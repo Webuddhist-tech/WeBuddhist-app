@@ -154,16 +154,17 @@ void main() {
       expect(quote.width, greaterThan(screenWidth * 0.68 - 40));
     });
 
-    testWidgets('a deleted message shows one label for everyone', (
+    testWidgets('a deleted message is one line, time after the label', (
       tester,
     ) async {
+      final message = _message(
+        senderId: 'me',
+        deletedAt: '2026-09-10T12:01:00Z',
+      );
       await tester.pumpWidget(
         _host(
           GroupChatMessageBubble(
-            message: _message(
-              senderId: 'me',
-              deletedAt: '2026-09-10T12:01:00Z',
-            ),
+            message: message,
             isSelf: true,
             isRunStart: true,
           ),
@@ -174,6 +175,18 @@ void main() {
       expect(find.text('This message was deleted'), findsOneWidget);
       expect(find.text('You deleted this message'), findsNothing);
       expect(find.text('Thank you'), findsNothing);
+
+      final timeLabel = GroupChatMessageBubble.timeLabel(
+        tester.element(find.byType(GroupChatMessageBubble)),
+        message,
+      );
+      final label = tester.getRect(find.text('This message was deleted'));
+      final time = tester.getRect(find.text(timeLabel));
+
+      // Beside the label, not under it, and sitting a touch lower.
+      expect(time.left, greaterThan(label.right));
+      expect(time.top, lessThan(label.bottom));
+      expect(time.bottom, greaterThanOrEqualTo(label.bottom - 1));
     });
   });
 }

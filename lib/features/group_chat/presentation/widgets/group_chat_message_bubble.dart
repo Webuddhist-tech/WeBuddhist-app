@@ -76,6 +76,12 @@ class GroupChatMessageBubble extends StatelessWidget {
   static const double _avatarSize = 32;
   static const double _maxWidthFactor = 0.68;
 
+  /// A tombstone is one line — icon, label and the time after it — and that
+  /// line does not fit under the ordinary cap once the font scales up. It
+  /// gets more room so it stays one line rather than wrapping "deleted" onto
+  /// a second.
+  static const double _tombstoneMaxWidthFactor = 0.82;
+
   /// How far the chip rides up over the bubble's bottom edge. Less than the
   /// bubble's 10dp bottom padding, so it overlaps the bubble but stays clear
   /// of the time label.
@@ -98,7 +104,9 @@ class GroupChatMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final maxWidth = MediaQuery.sizeOf(context).width * _maxWidthFactor;
+    final maxWidth =
+        MediaQuery.sizeOf(context).width *
+        (isDeleted ? _tombstoneMaxWidthFactor : _maxWidthFactor);
     // Identity travels with the message, so there is nothing to wait for.
     final displayName =
         (isSelf
@@ -267,18 +275,16 @@ class GroupChatMessageBubble extends StatelessWidget {
               if (previewUrl != null)
                 GroupChatLinkPreviewCard(url: previewUrl, onOpen: _openUrl),
             ],
-            const SizedBox(height: 2),
-            Text(
-              timeLabel(context, message),
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 11,
-                color:
-                    isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textSecondary,
+            // A tombstone carries its time on the same line (see
+            // `_tombstone`), so the bubble stays one line tall.
+            if (!isDeleted) ...[
+              const SizedBox(height: 2),
+              Text(
+                timeLabel(context, message),
+                textAlign: TextAlign.right,
+                style: _timeStyle(isDark),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -290,27 +296,50 @@ class GroupChatMessageBubble extends StatelessWidget {
     return isReply ? column : IntrinsicWidth(child: column);
   }
 
+  TextStyle _timeStyle(bool isDark) {
+    return TextStyle(
+      fontSize: 11,
+      color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+    );
+  }
+
   /// Stands in for a deleted message.
   ///
   /// The quote, link preview and reaction badges all go with the body: none of
   /// them describes anything that still exists. One label for everyone, in the
   /// ordinary text colour, per the mocks — the bubble's side already says
   /// whose message it was.
+  ///
+  /// One line: the time sits after the label rather than under it, its
+  /// baseline a touch lower, so a deleted message is shorter than a live one.
   Widget _tombstone(BuildContext context, bool isDark) {
     final color = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Icon(AppAssets.prohibit, size: 16, color: color),
-        const SizedBox(width: 6),
         Flexible(
-          child: Text(
-            context.l10n.group_chat_message_deleted_by_sender,
-            strutStyle: context.tibetanStrutStyle(15),
-            style: TextStyle(fontSize: 15, color: color),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            // The icon stays centred on the label even if a very large font
+            // scale still forces a wrap.
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(AppAssets.prohibit, size: 15, color: color),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  context.l10n.group_chat_message_deleted_by_sender,
+                  strutStyle: context.tibetanStrutStyle(14),
+                  style: TextStyle(fontSize: 14, color: color),
+                ),
+              ),
+            ],
           ),
         ),
+        const SizedBox(width: 8),
+        Text(timeLabel(context, message), style: _timeStyle(isDark)),
       ],
     );
   }

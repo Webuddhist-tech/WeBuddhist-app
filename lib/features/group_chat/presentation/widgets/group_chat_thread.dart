@@ -170,14 +170,30 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
 
   /// Brings the newest message into view. The list is reversed, so the bottom
   /// is offset zero.
+  ///
+  /// One continuous animation, however far away: a jump partway first was
+  /// tried and the cut it makes is exactly what stops it feeling smooth.
+  /// The duration grows with the distance but is capped, and the curve is
+  /// ease-out, so a long way flies past at the start — rows are a blur there
+  /// anyway — and the last stretch settles onto the newest message.
   void _scrollToNewest() {
     if (!_scrollController.hasClients) return;
+    final distance = _scrollController.position.pixels;
+    final milliseconds = (distance / _scrollPixelsPerMs)
+        .clamp(_minScrollMs, _maxScrollMs)
+        .round();
     _scrollController.animateTo(
       0,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOut,
+      duration: Duration(milliseconds: milliseconds),
+      curve: Curves.easeOutCubic,
     );
   }
+
+  /// Speed of the animated scroll, and its bounds so a short hop is still
+  /// visible and a long one never drags.
+  static const double _scrollPixelsPerMs = 3;
+  static const double _minScrollMs = 260;
+  static const double _maxScrollMs = 1100;
 
   /// Follows a newly arrived message.
   ///
