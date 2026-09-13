@@ -18,7 +18,7 @@ class AppAssets {
   static const String collectionCompletion =
       'assets/images/collection-completion.png';
   static const String myCollectionDefault =
-      'assets/images/my_collection_default.png';
+      'assets/images/my_collection_default.jpg';
 
   // ========== AUDIO ==========
   // PCM WAV (not MP3): ExoPlayer's offload path mis-parses the encoded MP3 on

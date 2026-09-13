@@ -390,10 +390,18 @@ class _CollectionHero extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: AspectRatio(
         aspectRatio: 343 / 196,
-        child: CachedNetworkImageWidget(
-          imageUrl: imageUrl,
-          fallbackAsset: AppAssets.myCollectionDefault,
-          fit: BoxFit.cover,
+        // Covers are user uploads of unbounded resolution; hand the image the
+        // laid-out size so the decode is bounded by the hero, not the source.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return CachedNetworkImageWidget(
+              imageUrl: imageUrl,
+              fallbackAsset: AppAssets.myCollectionDefault,
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              fit: BoxFit.cover,
+            );
+          },
         ),
       ),
     );

@@ -264,11 +264,27 @@ class _CachedNetworkImageWidgetState extends State<CachedNetworkImageWidget> {
   }
 
   Widget _buildAssetImage(String assetPath, BuildContext context) {
+    // Bundled art is authored at full display size, so without an explicit
+    // bound a 1280x720 fallback decodes at natural size even inside a 56px
+    // thumbnail. Reuse the network sizing so `cover`/`contain` stay on one
+    // axis — passing both axes would resize the decode to an exact box and
+    // distort the image.
+    final (cacheWidth, cacheHeight) = _resolveMemCacheDimensions(
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+      fit: widget.fit,
+      width: widget.width,
+      height: widget.height,
+      memCacheWidth: widget.memCacheWidth,
+      memCacheHeight: widget.memCacheHeight,
+    );
+
     return Image.asset(
       assetPath,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
       errorBuilder:
           (context, error, stackTrace) =>
               widget.errorWidget ?? _buildErrorWidget(context),

@@ -40,7 +40,14 @@ class PracticeMyChantsCollectionListTile extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             child: Row(
               children: [
-                _CollectionThumbnail(imageUrl: collection.imageUrl),
+                CachedNetworkImageWidget(
+                  imageUrl: collection.imageUrl,
+                  fallbackAsset: AppAssets.myCollectionDefault,
+                  width: _thumbnailSize,
+                  height: _thumbnailSize,
+                  fit: BoxFit.cover,
+                  borderRadius: BorderRadius.circular(_thumbnailRadius),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
@@ -67,22 +74,20 @@ class PracticeMyChantsCollectionListTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: trailingColor.withAlpha(100),
-                        width: 1,
-                      ),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: trailingColor.withAlpha(100),
+                      width: 1,
                     ),
-                    child: Icon(
-                      AppAssets.caretRight,
-                      size: 16,
-                      color: trailingColor,
-                    ),
+                  ),
+                  child: Icon(
+                    AppAssets.caretRight,
+                    size: 16,
+                    color: trailingColor,
                   ),
                 ),
               ],
@@ -90,61 +95,6 @@ class PracticeMyChantsCollectionListTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _CollectionThumbnail extends StatelessWidget {
-  const _CollectionThumbnail({required this.imageUrl});
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    const fallback = _CollectionThumbnailFallback();
-    final url = imageUrl?.trim();
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(
-        PracticeMyChantsCollectionListTile._thumbnailRadius,
-      ),
-      child: SizedBox(
-        width: PracticeMyChantsCollectionListTile._thumbnailSize,
-        height: PracticeMyChantsCollectionListTile._thumbnailSize,
-        child:
-            url != null && _isSupportedImageUrl(url)
-                ? CachedNetworkImageWidget(
-                  imageUrl: url,
-                  width: PracticeMyChantsCollectionListTile._thumbnailSize,
-                  height: PracticeMyChantsCollectionListTile._thumbnailSize,
-                  fit: BoxFit.cover,
-                  placeholder: fallback,
-                  errorWidget: fallback,
-                )
-                : fallback,
-      ),
-    );
-  }
-
-  bool _isSupportedImageUrl(String value) {
-    if (value.startsWith('assets/')) return true;
-    final uri = Uri.tryParse(value);
-    return uri != null &&
-        uri.hasScheme &&
-        (uri.scheme == 'http' || uri.scheme == 'https');
-  }
-}
-
-class _CollectionThumbnailFallback extends StatelessWidget {
-  const _CollectionThumbnailFallback();
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      AppAssets.myCollectionDefault,
-      width: PracticeMyChantsCollectionListTile._thumbnailSize,
-      height: PracticeMyChantsCollectionListTile._thumbnailSize,
-      fit: BoxFit.cover,
     );
   }
 }
