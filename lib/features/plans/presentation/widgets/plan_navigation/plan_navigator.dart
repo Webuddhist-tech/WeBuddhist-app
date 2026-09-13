@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,8 @@ import 'package:go_router/go_router.dart';
 /// user taps prev/next or swipes, the next item may live on a *different*
 /// screen than the current one. This helper picks the right route and replaces
 /// the current screen, so the user perceives a seamless "1/N → 2/N" sequence.
+///
+/// Inside a [PlanEmbeddedScope] the screens are shown in place instead.
 class PlanNavigator {
   PlanNavigator._();
 
@@ -25,6 +28,8 @@ class PlanNavigator {
     PlanTextItem item,
     NavigationContext navigationContext,
   ) {
+    final embedded = PlanEmbeddedScope.maybeOf(context);
+    if (embedded != null) return embedded.open<T>(item, navigationContext);
     return context.push<T>(_routeFor(item), extra: navigationContext);
   }
 
@@ -35,7 +40,22 @@ class PlanNavigator {
     PlanTextItem item,
     NavigationContext navigationContext,
   ) {
+    final embedded = PlanEmbeddedScope.maybeOf(context);
+    if (embedded != null) {
+      embedded.replace(item, navigationContext);
+      return;
+    }
     context.pushReplacement(_routeFor(item), extra: navigationContext);
+  }
+
+  /// Leaves the sequence: closes the embedded host, else pops the route.
+  static void pop(BuildContext context, [Object? result]) {
+    final embedded = PlanEmbeddedScope.maybeOf(context);
+    if (embedded != null) {
+      embedded.close(result);
+      return;
+    }
+    context.pop(result);
   }
 
   /// Move to the adjacent item in [direction]. Returns true if it navigated,

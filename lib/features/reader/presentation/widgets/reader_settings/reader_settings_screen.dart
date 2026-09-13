@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/language_picker_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/script_picker_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/slot_config_card.dart';
@@ -16,9 +17,13 @@ class ReaderSettingsScreen extends ConsumerWidget {
     super.key,
     required this.textId,
     this.initialPrimaryDisplay,
+    this.asSheet = false,
   });
 
   final String textId;
+
+  /// Renders as bottom-sheet content (drag handle + title) instead of a page.
+  final bool asSheet;
 
   /// Snapshot of what the reader is currently displaying for the primary
   /// slot, passed in from the reader screen. Used as the display default for
@@ -37,6 +42,76 @@ class ReaderSettingsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     final primaryDisplay = _primaryDisplay(ref, settings);
+    final title = Text(
+      context.l10n.parallel_version,
+      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+    );
+
+    final body = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SecondaryToggle(
+            enabled: settings.secondaryEnabled,
+            onChanged: notifier.setSecondaryEnabled,
+          ),
+          const Divider(height: 32),
+          _StaticVersionSection(
+            headerLabel: context.l10n.main_version,
+            config: primaryDisplay,
+            theme: theme,
+          ),
+          const SizedBox(height: 18),
+          SlotConfigCard(
+            headerLabel: context.l10n.second_version,
+            config: settings.secondary,
+            enabled: settings.secondaryEnabled,
+            showScriptRow: false,
+            isVersionLoading: isResolvingVersion,
+            onLanguage: () => _pickLanguage(context, ref, primaryDisplay),
+            onVersion: () => _pickVersion(context, ref),
+            onScript: () => _pickScript(context, ref, isPrimary: false),
+          ),
+          const SizedBox(height: 16),
+          Opacity(
+            opacity: settings.secondaryEnabled ? 1.0 : 0.45,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                context.l10n.second_version_msg,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (asSheet) {
+      return SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: ReaderPanelConstants.dragHandleWidth,
+              height: ReaderPanelConstants.dragHandleHeight,
+              decoration: BoxDecoration(
+                color: ReaderPanelConstants.dragHandleColor(context),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 14),
+            title,
+            Flexible(child: body),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -48,57 +123,9 @@ class ReaderSettingsScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_ios, size: 20),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: Text(
-          context.l10n.parallel_version,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        title: title,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _SecondaryToggle(
-                enabled: settings.secondaryEnabled,
-                onChanged: notifier.setSecondaryEnabled,
-              ),
-              const Divider(height: 32),
-              _StaticVersionSection(
-                headerLabel: context.l10n.main_version,
-                config: primaryDisplay,
-                theme: theme,
-              ),
-              const SizedBox(height: 18),
-              SlotConfigCard(
-                headerLabel: context.l10n.second_version,
-                config: settings.secondary,
-                enabled: settings.secondaryEnabled,
-                showScriptRow: false,
-                isVersionLoading: isResolvingVersion,
-                onLanguage: () => _pickLanguage(context, ref, primaryDisplay),
-                onVersion: () => _pickVersion(context, ref),
-                onScript: () => _pickScript(context, ref, isPrimary: false),
-              ),
-              const SizedBox(height: 16),
-              Opacity(
-                opacity: settings.secondaryEnabled ? 1.0 : 0.45,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Text(
-                    context.l10n.second_version_msg,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      body: SafeArea(child: body),
     );
   }
 
@@ -368,5 +395,29 @@ Future<void> openReaderSettings(
             initialPrimaryDisplay: initialPrimaryDisplay,
           ),
     ),
+  );
+}
+
+/// Same settings as [openReaderSettings], shown as a bottom sheet.
+Future<void> showReaderSettingsSheet(
+  BuildContext context, {
+  required String textId,
+  ReaderSlotConfig? initialPrimaryDisplay,
+}) {
+  return showModalBottomSheet(
+    context: context,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(ReaderPanelConstants.topRadius),
+      ),
+    ),
+    isScrollControlled: true,
+    builder:
+        (_) => ReaderSettingsScreen(
+          textId: textId,
+          initialPrimaryDisplay: initialPrimaryDisplay,
+          asSheet: true,
+        ),
   );
 }

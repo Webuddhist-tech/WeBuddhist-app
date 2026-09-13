@@ -389,6 +389,10 @@
   "connect_event_when": "When",
   "connect_event_where": "Where",
   "connect_event_practices": "Event practices",
+  "connect_event_tab_accumulations": "Accumulations",
+  "connect_event_tab_recitations": "Recitations",
+  "connect_event_add_recitations": "Add recitations",
+  "connect_event_add_recitations_message": "Add the number of recitations you did with the livestream or outside this app.",
   "connect_event_every_day": "Every day",
   "connect_event_every_weekday": "Every {weekday}",
   "@connect_event_every_weekday": {
@@ -1353,5 +1357,10 @@
   "group_post_update_error": "Unable to save your changes. Please try again.",
   "group_post_updated": "Your changes are saved.",
   "practice_collection_already_added": "This collection is already in your practices",
-  "practice_group_accumulator_already_added": "This accumulation is already in your practices"
+  "practice_group_accumulator_already_added": "This accumulation is already in your practices",
+  "event_live_badge": "LIVE",
+  "event_live_audio": "Live audio",
+  "event_live_video_mode": "Video",
+  "event_live_audio_mode": "Audio",
+  "event_live_go_live": "Live"
 }

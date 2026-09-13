@@ -10,7 +10,6 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_noti
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// Wraps the reader content with horizontal-swipe gestures and the shared
 /// plan navigation bottom bar.
@@ -172,6 +171,6 @@ class _SwipeNavigationWrapperState
     }
 
     if (!mounted) return;
-    context.pop();
+    PlanNavigator.pop(context);
   }
 }

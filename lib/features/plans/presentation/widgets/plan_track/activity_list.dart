@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_shorts_section.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Activity list for the *enrolled* plan flow. Each row is one task; the row
 /// is enabled iff at least one subtask is navigable. Tapping the title opens
 /// the task without auto-playing audio; tapping the play icon opens it with
 /// auto-play (only shown when the task has an audio segment).
-class ActivityList extends StatelessWidget {
+class ActivityList extends ConsumerWidget {
   final String language;
   final List<UserTasksDto> tasks;
   final List<PlanVideoModel> videos;
   final int today;
   final int totalDays;
   final Function(String taskId) onActivityToggled;
+  final Function(String taskId)? onGroupAccumulationPracticed;
   final VoidCallback? onReaderClosed;
   final AuthorDtoModel? author;
   final String? planId;
@@ -32,6 +35,7 @@ class ActivityList extends StatelessWidget {
     required this.today,
     required this.totalDays,
     required this.onActivityToggled,
+    this.onGroupAccumulationPracticed,
     this.onReaderClosed,
     this.author,
     this.planId,
@@ -40,7 +44,7 @@ class ActivityList extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final sortedTasks = List<UserTasksDto>.from(tasks)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
@@ -54,7 +58,10 @@ class ActivityList extends StatelessWidget {
           itemBuilder: (context, index) {
             final task = sortedTasks[index];
             final isNavigable = PlanSubtaskNavigation.isUserTaskNavigable(task);
-            final hasAudio = _taskHasAudio(task);
+            final isGroupAccumulation =
+                PlanSubtaskNavigation.groupAccumulationIdForUserTask(task) !=
+                null;
+            final hasAudio = !isGroupAccumulation && _taskHasAudio(task);
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
@@ -73,6 +80,7 @@ class ActivityList extends StatelessWidget {
                       onTap:
                           () => _handleActivityTap(
                             context,
+                            ref,
                             task,
                             autoPlay: false,
                           ),
@@ -82,8 +90,12 @@ class ActivityList extends StatelessWidget {
                     const SizedBox(width: 8),
                     _PlayButton(
                       onTap:
-                          () =>
-                              _handleActivityTap(context, task, autoPlay: true),
+                          () => _handleActivityTap(
+                            context,
+                            ref,
+                            task,
+                            autoPlay: true,
+                          ),
                     ),
                   ],
                 ],
@@ -105,9 +117,25 @@ class ActivityList extends StatelessWidget {
 
   void _handleActivityTap(
     BuildContext context,
+    WidgetRef ref,
     UserTasksDto task, {
     required bool autoPlay,
   }) {
+    final accumulatorId = PlanSubtaskNavigation.groupAccumulationIdForUserTask(
+      task,
+    );
+    if (accumulatorId != null) {
+      openGroupAccumulatorPractice(
+        context,
+        ref,
+        accumulatorId: accumulatorId,
+      ).then((practiced) {
+        if (practiced) onGroupAccumulationPracticed?.call(task.id);
+        onReaderClosed?.call();
+      });
+      return;
+    }
+
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
     if (planTextItems.isEmpty) return;
 

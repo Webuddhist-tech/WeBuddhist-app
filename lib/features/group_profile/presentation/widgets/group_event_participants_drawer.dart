@@ -51,12 +51,6 @@ class _GroupEventParticipantsDrawerState
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref
-          .read(groupEventParticipantsProvider(widget.eventId).notifier)
-          .loadInitial();
-    });
   }
 
   @override

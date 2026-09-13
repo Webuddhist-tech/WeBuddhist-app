@@ -330,10 +330,7 @@ class GroupRecitationCollectionCompletionNotifier
         // Merge rather than replace: a chant completed locally while this
         // fetch was in flight may not be in the server snapshot yet.
         state = state.copyWith(
-          completedChantIds: {
-            ...state.completedChantIds,
-            ...completedChantIds,
-          },
+          completedChantIds: {...state.completedChantIds, ...completedChantIds},
           isLoading: false,
           clearError: true,
         );
@@ -984,6 +981,17 @@ final groupEventDetailProvider = FutureProvider.autoDispose
       return repository.getGroupEventDetail(eventId, language: language);
     });
 
+typedef GroupEventLanguageKey = ({String eventId, String language});
+
+/// Event detail in an explicit language, for the live stream language toggle.
+final groupEventInLanguageProvider = FutureProvider.autoDispose.family<
+  Either<Failure, GroupEvent>,
+  GroupEventLanguageKey
+>((ref, key) async {
+  final repository = ref.watch(groupProfileRepositoryProvider);
+  return repository.getGroupEventDetail(key.eventId, language: key.language);
+});
+
 class GroupEventParticipantsState {
   final List<GroupEventParticipant> participants;
   final int total;
@@ -1139,15 +1147,19 @@ class GroupEventParticipantsNotifier
   }
 }
 
-final groupEventParticipantsProvider = StateNotifierProvider.autoDispose
-    .family<GroupEventParticipantsNotifier, GroupEventParticipantsState, String>(
-      (ref, eventId) {
-        return GroupEventParticipantsNotifier(
-          repository: ref.watch(groupProfileRepositoryProvider),
-          eventId: eventId,
-        );
-      },
-    );
+final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
+  GroupEventParticipantsNotifier,
+  GroupEventParticipantsState,
+  String
+>((ref, eventId) {
+  final notifier = GroupEventParticipantsNotifier(
+    repository: ref.watch(groupProfileRepositoryProvider),
+    eventId: eventId,
+  );
+  // Load on creation so the first watch already has participants.
+  notifier.loadInitial();
+  return notifier;
+});
 
 Future<bool> submitGroupJoinRequest({
   required WidgetRef ref,
@@ -1157,13 +1169,10 @@ Future<bool> submitGroupJoinRequest({
   final result = await ref
       .read(groupProfileRepositoryProvider)
       .submitJoinRequest(groupId, message: message);
-  return result.fold(
-    (_) => false,
-    (_) {
-      ref.invalidate(groupProfileProvider(groupId));
-      return true;
-    },
-  );
+  return result.fold((_) => false, (_) {
+    ref.invalidate(groupProfileProvider(groupId));
+    return true;
+  });
 }
 
 Future<void> refreshGroupProfilePage({

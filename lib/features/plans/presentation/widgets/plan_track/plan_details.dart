@@ -13,6 +13,11 @@ import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_player.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_toggles.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/routine_info_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
@@ -25,6 +30,8 @@ import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_panel.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_day_detail_response.dart';
@@ -32,6 +39,7 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../day_completion_bottom_sheet.dart';
 import '../plan_cover_image.dart';
 import '../day_carousel.dart';
@@ -40,6 +48,8 @@ import 'missed_days_badge.dart';
 
 final _logger = AppLogger('PlanDetails');
 
+enum _LiveStatus { loading, live, none, failed }
+
 class PlanDetails extends ConsumerStatefulWidget {
   const PlanDetails({
     super.key,
@@ -47,11 +57,15 @@ class PlanDetails extends ConsumerStatefulWidget {
     required this.selectedDay,
     required this.startDate,
     this.seriesId,
+    this.eventId,
   });
   final UserPlansModel plan;
   final int selectedDay;
   final DateTime startDate;
   final String? seriesId;
+
+  /// Set when opened from an event, to show its live stream above the days.
+  final String? eventId;
 
   @override
   ConsumerState<PlanDetails> createState() => _PlanDetailsState();
@@ -64,11 +78,19 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   final Map<String, bool> _optimisticCompletions = {};
   final GlobalKey _shareButtonKey = GlobalKey();
   bool _isSharing = false;
+  late String _liveLanguage;
+  bool _liveAudioOnly = false;
+  bool _liveStreamSeen = false;
+  final _embedded = PlanEmbeddedController();
 
   @override
   void initState() {
     super.initState();
     selectedDay = widget.selectedDay;
+    _embedded.addListener(_onEmbeddedChanged);
+    _liveLanguage = GroupEventLiveUtils.initialLanguage(
+      ref.read(contentLanguageProvider),
+    );
     _logger.info(
       'PlanDetails opened — id: ${widget.plan.id} | title: "${widget.plan.title}"',
     );
@@ -87,29 +109,146 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   }
 
   @override
+  void dispose() {
+    _embedded.removeListener(_onEmbeddedChanged);
+    _embedded.dispose();
+    super.dispose();
+  }
+
+  void _onEmbeddedChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final language = widget.plan.language;
     final localizations = context.l10n;
 
     _listenForDayCompletion();
+    final live = _liveStatus();
 
-    return Scaffold(
-      appBar: _buildAppBar(context, language, localizations),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  PlanCoverImage(image: widget.plan.coverImage),
-                  _buildDayCarouselSection(language),
-                  _buildDayContentSection(context, language),
-                ],
-              ),
+    return PopScope(
+      canPop: !_embedded.isOpen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _embedded.close();
+      },
+      child: Scaffold(
+        appBar: _buildAppBar(context, language, localizations, live: live),
+        // Only the live layout hosts the embedded panel, so a task opened
+        // while the stream was still loading stays put even if the request
+        // then fails or finds no stream; the plain layout takes over once the
+        // user closes it. Nothing is lost on a retryable network error.
+        body:
+            _embedded.isOpen
+                ? _buildLiveEventBody(language, localizations)
+                : switch (live) {
+                  _LiveStatus.none => _buildPlanBody(language, localizations),
+                  _LiveStatus.failed => _buildPlanBody(
+                    language,
+                    localizations,
+                    retryLive: _retryLiveEvent,
+                  ),
+                  _LiveStatus.loading ||
+                  _LiveStatus.live => _buildLiveEventBody(
+                    language,
+                    localizations,
+                  ),
+                },
+      ),
+    );
+  }
+
+  GroupEventLanguageKey get _liveKey => (
+    eventId: widget.eventId!,
+    language: _liveLanguage,
+  );
+
+  /// Sticky once a stream was seen, so a language without one keeps the
+  /// toggles reachable. A failed request is `failed`, never `none`, so a
+  /// network blip cannot hide an active stream.
+  _LiveStatus _liveStatus() {
+    if (widget.eventId == null) return _LiveStatus.none;
+    final eventAsync = ref.watch(groupEventInLanguageProvider(_liveKey));
+    final either = eventAsync.valueOrNull;
+    if (either == null) {
+      if (_liveStreamSeen) return _LiveStatus.live;
+      return eventAsync.hasError ? _LiveStatus.failed : _LiveStatus.loading;
+    }
+    final status = either.fold(
+      (failure) =>
+          failure is NotFoundFailure ? _LiveStatus.none : _LiveStatus.failed,
+      (event) =>
+          GroupEventLiveUtils.videoIdOf(event) != null
+              ? _LiveStatus.live
+              : _LiveStatus.none,
+    );
+    if (status == _LiveStatus.live) _liveStreamSeen = true;
+    return _liveStreamSeen ? _LiveStatus.live : status;
+  }
+
+  void _retryLiveEvent() {
+    ref.invalidate(groupEventInLanguageProvider(_liveKey));
+  }
+
+  Widget _buildPlanBody(
+    String language,
+    AppLocalizations localizations, {
+    VoidCallback? retryLive,
+  }) {
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                if (retryLive != null) _buildLiveEventError(retryLive),
+                // The edge-to-edge event cover has no margin of its own.
+                if (widget.eventId != null) const SizedBox(height: 12),
+                _buildDayCarouselSection(language),
+                _buildDayContentSection(context, language),
+              ],
             ),
           ),
-          _buildStartReadingButton(context, localizations),
+        ),
+        _buildStartReadingButton(context, localizations),
+      ],
+    );
+  }
+
+  /// The stream stays pinned; a tapped task opens below it, not as a route.
+  Widget _buildLiveEventBody(
+    String language,
+    AppLocalizations localizations,
+  ) {
+    return PlanEmbeddedScope(
+      controller: _embedded,
+      child: Column(
+        children: [
+          _buildHeader(),
+          if (_embedded.isOpen)
+            Expanded(child: PlanEmbeddedPanel(controller: _embedded))
+          else ...[
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    _buildDayCarouselSection(language),
+                    _buildDayContentSection(context, language),
+                  ],
+                ),
+              ),
+            ),
+            // Built below the scope so "Practice now" opens in place too.
+            Builder(
+              builder:
+                  (context) =>
+                      _buildStartReadingButton(context, localizations),
+            ),
+          ],
         ],
       ),
     );
@@ -214,13 +353,17 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   AppBar _buildAppBar(
     BuildContext context,
     String language,
-    AppLocalizations localizations,
-  ) {
+    AppLocalizations localizations, {
+    required _LiveStatus live,
+  }) {
+    final isLiveEvent = live == _LiveStatus.live;
     return AppBar(
       leading: IconButton(
         icon: const Icon(AppAssets.arrowLeft),
         onPressed: () {
-          if (context.canPop()) {
+          if (_embedded.isOpen) {
+            _embedded.close();
+          } else if (context.canPop()) {
             context.pop();
           } else {
             // Opened via deep link with no route beneath — go home.
@@ -228,8 +371,58 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           }
         },
       ),
-      title: Text(widget.plan.title, style: TextStyle(fontSize: 20)),
+      title: switch (live) {
+        _LiveStatus.loading => Skeletonizer(
+          child: Bone(
+            width: 180,
+            height: 20,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        _LiveStatus.live => null,
+        _LiveStatus.none || _LiveStatus.failed => Text(
+          widget.plan.title,
+          style: TextStyle(fontSize: 20),
+        ),
+      },
+      actions:
+          isLiveEvent
+              ? [
+                GroupEventMediaToggle(
+                  audioOnly: _liveAudioOnly,
+                  onChanged:
+                      (audioOnly) =>
+                          setState(() => _liveAudioOnly = audioOnly),
+                ),
+                const SizedBox(width: 8),
+                GroupEventLanguageToggle(
+                  language: _liveLanguage,
+                  onChanged:
+                      (language) => setState(() => _liveLanguage = language),
+                ),
+                const SizedBox(width: 12),
+              ]
+              : null,
       elevation: 0,
+    );
+  }
+
+  Widget _buildHeader() {
+    final eventId = widget.eventId;
+    if (eventId == null) return PlanCoverImage(image: widget.plan.coverImage);
+    return GroupEventLiveHeader(
+      eventId: eventId,
+      language: _liveLanguage,
+      audioOnly: _liveAudioOnly,
+      fallbackTitle: widget.plan.title,
+      fallback: LayoutBuilder(
+        builder:
+            (context, constraints) => PlanCoverImage(
+              image: widget.plan.coverImage,
+              height: constraints.maxWidth * 9 / 16,
+              edgeToEdge: true,
+            ),
+      ),
     );
   }
 
@@ -396,6 +589,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     dayAudioUrl: dayContent.audioUrl,
                     onActivityToggled:
                         (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
+                    onGroupAccumulationPracticed:
+                        (taskId) => _completeTask(taskId, dayContent.tasks),
                     onReaderClosed: _onReaderClosed,
                   );
                 },
@@ -404,6 +599,24 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             loading: () => const DayContentSkeleton(),
             error: (error, stackTrace) => _buildDayContentError(),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveEventError(VoidCallback onRetry) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              context.l10n.something_went_wrong,
+              style: TextStyle(color: Colors.red[600]),
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(onPressed: onRetry, child: Text(context.l10n.retry)),
         ],
       ),
     );
@@ -474,6 +687,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           ),
       ],
     );
+  }
+
+  // Marks a task complete after a group accumulation session, never unticks.
+  Future<void> _completeTask(String taskId, List<UserTasksDto> tasks) async {
+    final task = tasks.where((t) => t.id == taskId).firstOrNull;
+    if (task == null) return;
+    final isCompleted = _optimisticCompletions[taskId] ?? task.isCompleted;
+    if (isCompleted) return;
+    await _handleTaskToggle(taskId, tasks);
   }
 
   Future<void> _handleTaskToggle(
@@ -677,7 +899,30 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
-  void _startReading(List<UserTasksDto> tasks, {String? audioUrl}) {
+  void _startReading(
+    BuildContext context,
+    List<UserTasksDto> tasks, {
+    String? audioUrl,
+  }) {
+    final accumulationTask = _nextGroupAccumulationTask(tasks);
+    final accumulatorId =
+        accumulationTask == null
+            ? null
+            : PlanSubtaskNavigation.groupAccumulationIdForUserTask(
+              accumulationTask,
+            );
+    if (accumulationTask != null && accumulatorId != null) {
+      openGroupAccumulatorPractice(
+        context,
+        ref,
+        accumulatorId: accumulatorId,
+      ).then((practiced) {
+        if (practiced) _completeTask(accumulationTask.id, tasks);
+        _onReaderClosed();
+      });
+      return;
+    }
+
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
     if (planTextItems.isEmpty) return;
 
@@ -701,6 +946,22 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       target,
       navigationContext,
     ).then((_) => _onReaderClosed());
+  }
+
+  // The next open task when it is a group accumulation, else null.
+  UserTasksDto? _nextGroupAccumulationTask(List<UserTasksDto> tasks) {
+    final sorted = List<UserTasksDto>.from(tasks)
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    final navigable = sorted.where(PlanSubtaskNavigation.isUserTaskNavigable);
+    if (navigable.isEmpty) return null;
+    final next = navigable.firstWhere(
+      (t) => !t.isCompleted,
+      orElse: () => navigable.first,
+    );
+    if (PlanSubtaskNavigation.groupAccumulationIdForUserTask(next) == null) {
+      return null;
+    }
+    return next;
   }
 
   Widget _buildStartReadingButton(
@@ -782,7 +1043,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                   : FilledButton(
                     onPressed:
                         hasReadableContent
-                            ? () => _startReading(tasks, audioUrl: audioUrl)
+                            ? () => _startReading(
+                              context,
+                              tasks,
+                              audioUrl: audioUrl,
+                            )
                             : null,
                     style: buttonStyle,
                     child: Text(

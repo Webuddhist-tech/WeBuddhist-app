@@ -114,6 +114,8 @@ class AppAssets {
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
   static const IconData speakerSimpleHigh =
       PhosphorIconsRegular.speakerSimpleHigh;
+  static const IconData headphones = PhosphorIconsRegular.headphones;
+  static const IconData monitorPlay = PhosphorIconsRegular.monitorPlay;
   static const IconData vibrate = PhosphorIconsRegular.vibrate;
   static const IconData arrowCounterClockwise =
       PhosphorIconsRegular.arrowCounterClockwise;

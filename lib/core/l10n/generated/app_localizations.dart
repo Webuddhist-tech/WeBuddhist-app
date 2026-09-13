@@ -1882,6 +1882,30 @@ abstract class AppLocalizations {
   /// **'Event practices'**
   String get connect_event_practices;
 
+  /// No description provided for @connect_event_tab_accumulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulations'**
+  String get connect_event_tab_accumulations;
+
+  /// No description provided for @connect_event_tab_recitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Recitations'**
+  String get connect_event_tab_recitations;
+
+  /// No description provided for @connect_event_add_recitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Add recitations'**
+  String get connect_event_add_recitations;
+
+  /// No description provided for @connect_event_add_recitations_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the number of recitations you did with the livestream or outside this app.'**
+  String get connect_event_add_recitations_message;
+
   /// No description provided for @connect_event_every_day.
   ///
   /// In en, this message translates to:
@@ -4945,6 +4969,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This accumulation is already in your practices'**
   String get practice_group_accumulator_already_added;
+
+  /// No description provided for @event_live_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE'**
+  String get event_live_badge;
+
+  /// No description provided for @event_live_audio.
+  ///
+  /// In en, this message translates to:
+  /// **'Live audio'**
+  String get event_live_audio;
+
+  /// No description provided for @event_live_video_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get event_live_video_mode;
+
+  /// No description provided for @event_live_audio_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get event_live_audio_mode;
+
+  /// No description provided for @event_live_go_live.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get event_live_go_live;
 }
 
 class _AppLocalizationsDelegate
