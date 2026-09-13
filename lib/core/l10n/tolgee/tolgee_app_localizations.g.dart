@@ -1971,6 +1971,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_tab_accumulations => TolgeeBridge.get(
+    localeName,
+    'connect_event_tab_accumulations',
+    () => _fallback.connect_event_tab_accumulations,
+  );
+
+  @override
+  String get connect_event_tab_recitations => TolgeeBridge.get(
+    localeName,
+    'connect_event_tab_recitations',
+    () => _fallback.connect_event_tab_recitations,
+  );
+
+  @override
+  String get connect_event_add_recitations => TolgeeBridge.get(
+    localeName,
+    'connect_event_add_recitations',
+    () => _fallback.connect_event_add_recitations,
+  );
+
+  @override
+  String get connect_event_add_recitations_message => TolgeeBridge.get(
+    localeName,
+    'connect_event_add_recitations_message',
+    () => _fallback.connect_event_add_recitations_message,
+  );
+
+  @override
   String get connect_event_every_day => TolgeeBridge.get(
     localeName,
     'connect_event_every_day',
@@ -5465,5 +5493,40 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'practice_group_accumulator_already_added',
     () => _fallback.practice_group_accumulator_already_added,
+  );
+
+  @override
+  String get event_live_badge => TolgeeBridge.get(
+    localeName,
+    'event_live_badge',
+    () => _fallback.event_live_badge,
+  );
+
+  @override
+  String get event_live_audio => TolgeeBridge.get(
+    localeName,
+    'event_live_audio',
+    () => _fallback.event_live_audio,
+  );
+
+  @override
+  String get event_live_video_mode => TolgeeBridge.get(
+    localeName,
+    'event_live_video_mode',
+    () => _fallback.event_live_video_mode,
+  );
+
+  @override
+  String get event_live_audio_mode => TolgeeBridge.get(
+    localeName,
+    'event_live_audio_mode',
+    () => _fallback.event_live_audio_mode,
+  );
+
+  @override
+  String get event_live_go_live => TolgeeBridge.get(
+    localeName,
+    'event_live_go_live',
+    () => _fallback.event_live_go_live,
   );
 }

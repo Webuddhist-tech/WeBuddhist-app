@@ -36,6 +36,7 @@ class PlanContentTypes {
   static const String sourceReference = 'SOURCE_REFERENCE';
   static const String text = 'TEXT';
   static const String image = 'IMAGE';
+  static const String groupAccumulation = 'GROUP_ACCUMULATION';
 
   /// Map a raw API value to a [PlanItemContentType], or null if unknown.
   static PlanItemContentType? parse(String? raw) {

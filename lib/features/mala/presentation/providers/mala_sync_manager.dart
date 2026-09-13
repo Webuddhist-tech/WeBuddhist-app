@@ -296,6 +296,17 @@ class MalaSyncManager with WidgetsBindingObserver {
     }
   }
 
+  /// Flushes and waits for the in-flight sweep so callers can refetch
+  /// server-backed counts right after.
+  Future<void> flushAndSettle(SyncReason reason) async {
+    await flush(reason);
+    try {
+      await _awaitSyncIdle();
+    } on TimeoutException {
+      // Best effort; the caller refreshes with whatever has landed.
+    }
+  }
+
   Future<void> _awaitSyncIdle() async {
     final deadline = DateTime.now().add(_syncIdleTimeout);
     while (_isSyncing) {

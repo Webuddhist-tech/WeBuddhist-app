@@ -28,7 +28,7 @@ class AllRecitationsScreen extends ConsumerStatefulWidget {
 class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _languageRestored = false;
-  bool _isCreateCollectionDialogOpen = false;
+  bool _isCreateFlowOpen = false;
 
   @override
   void initState() {
@@ -112,10 +112,14 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
       return;
     }
 
-    setState(() => _isCreateCollectionDialogOpen = true);
-    await showNewCollectionDialog(context);
-    if (mounted) {
-      setState(() => _isCreateCollectionDialogOpen = false);
+    setState(() => _isCreateFlowOpen = true);
+    try {
+      await showNewCollectionDialog(context);
+    } finally {
+      // Restore the FAB even if the flow throws, not just when it completes.
+      if (mounted) {
+        setState(() => _isCreateFlowOpen = false);
+      }
     }
   }
 
@@ -155,7 +159,7 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
       ),
       body: _buildBody(context, recitationsState, languageCode),
       floatingActionButton:
-          _isCreateCollectionDialogOpen
+          _isCreateFlowOpen
               ? null
               : _CreateCollectionButton(
                 onPressed: _onCreateCollectionPressed,

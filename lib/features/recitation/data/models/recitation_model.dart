@@ -7,7 +7,7 @@ class RecitationModel {
   final String? imageUrl;
   final RecitationFirstSegmentModel? firstSegment;
   final String? language;
-  final double? displayOrder;
+  final int? displayOrder;
 
   RecitationModel({
     required this.textId,
@@ -30,7 +30,7 @@ class RecitationModel {
               )
               : null,
       language: json['language'] as String?,
-      displayOrder: (json['display_order'] as num?)?.toDouble(),
+      displayOrder: json['display_order'] as int?,
     );
   }
 
@@ -51,7 +51,7 @@ class RecitationModel {
     String? imageUrl,
     RecitationFirstSegmentModel? firstSegment,
     String? language,
-    double? displayOrder,
+    int? displayOrder,
   }) {
     return RecitationModel(
       textId: textId ?? this.textId,

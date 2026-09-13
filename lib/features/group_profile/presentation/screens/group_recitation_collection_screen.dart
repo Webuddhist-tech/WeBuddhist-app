@@ -15,7 +15,7 @@ import 'package:flutter_pecha/core/widgets/collection_completion_sheet.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
-import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_recitation_collection_row.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -148,30 +148,13 @@ class _GroupRecitationCollectionScreenState
     final chantId = item.id.trim();
     if (textId.isEmpty || chantId.isEmpty) return;
 
-    // Build navigation context with all chants in the collection
-    final completionState = ref.read(
-      groupRecitationCollectionCompletionProvider(key),
-    );
-    final currentIndex = collection.items.indexWhere((i) => i.id == item.id);
-
-    final planTextItems =
-        collection.items.map((collectionItem) {
-          return PlanTextItem.sourceReference(
-            textId: collectionItem.textId,
-            title: collectionItem.title,
-            language: collectionItem.language,
-            subtaskId: collectionItem.id,
-            isCompleted: completionState.isCompleted(collectionItem.id),
-          );
-        }).toList();
-
-    final navigationContext = NavigationContext(
-      source: NavigationSource.groupRecitationCollection,
-      planTextItems: planTextItems,
-      currentTextIndex: currentIndex >= 0 ? currentIndex : 0,
-      groupId: key.groupId,
-      collectionId: key.collectionId,
-      language: item.language,
+    final navigationContext = groupRecitationCollectionNavigationContext(
+      key: key,
+      collection: collection,
+      item: item,
+      completionState: ref.read(
+        groupRecitationCollectionCompletionProvider(key),
+      ),
     );
 
     await context.push('/reader/$textId', extra: navigationContext);
@@ -321,7 +304,7 @@ class _CollectionContent extends StatelessWidget {
                 const SizedBox(height: 12),
                 if (hasItems)
                   ...collection.items.map(
-                    (item) => _RecitationCollectionRow(
+                    (item) => GroupRecitationCollectionRow(
                       item: item,
                       isDark: isDark,
                       isCompleted: completionState.isCompleted(item.id),
@@ -534,118 +517,6 @@ class _ActionChip extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _RecitationCollectionRow extends StatelessWidget {
-  const _RecitationCollectionRow({
-    required this.item,
-    required this.isDark,
-    required this.isCompleted,
-    required this.isSubmitting,
-    required this.onTap,
-  });
-
-  final GroupRecitationCollectionItem item;
-  final bool isDark;
-  final bool isCompleted;
-  final bool isSubmitting;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final borderColor = isDark ? AppColors.grey800 : AppColors.grey600;
-
-    return InkWell(
-      onTap: isSubmitting ? null : onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          children: [
-            _CompletionIndicator(
-              isCompleted: isCompleted,
-              isSubmitting: isSubmitting,
-              isDark: isDark,
-              borderColor: borderColor,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                item.title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: borderColor, width: 1),
-              ),
-              child: Icon(
-                AppAssets.caretRight,
-                size: 18,
-                color: secondaryColor,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CompletionIndicator extends StatelessWidget {
-  const _CompletionIndicator({
-    required this.isCompleted,
-    required this.isSubmitting,
-    required this.isDark,
-    required this.borderColor,
-  });
-
-  final bool isCompleted;
-  final bool isSubmitting;
-  final bool isDark;
-  final Color borderColor;
-
-  @override
-  Widget build(BuildContext context) {
-    if (isSubmitting) {
-      return const SizedBox(
-        width: 22,
-        height: 22,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
-    final fillColor = isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
-    final checkColor = isDark ? AppColors.textPrimary : AppColors.surfaceWhite;
-
-    return Container(
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isCompleted ? fillColor : Colors.transparent,
-        border: Border.all(
-          color: isCompleted ? fillColor : borderColor,
-          width: 1,
-        ),
-      ),
-      child:
-          isCompleted
-              ? Icon(AppAssets.check, size: 13, color: checkColor)
-              : null,
     );
   }
 }

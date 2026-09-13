@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_man
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_segment_audio_controller.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_subtask_completion.dart';
@@ -29,7 +30,10 @@ import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_more_bottom_sheet.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_translate_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/reader_translation_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
@@ -37,6 +41,7 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_gestur
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_search/reader_search_delegate.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_settings_screen.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
@@ -103,6 +108,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
+
+  bool get _isEmbedded => PlanEmbeddedScope.maybeOf(context) != null;
 
   // ─── Audio ─────────────────────────────────────────────────────────────
   // Plays the current SOURCE_REFERENCE subtask's audio when the reader is
@@ -222,8 +229,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       _chantSessionFinished = true;
       finishedSessionCount = sessionCount;
     }
-    if (mounted && context.canPop()) {
-      context.pop(finishedSessionCount);
+    if (mounted && (_isEmbedded || context.canPop())) {
+      PlanNavigator.pop(context, finishedSessionCount);
     }
   }
 
@@ -300,9 +307,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     if (didNavigate) {
       _isAdvancing = true;
-    } else if (context.canPop()) {
+    } else if (_isEmbedded || context.canPop()) {
       // Last task in the day — close the sequence.
-      context.pop();
+      PlanNavigator.pop(context);
     }
   }
 
@@ -361,6 +368,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       });
     }
 
+    final scaffold = Scaffold(
+      backgroundColor: readerTheme.scaffoldBackgroundColor,
+      body: _buildBody(context, state, notifier),
+    );
+    // Embedded, the host owns leaving; there is no route of our own to pop.
+    if (_isEmbedded) return Theme(data: readerTheme, child: scaffold);
+
     return Theme(
       data: readerTheme,
       child: PopScope(
@@ -384,10 +398,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             }
           });
         },
-        child: Scaffold(
-          backgroundColor: readerTheme.scaffoldBackgroundColor,
-          body: _buildBody(context, state, notifier),
-        ),
+        child: scaffold,
       ),
     );
   }
@@ -409,8 +420,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ) {
     final localizations = context.l10n;
     final textDetail = state.textDetail;
-    // Loading state
-    if (state.isLoading) {
+    // Loading state; also the first frame, before the initial fetch starts.
+    if (state.isLoading || state.status == ReaderStatus.initial) {
       return _buildStatusView(
         context,
         child: Center(
@@ -500,22 +511,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   height: _isAppBarVisible ? null : 0,
                   child:
                       _isAppBarVisible
-                          ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ReaderAppBarOverlay(
-                                params: _params,
-                                colorIndex: widget.colorIndex,
-                                onSearchPressed:
-                                    () => _handleSearch(context, state),
-                                onMorePressed:
-                                    () => _openMoreBottomSheet(
-                                      context,
-                                      textDetail,
-                                    ),
-                              ),
-                            ],
-                          )
+                          ? _buildAppBar(context, state, textDetail)
                           : const SizedBox.shrink(),
                 ),
               ),
@@ -605,6 +601,47 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  /// Embedded: a close bar with font size and translate instead of the app bar.
+  Widget _buildAppBar(
+    BuildContext context,
+    ReaderState state,
+    TextDetail? textDetail,
+  ) {
+    if (_isEmbedded) {
+      return PlanEmbeddedHeader(
+        onClose: _closeEmbedded,
+        actions: [
+          ReaderFontSizeButton(
+            onPressed: () => showFontSizeBottomSheet(context),
+          ),
+          ReaderTranslateButton(params: _params),
+          IconButton(
+            icon: const Icon(AppAssets.readerVersionSettings),
+            tooltip: context.l10n.parallel_version,
+            onPressed: () => _openReaderSettings(context, textDetail),
+          ),
+        ],
+      );
+    }
+    return ReaderAppBarOverlay(
+      params: _params,
+      colorIndex: widget.colorIndex,
+      onSearchPressed: () => _handleSearch(context, state),
+      onMorePressed: () => _openMoreBottomSheet(context, textDetail),
+    );
+  }
+
+  /// The embedded host has no route of its own, so the leave work that the
+  /// route's PopScope would do (see [build]) runs here instead.
+  void _closeEmbedded() {
+    _audioController?.cancel();
+    _invalidatePlanProviders();
+    if (_isGroupAccumulatorChant && !_chantSessionFinished) {
+      unawaited(ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave));
+    }
+    PlanNavigator.pop(context);
+  }
+
   /// The floating plan audio play/pause control. Keyed so its animation state
   /// survives reparenting between the behind-panel slot and the bottom overlay.
   Widget _buildAudioButton() {
@@ -635,6 +672,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// minimal app bar that always exposes a back button. This guarantees the
   /// user can leave the screen even when content fails to load.
   Widget _buildStatusView(BuildContext context, {required Widget child}) {
+    if (_isEmbedded) {
+      return Column(
+        children: [
+          PlanEmbeddedHeader(onClose: () => _navigateBack(context)),
+          Expanded(child: child),
+        ],
+      );
+    }
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -658,8 +703,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Pops back if possible, otherwise falls back to the home route so the user
   /// is never stranded (e.g. when arriving via a deep link with no history).
   void _navigateBack(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
+    if (_isEmbedded || context.canPop()) {
+      PlanNavigator.pop(context);
     } else {
       context.go(AppRoutes.home);
     }
@@ -723,6 +768,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       versionLabel: textDetail?.title,
     );
 
+    if (_isEmbedded) {
+      await showReaderSettingsSheet(
+        context,
+        textId: widget.textId,
+        initialPrimaryDisplay: initialPrimaryDisplay,
+      );
+      return;
+    }
     await openReaderSettings(
       context,
       textId: widget.textId,
