@@ -29,7 +29,10 @@ Future<bool> openGroupAccumulatorPractice(
   var detail = await _loadDetail(ref, accumulatorId);
   if (detail == null || !context.mounted) return false;
 
-  if (!detail.hasJoined) {
+  final localJoinedIds = ref.read(
+    groupAccumulatorJoinCacheProvider(detail.groupId),
+  );
+  if (!accumulatorHasJoined(detail, localJoinedIds: localJoinedIds)) {
     final joined = await joinGroupAccumulator(
       ref: ref,
       accumulatorId: detail.id,
@@ -125,8 +128,12 @@ Future<void> _refreshAfterPractice(
   WidgetRef ref,
   GroupAccumulatorDetail detail,
 ) async {
+  // Wait for the in-flight sweep too: the practice screen already kicked off
+  // a flush on leave, and a plain flush() returns at once while one runs.
   try {
-    await ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave);
+    await ref
+        .read(malaSyncManagerProvider)
+        .flushAndSettle(SyncReason.screenLeave);
   } catch (_) {}
   refreshGroupAccumulatorData(
     ref,

@@ -229,7 +229,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       _chantSessionFinished = true;
       finishedSessionCount = sessionCount;
     }
-    if (mounted && context.canPop()) {
+    if (mounted && (_isEmbedded || context.canPop())) {
       PlanNavigator.pop(context, finishedSessionCount);
     }
   }
@@ -307,7 +307,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     if (didNavigate) {
       _isAdvancing = true;
-    } else if (context.canPop()) {
+    } else if (_isEmbedded || context.canPop()) {
       // Last task in the day — close the sequence.
       PlanNavigator.pop(context);
     }
@@ -631,8 +631,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  /// The embedded host has no route of its own, so the leave work that the
+  /// route's PopScope would do (see [build]) runs here instead.
   void _closeEmbedded() {
     _audioController?.cancel();
+    _invalidatePlanProviders();
+    if (_isGroupAccumulatorChant && !_chantSessionFinished) {
+      unawaited(ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave));
+    }
     PlanNavigator.pop(context);
   }
 
@@ -697,7 +703,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Pops back if possible, otherwise falls back to the home route so the user
   /// is never stranded (e.g. when arriving via a deep link with no history).
   void _navigateBack(BuildContext context) {
-    if (context.canPop()) {
+    if (_isEmbedded || context.canPop()) {
       PlanNavigator.pop(context);
     } else {
       context.go(AppRoutes.home);

@@ -22,8 +22,11 @@ abstract final class GroupEventLiveUtils {
     return languages.contains(code) ? code : AppConfig.englishLanguageCode;
   }
 
+  static final _liveWord = RegExp(r'\blive\b', caseSensitive: false);
+
+  /// Whole-word match, so labels like "Delivered" do not count as live.
   static bool isLiveLabel(String? label) =>
-      label?.toLowerCase().contains('live') ?? false;
+      label != null && _liveWord.hasMatch(label);
 
   /// YouTube id of the event's stream, or null when it has none.
   static String? videoIdOf(GroupEvent event) {

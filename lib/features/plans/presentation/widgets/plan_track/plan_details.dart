@@ -126,6 +126,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     _listenForDayCompletion();
     final live = _liveStatus();
+    // The plain layout has no embedded panel, so a task opened while the
+    // stream was still loading must not stay open (and block back) invisibly.
+    if (_embedded.isOpen &&
+        (live == _LiveStatus.none || live == _LiveStatus.failed)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _embedded.close();
+      });
+    }
 
     return PopScope(
       canPop: !_embedded.isOpen,

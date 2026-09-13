@@ -150,6 +150,7 @@ class GroupAccumulatorMembersNotifier
       limit: _pageSize,
       sortBy: sortBy,
     );
+    if (!mounted) return;
 
     result.fold(
       (failure) => state = state.copyWith(
@@ -176,6 +177,7 @@ class GroupAccumulatorMembersNotifier
       limit: _pageSize,
       sortBy: sortBy,
     );
+    if (!mounted) return;
 
     result.fold(
       (failure) => state = state.copyWith(isLoadingMore: false, error: failure),

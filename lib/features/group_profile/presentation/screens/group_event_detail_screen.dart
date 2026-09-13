@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_p
 import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
+import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -352,10 +353,13 @@ class _GroupEventDetailScreenState
     _EventTab.recitations => context.l10n.connect_event_tab_recitations,
   };
 
-  /// Auto-enrolls in the event series, then opens its (only) plan's day list.
+  /// Opens the event's puja: auto-enrolls in its series and opens the (only)
+  /// plan's day list, or previews the plan when the event has no series.
   Future<void> _enterPuja(GroupEvent event) async {
+    if (_isOpeningPuja) return;
     final seriesId = event.series?.id ?? event.seriesId;
-    if (seriesId == null || _isOpeningPuja) return;
+    final planId = event.plan?.id ?? event.planId;
+    if (seriesId == null && planId == null) return;
 
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
@@ -365,55 +369,74 @@ class _GroupEventDetailScreenState
 
     setState(() => _isOpeningPuja = true);
     try {
-      final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
-      if (!mounted) return;
-      final series = seriesEither.fold((_) => null, (s) => s);
-      final plan = series?.plans.firstOrNull;
-      if (plan == null) {
-        _showError(context.l10n.notFound);
-        return;
+      if (seriesId != null) {
+        await _enterSeries(event, seriesId);
+      } else {
+        await _openPlanPreview(planId!);
       }
-
-      final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
-      if (!mounted) return;
-      if (!enrollments.contains(seriesId)) {
-        final ok = await ref
-            .read(seriesEnrollmentProvider(seriesId).notifier)
-            .enroll();
-        if (!mounted) return;
-        if (!ok) {
-          final state = ref.read(seriesEnrollmentProvider(seriesId));
-          _showError(
-            state is SeriesEnrollmentFailure
-                ? state.failure.message
-                : context.l10n.series_enroll_error,
-          );
-          return;
-        }
-      }
-
-      // Prefer the enrolled plan so flexible plans keep their saved start date.
-      final enrolled =
-          ref
-              .read(myPlansPaginatedProvider)
-              .plans
-              .where((p) => p.id == plan.id)
-              .firstOrNull;
-      final userPlan = enrolled ?? userPlanFromCatalogPlan(plan);
-      final startDate = userPlan.effectiveStartDate;
-      context.push(
-        '/practice/details',
-        extra: {
-          'plan': userPlan,
-          'selectedDay': selectedDayForStart(startDate, userPlan.totalDays),
-          'startDate': startDate,
-          'seriesId': seriesId,
-          'eventId': event.id,
-        },
-      );
     } finally {
       if (mounted) setState(() => _isOpeningPuja = false);
     }
+  }
+
+  Future<void> _openPlanPreview(String planId) async {
+    final either = await ref.read(planByIdFutureProvider(planId).future);
+    if (!mounted) return;
+    final plan = either.fold((_) => null, (plan) => plan);
+    if (plan == null) {
+      _showError(context.l10n.notFound);
+      return;
+    }
+    context.push(AppRoutes.practicePlanPreview, extra: {'plan': plan});
+  }
+
+  Future<void> _enterSeries(GroupEvent event, String seriesId) async {
+    final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
+    if (!mounted) return;
+    final series = seriesEither.fold((_) => null, (s) => s);
+    final plan = series?.plans.firstOrNull;
+    if (plan == null) {
+      _showError(context.l10n.notFound);
+      return;
+    }
+
+    final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
+    if (!mounted) return;
+    if (!enrollments.contains(seriesId)) {
+      final ok = await ref
+          .read(seriesEnrollmentProvider(seriesId).notifier)
+          .enroll();
+      if (!mounted) return;
+      if (!ok) {
+        final state = ref.read(seriesEnrollmentProvider(seriesId));
+        _showError(
+          state is SeriesEnrollmentFailure
+              ? state.failure.message
+              : context.l10n.series_enroll_error,
+        );
+        return;
+      }
+    }
+
+    // Prefer the enrolled plan so flexible plans keep their saved start date.
+    final enrolled =
+        ref
+            .read(myPlansPaginatedProvider)
+            .plans
+            .where((p) => p.id == plan.id)
+            .firstOrNull;
+    final userPlan = enrolled ?? userPlanFromCatalogPlan(plan);
+    final startDate = userPlan.effectiveStartDate;
+    context.push(
+      '/practice/details',
+      extra: {
+        'plan': userPlan,
+        'selectedDay': selectedDayForStart(startDate, userPlan.totalDays),
+        'startDate': startDate,
+        'seriesId': seriesId,
+        'eventId': event.id,
+      },
+    );
   }
 
   List<GroupEventLink> _videoLinks(GroupEvent event) {
@@ -607,6 +630,17 @@ class _AttendeesRow extends StatelessWidget {
               height: avatarSize,
               child: Stack(
                 children: [
+                  // Paint first avatar last so it sits on top of the rest.
+                  for (var i = shown.length - 1; i >= 0; i--)
+                    Positioned(
+                      left: i * overlap,
+                      child: _ParticipantAvatar(
+                        participant: shown[i],
+                        isDark: isDark,
+                        size: avatarSize,
+                      ),
+                    ),
+                  // Painted after the avatars so the overflow count stays on top.
                   if (remaining > 0)
                     Positioned(
                       left: shown.length * overlap,
@@ -639,16 +673,6 @@ class _AttendeesRow extends StatelessWidget {
                                     : AppColors.greyDark,
                           ),
                         ),
-                      ),
-                    ),
-                  // Paint first avatar last so it sits on top of the rest.
-                  for (var i = shown.length - 1; i >= 0; i--)
-                    Positioned(
-                      left: i * overlap,
-                      child: _ParticipantAvatar(
-                        participant: shown[i],
-                        isDark: isDark,
-                        size: avatarSize,
                       ),
                     ),
                 ],
