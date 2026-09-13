@@ -126,14 +126,6 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     _listenForDayCompletion();
     final live = _liveStatus();
-    // The plain layout has no embedded panel, so a task opened while the
-    // stream was still loading must not stay open (and block back) invisibly.
-    if (_embedded.isOpen &&
-        (live == _LiveStatus.none || live == _LiveStatus.failed)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _embedded.close();
-      });
-    }
 
     return PopScope(
       canPop: !_embedded.isOpen,
@@ -142,16 +134,26 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       },
       child: Scaffold(
         appBar: _buildAppBar(context, language, localizations, live: live),
-        body: switch (live) {
-          _LiveStatus.none => _buildPlanBody(language, localizations),
-          _LiveStatus.failed => _buildPlanBody(
-            language,
-            localizations,
-            retryLive: _retryLiveEvent,
-          ),
-          _LiveStatus.loading ||
-          _LiveStatus.live => _buildLiveEventBody(language, localizations),
-        },
+        // Only the live layout hosts the embedded panel, so a task opened
+        // while the stream was still loading stays put even if the request
+        // then fails or finds no stream; the plain layout takes over once the
+        // user closes it. Nothing is lost on a retryable network error.
+        body:
+            _embedded.isOpen
+                ? _buildLiveEventBody(language, localizations)
+                : switch (live) {
+                  _LiveStatus.none => _buildPlanBody(language, localizations),
+                  _LiveStatus.failed => _buildPlanBody(
+                    language,
+                    localizations,
+                    retryLive: _retryLiveEvent,
+                  ),
+                  _LiveStatus.loading ||
+                  _LiveStatus.live => _buildLiveEventBody(
+                    language,
+                    localizations,
+                  ),
+                },
       ),
     );
   }

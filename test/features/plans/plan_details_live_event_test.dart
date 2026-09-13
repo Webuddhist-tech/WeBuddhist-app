@@ -112,6 +112,7 @@ UserPlanDayDetailResponse _makeDay() => UserPlanDayDetailResponse(
 Future<void> _pumpLiveEventDetails(
   WidgetTester tester, {
   bool streamKnownAbsent = false,
+  Completer<Either<Failure, GroupEvent>>? stream,
 }) async {
   // Phone portrait: the pinned 16:9 stream must leave room for the list.
   tester.view.physicalSize = const Size(390, 844);
@@ -129,7 +130,8 @@ Future<void> _pumpLiveEventDetails(
           (ref, key) =>
               streamKnownAbsent
                   ? Future.value(const Left(NetworkFailure('test')))
-                  : Completer<Either<Failure, GroupEvent>>().future,
+                  : (stream ?? Completer<Either<Failure, GroupEvent>>())
+                      .future,
         ),
         userPlanDayContentFutureProvider.overrideWith(
           (ref, params) => Stream.value(Right(day)),
@@ -218,6 +220,31 @@ void main() {
     expect(find.byType(GroupEventLanguageToggle), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
+  });
+
+  testWidgets('a failed stream request keeps an open task in place', (
+    tester,
+  ) async {
+    final stream = Completer<Either<Failure, GroupEvent>>();
+    await _pumpLiveEventDetails(tester, stream: stream);
+
+    await tester.tap(find.text('Tara of the day'));
+    await _settle(tester);
+    expect(_body(), findsOneWidget);
+
+    // A retryable failure must not throw the user out of the task.
+    stream.complete(const Left(NetworkFailure('test')));
+    await _settle(tester);
+    expect(_body(), findsOneWidget);
+    expect(find.byType(PlanEmbeddedHeader), findsOneWidget);
+
+    // Closing it hands over to the plain layout with the retry row.
+    await tester.tap(find.byIcon(AppAssets.x));
+    await _settle(tester);
+    expect(_body(), findsNothing);
+    expect(find.text('Tara of the day'), findsOneWidget);
+    expect(find.text('Green Tara'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('the page back arrow closes an open task before leaving', (
