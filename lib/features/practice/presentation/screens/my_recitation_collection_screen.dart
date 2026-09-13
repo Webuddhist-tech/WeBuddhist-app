@@ -280,7 +280,7 @@ class _CollectionContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _CollectionHero(imageUrl: collection.imgUrl, isDark: isDark),
+                _CollectionHero(imageUrl: collection.imgUrl),
                 const SizedBox(height: 14),
                 _CollectionActionBar(collection: collection, isDark: isDark),
                 const SizedBox(height: 12),
@@ -380,35 +380,29 @@ bool _matchesItem(
 }
 
 class _CollectionHero extends StatelessWidget {
-  const _CollectionHero({required this.imageUrl, required this.isDark});
+  const _CollectionHero({required this.imageUrl});
 
   final String? imageUrl;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final fallbackColor =
-        isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
-    final iconColor = isDark ? AppColors.grey500 : AppColors.grey600;
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: AspectRatio(
         aspectRatio: 343 / 196,
-        child:
-            imageUrl != null && imageUrl!.trim().isNotEmpty
-                ? CachedNetworkImageWidget(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.cover,
-                )
-                : ColoredBox(
-                  color: fallbackColor,
-                  child: Icon(
-                    AppAssets.bookOpenText,
-                    size: 44,
-                    color: iconColor,
-                  ),
-                ),
+        // Covers are user uploads of unbounded resolution; hand the image the
+        // laid-out size so the decode is bounded by the hero, not the source.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return CachedNetworkImageWidget(
+              imageUrl: imageUrl,
+              fallbackAsset: AppAssets.myCollectionDefault,
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              fit: BoxFit.cover,
+            );
+          },
+        ),
       ),
     );
   }
