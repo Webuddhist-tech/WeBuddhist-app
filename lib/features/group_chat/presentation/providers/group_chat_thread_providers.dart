@@ -4,9 +4,19 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// What a multi-message delete came to, by id. Every requested id lands in
+/// exactly one of the two sets.
+class ChatDeleteOutcome {
+  const ChatDeleteOutcome({this.deleted = const {}, this.failed = const {}});
+
+  final Set<String> deleted;
+  final Set<String> failed;
+}
 
 class GroupChatThreadState extends Equatable {
   /// Newest-first, exactly as the API returns them. Rendered through
@@ -1076,13 +1086,67 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     return result.fold((failure) => failure, (_) {
       // 204 with no body, so there is nothing to adopt: the row is stamped now
       // and the next fetch replaces this with the server's own value.
-      applyDeletion(
-        messageId,
-        deletedAt: DateTime.now().toUtc().toIso8601String(),
-      );
+      applyDeletion(messageId, deletedAt: _nowIso());
       return null;
     });
   }
+
+  /// Deletes several of this member's own messages.
+  ///
+  /// One message goes through [deleteMessage]: the single route exists on
+  /// every backend and needs no bulk call. Several go in one bulk request,
+  /// which is **all or nothing** on the server: a `204` means every id is
+  /// gone, and any refusal means none is. The `204` carries no body, so each
+  /// row is stamped now and the `message_deleted` broadcast or the next
+  /// fetch brings the server's own timestamp.
+  ///
+  /// An environment without the bulk route answers with
+  /// [ChatBulkDeleteUnsupportedFailure], and the ids are then deleted one
+  /// call each.
+  Future<ChatDeleteOutcome> deleteMessages(List<String> messageIds) async {
+    final ids = messageIds.where((id) => id.isNotEmpty).toSet().toList();
+    if (ids.isEmpty) return const ChatDeleteOutcome();
+    if (ids.length == 1) return _deleteOneByOne(ids);
+
+    final result = await ref
+        .read(groupChatRepositoryProvider)
+        .deleteMessages(roomId, messageIds: ids);
+    if (!mounted) return ChatDeleteOutcome(failed: ids.toSet());
+
+    return result.fold<Future<ChatDeleteOutcome>>(
+      (failure) async {
+        if (failure is ChatBulkDeleteUnsupportedFailure) {
+          return _deleteOneByOne(ids);
+        }
+        return ChatDeleteOutcome(failed: ids.toSet());
+      },
+      (_) async {
+        final deletedAt = _nowIso();
+        for (final id in ids) {
+          applyDeletion(id, deletedAt: deletedAt);
+        }
+        return ChatDeleteOutcome(deleted: ids.toSet());
+      },
+    );
+  }
+
+  /// The fallback: one call per id, in order, stopping only if the notifier
+  /// is torn down mid-run.
+  Future<ChatDeleteOutcome> _deleteOneByOne(List<String> ids) async {
+    final deleted = <String>{};
+    final failed = <String>{};
+    for (final id in ids) {
+      final failure = await deleteMessage(id);
+      if (!mounted) {
+        failed.addAll(ids.where((other) => !deleted.contains(other)));
+        break;
+      }
+      (failure == null ? deleted : failed).add(id);
+    }
+    return ChatDeleteOutcome(deleted: deleted, failed: failed);
+  }
+
+  static String _nowIso() => DateTime.now().toUtc().toIso8601String();
 
   void retry() {
     if (state.messages.isEmpty) {

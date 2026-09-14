@@ -4,6 +4,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_member_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 
 class ChatRoomsPage {
   final List<ChatRoomDTO> rooms;
@@ -213,12 +214,41 @@ class GroupChatRemoteDatasource {
   /// Deletes one of the caller's own messages, for everyone. Returns 204
   /// with no body.
   ///
-  /// Sender-only, enforced server side. Nothing is broadcast over the socket,
-  /// so other members see it gone on their next fetch rather than live.
+  /// Sender-only, enforced server side. The server broadcasts a
+  /// `message_deleted` frame, so other members see the tombstone live.
   Future<void> deleteMessage(String roomId, {required String messageId}) async {
     try {
       await _dio.delete('/chat/rooms/$roomId/messages/$messageId');
     } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// Deletes several of this member's own messages in one request.
+  ///
+  /// `DELETE /chat/rooms/{room_id}/messages` with body
+  /// `{"message_ids": [...]}`, per `DeleteChatMessagesRequest` in the spec.
+  /// Answers `204` with no body. **All or nothing**: if any id is not the
+  /// caller's, nothing is deleted and the call fails. The server then
+  /// broadcasts one `message_deleted` frame per message.
+  ///
+  /// Throws [ChatBulkDeleteUnsupportedException] on a `404` or `405` — the
+  /// two answers a server gives for a route it does not have — so the caller
+  /// can fall back to one call per message on an environment without it.
+  Future<void> deleteMessages(
+    String roomId, {
+    required List<String> messageIds,
+  }) async {
+    try {
+      await _dio.delete(
+        '/chat/rooms/$roomId/messages',
+        data: {'message_ids': messageIds},
+      );
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 404 || status == 405) {
+        throw const ChatBulkDeleteUnsupportedException();
+      }
       throw _unwrap(e);
     }
   }

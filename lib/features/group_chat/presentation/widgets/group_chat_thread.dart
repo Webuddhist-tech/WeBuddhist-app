@@ -558,12 +558,13 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     return message.deletedAt == null && _isSelf(message);
   }
 
-  /// Deletes every selected own message, one call each, after one dialog.
+  /// Deletes every selected own message after one dialog — one bulk request,
+  /// or one call each where the server has no bulk route yet.
   ///
-  /// Each success tombstones its row and drops it from the selection as it
-  /// lands. Whatever failed stays selected, under one snackbar, so Delete can
-  /// simply be tapped again. The selection only stays behind the dialog
-  /// (mock 5); the pill does not.
+  /// Each success tombstones its row and drops it from the selection.
+  /// Whatever failed stays selected, under one snackbar, so Delete can simply
+  /// be tapped again. The selection only stays behind the dialog (mock 5);
+  /// the pill does not.
   Future<void> _deleteSelection() async {
     final targets = _selectedMessages;
     // All or nothing: a selection holding anyone else's message offers no
@@ -582,22 +583,19 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final l10n = context.l10n;
     final notifier = ref.read(groupChatThreadProvider(widget.roomId).notifier);
 
-    var failed = 0;
-    for (final message in targets) {
-      final failure = await notifier.deleteMessage(message.id);
-      if (!mounted) return;
-      if (failure == null) {
-        _selectedIds.remove(message.id);
-      } else {
-        failed++;
-      }
-    }
+    final outcome = await notifier.deleteMessages([
+      for (final message in targets) message.id,
+    ]);
+    if (!mounted) return;
+    _selectedIds.removeAll(outcome.deleted);
 
-    if (failed == 0) {
+    if (outcome.failed.isEmpty) {
       _clearSelection();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(l10n.group_chat_message_deleted_toast(targets.length)),
+          content: Text(
+            l10n.group_chat_message_deleted_toast(outcome.deleted.length),
+          ),
         ),
       );
       return;
