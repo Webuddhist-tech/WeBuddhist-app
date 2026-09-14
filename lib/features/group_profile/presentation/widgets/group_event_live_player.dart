@@ -56,8 +56,12 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
 }
 
 class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
+  // The stream link is often attached after the start time, so keep asking.
+  static const _retryInterval = Duration(seconds: 30);
+
   GroupEventLiveStream? _stream;
   DateTime? _startsAt;
+  Timer? _retry;
 
   GroupEventLanguageKey get _key => (
     eventId: widget.eventId,
@@ -65,16 +69,41 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   );
 
   @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    ref.invalidate(groupEventInLanguageProvider(_key));
+  }
+
+  void _syncRetry({required bool waiting}) {
+    if (!waiting) {
+      _retry?.cancel();
+      _retry = null;
+      return;
+    }
+    _retry ??= Timer.periodic(_retryInterval, (_) => _refresh());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(groupEventInLanguageProvider(_key));
-    // Keep the current stream playing while another language loads.
-    eventAsync.valueOrNull?.fold((_) {}, (event) {
+    // Keep the current stream playing while another language loads; a failed
+    // fetch drops it so the old language's player does not linger.
+    eventAsync.valueOrNull?.fold((_) => _stream = null, (event) {
       _stream = _resolve(event);
       _startsAt = event.startDate;
     });
 
     final stream = _stream;
     final fetching = eventAsync.isLoading && !eventAsync.hasValue;
+    final startsAt = _startsAt;
+    final started = startsAt != null && !startsAt.isAfter(DateTime.now());
+    _syncRetry(waiting: stream == null && !fetching && started);
+
     final Widget child;
     if (stream != null) {
       child = GroupEventLivePlayer(
@@ -92,10 +121,9 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
       );
     } else {
       child = GroupEventNotStartedCard(
-        startsAt: _startsAt,
+        startsAt: startsAt,
         background: widget.notStartedBackground,
-        // The stream link is often attached right at start time.
-        onStarted: () => ref.invalidate(groupEventInLanguageProvider(_key)),
+        onStarted: _refresh,
       );
     }
     return child;
