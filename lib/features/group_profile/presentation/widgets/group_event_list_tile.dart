@@ -286,6 +286,8 @@ class _EventChip extends StatelessWidget {
                 color: color,
                 height: lineHeight,
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
