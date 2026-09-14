@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 /// - SOURCE_REFERENCE → valid iff `sourceTextId` is non-null and non-empty.
 /// - TEXT             → valid iff `content.trim()` is non-empty.
 /// - IMAGE            → valid iff `content.trim()` is non-empty.
+/// - GROUP_ACCUMULATION → not a reader item; opens the group accumulator screen.
 /// - Anything else (unknown content type, missing fields) is silently dropped.
 ///
 /// Both task models (`UserTasksDto` for enrolled users, `PlanTasksModel` for
@@ -53,14 +54,34 @@ class PlanSubtaskNavigation {
   }
 
   /// True if the given task has at least one navigable subtask
-  /// (SOURCE_REFERENCE, TEXT, or IMAGE).
+  /// (SOURCE_REFERENCE, TEXT, IMAGE, or GROUP_ACCUMULATION).
   static bool isUserTaskNavigable(UserTasksDto task) {
-    return task.subTasks.any(_isUserSubtaskNavigable);
+    return task.subTasks.any(_isUserSubtaskNavigable) ||
+        groupAccumulationIdForUserTask(task) != null;
   }
 
   /// Same as [isUserTaskNavigable] for the preview model.
   static bool isPlanTaskNavigable(PlanTasksModel task) {
-    return task.subtasks.any(_isPlanSubtaskNavigable);
+    return task.subtasks.any(_isPlanSubtaskNavigable) ||
+        groupAccumulationIdForPlanTask(task) != null;
+  }
+
+  /// Accumulator id of the task's first GROUP_ACCUMULATION subtask, or null.
+  static String? groupAccumulationIdForUserTask(UserTasksDto task) {
+    for (final subtask in task.subTasks) {
+      final id = subtask.groupAccumulationId;
+      if (id != null) return id;
+    }
+    return null;
+  }
+
+  /// Same as [groupAccumulationIdForUserTask] for the preview model.
+  static String? groupAccumulationIdForPlanTask(PlanTasksModel task) {
+    for (final subtask in task.subtasks) {
+      final id = subtask.groupAccumulationId;
+      if (id != null) return id;
+    }
+    return null;
   }
 
   // ─── Internal helpers ───────────────────────────────────────────────

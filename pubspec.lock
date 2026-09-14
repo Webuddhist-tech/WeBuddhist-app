@@ -1715,14 +1715,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.10.1"
-  tolgee:
-    dependency: "direct main"
-    description:
-      name: tolgee
-      sha256: "8e6a4278d990bdc38b295749c6bf13c1473a5fbb0f7ee2cd60fa40f2fc79af44"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   typed_data:
     dependency: transitive
     description:

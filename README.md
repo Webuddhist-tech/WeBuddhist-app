@@ -165,8 +165,12 @@ context.l10n.my_key
 ```
 
 Because the bundled ARB is always the fallback, the app behaves exactly as it
-did before Tolgee whenever the SDK is disabled, offline, still fetching, or
-missing a key.
+did before Tolgee whenever the integration is disabled, offline, still
+fetching, or missing a key.
+
+The payload is fetched and parsed by the app rather than by the Tolgee SDK,
+which cannot serve a multi-part language tag such as `bo-IN`. See
+[docs/tolgee.md](docs/tolgee.md#why-the-sdk-is-not-used).
 
 ### Configuration
 
@@ -174,8 +178,8 @@ Set these in `.env.dev` / `.env.staging` / `.env.prod`:
 
 | Variable | Purpose |
 | --- | --- |
-| `TOLGEE_API_URL` | Tolgee API base, defaults to `https://app.tolgee.io/v2` |
-| `TOLGEE_API_KEY` | Read-only scoped project key |
+| `TOLGEE_API_URL` | No longer read by the app; safe to drop from `.env` |
+| `TOLGEE_API_KEY` | Read-only scoped project key. Acts as a feature flag — Content Delivery itself is public |
 | `TOLGEE_CDN_URL` | Content Delivery base URL |
 | `TOLGEE_ENABLED` | Optional override; defaults to on when key and CDN URL are set |
 
@@ -184,9 +188,8 @@ bundled ARB only. This is also the kill switch if a bad translation ships.
 
 > **The API key ships inside the app.** `.env` files are bundled as assets, so
 > anything in them can be extracted from a release build. Use a project key
-> scoped to `translations.view` and `languages.view` only — the SDK also
-> contains a write API, so a leaked write-capable key would let anyone rewrite
-> the app's copy.
+> scoped to `translations.view` and `languages.view` only — a leaked
+> write-capable key would let anyone rewrite the app's copy.
 
 ### Tolgee project requirements
 

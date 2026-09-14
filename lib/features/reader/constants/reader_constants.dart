@@ -1,11 +1,14 @@
 import 'package:flutter_pecha/core/theme/font_config.dart';
+import 'package:flutter_pecha/features/texts/constants/text_details_constants.dart';
 
 /// Constants for reader feature
 class ReaderConstants {
   ReaderConstants._(); // Private constructor to prevent instantiation
 
   // Pagination
-  static const int pageSize = 20;
+  /// Segments per page. Must match what the API returns when no explicit
+  /// `size` is sent, so the plan-window threshold compares like with like.
+  static const int pageSize = TextDetailsConstants.defaultPageSize;
   static const int previousLoadThreshold = 5;
   static const int nextLoadThreshold = 3;
 

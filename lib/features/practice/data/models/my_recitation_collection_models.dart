@@ -37,6 +37,18 @@ class UpdateMyRecitationCollectionRequest {
   };
 }
 
+/// Request body for
+/// `PATCH /users/me/recitation-collections/{collectionId}/items/{itemId}`.
+class UpdateMyRecitationCollectionItemDisplayOrderRequest {
+  final double displayOrder;
+
+  const UpdateMyRecitationCollectionItemDisplayOrderRequest({
+    required this.displayOrder,
+  });
+
+  Map<String, dynamic> toJson() => {'display_order': displayOrder};
+}
+
 /// Nested image URLs from `POST .../upload-image`.
 class MyRecitationCollectionUploadedImage {
   final String? thumbnail;
@@ -238,7 +250,7 @@ class MyRecitationCollectionItemModel {
   final String? title;
   final String? language;
   final String? type;
-  final int displayOrder;
+  final double displayOrder;
 
   const MyRecitationCollectionItemModel({
     required this.id,
@@ -256,7 +268,7 @@ class MyRecitationCollectionItemModel {
       title: json['title'] as String?,
       language: json['language'] as String?,
       type: json['type'] as String?,
-      displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      displayOrder: (json['display_order'] as num?)?.toDouble() ?? 0,
     );
   }
 }

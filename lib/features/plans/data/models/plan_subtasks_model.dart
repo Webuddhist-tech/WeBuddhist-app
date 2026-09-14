@@ -1,3 +1,6 @@
+import 'package:flutter_pecha/features/plans/data/models/plan_group_accumulation_ref.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+
 class PlanSubtasksModel {
   final String id;
   final String? label;
@@ -11,6 +14,8 @@ class PlanSubtasksModel {
   final List<String>? segmentIds;
   final int? startMs;
   final int? endMs;
+  final String? referenceId;
+  final PlanGroupAccumulationRef? reference;
 
   const PlanSubtasksModel({
     required this.id,
@@ -25,11 +30,23 @@ class PlanSubtasksModel {
     this.segmentIds,
     this.startMs,
     this.endMs,
+    this.referenceId,
+    this.reference,
   });
 
   /// True when this subtask carries its own audio file. A subtask-level
   /// [audioUrl] takes precedence over the day-level audio track.
   bool get hasOwnAudio => audioUrl != null;
+
+  /// Group accumulation id when this is a GROUP_ACCUMULATION subtask.
+  String? get groupAccumulationId {
+    if (contentType.trim().toUpperCase() !=
+        PlanContentTypes.groupAccumulation) {
+      return null;
+    }
+    final id = reference?.id ?? referenceId;
+    return (id == null || id.isEmpty) ? null : id;
+  }
 
   factory PlanSubtasksModel.fromJson(Map<String, dynamic> json) {
     return PlanSubtasksModel(
@@ -47,6 +64,13 @@ class PlanSubtasksModel {
           .toList(),
       startMs: json['start_ms'] as int?,
       endMs: json['end_ms'] as int?,
+      referenceId: json['reference_id'] as String?,
+      reference:
+          json['reference'] is Map<String, dynamic>
+              ? PlanGroupAccumulationRef.fromJson(
+                json['reference'] as Map<String, dynamic>,
+              )
+              : null,
     );
   }
 
@@ -64,6 +88,8 @@ class PlanSubtasksModel {
       'segment_ids': segmentIds,
       'start_ms': startMs,
       'end_ms': endMs,
+      'reference_id': referenceId,
+      'reference': reference?.toJson(),
     };
   }
 
@@ -80,6 +106,8 @@ class PlanSubtasksModel {
     List<String>? segmentIds,
     int? startMs,
     int? endMs,
+    String? referenceId,
+    PlanGroupAccumulationRef? reference,
   }) {
     return PlanSubtasksModel(
       id: id ?? this.id,
@@ -94,6 +122,8 @@ class PlanSubtasksModel {
       segmentIds: segmentIds ?? this.segmentIds,
       startMs: startMs ?? this.startMs,
       endMs: endMs ?? this.endMs,
+      referenceId: referenceId ?? this.referenceId,
+      reference: reference ?? this.reference,
     );
   }
 }

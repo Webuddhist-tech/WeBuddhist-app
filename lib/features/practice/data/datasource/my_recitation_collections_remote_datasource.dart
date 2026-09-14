@@ -129,6 +129,30 @@ class MyRecitationCollectionsRemoteDatasource {
     }
   }
 
+  /// PATCH /users/me/recitation-collections/{collectionId}/items/{itemId}
+  ///
+  /// Updates one collection item's fractional `display_order`.
+  Future<MyRecitationCollectionItemModel> updateCollectionItemDisplayOrder({
+    required String collectionId,
+    required String itemId,
+    required double displayOrder,
+  }) async {
+    final request = UpdateMyRecitationCollectionItemDisplayOrderRequest(
+      displayOrder: displayOrder,
+    );
+    final response = await dio.patch(
+      '/users/me/recitation-collections/$collectionId/items/$itemId',
+      data: request.toJson(),
+    );
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Unexpected /users/me/recitation-collections/items display-order payload type',
+      );
+    }
+    return MyRecitationCollectionItemModel.fromJson(data);
+  }
+
   /// POST /users/me/recitation-collections/{collectionId}/items
   ///
   /// Adds chants in a single request (preserving [textIds] order) so a failed

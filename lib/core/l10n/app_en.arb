@@ -60,6 +60,7 @@
   "bookmark_mala": "Malas",
   "bookmark_timers": "Timers",
   "bookmark_texts": "Texts",
+  "bookmark_group_accumulation": "Group accumulation",
   "mala_add_to_practice": "Add to my practices",
   "mala_add_mala_round": "Add mala round",
   "mala_add_rounds_title": "Add mala rounds:",
@@ -185,6 +186,39 @@
   "recitations_no_content": "No recitations available",
   "recitations_no_saved": "No saved recitations",
   "recitations_login_prompt": "Sign in to view your saved recitations",
+  "my_recitation_collection_new_title": "New Collection",
+  "my_recitation_collection_next": "Next",
+  "my_recitation_collection_create": "Create",
+  "my_recitation_collection_create_button": "Create collection",
+  "my_recitation_collection_change_title": "Change title",
+  "my_recitation_collection_change": "Change",
+  "my_recitation_collection_add_chants": "Add chants",
+  "my_recitation_collection_search_chants": "Search chants",
+  "my_recitation_collection_add_to_collection": "Add to collection",
+  "my_recitation_collection_edit": "Edit collection",
+  "my_recitation_collection_delete": "Delete collection",
+  "my_recitation_collection_delete_title": "Delete collection?",
+  "my_recitation_collection_delete_message": "This collection will be permanently removed.",
+  "my_recitation_collection_fallback_title": "Chant collection",
+  "my_recitation_collection_unavailable": "No longer available",
+  "my_recitation_collection_chant_count": "{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}",
+  "@my_recitation_collection_chant_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "my_recitation_collection_chant_count_owner": "{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}",
+  "@my_recitation_collection_chant_count_owner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarks_empty_chant_collections_title": "No chant collections bookmarked yet.",
+  "bookmarks_empty_chant_collections_subtitle": "Bookmark a chant collection to save it here.",
   "notification_settings": "Notification settings",
   "notification_allow_title": "Allow notifications",
   "notification_allow_subtitle_enabled": "Notifications are enabled for this app",
@@ -219,7 +253,7 @@
   "profile_guest_benefit_notifications": "Custom notifications",
   "auth_drawer_title": "Log in to continue",
   "auth_drawer_subtitle": "Continue your practice on any device, wherever you go.",
-  "routine_delete_block_message": "The time block and all its items will be removed",
+  "routine_delete_block_message": "The session and all its items will be removed",
   "something_went_wrong": "Something went wrong. Please try again",
   "onboarding_quote_citation": "— Dhammapada 122",
   "onboarding_traditions_question": "Which traditions\ndo you follow?",
@@ -355,6 +389,10 @@
   "connect_event_when": "When",
   "connect_event_where": "Where",
   "connect_event_practices": "Event practices",
+  "connect_event_tab_accumulations": "Accumulations",
+  "connect_event_tab_recitations": "Recitations",
+  "connect_event_add_recitations": "Add recitations",
+  "connect_event_add_recitations_message": "Add the number of recitations you did with the livestream or outside this app.",
   "connect_event_every_day": "Every day",
   "connect_event_every_weekday": "Every {weekday}",
   "@connect_event_every_weekday": {
@@ -589,8 +627,11 @@
   "routine_empty_description": "Explore more teachings and practices to add to your routine",
   "routine_build": "Build your routine",
   "routine_add_session": "Add to session",
-  "routine_edit_title": "Edit your routine",
-  "routine_delete_block": "Remove block",
+  "routine_edit_title": "Edit your practices",
+  "routine_delete_block": "Remove session",
+  "routine_session_title_hint": "Title...",
+  "routine_expand_all": "Expand all",
+  "routine_collapse_all": "Collapse all",
   "routine_delete_time_block": "Remove time block",
   "routine_add_plan": "Add plan",
   "routine_add_recitation": "Add recitation",
@@ -615,8 +656,8 @@
     }
   },
   "routine_empty_block_add_items": "Add items",
-  "routine_empty_block_delete_singular": "Remove block",
-  "routine_empty_block_delete_plural": "Remove blocks",
+  "routine_empty_block_delete_singular": "Remove session",
+  "routine_empty_block_delete_plural": "Remove sessions",
   "routine_notification_title": "Make practice a habit",
   "routine_notification_description": "Allow notifications so we can remind you to practice",
   "routine_notification_enable": "Enable notifications",
@@ -938,6 +979,7 @@
   "group_change_practice_message": "You are already practicing this plan with another group. Would you like to change your practice group?",
   "group_join_to_contribute": "Join to contribute",
   "group_accumulator_join_error": "Unable to join accumulation. Please try again.",
+  "group_accumulator_join_before_practice": "Join this accumulation before adding it to your practices",
   "group_accumulator_participants": "{count} participants",
   "@group_accumulator_participants": {
     "placeholders": {
@@ -1070,6 +1112,8 @@
   "bookmarks_empty_plans_subtitle": "Bookmark a plan to save it here.",
   "bookmarks_empty_malas_title": "No malas bookmarked yet.",
   "bookmarks_empty_malas_subtitle": "Bookmark a mala to save it here.",
+  "bookmarks_empty_group_accumulations_title": "No group accumulations bookmarked yet.",
+  "bookmarks_empty_group_accumulations_subtitle": "Bookmark a group accumulation to save it here.",
   "bookmarks_empty_timers_title": "No timers bookmarked yet.",
   "bookmarks_empty_timers_subtitle": "Bookmark a timer to save it here.",
   "bookmarks_empty_texts_title": "No texts bookmarked yet.",
@@ -1293,5 +1337,52 @@
   "group_chat_you": "You",
   "group_chat_tap_to_remove": "Tap to remove",
   "group_chat_reply_parent_gone": "That message is no longer available, so the quote was removed. Send again to post your message.",
-  "practice_collection_already_added": "This collection is already in your practices"
+  "group_tab_posts": "Posts",
+  "group_tab_events": "Events",
+  "group_posts_empty_title": "No posts yet",
+  "group_posts_empty_message": "Share your first update with your community.",
+  "group_posts_load_error": "Unable to load posts. Please try again.",
+  "group_post_button": "Post",
+  "group_post_new_title": "New post",
+  "group_post_posting_to": "Posting to:",
+  "group_post_caption_hint": "What's new?",
+  "group_post_photos": "Photos",
+  "group_post_link": "Link",
+  "group_post_discard_title": "Discard post?",
+  "group_post_discard_message": "You'll lose what you've written.",
+  "group_post_keep_editing": "Keep editing",
+  "group_post_discard": "Discard",
+  "group_post_add_link_title": "Add link",
+  "group_post_add_link_hint": "Paste a link and we'll show a preview.",
+  "group_post_link_field_hint": "Link",
+  "group_post_attach": "Attach",
+  "group_post_attach_as_link": "Attach as link",
+  "group_post_preview_failed_title": "Couldn't load a preview",
+  "group_post_preview_failed_message": "You can still attach it as a link.",
+  "group_post_invalid_link": "Enter a valid link, for example https://example.com",
+  "group_post_photo_limit": "You can add up to {count} photos.",
+  "@group_post_photo_limit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_post_upload_error": "Unable to upload photos. Please try again.",
+  "group_post_publish_error": "Unable to publish your post. Please try again.",
+  "group_post_published": "Your post is live.",
+  "group_post_delete_title": "Delete post?",
+  "group_post_delete_message": "This post will be permanently removed.",
+  "group_post_delete_failed": "Unable to delete the post. Please try again.",
+  "edit": "Edit",
+  "group_post_edit_title": "Edit post",
+  "group_post_update_error": "Unable to save your changes. Please try again.",
+  "group_post_updated": "Your changes are saved.",
+  "practice_collection_already_added": "This collection is already in your practices",
+  "practice_group_accumulator_already_added": "This accumulation is already in your practices",
+  "event_live_badge": "LIVE",
+  "event_live_audio": "Live audio",
+  "event_live_video_mode": "Video",
+  "event_live_audio_mode": "Audio",
+  "event_live_go_live": "Live"
 }

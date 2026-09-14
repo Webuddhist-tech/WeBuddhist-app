@@ -36,6 +36,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       final response = await _fetch(
         segmentId: key.initialSegmentId,
         direction: 'next',
+        size: key.initialSize,
       );
       if (_disposed) return;
 
@@ -162,12 +163,14 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   Future<ReaderResponse> _fetch({
     required String? segmentId,
     required String direction,
+    int? size,
   }) async {
     final params = TextDetailsParams(
       textId: key.textId,
       versionId: key.versionId,
       segmentId: segmentId,
       direction: direction,
+      size: size,
     );
     final result = await _ref.read(textDetailsFutureProvider(params).future);
     return result.fold(

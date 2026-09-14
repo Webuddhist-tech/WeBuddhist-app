@@ -160,6 +160,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get bookmark_texts => 'ग्रन्थहरू';
 
   @override
+  String get bookmark_group_accumulation => 'Group accumulation';
+
+  @override
   String get mala_add_to_practice => 'मेरा अभ्यासहरूमा थप्नुहोस्';
 
   @override
@@ -453,6 +456,87 @@ class AppLocalizationsNe extends AppLocalizations {
   @override
   String get recitations_login_prompt =>
       'आफ्ना सेभ गरिएका पाठहरू हेर्न साइन इन गर्नुहोस्';
+
+  @override
+  String get my_recitation_collection_new_title => 'नयाँ सङ्ग्रह';
+
+  @override
+  String get my_recitation_collection_next => 'अर्को';
+
+  @override
+  String get my_recitation_collection_create => 'सिर्जना गर्नुहोस्';
+
+  @override
+  String get my_recitation_collection_create_button =>
+      'सङ्ग्रह सिर्जना गर्नुहोस्';
+
+  @override
+  String get my_recitation_collection_change_title =>
+      'शीर्षक परिवर्तन गर्नुहोस्';
+
+  @override
+  String get my_recitation_collection_change => 'परिवर्तन गर्नुहोस्';
+
+  @override
+  String get my_recitation_collection_add_chants => 'पाठहरू थप्नुहोस्';
+
+  @override
+  String get my_recitation_collection_search_chants => 'पाठहरू खोज्नुहोस्';
+
+  @override
+  String get my_recitation_collection_add_to_collection =>
+      'सङ्ग्रहमा थप्नुहोस्';
+
+  @override
+  String get my_recitation_collection_edit => 'सङ्ग्रह सम्पादन गर्नुहोस्';
+
+  @override
+  String get my_recitation_collection_delete => 'सङ्ग्रह मेटाउनुहोस्';
+
+  @override
+  String get my_recitation_collection_delete_title => 'सङ्ग्रह मेटाउने?';
+
+  @override
+  String get my_recitation_collection_delete_message =>
+      'यो सङ्ग्रह स्थायी रूपमा हटाइनेछ.';
+
+  @override
+  String get my_recitation_collection_fallback_title => 'पाठ सङ्ग्रह';
+
+  @override
+  String get my_recitation_collection_unavailable => 'अब उपलब्ध छैन';
+
+  @override
+  String my_recitation_collection_chant_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count पाठहरू',
+      one: '1 पाठ',
+      zero: '0 पाठहरू',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String my_recitation_collection_chant_count_owner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count पाठहरू • मेरो',
+      one: '1 पाठ • मेरो',
+      zero: '0 पाठहरू • मेरो',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookmarks_empty_chant_collections_title =>
+      'अहिलेसम्म कुनै पाठ सङ्ग्रह बुकमार्क गरिएको छैन.';
+
+  @override
+  String get bookmarks_empty_chant_collections_subtitle =>
+      'पाठ सङ्ग्रह यहाँ सेभ गर्न बुकमार्क गर्नुहोस्.';
 
   @override
   String get notification_settings => 'सूचना सेटिङ';
@@ -933,6 +1017,19 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_event_practices => 'Event practices';
 
   @override
+  String get connect_event_tab_accumulations => 'Accumulations';
+
+  @override
+  String get connect_event_tab_recitations => 'Recitations';
+
+  @override
+  String get connect_event_add_recitations => 'Add recitations';
+
+  @override
+  String get connect_event_add_recitations_message =>
+      'Add the number of recitations you did with the livestream or outside this app.';
+
+  @override
   String get connect_event_every_day => 'Every day';
 
   @override
@@ -1318,6 +1415,15 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get routine_delete_block => 'ब्लक हटाउने?';
+
+  @override
+  String get routine_session_title_hint => 'Title...';
+
+  @override
+  String get routine_expand_all => 'Expand all';
+
+  @override
+  String get routine_collapse_all => 'Collapse all';
 
   @override
   String get routine_delete_time_block => 'समय ब्लक हटाउनुहोस्';
@@ -2015,6 +2121,10 @@ class AppLocalizationsNe extends AppLocalizations {
       'संचयमा सामेल हुन असमर्थ। कृपया फेरि प्रयास गर्नुहोस्।';
 
   @override
+  String get group_accumulator_join_before_practice =>
+      'Join this accumulation before adding it to your practices';
+
+  @override
   String group_accumulator_participants(int count) {
     return '$count सहभागी';
   }
@@ -2239,6 +2349,14 @@ class AppLocalizationsNe extends AppLocalizations {
   @override
   String get bookmarks_empty_malas_subtitle =>
       'यहाँ सुरक्षित गर्न कुनै माला बुकमार्क गर्नुहोस्।';
+
+  @override
+  String get bookmarks_empty_group_accumulations_title =>
+      'No group accumulations bookmarked yet.';
+
+  @override
+  String get bookmarks_empty_group_accumulations_subtitle =>
+      'Bookmark a group accumulation to save it here.';
 
   @override
   String get bookmarks_empty_timers_title =>
@@ -2605,6 +2723,138 @@ class AppLocalizationsNe extends AppLocalizations {
       'त्यो सन्देश अब उपलब्ध छैन, त्यसैले उद्धरण हटाइयो। आफ्नो सन्देश पठाउन फेरि पठाउनुहोस्।';
 
   @override
+  String get group_tab_posts => 'पोस्ट';
+
+  @override
+  String get group_tab_events => 'कार्यक्रम';
+
+  @override
+  String get group_posts_empty_title => 'अहिलेसम्म कुनै पोस्ट छैन';
+
+  @override
+  String get group_posts_empty_message =>
+      'आफ्नो समुदायसँग पहिलो अपडेट साझा गर्नुहोस्।';
+
+  @override
+  String get group_posts_load_error =>
+      'पोस्टहरू लोड गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String get group_post_button => 'पोस्ट गर्नुहोस्';
+
+  @override
+  String get group_post_new_title => 'नयाँ पोस्ट';
+
+  @override
+  String get group_post_posting_to => 'यहाँ पोस्ट हुँदैछ:';
+
+  @override
+  String get group_post_caption_hint => 'के नयाँ छ?';
+
+  @override
+  String get group_post_photos => 'फोटो';
+
+  @override
+  String get group_post_link => 'लिङ्क';
+
+  @override
+  String get group_post_discard_title => 'पोस्ट खारेज गर्ने?';
+
+  @override
+  String get group_post_discard_message => 'तपाईंले लेखेको कुरा हराउनेछ।';
+
+  @override
+  String get group_post_keep_editing => 'सम्पादन जारी राख्नुहोस्';
+
+  @override
+  String get group_post_discard => 'खारेज गर्नुहोस्';
+
+  @override
+  String get group_post_add_link_title => 'लिङ्क थप्नुहोस्';
+
+  @override
+  String get group_post_add_link_hint =>
+      'लिङ्क टाँस्नुहोस्, हामी पूर्वावलोकन देखाउनेछौँ।';
+
+  @override
+  String get group_post_link_field_hint => 'लिङ्क';
+
+  @override
+  String get group_post_attach => 'संलग्न गर्नुहोस्';
+
+  @override
+  String get group_post_attach_as_link => 'लिङ्कको रूपमा संलग्न गर्नुहोस्';
+
+  @override
+  String get group_post_preview_failed_title => 'पूर्वावलोकन लोड गर्न सकिएन';
+
+  @override
+  String get group_post_preview_failed_message =>
+      'तपाईं यसलाई अझै लिङ्कको रूपमा संलग्न गर्न सक्नुहुन्छ।';
+
+  @override
+  String get group_post_invalid_link =>
+      'मान्य लिङ्क प्रविष्ट गर्नुहोस्, जस्तै https://example.com';
+
+  @override
+  String group_post_photo_limit(int count) {
+    return 'तपाईं बढीमा $count फोटो थप्न सक्नुहुन्छ।';
+  }
+
+  @override
+  String get group_post_upload_error =>
+      'फोटो अपलोड गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String get group_post_publish_error =>
+      'तपाईंको पोस्ट प्रकाशित गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String get group_post_published => 'तपाईंको पोस्ट प्रकाशित भयो।';
+
+  @override
+  String get group_post_delete_title => 'पोस्ट मेट्ने?';
+
+  @override
+  String get group_post_delete_message => 'यो पोस्ट स्थायी रूपमा हटाइनेछ।';
+
+  @override
+  String get group_post_delete_failed =>
+      'पोस्ट मेटाउन सकिएन। कृपया फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String get edit => 'सम्पादन गर्नुहोस्';
+
+  @override
+  String get group_post_edit_title => 'पोस्ट सम्पादन गर्नुहोस्';
+
+  @override
+  String get group_post_update_error =>
+      'तपाईंका परिवर्तनहरू सुरक्षित गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String get group_post_updated => 'तपाईंका परिवर्तनहरू सुरक्षित गरियो।';
+
+  @override
   String get practice_collection_already_added =>
       'This collection is already in your practices';
+
+  @override
+  String get practice_group_accumulator_already_added =>
+      'This accumulation is already in your practices';
+
+  @override
+  String get event_live_badge => 'LIVE';
+
+  @override
+  String get event_live_audio => 'Live audio';
+
+  @override
+  String get event_live_video_mode => 'Video';
+
+  @override
+  String get event_live_audio_mode => 'Audio';
+
+  @override
+  String get event_live_go_live => 'Live';
 }

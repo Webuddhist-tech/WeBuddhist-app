@@ -14,6 +14,74 @@ void main() {
     test('parses SERIES independently of PLAN', () {
       expect(SessionType.fromJson('SERIES'), SessionType.series);
     });
+
+    test('parses GROUP_ACCUMULATOR as its own session type', () {
+      expect(
+        SessionType.fromJson('GROUP_ACCUMULATOR'),
+        SessionType.groupAccumulator,
+      );
+      expect(SessionType.groupAccumulator.toJson(), 'GROUP_ACCUMULATOR');
+    });
+  });
+
+  group('GROUP_ACCUMULATOR sessions', () {
+    test('reads group_accumulator_id as the source id and keeps the image', () {
+      final session = SessionDTO.fromJson({
+        'id': 'session-ga',
+        'session_type': 'GROUP_ACCUMULATOR',
+        'group_accumulator_id': 'ga-1',
+        'title': 'Group Mani',
+        'image': {
+          'thumbnail': 'https://img/thumb.jpg',
+          'medium': 'https://img/medium.jpg',
+          'original': 'https://img/original.jpg',
+        },
+        'display_order': 0,
+      });
+
+      final item = routineItemFromSessionDto(session);
+
+      expect(session.sessionType, SessionType.groupAccumulator);
+      expect(session.sourceId, 'ga-1');
+      expect(item.id, 'ga-1');
+      expect(item.title, 'Group Mani');
+      expect(item.type, RoutineItemType.groupAccumulator);
+      expect(item.coverImage?.thumbnail, 'https://img/thumb.jpg');
+    });
+
+    test('writes group_accumulator_id instead of source_id', () {
+      final block = RoutineBlock(
+        time: const TimeOfDay(hour: 8, minute: 0),
+        items: const [
+          RoutineItem(
+            id: 'ga-1',
+            title: 'Group Mani',
+            type: RoutineItemType.groupAccumulator,
+          ),
+        ],
+      );
+
+      final sessions = routineBlockToRequest(block).toJson()['sessions'] as List;
+
+      expect(sessions.single, {
+        'session_type': 'GROUP_ACCUMULATOR',
+        'group_accumulator_id': 'ga-1',
+        'display_order': 0,
+      });
+    });
+
+    test('survives a local persistence round trip', () {
+      const item = RoutineItem(
+        id: 'ga-1',
+        title: 'Group Mani',
+        type: RoutineItemType.groupAccumulator,
+      );
+
+      final restored = RoutineItem.fromJson(item.toJson());
+
+      expect(restored.type, RoutineItemType.groupAccumulator);
+      expect(restored.id, 'ga-1');
+    });
   });
 
   group('routineItemFromSessionDto', () {
@@ -298,6 +366,55 @@ void main() {
       expect(item.title, 'Daily Chants');
       expect(item.type, RoutineItemType.myRecitationCollection);
       expect(item.itemCount, 3);
+    });
+  });
+
+  group('time block title', () {
+    TimeBlockDTO dto(String? title) => TimeBlockDTO.fromJson({
+      'id': 'tb-1',
+      'time': '20:00',
+      'time_int': 2000,
+      if (title != null) 'title': title,
+      'notification_enabled': true,
+      'sessions': const [],
+    });
+
+    test('carries the API title onto the block', () {
+      expect(routineBlockFromDto(dto('Vesak Day Practice')).title,
+          'Vesak Day Practice');
+    });
+
+    test('treats a missing or blank API title as unset', () {
+      expect(routineBlockFromDto(dto(null)).title, isNull);
+      expect(routineBlockFromDto(dto('   ')).title, isNull);
+    });
+
+    test('sends the title on create/update and omits it when unset', () {
+      final titled = RoutineBlock(
+        time: const TimeOfDay(hour: 20, minute: 0),
+        title: 'Vesak Day Practice',
+      );
+      final untitled = RoutineBlock(time: const TimeOfDay(hour: 20, minute: 0));
+
+      expect(routineBlockToRequest(titled).toJson()['title'],
+          'Vesak Day Practice');
+      expect(routineBlockToRequest(untitled).toJson(), isNot(contains('title')));
+    });
+
+    test('survives a local persistence round trip', () {
+      final block = RoutineBlock(
+        time: const TimeOfDay(hour: 20, minute: 0),
+        title: 'Vesak Day Practice',
+      );
+
+      expect(RoutineBlock.fromJson(block.toJson()).title, 'Vesak Day Practice');
+    });
+
+    test('normalizeTitle trims and collapses blanks to null', () {
+      expect(RoutineBlock.normalizeTitle('  Evening  '), 'Evening');
+      expect(RoutineBlock.normalizeTitle('   '), isNull);
+      expect(RoutineBlock.normalizeTitle(''), isNull);
+      expect(RoutineBlock.normalizeTitle(null), isNull);
     });
   });
 }

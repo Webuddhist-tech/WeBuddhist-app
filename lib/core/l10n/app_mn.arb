@@ -185,6 +185,39 @@
   "recitations_no_content": "Уншлага байхгүй байна",
   "recitations_no_saved": "Хадгалсан уншлага байхгүй",
   "recitations_login_prompt": "Хадгалсан уншлагаа харахын тулд нэвтэрнэ үү",
+  "my_recitation_collection_new_title": "Шинэ цуглуулга",
+  "my_recitation_collection_next": "Дараах",
+  "my_recitation_collection_create": "Үүсгэх",
+  "my_recitation_collection_create_button": "Цуглуулга үүсгэх",
+  "my_recitation_collection_change_title": "Гарчиг өөрчлөх",
+  "my_recitation_collection_change": "Өөрчлөх",
+  "my_recitation_collection_add_chants": "Уншлага нэмэх",
+  "my_recitation_collection_search_chants": "Уншлага хайх",
+  "my_recitation_collection_add_to_collection": "Цуглуулгад нэмэх",
+  "my_recitation_collection_edit": "Цуглуулга засах",
+  "my_recitation_collection_delete": "Цуглуулга устгах",
+  "my_recitation_collection_delete_title": "Цуглуулгыг устгах уу?",
+  "my_recitation_collection_delete_message": "Энэ цуглуулгыг бүрмөсөн устгана.",
+  "my_recitation_collection_fallback_title": "Уншлагын цуглуулга",
+  "my_recitation_collection_unavailable": "Боломжгүй болсон",
+  "my_recitation_collection_chant_count": "{count, plural, =0{0 уншлага} =1{1 уншлага} other{{count} уншлага}}",
+  "@my_recitation_collection_chant_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "my_recitation_collection_chant_count_owner": "{count, plural, =0{0 уншлага • миний} =1{1 уншлага • миний} other{{count} уншлага • миний}}",
+  "@my_recitation_collection_chant_count_owner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarks_empty_chant_collections_title": "Уншлагын цуглуулга хавчуурга болгосон зүйл алга.",
+  "bookmarks_empty_chant_collections_subtitle": "Уншлагын цуглуулгыг хадгалахын тулд хавчуурга болгоно уу.",
   "notification_settings": "Мэдэгдлийн тохиргоо",
   "notification_allow_title": "Мэдэгдэл зөвшөөрөх",
   "notification_allow_subtitle_enabled": "Энэ аппликейшнд мэдэгдэл идэвхжсэн байна",
@@ -1075,5 +1108,39 @@
   },
   "group_chat_you": "Та",
   "group_chat_tap_to_remove": "Устгахын тулд товшино уу",
-  "group_chat_reply_parent_gone": "Тэр мессеж байхгүй тул иш татсаныг хаслаа. Мессежээ илгээхийн тулд дахин илгээнэ үү."
+  "group_chat_reply_parent_gone": "Тэр мессеж байхгүй тул иш татсаныг хаслаа. Мессежээ илгээхийн тулд дахин илгээнэ үү.",
+  "group_tab_posts": "Нийтлэл",
+  "group_tab_events": "Арга хэмжээ",
+  "group_posts_empty_title": "Одоогоор нийтлэл алга",
+  "group_posts_empty_message": "Анхны мэдээллээ нийгэмлэгтэйгээ хуваалцаарай.",
+  "group_posts_load_error": "Нийтлэлүүдийг ачаалж чадсангүй. Дахин оролдоно уу.",
+  "group_post_button": "Нийтлэх",
+  "group_post_new_title": "Шинэ нийтлэл",
+  "group_post_posting_to": "Нийтлэх газар:",
+  "group_post_caption_hint": "Юу шинэ байна?",
+  "group_post_photos": "Зураг",
+  "group_post_link": "Холбоос",
+  "group_post_discard_title": "Нийтлэлийг устгах уу?",
+  "group_post_discard_message": "Таны бичсэн зүйл устах болно.",
+  "group_post_keep_editing": "Үргэлжлүүлэн засах",
+  "group_post_discard": "Устгах",
+  "group_post_add_link_title": "Холбоос нэмэх",
+  "group_post_add_link_hint": "Холбоос буулгавал бид урьдчилан харуулна.",
+  "group_post_link_field_hint": "Холбоос",
+  "group_post_attach": "Хавсаргах",
+  "group_post_attach_as_link": "Холбоос болгон хавсаргах",
+  "group_post_preview_failed_title": "Урьдчилан харах боломжгүй",
+  "group_post_preview_failed_message": "Та үүнийг холбоос болгон хавсаргаж болно.",
+  "group_post_invalid_link": "Зөв холбоос оруулна уу, жишээ нь https://example.com",
+  "group_post_photo_limit": "Та хамгийн ихдээ {count} зураг нэмэх боломжтой.",
+  "group_post_upload_error": "Зургуудыг байршуулж чадсангүй. Дахин оролдоно уу.",
+  "group_post_publish_error": "Таны нийтлэлийг нийтэлж чадсангүй. Дахин оролдоно уу.",
+  "group_post_published": "Таны нийтлэл нийтлэгдлээ.",
+  "group_post_delete_title": "Нийтлэлийг устгах уу?",
+  "group_post_delete_message": "Энэ нийтлэл бүрмөсөн устгагдана.",
+  "group_post_delete_failed": "Нийтлэлийг устгаж чадсангүй. Дахин оролдоно уу.",
+  "edit": "Засах",
+  "group_post_edit_title": "Нийтлэлийг засах",
+  "group_post_update_error": "Таны өөрчлөлтийг хадгалж чадсангүй. Дахин оролдоно уу.",
+  "group_post_updated": "Таны өөрчлөлт хадгалагдлаа."
 }

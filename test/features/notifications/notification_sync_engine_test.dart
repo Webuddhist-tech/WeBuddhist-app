@@ -349,10 +349,83 @@ void main() {
           NotificationIdScheme.accumulatorBlockId(blockId),
           NotificationIdScheme.timerStartId(blockId),
           NotificationIdScheme.groupCollectionId(blockId),
+          NotificationIdScheme.groupAccumulatorId(blockId),
         };
-        expect(ids, hasLength(4)); // all distinct
+        expect(ids, hasLength(5)); // all distinct
       },
     );
+  });
+
+  group('case 4: group-accumulator daily-repeat', () {
+    RoutineItem groupAccumulatorItem({
+      String id = 'ga-1',
+      String title = 'Group Mani',
+    }) => RoutineItem(
+      id: id,
+      title: title,
+      type: RoutineItemType.groupAccumulator,
+    );
+
+    RoutineBlock block(List<RoutineItem> items) => RoutineBlock(
+      id: 'ga-block',
+      time: const TimeOfDay(hour: 7, minute: 0),
+      notificationEnabled: true,
+      items: items,
+      notificationId: 5555,
+    );
+
+    test('emits a single repeating notification using the accumulation title',
+        () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([groupAccumulatorItem()]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: true,
+      );
+      expect(entries, hasLength(1));
+      final entry = entries.single;
+      expect(entry.isDailyRepeat, isTrue);
+      expect(entry.title, 'Group Mani');
+      expect(entry.body, 'Time for your group accumulation');
+      expect(entry.id, NotificationIdScheme.groupAccumulatorId(5555));
+      expect(entry.payload, contains('"itemType":"groupAccumulator"'));
+    });
+
+    test('counts the other group accumulations in the block', () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([groupAccumulatorItem(), groupAccumulatorItem(id: 'ga-2')]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: true,
+      );
+      expect(entries.single.body, 'Time for your group accumulation and 1 more');
+    });
+
+    test('emits nothing when practice sub-toggle OFF', () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([groupAccumulatorItem()]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: false,
+      );
+      expect(entries, isEmpty);
+    });
+
+    test('ignores personal mala items in the block', () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([
+          const RoutineItem(
+            id: 'preset-1',
+            title: 'Om Mani',
+            type: RoutineItemType.accumulator,
+          ),
+        ]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: true,
+      );
+      expect(entries, isEmpty);
+    });
   });
 
   group('case 4: personal recitation-collection daily-repeat', () {
@@ -430,6 +503,7 @@ void main() {
       expect(NotificationIdScheme.isOurs(21000000), isTrue); // timer start
       expect(NotificationIdScheme.isOurs(23000000), isTrue); // group collection
       expect(NotificationIdScheme.isOurs(24000000), isTrue); // my collection
+      expect(NotificationIdScheme.isOurs(25000000), isTrue); // group accumulator
       expect(NotificationIdScheme.isOurs(50), isFalse); // system range
       expect(NotificationIdScheme.isOurs(30000000), isFalse); // outside
     });
@@ -461,6 +535,12 @@ void main() {
             NotificationIdScheme.myCollectionId(5555),
           ),
           isTrue, // my collection
+        );
+        expect(
+          NotificationIdScheme.isRoutineDailyRepeat(
+            NotificationIdScheme.groupAccumulatorId(5555),
+          ),
+          isTrue, // group accumulator
         );
         expect(
           NotificationIdScheme.isRoutineDailyRepeat(9000000),

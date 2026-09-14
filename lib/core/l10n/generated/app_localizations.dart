@@ -382,6 +382,12 @@ abstract class AppLocalizations {
   /// **'Texts'**
   String get bookmark_texts;
 
+  /// No description provided for @bookmark_group_accumulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Group accumulation'**
+  String get bookmark_group_accumulation;
+
   /// No description provided for @mala_add_to_practice.
   ///
   /// In en, this message translates to:
@@ -928,6 +934,120 @@ abstract class AppLocalizations {
   /// **'Sign in to view your saved recitations'**
   String get recitations_login_prompt;
 
+  /// No description provided for @my_recitation_collection_new_title.
+  ///
+  /// In en, this message translates to:
+  /// **'New Collection'**
+  String get my_recitation_collection_new_title;
+
+  /// No description provided for @my_recitation_collection_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get my_recitation_collection_next;
+
+  /// No description provided for @my_recitation_collection_create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get my_recitation_collection_create;
+
+  /// No description provided for @my_recitation_collection_create_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Create collection'**
+  String get my_recitation_collection_create_button;
+
+  /// No description provided for @my_recitation_collection_change_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change title'**
+  String get my_recitation_collection_change_title;
+
+  /// No description provided for @my_recitation_collection_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get my_recitation_collection_change;
+
+  /// No description provided for @my_recitation_collection_add_chants.
+  ///
+  /// In en, this message translates to:
+  /// **'Add chants'**
+  String get my_recitation_collection_add_chants;
+
+  /// No description provided for @my_recitation_collection_search_chants.
+  ///
+  /// In en, this message translates to:
+  /// **'Search chants'**
+  String get my_recitation_collection_search_chants;
+
+  /// No description provided for @my_recitation_collection_add_to_collection.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to collection'**
+  String get my_recitation_collection_add_to_collection;
+
+  /// No description provided for @my_recitation_collection_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit collection'**
+  String get my_recitation_collection_edit;
+
+  /// No description provided for @my_recitation_collection_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection'**
+  String get my_recitation_collection_delete;
+
+  /// No description provided for @my_recitation_collection_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete collection?'**
+  String get my_recitation_collection_delete_title;
+
+  /// No description provided for @my_recitation_collection_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This collection will be permanently removed.'**
+  String get my_recitation_collection_delete_message;
+
+  /// No description provided for @my_recitation_collection_fallback_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Chant collection'**
+  String get my_recitation_collection_fallback_title;
+
+  /// No description provided for @my_recitation_collection_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No longer available'**
+  String get my_recitation_collection_unavailable;
+
+  /// No description provided for @my_recitation_collection_chant_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}'**
+  String my_recitation_collection_chant_count(int count);
+
+  /// No description provided for @my_recitation_collection_chant_count_owner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}'**
+  String my_recitation_collection_chant_count_owner(int count);
+
+  /// No description provided for @bookmarks_empty_chant_collections_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No chant collections bookmarked yet.'**
+  String get bookmarks_empty_chant_collections_title;
+
+  /// No description provided for @bookmarks_empty_chant_collections_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark a chant collection to save it here.'**
+  String get bookmarks_empty_chant_collections_subtitle;
+
   /// No description provided for @notification_settings.
   ///
   /// In en, this message translates to:
@@ -1135,7 +1255,7 @@ abstract class AppLocalizations {
   /// No description provided for @routine_delete_block_message.
   ///
   /// In en, this message translates to:
-  /// **'The time block and all its items will be removed'**
+  /// **'The session and all its items will be removed'**
   String get routine_delete_block_message;
 
   /// No description provided for @something_went_wrong.
@@ -1761,6 +1881,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Event practices'**
   String get connect_event_practices;
+
+  /// No description provided for @connect_event_tab_accumulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulations'**
+  String get connect_event_tab_accumulations;
+
+  /// No description provided for @connect_event_tab_recitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Recitations'**
+  String get connect_event_tab_recitations;
+
+  /// No description provided for @connect_event_add_recitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Add recitations'**
+  String get connect_event_add_recitations;
+
+  /// No description provided for @connect_event_add_recitations_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the number of recitations you did with the livestream or outside this app.'**
+  String get connect_event_add_recitations_message;
 
   /// No description provided for @connect_event_every_day.
   ///
@@ -2413,14 +2557,32 @@ abstract class AppLocalizations {
   /// No description provided for @routine_edit_title.
   ///
   /// In en, this message translates to:
-  /// **'Edit your routine'**
+  /// **'Edit your practices'**
   String get routine_edit_title;
 
   /// No description provided for @routine_delete_block.
   ///
   /// In en, this message translates to:
-  /// **'Remove block'**
+  /// **'Remove session'**
   String get routine_delete_block;
+
+  /// No description provided for @routine_session_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title...'**
+  String get routine_session_title_hint;
+
+  /// No description provided for @routine_expand_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand all'**
+  String get routine_expand_all;
+
+  /// No description provided for @routine_collapse_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse all'**
+  String get routine_collapse_all;
 
   /// No description provided for @routine_delete_time_block.
   ///
@@ -2485,13 +2647,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_empty_block_delete_singular.
   ///
   /// In en, this message translates to:
-  /// **'Remove block'**
+  /// **'Remove session'**
   String get routine_empty_block_delete_singular;
 
   /// No description provided for @routine_empty_block_delete_plural.
   ///
   /// In en, this message translates to:
-  /// **'Remove blocks'**
+  /// **'Remove sessions'**
   String get routine_empty_block_delete_plural;
 
   /// No description provided for @routine_notification_title.
@@ -3634,6 +3796,12 @@ abstract class AppLocalizations {
   /// **'Unable to join accumulation. Please try again.'**
   String get group_accumulator_join_error;
 
+  /// No description provided for @group_accumulator_join_before_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Join this accumulation before adding it to your practices'**
+  String get group_accumulator_join_before_practice;
+
   /// No description provided for @group_accumulator_participants.
   ///
   /// In en, this message translates to:
@@ -3985,6 +4153,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bookmark a mala to save it here.'**
   String get bookmarks_empty_malas_subtitle;
+
+  /// No description provided for @bookmarks_empty_group_accumulations_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No group accumulations bookmarked yet.'**
+  String get bookmarks_empty_group_accumulations_title;
+
+  /// No description provided for @bookmarks_empty_group_accumulations_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookmark a group accumulation to save it here.'**
+  String get bookmarks_empty_group_accumulations_subtitle;
 
   /// No description provided for @bookmarks_empty_timers_title.
   ///
@@ -4580,11 +4760,251 @@ abstract class AppLocalizations {
   /// **'That message is no longer available, so the quote was removed. Send again to post your message.'**
   String get group_chat_reply_parent_gone;
 
+  /// No description provided for @group_tab_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get group_tab_posts;
+
+  /// No description provided for @group_tab_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get group_tab_events;
+
+  /// No description provided for @group_posts_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get group_posts_empty_title;
+
+  /// No description provided for @group_posts_empty_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your first update with your community.'**
+  String get group_posts_empty_message;
+
+  /// No description provided for @group_posts_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load posts. Please try again.'**
+  String get group_posts_load_error;
+
+  /// No description provided for @group_post_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get group_post_button;
+
+  /// No description provided for @group_post_new_title.
+  ///
+  /// In en, this message translates to:
+  /// **'New post'**
+  String get group_post_new_title;
+
+  /// No description provided for @group_post_posting_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting to:'**
+  String get group_post_posting_to;
+
+  /// No description provided for @group_post_caption_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s new?'**
+  String get group_post_caption_hint;
+
+  /// No description provided for @group_post_photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get group_post_photos;
+
+  /// No description provided for @group_post_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get group_post_link;
+
+  /// No description provided for @group_post_discard_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard post?'**
+  String get group_post_discard_title;
+
+  /// No description provided for @group_post_discard_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll lose what you\'ve written.'**
+  String get group_post_discard_message;
+
+  /// No description provided for @group_post_keep_editing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get group_post_keep_editing;
+
+  /// No description provided for @group_post_discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get group_post_discard;
+
+  /// No description provided for @group_post_add_link_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get group_post_add_link_title;
+
+  /// No description provided for @group_post_add_link_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a link and we\'ll show a preview.'**
+  String get group_post_add_link_hint;
+
+  /// No description provided for @group_post_link_field_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get group_post_link_field_hint;
+
+  /// No description provided for @group_post_attach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach'**
+  String get group_post_attach;
+
+  /// No description provided for @group_post_attach_as_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach as link'**
+  String get group_post_attach_as_link;
+
+  /// No description provided for @group_post_preview_failed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load a preview'**
+  String get group_post_preview_failed_title;
+
+  /// No description provided for @group_post_preview_failed_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still attach it as a link.'**
+  String get group_post_preview_failed_message;
+
+  /// No description provided for @group_post_invalid_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid link, for example https://example.com'**
+  String get group_post_invalid_link;
+
+  /// No description provided for @group_post_photo_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add up to {count} photos.'**
+  String group_post_photo_limit(int count);
+
+  /// No description provided for @group_post_upload_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to upload photos. Please try again.'**
+  String get group_post_upload_error;
+
+  /// No description provided for @group_post_publish_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to publish your post. Please try again.'**
+  String get group_post_publish_error;
+
+  /// No description provided for @group_post_published.
+  ///
+  /// In en, this message translates to:
+  /// **'Your post is live.'**
+  String get group_post_published;
+
+  /// No description provided for @group_post_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete post?'**
+  String get group_post_delete_title;
+
+  /// No description provided for @group_post_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This post will be permanently removed.'**
+  String get group_post_delete_message;
+
+  /// No description provided for @group_post_delete_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to delete the post. Please try again.'**
+  String get group_post_delete_failed;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @group_post_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit post'**
+  String get group_post_edit_title;
+
+  /// No description provided for @group_post_update_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save your changes. Please try again.'**
+  String get group_post_update_error;
+
+  /// No description provided for @group_post_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes are saved.'**
+  String get group_post_updated;
+
   /// No description provided for @practice_collection_already_added.
   ///
   /// In en, this message translates to:
   /// **'This collection is already in your practices'**
   String get practice_collection_already_added;
+
+  /// No description provided for @practice_group_accumulator_already_added.
+  ///
+  /// In en, this message translates to:
+  /// **'This accumulation is already in your practices'**
+  String get practice_group_accumulator_already_added;
+
+  /// No description provided for @event_live_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'LIVE'**
+  String get event_live_badge;
+
+  /// No description provided for @event_live_audio.
+  ///
+  /// In en, this message translates to:
+  /// **'Live audio'**
+  String get event_live_audio;
+
+  /// No description provided for @event_live_video_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get event_live_video_mode;
+
+  /// No description provided for @event_live_audio_mode.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get event_live_audio_mode;
+
+  /// No description provided for @event_live_go_live.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get event_live_go_live;
 }
 
 class _AppLocalizationsDelegate

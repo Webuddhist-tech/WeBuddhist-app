@@ -28,6 +28,7 @@ class AllRecitationsScreen extends ConsumerStatefulWidget {
 class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _languageRestored = false;
+  bool _isCreateFlowOpen = false;
 
   @override
   void initState() {
@@ -98,10 +99,10 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
   }
 
   Future<void> _ensureLanguageRestored() => ref
-      .read(practiceRecitationsLanguageProvider.notifier)
-      .ensureInitialized();
+          .read(practiceRecitationsLanguageProvider.notifier)
+          .ensureInitialized();
 
-  void _onCreateCollectionPressed() {
+  Future<void> _onCreateCollectionPressed() async {
     // Guests and expired sessions both lack credentials for the protected
     // collection endpoints. This screen is pushed imperatively, so the route
     // guard does not re-run if auth changes underneath it.
@@ -110,7 +111,16 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
       LoginDrawer.show(context, ref);
       return;
     }
-    showNewCollectionDialog(context);
+
+    setState(() => _isCreateFlowOpen = true);
+    try {
+      await showNewCollectionDialog(context);
+    } finally {
+      // Restore the FAB even if the flow throws, not just when it completes.
+      if (mounted) {
+        setState(() => _isCreateFlowOpen = false);
+      }
+    }
   }
 
   @override
@@ -148,9 +158,12 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
         ],
       ),
       body: _buildBody(context, recitationsState, languageCode),
-      floatingActionButton: _CreateCollectionButton(
-        onPressed: _onCreateCollectionPressed,
-      ),
+      floatingActionButton:
+          _isCreateFlowOpen
+              ? null
+              : _CreateCollectionButton(
+                onPressed: _onCreateCollectionPressed,
+              ),
     );
   }
 
@@ -261,7 +274,7 @@ class _CreateCollectionButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Create collection',
+                context.l10n.my_recitation_collection_create_button,
                 style: TextStyle(
                   color: foregroundColor,
                   fontSize: 15,

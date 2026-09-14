@@ -7,7 +7,10 @@ import 'package:flutter_pecha/core/widgets/collection_completion_sheet.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/models/my_recitation_collection_models.dart';
+import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/my_recitation_collections_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/my_recitation_collection_options_sheet.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
@@ -277,7 +280,7 @@ class _CollectionContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _CollectionHero(imageUrl: collection.imgUrl, isDark: isDark),
+                _CollectionHero(imageUrl: collection.imgUrl),
                 const SizedBox(height: 14),
                 _CollectionActionBar(collection: collection, isDark: isDark),
                 const SizedBox(height: 12),
@@ -377,35 +380,29 @@ bool _matchesItem(
 }
 
 class _CollectionHero extends StatelessWidget {
-  const _CollectionHero({required this.imageUrl, required this.isDark});
+  const _CollectionHero({required this.imageUrl});
 
   final String? imageUrl;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final fallbackColor =
-        isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
-    final iconColor = isDark ? AppColors.grey500 : AppColors.grey600;
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: AspectRatio(
         aspectRatio: 343 / 196,
-        child:
-            imageUrl != null && imageUrl!.trim().isNotEmpty
-                ? CachedNetworkImageWidget(
-                  imageUrl: imageUrl,
-                  fit: BoxFit.cover,
-                )
-                : ColoredBox(
-                  color: fallbackColor,
-                  child: Icon(
-                    AppAssets.bookOpenText,
-                    size: 44,
-                    color: iconColor,
-                  ),
-                ),
+        // Covers are user uploads of unbounded resolution; hand the image the
+        // laid-out size so the decode is bounded by the hero, not the source.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return CachedNetworkImageWidget(
+              imageUrl: imageUrl,
+              fallbackAsset: AppAssets.myCollectionDefault,
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              fit: BoxFit.cover,
+            );
+          },
+        ),
       ),
     );
   }
@@ -419,6 +416,12 @@ class _CollectionActionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bookmarkTarget = BookmarkTarget(
+      type: BookmarkType.recitationCollection,
+      sourceId: collection.id,
+    );
+    final isBookmarked = ref.watch(isBookmarkedProvider(bookmarkTarget));
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -431,17 +434,20 @@ class _CollectionActionBar extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           _ActionChip(
-            icon: AppAssets.bookmarkSimple,
+            icon:
+                isBookmarked
+                    ? AppAssets.bookmarkSimpleFill
+                    : AppAssets.bookmarkSimple,
             label: context.l10n.bookmark,
             isDark: isDark,
-            onTap: () {},
-          ),
-          const SizedBox(width: 8),
-          _ActionChip(
-            icon: AppAssets.readerShare,
-            label: context.l10n.share,
-            isDark: isDark,
-            onTap: () {},
+            onTap:
+                () => BookmarkController(
+                  ref: ref,
+                  context: context,
+                ).toggleRecitationCollection(
+                  collection.id,
+                  name: collection.name,
+                ),
           ),
           const SizedBox(width: 8),
         ],

@@ -12,9 +12,16 @@ import 'package:flutter_pecha/features/practice/presentation/widgets/routine_ite
 
 class RoutineTimeBlock extends StatefulWidget {
   final TimeOfDay time;
+  final String? title;
   final bool notificationEnabled;
   final List<RoutineItem> items;
   final VoidCallback onTimeChanged;
+
+  /// Fires on every keystroke with the raw text.
+  final ValueChanged<String> onTitleChanged;
+
+  /// Fires when the title field loses focus.
+  final VoidCallback onTitleEditingDone;
   final VoidCallback onNotificationToggle;
   final Future<void> Function() onDelete;
   final VoidCallback onAddSession;
@@ -24,9 +31,12 @@ class RoutineTimeBlock extends StatefulWidget {
   const RoutineTimeBlock({
     super.key,
     required this.time,
+    this.title,
     required this.notificationEnabled,
     required this.items,
     required this.onTimeChanged,
+    required this.onTitleChanged,
+    required this.onTitleEditingDone,
     required this.onNotificationToggle,
     required this.onDelete,
     required this.onAddSession,
@@ -40,6 +50,39 @@ class RoutineTimeBlock extends StatefulWidget {
 
 class _RoutineTimeBlockState extends State<RoutineTimeBlock> {
   bool _expanded = true;
+  late final TextEditingController _titleController;
+  final FocusNode _titleFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.title ?? '');
+    _titleFocus.addListener(_onTitleFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(RoutineTimeBlock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Never overwrite text the user is still typing.
+    if (_titleFocus.hasFocus || widget.title == oldWidget.title) return;
+    final next = widget.title ?? '';
+    if (_titleController.text != next) _titleController.text = next;
+  }
+
+  @override
+  void dispose() {
+    _titleFocus.removeListener(_onTitleFocusChanged);
+    _titleFocus.dispose();
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  void _onTitleFocusChanged() {
+    if (_titleFocus.hasFocus) return;
+    final trimmed = _titleController.text.trim();
+    if (_titleController.text != trimmed) _titleController.text = trimmed;
+    widget.onTitleEditingDone();
+  }
 
   Future<void> _confirmDeleteItem(BuildContext context, int index) async {
     final l10n = context.l10n;
@@ -127,6 +170,14 @@ class _RoutineTimeBlockState extends State<RoutineTimeBlock> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        _TitleField(
+          controller: _titleController,
+          focusNode: _titleFocus,
+          hint: localizations.routine_session_title_hint,
+          onChanged: widget.onTitleChanged,
+          isDark: isDark,
         ),
         AnimatedSize(
           duration: const Duration(milliseconds: 200),
@@ -349,6 +400,68 @@ class _NotificationIcon extends StatelessWidget {
           size: 20,
           color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
         ),
+      ),
+    );
+  }
+}
+
+class _TitleField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String hint;
+  final ValueChanged<String> onChanged;
+  final bool isDark;
+
+  const _TitleField({
+    required this.controller,
+    required this.focusNode,
+    required this.hint,
+    required this.onChanged,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    );
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      textInputAction: TextInputAction.done,
+      textCapitalization: TextCapitalization.sentences,
+      maxLength: RoutineBlock.titleMaxLength,
+      buildCounter:
+          (
+            context, {
+            required currentLength,
+            required isFocused,
+            required maxLength,
+          }) => null,
+      onChanged: onChanged,
+      onSubmitted: (_) => focusNode.unfocus(),
+      style: TextStyle(
+        fontSize: 15,
+        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: hint,
+        hintStyle: TextStyle(
+          fontSize: 15,
+          color:
+              isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+        ),
+        filled: true,
+        fillColor: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border,
       ),
     );
   }

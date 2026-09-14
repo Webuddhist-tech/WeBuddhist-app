@@ -126,6 +126,16 @@ class RoutineItemCard extends StatelessWidget {
                 size: imageSize,
                 isDark: isDark,
               )
+            else if (type == RoutineItemType.groupAccumulator)
+              // Square like a collection, but a mala icon when there is no
+              // cover so it reads as an accumulation, matching the bookmark card.
+              _CollectionCoverImage(
+                coverImage: coverImage,
+                imageUrl: imageUrl,
+                size: imageSize,
+                isDark: isDark,
+                fallbackIcon: PhosphorIconsRegular.circlesThree,
+              )
             else if (type == RoutineItemType.myRecitationCollection)
               _CollectionCoverImage(
                 coverImage: coverImage,
@@ -233,12 +243,16 @@ class _CollectionCoverImage extends StatelessWidget {
     required this.imageUrl,
     required this.size,
     required this.isDark,
+    this.fallbackIcon = AppAssets.bookOpenText,
   });
 
   final ResponsiveImage? coverImage;
   final String? imageUrl;
   final double size;
   final bool isDark;
+
+  /// Icon shown when the item has no cover image.
+  final IconData fallbackIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +280,7 @@ class _CollectionCoverImage extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
-        AppAssets.bookOpenText,
+        fallbackIcon,
         size: size * 0.45,
         color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
       ),

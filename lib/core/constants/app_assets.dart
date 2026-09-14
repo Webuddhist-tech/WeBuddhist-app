@@ -17,6 +17,8 @@ class AppAssets {
   static const String verseOfDayFallback = 'assets/images/buddha.jpeg';
   static const String collectionCompletion =
       'assets/images/collection-completion.png';
+  static const String myCollectionDefault =
+      'assets/images/my_collection_default.jpg';
 
   // ========== AUDIO ==========
   // PCM WAV (not MP3): ExoPlayer's offload path mis-parses the encoded MP3 on
@@ -108,12 +110,15 @@ class AppAssets {
   static const IconData pause = PhosphorIconsFill.pause;
   static const IconData list = PhosphorIconsRegular.list;
   static const IconData trash = PhosphorIconsRegular.trash;
+  static const IconData pencilSimple = PhosphorIconsRegular.pencilSimple;
   static const IconData prohibit = PhosphorIconsRegular.prohibit;
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
   static const IconData speakerSimpleHigh =
       PhosphorIconsRegular.speakerSimpleHigh;
+  static const IconData headphones = PhosphorIconsRegular.headphones;
+  static const IconData monitorPlay = PhosphorIconsRegular.monitorPlay;
   static const IconData vibrate = PhosphorIconsRegular.vibrate;
   static const IconData arrowCounterClockwise =
       PhosphorIconsRegular.arrowCounterClockwise;

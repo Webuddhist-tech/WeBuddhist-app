@@ -12,7 +12,6 @@ import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_comments_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
-import 'package:flutter_pecha/features/connect/presentation/providers/connect_posts_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_comment_tile.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_comment_composer.dart';
@@ -60,6 +59,7 @@ class ConnectPostDetailPanel extends ConsumerStatefulWidget {
     required this.postId,
     this.initialPost,
     this.includeUnfollowed = false,
+    this.groupId,
     this.scrollController,
     this.showTopBar = false,
     this.showPostPreview = true,
@@ -68,6 +68,7 @@ class ConnectPostDetailPanel extends ConsumerStatefulWidget {
   final String postId;
   final ConnectPost? initialPost;
   final bool includeUnfollowed;
+  final String? groupId;
   final ScrollController? scrollController;
   final bool showTopBar;
   final bool showPostPreview;
@@ -177,11 +178,13 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
     setState(() {
       _post = _post.copyWith(commentCount: count);
     });
-    final provider =
-        widget.includeUnfollowed
-            ? discoverConnectPostsProvider
-            : myConnectPostsProvider;
-    ref.read(provider.notifier).updatePost(_post);
+    ref
+        .read(connectPostLikeActionsProvider)
+        .syncPost(
+          _post,
+          includeUnfollowed: widget.includeUnfollowed,
+          groupId: widget.groupId,
+        );
   }
 
   Future<void> _toggleLike() async {
@@ -203,6 +206,7 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
           wasLiked: wasLiked,
           optimisticLikeCount: _likeCount,
           includeUnfollowed: widget.includeUnfollowed,
+          groupId: widget.groupId,
         );
 
     if (!mounted) return;

@@ -51,6 +51,23 @@ class BookmarkController {
         name: name,
       );
 
+  Future<bool> toggleGroupAccumulator(String accumulatorId, {String? name}) =>
+      toggle(
+        type: BookmarkType.groupAccumulator,
+        sourceId: accumulatorId,
+        name: name,
+      );
+
+  Future<bool> toggleRecitationCollection(
+    String collectionId, {
+    String? name,
+  }) =>
+      toggle(
+        type: BookmarkType.recitationCollection,
+        sourceId: collectionId,
+        name: name,
+      );
+
   /// Optimistically toggles bookmark state, then POST or DELETE (one call).
   ///
   /// Returns `false` when the guest login gate blocked the action (the login

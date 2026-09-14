@@ -98,6 +98,29 @@ class MyRecitationCollectionsRepository {
     }
   }
 
+  Future<Either<Failure, MyRecitationCollectionItemModel>>
+  updateCollectionItemDisplayOrder({
+    required String collectionId,
+    required String itemId,
+    required double displayOrder,
+  }) async {
+    try {
+      final result = await remoteDatasource.updateCollectionItemDisplayOrder(
+        collectionId: collectionId,
+        itemId: itemId,
+        displayOrder: displayOrder,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(
+        ExceptionMapper.map(
+          e,
+          context: 'Failed to reorder chant in collection',
+        ),
+      );
+    }
+  }
+
   Future<Either<Failure, AddMyRecitationCollectionItemsResponse>>
   addItemsToCollection({
     required String collectionId,

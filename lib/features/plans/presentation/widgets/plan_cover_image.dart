@@ -6,24 +6,36 @@ class PlanCoverImage extends StatelessWidget {
   final ResponsiveImage? image;
   final double? height;
 
-  const PlanCoverImage({super.key, required this.image, this.height});
+  /// Full width with square corners, for headers that bleed to the edges.
+  final bool edgeToEdge;
+
+  const PlanCoverImage({
+    super.key,
+    required this.image,
+    this.height,
+    this.edgeToEdge = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final double resolvedHeight =
         height ?? MediaQuery.of(context).size.height * 0.3;
+    final radius = edgeToEdge ? BorderRadius.zero : BorderRadius.circular(12);
 
     return Container(
       height: resolvedHeight,
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+      margin:
+          edgeToEdge
+              ? EdgeInsets.zero
+              : const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(borderRadius: radius),
       child: ResponsiveCoverImage(
         image: image,
         width: double.infinity,
         height: resolvedHeight,
         fit: BoxFit.cover,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: radius,
         errorWidget: const Center(child: Icon(Icons.broken_image, size: 80)),
       ),
     );

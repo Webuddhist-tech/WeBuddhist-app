@@ -160,6 +160,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get bookmark_texts => 'Бичвэрүүд';
 
   @override
+  String get bookmark_group_accumulation => 'Group accumulation';
+
+  @override
   String get mala_add_to_practice => 'Миний дадлагад нэмэх';
 
   @override
@@ -453,6 +456,84 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get recitations_login_prompt =>
       'Хадгалсан уншлагаа харахын тулд нэвтэрнэ үү';
+
+  @override
+  String get my_recitation_collection_new_title => 'Шинэ цуглуулга';
+
+  @override
+  String get my_recitation_collection_next => 'Дараах';
+
+  @override
+  String get my_recitation_collection_create => 'Үүсгэх';
+
+  @override
+  String get my_recitation_collection_create_button => 'Цуглуулга үүсгэх';
+
+  @override
+  String get my_recitation_collection_change_title => 'Гарчиг өөрчлөх';
+
+  @override
+  String get my_recitation_collection_change => 'Өөрчлөх';
+
+  @override
+  String get my_recitation_collection_add_chants => 'Уншлага нэмэх';
+
+  @override
+  String get my_recitation_collection_search_chants => 'Уншлага хайх';
+
+  @override
+  String get my_recitation_collection_add_to_collection => 'Цуглуулгад нэмэх';
+
+  @override
+  String get my_recitation_collection_edit => 'Цуглуулга засах';
+
+  @override
+  String get my_recitation_collection_delete => 'Цуглуулга устгах';
+
+  @override
+  String get my_recitation_collection_delete_title => 'Цуглуулгыг устгах уу?';
+
+  @override
+  String get my_recitation_collection_delete_message =>
+      'Энэ цуглуулгыг бүрмөсөн устгана.';
+
+  @override
+  String get my_recitation_collection_fallback_title => 'Уншлагын цуглуулга';
+
+  @override
+  String get my_recitation_collection_unavailable => 'Боломжгүй болсон';
+
+  @override
+  String my_recitation_collection_chant_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count уншлага',
+      one: '1 уншлага',
+      zero: '0 уншлага',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String my_recitation_collection_chant_count_owner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count уншлага • миний',
+      one: '1 уншлага • миний',
+      zero: '0 уншлага • миний',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookmarks_empty_chant_collections_title =>
+      'Уншлагын цуглуулга хавчуурга болгосон зүйл алга.';
+
+  @override
+  String get bookmarks_empty_chant_collections_subtitle =>
+      'Уншлагын цуглуулгыг хадгалахын тулд хавчуурга болгоно уу.';
 
   @override
   String get notification_settings => 'Мэдэгдлийн тохиргоо';
@@ -926,6 +1007,19 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_practices => 'Event practices';
 
   @override
+  String get connect_event_tab_accumulations => 'Accumulations';
+
+  @override
+  String get connect_event_tab_recitations => 'Recitations';
+
+  @override
+  String get connect_event_add_recitations => 'Add recitations';
+
+  @override
+  String get connect_event_add_recitations_message =>
+      'Add the number of recitations you did with the livestream or outside this app.';
+
+  @override
   String get connect_event_every_day => 'Every day';
 
   @override
@@ -1310,6 +1404,15 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get routine_delete_block => 'Блокыг устгах уу?';
+
+  @override
+  String get routine_session_title_hint => 'Title...';
+
+  @override
+  String get routine_expand_all => 'Expand all';
+
+  @override
+  String get routine_collapse_all => 'Collapse all';
 
   @override
   String get routine_delete_time_block => 'Цагийн блокыг устгах';
@@ -2010,6 +2113,10 @@ class AppLocalizationsMn extends AppLocalizations {
       'Хуримтлалд нэгдэх боломжгүй байна. Дахин оролдоно уу.';
 
   @override
+  String get group_accumulator_join_before_practice =>
+      'Join this accumulation before adding it to your practices';
+
+  @override
   String group_accumulator_participants(int count) {
     return '$count оролцогч';
   }
@@ -2234,6 +2341,14 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get bookmarks_empty_malas_subtitle =>
       'Энд хадгалахын тулд мала хавчуургалаарай.';
+
+  @override
+  String get bookmarks_empty_group_accumulations_title =>
+      'No group accumulations bookmarked yet.';
+
+  @override
+  String get bookmarks_empty_group_accumulations_subtitle =>
+      'Bookmark a group accumulation to save it here.';
 
   @override
   String get bookmarks_empty_timers_title =>
@@ -2603,6 +2718,138 @@ class AppLocalizationsMn extends AppLocalizations {
       'Тэр мессеж байхгүй тул иш татсаныг хаслаа. Мессежээ илгээхийн тулд дахин илгээнэ үү.';
 
   @override
+  String get group_tab_posts => 'Нийтлэл';
+
+  @override
+  String get group_tab_events => 'Арга хэмжээ';
+
+  @override
+  String get group_posts_empty_title => 'Одоогоор нийтлэл алга';
+
+  @override
+  String get group_posts_empty_message =>
+      'Анхны мэдээллээ нийгэмлэгтэйгээ хуваалцаарай.';
+
+  @override
+  String get group_posts_load_error =>
+      'Нийтлэлүүдийг ачаалж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String get group_post_button => 'Нийтлэх';
+
+  @override
+  String get group_post_new_title => 'Шинэ нийтлэл';
+
+  @override
+  String get group_post_posting_to => 'Нийтлэх газар:';
+
+  @override
+  String get group_post_caption_hint => 'Юу шинэ байна?';
+
+  @override
+  String get group_post_photos => 'Зураг';
+
+  @override
+  String get group_post_link => 'Холбоос';
+
+  @override
+  String get group_post_discard_title => 'Нийтлэлийг устгах уу?';
+
+  @override
+  String get group_post_discard_message => 'Таны бичсэн зүйл устах болно.';
+
+  @override
+  String get group_post_keep_editing => 'Үргэлжлүүлэн засах';
+
+  @override
+  String get group_post_discard => 'Устгах';
+
+  @override
+  String get group_post_add_link_title => 'Холбоос нэмэх';
+
+  @override
+  String get group_post_add_link_hint =>
+      'Холбоос буулгавал бид урьдчилан харуулна.';
+
+  @override
+  String get group_post_link_field_hint => 'Холбоос';
+
+  @override
+  String get group_post_attach => 'Хавсаргах';
+
+  @override
+  String get group_post_attach_as_link => 'Холбоос болгон хавсаргах';
+
+  @override
+  String get group_post_preview_failed_title => 'Урьдчилан харах боломжгүй';
+
+  @override
+  String get group_post_preview_failed_message =>
+      'Та үүнийг холбоос болгон хавсаргаж болно.';
+
+  @override
+  String get group_post_invalid_link =>
+      'Зөв холбоос оруулна уу, жишээ нь https://example.com';
+
+  @override
+  String group_post_photo_limit(int count) {
+    return 'Та хамгийн ихдээ $count зураг нэмэх боломжтой.';
+  }
+
+  @override
+  String get group_post_upload_error =>
+      'Зургуудыг байршуулж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String get group_post_publish_error =>
+      'Таны нийтлэлийг нийтэлж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String get group_post_published => 'Таны нийтлэл нийтлэгдлээ.';
+
+  @override
+  String get group_post_delete_title => 'Нийтлэлийг устгах уу?';
+
+  @override
+  String get group_post_delete_message => 'Энэ нийтлэл бүрмөсөн устгагдана.';
+
+  @override
+  String get group_post_delete_failed =>
+      'Нийтлэлийг устгаж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String get edit => 'Засах';
+
+  @override
+  String get group_post_edit_title => 'Нийтлэлийг засах';
+
+  @override
+  String get group_post_update_error =>
+      'Таны өөрчлөлтийг хадгалж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String get group_post_updated => 'Таны өөрчлөлт хадгалагдлаа.';
+
+  @override
   String get practice_collection_already_added =>
       'This collection is already in your practices';
+
+  @override
+  String get practice_group_accumulator_already_added =>
+      'This accumulation is already in your practices';
+
+  @override
+  String get event_live_badge => 'LIVE';
+
+  @override
+  String get event_live_audio => 'Live audio';
+
+  @override
+  String get event_live_video_mode => 'Video';
+
+  @override
+  String get event_live_audio_mode => 'Audio';
+
+  @override
+  String get event_live_go_live => 'Live';
 }

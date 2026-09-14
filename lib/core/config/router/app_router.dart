@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.d
 import 'package:flutter_pecha/features/calendar/presentation/screens/tibetan_calendar_screen.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/connect_post_detail_screen.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_accumulator_screen.dart';
@@ -540,6 +541,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final myCollection =
               extra?['initialMyCollection']
                   as MyRecitationCollectionDetailModel?;
+          final groupAccumulator =
+              extra?['initialGroupAccumulator'] as GroupAccumulator?;
           return EditRoutineScreen(
             initialPlan: plan,
             initialRecitation: recitation,
@@ -549,6 +552,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             enrollSeriesId: enrollSeriesId,
             initialGroupCollection: groupCollection,
             initialMyCollection: myCollection,
+            initialGroupAccumulator: groupAccumulator,
           );
         },
         routes: [
@@ -579,6 +583,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final selectedDay = extra?['selectedDay'] as int?;
           final startDate = extra?['startDate'] as DateTime?;
           final seriesId = extra?['seriesId'] as String?;
+          final eventId = extra?['eventId'] as String?;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -587,6 +592,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             selectedDay: selectedDay ?? 1,
             startDate: startDate ?? DateTime.now(),
             seriesId: seriesId,
+            eventId: eventId,
           );
         },
       ),
@@ -629,6 +635,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final selectedDay = extra?['selectedDay'] as int?;
               final startDate = extra?['startDate'] as DateTime?;
               final seriesId = extra?['seriesId'] as String?;
+              final eventId = extra?['eventId'] as String?;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }
@@ -637,6 +644,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 selectedDay: selectedDay ?? 1,
                 startDate: startDate ?? DateTime.now(),
                 seriesId: seriesId,
+                eventId: eventId,
               );
             },
           ),

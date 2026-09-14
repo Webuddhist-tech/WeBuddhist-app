@@ -185,6 +185,39 @@
   "recitations_no_content": "ཞལ་འདོན་མི་འདུག",
   "recitations_no_saved": "ཉར་ཚག་བྱས་པའི་ཞལ་འདོན་མི་འདུག",
   "recitations_login_prompt": "ཁྱེད་ཀྱིས་ཉར་ཚགས་བྱས་པའི་ཞལ་འདོན་ལ་གཟིགས་ན་ནང་འཛུལ་བྱོས།",
+  "my_recitation_collection_new_title": "ཚོགས་སྡེ་གསར་པ།",
+  "my_recitation_collection_next": "རྗེས་མ།",
+  "my_recitation_collection_create": "གསར་བཟོ།",
+  "my_recitation_collection_create_button": "ཚོགས་སྡེ་གསར་བཟོ།",
+  "my_recitation_collection_change_title": "མཚན་བྱང་བསྒྱུར།",
+  "my_recitation_collection_change": "བསྒྱུར།",
+  "my_recitation_collection_add_chants": "ཞལ་འདོན་ཁ་སྣོན།",
+  "my_recitation_collection_search_chants": "ཞལ་འདོན་འཚོལ།",
+  "my_recitation_collection_add_to_collection": "ཚོགས་སྡེར་ཁ་སྣོན།",
+  "my_recitation_collection_edit": "ཚོགས་སྡེ་བཟོ་བཅོས།",
+  "my_recitation_collection_delete": "ཚོགས་སྡེ་སུབས།",
+  "my_recitation_collection_delete_title": "ཚོགས་སྡེ་སུབ་བམ།",
+  "my_recitation_collection_delete_message": "ཚོགས་སྡེ་འདི་གཏན་དུ་སུབ་འགྲོ།",
+  "my_recitation_collection_fallback_title": "ཞལ་འདོན་ཚོགས་སྡེ།",
+  "my_recitation_collection_unavailable": "ད་ལྟ་མི་འདུག",
+  "my_recitation_collection_chant_count": "{count, plural, =0{ཞལ་འདོན་ ༠} =1{ཞལ་འདོན་ ༡} other{ཞལ་འདོན་ {count}}}",
+  "@my_recitation_collection_chant_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "my_recitation_collection_chant_count_owner": "{count, plural, =0{ཞལ་འདོན་ ༠ • ང་} =1{ཞལ་འདོན་ ༡ • ང་} other{ཞལ་འདོན་ {count} • ང་}}",
+  "@my_recitation_collection_chant_count_owner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarks_empty_chant_collections_title": "བརྟག་ཉར་བྱས་པའི་ཞལ་འདོན་ཚོགས་སྡེ་མི་འདུག",
+  "bookmarks_empty_chant_collections_subtitle": "ཞལ་འདོན་ཚོགས་སྡེ་ཞིག་བརྟག་ཉར་བྱས་ནས་འདིར་ཉར།",
   "notification_settings": "གསལ་བརྡའི་སྒྲིག་འགོད།",
   "notification_allow_title": "གསར་བརྡ་གཏོང་ཆོག",
   "notification_allow_subtitle_enabled": "མཉེན་ཆས་འདིའི་ནང་གསར་བརྡའི་སྒོ་ཕྱེས་འདུག",
@@ -1009,5 +1042,39 @@
   },
   "group_chat_you": "ཁྱེད།",
   "group_chat_tap_to_remove": "སུབ་པར་མནན།",
-  "group_chat_reply_parent_gone": "འཕྲིན་ཐུང་དེ་མི་འདུག་པས་ལུང་འདྲེན་ཕྱིར་བསུབས། ཡང་བསྐྱར་གཏོང་རོགས།"
+  "group_chat_reply_parent_gone": "འཕྲིན་ཐུང་དེ་མི་འདུག་པས་ལུང་འདྲེན་ཕྱིར་བསུབས། ཡང་བསྐྱར་གཏོང་རོགས།",
+  "group_tab_posts": "སྤེལ་བ།",
+  "group_tab_events": "བྱེད་སྒོ།",
+  "group_posts_empty_title": "ད་དུང་སྤེལ་བ་གང་ཡང་མེད།",
+  "group_posts_empty_message": "ཁྱེད་ཀྱི་ཚོགས་པར་གསར་འགྱུར་ཐོག་མ་དེ་སྤེལ་རོགས།",
+  "group_posts_load_error": "སྤེལ་བ་ཁག་འཇུག་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_button": "སྤེལ།",
+  "group_post_new_title": "སྤེལ་བ་གསར་པ།",
+  "group_post_posting_to": "སྤེལ་ཡུལ།",
+  "group_post_caption_hint": "གསར་འགྱུར་ཅི་ཡོད།",
+  "group_post_photos": "འདྲ་པར།",
+  "group_post_link": "འབྲེལ་ཐག",
+  "group_post_discard_title": "སྤེལ་བ་འདོར་རྒྱུ་ཡིན་ནམ།",
+  "group_post_discard_message": "ཁྱེད་ཀྱིས་བྲིས་པ་རྣམས་བརླག་འགྲོ།",
+  "group_post_keep_editing": "མུ་མཐུད་འབྲི།",
+  "group_post_discard": "འདོར།",
+  "group_post_add_link_title": "འབྲེལ་ཐག་སྣོན།",
+  "group_post_add_link_hint": "འབྲེལ་ཐག་སྦྱར་ན་སྔོན་ལྟ་སྟོན་གྱི་རེད།",
+  "group_post_link_field_hint": "འབྲེལ་ཐག",
+  "group_post_attach": "སྦྱར།",
+  "group_post_attach_as_link": "འབྲེལ་ཐག་ལྟར་སྦྱར།",
+  "group_post_preview_failed_title": "སྔོན་ལྟ་འཇུག་མ་ཐུབ།",
+  "group_post_preview_failed_message": "ད་དུང་འབྲེལ་ཐག་ལྟར་སྦྱར་ཆོག",
+  "group_post_invalid_link": "འབྲེལ་ཐག་ཚད་ལྡན་ཞིག་འཇུག་རོགས། དཔེར་ན་ https://example.com",
+  "group_post_photo_limit": "འདྲ་པར་ {count} བར་སྣོན་ཆོག",
+  "group_post_upload_error": "འདྲ་པར་ཡར་འཇུག་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_publish_error": "ཁྱེད་ཀྱི་སྤེལ་བ་སྤེལ་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_published": "ཁྱེད་ཀྱི་སྤེལ་བ་སྤེལ་ཟིན།",
+  "group_post_delete_title": "སྤེལ་བ་བསུབ་རྒྱུ་ཡིན་ནམ།",
+  "group_post_delete_message": "སྤེལ་བ་འདི་གཏན་དུ་བསུབ་འགྲོ།",
+  "group_post_delete_failed": "སྤེལ་བ་བསུབ་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "edit": "བཟོ་བཅོས།",
+  "group_post_edit_title": "སྤེལ་བ་བཟོ་བཅོས།",
+  "group_post_update_error": "བཟོ་བཅོས་ཉར་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_updated": "བཟོ་བཅོས་ཉར་ཟིན།"
 }

@@ -57,12 +57,16 @@ final _logger = AppLogger('RoutineFilledState');
 class RoutineFilledState extends ConsumerStatefulWidget {
   final RoutineData routineData;
   final VoidCallback onEdit;
+
+  /// Shows a back arrow in the header row when set.
+  final VoidCallback? onBack;
   final bool showTitle;
 
   const RoutineFilledState({
     super.key,
     required this.routineData,
     required this.onEdit,
+    this.onBack,
     this.showTitle = true,
   });
 
@@ -71,6 +75,32 @@ class RoutineFilledState extends ConsumerStatefulWidget {
 }
 
 class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
+  /// Ids of blocks currently expanded; owned here so one control can drive all.
+  final Set<String> _expandedBlockIds = {};
+
+  Iterable<RoutineBlock> get _expandableBlocks =>
+      widget.routineData.blocks.where((b) => b.items.isNotEmpty);
+
+  bool get _allExpanded =>
+      _expandableBlocks.isNotEmpty &&
+      _expandableBlocks.every((b) => _expandedBlockIds.contains(b.id));
+
+  void _toggleBlock(String id) {
+    setState(() {
+      if (!_expandedBlockIds.remove(id)) _expandedBlockIds.add(id);
+    });
+  }
+
+  void _toggleAll() {
+    setState(() {
+      if (_allExpanded) {
+        _expandedBlockIds.clear();
+      } else {
+        _expandedBlockIds.addAll(_expandableBlocks.map((b) => b.id));
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +136,15 @@ class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
     if (itemType == RoutineItemType.accumulator) {
       ref.read(pendingNotificationNavProvider.notifier).state = null;
       context.push('/mala', extra: {'presetId': pendingNav.itemId});
+      return;
+    }
+
+    if (itemType == RoutineItemType.groupAccumulator) {
+      ref.read(pendingNotificationNavProvider.notifier).state = null;
+      context.pushNamed(
+        'home-group-accumulator',
+        pathParameters: {'accumulatorId': pendingNav.itemId},
+      );
       return;
     }
 
@@ -225,21 +264,69 @@ class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.showTitle) ...[
+          const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-            child: _RoutineHeader(
-              title: localizations.routine_title,
-              editLabel: localizations.routine_edit,
-              onEdit: widget.onEdit,
-              isDark: isDark,
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Row(
+              children: [
+                if (widget.onBack != null)
+                  IconButton(
+                    onPressed: widget.onBack,
+                    padding: EdgeInsets.zero,
+                    alignment: Alignment.centerLeft,
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    icon: Icon(
+                      AppAssets.arrowLeft,
+                      size: 24,
+                      color:
+                          isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
+                    ),
+                  ),
+                const Spacer(),
+                _EditButton(
+                  label: localizations.routine_edit,
+                  onTap: widget.onEdit,
+                  isDark: isDark,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              localizations.routine_title,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 12),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.0),
             child: Divider(height: 1),
           ),
         ],
+        if (_expandableBlocks.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: _ExpandAllButton(
+                allExpanded: _allExpanded,
+                label:
+                    _allExpanded
+                        ? localizations.routine_collapse_all
+                        : localizations.routine_expand_all,
+                onTap: _toggleAll,
+                isDark: isDark,
+              ),
+            ),
+          ),
         // Routine blocks
         Expanded(
           child: RefreshIndicator(
@@ -260,6 +347,8 @@ class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
                 return _RoutineBlockSection(
                   key: ValueKey(block.id),
                   block: block,
+                  expanded: _expandedBlockIds.contains(block.id),
+                  onToggleExpanded: () => _toggleBlock(block.id),
                 );
               },
             ),
@@ -270,58 +359,80 @@ class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
   }
 }
 
-class _RoutineHeader extends StatelessWidget {
-  final String title;
-  final String editLabel;
-  final VoidCallback onEdit;
+class _ExpandAllButton extends StatelessWidget {
+  final bool allExpanded;
+  final String label;
+  final VoidCallback onTap;
   final bool isDark;
 
-  const _RoutineHeader({
-    required this.title,
-    required this.editLabel,
-    required this.onEdit,
+  const _ExpandAllButton({
+    required this.allExpanded,
+    required this.label,
+    required this.onTap,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          ),
+    final color = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+          borderRadius: BorderRadius.circular(20),
         ),
-        _EditLink(editLabel: editLabel, onEdit: onEdit, isDark: isDark),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              allExpanded ? AppAssets.caretUp : AppAssets.caretDown,
+              size: 18,
+              color: color,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class _EditLink extends StatelessWidget {
-  final String editLabel;
-  final VoidCallback onEdit;
+/// Pill-shaped Edit action, styled like the Done button on the edit screen.
+class _EditButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
   final bool isDark;
 
-  const _EditLink({
-    required this.editLabel,
-    required this.onEdit,
+  const _EditButton({
+    required this.label,
+    required this.onTap,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onEdit,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Text(
-          editLabel,
+          label,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
             color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
           ),
@@ -333,8 +444,15 @@ class _EditLink extends StatelessWidget {
 
 class _RoutineBlockSection extends ConsumerStatefulWidget {
   final RoutineBlock block;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
 
-  const _RoutineBlockSection({super.key, required this.block});
+  const _RoutineBlockSection({
+    super.key,
+    required this.block,
+    required this.expanded,
+    required this.onToggleExpanded,
+  });
 
   @override
   ConsumerState<_RoutineBlockSection> createState() =>
@@ -342,9 +460,9 @@ class _RoutineBlockSection extends ConsumerStatefulWidget {
 }
 
 class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
-  bool _expanded = false;
-
   RoutineBlock get block => widget.block;
+
+  bool get _expanded => widget.expanded;
 
   Future<void> _onItemTap(
     BuildContext context,
@@ -366,6 +484,11 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
         _navigateToTimer(context, item);
       case RoutineItemType.accumulator:
         context.push('/mala', extra: {'presetId': item.id});
+      case RoutineItemType.groupAccumulator:
+        context.pushNamed(
+          'home-group-accumulator',
+          pathParameters: {'accumulatorId': item.id},
+        );
       case RoutineItemType.groupRecitationCollection:
         context.pushNamed(
           'recitation-collection',
@@ -459,7 +582,7 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
 
   void _toggleExpanded() {
     if (block.items.isEmpty) return;
-    setState(() => _expanded = !_expanded);
+    widget.onToggleExpanded();
   }
 
   @override
@@ -468,6 +591,15 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
     final hasItems = block.items.isNotEmpty;
     final labelColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final title = block.title;
+    final timeStyle = TextStyle(
+      fontSize: title == null ? 15 : 13,
+      fontWeight: title == null ? FontWeight.w500 : FontWeight.w400,
+      color:
+          title == null
+              ? labelColor
+              : (isDark ? AppColors.textTertiaryDark : AppColors.textSecondary),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,13 +613,24 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    block.formattedTime,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: labelColor,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(block.formattedTime, style: timeStyle),
+                      if (title != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: labelColor,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 if (hasItems)
@@ -564,7 +707,7 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
           type: item.type,
           planTitle:
               isCollection && itemCount != null && itemCount > 0
-                  ? context.l10n.home_recitation_count(itemCount)
+                  ? context.l10n.my_recitation_collection_chant_count(itemCount)
                   : item.currentPlanTitle,
           imageSize: 56,
           onTap: () => _onItemTap(context, ref, item),

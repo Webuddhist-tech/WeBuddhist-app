@@ -30,6 +30,7 @@ class GroupEventLinkModel {
   final String type;
   final String url;
   final String? label;
+  final String? language;
   final int displayOrder;
 
   const GroupEventLinkModel({
@@ -37,6 +38,7 @@ class GroupEventLinkModel {
     required this.type,
     required this.url,
     this.label,
+    this.language,
     this.displayOrder = 0,
   });
 
@@ -46,6 +48,7 @@ class GroupEventLinkModel {
       type: json['type'] as String? ?? '',
       url: json['url'] as String? ?? '',
       label: json['label'] as String?,
+      language: json['language'] as String?,
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
     );
   }
@@ -56,6 +59,7 @@ class GroupEventLinkModel {
       type: type,
       url: url,
       label: label,
+      language: language,
       displayOrder: displayOrder,
     );
   }
@@ -208,13 +212,18 @@ class GroupEventModel {
   final int participantCount;
   final bool isJoined;
   final List<GroupEventLinkModel> links;
+  final List<GroupEventLinkModel> youtube;
   final String? planId;
+  final String? seriesId;
   final String? accumulatorId;
+  final String? groupAccumulatorId;
   final String? mantraId;
   final String? timerId;
   final String? groupRecitationCollectionId;
   final GroupEventPracticeRefModel? plan;
+  final GroupEventPracticeRefModel? series;
   final GroupEventPracticeRefModel? accumulator;
+  final GroupEventPracticeRefModel? groupAccumulator;
   final GroupEventPracticeRefModel? groupRecitationCollection;
   final String? groupName;
   final String? groupAvatarUrl;
@@ -237,13 +246,18 @@ class GroupEventModel {
     this.participantCount = 0,
     this.isJoined = false,
     this.links = const [],
+    this.youtube = const [],
     this.planId,
+    this.seriesId,
     this.accumulatorId,
+    this.groupAccumulatorId,
     this.mantraId,
     this.timerId,
     this.groupRecitationCollectionId,
     this.plan,
+    this.series,
     this.accumulator,
+    this.groupAccumulator,
     this.groupRecitationCollection,
     this.groupName,
     this.groupAvatarUrl,
@@ -277,20 +291,20 @@ class GroupEventModel {
       image: imageJson != null ? ResponsiveImage.fromJson(imageJson) : null,
       participantCount: (json['participant_count'] as num?)?.toInt() ?? 0,
       isJoined: json['is_joined'] as bool? ?? false,
-      links:
-          (json['links'] as List<dynamic>?)
-              ?.whereType<Map<String, dynamic>>()
-              .map(GroupEventLinkModel.fromJson)
-              .toList() ??
-          const [],
+      links: _parseLinks(json['links']),
+      youtube: _parseLinks(json['youtube']),
       planId: json['plan_id'] as String?,
+      seriesId: json['series_id'] as String?,
       accumulatorId: json['accumulator_id'] as String?,
+      groupAccumulatorId: json['group_accumulator_id'] as String?,
       mantraId: json['mantra_id'] as String?,
       timerId: json['timer_id'] as String?,
       groupRecitationCollectionId:
           json['group_recitation_collection_id'] as String?,
       plan: _parsePracticeRef(json['plan']),
+      series: _parsePracticeRef(json['series']),
       accumulator: _parsePracticeRef(json['accumulator']),
+      groupAccumulator: _parsePracticeRef(json['group_accumulator']),
       groupRecitationCollection: _parsePracticeRef(
         json['group_recitation_collection'],
       ),
@@ -323,13 +337,18 @@ class GroupEventModel {
       participantCount: participantCount,
       isJoined: isJoined,
       links: links.map((link) => link.toEntity()).toList(),
+      youtube: youtube.map((link) => link.toEntity()).toList(),
       planId: planId,
+      seriesId: seriesId,
       accumulatorId: accumulatorId,
+      groupAccumulatorId: groupAccumulatorId,
       mantraId: mantraId,
       timerId: timerId,
       groupRecitationCollectionId: groupRecitationCollectionId,
       plan: plan?.toEntity(),
+      series: series?.toEntity(),
       accumulator: accumulator?.toEntity(),
+      groupAccumulator: groupAccumulator?.toEntity(),
       groupRecitationCollection: groupRecitationCollection?.toEntity(),
       groupName: groupName,
       groupAvatarUrl: groupAvatarUrl,
@@ -337,6 +356,14 @@ class GroupEventModel {
       location: location?.toEntity(),
       eventFormat: eventFormat,
     );
+  }
+
+  static List<GroupEventLinkModel> _parseLinks(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .whereType<Map<String, dynamic>>()
+        .map(GroupEventLinkModel.fromJson)
+        .toList();
   }
 
   static GroupEventPracticeRefModel? _parsePracticeRef(Object? value) {

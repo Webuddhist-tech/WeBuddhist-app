@@ -61,6 +61,10 @@ class NotificationIdScheme {
   static const int myCollectionBase = 24000000;
   static const int myCollectionMax = 24999999;
 
+  // Routine block group-accumulator daily-repeat, separate from the mala range.
+  static const int groupAccumulatorBase = 25000000;
+  static const int groupAccumulatorMax = 25999999;
+
   /// Stable daily-repeat ID for a mala/accumulator block. Derived from the
   /// block's own notification ID so it survives restarts, but lives in a
   /// range separate from the recitation daily-repeat
@@ -86,6 +90,10 @@ class NotificationIdScheme {
   static int myCollectionId(int blockNotificationId) =>
       myCollectionBase + (blockNotificationId - routineBlockMin);
 
+  /// Stable daily-repeat ID for a group-accumulator block.
+  static int groupAccumulatorId(int blockNotificationId) =>
+      groupAccumulatorBase + (blockNotificationId - routineBlockMin);
+
   // ── Meditation timer session ────────────────────────────────────────────
   // A running timer session posts an ongoing status notification and, while the
   // app is backgrounded, schedules its completion bell. Only one session can be
@@ -108,7 +116,8 @@ class NotificationIdScheme {
       (id >= accumulatorBlockBase && id <= accumulatorBlockMax) ||
       (id >= timerStartBase && id <= timerStartMax) ||
       (id >= groupCollectionBase && id <= groupCollectionMax) ||
-      (id >= myCollectionBase && id <= myCollectionMax);
+      (id >= myCollectionBase && id <= myCollectionMax) ||
+      (id >= groupAccumulatorBase && id <= groupAccumulatorMax);
 
   /// True when [id] was issued by any of the schemes registered here.
   /// Used by the engine to scope reconciliation: it must NEVER cancel an
@@ -123,6 +132,7 @@ class NotificationIdScheme {
     if (id >= timerStartBase && id <= timerStartMax) return true;
     if (id >= groupCollectionBase && id <= groupCollectionMax) return true;
     if (id >= myCollectionBase && id <= myCollectionMax) return true;
+    if (id >= groupAccumulatorBase && id <= groupAccumulatorMax) return true;
     return false;
   }
 }

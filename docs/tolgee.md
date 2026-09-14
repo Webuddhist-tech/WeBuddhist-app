@@ -23,8 +23,9 @@ Key files:
 
 | File | Role |
 | --- | --- |
-| [`lib/core/l10n/tolgee/tolgee_service.dart`](../lib/core/l10n/tolgee/tolgee_service.dart) | `Tolgee.init` / language switch, readiness probe |
-| [`lib/core/l10n/tolgee/tolgee_bridge.dart`](../lib/core/l10n/tolgee/tolgee_bridge.dart) | Lookup + ICU format + ARB fallback |
+| [`lib/core/l10n/tolgee/tolgee_service.dart`](../lib/core/l10n/tolgee/tolgee_service.dart) | Fetch lifecycle, language switch, serialisation |
+| [`lib/core/l10n/tolgee/tolgee_cdn.dart`](../lib/core/l10n/tolgee/tolgee_cdn.dart) | Reads `{CDN}/{tag}.json` directly |
+| [`lib/core/l10n/tolgee/tolgee_bridge.dart`](../lib/core/l10n/tolgee/tolgee_bridge.dart) | Holds the payload; lookup + ICU format + ARB fallback |
 | [`lib/core/l10n/tolgee/tolgee_locale_map.dart`](../lib/core/l10n/tolgee/tolgee_locale_map.dart) | App locale ↔ CDN tag |
 | [`lib/core/l10n/tolgee/tolgee_localizations_delegate.dart`](../lib/core/l10n/tolgee/tolgee_localizations_delegate.dart) | Replaces `AppLocalizations.delegate` |
 | [`lib/core/l10n/tolgee/tolgee_app_localizations.g.dart`](../lib/core/l10n/tolgee/tolgee_app_localizations.g.dart) | Generated overrides for all ARB keys |
@@ -42,7 +43,9 @@ Public Content Delivery prefix (namespace included; **no** trailing file name):
 https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
 ```
 
-The Flutter SDK requests `{TOLGEE_CDN_URL}/{language}.json`. Published files:
+The app requests `{TOLGEE_CDN_URL}/{tag}.json` itself — see
+[`tolgee_cdn.dart`](../lib/core/l10n/tolgee/tolgee_cdn.dart) and the note under
+"Why the SDK is not used" below. Published files:
 
 | CDN file | App UI `languageCode` |
 | --- | --- |
@@ -69,9 +72,31 @@ TOLGEE_CDN_URL=https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
 TOLGEE_ENABLED=true
 ```
 
-A read-only API key is still required: init calls `GET /v2/projects/languages`
-even in CDN mode. The key ships inside the bundled `.env` asset — never grant
-write scopes.
+`TOLGEE_API_KEY` and `TOLGEE_API_URL` are **no longer used to read
+translations** — Content Delivery is public and the app fetches it directly.
+They are still read by `Env.tolgeeEnabled`, so a build without them keeps
+Tolgee switched off exactly as before; treat the key as a feature flag rather
+than a credential. It ships inside the bundled `.env` asset — never grant write
+scopes.
+
+## Why the SDK is not used
+
+`tolgee: ^1.2.0` stores a fetched payload under `Locale.toString()` but reads it
+back under a normalised code, and the two disagree for any multi-part tag:
+
+| Published tag | Stored as | Looked up as | |
+| --- | --- | --- | --- |
+| `en`, `hi`, `mn`, `ne` | `en` | `en` | ✅ |
+| `bo-IN` | `bo-IN` | `bo` — region dropped | ❌ |
+| `zh-Hant-TW` | `zh-Hant-TW` | `zh-hant-tw` — lower-cased | ❌ |
+
+Two parts collapse to the language alone; anything else is lower-cased whole.
+So `bo` and `zh` resolved **no keys at all** and silently fell back to the
+bundled ARB, while the log still said the language was ready.
+
+The app therefore fetches and parses the payload itself. Keying by the exact
+tag requested makes tag shape irrelevant. Do not route lookups back through the
+SDK unless this is fixed upstream.
 
 ## Languages and switching
 
@@ -87,7 +112,7 @@ Text(context.l10n.sign_in)
 Text(context.l10n.ai_greeting(name))
 ```
 
-Do not call `Tolgee.translate` or `TranslationWidget` from feature code.
+Do not call the Tolgee SDK from feature code — nothing in `lib/` imports it.
 
 Context-free paths (e.g. notification scheduling) use
 `tolgeeAppLocalizationsFor(locale)` from
@@ -369,5 +394,6 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 ## Known limits
 
 - Updates apply on next launch or language switch (no live push).
-- Empty/404 CDN responses are treated as “use ARB” after the readiness probe.
+- Empty/404 CDN responses, malformed bodies and transport failures all parse
+  to an empty payload, which the bridge treats as “use ARB”.
 - Do not put the filename in `TOLGEE_CDN_URL` — only the prefix through `/webuddhist`.

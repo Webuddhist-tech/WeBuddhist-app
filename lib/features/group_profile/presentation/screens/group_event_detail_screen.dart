@@ -15,12 +15,25 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_attendance_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_link_utils.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_recitation_collection_row.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
+import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,6 +42,8 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+
+enum _EventTab { videos, about, accumulations, recitations }
 
 class GroupEventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -42,20 +57,10 @@ class GroupEventDetailScreen extends ConsumerStatefulWidget {
 
 class _GroupEventDetailScreenState
     extends ConsumerState<GroupEventDetailScreen> {
-  int _selectedTab = 0;
+  _EventTab? _selectedTab;
   bool? _attendingOverride;
   bool _isSubmitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref
-          .read(groupEventParticipantsProvider(widget.eventId).notifier)
-          .loadInitial();
-    });
-  }
+  bool _isOpeningPuja = false;
 
   @override
   Widget build(BuildContext context) {
@@ -149,11 +154,16 @@ class _GroupEventDetailScreenState
     final isAttending = _attendingOverride ?? event.isJoined;
     final totalAttending = _attendeeCount(event, isAttending);
     final videos = _videoLinks(event);
-    final hasVideos = videos.isNotEmpty;
-    final hasPractices =
-        event.plan != null ||
-        event.accumulator != null ||
-        event.groupRecitationCollection != null;
+    final groupAccumulator = event.groupAccumulator;
+    final collection = event.groupRecitationCollection;
+    final tabs = <_EventTab>[
+      if (videos.isNotEmpty) _EventTab.videos,
+      _EventTab.about,
+      if (groupAccumulator != null) _EventTab.accumulations,
+      if (collection != null) _EventTab.recitations,
+    ];
+    final selectedTab =
+        tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
     final isPast = isGroupEventPast(event);
 
     return SingleChildScrollView(
@@ -169,22 +179,37 @@ class _GroupEventDetailScreenState
             totalAttending: totalAttending,
             isDark: isDark,
           ),
-          if (!isPast) ...[
+          if (!isPast || (event.hasPuja && isAttending)) ...[
             const SizedBox(height: 14),
-            _buildActionRow(event, isAttending, isDark),
+            _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
           _EventInfoCard(event: event, isDark: isDark),
-          if (hasPractices) ...[
+          if (event.accumulator != null) ...[
             const SizedBox(height: 16),
-            _EventPracticesCard(event: event, isDark: isDark),
+            _EventPracticesCard(practice: event.accumulator!, isDark: isDark),
           ],
           const SizedBox(height: 16),
-          _buildTabs(isDark, hasVideos: hasVideos),
-          const SizedBox(height: 12),
-          hasVideos && _selectedTab == 0
-              ? _VideosPanel(videos: videos, event: event, isDark: isDark)
-              : _AboutPanel(event: event, isDark: isDark),
+          _buildTabs(tabs, selectedTab, isDark),
+          const SizedBox(height: 20),
+          switch (selectedTab) {
+            _EventTab.videos => _VideosPanel(
+              videos: videos,
+              event: event,
+              isDark: isDark,
+            ),
+            _EventTab.about => _AboutPanel(event: event, isDark: isDark),
+            _EventTab.accumulations => _EventAccumulatorPanel(
+              accumulatorId: groupAccumulator!.id,
+              groupTitle: event.groupName,
+              isDark: isDark,
+            ),
+            _EventTab.recitations => _EventRecitationsPanel(
+              groupId: event.groupId,
+              collectionId: collection!.id,
+              isDark: isDark,
+            ),
+          },
         ],
       ),
     );
@@ -197,7 +222,12 @@ class _GroupEventDetailScreenState
     return math.max(0, count);
   }
 
-  Widget _buildActionRow(GroupEvent event, bool isAttending, bool isDark) {
+  Widget _buildActionRow(
+    GroupEvent event,
+    bool isAttending,
+    bool isDark, {
+    required bool isPast,
+  }) {
     final secondaryButtonColor =
         isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite;
     final secondaryBorder = isDark ? AppColors.grey800 : AppColors.grey300;
@@ -234,6 +264,41 @@ class _GroupEventDetailScreenState
               ),
     );
 
+    if (event.hasPuja && isAttending) {
+      final pujaButton = ElevatedButton(
+        onPressed: _isOpeningPuja ? null : () => _enterPuja(event),
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          minimumSize: const Size(0, 44),
+          backgroundColor:
+              isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
+          foregroundColor:
+              isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        child:
+            _isOpeningPuja
+                ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+                : Text(context.l10n.start_reading),
+      );
+      if (isPast) {
+        return SizedBox(width: double.infinity, child: pujaButton);
+      }
+      return Row(
+        children: [
+          Expanded(child: attendButton),
+          const SizedBox(width: 12),
+          Expanded(child: pujaButton),
+        ],
+      );
+    }
+
     if (!isAttending) {
       return SizedBox(width: double.infinity, child: attendButton);
     }
@@ -262,25 +327,115 @@ class _GroupEventDetailScreenState
     );
   }
 
-  Widget _buildTabs(bool isDark, {required bool hasVideos}) {
-    return Row(
-      children: [
-        if (hasVideos) ...[
-          _EventTabButton(
-            label: context.l10n.connect_event_tab_videos,
-            selected: _selectedTab == 0,
-            isDark: isDark,
-            onTap: () => setState(() => _selectedTab = 0),
-          ),
-          const SizedBox(width: 20),
+  Widget _buildTabs(List<_EventTab> tabs, _EventTab selected, bool isDark) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < tabs.length; i++) ...[
+            if (i > 0) const SizedBox(width: 20),
+            _EventTabButton(
+              label: _tabLabel(tabs[i]),
+              selected: tabs[i] == selected,
+              isDark: isDark,
+              onTap: () => setState(() => _selectedTab = tabs[i]),
+            ),
+          ],
         ],
-        _EventTabButton(
-          label: context.l10n.connect_event_tab_about,
-          selected: !hasVideos || _selectedTab == 1,
-          isDark: isDark,
-          onTap: () => setState(() => _selectedTab = 1),
-        ),
-      ],
+      ),
+    );
+  }
+
+  String _tabLabel(_EventTab tab) => switch (tab) {
+    _EventTab.videos => context.l10n.connect_event_tab_videos,
+    _EventTab.about => context.l10n.connect_event_tab_about,
+    _EventTab.accumulations => context.l10n.connect_event_tab_accumulations,
+    _EventTab.recitations => context.l10n.connect_event_tab_recitations,
+  };
+
+  /// Opens the event's puja: auto-enrolls in its series and opens the (only)
+  /// plan's day list, or previews the plan when the event has no series.
+  Future<void> _enterPuja(GroupEvent event) async {
+    if (_isOpeningPuja) return;
+    final seriesId = event.series?.id ?? event.seriesId;
+    final planId = event.plan?.id ?? event.planId;
+    if (seriesId == null && planId == null) return;
+
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    setState(() => _isOpeningPuja = true);
+    try {
+      if (seriesId != null) {
+        await _enterSeries(event, seriesId);
+      } else {
+        await _openPlanPreview(planId!);
+      }
+    } finally {
+      if (mounted) setState(() => _isOpeningPuja = false);
+    }
+  }
+
+  Future<void> _openPlanPreview(String planId) async {
+    final either = await ref.read(planByIdFutureProvider(planId).future);
+    if (!mounted) return;
+    final plan = either.fold((_) => null, (plan) => plan);
+    if (plan == null) {
+      _showError(context.l10n.notFound);
+      return;
+    }
+    context.push(AppRoutes.practicePlanPreview, extra: {'plan': plan});
+  }
+
+  Future<void> _enterSeries(GroupEvent event, String seriesId) async {
+    final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
+    if (!mounted) return;
+    final series = seriesEither.fold((_) => null, (s) => s);
+    final plan = series?.plans.firstOrNull;
+    if (plan == null) {
+      _showError(context.l10n.notFound);
+      return;
+    }
+
+    final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
+    if (!mounted) return;
+    if (!enrollments.contains(seriesId)) {
+      final ok = await ref
+          .read(seriesEnrollmentProvider(seriesId).notifier)
+          .enroll();
+      if (!mounted) return;
+      if (!ok) {
+        final state = ref.read(seriesEnrollmentProvider(seriesId));
+        _showError(
+          state is SeriesEnrollmentFailure
+              ? state.failure.message
+              : context.l10n.series_enroll_error,
+        );
+        return;
+      }
+    }
+
+    // Prefer the enrolled plan so flexible plans keep their saved start date.
+    final enrolled =
+        ref
+            .read(myPlansPaginatedProvider)
+            .plans
+            .where((p) => p.id == plan.id)
+            .firstOrNull;
+    final userPlan = enrolled ?? userPlanFromCatalogPlan(plan);
+    final startDate = userPlan.effectiveStartDate;
+    context.push(
+      '/practice/details',
+      extra: {
+        'plan': userPlan,
+        'selectedDay': selectedDayForStart(startDate, userPlan.totalDays),
+        'startDate': startDate,
+        'seriesId': seriesId,
+        'eventId': event.id,
+      },
     );
   }
 
@@ -475,7 +630,8 @@ class _AttendeesRow extends StatelessWidget {
               height: avatarSize,
               child: Stack(
                 children: [
-                  for (var i = 0; i < shown.length; i++)
+                  // Paint first avatar last so it sits on top of the rest.
+                  for (var i = shown.length - 1; i >= 0; i--)
                     Positioned(
                       left: i * overlap,
                       child: _ParticipantAvatar(
@@ -484,6 +640,7 @@ class _AttendeesRow extends StatelessWidget {
                         size: avatarSize,
                       ),
                     ),
+                  // Painted after the avatars so the overflow count stays on top.
                   if (remaining > 0)
                     Positioned(
                       left: shown.length * overlap,
@@ -873,57 +1030,16 @@ class _EventLinkText extends StatelessWidget {
   }
 }
 
-class _EventPracticesCard extends ConsumerStatefulWidget {
-  final GroupEvent event;
+class _EventPracticesCard extends ConsumerWidget {
+  final GroupEventPracticeRef practice;
   final bool isDark;
 
-  const _EventPracticesCard({required this.event, required this.isDark});
+  const _EventPracticesCard({required this.practice, required this.isDark});
 
   @override
-  ConsumerState<_EventPracticesCard> createState() =>
-      _EventPracticesCardState();
-}
-
-class _EventPracticesCardState extends ConsumerState<_EventPracticesCard> {
-  String? _loadingId;
-
-  @override
-  Widget build(BuildContext context) {
-    final event = widget.event;
-    final isDark = widget.isDark;
+  Widget build(BuildContext context, WidgetRef ref) {
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
-    final plan = event.plan;
-    final accumulator = event.accumulator;
-    final collection = event.groupRecitationCollection;
-
-    final rows = <Widget>[
-      if (plan != null)
-        _EventPracticeRow(
-          practice: plan,
-          isDark: isDark,
-          isLoading: _loadingId == plan.id,
-          onTap: () => _openPlan(plan),
-        ),
-      if (accumulator != null)
-        _EventPracticeRow(
-          practice: accumulator,
-          isDark: isDark,
-          isLoading: false,
-          onTap: () => _openMala(accumulator),
-        ),
-      if (collection != null)
-        _EventPracticeRow(
-          practice: collection,
-          isDark: isDark,
-          isLoading: false,
-          onTap:
-              () => context.push(
-                '/home/group/${event.groupId}/recitation-collections/${collection.id}',
-                extra: {'title': collection.name},
-              ),
-        ),
-    ];
 
     return Container(
       width: double.infinity,
@@ -937,41 +1053,19 @@ class _EventPracticesCardState extends ConsumerState<_EventPracticesCard> {
         children: [
           _EventSectionLabel(text: context.l10n.connect_event_practices),
           const SizedBox(height: 4),
-          for (var i = 0; i < rows.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: isDark ? AppColors.cardBorderDark : AppColors.grey100,
-              ),
-            rows[i],
-          ],
+          _EventPracticeRow(
+            practice: practice,
+            isDark: isDark,
+            onTap: () => _openMala(context, ref),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _openPlan(GroupEventPracticeRef practice) async {
-    if (_loadingId != null) return;
-    setState(() => _loadingId = practice.id);
-
-    final either = await ref.read(planByIdFutureProvider(practice.id).future);
-    if (!mounted) return;
-    setState(() => _loadingId = null);
-
-    final plan = either.fold((_) => null, (plan) => plan);
-    if (plan == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.notFound)));
-      return;
-    }
-    context.push(AppRoutes.practicePlanPreview, extra: {'plan': plan});
-  }
-
   /// `accumulator_id` on an event is a mala preset id, so the counter opens
   /// on that mantra directly.
-  void _openMala(GroupEventPracticeRef practice) {
+  void _openMala(BuildContext context, WidgetRef ref) {
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
       LoginDrawer.show(context, ref);
@@ -984,13 +1078,11 @@ class _EventPracticesCardState extends ConsumerState<_EventPracticesCard> {
 class _EventPracticeRow extends StatelessWidget {
   final GroupEventPracticeRef practice;
   final bool isDark;
-  final bool isLoading;
   final VoidCallback onTap;
 
   const _EventPracticeRow({
     required this.practice,
     required this.isDark,
-    required this.isLoading,
     required this.onTap,
   });
 
@@ -1002,7 +1094,7 @@ class _EventPracticeRow extends StatelessWidget {
     final hasImage = imageUrl != null && imageUrl.isNotEmpty;
 
     return InkWell(
-      onTap: isLoading ? null : onTap,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -1037,24 +1129,14 @@ class _EventPracticeRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            if (isLoading)
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Icon(
-                  AppAssets.caretRight,
-                  size: 18,
-                  color: secondaryColor,
-                ),
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                AppAssets.caretRight,
+                size: 18,
+                color: secondaryColor,
               ),
+            ),
           ],
         ),
       ),
@@ -1068,6 +1150,518 @@ class _EventPracticeRow extends StatelessWidget {
         AppAssets.bookOpenText,
         size: 20,
         color: isDark ? AppColors.grey500 : AppColors.grey600,
+      ),
+    );
+  }
+}
+
+/// Accumulations tab: progress, leaderboard / own count, and a way to log
+/// recitations done with the livestream or offline.
+class _EventAccumulatorPanel extends ConsumerStatefulWidget {
+  final String accumulatorId;
+  final String? groupTitle;
+  final bool isDark;
+
+  const _EventAccumulatorPanel({
+    required this.accumulatorId,
+    required this.groupTitle,
+    required this.isDark,
+  });
+
+  @override
+  ConsumerState<_EventAccumulatorPanel> createState() =>
+      _EventAccumulatorPanelState();
+}
+
+class _EventAccumulatorPanelState
+    extends ConsumerState<_EventAccumulatorPanel> {
+  bool _showContributions = false;
+  bool _isJoining = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final detailAsync = ref.watch(
+      groupAccumulatorDetailProvider(widget.accumulatorId),
+    );
+    void retry() =>
+        ref.invalidate(groupAccumulatorDetailProvider(widget.accumulatorId));
+
+    return detailAsync.when(
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+      error: (error, _) => ErrorStateWidget(error: error, onRetry: retry),
+      data:
+          (either) => either.fold(
+            (failure) => ErrorStateWidget(error: failure, onRetry: retry),
+            (detail) => _buildDetail(context, detail),
+          ),
+    );
+  }
+
+  Widget _buildDetail(BuildContext context, GroupAccumulatorDetail detail) {
+    final isDark = widget.isDark;
+    final localJoinedIds = ref.watch(
+      groupAccumulatorJoinCacheProvider(detail.groupId),
+    );
+    final hasJoined = accumulatorHasJoined(
+      detail,
+      localJoinedIds: localJoinedIds,
+    );
+    final numberFormat = NumberFormat.decimalPattern(
+      intlFormatLocaleOf(context),
+    );
+    final primaryColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final progressText =
+        '${numberFormat.format(detail.totalCount)} / ${numberFormat.format(detail.targetCount)}';
+    // Keep the counts notifier alive while the panel is visible so an offline
+    // add is not racing its own dispose during sync.
+    if (detail.presetAccumulatorId.isNotEmpty) {
+      ref.watch(groupAccumulationCountsProvider(detail.presetAccumulatorId));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: () => _openAccumulator(detail),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    detail.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: primaryColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(AppAssets.caretRight, size: 18, color: secondaryColor),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                progressText,
+                style: TextStyle(fontSize: 13, color: secondaryColor),
+              ),
+            ),
+            Text(
+              '${detail.progressPercent}%',
+              style: TextStyle(fontSize: 13, color: secondaryColor),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: detail.progressFraction,
+            minHeight: 6,
+            backgroundColor:
+                isDark ? AppColors.cardBorderDark : AppColors.grey300,
+            color: AppColors.primary,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: _EventSubTabButton(
+                label: context.l10n.group_accumulator_leaderboard,
+                selected: !_showContributions,
+                isDark: isDark,
+                onTap: () => setState(() => _showContributions = false),
+              ),
+            ),
+            Expanded(
+              child: _EventSubTabButton(
+                label: context.l10n.group_accumulator_my_contributions,
+                selected: _showContributions,
+                isDark: isDark,
+                onTap: () => setState(() => _showContributions = true),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (_showContributions)
+          GroupAccumulatorMyContributionsList(
+            detail: detail,
+            isDark: isDark,
+            embedded: true,
+          )
+        else
+          GroupAccumulatorLeaderboardList(
+            accumulatorId: detail.id,
+            isDark: isDark,
+            embedded: true,
+          ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child:
+              hasJoined
+                  ? OutlinedButton.icon(
+                    onPressed: () => _addRecitations(detail),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 50),
+                      backgroundColor:
+                          isDark
+                              ? AppColors.surfaceVariantDark
+                              : AppColors.grey100,
+                      foregroundColor: primaryColor,
+                      side: BorderSide(
+                        color: isDark ? AppColors.grey800 : AppColors.grey300,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    icon: const Icon(AppAssets.plusCircle, size: 20),
+                    label: Text(
+                      context.l10n.connect_event_add_recitations,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                  : ElevatedButton(
+                    onPressed: _isJoining ? null : () => _join(detail),
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      minimumSize: const Size(0, 50),
+                      backgroundColor:
+                          isDark
+                              ? AppColors.surfaceWhite
+                              : AppColors.textPrimary,
+                      foregroundColor:
+                          isDark
+                              ? AppColors.textPrimary
+                              : AppColors.surfaceWhite,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child:
+                        _isJoining
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : Text(
+                              context.l10n.group_join_to_contribute,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                  ),
+        ),
+      ],
+    );
+  }
+
+  void _openAccumulator(GroupAccumulatorDetail detail) {
+    context.push(
+      '/home/group-accumulator/${detail.id}',
+      extra: {'groupTitle': widget.groupTitle},
+    );
+  }
+
+  bool _requireLogin() {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _join(GroupAccumulatorDetail detail) async {
+    if (!_requireLogin()) return;
+
+    setState(() => _isJoining = true);
+    final ok = await joinGroupAccumulator(
+      ref: ref,
+      accumulatorId: detail.id,
+      groupId: detail.groupId,
+    );
+    if (!mounted) return;
+    setState(() => _isJoining = false);
+
+    if (ok) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(context.l10n.group_accumulator_join_error),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  /// Counts go through the mala pipeline so they sync like in-app taps. The
+  /// local total is seeded from a fresh server count first, since the sync
+  /// posts an absolute total and the screen snapshot may be stale.
+  Future<void> _addRecitations(GroupAccumulatorDetail detail) async {
+    if (!_requireLogin()) return;
+    final presetId = detail.presetAccumulatorId;
+    if (presetId.isEmpty) return;
+
+    final l10n = context.l10n;
+    final count = await showAddOfflineChantsDialog(
+      context,
+      title: l10n.connect_event_add_recitations,
+      message: l10n.connect_event_add_recitations_message,
+    );
+    if (count == null || count <= 0 || !mounted) return;
+
+    final countsNotifier = ref.read(
+      groupAccumulationCountsProvider(presetId).notifier,
+    );
+    final serverTotal = await _fetchServerTotal(detail, countsNotifier);
+    if (!mounted) return;
+    await countsNotifier.mergeFromServerCounts({detail.id: serverTotal});
+    if (!mounted) return;
+    countsNotifier.addCount(
+      groupAccumulatorId: detail.id,
+      groups: const [],
+      count: count,
+    );
+    try {
+      await ref
+          .read(malaSyncManagerProvider)
+          .flushAndSettle(SyncReason.roundComplete);
+    } catch (_) {}
+    if (!mounted) return;
+    refreshGroupAccumulatorData(
+      ref,
+      accumulatorId: detail.id,
+      groupId: detail.groupId,
+    );
+  }
+
+  /// Falls back to the greatest known total so a failed fetch never seeds a
+  /// lower count than what was already recorded.
+  Future<int> _fetchServerTotal(
+    GroupAccumulatorDetail detail,
+    GroupAccumulationCountsNotifier countsNotifier,
+  ) async {
+    final result = await ref
+        .read(groupAccumulatorRepositoryProvider)
+        .getGroupAccumulator(detail.id);
+    return result.fold(
+      (_) => math.max(
+        detail.user?.totalCount ?? 0,
+        countsNotifier.countFor(detail.id),
+      ),
+      (fresh) => fresh.user?.totalCount ?? 0,
+    );
+  }
+}
+
+class _EventSubTabButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _EventSubTabButton({
+    required this.label,
+    required this.selected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final inactiveColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: selected ? activeColor : inactiveColor,
+              ),
+            ),
+          ),
+          Container(
+            height: 2,
+            color:
+                selected
+                    ? activeColor
+                    : (isDark ? AppColors.cardBorderDark : AppColors.grey300),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Recitations tab: the collection's chants, each opening the reader.
+class _EventRecitationsPanel extends ConsumerWidget {
+  final String groupId;
+  final String collectionId;
+  final bool isDark;
+
+  const _EventRecitationsPanel({
+    required this.groupId,
+    required this.collectionId,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final key = GroupRecitationCollectionKey(
+      groupId: groupId,
+      collectionId: collectionId,
+    );
+    final detailAsync = ref.watch(groupRecitationCollectionDetailProvider(key));
+    final completionState = ref.watch(
+      groupRecitationCollectionCompletionProvider(key),
+    );
+    void retry() =>
+        ref.invalidate(groupRecitationCollectionDetailProvider(key));
+
+    return detailAsync.when(
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+      error: (error, _) => ErrorStateWidget(error: error, onRetry: retry),
+      data:
+          (either) => either.fold(
+            (failure) => ErrorStateWidget(error: failure, onRetry: retry),
+            (collection) => _buildCollection(
+              context,
+              ref,
+              key,
+              collection,
+              completionState,
+            ),
+          ),
+    );
+  }
+
+  Widget _buildCollection(
+    BuildContext context,
+    WidgetRef ref,
+    GroupRecitationCollectionKey key,
+    GroupRecitationCollection collection,
+    GroupRecitationCollectionCompletionState completionState,
+  ) {
+    final primaryColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap:
+              () => context.push(
+                '/home/group/$groupId/recitation-collections/${collection.id}',
+                extra: {'title': collection.name},
+              ),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    collection.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: primaryColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(AppAssets.caretRight, size: 18, color: secondaryColor),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (collection.items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: Text(
+                context.l10n.noContentAvailable,
+                style: TextStyle(fontSize: 15, color: secondaryColor),
+              ),
+            ),
+          )
+        else
+          for (final item in collection.items)
+            GroupRecitationCollectionRow(
+              item: item,
+              isDark: isDark,
+              isCompleted: completionState.isCompleted(item.id),
+              isSubmitting: completionState.isSubmitting(item.id),
+              onTap: () => _openReader(context, ref, key, collection, item),
+            ),
+      ],
+    );
+  }
+
+  void _openReader(
+    BuildContext context,
+    WidgetRef ref,
+    GroupRecitationCollectionKey key,
+    GroupRecitationCollection collection,
+    GroupRecitationCollectionItem item,
+  ) {
+    final textId = item.textId.trim();
+    if (textId.isEmpty || item.id.trim().isEmpty) return;
+
+    context.push(
+      '/reader/$textId',
+      extra: groupRecitationCollectionNavigationContext(
+        key: key,
+        collection: collection,
+        item: item,
+        completionState: ref.read(
+          groupRecitationCollectionCompletionProvider(key),
+        ),
       ),
     );
   }
@@ -1096,25 +1690,27 @@ class _EventTabButton extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: textColor,
+      child: IntrinsicWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 7),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: textColor,
+                ),
               ),
             ),
-          ),
-          Container(
-            width: 40,
-            height: 2,
-            color: selected ? textColor : Colors.transparent,
-          ),
-        ],
+            Container(
+              height: 2,
+              color: selected ? textColor : Colors.transparent,
+            ),
+          ],
+        ),
       ),
     );
   }

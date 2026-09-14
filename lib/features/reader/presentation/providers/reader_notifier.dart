@@ -135,6 +135,8 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     _logger.debug('ReaderNotifier initializing with params: $_params');
 
     final initialSegmentId = useNavParams ? _params.segmentId : null;
+    final initialSize =
+        useNavParams ? _params.navigationContext?.initialPageSize : null;
 
     state = state.copyWith(
       status: ReaderStatus.loading,
@@ -148,6 +150,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       final response = await _fetchContent(
         segmentId: initialSegmentId,
         direction: 'next',
+        size: initialSize,
       );
       _logger.debug('ReaderNotifier initialized with response: $response');
 
@@ -237,6 +240,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   Future<ReaderResponse> _fetchContent({
     String? segmentId,
     required String direction,
+    int? size,
   }) async {
     // Note: do NOT update _activeVersionId here. It's the id of the
     // currently-LOADED version (set after a successful initial fetch in
@@ -261,6 +265,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       segmentId: segmentId,
       direction: direction,
       language: (language != null && language.isNotEmpty) ? language : null,
+      size: size,
     );
 
     final result = await _ref.read(textDetailsFutureProvider(params).future);

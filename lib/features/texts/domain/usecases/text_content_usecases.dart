@@ -115,6 +115,7 @@ class GetTextDetailsUseCase extends UseCase<ReaderResponse, GetTextDetailsParams
       segmentId: params.segmentId,
       direction: params.direction,
       language: params.language,
+      size: params.size,
       forceRefresh: params.forceRefresh,
     );
   }
@@ -127,6 +128,7 @@ class GetTextDetailsParams {
   final String? segmentId;
   final String? direction;
   final String? language;
+  final int? size;
   final bool forceRefresh;
 
   const GetTextDetailsParams({
@@ -136,6 +138,7 @@ class GetTextDetailsParams {
     this.segmentId,
     this.direction,
     this.language,
+    this.size,
     this.forceRefresh = false,
   });
 }

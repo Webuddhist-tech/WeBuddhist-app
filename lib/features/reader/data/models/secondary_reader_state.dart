@@ -10,15 +10,20 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 /// It is intentionally excluded from `==`/`hashCode` so the Riverpod family
 /// resolves the same notifier across rebuilds — otherwise viewport changes
 /// would tear down and re-create the secondary provider on every scroll.
+///
+/// `initialSize` is part of identity: it is fixed per screen, and overlapping
+/// readers (plan `pushReplacement`) must not share a differently sized window.
 class SecondaryReaderKey {
   final String textId;
   final String versionId;
   final String? initialSegmentId;
+  final int? initialSize;
 
   const SecondaryReaderKey({
     required this.textId,
     required this.versionId,
     this.initialSegmentId,
+    this.initialSize,
   });
 
   @override
@@ -26,14 +31,15 @@ class SecondaryReaderKey {
       identical(this, other) ||
       (other is SecondaryReaderKey &&
           other.textId == textId &&
-          other.versionId == versionId);
+          other.versionId == versionId &&
+          other.initialSize == initialSize);
 
   @override
-  int get hashCode => Object.hash(textId, versionId);
+  int get hashCode => Object.hash(textId, versionId, initialSize);
 
   @override
   String toString() =>
-      'SecondaryReaderKey(textId: $textId, versionId: $versionId, initialSegmentId: $initialSegmentId)';
+      'SecondaryReaderKey(textId: $textId, versionId: $versionId, initialSegmentId: $initialSegmentId, initialSize: $initialSize)';
 }
 
 /// State for the secondary (translation/companion) text shown beneath the

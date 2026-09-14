@@ -398,7 +398,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final itemCountLabel =
         collection.itemCount > 0
-            ? context.l10n.home_recitation_count(collection.itemCount)
+            ? context.l10n.my_recitation_collection_chant_count(
+              collection.itemCount,
+            )
             : null;
 
     return Material(

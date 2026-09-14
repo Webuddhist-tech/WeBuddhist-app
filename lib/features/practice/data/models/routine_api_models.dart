@@ -10,6 +10,7 @@ enum SessionType {
   accumulator,
   groupRecitationCollection,
   recitationCollection,
+  groupAccumulator,
 
   /// A session type this build doesn't know. Kept so a routine written by a
   /// newer app version still parses here; the original wire value rides along
@@ -24,6 +25,7 @@ enum SessionType {
     SessionType.accumulator => 'ACCUMULATOR',
     SessionType.groupRecitationCollection => 'GROUP_RECITATION_COLLECTION',
     SessionType.recitationCollection => 'RECITATION_COLLECTION',
+    SessionType.groupAccumulator => 'GROUP_ACCUMULATOR',
     SessionType.unknown => 'UNKNOWN',
   };
 
@@ -35,6 +37,7 @@ enum SessionType {
     'ACCUMULATOR' => SessionType.accumulator,
     'GROUP_RECITATION_COLLECTION' => SessionType.groupRecitationCollection,
     'RECITATION_COLLECTION' => SessionType.recitationCollection,
+    'GROUP_ACCUMULATOR' => SessionType.groupAccumulator,
     // Never throws: one unrecognised session would otherwise fail the whole
     // routine response, blanking every block the user has.
     _ => SessionType.unknown,
@@ -69,6 +72,8 @@ class SessionRequest {
     'session_type': rawSessionType ?? sessionType.toJson(),
     if (sessionType == SessionType.accumulator)
       'accumulator_id': sourceId
+    else if (sessionType == SessionType.groupAccumulator)
+      'group_accumulator_id': sourceId
     else if (sessionType != SessionType.timer)
       'source_id': sourceId,
     'display_order': displayOrder,
@@ -81,12 +86,16 @@ class SessionRequest {
 class TimeBlockRequest {
   final String time;
   final int timeInt;
+
+  /// Optional session title. PUT is a full replace, so null clears it.
+  final String? title;
   final bool notificationEnabled;
   final List<SessionRequest> sessions;
 
   const TimeBlockRequest({
     required this.time,
     required this.timeInt,
+    this.title,
     this.notificationEnabled = true,
     required this.sessions,
   });
@@ -94,6 +103,7 @@ class TimeBlockRequest {
   Map<String, dynamic> toJson() => {
     'time': time,
     'time_int': timeInt,
+    if (title != null) 'title': title,
     'notification_enabled': notificationEnabled,
     'sessions': sessions.map((s) => s.toJson()).toList(),
   };
@@ -185,8 +195,9 @@ class SessionDTO {
 
   /// Preset/content id used when re-syncing this session to the API.
   ///
-  /// Accumulator sessions expose [accumulator_id] (preset id) rather than
-  /// [source_id]. Falling back to the session [id] would break PUT updates.
+  /// Accumulator sessions expose [accumulator_id] (preset id) and group
+  /// accumulator sessions [group_accumulator_id] rather than [source_id].
+  /// Falling back to the session [id] would break PUT updates.
   static String _sourceIdFromJson(
     Map<String, dynamic> json,
     SessionType sessionType,
@@ -195,6 +206,12 @@ class SessionDTO {
       final accumulatorId = json['accumulator_id'] as String?;
       if (accumulatorId != null && accumulatorId.isNotEmpty) {
         return accumulatorId;
+      }
+    }
+    if (sessionType == SessionType.groupAccumulator) {
+      final groupAccumulatorId = json['group_accumulator_id'] as String?;
+      if (groupAccumulatorId != null && groupAccumulatorId.isNotEmpty) {
+        return groupAccumulatorId;
       }
     }
 
@@ -212,6 +229,7 @@ class TimeBlockDTO {
   final String id;
   final String time;
   final int timeInt;
+  final String? title;
   final bool notificationEnabled;
   final List<SessionDTO> sessions;
 
@@ -219,6 +237,7 @@ class TimeBlockDTO {
     required this.id,
     required this.time,
     required this.timeInt,
+    this.title,
     required this.notificationEnabled,
     required this.sessions,
   });
@@ -228,6 +247,7 @@ class TimeBlockDTO {
       id: json['id'] as String,
       time: json['time'] as String,
       timeInt: json['time_int'] as int,
+      title: json['title'] as String?,
       notificationEnabled: json['notification_enabled'] as bool,
       sessions:
           (json['sessions'] as List<dynamic>)
