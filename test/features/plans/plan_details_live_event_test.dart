@@ -185,7 +185,8 @@ void main() {
     expect(find.byType(GroupEventMediaToggle), findsNothing);
     expect(find.text('Green Tara'), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    expect(find.text('Practice now'), findsOneWidget);
+    // Already practicing via the event, so no "Practice now".
+    expect(find.text('Practice now'), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
 
     await tester.tap(find.text('Tara of the day'));
@@ -204,7 +205,7 @@ void main() {
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
     expect(_body(), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    expect(find.text('Practice now'), findsOneWidget);
+    expect(find.text('Practice now'), findsNothing);
 
     // Let the deferred refresh after closing run out.
     await tester.pump(const Duration(seconds: 1));
@@ -252,7 +253,7 @@ void main() {
   ) async {
     await _pumpLiveEventDetails(tester);
 
-    await tester.tap(find.text('Practice now'));
+    await tester.tap(find.text('Tara of the day'));
     await _settle(tester);
     expect(_body(), findsOneWidget);
 

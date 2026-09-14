@@ -242,12 +242,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                 ),
               ),
             ),
-            // Built below the scope so "Practice now" opens in place too.
-            Builder(
-              builder:
-                  (context) =>
-                      _buildStartReadingButton(context, localizations),
-            ),
+            _buildStartReadingButton(context, localizations),
           ],
         ],
       ),
@@ -989,6 +984,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         dayData.isCompleted &&
         shareableImageUrl != null &&
         shareableImageUrl.isNotEmpty;
+
+    // From an event the user is already practicing; only Share remains.
+    if (!showShareButton && widget.eventId != null) {
+      return const SizedBox.shrink();
+    }
 
     final buttonStyle = FilledButton.styleFrom(
       backgroundColor: Theme.of(context).colorScheme.onSurface,
