@@ -2250,6 +2250,11 @@ class AppLocalizationsNe extends AppLocalizations {
       'मलाई WeBuddhist को यो कविता मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें।';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'म WeBuddhist मा यो डिजिटल माला प्रयोग गर्दैछु र तपाईंसँग साझा गर्न चाहन्थें। जहाँ जानुभए पनि अभ्यास गर्न सजिलो तरिका हो।';
 
