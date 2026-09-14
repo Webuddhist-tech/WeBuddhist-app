@@ -1939,7 +1939,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get following => 'རྗེས་འབྲང་ཟིན།';
 
   @override
-  String get calendar_title => 'ཟླ་ཐོ།';
+  String get calendar_title => 'ལོ་ཐོ།';
 
   @override
   String get calendar_upcoming_events => 'འབྱུང་འགྱུར་བྱེད་སྒོ།';

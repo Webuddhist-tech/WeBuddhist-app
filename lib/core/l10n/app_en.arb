@@ -201,7 +201,7 @@
   "my_recitation_collection_delete_message": "This collection will be permanently removed.",
   "my_recitation_collection_fallback_title": "Chant collection",
   "my_recitation_collection_unavailable": "No longer available",
-  "my_recitation_collection_chant_count": "{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}",
+  "my_recitation_collection_chant_count": "{count, plural,\n=0 {0 chants}\n=1 {1 chant}\nother {{count} chants}\n}",
   "@my_recitation_collection_chant_count": {
     "placeholders": {
       "count": {
@@ -209,7 +209,7 @@
       }
     }
   },
-  "my_recitation_collection_chant_count_owner": "{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}",
+  "my_recitation_collection_chant_count_owner": "{count, plural,\n=0 {0 chants • me}\n=1 {1 chant • me}\nother {{count} chants • me}\n}",
   "@my_recitation_collection_chant_count_owner": {
     "placeholders": {
       "count": {
@@ -253,7 +253,7 @@
   "profile_guest_benefit_notifications": "Custom notifications",
   "auth_drawer_title": "Log in to continue",
   "auth_drawer_subtitle": "Continue your practice on any device, wherever you go.",
-  "routine_delete_block_message": "The session and all its items will be removed",
+  "routine_delete_block_message": "The time block and all its items will be removed",
   "something_went_wrong": "Something went wrong. Please try again",
   "onboarding_quote_citation": "— Dhammapada 122",
   "onboarding_traditions_question": "Which traditions\ndo you follow?",
@@ -627,8 +627,8 @@
   "routine_empty_description": "Explore more teachings and practices to add to your routine",
   "routine_build": "Build your routine",
   "routine_add_session": "Add to session",
-  "routine_edit_title": "Edit your practices",
-  "routine_delete_block": "Remove session",
+  "routine_edit_title": "Edit your routine",
+  "routine_delete_block": "Remove block",
   "routine_session_title_hint": "Title...",
   "routine_expand_all": "Expand all",
   "routine_collapse_all": "Collapse all",
@@ -656,8 +656,8 @@
     }
   },
   "routine_empty_block_add_items": "Add items",
-  "routine_empty_block_delete_singular": "Remove session",
-  "routine_empty_block_delete_plural": "Remove sessions",
+  "routine_empty_block_delete_singular": "Remove block",
+  "routine_empty_block_delete_plural": "Remove blocks",
   "routine_notification_title": "Make practice a habit",
   "routine_notification_description": "Allow notifications so we can remind you to practice",
   "routine_notification_enable": "Enable notifications",
