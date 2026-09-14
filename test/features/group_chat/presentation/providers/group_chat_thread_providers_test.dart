@@ -1834,6 +1834,71 @@ void main() {
       expect(_byId(notifier, 'm0').deletedAt, isNull);
     });
 
+    test('a refresh keeps the quote a tombstone when the original is outside '
+        'the window', () async {
+      // The server does not stamp `deleted_at` onto an embedded parent, so
+      // the refetched reply quotes the original as live.
+      final reply = ChatMessageDTO(
+        id: 'r1',
+        roomId: 'room-1',
+        senderId: 'b',
+        senderEmail: 'b@example.com',
+        body: 'ok',
+        createdAt: '2026-08-28T12:01:00Z',
+        parent: const ChatMessageParentDTO(
+          id: 'gone',
+          senderId: 'a',
+          senderEmail: 'a@example.com',
+          body: 'hello',
+          createdAt: '2026-08-28T12:00:00Z',
+        ),
+      );
+      repository = _FakeGroupChatRepository(history: [reply, _message('m0')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      // No fetch in flight: nothing is held for a page, only remembered.
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').parent?.deletedAt, isNotNull);
+
+      await notifier.refreshLatest();
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+    });
+
+    test('a reply arriving after its original was deleted quotes a '
+        'tombstone', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m0')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+
+      notifier.appendLive(
+        ChatMessageDTO(
+          id: 'r1',
+          roomId: 'room-1',
+          senderId: 'b',
+          senderEmail: 'b@example.com',
+          body: 'ok',
+          createdAt: '2026-08-28T12:01:00Z',
+          parent: const ChatMessageParentDTO(
+            id: 'gone',
+            senderId: 'a',
+            senderEmail: 'a@example.com',
+            body: 'hello',
+            createdAt: '2026-08-28T12:00:00Z',
+          ),
+        ),
+      );
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+    });
+
     test('a deletion for a message no page brings back is dropped', () async {
       repository = _FakeGroupChatRepository(history: [_message('m0')]);
       container = buildContainer();

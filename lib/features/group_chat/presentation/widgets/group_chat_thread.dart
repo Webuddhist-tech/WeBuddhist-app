@@ -83,6 +83,12 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   /// the pill can be gone while that row is still selected.
   String? _pillMessageId;
 
+  /// True from the moment the delete dialog is confirmed until the request
+  /// settles. The selection stays on screen meanwhile, so without this the
+  /// header would offer Delete again and a second confirm would send the
+  /// same ids on top of a request still running.
+  bool _deleteInFlight = false;
+
   /// Gap between the pill and the bubble it floats over.
   static const double _pillGap = 8;
 
@@ -405,6 +411,7 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
       _selectedMessages,
       currentUserId: _viewerId,
       currentUserEmail: _viewerEmail,
+      deleteInFlight: _deleteInFlight,
     );
     widget.onSelectionChanged(
       ChatSelection(
@@ -417,6 +424,30 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
         onClear: _clearSelection,
       ),
     );
+  }
+
+  /// Drops from the selection — and from under the pill — any row that has
+  /// stopped being selectable since it was picked: tombstoned by a live
+  /// `message_deleted`, or gone from a restarted window.
+  ///
+  /// Runs on every thread change while something is selected. The header
+  /// holds the gates it was last handed, so a row that turns into a
+  /// tombstone underneath it would otherwise keep Reply, Copy and Delete on
+  /// offer for a message that no longer has a body.
+  void _reconcileSelection(List<ChatMessageDTO> messages) {
+    if (!_hasSelection && _pillMessageId == null) return;
+
+    final stale = chatSelectionStaleIds([
+      ..._selectedIds,
+      if (_pillMessageId case final pillId?) pillId,
+    ], messages);
+    if (stale.isEmpty) return;
+
+    if (stale.contains(_pillMessageId)) _hidePill();
+    if (_selectedIds.any(stale.contains)) {
+      _selectedIds.removeAll(stale);
+      _publishSelection();
+    }
   }
 
   /// Places the pill above [message]'s bubble, aligned to the bubble's near
@@ -566,6 +597,9 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   /// be tapped again. The selection only stays behind the dialog (mock 5);
   /// the pill does not.
   Future<void> _deleteSelection() async {
+    // The header greys Delete for the duration, but a tap already queued
+    // when the first confirm landed can still arrive here.
+    if (_deleteInFlight) return;
     final targets = _selectedMessages;
     // All or nothing: a selection holding anyone else's message offers no
     // Delete at all, and this must not quietly delete the own subset either.
@@ -575,7 +609,7 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     if (!await confirmChatMessageDelete(context, count: targets.length)) {
       return;
     }
-    if (!mounted) return;
+    if (!mounted || _deleteInFlight) return;
 
     // Resolved before the await for the same reason as `_toggleReaction`:
     // leaving the screen mid-request deactivates this element.
@@ -583,9 +617,18 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final l10n = context.l10n;
     final notifier = ref.read(groupChatThreadProvider(widget.roomId).notifier);
 
-    final outcome = await notifier.deleteMessages([
-      for (final message in targets) message.id,
-    ]);
+    // Published so the header greys Delete before the request goes out, and
+    // released before the selection is republished below either way.
+    _deleteInFlight = true;
+    _publishSelection();
+    final ChatDeleteOutcome outcome;
+    try {
+      outcome = await notifier.deleteMessages([
+        for (final message in targets) message.id,
+      ]);
+    } finally {
+      _deleteInFlight = false;
+    }
     if (!mounted) return;
 
     if (outcome.failed.isEmpty) {
@@ -619,6 +662,10 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final user = ref.watch(userProvider).user;
 
     ref.listen(groupChatThreadProvider(widget.roomId), (_, next) {
+      // Before the arrival check: a deletion changes rows without changing
+      // which one is newest, and it is exactly what the selection has to
+      // hear about.
+      _reconcileSelection(next.messages);
       if (next.messages.isEmpty) return;
       final newest = next.messages.first;
       // Only an arrival counts; `skip`, loading flags and reaction edits all

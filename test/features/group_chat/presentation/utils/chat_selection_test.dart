@@ -99,6 +99,46 @@ void main() {
       expect(gates.canReport, isFalse);
       expect(gates.showPill, isFalse);
     });
+
+    test('a delete in flight greys Delete but keeps it drawn', () {
+      final gates = chatSelectionGates(
+        [_message('m1', senderId: _me), _message('m2', senderId: _me)],
+        currentUserId: _me,
+        currentUserEmail: _myEmail,
+        deleteInFlight: true,
+      );
+
+      expect(gates.showDelete, isTrue);
+      expect(gates.canDelete, isFalse);
+      // Nothing else is held back by it.
+      expect(gates.canCopy, isTrue);
+    });
+  });
+
+  group('chatSelectionStaleIds', () {
+    test('a row tombstoned since it was picked is stale', () {
+      final stale = chatSelectionStaleIds(
+        ['m1', 'm2'],
+        [_message('m1', deletedAt: '2026-09-10T12:01:00Z'), _message('m2')],
+      );
+
+      expect(stale, {'m1'});
+    });
+
+    test('a row no longer in the loaded window is stale', () {
+      final stale = chatSelectionStaleIds(['m1', 'gone'], [_message('m1')]);
+
+      expect(stale, {'gone'});
+    });
+
+    test('a live selection has nothing stale', () {
+      final stale = chatSelectionStaleIds(
+        ['m1', 'm2'],
+        [_message('m2'), _message('m1'), _message('m0')],
+      );
+
+      expect(stale, isEmpty);
+    });
   });
 
   group('selection membership', () {

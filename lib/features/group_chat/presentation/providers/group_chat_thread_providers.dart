@@ -174,6 +174,18 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// over whatever was committed — see [_applyPendingDeletions].
   final Map<String, String> _pendingDeletions = {};
 
+  /// Every deletion this thread has learned of, for as long as it lives.
+  ///
+  /// Unlike [_pendingDeletions] this is never dropped, because the server
+  /// does not yet stamp `deleted_at` onto the parent embedded in a reply.
+  /// A reply's own row carries the marker when refetched, but its quote
+  /// does not: a refresh that replaces the held reply with the server's copy
+  /// would show the deleted original's author and body in the quote again,
+  /// and when the original is outside the loaded window nothing else in the
+  /// thread knows it is gone. Swept over the quotes of every committed row
+  /// instead — see [_withDeletedParent].
+  final Map<String, String> _deletedOriginals = {};
+
   /// How many page requests are in flight. A broadcast is only worth holding
   /// while one of them might be carrying the message it names.
   int _fetchesInFlight = 0;
@@ -204,8 +216,6 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// the map has already forgotten it. Running last, over whatever was
   /// actually committed, treats an inserted row and an already-held one alike.
   void _applyPendingDeletions() {
-    if (_pendingDeletions.isEmpty) return;
-
     var changed = false;
     // Read, not consumed: a second page still in flight can commit the same
     // stale copy, and `_dropStalePending` clears the map once none is
@@ -219,7 +229,30 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       ];
     }
 
+    // Quotes of every original known to be gone, whether or not a fetch was
+    // running: the page just committed carries those quotes as live.
+    if (_deletedOriginals.isNotEmpty) {
+      messages = [
+        for (final message in messages)
+          _withDeletedParent(message, () => changed = true),
+      ];
+    }
+
     if (changed) state = state.copyWith(messages: messages);
+  }
+
+  /// [message] with its quote stamped when the original it quotes is in
+  /// [_deletedOriginals] and the quote is not stamped yet.
+  ChatMessageDTO _withDeletedParent(
+    ChatMessageDTO message,
+    void Function() onChanged,
+  ) {
+    final parent = message.parent;
+    if (parent == null || parent.deletedAt != null) return message;
+    final deletedAt = _deletedOriginals[parent.id];
+    if (deletedAt == null) return message;
+    onChanged();
+    return message.copyWith(parent: parent.copyWith(deletedAt: deletedAt));
   }
 
   /// Anything still held once no fetch is running names a message no page is
@@ -317,8 +350,11 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   void appendLive(ChatMessageDTO message) {
     if (message.id.isEmpty) return;
     if (state.messages.any((existing) => existing.id == message.id)) return;
+    // A reply sent after its original was deleted arrives quoting it as
+    // live, the same way a refetched one does.
+    final stamped = _withDeletedParent(message, () {});
     state = state.copyWith(
-      messages: [message, ...state.messages],
+      messages: [stamped, ...state.messages],
       skip: state.skip + 1,
       total: state.total + 1,
       hasLoaded: true,
@@ -1028,6 +1064,8 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     // that commit, so it is held until no fetch is running. With nothing in
     // flight it is safe to drop: any later fetch carries `deleted_at` itself.
     if (_fetchesInFlight > 0) _pendingDeletions[messageId] = deletedAt;
+    // Kept for good, for the quotes: the first timestamp stands here too.
+    _deletedOriginals.putIfAbsent(messageId, () => deletedAt);
 
     // The original and every loaded reply quoting it, in one pass. The
     // replies are stamped even when the original itself is outside the loaded
