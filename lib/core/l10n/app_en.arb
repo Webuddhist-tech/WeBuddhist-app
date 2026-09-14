@@ -1298,10 +1298,32 @@
   "group_chat_report_retry": "Retry",
   "group_chat_delete": "Delete",
   "group_chat_delete_title": "Delete message?",
-  "group_chat_delete_confirm_body": "This message will be deleted for everyone in this chat.",
-  "group_chat_delete_for_everyone": "Delete for everyone",
+  "group_chat_delete_title_many": "Delete {count} messages?",
+  "@group_chat_delete_title_many": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_confirm_body": "This message will be removed from the chat for everyone.",
   "group_chat_delete_failed": "The message couldn't be deleted.",
-  "group_chat_message_deleted": "You deleted this message",
+  "group_chat_message_deleted_toast": "{count, plural, =1{Message deleted} other{Messages deleted}}",
+  "@group_chat_message_deleted_toast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_selection_limit": "You can select up to {count} messages",
+  "@group_chat_selection_limit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "group_chat_message_deleted_by_sender": "This message was deleted",
   "group_chat_reaction_failed": "Your reaction couldn't be saved.",
   "group_chat_reactions_count": "{count, plural,\n=1 {1 reaction}\nother {{count} reactions}\n}",

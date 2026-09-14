@@ -5176,17 +5176,18 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String group_chat_delete_title_many(int count) => TolgeeBridge.format(
+    localeName,
+    'group_chat_delete_title_many',
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_delete_title_many(count),
+  );
+
+  @override
   String get group_chat_delete_confirm_body => TolgeeBridge.get(
     localeName,
     'group_chat_delete_confirm_body',
     () => _fallback.group_chat_delete_confirm_body,
-  );
-
-  @override
-  String get group_chat_delete_for_everyone => TolgeeBridge.get(
-    localeName,
-    'group_chat_delete_for_everyone',
-    () => _fallback.group_chat_delete_for_everyone,
   );
 
   @override
@@ -5197,10 +5198,19 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get group_chat_message_deleted => TolgeeBridge.get(
+  String group_chat_message_deleted_toast(int count) => TolgeeBridge.format(
     localeName,
-    'group_chat_message_deleted',
-    () => _fallback.group_chat_message_deleted,
+    'group_chat_message_deleted_toast',
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_message_deleted_toast(count),
+  );
+
+  @override
+  String group_chat_selection_limit(int count) => TolgeeBridge.format(
+    localeName,
+    'group_chat_selection_limit',
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_selection_limit(count),
   );
 
   @override

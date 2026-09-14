@@ -2631,17 +2631,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_delete_title => 'Delete message?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'This message will be deleted for everyone in this chat.';
+  String group_chat_delete_title_many(int count) {
+    return 'Delete $count messages?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'Delete for everyone';
+  String get group_chat_delete_confirm_body =>
+      'This message will be removed from the chat for everyone.';
 
   @override
   String get group_chat_delete_failed => 'The message couldn\'t be deleted.';
 
   @override
-  String get group_chat_message_deleted => 'You deleted this message';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Messages deleted',
+      one: 'Message deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'You can select up to $count messages';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'This message was deleted';

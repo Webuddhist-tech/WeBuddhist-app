@@ -2655,17 +2655,32 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_delete_title => 'संदेश हटाएँ?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'यह संदेश इस चैट में सभी के लिए हटा दिया जाएगा।';
+  String group_chat_delete_title_many(int count) {
+    return '$count संदेश हटाएँ?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'सभी के लिए हटाएँ';
+  String get group_chat_delete_confirm_body =>
+      'यह संदेश चैट से सभी के लिए हटा दिया जाएगा।';
 
   @override
   String get group_chat_delete_failed => 'संदेश हटाया नहीं जा सका।';
 
   @override
-  String get group_chat_message_deleted => 'आपने यह संदेश हटा दिया';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'संदेश हटा दिए गए',
+      one: 'संदेश हटा दिया गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'आप अधिकतम $count संदेश चुन सकते हैं';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'यह संदेश हटा दिया गया';

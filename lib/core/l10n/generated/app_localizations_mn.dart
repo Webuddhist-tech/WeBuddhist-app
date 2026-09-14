@@ -2662,17 +2662,32 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_chat_delete_title => 'Мессежийг устгах уу?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'Энэ мессеж энэ чат дахь бүх хүний хувьд устгагдана.';
+  String group_chat_delete_title_many(int count) {
+    return '$count мессежийг устгах уу?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'Бүгдээс устгах';
+  String get group_chat_delete_confirm_body =>
+      'Энэ мессеж чатаас бүх хүний хувьд устгагдана.';
 
   @override
   String get group_chat_delete_failed => 'Мессежийг устгаж чадсангүй.';
 
   @override
-  String get group_chat_message_deleted => 'Та энэ мессежийг устгасан';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Мессежүүд устгагдлаа',
+      one: 'Мессеж устгагдлаа',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'Та хамгийн ихдээ $count мессеж сонгох боломжтой';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'Энэ мессежийг устгасан';

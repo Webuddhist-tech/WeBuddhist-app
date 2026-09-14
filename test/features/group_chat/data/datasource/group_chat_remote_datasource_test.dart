@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
@@ -40,6 +41,53 @@ GroupChatRemoteDatasource _datasource(
 }
 
 void main() {
+  group('GroupChatRemoteDatasource.deleteMessages', () {
+    test('sends the ids in a JSON body on the collection, expects 204', () async {
+      late RequestOptions sent;
+      final ds = _datasource((options) async {
+        sent = options;
+        return _status(204);
+      });
+
+      await expectLater(
+        ds.deleteMessages('r1', messageIds: ['m1', 'm2']),
+        completes,
+      );
+
+      expect(sent.method, 'DELETE');
+      expect(sent.path, '/chat/rooms/r1/messages');
+      expect(sent.uri.query, isEmpty);
+      // `DeleteChatMessagesRequest` in the spec: the body, not the query,
+      // which the server answered with 422 "body: Field required".
+      expect(sent.data, {
+        'message_ids': ['m1', 'm2'],
+      });
+    });
+
+    test('a 404 or 405 means the route is not deployed', () async {
+      for (final status in [404, 405]) {
+        final ds = _datasource((_) async => _status(status));
+        await expectLater(
+          ds.deleteMessages('r1', messageIds: ['m1', 'm2']),
+          throwsA(isA<ChatBulkDeleteUnsupportedException>()),
+        );
+      }
+    });
+
+    test('any other refusal surfaces as an ordinary exception', () async {
+      final ds = _datasource((_) async => _status(500));
+      await expectLater(
+        ds.deleteMessages('r1', messageIds: ['m1', 'm2']),
+        throwsA(
+          allOf(
+            isA<Exception>(),
+            isNot(isA<ChatBulkDeleteUnsupportedException>()),
+          ),
+        ),
+      );
+    });
+  });
+
   group('GroupChatRemoteDatasource.reportMessage', () {
     test(
       'posts the reason, and the description only when there is one',

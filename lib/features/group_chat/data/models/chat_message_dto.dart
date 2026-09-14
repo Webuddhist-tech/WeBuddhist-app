@@ -73,6 +73,7 @@ class ChatMessageDTO extends Equatable {
   ChatMessageDTO copyWith({
     String? body,
     String? deletedAt,
+    ChatMessageParentDTO? parent,
     List<ChatMessageReactionDTO>? reactions,
   }) {
     return ChatMessageDTO(
@@ -85,7 +86,7 @@ class ChatMessageDTO extends Equatable {
       body: body ?? this.body,
       createdAt: createdAt,
       deletedAt: deletedAt ?? this.deletedAt,
-      parent: parent,
+      parent: parent ?? this.parent,
       reactions: reactions ?? this.reactions,
     );
   }

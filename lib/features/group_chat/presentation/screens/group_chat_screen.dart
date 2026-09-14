@@ -28,6 +28,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_error_state.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reply_preview.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_selection_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_thread.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
@@ -100,6 +101,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
 
   /// The message a reply is being composed for, quoted above the composer.
   ChatMessageDTO? _replyingTo;
+
+  /// Messages selected in the thread, or null. While set, the header becomes
+  /// the selection bar. The thread owns the selection; this is a view of it.
+  ChatSelection? _selection;
 
   /// Draft link previews the sender closed, so a dismissed card does not come
   /// straight back on the next keystroke.
@@ -528,6 +533,11 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
 
   void _cancelReply() => setState(() => _replyingTo = null);
 
+  void _onSelectionChanged(ChatSelection? selection) {
+    if (!mounted || _disposed) return;
+    setState(() => _selection = selection);
+  }
+
   Future<void> _send() async {
     final body = _bodyController.text.trim();
     if (body.isEmpty || _sending) return;
@@ -664,6 +674,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
                 roomId: roomId,
                 groupId: widget.groupId,
                 onReply: _startReply,
+                onSelectionChanged: _onSelectionChanged,
               ),
       },
       // A confirmed member may always write: a lookup that found no room, or
@@ -680,6 +691,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(userProvider).user;
+    final selection = _selection;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -689,45 +701,71 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         bottom: false,
         child: Column(
           children: [
-            GroupChatHeader(isDark: isDark, onBack: _goBack, profile: profile),
+            // The selection bar and the header share a footprint, so the
+            // thread does not jump when they swap.
+            selection == null
+                ? GroupChatHeader(
+                  isDark: isDark,
+                  onBack: _goBack,
+                  profile: profile,
+                )
+                : GroupChatSelectionHeader(
+                  isDark: isDark,
+                  selection: selection,
+                ),
             Expanded(child: body),
-            if (showComposer)
-              // Watches the draft directly, so the rest of the screen does not
-              // rebuild on every keystroke.
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _bodyController,
-                builder: (context, value, _) {
-                  final url = firstChatLinkUrl(value.text);
-                  if (url == null || _dismissedPreviews.contains(url)) {
-                    return const SizedBox.shrink();
-                  }
-                  return GroupChatComposerLinkPreview(
-                    url: url,
-                    onDismiss:
-                        () => setState(() => _dismissedPreviews.add(url)),
-                  );
-                },
-              ),
-            if (showComposer && _replyingTo != null)
-              GroupChatReplyPreview(
-                message: _replyingTo!,
-                onCancel: _cancelReply,
-              ),
-            if (showComposer)
-              GroupChatComposer(
-                controller: _bodyController,
-                focusNode: _bodyFocusNode,
-                hintText: context.l10n.group_chat_message_hint,
-                isSending: _sending,
-                onSubmit: _send,
-                avatarUrl: user?.avatarUrl,
-                displayName:
-                    joinChatName(user?.firstName, user?.lastName) ??
-                    user?.email,
-              ),
           ],
         ),
       ),
+      // In the bottom slot rather than the body column, so a floating
+      // snackbar is laid out above the composer instead of over it. The
+      // composer still pads itself for the keyboard and the home indicator.
+      bottomNavigationBar:
+          showComposer
+              ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Watches the draft directly, so the rest of the screen does
+                  // not rebuild on every keystroke.
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _bodyController,
+                    builder: (context, value, _) {
+                      final url = firstChatLinkUrl(value.text);
+                      if (url == null || _dismissedPreviews.contains(url)) {
+                        return const SizedBox.shrink();
+                      }
+                      return GroupChatComposerLinkPreview(
+                        url: url,
+                        onDismiss:
+                            () => setState(() => _dismissedPreviews.add(url)),
+                      );
+                    },
+                  ),
+                  if (_replyingTo != null)
+                    GroupChatReplyPreview(
+                      message: _replyingTo!,
+                      onCancel: _cancelReply,
+                      isOwnMessage: isSelfChatMessage(
+                        senderId: _replyingTo!.senderId,
+                        senderEmail: _replyingTo!.senderEmail,
+                        currentUserId: _viewerId,
+                        currentUserEmail: _viewerEmail,
+                      ),
+                    ),
+                  GroupChatComposer(
+                    controller: _bodyController,
+                    focusNode: _bodyFocusNode,
+                    hintText: context.l10n.group_chat_message_hint,
+                    isSending: _sending,
+                    onSubmit: _send,
+                    avatarUrl: user?.avatarUrl,
+                    displayName:
+                        joinChatName(user?.firstName, user?.lastName) ??
+                        user?.email,
+                  ),
+                ],
+              )
+              : null,
     );
   }
 

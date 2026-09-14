@@ -4694,17 +4694,17 @@ abstract class AppLocalizations {
   /// **'Delete message?'**
   String get group_chat_delete_title;
 
+  /// No description provided for @group_chat_delete_title_many.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} messages?'**
+  String group_chat_delete_title_many(int count);
+
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'This message will be deleted for everyone in this chat.'**
+  /// **'This message will be removed from the chat for everyone.'**
   String get group_chat_delete_confirm_body;
-
-  /// No description provided for @group_chat_delete_for_everyone.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for everyone'**
-  String get group_chat_delete_for_everyone;
 
   /// No description provided for @group_chat_delete_failed.
   ///
@@ -4712,11 +4712,17 @@ abstract class AppLocalizations {
   /// **'The message couldn\'t be deleted.'**
   String get group_chat_delete_failed;
 
-  /// No description provided for @group_chat_message_deleted.
+  /// No description provided for @group_chat_message_deleted_toast.
   ///
   /// In en, this message translates to:
-  /// **'You deleted this message'**
-  String get group_chat_message_deleted;
+  /// **'{count, plural, =1{Message deleted} other{Messages deleted}}'**
+  String group_chat_message_deleted_toast(int count);
+
+  /// No description provided for @group_chat_selection_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can select up to {count} messages'**
+  String group_chat_selection_limit(int count);
 
   /// No description provided for @group_chat_message_deleted_by_sender.
   ///
