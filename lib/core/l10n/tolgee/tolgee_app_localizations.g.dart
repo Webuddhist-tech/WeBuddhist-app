@@ -3194,6 +3194,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get reader_languages_title => TolgeeBridge.get(
+    localeName,
+    'reader_languages_title',
+    () => _fallback.reader_languages_title,
+  );
+
+  @override
+  String get reader_original_label => TolgeeBridge.get(
+    localeName,
+    'reader_original_label',
+    () => _fallback.reader_original_label,
+  );
+
+  @override
+  String get reader_translation_label => TolgeeBridge.get(
+    localeName,
+    'reader_translation_label',
+    () => _fallback.reader_translation_label,
+  );
+
+  @override
   String get version_not_available => TolgeeBridge.get(
     localeName,
     'version_not_available',

@@ -1575,6 +1575,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get parallel_version => '對讀版本';
 
   @override
+  String get reader_languages_title => '語言';
+
+  @override
+  String get reader_original_label => '原文';
+
+  @override
+  String get reader_translation_label => '譯文';
+
+  @override
   String get version_not_available => '無可用版本';
 
   @override

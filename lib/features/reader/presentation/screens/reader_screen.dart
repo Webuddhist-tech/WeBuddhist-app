@@ -32,16 +32,15 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_action
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_languages_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_more_bottom_sheet.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_translate_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/reader_translation_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_gestures/swipe_navigation_wrapper.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_search/reader_search_delegate.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_settings_screen.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_languages_sheet.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
@@ -601,7 +600,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  /// Embedded: a close bar with font size and translate instead of the app bar.
+  /// Embedded: a close bar with font size and languages instead of the app bar.
   Widget _buildAppBar(
     BuildContext context,
     ReaderState state,
@@ -614,11 +613,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
-          ReaderTranslateButton(params: _params),
-          IconButton(
-            icon: const Icon(AppAssets.readerVersionSettings),
-            tooltip: context.l10n.parallel_version,
-            onPressed: () => _openReaderSettings(context, textDetail),
+          ReaderLanguagesButton(
+            params: _params,
+            onPressed: () => _openLanguagesSheet(context, textDetail),
           ),
         ],
       );
@@ -627,6 +624,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       params: _params,
       colorIndex: widget.colorIndex,
       onSearchPressed: () => _handleSearch(context, state),
+      onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       onMorePressed: () => _openMoreBottomSheet(context, textDetail),
     );
   }
@@ -744,7 +742,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<void> _openReaderSettings(
+  Future<void> _openLanguagesSheet(
     BuildContext context,
     TextDetail? textDetail,
   ) async {
@@ -753,33 +751,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     notifier.closeCommentary();
     notifier.closeTranslation();
 
-    // Pass the currently-loaded primary display so the settings screen can
-    // show it under "Main text" without the reader notifier having to write
-    // into a global settings store as a side effect. The backend returns a
-    // raw language code (e.g. "bo") — render it through getLanguageName so
-    // the user sees "Tibetan", not "bo". `versionId` in this API is just the
-    // loaded text's id, so textDetail.id / textDetail.title pre-fill the
-    // version row of the Main text card.
+    // Snapshot of the loaded text so the drawer can show it as "Original".
     final languageCode = textDetail?.language ?? 'en';
-    final initialPrimaryDisplay = ReaderSlotConfig(
+    final primaryDisplay = ReaderSlotConfig(
       languageCode: languageCode,
       languageLabel: getLanguageName(languageCode, context),
       versionId: textDetail?.id,
       versionLabel: textDetail?.title,
     );
 
-    if (_isEmbedded) {
-      await showReaderSettingsSheet(
-        context,
-        textId: widget.textId,
-        initialPrimaryDisplay: initialPrimaryDisplay,
-      );
-      return;
-    }
-    await openReaderSettings(
+    await showReaderLanguagesSheet(
       context,
       textId: widget.textId,
-      initialPrimaryDisplay: initialPrimaryDisplay,
+      primaryDisplay: primaryDisplay,
     );
   }
 
@@ -805,7 +789,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               : null,
       onAddOfflineRecitation:
           _isGroupAccumulatorChant ? _addOfflineChantCount : null,
-      onParallelVersion: () => _openReaderSettings(context, textDetail),
     );
   }
 

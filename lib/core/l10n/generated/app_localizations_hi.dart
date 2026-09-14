@@ -1666,6 +1666,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get parallel_version => 'समानांतर संस्करण';
 
   @override
+  String get reader_languages_title => 'भाषाएँ';
+
+  @override
+  String get reader_original_label => 'मूल';
+
+  @override
+  String get reader_translation_label => 'अनुवाद';
+
+  @override
   String get version_not_available => 'उपलब्ध नहीं है';
 
   @override

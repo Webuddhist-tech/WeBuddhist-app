@@ -1664,6 +1664,15 @@ class AppLocalizationsMn extends AppLocalizations {
   String get parallel_version => 'Зэрэгцээ хувилбар';
 
   @override
+  String get reader_languages_title => 'Хэл';
+
+  @override
+  String get reader_original_label => 'Эх бичвэр';
+
+  @override
+  String get reader_translation_label => 'Орчуулга';
+
+  @override
   String get version_not_available => 'Байхгүй';
 
   @override

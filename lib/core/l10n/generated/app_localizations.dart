@@ -3004,6 +3004,24 @@ abstract class AppLocalizations {
   /// **'Parallel version'**
   String get parallel_version;
 
+  /// No description provided for @reader_languages_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Languages'**
+  String get reader_languages_title;
+
+  /// No description provided for @reader_original_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get reader_original_label;
+
+  /// No description provided for @reader_translation_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get reader_translation_label;
+
   /// No description provided for @version_not_available.
   ///
   /// In en, this message translates to:

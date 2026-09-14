@@ -1672,6 +1672,15 @@ class AppLocalizationsBo extends AppLocalizations {
   String get parallel_version => 'ཀློག་མཁན་གྱི་སྒྲིག་འགོད།';
 
   @override
+  String get reader_languages_title => 'སྐད་ཡིག';
+
+  @override
+  String get reader_original_label => 'མ་ཡིག';
+
+  @override
+  String get reader_translation_label => 'འགྱུར་མ།';
+
+  @override
   String get version_not_available => 'མི་འདུག';
 
   @override

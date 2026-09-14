@@ -1653,6 +1653,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get parallel_version => 'Parallel version';
 
   @override
+  String get reader_languages_title => 'Languages';
+
+  @override
+  String get reader_original_label => 'Original';
+
+  @override
+  String get reader_translation_label => 'Translation';
+
+  @override
   String get version_not_available => 'Not available';
 
   @override

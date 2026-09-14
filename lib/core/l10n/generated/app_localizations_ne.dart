@@ -1677,6 +1677,15 @@ class AppLocalizationsNe extends AppLocalizations {
   String get parallel_version => 'समानान्तर संस्करण';
 
   @override
+  String get reader_languages_title => 'भाषाहरू';
+
+  @override
+  String get reader_original_label => 'मूल';
+
+  @override
+  String get reader_translation_label => 'अनुवाद';
+
+  @override
   String get version_not_available => 'उपलब्ध छैन';
 
   @override
