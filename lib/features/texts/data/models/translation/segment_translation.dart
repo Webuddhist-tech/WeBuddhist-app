@@ -1,43 +1,59 @@
 class SegmentTranslation {
-  final String segmentId;
   final String textId;
   final String title;
-  final String source;
   final String language;
-  final String content;
+  final String? source;
   final String? license;
+  final List<TranslationSegment> segments;
 
   SegmentTranslation({
-    required this.segmentId,
     required this.textId,
     required this.title,
-    required this.source,
     required this.language,
-    required this.content,
+    required this.segments,
+    this.source,
     this.license,
   });
 
   factory SegmentTranslation.fromJson(Map<String, dynamic> json) {
     return SegmentTranslation(
-      segmentId: json['segment_id'] as String? ?? '',
       textId: json['text_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
-      source: json['source'] as String? ?? '',
       language: json['language'] as String? ?? '',
-      content: json['content'] as String? ?? '',
+      source: json['source_link'] as String? ?? json['source'] as String?,
       license: json['license'] as String?,
+      segments: (json['segments'] as List<dynamic>? ?? const [])
+          .map((e) => TranslationSegment.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'segment_id': segmentId,
       'text_id': textId,
       'title': title,
-      'source': source,
       'language': language,
-      'content': content,
+      'source_link': source,
       'license': license,
+      'segments': segments.map((e) => e.toJson()).toList(),
     };
+  }
+}
+
+class TranslationSegment {
+  final String id;
+  final String content;
+
+  TranslationSegment({required this.id, required this.content});
+
+  factory TranslationSegment.fromJson(Map<String, dynamic> json) {
+    return TranslationSegment(
+      id: json['id'] as String? ?? json['segment_id'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'content': content};
   }
 }
