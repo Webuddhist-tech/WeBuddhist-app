@@ -215,8 +215,7 @@ class GroupEventListTile extends StatelessWidget {
     if (recurrenceLabel != null) return '$recurrenceLabel · $time';
 
     final end = event.endDate?.toLocal();
-    final isMultiDay =
-        end != null && !DateUtils.isSameDay(start, end);
+    final isMultiDay = end != null && !DateUtils.isSameDay(start, end);
     if (isMultiDay) {
       return '${dayFormat.format(start)} - ${dayFormat.format(end)}';
     }
