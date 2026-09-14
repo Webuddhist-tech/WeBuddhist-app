@@ -14,22 +14,37 @@ class PracticeAccumulationCircleItem extends StatelessWidget {
   final String language;
   final VoidCallback onTap;
 
+  static const itemWidth = 110.0;
+  static const beadSize = 70.0;
+  static const _labelGap = 8.0;
+  static const _labelMaxLines = 2;
+  static const _titleStyle = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.bold,
+    height: 1.33,
+  );
+
+  // Label height follows the device text scale so large fonts never clip.
+  static double labelHeightOf(BuildContext context) {
+    final scaledFont = MediaQuery.textScalerOf(
+      context,
+    ).scale(_titleStyle.fontSize!);
+    return scaledFont * _titleStyle.height! * _labelMaxLines;
+  }
+
+  static double heightOf(BuildContext context) =>
+      beadSize + _labelGap + labelHeightOf(context);
+
   @override
   Widget build(BuildContext context) {
     final beadUrl = mantra.mantra?.beadImageUrl ?? mantra.beadImageUrl;
     final title = mantra.displayTitle(language);
 
-    const titleStyle = TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.bold,
-      height: 1.33,
-    );
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        width: 110,
+        width: itemWidth,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -39,13 +54,13 @@ class PracticeAccumulationCircleItem extends StatelessWidget {
                   beadUrl != null && beadUrl.isNotEmpty
                       ? CachedNetworkImageWidget(
                         imageUrl: beadUrl,
-                        width: 70,
-                        height: 70,
+                        width: beadSize,
+                        height: beadSize,
                         fit: BoxFit.cover,
                       )
                       : Container(
-                        width: 56,
-                        height: 56,
+                        width: beadSize,
+                        height: beadSize,
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surfaceContainer,
                           shape: BoxShape.circle,
@@ -53,14 +68,14 @@ class PracticeAccumulationCircleItem extends StatelessWidget {
                         child: const Icon(Icons.spa, size: 24),
                       ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: _labelGap),
             SizedBox(
-              height: titleStyle.fontSize! * titleStyle.height! * 2,
+              height: labelHeightOf(context),
               child: Text(
                 title,
-                style: titleStyle,
+                style: _titleStyle,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: _labelMaxLines,
                 overflow: TextOverflow.ellipsis,
               ),
             ),

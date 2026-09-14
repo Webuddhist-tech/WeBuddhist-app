@@ -129,6 +129,30 @@ class MyRecitationCollectionsRemoteDatasource {
     }
   }
 
+  /// PATCH /users/me/recitation-collections/{collectionId}/items/{itemId}
+  ///
+  /// Updates one collection item's fractional `display_order`.
+  Future<MyRecitationCollectionItemModel> updateCollectionItemDisplayOrder({
+    required String collectionId,
+    required String itemId,
+    required double displayOrder,
+  }) async {
+    final request = UpdateMyRecitationCollectionItemDisplayOrderRequest(
+      displayOrder: displayOrder,
+    );
+    final response = await dio.patch(
+      '/users/me/recitation-collections/$collectionId/items/$itemId',
+      data: request.toJson(),
+    );
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Unexpected /users/me/recitation-collections/items display-order payload type',
+      );
+    }
+    return MyRecitationCollectionItemModel.fromJson(data);
+  }
+
   /// POST /users/me/recitation-collections/{collectionId}/items
   ///
   /// Adds chants in a single request (preserving [textIds] order) so a failed
@@ -172,6 +196,72 @@ class MyRecitationCollectionsRemoteDatasource {
       );
       rethrow;
     }
+  }
+
+  /// GET /users/me/recitation-collections/{collectionId}/complete/today
+  Future<MyRecitationCollectionTodayCompletionsResponse> getTodayCompletions({
+    required String collectionId,
+  }) async {
+    final response = await dio.get(
+      '/users/me/recitation-collections/$collectionId/complete/today',
+      options: Options(extra: {'no_cache': true}),
+    );
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Unexpected /users/me/recitation-collections/complete/today payload type',
+      );
+    }
+    return MyRecitationCollectionTodayCompletionsResponse.fromJson(data);
+  }
+
+  /// POST /users/me/recitation-collections/{collectionId}/complete
+  Future<void> completeChant({
+    required String collectionId,
+    required String chantId,
+  }) async {
+    final payload =
+        CompleteMyRecitationCollectionChantRequest(chantId: chantId).toJson();
+
+    try {
+      _logger.debug(
+        'Completing recitation $chantId in collection $collectionId',
+      );
+      final response = await dio.post(
+        '/users/me/recitation-collections/$collectionId/complete',
+        data: payload,
+      );
+      final status = response.statusCode;
+      if (status == null || status < 200 || status >= 300) {
+        throw FormatException(
+          'Unexpected /users/me/recitation-collections/complete status: $status',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) {
+        _logger.info(
+          'Recitation $chantId already completed (409) - treating as success',
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  /// GET /users/me/recitation-collections/{collectionId}/complete/days-count
+  Future<MyRecitationCollectionCompletionDaysCountResponse>
+  getCompletionDaysCount({required String collectionId}) async {
+    final response = await dio.get(
+      '/users/me/recitation-collections/$collectionId/complete/days-count',
+      options: Options(extra: {'no_cache': true}),
+    );
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Unexpected /users/me/recitation-collections/complete/days-count payload type',
+      );
+    }
+    return MyRecitationCollectionCompletionDaysCountResponse.fromJson(data);
   }
 
   static List<String> _uniqueNonEmptyTextIds(List<String> textIds) {

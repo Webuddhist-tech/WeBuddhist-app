@@ -66,6 +66,31 @@ void main() {
     });
   });
 
+  group('isChatViewerKnown', () {
+    test('an id or an email is enough', () {
+      expect(isChatViewerKnown(currentUserId: 'u1'), isTrue);
+      expect(isChatViewerKnown(currentUserEmail: 'me@x.org'), isTrue);
+    });
+
+    test('nothing, empty or blank is unknown', () {
+      // The state while the profile is loading or failed to load. Here
+      // isSelfChatMessage says "not mine" about every message, the viewer's
+      // own included, so that answer must not be taken as a verdict.
+      expect(isChatViewerKnown(), isFalse);
+      expect(isChatViewerKnown(currentUserId: '', currentUserEmail: ''), isFalse);
+      expect(isChatViewerKnown(currentUserId: '  ', currentUserEmail: ' '), isFalse);
+      expect(
+        isSelfChatMessage(
+          senderId: 'u1',
+          senderEmail: 'me@x.org',
+          currentUserId: '',
+          currentUserEmail: null,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('chatSenderDisplayName', () {
     test('prefers the name carried by the message', () {
       expect(

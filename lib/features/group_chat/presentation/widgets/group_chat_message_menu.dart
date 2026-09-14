@@ -38,6 +38,7 @@ Future<ChatMessageMenuResult?> showChatMessageMenu(
   required Rect anchor,
   required Widget message,
   required String? myEmoji,
+  required bool canReport,
   required bool canDelete,
 }) {
   return Navigator.of(context).push<ChatMessageMenuResult>(
@@ -52,6 +53,7 @@ Future<ChatMessageMenuResult?> showChatMessageMenu(
             anchor: anchor,
             message: message,
             myEmoji: myEmoji,
+            canReport: canReport,
             canDelete: canDelete,
           ),
       transitionsBuilder:
@@ -66,12 +68,14 @@ class _ChatMessageMenu extends StatelessWidget {
     required this.anchor,
     required this.message,
     required this.myEmoji,
+    required this.canReport,
     required this.canDelete,
   });
 
   final Rect anchor;
   final Widget message;
   final String? myEmoji;
+  final bool canReport;
   final bool canDelete;
 
   static const double _pillHeight = 56;
@@ -83,7 +87,11 @@ class _ChatMessageMenu extends StatelessWidget {
     final media = MediaQuery.of(context);
     final safeTop = media.padding.top + 8;
     final safeBottom = media.size.height - media.padding.bottom - 8;
-    final cardHeight = 52.0 * (canDelete ? 4 : 3) + 16;
+    // Counted, not assumed: Report and Delete are both conditional now, and a
+    // hardcoded row count would size the card for rows it is not drawing —
+    // which the positioning below then compounds.
+    final rowCount = 2 + (canReport ? 1 : 0) + (canDelete ? 1 : 0);
+    final cardHeight = 52.0 * rowCount + 16;
 
     // A long message cannot be lifted whole. The pill above it and the card
     // below it are the whole point of the menu, and a full-height bubble drove
@@ -157,7 +165,7 @@ class _ChatMessageMenu extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: SizedBox(
                 width: _cardWidth,
-                child: _ActionsCard(canDelete: canDelete),
+                child: _ActionsCard(canReport: canReport, canDelete: canDelete),
               ),
             ),
           ),
@@ -258,8 +266,9 @@ class _PillButton extends StatelessWidget {
 }
 
 class _ActionsCard extends StatelessWidget {
-  const _ActionsCard({required this.canDelete});
+  const _ActionsCard({required this.canReport, required this.canDelete});
 
+  final bool canReport;
   final bool canDelete;
 
   @override
@@ -294,13 +303,14 @@ class _ActionsCard extends StatelessWidget {
             action: ChatMessageAction.copy,
             isDark: isDark,
           ),
-          _ActionRow(
-            icon: AppAssets.warning,
-            label: context.l10n.group_chat_report,
-            action: ChatMessageAction.report,
-            isDark: isDark,
-            isDestructive: true,
-          ),
+          if (canReport)
+            _ActionRow(
+              icon: AppAssets.warning,
+              label: context.l10n.group_chat_report,
+              action: ChatMessageAction.report,
+              isDark: isDark,
+              isDestructive: true,
+            ),
           if (canDelete)
             _ActionRow(
               icon: AppAssets.trash,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_shorts_section.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// A read-only activity list for previewing plan tasks before enrollment.
 /// Mirrors `ActivityList` but works with `PlanTasksModel` (non-enrolled
@@ -14,7 +16,7 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 /// SOURCE_REFERENCE, PlanTextScreen for TEXT/IMAGE) with the unified
 /// [PlanTextItem] list, so the bottom-bar progress works the same as in
 /// the enrolled flow.
-class PreviewActivityList extends StatelessWidget {
+class PreviewActivityList extends ConsumerWidget {
   final String language;
   final List<PlanTasksModel> tasks;
   final List<PlanVideoModel> videos;
@@ -45,7 +47,7 @@ class PreviewActivityList extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (tasks.isEmpty && videos.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -62,7 +64,10 @@ class PreviewActivityList extends StatelessWidget {
           itemBuilder: (context, index) {
             final task = sortedTasks[index];
             final isNavigable = PlanSubtaskNavigation.isPlanTaskNavigable(task);
-            final hasAudio = _taskHasAudio(task);
+            final isGroupAccumulation =
+                PlanSubtaskNavigation.groupAccumulationIdForPlanTask(task) !=
+                null;
+            final hasAudio = !isGroupAccumulation && _taskHasAudio(task);
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
@@ -76,6 +81,7 @@ class PreviewActivityList extends StatelessWidget {
                       onTap:
                           () => _handleActivityTap(
                             context,
+                            ref,
                             task,
                             autoPlay: false,
                           ),
@@ -85,8 +91,12 @@ class PreviewActivityList extends StatelessWidget {
                     const SizedBox(width: 8),
                     _PlayButton(
                       onTap:
-                          () =>
-                              _handleActivityTap(context, task, autoPlay: true),
+                          () => _handleActivityTap(
+                            context,
+                            ref,
+                            task,
+                            autoPlay: true,
+                          ),
                     ),
                   ],
                 ],
@@ -106,9 +116,18 @@ class PreviewActivityList extends StatelessWidget {
 
   void _handleActivityTap(
     BuildContext context,
+    WidgetRef ref,
     PlanTasksModel task, {
     required bool autoPlay,
   }) {
+    final accumulatorId = PlanSubtaskNavigation.groupAccumulationIdForPlanTask(
+      task,
+    );
+    if (accumulatorId != null) {
+      openGroupAccumulatorPractice(context, ref, accumulatorId: accumulatorId);
+      return;
+    }
+
     final planTextItems = PlanSubtaskNavigation.fromPlanTasks(tasks);
     if (planTextItems.isEmpty) return;
 

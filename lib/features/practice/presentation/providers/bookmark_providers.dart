@@ -43,6 +43,8 @@ BookmarkType? bookmarkTypeFromItem(BookmarkItemType type) => switch (type) {
   BookmarkItemType.timer => BookmarkType.timer,
   BookmarkItemType.groupRecitationCollection =>
     BookmarkType.groupRecitationCollection,
+  BookmarkItemType.recitationCollection => BookmarkType.recitationCollection,
+  BookmarkItemType.groupAccumulator => BookmarkType.groupAccumulator,
   BookmarkItemType.plan => null,
 };
 
@@ -238,23 +240,27 @@ void invalidateBookmarkCaches(
 }
 
 /// The tabs shown on the bookmarks screen, in display order.
-enum BookmarkTab { all, plans, chants, mala, timers, texts }
+enum BookmarkTab { all, plans, chants, mala, groupAccumulation, timers, texts }
 
 extension BookmarkTabFilter on BookmarkTab {
   /// Whether [bookmark] belongs under this tab.
   ///
   /// `plans` merges PLAN + SERIES (in-app both are "series" routine items);
   /// `texts` merges TEXT + VERSE client-side (VERSE isn't a server filter
-  /// value); `mala` maps to ACCUMULATOR; `chants` holds chant collections,
-  /// which are containers of texts rather than texts themselves.
+  /// value); `mala` maps to ACCUMULATOR and `groupAccumulation` to
+  /// GROUP_ACCUMULATOR; `chants` holds chant collections, which are containers
+  /// of texts rather than texts themselves.
   bool matches(BookmarkDTO bookmark) => switch (this) {
     BookmarkTab.all => true,
     BookmarkTab.plans =>
       bookmark.type == BookmarkItemType.plan ||
           bookmark.type == BookmarkItemType.series,
     BookmarkTab.chants =>
-      bookmark.type == BookmarkItemType.groupRecitationCollection,
+      bookmark.type == BookmarkItemType.groupRecitationCollection ||
+          bookmark.type == BookmarkItemType.recitationCollection,
     BookmarkTab.mala => bookmark.type == BookmarkItemType.accumulator,
+    BookmarkTab.groupAccumulation =>
+      bookmark.type == BookmarkItemType.groupAccumulator,
     BookmarkTab.timers => bookmark.type == BookmarkItemType.timer,
     BookmarkTab.texts =>
       bookmark.type == BookmarkItemType.text ||

@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comm
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_comments_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ConnectPostCommentTile extends ConsumerStatefulWidget {
@@ -102,8 +103,12 @@ class _ConnectPostCommentTileState
                 ),
               ),
               if (isOwnComment)
-                _CommentActionMenu(
-                  isDark: isDark,
+                ConnectActionMenu(
+                  iconSize: 18,
+                  iconColor:
+                      isDark
+                          ? AppColors.textTertiaryDark
+                          : AppColors.textSecondary,
                   onDelete: () => _confirmDelete(comment),
                 ),
             ],
@@ -204,59 +209,6 @@ class _ConnectPostCommentTileState
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.l10n.connect_comment_delete_failed)),
-    );
-  }
-}
-
-class _CommentActionMenu extends StatelessWidget {
-  const _CommentActionMenu({required this.isDark, required this.onDelete});
-
-  final bool isDark;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: Icon(
-        AppAssets.dotsThreeVertical,
-        size: 18,
-        color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
-      ),
-      padding: EdgeInsets.zero,
-      offset: const Offset(0, 28),
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.12),
-      surfaceTintColor: Colors.transparent,
-      color: isDark ? AppColors.surfaceDark : AppColors.surfaceWhite,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: isDark ? AppColors.grey800 : AppColors.grey300),
-      ),
-      onSelected: (value) {
-        if (value == 'delete') onDelete();
-      },
-      itemBuilder:
-          (context) => [
-            PopupMenuItem<String>(
-              value: 'delete',
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  Icon(AppAssets.trash, size: 18, color: AppColors.error),
-                  const SizedBox(width: 10),
-                  Text(
-                    context.l10n.delete,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.error,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
     );
   }
 }

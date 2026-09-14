@@ -45,7 +45,11 @@ class PlanNavigationBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctx = navigationContext;
     final canSwipe = ctx != null && ctx.canSwipe;
-    final isPlanNavigation = ctx != null && ctx.source == NavigationSource.plan;
+    final isCompletableNavigation =
+        ctx != null &&
+        (ctx.source == NavigationSource.plan ||
+            ctx.source == NavigationSource.groupRecitationCollection ||
+            ctx.source == NavigationSource.myRecitationCollection);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -60,7 +64,7 @@ class PlanNavigationBottomBar extends StatelessWidget {
         child:
             canSwipe
                 ? _buildFullControls(context, ctx)
-                : isPlanNavigation
+                : isCompletableNavigation
                 ? _buildSingleItemControls(context, ctx)
                 : _buildMinimalTitle(context),
       ),

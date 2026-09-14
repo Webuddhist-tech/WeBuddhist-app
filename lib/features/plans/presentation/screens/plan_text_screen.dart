@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigation_bottom_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_segment_audio_controller.dart';
@@ -14,7 +15,6 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_ba
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// Lightweight reading screen for inline plan subtasks (`TEXT` or `IMAGE`).
 ///
@@ -47,6 +47,8 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
   PlanSegmentAudioController? _audioController;
 
   bool get _hasAudio => _audioController?.hasAudio ?? false;
+
+  bool get _isEmbedded => PlanEmbeddedScope.maybeOf(context) != null;
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -139,11 +141,17 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
       data: readerTheme,
       child: Scaffold(
         backgroundColor: readerTheme.scaffoldBackgroundColor,
-        appBar: _buildAppBar(
-          context,
-          currentItem.title,
-          showFontControls: currentItem.isInlineText,
-        ),
+        appBar:
+            _isEmbedded
+                ? _buildEmbeddedHeader(
+                  context,
+                  showFontControls: currentItem.isInlineText,
+                )
+                : _buildAppBar(
+                  context,
+                  currentItem.title,
+                  showFontControls: currentItem.isInlineText,
+                ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onHorizontalDragStart: canSwipe ? _onDragStart : null,
@@ -262,10 +270,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
       elevation: 0,
       leading: IconButton(
         icon: const Icon(AppAssets.arrowLeft),
-        onPressed: () {
-          _audioController?.cancel();
-          context.pop();
-        },
+        onPressed: _close,
       ),
       centerTitle: true,
       actions:
@@ -280,18 +285,41 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
     );
   }
 
+  PreferredSizeWidget _buildEmbeddedHeader(
+    BuildContext context, {
+    required bool showFontControls,
+  }) {
+    return PlanEmbeddedHeader(
+      onClose: _close,
+      actions: [
+        if (showFontControls)
+          ReaderFontSizeButton(
+            onPressed: () => showFontSizeBottomSheet(context),
+          ),
+      ],
+    );
+  }
+
   Widget _buildMissingContentScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        leading: IconButton(
-          icon: const Icon(AppAssets.arrowLeft),
-          onPressed: () => context.pop(),
-        ),
-      ),
+      appBar:
+          _isEmbedded
+              ? PlanEmbeddedHeader(onClose: _close)
+              : AppBar(
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                leading: IconButton(
+                  icon: const Icon(AppAssets.arrowLeft),
+                  onPressed: _close,
+                ),
+              ),
       body: Center(child: Text(context.l10n.no_content)),
     );
+  }
+
+  void _close() {
+    _audioController?.cancel();
+    PlanNavigator.pop(context);
   }
 
   // ─── Drag / swipe ──────────────────────────────────────────────────────
@@ -366,6 +394,6 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
         .read(planSubtaskCompletionProvider)
         .completeCurrent(widget.navigationContext);
     if (!mounted) return;
-    context.pop();
+    PlanNavigator.pop(context);
   }
 }

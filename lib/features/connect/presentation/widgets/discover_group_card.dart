@@ -39,8 +39,6 @@ class DiscoverGroupCard extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final subtitleColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.cardBackgroundLight;
     final followKey = GroupFollowKey(
       groupId: group.id,
       groupType: group.groupType,
@@ -86,27 +84,16 @@ class DiscoverGroupCard extends ConsumerWidget {
       child: InkWell(
         onTap: () => context.push('/home/group/${group.id}'),
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: EdgeInsets.all(hasTibetanText ? 14 : 12),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow:
-                isDark
-                    ? null
-                    : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: hasTibetanText ? 10 : 8,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               _GroupAvatar(group: group, isDark: isDark),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +112,7 @@ class DiscoverGroupCard extends ConsumerWidget {
                               )
                               : null,
                     ),
-                    SizedBox(height: hasTibetanText ? 6 : 4),
+                    SizedBox(height: hasTibetanText ? 4 : 2),
                     Text(
                       subtitleText,
                       maxLines: 1,
@@ -157,10 +144,6 @@ class DiscoverGroupCard extends ConsumerWidget {
   }
 
   String _subtitle(BuildContext context, int countDelta) {
-    final typeLabel =
-        group.tags.isNotEmpty
-            ? group.tags.first
-            : (group.subTitle ?? group.groupType.name);
     final memberCount = (group.memberOrFollowerCount + countDelta).clamp(
       0,
       1 << 31,
@@ -175,9 +158,9 @@ class DiscoverGroupCard extends ConsumerWidget {
             : context.l10n.group_members;
 
     if (context.isTibetanLocale) {
-      return '$typeLabel · $memberLabel ${toTibetanDigits(formattedCount)}';
+      return '$memberLabel ${toTibetanDigits(formattedCount)}';
     }
-    return '$typeLabel · $formattedCount $memberLabel';
+    return '$formattedCount $memberLabel';
   }
 
   String _formatCompactCount(int count, String locale) {
@@ -275,9 +258,7 @@ class _JoinButton extends ConsumerWidget {
         style: TextButton.styleFrom(
           backgroundColor:
               isPending
-                  ? (isDark
-                      ? AppColors.surfaceVariantDark
-                      : AppColors.grey100)
+                  ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
                   : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary),
           foregroundColor:
               isPending

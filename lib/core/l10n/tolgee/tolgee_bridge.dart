@@ -1,35 +1,50 @@
 import 'package:intl/message_format.dart';
-import 'package:tolgee/tolgee.dart';
 
 import 'tolgee_locale_map.dart';
 
 /// Runtime lookup layer sitting between the generated `AppLocalizations`
-/// overrides and the Tolgee SDK.
+/// overrides and the Content Delivery payload.
 ///
 /// Every lookup falls back to the bundled ARB translation, so the app behaves
-/// exactly as it did before Tolgee whenever the SDK is disabled, still loading,
+/// exactly as it did before Tolgee whenever it is disabled, still loading,
 /// offline, or missing the key.
+///
+/// The strings are held here rather than read back out of the Tolgee SDK: the
+/// SDK cannot serve a multi-part language tag, which left `bo` and `zh`
+/// resolving nothing at all. See [TolgeeCdn].
 class TolgeeBridge {
   TolgeeBridge._();
 
-  /// Set to true only after [Tolgee.init] succeeds. While false the bridge is
+  /// True only while [_strings] holds a payload. While false the bridge is
   /// completely inert and every lookup resolves to the bundled ARB value.
-  static bool active = false;
+  static bool get active => _strings.isNotEmpty;
 
-  /// Cached raw Tolgee strings for the current revision. A stored `null` means
-  /// "known miss" and is preserved so repeated lookups stay O(1) — the SDK
-  /// itself does a linear scan over every key on each `translate` call.
-  static final Map<String, String?> _cache = <String, String?>{};
+  /// The loaded payload, keyed exactly as the CDN publishes it.
+  static Map<String, String> _strings = const <String, String>{};
 
-  /// Drops the memoized lookups. Called whenever Tolgee reports new data or the
-  /// language changes.
-  static void invalidate() => _cache.clear();
+  /// App language code the payload belongs to (`bo`, `zh`, …), used to refuse
+  /// serving one language's strings while another is on screen.
+  static String? _language;
+
+  /// Adopts a freshly fetched payload for [languageCode].
+  static void load({
+    required String languageCode,
+    required Map<String, String> strings,
+  }) {
+    _language = TolgeeLocaleMap.appLanguageCodeOf(languageCode);
+    _strings = strings;
+  }
+
+  /// Drops the loaded payload, making the bridge inert until the next load.
+  /// Called before a fetch so the previous language cannot leak into the new
+  /// one while it is in flight.
+  static void invalidate() {
+    _strings = const <String, String>{};
+    _language = null;
+  }
 
   /// Resets all bridge state. Used by tests.
-  static void reset() {
-    active = false;
-    _cache.clear();
-  }
+  static void reset() => invalidate();
 
   /// Resolves a translation with no placeholders.
   static String get(String localeName, String key, String Function() fallback) {
@@ -59,42 +74,30 @@ class TolgeeBridge {
   }
 
   static String? _raw(String localeName, String key) {
-    if (!active) {
+    if (!_matchesLoadedLanguage(localeName)) {
       return null;
     }
-    if (!_matchesCurrentLanguage(localeName)) {
+    final String? value = _strings[key];
+    // An empty string is a key that exists but says nothing; the bundled value
+    // is better than blank UI.
+    if (value == null || value.isEmpty) {
       return null;
     }
-    return _cache.putIfAbsent(key, () {
-      // The SDK returns the key itself (ignoring defaultValue) when it has no
-      // current language, and returns defaultValue when the key is missing.
-      // Passing the key as the default collapses both cases into one check.
-      final String value = Tolgee.translate(key: key, defaultValue: key);
-      if (value == key || value.isEmpty) {
-        return null;
-      }
-      return value;
-    });
+    return value;
   }
 
   /// Guards against serving strings for the wrong language.
   ///
-  /// Tolgee holds exactly one language in memory at a time and swaps it
-  /// asynchronously. Until its fetch for the new language lands, the requested
-  /// locale and the loaded one disagree, and serving the loaded one would mix
-  /// languages in the UI.
+  /// Only one payload is held at a time and it is swapped asynchronously. Until
+  /// the fetch for a newly chosen language lands, the requested locale and the
+  /// loaded one disagree, and serving the loaded one would mix languages in the
+  /// UI.
   ///
   /// CDN tags like `bo-IN` / `zh-Hant-TW` are treated as matching app locales
   /// `bo` / `zh` via [TolgeeLocaleMap].
-  static bool _matchesCurrentLanguage(String localeName) {
-    try {
-      return TolgeeLocaleMap.matchesAppLocale(
-        localeName,
-        Tolgee.currentLocale,
-      );
-    } catch (_) {
-      // `Tolgee.currentLocale` throws when the SDK is not initialized.
-      return false;
-    }
+  static bool _matchesLoadedLanguage(String localeName) {
+    final String? loaded = _language;
+    if (loaded == null) return false;
+    return TolgeeLocaleMap.appLanguageCodeOf(localeName) == loaded;
   }
 }

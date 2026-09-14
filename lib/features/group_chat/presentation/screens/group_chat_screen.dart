@@ -18,6 +18,9 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/group_c
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_composer_controller.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_link_spans.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_rooms_list.dart';
+import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
+import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_composer.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_composer_link_preview.dart';
@@ -54,6 +57,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   final _bodyFocusNode = FocusNode();
   ChatLiveClient? _live;
   StreamSubscription<ChatLiveEvent>? _liveSub;
+
+  /// Foreground pushes, used as a backstop for the socket — see
+  /// [_onForegroundPush].
+  StreamSubscription<PushMessage>? _pushSub;
   Timer? _reconnectTimer;
   int _reconnectAttempt = 0;
   bool _hadLiveSession = false;
@@ -109,6 +116,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     super.initState();
     _providers = ProviderScope.containerOf(context, listen: false);
     WidgetsBinding.instance.addObserver(this);
+    _pushSub = _providers
+        .read(pushMessagingRepositoryProvider)
+        .onForegroundMessage
+        .listen(_onForegroundPush);
   }
 
   @override
@@ -123,6 +134,8 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _reconnectTimer?.cancel();
+    unawaited(_pushSub?.cancel());
+    _pushSub = null;
     unawaited(_tearDownLive());
     _bodyController.dispose();
     _bodyFocusNode.dispose();
@@ -146,11 +159,16 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     }
   }
 
+  /// Clears the fields before the first await, so anything that looks at
+  /// `_live` while the old socket is still closing — a second push verdict, a
+  /// reconnect firing — sees it gone rather than a client mid-teardown.
   Future<void> _tearDownLive() async {
-    await _liveSub?.cancel();
+    final sub = _liveSub;
+    final live = _live;
     _liveSub = null;
-    await _live?.dispose();
     _live = null;
+    await sub?.cancel();
+    await live?.dispose();
   }
 
   String get _profilePath => '/home/group/${widget.groupId}';
@@ -299,6 +317,64 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     if (reconnected) await _refreshThread();
   }
 
+  /// A push for this thread arrived while it is on screen.
+  ///
+  /// The socket should already have delivered that message. A socket that has
+  /// gone half-open cannot be told from a healthy one — no error, no close,
+  /// frames simply stop — and the client would sit there believing it is
+  /// connected, which is what made new messages appear only after leaving and
+  /// coming back.
+  ///
+  /// So the push is treated as a second opinion: refetch, and if the refetch
+  /// turns up a message the socket never delivered, that is proof the socket
+  /// is not working — replace it rather than trust it with the next one. The
+  /// thread notifier makes that call, not a before/after comparison here: a
+  /// message the socket delivers while the refetch is in flight also changes
+  /// the newest row, and that is the socket working, not failing. Nor is a
+  /// frame that lands just after the page: the refetch is given a grace
+  /// window for the socket to catch up before its verdict counts.
+  ///
+  /// A refetch that fails proves nothing either way, and the push says a
+  /// message exists that this screen may not hold. Keeping a socket that
+  /// cannot be vouched for is how the half-open case went unnoticed in the
+  /// first place, so it is replaced too. That costs a healthy socket at most
+  /// one reconnect round trip: the reconnect refetches, which retries the
+  /// page and merges anything posted in the gap, and a reconnect that fails
+  /// backs off and retries rather than leaving the thread without a socket.
+  Future<void> _onForegroundPush(PushMessage message) async {
+    if (_disposed || !mounted) return;
+    if (!chatPushTargets(
+      message.data,
+      roomId: _roomId,
+      groupId: widget.groupId,
+    )) {
+      return;
+    }
+    if (_roomId == null) return;
+
+    // The socket under judgement. The verdict takes a refetch plus the grace
+    // window to arrive, and pushes can overlap within that — by the time it
+    // lands, an earlier push or the reconnect timer may already have replaced
+    // this socket. A verdict is only ever about the socket that was up when
+    // the refetch went out; acting on it against whatever is up now would
+    // close a fresh, healthy connection over the sins of the old one.
+    final judged = _live;
+
+    final outcome = await _refreshThread(socketGrace: _pushSocketGrace);
+    if (_disposed || !mounted) return;
+
+    unawaited(_markRoomRead());
+    if (outcome == ThreadRefreshResult.nothingMissed) return;
+    if (!identical(_live, judged)) return;
+
+    // Tear the socket down first: `_ensureLiveConnected` treats a non-null
+    // client as already connected and would otherwise leave the dead one in
+    // place.
+    await _tearDownLive();
+    if (_disposed || !mounted) return;
+    await _ensureLiveConnected();
+  }
+
   void _onLiveEvent(ChatLiveEvent event) {
     if (_disposed || !mounted) return;
     // A frame on a fresh socket means the connection is healthy again.
@@ -354,7 +430,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     if (_roomId != message.roomId) return;
     _providers
         .read(groupChatThreadProvider(message.roomId).notifier)
-        .appendLive(message);
+        .appendFromSocket(message);
     unawaited(_markRoomRead());
   }
 
@@ -394,14 +470,23 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         );
   }
 
-  Future<void> _refreshThread() async {
+  /// How long a push-triggered refetch waits for the socket to deliver what
+  /// the page carried before calling the socket dead. Long enough to cover
+  /// ordinary jitter between the push and the frame, short enough that a
+  /// socket that really is half-open is replaced before the next message.
+  static const Duration _pushSocketGrace = Duration(seconds: 2);
+
+  Future<ThreadRefreshResult> _refreshThread({
+    Duration socketGrace = Duration.zero,
+  }) async {
     final roomId = _roomId;
-    if (_disposed || roomId == null) return;
-    await _providers
+    if (_disposed || roomId == null) return ThreadRefreshResult.failed;
+    return _providers
         .read(groupChatThreadProvider(roomId).notifier)
         .refreshLatest(
           currentUserId: _viewerId,
           currentUserEmail: _viewerEmail,
+          socketGrace: socketGrace,
         );
   }
 
@@ -429,11 +514,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       final accountId = await _loadAccountId();
       await _providers
           .read(groupChatRoomCacheProvider)
-          .write(
-            userId: accountId,
-            groupId: widget.groupId,
-            roomId: roomId,
-          );
+          .write(userId: accountId, groupId: widget.groupId, roomId: roomId);
     } catch (_) {
       // Cache is best-effort; join is already committed on the server.
     }
@@ -489,6 +570,12 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _providers
               .read(groupChatThreadProvider(message.roomId).notifier)
               .appendLive(message);
+          // Your own message is read the moment it is sent. The server counts
+          // it as unread until `last_read_at` moves past it, so without this
+          // the chats list shows the sender their own message with a badge.
+          // It used to be covered only by the `message_created` echo marking
+          // read — which never arrives if the socket is not delivering.
+          unawaited(_markRoomRead());
           await _ensureLiveConnected();
         },
       );

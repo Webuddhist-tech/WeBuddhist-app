@@ -10,14 +10,17 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/practice/data/models/my_recitation_collection_models.dart';
+import 'package:flutter_pecha/features/practice/data/utils/collection_display_order_plan.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/my_recitation_collections_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_recitations_paginated_provider.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/add_chants_to_collection_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/collection_name_dialog.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart' show Either;
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Placeholder mustard accent used for the empty cover tile in the designs.
 const Color _kCoverPlaceholder = Color(0xFFC9A84C);
@@ -63,13 +66,24 @@ class _CreateEditCollectionScreenState
 
   late String _name;
 
-  /// `text_id`s on the server when the screen opened. Save diffs [_chants]
-  /// against this: missing ids are deleted, extra ids are added.
+  /// `text_id`s known to be on the server: seeded when the screen opens and
+  /// kept current through Save, so a retry only re-sends what did not land.
+  /// Save diffs [_chants] against this: missing ids are deleted, extra ids are
+  /// added.
   late final Set<String> _originalTextIds;
 
   /// Collection-item ids keyed by `text_id` for chants already on the server.
   late final Map<String, String> _itemIdsByTextId;
+
+  /// Server `display_order` keyed by `text_id`, for every chant known to be on
+  /// the server. Updated as Save deletes, adds and reorders, so the order is
+  /// always planned against values the server actually holds.
+  late final Map<String, double> _displayOrdersByTextId;
   File? _localCoverFile;
+
+  /// Upright copy written by [_normalizeCoverOrientation], if one was made.
+  /// Deleted once nothing previews it; the picker's own file is never deleted.
+  File? _normalizedCoverTemp;
   String? _uploadedImageKey;
   String? _coverPreviewUrl;
 
@@ -114,7 +128,6 @@ class _CreateEditCollectionScreenState
                           ? item.title!
                           : item.textId,
                   language: item.language,
-                  displayOrder: item.displayOrder,
                 ),
               )
               .toList();
@@ -124,12 +137,37 @@ class _CreateEditCollectionScreenState
           if (item.textId.isNotEmpty && item.id.isNotEmpty)
             item.textId: item.id,
       };
+      _displayOrdersByTextId = {
+        for (final item in existing.items)
+          if (item.textId.isNotEmpty) item.textId: item.displayOrder,
+      };
     } else {
       _name = widget.initialName ?? '';
       _chants = [];
       _originalTextIds = {};
       _itemIdsByTextId = {};
+      _displayOrdersByTextId = {};
     }
+  }
+
+  @override
+  void dispose() {
+    _deleteNormalizedCoverTemp();
+    super.dispose();
+  }
+
+  void _deleteNormalizedCoverTemp() {
+    final temp = _normalizedCoverTemp;
+    _normalizedCoverTemp = null;
+    if (temp != null) _deleteTempFile(temp);
+  }
+
+  /// Best-effort: a failed delete only leaves the file for the OS to clear.
+  void _deleteTempFile(File file) {
+    file.delete().catchError((Object e) {
+      _logger.warning('Failed to delete normalized cover temp file: $e');
+      return file;
+    });
   }
 
   Future<void> _pickImage() async {
@@ -145,7 +183,25 @@ class _CreateEditCollectionScreenState
     );
     if (xFile == null || !mounted) return;
 
-    final file = File(xFile.path);
+    final File file;
+    try {
+      file = await _normalizeCoverOrientation(xFile.path);
+    } catch (e, st) {
+      _logger.error('Failed to normalize cover image: $e', e, st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.something_went_wrong),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+
+    final previousTemp = _normalizedCoverTemp;
+    _normalizedCoverTemp = file.path != xFile.path ? file : null;
+
     setState(() {
       _localCoverFile = file;
       _isUploadingImage = true;
@@ -154,6 +210,11 @@ class _CreateEditCollectionScreenState
         _coverPreviewUrl = null;
       }
     });
+
+    // Only now is the previous upright copy no longer previewed.
+    if (previousTemp != null && previousTemp.path != file.path) {
+      _deleteTempFile(previousTemp);
+    }
 
     final result = await ref
         .read(myRecitationCollectionsRepositoryProvider)
@@ -170,6 +231,7 @@ class _CreateEditCollectionScreenState
           _uploadedImageKey = null;
           _coverPreviewUrl = _isEditing ? widget.collection?.imgUrl : null;
         });
+        _deleteNormalizedCoverTemp();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(context.l10n.something_went_wrong),
@@ -187,11 +249,36 @@ class _CreateEditCollectionScreenState
     );
   }
 
+  /// Physically rotates picked photos according to EXIF before upload.
+  ///
+  /// Phone camera images can store landscape sensor pixels plus an EXIF
+  /// orientation tag. The collection image pipeline may later ignore that tag,
+  /// so upload upright pixels instead of relying on renderer/server behavior.
+  Future<File> _normalizeCoverOrientation(String sourcePath) async {
+    final tmpDir = await getTemporaryDirectory();
+    final destPath =
+        '${tmpDir.path}/collection_cover_normalized_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final result = await FlutterImageCompress.compressAndGetFile(
+      sourcePath,
+      destPath,
+      quality: 90,
+      autoCorrectionAngle: true,
+    );
+    if (result == null) {
+      // Upload still proceeds with the original, which may render sideways.
+      _logger.warning(
+        'Cover orientation normalization returned no file; using the original',
+      );
+      return File(sourcePath);
+    }
+    return File(result.path);
+  }
+
   Future<void> _changeName() async {
     if (_isSubmitting || _isMetadataLocked) return;
     final result = await showCollectionNameDialog(
       context,
-      title: 'Change title',
+      title: context.l10n.my_recitation_collection_change_title,
       actionLabel: context.l10n.save,
       initialName: _name,
     );
@@ -221,6 +308,8 @@ class _CreateEditCollectionScreenState
     setState(() => _chants.removeAt(index));
   }
 
+  /// Staged too. On edit, Save plans the `display_order` writes from the
+  /// final list, once removals and additions are on the server.
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       if (newIndex > oldIndex) newIndex -= 1;
@@ -280,10 +369,11 @@ class _CreateEditCollectionScreenState
     );
   }
 
-  /// Applies the edit as metadata → removals → additions. Each step is
+  /// Applies the edit as metadata → removals → additions → order. Each step is
   /// idempotent for a retry: the PUT re-sends the same values, ids already
-  /// deleted are dropped from [_originalTextIds] as they go, and additions are
-  /// computed against what is still known to be on the server.
+  /// deleted are dropped from [_originalTextIds] as they go, additions are
+  /// computed against what is still known to be on the server, and the order
+  /// is re-planned from the `display_order` values the server last confirmed.
   Future<void> _submitEdit() async {
     final collection = widget.collection;
     if (collection == null) return;
@@ -323,6 +413,7 @@ class _CreateEditCollectionScreenState
       }
       _originalTextIds.remove(textId);
       _itemIdsByTextId.remove(textId);
+      _displayOrdersByTextId.remove(textId);
     }
 
     final newTextIds =
@@ -331,17 +422,90 @@ class _CreateEditCollectionScreenState
             .where((id) => !_originalTextIds.contains(id))
             .toList();
     if (newTextIds.isNotEmpty) {
-      final addFailure = _failureOf(
-        await repository.addItemsToCollection(
-          collectionId: collection.id,
-          textIds: newTextIds,
-        ),
+      final addResult = await repository.addItemsToCollection(
+        collectionId: collection.id,
+        textIds: newTextIds,
       );
       if (!mounted) return;
+      final addFailure = _failureOf(addResult);
       if (addFailure != null) {
         _showSubmitFailure('Failed to add chants', addFailure);
         return;
       }
+      final addResponse = addResult.fold((_) => null, (response) => response);
+      if (addResponse != null) {
+        for (final item in addResponse.items) {
+          final textId = item.textId.trim();
+          if (textId.isEmpty) continue;
+          if (item.id.isNotEmpty) {
+            _itemIdsByTextId[textId] = item.id;
+          }
+          _originalTextIds.add(textId);
+          _displayOrdersByTextId[textId] = item.displayOrder;
+        }
+      }
+    }
+
+    // Order goes last: removals and additions have now settled which chants
+    // exist and which `display_order` the server gave each one. Planning only
+    // against those confirmed values keeps every PATCH unique; values guessed
+    // while dragging could collide with orders the server assigned on add.
+    final orderedTextIds = _chants.map((c) => c.textId).toList();
+    if (!_hasServerOrderFor(orderedTextIds)) {
+      // Save lost track of a chant's item id or order (e.g. the add response
+      // omitted it). Reload the collection and plan from its rows; closing as
+      // if the save succeeded would silently drop the arranged order.
+      final detailResult = await repository.getCollectionDetail(collection.id);
+      if (!mounted) return;
+      final detailFailure = _failureOf(detailResult);
+      if (detailFailure != null) {
+        _showSubmitFailure(
+          'Failed to reload collection to reorder',
+          detailFailure,
+        );
+        return;
+      }
+      detailResult.fold((_) {}, _adoptServerItems);
+      if (!_hasServerOrderFor(orderedTextIds)) {
+        _showSubmitFailure(
+          'Failed to reorder chants',
+          const ServerFailure('A chant has no server item id or display_order'),
+        );
+        return;
+      }
+    }
+
+    final orderedSet = orderedTextIds.toSet();
+    final updates = planDisplayOrderUpdates(
+      orderedKeys: orderedTextIds,
+      currentOrders: {
+        for (final textId in orderedTextIds)
+          textId: _displayOrdersByTextId[textId]!,
+      },
+      reservedOrders: [
+        for (final entry in _displayOrdersByTextId.entries)
+          if (!orderedSet.contains(entry.key)) entry.value,
+      ],
+    );
+    for (final update in updates.entries) {
+      final reorderResult = await repository.updateCollectionItemDisplayOrder(
+        collectionId: collection.id,
+        itemId: _itemIdsByTextId[update.key]!,
+        displayOrder: update.value,
+      );
+      if (!mounted) return;
+      final reorderFailure = _failureOf(reorderResult);
+      if (reorderFailure != null) {
+        _showSubmitFailure(
+          'Failed to reorder chant ${update.key}',
+          reorderFailure,
+        );
+        return;
+      }
+      _displayOrdersByTextId[update.key] = reorderResult.fold(
+        (_) => update.value,
+        (item) => item.displayOrder,
+      );
     }
 
     final languageCode = ref.read(practiceRecitationsLanguageProvider);
@@ -350,6 +514,34 @@ class _CreateEditCollectionScreenState
 
     if (!mounted) return;
     Navigator.of(context).pop(true);
+  }
+
+  /// Whether Save knows the server item id and `display_order` of every chant
+  /// in [textIds]; planning and sending the reorder needs both.
+  bool _hasServerOrderFor(List<String> textIds) => textIds.every(
+    (textId) =>
+        _displayOrdersByTextId.containsKey(textId) &&
+        (_itemIdsByTextId[textId]?.isNotEmpty ?? false),
+  );
+
+  /// Replaces what Save knows about the server with [detail]'s rows, so the
+  /// order is planned against them. A chant absent from the server also drops
+  /// out of [_originalTextIds], so the next Save adds it again rather than
+  /// assuming it landed.
+  void _adoptServerItems(MyRecitationCollectionDetailModel detail) {
+    final items = detail.items.where((item) => item.textId.isNotEmpty);
+    _originalTextIds
+      ..clear()
+      ..addAll(items.map((item) => item.textId));
+    _itemIdsByTextId
+      ..clear()
+      ..addAll({
+        for (final item in items)
+          if (item.id.isNotEmpty) item.textId: item.id,
+      });
+    _displayOrdersByTextId
+      ..clear()
+      ..addAll({for (final item in items) item.textId: item.displayOrder});
   }
 
   static Failure? _failureOf<T>(Either<Failure, T> result) =>
@@ -389,7 +581,10 @@ class _CreateEditCollectionScreenState
             ? (isDark ? AppColors.textPrimary : AppColors.onPrimary)
             : AppColors.onPrimary;
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final actionLabel = _isEditing ? context.l10n.save : 'Create';
+    final actionLabel =
+        _isEditing
+            ? context.l10n.save
+            : context.l10n.my_recitation_collection_create;
 
     return Scaffold(
       body: SafeArea(
@@ -449,7 +644,9 @@ class _CreateEditCollectionScreenState
                                         vertical: 7,
                                       ),
                                       child: Text(
-                                        'Change',
+                                        context
+                                            .l10n
+                                            .my_recitation_collection_change,
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -471,10 +668,6 @@ class _CreateEditCollectionScreenState
                   ),
                   const SizedBox(height: 32),
                   if (_chants.isNotEmpty) ...[
-                    // Order is only persisted on create, via the text_ids
-                    // array; the API has no reorder call for personal
-                    // collections (unlike the CMS group one), so the drag
-                    // handle is hidden in edit mode rather than lying.
                     ReorderableListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -496,7 +689,7 @@ class _CreateEditCollectionScreenState
                           isDark: isDark,
                           onRemove: () => _removeChant(index),
                           dragIndex: index,
-                          canReorder: !_isEditing,
+                          canReorder: !_isSubmitting,
                         );
                       },
                     ),
@@ -665,7 +858,7 @@ class _AddChantsRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 34),
                 Text(
-                  'Add chants',
+                  context.l10n.my_recitation_collection_add_chants,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,

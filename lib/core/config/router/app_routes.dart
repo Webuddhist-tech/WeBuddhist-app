@@ -39,6 +39,10 @@ class AppRoutes {
 
   static String groupChatPath(String groupId) => '/groups/$groupId/chat';
 
+  /// Every group chat the viewer belongs to. Top-level for the same reason as
+  /// [groupChat] — it is not guest-accessible.
+  static const String chats = '/chats';
+
   // ========== PRACTICE SUB ROUTES ==========
   static const String practiceEditRoutine = '/practice/edit-routine';
   static const String practiceMyPractices = '/practice/my-practices';

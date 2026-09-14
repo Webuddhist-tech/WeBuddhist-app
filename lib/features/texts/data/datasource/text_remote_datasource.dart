@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/texts/data/models/text/reader_response.da
 import 'package:flutter_pecha/features/texts/data/models/text/toc_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/version_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
+import 'package:flutter_pecha/features/texts/constants/text_details_constants.dart';
 import 'package:flutter_pecha/features/texts/data/models/version.dart';
 
 /// Text remote datasource.
@@ -121,7 +122,7 @@ class TextRemoteDatasource {
     String? segmentId,
     String? direction,
     String? language,
-    int size = 20,
+    int? size,
   }) async {
     final response = await dio.post(
       '/texts/$textId/details',
@@ -130,7 +131,7 @@ class TextRemoteDatasource {
         if (versionId != null) 'version_id': versionId,
         if (segmentId != null) 'segment_id': segmentId,
         if (language != null) 'language': language,
-        'size': size,
+        'size': size ?? TextDetailsConstants.defaultPageSize,
         'direction': direction,
       },
     );

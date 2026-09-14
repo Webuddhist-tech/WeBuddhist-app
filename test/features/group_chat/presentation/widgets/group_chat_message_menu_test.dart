@@ -10,6 +10,7 @@ Future<void> _openMenu(
   WidgetTester tester, {
   required double messageHeight,
   double anchorTop = 100,
+  bool canReport = true,
   bool canDelete = true,
 }) async {
   late BuildContext hostContext;
@@ -32,6 +33,7 @@ Future<void> _openMenu(
     anchor: Rect.fromLTWH(16, anchorTop, 320, messageHeight),
     message: Container(height: messageHeight, color: Colors.blue),
     myEmoji: null,
+    canReport: canReport,
     canDelete: canDelete,
   );
   await tester.pumpAndSettle();
@@ -92,6 +94,25 @@ void main() {
 
       // Clipped rather than shrunk, so the rest is reachable.
       expect(find.byType(SingleChildScrollView), findsOneWidget);
+    });
+
+    testWidgets('own message: no Report row, and the card shrinks', (
+      tester,
+    ) async {
+      tester.view.physicalSize = _screen;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+
+      await _openMenu(tester, messageHeight: 80, canReport: false);
+
+      expect(find.text('Report'), findsNothing);
+      expect(find.text('Reply'), findsOneWidget);
+      expect(find.text('Delete'), findsOneWidget);
+
+      // The card is measured from the rows it draws; a hardcoded count would
+      // reserve space for a Report row that is not there.
+      final card = tester.getRect(find.text('Delete'));
+      expect(card.bottom, lessThanOrEqualTo(_screen.height));
     });
 
     testWidgets('a short message is not clipped or made scrollable', (

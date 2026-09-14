@@ -153,6 +153,14 @@ class AppColors {
     Color(0xFF38BDF8), // sky
   ];
 
+  // ============ Event chips ============
+  /// In-person (amber) and online (green) event tags; backgrounds are these
+  /// at low alpha so they sit on any card colour.
+  static const Color eventInPersonChip = Color(0xFFB45309);
+  static const Color eventInPersonChipDark = Color(0xFFF59E0B);
+  static const Color eventOnlineChip = Color(0xFF15803D);
+  static const Color eventOnlineChipDark = Color(0xFF4ADE80);
+
   // ============ Design System Reference ============
   // Figma file: 0TE5qdViUvrisFZfNqODpX/WeBuddhist-App
   // Design system: Monlam Colors

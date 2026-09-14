@@ -223,6 +223,36 @@ class GroupChatRemoteDatasource {
     }
   }
 
+  /// Reports a message. Returns 204 with no body.
+  ///
+  /// `description` is omitted rather than sent as null when there is nothing
+  /// to say, so the payload carries only what the member actually chose.
+  ///
+  /// A second report of the same message answers 409 `ALREADY_REPORTED`.
+  /// From the member's side that is not a failure — the report is on file —
+  /// so it completes normally here, where the status is still in hand, rather
+  /// than being told apart from a real rejection by its message text later.
+  Future<void> reportMessage(
+    String roomId, {
+    required String messageId,
+    required String reason,
+    String? description,
+  }) async {
+    try {
+      await _dio.post(
+        '/chat/rooms/$roomId/messages/$messageId/report',
+        data: {
+          'reason': reason,
+          if (description != null && description.isNotEmpty)
+            'description': description,
+        },
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 409) return;
+      throw _unwrap(e);
+    }
+  }
+
   /// Bumps the caller's `last_read_at`. Returns 204 with no body.
   Future<void> markRoomRead(String roomId) async {
     try {

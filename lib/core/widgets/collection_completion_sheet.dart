@@ -3,8 +3,8 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
-/// Celebration sheet shown once all chants in a group recitation collection
-/// have been completed for the day.
+/// Celebration sheet shown once all chants in a recitation collection (group
+/// or user-created) have been completed for the day.
 class CollectionCompletionSheet extends StatelessWidget {
   const CollectionCompletionSheet({
     super.key,

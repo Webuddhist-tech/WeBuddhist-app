@@ -46,7 +46,7 @@ class RoutineNotificationService {
   // ─── Cancellation ────────────────────────────────────────────────────────
 
   /// Cancels every daily-repeat the app scheduled for [block] (recitation,
-  /// mala, timer and group-recitation-collection), each in its own ID range.
+  /// mala, timer and recitation collections), each in its own ID range.
   ///
   /// Used by the edit-routine screen on local delete (before Done is
   /// pressed). The full sync engine handles reconciliation otherwise.
@@ -68,6 +68,11 @@ class RoutineNotificationService {
       // own parallel range too — cancel it for the same reason.
       await _plugin.cancel(
         NotificationIdScheme.groupCollectionId(block.notificationId),
+      );
+      // Personal recitation collections use a separate parallel range from
+      // group collections.
+      await _plugin.cancel(
+        NotificationIdScheme.myCollectionId(block.notificationId),
       );
     } catch (e) {
       _logger.warning(

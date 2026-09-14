@@ -28,6 +28,7 @@ class PracticeAccumulationsSection extends ConsumerWidget {
           (either) => either.fold((_) => const SizedBox.shrink(), (mantras) {
             if (mantras.isEmpty) return const SizedBox.shrink();
             final preview = mantras.take(_previewCount).toList();
+            final rowHeight = PracticeAccumulationCircleItem.heightOf(context);
             return PracticeSectionContainer(
               title: l10n.accumulations,
               seeAllLabel:
@@ -38,7 +39,7 @@ class PracticeAccumulationsSection extends ConsumerWidget {
                           _showAllAccumulations(context, ref, mantras, language)
                       : null,
               child: SizedBox(
-                height: 120,
+                height: rowHeight,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -60,8 +61,8 @@ class PracticeAccumulationsSection extends ConsumerWidget {
             );
           }),
       loading:
-          () => const PracticeSectionSkeleton(
-            height: 120,
+          () => PracticeSectionSkeleton(
+            height: PracticeAccumulationCircleItem.heightOf(context),
             axis: Axis.horizontal,
             itemCount: 5,
             itemWidth: 84,

@@ -12,12 +12,15 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_card.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
@@ -25,6 +28,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_pr
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_links_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_members_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_posts_tab.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -101,9 +105,6 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     );
   }
 
-  /// Posts have no data source yet, so the tab never has content to show.
-  bool get _hasPosts => false;
-
   bool _hasBanner(GroupProfile profile) =>
       profile.bannerUrl != null && profile.bannerUrl!.isNotEmpty;
 
@@ -154,6 +155,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
             ? _visibleTabs[previous.index]
             : null;
     var initialIndex = selectedTab == null ? -1 : tabs.indexOf(selectedTab);
+    if (initialIndex < 0) initialIndex = tabs.indexOf(_GroupProfileTab.posts);
     if (initialIndex < 0) {
       initialIndex = tabs.indexOf(_GroupProfileTab.practices);
     }
@@ -419,11 +421,26 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final isEventsLoading =
         eventsAsync.isLoading && !eventsAsync.hasValue && !eventsAsync.hasError;
 
-    // Wait for both sections before laying out the tabs, otherwise tabs would
+    final postsState = ref.watch(groupPostsProvider(profile.id));
+    final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
+    final canPost = permissionAsync.valueOrNull ?? false;
+    // Keep the posts tab when loading failed so its retry action stays
+    // reachable, and for anyone allowed to publish so the Post button shows.
+    final hasPosts =
+        postsState.posts.isNotEmpty ||
+        (postsState.hasLoaded && postsState.error != null);
+    final isPostsLoading =
+        !postsState.hasLoaded ||
+        (permissionAsync.isLoading &&
+            !permissionAsync.hasValue &&
+            !permissionAsync.hasError);
+
+    // Wait for every section before laying out the tabs, otherwise tabs would
     // pop in and out as each request settles.
-    final isTabDataLoading = isPracticesLoading || isEventsLoading;
+    final isTabDataLoading =
+        isPracticesLoading || isEventsLoading || isPostsLoading;
     final tabs = <_GroupProfileTab>[
-      if (_hasPosts) _GroupProfileTab.posts,
+      if (hasPosts || canPost) _GroupProfileTab.posts,
       if (hasEvents) _GroupProfileTab.events,
       if (hasPractices) _GroupProfileTab.practices,
       _GroupProfileTab.members,
@@ -657,9 +674,18 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final pageStorageKey = '${profile.id}-${tab.name}';
 
     return switch (tab) {
-      _GroupProfileTab.posts => GroupProfileNestedTabScrollView.centered(
+      _GroupProfileTab.posts => GroupProfilePostsTab(
+        groupId: profile.id,
+        isDark: isDark,
+        lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
-        child: _buildEmptyTab('No posts yet', isDark, lineHeight),
+        canPost: ref.watch(
+          groupPostPermissionProvider(
+            profile.id,
+          ).select((async) => async.valueOrNull ?? false),
+        ),
+        onCreatePost: () => _onCreatePost(profile),
+        onEditPost: (post) => _onEditPost(profile, post),
       ),
       _GroupProfileTab.events => GroupProfileEventsTab(
         groupId: profile.id,
@@ -681,6 +707,73 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         pageStorageKey: pageStorageKey,
       ),
     };
+  }
+
+  Future<void> _onCreatePost(GroupProfile profile) async {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    final result = await GroupPostComposerScreen.show(context, profile);
+    if (result == null || !mounted) return;
+
+    final notifier = ref.read(groupPostsProvider(profile.id).notifier);
+    notifier.prependPost(_withGroupFields(result.post, profile));
+    notifier.loadInitial();
+    if (result.saved) _showPostSnackBar(context.l10n.group_post_published);
+  }
+
+  Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {
+    final result = await GroupPostComposerScreen.show(
+      context,
+      profile,
+      post: post,
+    );
+    if (result == null || !mounted) return;
+
+    // CMS responses don't carry the viewer's like state; keep what we had.
+    final merged = _withGroupFields(result.post, profile).copyWith(
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      likedByMe: post.likedByMe,
+    );
+    final notifier = ref.read(groupPostsProvider(profile.id).notifier);
+    notifier.updatePost(merged);
+    notifier.loadInitial();
+    // A partial save already showed its error inside the composer.
+    if (result.saved) _showPostSnackBar(context.l10n.group_post_updated);
+  }
+
+  /// CMS responses may omit group fields the card needs; fill them from the
+  /// profile. The list is refetched right after so it reflects the server.
+  ConnectPost _withGroupFields(ConnectPost post, GroupProfile profile) {
+    return ConnectPost(
+      id: post.id,
+      groupId: post.groupId.isNotEmpty ? post.groupId : profile.id,
+      groupName:
+          post.groupName.trim().isNotEmpty ? post.groupName : profile.title,
+      groupAvatarUrl: post.groupAvatarUrl ?? profile.avatarUrl,
+      caption: post.caption,
+      status: post.status,
+      publishedAt: post.publishedAt ?? DateTime.now(),
+      media: post.media,
+      links: post.links,
+      creatorName: post.creatorName,
+      creatorImageUrl: post.creatorImageUrl,
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      createdAt: post.createdAt ?? DateTime.now(),
+      updatedAt: post.updatedAt,
+      likedByMe: post.likedByMe,
+    );
+  }
+
+  void _showPostSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
   }
 
   GroupProfile _resolveProfile() {
@@ -983,8 +1076,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
   String _tabLabel(_GroupProfileTab tab, GroupProfile profile) {
     return switch (tab) {
-      _GroupProfileTab.posts => 'Post',
-      _GroupProfileTab.events => 'Events',
+      _GroupProfileTab.posts => context.l10n.group_tab_posts,
+      _GroupProfileTab.events => context.l10n.group_tab_events,
       _GroupProfileTab.practices => context.l10n.tab_practices,
       _GroupProfileTab.members =>
         profile.groupType.isPage
@@ -1159,7 +1252,9 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   if (collection.itemCount > 0) ...[
                     const SizedBox(height: 4),
                     Text(
-                      context.l10n.home_recitation_count(collection.itemCount),
+                      context.l10n.my_recitation_collection_chant_count(
+                        collection.itemCount,
+                      ),
                       style: TextStyle(
                         fontSize: 13,
                         color: secondaryColor,
@@ -1355,17 +1450,6 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyTab(String message, bool isDark, double? lineHeight) {
-    final color = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-
-    return Center(
-      child: Text(
-        message,
-        style: TextStyle(fontSize: 14, color: color, height: lineHeight),
       ),
     );
   }

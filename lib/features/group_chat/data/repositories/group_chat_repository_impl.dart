@@ -107,6 +107,26 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, Unit>> reportMessage(
+    String roomId, {
+    required String messageId,
+    required String reason,
+    String? description,
+  }) async {
+    try {
+      await _remote.reportMessage(
+        roomId,
+        messageId: messageId,
+        reason: reason,
+        description: description,
+      );
+      return const Right(unit);
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'reportMessage'));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<ChatMessageReactionDTO>>> addReaction(
     String roomId, {
     required String messageId,

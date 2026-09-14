@@ -13,6 +13,12 @@ enum RoutineItemType {
   timer,
   accumulator,
   groupRecitationCollection,
+  myRecitationCollection,
+  groupAccumulator,
+
+  /// A session type this build doesn't recognise. Carried through the UI so
+  /// re-syncing a block never silently deletes it.
+  unknown,
 }
 
 class RoutineItem {
@@ -32,9 +38,11 @@ class RoutineItem {
   /// Preview text for [RoutineItemType.recitation] items (from API or selection).
   final RecitationFirstSegmentModel? firstSegment;
 
-  /// Number of chants — only present for
-  /// [RoutineItemType.groupRecitationCollection] items.
+  /// Number of chants — only present for recitation collection items.
   final int? itemCount;
+
+  /// Original API `session_type` for [RoutineItemType.unknown] items.
+  final String? rawSessionType;
 
   const RoutineItem({
     required this.id,
@@ -49,6 +57,7 @@ class RoutineItem {
     this.durationMs,
     this.firstSegment,
     this.itemCount,
+    this.rawSessionType,
   });
 
   /// Smallest cover URL — legacy persistence and notifications.
@@ -77,6 +86,7 @@ class RoutineItem {
     if (durationMs != null) 'durationMs': durationMs,
     if (firstSegment != null) 'firstSegment': firstSegment!.toJson(),
     if (itemCount != null) 'itemCount': itemCount,
+    if (rawSessionType != null) 'rawSessionType': rawSessionType,
   };
 
   /// Safely parses a [RoutineItem] from JSON with null checks and fallbacks.
@@ -104,6 +114,7 @@ class RoutineItem {
       durationMs: (json['durationMs'] as num?)?.toInt(),
       firstSegment: _parseFirstSegment(json),
       itemCount: (json['itemCount'] as num?)?.toInt(),
+      rawSessionType: json['rawSessionType'] as String?,
     );
   }
 
@@ -145,6 +156,9 @@ class RoutineItem {
       'timer' => RoutineItemType.timer,
       'accumulator' => RoutineItemType.accumulator,
       'groupRecitationCollection' => RoutineItemType.groupRecitationCollection,
+      'myRecitationCollection' => RoutineItemType.myRecitationCollection,
+      'groupAccumulator' => RoutineItemType.groupAccumulator,
+      'unknown' => RoutineItemType.unknown,
       _ => RoutineItemType.series,
     };
   }
@@ -157,8 +171,14 @@ class RoutineItem {
 }
 
 class RoutineBlock {
+  /// Matches the backend `routine_time_blocks.title` VARCHAR(255) column.
+  static const int titleMaxLength = 255;
+
   final String id;
   final TimeOfDay time;
+
+  /// Optional user-given session title; null when unset.
+  final String? title;
   final bool notificationEnabled;
   final List<RoutineItem> items;
 
@@ -172,6 +192,7 @@ class RoutineBlock {
   RoutineBlock({
     String? id,
     required this.time,
+    this.title,
     this.notificationEnabled = true,
     this.items = const [],
     int? notificationId,
@@ -179,9 +200,17 @@ class RoutineBlock {
   })  : id = id ?? _uuid.v4(),
         _persistedNotificationId = notificationId;
 
+  /// Trims [raw] and collapses blank input to null, mirroring the backend.
+  static String? normalizeTitle(String? raw) {
+    final trimmed = raw?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
   RoutineBlock copyWith({
     String? id,
     TimeOfDay? time,
+    String? title,
     bool? notificationEnabled,
     List<RoutineItem>? items,
     int? notificationId,
@@ -190,6 +219,7 @@ class RoutineBlock {
     return RoutineBlock(
       id: id ?? this.id,
       time: time ?? this.time,
+      title: title ?? this.title,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       items: items ?? this.items,
       notificationId: _persistedNotificationId ?? notificationId,
@@ -239,6 +269,7 @@ class RoutineBlock {
     'id': id,
     'hour': time.hour,
     'minute': time.minute,
+    if (title != null) 'title': title,
     'notificationEnabled': notificationEnabled,
     'notificationId': notificationId, // Persist for stability
     if (apiTimeBlockId != null) 'apiTimeBlockId': apiTimeBlockId,
@@ -276,6 +307,7 @@ class RoutineBlock {
     return RoutineBlock(
       id: id,
       time: TimeOfDay(hour: hour, minute: minute),
+      title: normalizeTitle(json['title'] as String?),
       notificationEnabled: json['notificationEnabled'] as bool? ?? true,
       notificationId: json['notificationId'] as int?,
       apiTimeBlockId: json['apiTimeBlockId'] as String?,

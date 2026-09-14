@@ -33,6 +33,23 @@ class PartialCollectionCreateFailure extends Failure {
   List<Object> get props => [message, collectionId];
 }
 
+/// Some parts of a post edit were persisted before a later request failed.
+class PartialPostUpdateFailure extends Failure {
+  final bool captionSaved;
+  final bool mediaSaved;
+  final bool linksSaved;
+
+  const PartialPostUpdateFailure(
+    super.message, {
+    required this.captionSaved,
+    required this.mediaSaved,
+    required this.linksSaved,
+  });
+
+  @override
+  List<Object> get props => [message, captionSaved, mediaSaved, linksSaved];
+}
+
 class CacheFailure extends Failure {
   const CacheFailure(super.message);
 }

@@ -70,6 +70,19 @@ class GroupChatThreadState extends Equatable {
   ];
 }
 
+/// What a `refreshLatest` found, for the caller deciding whether the socket
+/// that should have delivered it can still be trusted.
+enum ThreadRefreshResult {
+  /// The request failed, so nothing can be said either way.
+  failed,
+
+  /// Every message the page carried was already held.
+  nothingMissed,
+
+  /// The page carried a message nothing else had delivered.
+  missedMessages,
+}
+
 class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   GroupChatThreadNotifier({required this.ref, required this.roomId})
     : super(const GroupChatThreadState()) {
@@ -306,11 +319,85 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     );
   }
 
+  /// A `message_created` frame. Same insert as [appendLive], but it also
+  /// vouches for the socket: a `refreshLatest` waiting on this id learns the
+  /// socket did deliver it, just after the page had already landed.
+  ///
+  /// Only the socket path calls this. The POST response for an own message
+  /// and the refresh's own inserts go through [appendLive], because neither
+  /// says anything about whether the socket is working.
+  void appendFromSocket(ChatMessageDTO message) {
+    if (_awaitingSocket.containsKey(message.id)) {
+      _vouchedBySocket.add(message.id);
+    }
+    appendLive(message);
+  }
+
+  /// Ids a `refreshLatest` inserted itself and is now giving the socket a
+  /// grace window to deliver, with how many refreshes are waiting on each.
+  final Map<String, int> _awaitingSocket = {};
+
+  /// Ids in [_awaitingSocket] the socket has since delivered.
+  final Set<String> _vouchedBySocket = {};
+
+  /// Decides between `missedMessages` and `nothingMissed` for rows this
+  /// refresh inserted itself.
+  ///
+  /// The page landing before the socket frame is not proof the socket is
+  /// dead: the push, the frame and the refetch all race, and a frame held up
+  /// by a few hundred milliseconds of jitter arrives right after the page
+  /// did. Judging at the instant the page lands would call that a miss and
+  /// have the caller replace a healthy socket. So the socket is given
+  /// [grace] to deliver what the page carried, and only what it still has not
+  /// delivered by then counts.
+  Future<ThreadRefreshResult> _judgeMissed(
+    Set<String> missedIds,
+    Duration grace,
+  ) async {
+    if (missedIds.isEmpty) return ThreadRefreshResult.nothingMissed;
+    if (grace <= Duration.zero) return ThreadRefreshResult.missedMessages;
+
+    for (final id in missedIds) {
+      _awaitingSocket[id] = (_awaitingSocket[id] ?? 0) + 1;
+    }
+    await Future<void>.delayed(grace);
+
+    // Read before the release below: the last waiter clears the record.
+    final stillMissing = missedIds.any(
+      (id) => !_vouchedBySocket.contains(id),
+    );
+    for (final id in missedIds) {
+      final waiters = (_awaitingSocket[id] ?? 1) - 1;
+      if (waiters > 0) {
+        _awaitingSocket[id] = waiters;
+      } else {
+        _awaitingSocket.remove(id);
+        _vouchedBySocket.remove(id);
+      }
+    }
+    if (!mounted) return ThreadRefreshResult.failed;
+    return stillMissing
+        ? ThreadRefreshResult.missedMessages
+        : ThreadRefreshResult.nothingMissed;
+  }
+
   /// Re-reads the newest page after a reconnect and merges by id, so anything
   /// missed while the socket was down lands without duplicating what is held.
-  Future<void> refreshLatest({
+  ///
+  /// Reports whether the page carried a message nothing else had delivered by
+  /// the time it was merged. A message the socket delivered while the request
+  /// was in flight is already held when the page lands, so it does not count:
+  /// the socket did its job, just not before the refetch went out.
+  ///
+  /// [socketGrace] extends that allowance past the merge: rows this refresh
+  /// had to insert itself are reported as missed only if the socket has still
+  /// not delivered them (via [appendFromSocket]) once the window closes. The
+  /// merge itself is committed before the wait, so the rows are on screen
+  /// either way; only the verdict is delayed. Zero judges at the merge.
+  Future<ThreadRefreshResult> refreshLatest({
     String? currentUserId,
     String? currentUserEmail,
+    Duration socketGrace = Duration.zero,
   }) async {
     // Taken before the request goes out, so anything that changes while it is
     // in flight is visible on arrival.
@@ -331,9 +418,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           .listMessages(roomId, skip: 0, limit: _limit),
     );
 
-    if (!mounted) return;
+    if (!mounted) return ThreadRefreshResult.failed;
 
-    result.fold((_) {}, (page) {
+    // The ids of every row this refresh inserted itself, or null on failure.
+    // Judged after the merge is committed, not inside the fold, so the wait
+    // does not hold back rows the caller should already see.
+    final missedIds = result.fold<Set<String>?>((_) => null, (page) {
       List<ChatMessageReactionDTO> resolve(
         List<ChatMessageReactionDTO> reactions,
       ) {
@@ -408,6 +498,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       }
 
       if (state.messages.isEmpty) {
+        // Only a thread that had loaded can have missed anything: an empty
+        // list before the first page lands says nothing about the socket.
+        final missed = state.hasLoaded ? fetchedIds : <String>{};
         final messages = fetched.map(withPending).toList();
         state = state.copyWith(
           messages: messages,
@@ -417,7 +510,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           total: page.total,
           clearError: true,
         );
-        return;
+        return missed;
       }
 
       // A full page with nothing in common with what is held means more
@@ -448,7 +541,8 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           total: total,
           clearError: true,
         );
-        return;
+        // A whole page of rows nothing here had seen.
+        return fetchedIds;
       }
 
       // Refresh what is already held rather than skipping it. A reaction that
@@ -462,6 +556,11 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       // count that came back with it cannot include. Counted before the
       // page's own rows are inserted further down.
       final arrivedDuring = arrivedSince(fetchedIds).length;
+
+      // Judged against what is held now, not when the request went out, so a
+      // row the socket delivered meanwhile counts as delivered.
+      final heldNow = {for (final message in state.messages) message.id};
+      final missed = fetchedIds.difference(heldNow);
 
       state = state.copyWith(
         messages:
@@ -505,9 +604,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         total: total,
         hasMore: state.messages.length < total,
       );
+      return missed;
     });
     _applyPendingDeletions();
     _dropStalePending();
+    if (missedIds == null) return ThreadRefreshResult.failed;
+    return _judgeMissed(missedIds, socketGrace);
   }
 
   /// Rewrites one message's reactions from an authoritative summary — the

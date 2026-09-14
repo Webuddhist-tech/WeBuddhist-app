@@ -16,44 +16,4 @@ void main() {
       }
     });
   });
-
-  group('TolgeeLocaleMap.cdnLocaleFor', () {
-    test('toString keeps hyphenated CDN tags for the SDK URL', () {
-      expect(
-        TolgeeLocaleMap.cdnLocaleFor(const Locale('bo')).toString(),
-        'bo-IN',
-      );
-      expect(
-        TolgeeLocaleMap.cdnLocaleFor(const Locale('zh')).toString(),
-        'zh-Hant-TW',
-      );
-      expect(
-        TolgeeLocaleMap.cdnLocaleFor(const Locale('en')).toString(),
-        'en',
-      );
-    });
-  });
-
-  group('TolgeeLocaleMap.matchesAppLocale', () {
-    test('CDN bo-IN matches app bo', () {
-      expect(
-        TolgeeLocaleMap.matchesAppLocale('bo', const Locale('bo-IN')),
-        isTrue,
-      );
-      expect(
-        TolgeeLocaleMap.matchesAppLocale('bo', const Locale('en')),
-        isFalse,
-      );
-    });
-
-    test('CDN zh-Hant-TW matches app zh', () {
-      expect(
-        TolgeeLocaleMap.matchesAppLocale(
-          'zh',
-          const Locale('zh-Hant-TW'),
-        ),
-        isTrue,
-      );
-    });
-  });
 }

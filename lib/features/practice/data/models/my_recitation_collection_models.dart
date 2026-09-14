@@ -37,6 +37,18 @@ class UpdateMyRecitationCollectionRequest {
   };
 }
 
+/// Request body for
+/// `PATCH /users/me/recitation-collections/{collectionId}/items/{itemId}`.
+class UpdateMyRecitationCollectionItemDisplayOrderRequest {
+  final double displayOrder;
+
+  const UpdateMyRecitationCollectionItemDisplayOrderRequest({
+    required this.displayOrder,
+  });
+
+  Map<String, dynamic> toJson() => {'display_order': displayOrder};
+}
+
 /// Nested image URLs from `POST .../upload-image`.
 class MyRecitationCollectionUploadedImage {
   final String? thumbnail;
@@ -113,7 +125,7 @@ class MyRecitationCollectionModel {
 
   factory MyRecitationCollectionModel.fromJson(Map<String, dynamic> json) {
     return MyRecitationCollectionModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['collection_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       imgUrl: json['img_url'] as String?,
       createdAt: _parseDate(json['created_at']),
@@ -155,7 +167,7 @@ class MyRecitationCollectionDetailModel {
           ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
     return MyRecitationCollectionDetailModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['collection_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       imgUrl: json['img_url'] as String?,
       createdAt: MyRecitationCollectionModel._parseDate(json['created_at']),
@@ -174,6 +186,63 @@ class AddMyRecitationCollectionItemsRequest {
   Map<String, dynamic> toJson() => {'text_ids': textIds};
 }
 
+/// Request body for `POST /users/me/recitation-collections/{id}/complete`.
+class CompleteMyRecitationCollectionChantRequest {
+  final String chantId;
+
+  const CompleteMyRecitationCollectionChantRequest({required this.chantId});
+
+  Map<String, dynamic> toJson() => {'chant_id': chantId};
+}
+
+/// Response from
+/// `GET /users/me/recitation-collections/{id}/complete/today` (200).
+class MyRecitationCollectionTodayCompletionsResponse {
+  final Set<String> completedChantIds;
+  final DateTime? date;
+
+  const MyRecitationCollectionTodayCompletionsResponse({
+    this.completedChantIds = const {},
+    this.date,
+  });
+
+  factory MyRecitationCollectionTodayCompletionsResponse.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return MyRecitationCollectionTodayCompletionsResponse(
+      completedChantIds:
+          (json['completed_chant_ids'] as List<dynamic>?)
+              ?.whereType<String>()
+              .map((id) => id.trim())
+              .where((id) => id.isNotEmpty)
+              .toSet() ??
+          const {},
+      date: MyRecitationCollectionModel._parseDate(json['date']),
+    );
+  }
+}
+
+/// Response from
+/// `GET /users/me/recitation-collections/{id}/complete/days-count` (200).
+class MyRecitationCollectionCompletionDaysCountResponse {
+  final String collectionId;
+  final int dayCount;
+
+  const MyRecitationCollectionCompletionDaysCountResponse({
+    required this.collectionId,
+    required this.dayCount,
+  });
+
+  factory MyRecitationCollectionCompletionDaysCountResponse.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return MyRecitationCollectionCompletionDaysCountResponse(
+      collectionId: json['collection_id'] as String? ?? '',
+      dayCount: (json['day_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 /// A chant row returned after adding items to a collection.
 class MyRecitationCollectionItemModel {
   final String id;
@@ -181,7 +250,7 @@ class MyRecitationCollectionItemModel {
   final String? title;
   final String? language;
   final String? type;
-  final int displayOrder;
+  final double displayOrder;
 
   const MyRecitationCollectionItemModel({
     required this.id,
@@ -194,12 +263,12 @@ class MyRecitationCollectionItemModel {
 
   factory MyRecitationCollectionItemModel.fromJson(Map<String, dynamic> json) {
     return MyRecitationCollectionItemModel(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? json['chant_id'] as String? ?? '',
       textId: json['text_id'] as String? ?? '',
       title: json['title'] as String?,
       language: json['language'] as String?,
       type: json['type'] as String?,
-      displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      displayOrder: (json['display_order'] as num?)?.toDouble() ?? 0,
     );
   }
 }

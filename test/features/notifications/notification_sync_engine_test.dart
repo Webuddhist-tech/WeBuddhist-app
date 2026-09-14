@@ -35,10 +35,10 @@ void main() {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   RoutineItem recitationItem({String id = 'r-1'}) => RoutineItem(
-        id: id,
-        title: 'Recitation',
-        type: RoutineItemType.recitation,
-      );
+    id: id,
+    title: 'Recitation',
+    type: RoutineItemType.recitation,
+  );
 
   // ─── Recitation ────────────────────────────────────────────────────────────
 
@@ -144,11 +144,11 @@ void main() {
       int? durationMs = 1800000, // 30 min
     }) =>
         RoutineItem(
-          id: id,
-          title: title,
-          type: RoutineItemType.timer,
-          durationMs: durationMs,
-        );
+      id: id,
+      title: title,
+      type: RoutineItemType.timer,
+      durationMs: durationMs,
+    );
 
     RoutineBlock timerBlock({
       List<RoutineItem>? items,
@@ -156,12 +156,12 @@ void main() {
       int minute = 30,
     }) =>
         RoutineBlock(
-          id: 'timer-1',
-          time: TimeOfDay(hour: hour, minute: minute),
-          notificationEnabled: true,
-          items: items ?? [timerItem()],
-          notificationId: 5555,
-        );
+      id: 'timer-1',
+      time: TimeOfDay(hour: hour, minute: minute),
+      notificationEnabled: true,
+      items: items ?? [timerItem()],
+      notificationId: 5555,
+    );
 
     test('emits a single "starting now" start reminder', () {
       final entries = engine.computeForTimerBlock(
@@ -250,32 +250,32 @@ void main() {
       int? itemCount = 12,
     }) =>
         RoutineItem(
-          id: id,
-          title: title,
-          type: RoutineItemType.groupRecitationCollection,
-          itemCount: itemCount,
-        );
+      id: id,
+      title: title,
+      type: RoutineItemType.groupRecitationCollection,
+      itemCount: itemCount,
+    );
 
     test('emits a single repeating notification using the collection title', () {
-      final entries = engine.computeForGroupCollectionBlock(
-        RoutineBlock(
-          id: 'coll-1',
-          time: const TimeOfDay(hour: 7, minute: 0),
-          notificationEnabled: true,
-          items: [collectionItem()],
-          notificationId: 5555,
-        ),
-        DateTime(2026, 6, 5, 6),
-        masterOn: true,
-        recitationOn: true,
-      );
-      expect(entries, hasLength(1));
-      final entry = entries.single;
-      expect(entry.isDailyRepeat, isTrue);
-      expect(entry.title, 'Morning Chants');
-      expect(entry.body, '12 chants');
-      expect(entry.id, NotificationIdScheme.groupCollectionId(5555));
-      expect(entry.debugCase, contains('4'));
+        final entries = engine.computeForGroupCollectionBlock(
+          RoutineBlock(
+            id: 'coll-1',
+            time: const TimeOfDay(hour: 7, minute: 0),
+            notificationEnabled: true,
+            items: [collectionItem()],
+            notificationId: 5555,
+          ),
+          DateTime(2026, 6, 5, 6),
+          masterOn: true,
+          recitationOn: true,
+        );
+        expect(entries, hasLength(1));
+        final entry = entries.single;
+        expect(entry.isDailyRepeat, isTrue);
+        expect(entry.title, 'Morning Chants');
+        expect(entry.body, '12 chants');
+        expect(entry.id, NotificationIdScheme.groupCollectionId(5555));
+        expect(entry.debugCase, contains('4'));
     });
 
     test('falls back to a generic body when itemCount is unknown', () {
@@ -343,14 +343,150 @@ void main() {
     });
 
     test('produces an ID distinct from recitation/mala/timer in the same block', () {
-      const blockId = 5555;
-      final ids = {
-        blockId, // recitation
-        NotificationIdScheme.accumulatorBlockId(blockId),
-        NotificationIdScheme.timerStartId(blockId),
-        NotificationIdScheme.groupCollectionId(blockId),
-      };
-      expect(ids, hasLength(4)); // all distinct
+        const blockId = 5555;
+        final ids = {
+          blockId, // recitation
+          NotificationIdScheme.accumulatorBlockId(blockId),
+          NotificationIdScheme.timerStartId(blockId),
+          NotificationIdScheme.groupCollectionId(blockId),
+          NotificationIdScheme.groupAccumulatorId(blockId),
+        };
+        expect(ids, hasLength(5)); // all distinct
+      },
+    );
+  });
+
+  group('case 4: group-accumulator daily-repeat', () {
+    RoutineItem groupAccumulatorItem({
+      String id = 'ga-1',
+      String title = 'Group Mani',
+    }) => RoutineItem(
+      id: id,
+      title: title,
+      type: RoutineItemType.groupAccumulator,
+    );
+
+    RoutineBlock block(List<RoutineItem> items) => RoutineBlock(
+      id: 'ga-block',
+      time: const TimeOfDay(hour: 7, minute: 0),
+      notificationEnabled: true,
+      items: items,
+      notificationId: 5555,
+    );
+
+    test('emits a single repeating notification using the accumulation title',
+        () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([groupAccumulatorItem()]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: true,
+      );
+      expect(entries, hasLength(1));
+      final entry = entries.single;
+      expect(entry.isDailyRepeat, isTrue);
+      expect(entry.title, 'Group Mani');
+      expect(entry.body, 'Time for your group accumulation');
+      expect(entry.id, NotificationIdScheme.groupAccumulatorId(5555));
+      expect(entry.payload, contains('"itemType":"groupAccumulator"'));
+    });
+
+    test('counts the other group accumulations in the block', () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([groupAccumulatorItem(), groupAccumulatorItem(id: 'ga-2')]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: true,
+      );
+      expect(entries.single.body, 'Time for your group accumulation and 1 more');
+    });
+
+    test('emits nothing when practice sub-toggle OFF', () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([groupAccumulatorItem()]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: false,
+      );
+      expect(entries, isEmpty);
+    });
+
+    test('ignores personal mala items in the block', () {
+      final entries = engine.computeForGroupAccumulatorBlock(
+        block([
+          const RoutineItem(
+            id: 'preset-1',
+            title: 'Om Mani',
+            type: RoutineItemType.accumulator,
+          ),
+        ]),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        practiceOn: true,
+      );
+      expect(entries, isEmpty);
+    });
+  });
+
+  group('case 4: personal recitation-collection daily-repeat', () {
+    RoutineItem collectionItem({
+      String id = 'my-c-1',
+      String title = 'My Morning Chants',
+      int? itemCount = 7,
+    }) => RoutineItem(
+      id: id,
+      title: title,
+      type: RoutineItemType.myRecitationCollection,
+      itemCount: itemCount,
+    );
+
+    test(
+      'emits a single repeating notification using the collection title',
+      () {
+        final entries = engine.computeForMyCollectionBlock(
+          RoutineBlock(
+            id: 'my-coll-1',
+            time: const TimeOfDay(hour: 7, minute: 0),
+            notificationEnabled: true,
+            items: [collectionItem()],
+            notificationId: 5555,
+          ),
+          DateTime(2026, 6, 5, 6),
+          masterOn: true,
+          recitationOn: true,
+        );
+
+        expect(entries, hasLength(1));
+        final entry = entries.single;
+        expect(entry.isDailyRepeat, isTrue);
+        expect(entry.title, 'My Morning Chants');
+        expect(entry.body, '7 chants');
+        expect(entry.id, NotificationIdScheme.myCollectionId(5555));
+        expect(entry.debugCase, '4 daily-repeat-my-collection');
+      },
+    );
+
+    test('ignores group collection items in the block', () {
+      final entries = engine.computeForMyCollectionBlock(
+        RoutineBlock(
+          id: 'my-coll-1',
+          time: const TimeOfDay(hour: 7, minute: 0),
+          notificationEnabled: true,
+          items: const [
+            RoutineItem(
+              id: 'group-c-1',
+              title: 'Group Chants',
+              type: RoutineItemType.groupRecitationCollection,
+            ),
+          ],
+          notificationId: 5555,
+        ),
+        DateTime(2026, 6, 5, 6),
+        masterOn: true,
+        recitationOn: true,
+      );
+
+      expect(entries, isEmpty);
     });
   });
 
@@ -366,12 +502,14 @@ void main() {
       expect(NotificationIdScheme.isOurs(20000000), isTrue); // accumulator block
       expect(NotificationIdScheme.isOurs(21000000), isTrue); // timer start
       expect(NotificationIdScheme.isOurs(23000000), isTrue); // group collection
+      expect(NotificationIdScheme.isOurs(24000000), isTrue); // my collection
+      expect(NotificationIdScheme.isOurs(25000000), isTrue); // group accumulator
       expect(NotificationIdScheme.isOurs(50), isFalse); // system range
       expect(NotificationIdScheme.isOurs(30000000), isFalse); // outside
     });
 
     test(
-      'isRoutineDailyRepeat covers recitation + mala + timer + group-collection ranges only',
+      'isRoutineDailyRepeat covers recitation + mala + timer + collection ranges only',
       () {
         expect(NotificationIdScheme.isRoutineDailyRepeat(5555), isTrue); // recitation block
         expect(
@@ -392,26 +530,58 @@ void main() {
           ),
           isTrue, // group collection
         );
-        expect(NotificationIdScheme.isRoutineDailyRepeat(9000000), isFalse); // legacy plan one-shot
-        expect(NotificationIdScheme.isRoutineDailyRepeat(10000000), isFalse); // legacy plan series
-        expect(NotificationIdScheme.isRoutineDailyRepeat(810), isFalse); // legacy special
+        expect(
+          NotificationIdScheme.isRoutineDailyRepeat(
+            NotificationIdScheme.myCollectionId(5555),
+          ),
+          isTrue, // my collection
+        );
+        expect(
+          NotificationIdScheme.isRoutineDailyRepeat(
+            NotificationIdScheme.groupAccumulatorId(5555),
+          ),
+          isTrue, // group accumulator
+        );
+        expect(
+          NotificationIdScheme.isRoutineDailyRepeat(9000000),
+          isFalse,
+        ); // legacy plan one-shot
+        expect(
+          NotificationIdScheme.isRoutineDailyRepeat(10000000),
+          isFalse,
+        ); // legacy plan series
+        expect(
+          NotificationIdScheme.isRoutineDailyRepeat(810),
+          isFalse,
+        ); // legacy special
       },
     );
 
-    test('accumulator + timer + group-collection block ids are distinct from each other', () {
-      // A block holding a recitation (notificationId), a mala
-      // (accumulatorBlockId), a timer (timerStartId), and a group collection
-      // (groupCollectionId) must produce four non-colliding IDs.
-      const blockId = 5555;
-      final malaId = NotificationIdScheme.accumulatorBlockId(blockId);
-      final timerStart = NotificationIdScheme.timerStartId(blockId);
-      final groupCollection = NotificationIdScheme.groupCollectionId(blockId);
-      final ids = {blockId, malaId, timerStart, groupCollection};
-      expect(ids, hasLength(4)); // all distinct
-      expect(NotificationIdScheme.isOurs(malaId), isTrue);
-      expect(NotificationIdScheme.isOurs(timerStart), isTrue);
-      expect(NotificationIdScheme.isOurs(groupCollection), isTrue);
-    });
+    test(
+      'accumulator + timer + collection block ids are distinct from each other',
+      () {
+        // A block holding a recitation (notificationId), a mala
+        // (accumulatorBlockId), a timer (timerStartId), and a group collection
+        // (groupCollectionId/myCollectionId) must produce non-colliding IDs.
+        const blockId = 5555;
+        final malaId = NotificationIdScheme.accumulatorBlockId(blockId);
+        final timerStart = NotificationIdScheme.timerStartId(blockId);
+        final groupCollection = NotificationIdScheme.groupCollectionId(blockId);
+        final myCollection = NotificationIdScheme.myCollectionId(blockId);
+        final ids = {
+          blockId,
+          malaId,
+          timerStart,
+          groupCollection,
+          myCollection,
+        };
+        expect(ids, hasLength(5)); // all distinct
+        expect(NotificationIdScheme.isOurs(malaId), isTrue);
+        expect(NotificationIdScheme.isOurs(timerStart), isTrue);
+        expect(NotificationIdScheme.isOurs(groupCollection), isTrue);
+        expect(NotificationIdScheme.isOurs(myCollection), isTrue);
+      },
+    );
   });
 
   // Silence analyzer warnings for unused imports.

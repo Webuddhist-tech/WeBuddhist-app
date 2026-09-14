@@ -150,6 +150,7 @@ class GroupAccumulatorMembersNotifier
       limit: _pageSize,
       sortBy: sortBy,
     );
+    if (!mounted) return;
 
     result.fold(
       (failure) => state = state.copyWith(
@@ -176,6 +177,7 @@ class GroupAccumulatorMembersNotifier
       limit: _pageSize,
       sortBy: sortBy,
     );
+    if (!mounted) return;
 
     result.fold(
       (failure) => state = state.copyWith(isLoadingMore: false, error: failure),
@@ -258,22 +260,16 @@ void refreshGroupAccumulatorData(
   String? groupId,
 }) {
   ref.invalidate(groupAccumulatorDetailProvider(accumulatorId));
-  ref.invalidate(
-    groupAccumulatorMembersProvider(
-      GroupAccumulatorMembersKey(
-        accumulatorId: accumulatorId,
-        sortBy: GroupAccumulatorMemberSort.total,
-      ),
-    ),
-  );
-  ref.invalidate(
-    groupAccumulatorMembersProvider(
-      GroupAccumulatorMembersKey(
-        accumulatorId: accumulatorId,
-        sortBy: GroupAccumulatorMemberSort.today,
-      ),
-    ),
-  );
+  // Reload live member lists in place so they keep showing the current rows
+  // instead of resetting to a spinner; unmounted ones load fresh on demand.
+  for (final sort in GroupAccumulatorMemberSort.values) {
+    final provider = groupAccumulatorMembersProvider(
+      GroupAccumulatorMembersKey(accumulatorId: accumulatorId, sortBy: sort),
+    );
+    if (ref.exists(provider)) {
+      ref.read(provider.notifier).loadInitial(force: true);
+    }
+  }
   if (groupId != null && groupId.isNotEmpty) {
     refreshGroupPractices(ref, groupId);
   }

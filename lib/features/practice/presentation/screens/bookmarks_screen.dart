@@ -27,6 +27,7 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
     context.l10n.home_shortcut_plans,
     context.l10n.home_chants,
     context.l10n.bookmark_mala,
+    context.l10n.bookmark_group_accumulation,
     context.l10n.bookmark_timers,
     context.l10n.bookmark_texts,
   ];
@@ -35,6 +36,7 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
     BookmarkTab.plans,
     BookmarkTab.chants,
     BookmarkTab.mala,
+    BookmarkTab.groupAccumulation,
     BookmarkTab.timers,
     BookmarkTab.texts,
   ];
@@ -49,12 +51,16 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
       context.l10n.bookmarks_empty_plans_subtitle,
     ),
     (
-      'No chant collections bookmarked yet.',
-      'Bookmark a chant collection to save it here.',
+      context.l10n.bookmarks_empty_chant_collections_title,
+      context.l10n.bookmarks_empty_chant_collections_subtitle,
     ),
     (
       context.l10n.bookmarks_empty_malas_title,
       context.l10n.bookmarks_empty_malas_subtitle,
+    ),
+    (
+      context.l10n.bookmarks_empty_group_accumulations_title,
+      context.l10n.bookmarks_empty_group_accumulations_subtitle,
     ),
     (
       context.l10n.bookmarks_empty_timers_title,
@@ -136,12 +142,32 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
         if (groupId == null || groupId.isEmpty) return;
         context.push(
           '/home/group/$groupId/recitation-collections/${bookmark.sourceId}',
-          extra: {'title': bookmark.displayTitle},
+          extra: {'title': _collectionDisplayTitle(bookmark)},
+        );
+      case BookmarkItemType.recitationCollection:
+        context.pushNamed(
+          'my-recitation-collection',
+          pathParameters: {'collectionId': bookmark.sourceId},
+          extra: {'title': _collectionDisplayTitle(bookmark)},
+        );
+      case BookmarkItemType.groupAccumulator:
+        if (bookmark.isOrphaned) return;
+        context.pushNamed(
+          'home-group-accumulator',
+          pathParameters: {'accumulatorId': bookmark.sourceId},
         );
       case BookmarkItemType.plan:
         // No reliable id-based deep link for a plan from bookmark data alone.
         break;
     }
+  }
+
+  String _collectionDisplayTitle(BookmarkDTO bookmark) {
+    final preferred = bookmark.nestedTitle ?? bookmark.name;
+    if (preferred != null && preferred.trim().isNotEmpty) {
+      return preferred.trim();
+    }
+    return context.l10n.my_recitation_collection_fallback_title;
   }
 
   @override
@@ -228,7 +254,6 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
       dividerColor: Colors.transparent,
     );
   }
-
 }
 
 /// Renders one tab: loading / error / empty / grouped list states.

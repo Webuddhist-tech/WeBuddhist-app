@@ -38,6 +38,13 @@ abstract class GroupChatRepository {
     required String messageId,
   });
 
+  Future<Either<Failure, Unit>> reportMessage(
+    String roomId, {
+    required String messageId,
+    required String reason,
+    String? description,
+  });
+
   Future<Either<Failure, List<ChatMessageReactionDTO>>> addReaction(
     String roomId, {
     required String messageId,

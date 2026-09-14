@@ -1,11 +1,11 @@
 import 'dart:ui' show Locale;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tolgee/tolgee.dart';
 
 import '../../../env.dart';
 import '../../utils/app_logger.dart';
 import 'tolgee_bridge.dart';
+import 'tolgee_cdn.dart';
 import 'tolgee_locale_map.dart';
 
 /// Incremented whenever Tolgee has new translations in memory.
@@ -25,18 +25,9 @@ class TolgeeService {
 
   static final AppLogger _logger = AppLogger('Tolgee');
 
-  /// The SDK issues plain `package:http` calls with no timeout of their own,
-  /// so an unreachable host would otherwise leave the future pending forever.
+  /// A CDN that accepts the connection but never answers would otherwise leave
+  /// the future pending forever.
   static const Duration _networkTimeout = Duration(seconds: 15);
-
-  /// Stable keys used to prove the CDN payload actually loaded.
-  ///
-  /// The SDK does not throw on 404/empty CDN responses, so we probe after
-  /// `setCurrentLocale` before flipping [TolgeeBridge.active].
-  static const List<String> _readinessProbeKeys = <String>[
-    'appTitle',
-    'sign_in',
-  ];
 
   /// Newest locale the UI has asked for. `localeProvider` restores the stored
   /// language asynchronously, so a change can land while the fetch for the
@@ -44,14 +35,11 @@ class TolgeeService {
   /// converge on this value rather than on the locale it started with.
   static Locale? _desiredLocale;
 
-  /// App locale whose payload [_hasLoadedTranslations] last proved loaded.
+  /// App locale whose payload is currently loaded into the bridge.
   static Locale? _loadedLocale;
 
-  /// `Tolgee.init` may only run once per process.
-  static bool _sdkInitialized = false;
-
-  /// Serialises SDK work. Tolgee holds exactly one language in memory, so
-  /// overlapping `setCurrentLocale` calls would race over shared state.
+  /// Serialises loads. One payload is held at a time, so overlapping fetches
+  /// would race over shared state.
   static Future<void> _chain = Future<void>.value();
 
   /// Keeps a misconfigured build from repeating the same warning on every
@@ -125,61 +113,50 @@ class TolgeeService {
         return true;
       }
 
-      final Locale cdnLocale = TolgeeLocaleMap.cdnLocaleFor(target);
       final String cdnTag = TolgeeLocaleMap.cdnTagFor(target);
       final bool isFirstLoad = _loadedLocale == null;
-      // Drop memoized strings up front: the bridge refuses to serve values
-      // whose language does not match the request, so during the fetch it falls
-      // back to the bundled ARB rather than showing the previous language.
+      // Drop the loaded payload up front: the bridge is inert without one, so
+      // during the fetch it falls back to the bundled ARB rather than showing
+      // the previous language.
       TolgeeBridge.invalidate();
 
       try {
-        if (!_sdkInitialized) {
-          await Tolgee.init(
-            apiKey: Env.tolgeeApiKey!,
-            apiUrl: Env.tolgeeApiUrl,
-            cdnUrl: Env.tolgeeCdnUrl!,
-            useCDN: true,
-            currentLanguage: cdnTag,
-          ).timeout(_networkTimeout);
-          _sdkInitialized = true;
-        }
+        final Map<String, String> strings = await TolgeeCdn.fetch(
+          cdnUrl: Env.tolgeeCdnUrl!,
+          tag: cdnTag,
+          timeout: _networkTimeout,
+        );
 
-        // `Tolgee.init` starts its first translation fetch without awaiting it,
-        // and may normalize multi-part tags incorrectly — this awaited call is
-        // what loads `{cdn}/{tag}.json` into memory.
-        await Tolgee.setCurrentLocale(cdnLocale).timeout(_networkTimeout);
-
-        // The UI moved on while we were fetching; activating now would pin the
+        // The UI moved on while we were fetching; loading now would pin the
         // bridge to a language nothing is asking for.
         if (_desiredLocale != target) {
           continue;
         }
 
-        if (!_hasLoadedTranslations()) {
-          TolgeeBridge.active = false;
+        if (strings.isEmpty) {
           TolgeeBridge.invalidate();
           _logger.warning(
-            'Tolgee CDN returned no usable strings for $cdnTag '
-            '(probed ${_readinessProbeKeys.join(", ")}); using bundled ARB',
+            'Tolgee CDN returned no usable strings for $cdnTag; '
+            'using bundled ARB',
           );
           return false;
         }
 
-        TolgeeBridge.invalidate();
-        TolgeeBridge.active = true;
+        TolgeeBridge.load(languageCode: target.languageCode, strings: strings);
         _loadedLocale = target;
         _logger.info(
           isFirstLoad
-              ? 'Tolgee ready for ${target.languageCode} (CDN tag $cdnTag)'
-              : 'Tolgee switched to ${target.languageCode} (CDN tag $cdnTag)',
+              ? 'Tolgee ready for ${target.languageCode} '
+                  '(CDN tag $cdnTag, ${strings.length} strings)'
+              : 'Tolgee switched to ${target.languageCode} '
+                  '(CDN tag $cdnTag, ${strings.length} strings)',
         );
         return true;
       } catch (error, stackTrace) {
-        TolgeeBridge.active = false;
+        TolgeeBridge.invalidate();
         _logger.warning(
           isFirstLoad
-              ? 'Tolgee init failed; using bundled ARB'
+              ? 'Tolgee load failed; using bundled ARB'
               : 'Tolgee language switch failed',
           error,
           stackTrace,
@@ -187,15 +164,5 @@ class TolgeeService {
         return false;
       }
     }
-  }
-
-  static bool _hasLoadedTranslations() {
-    for (final String key in _readinessProbeKeys) {
-      final String value = Tolgee.translate(key: key, defaultValue: key);
-      if (value != key && value.isNotEmpty) {
-        return true;
-      }
-    }
-    return false;
   }
 }
