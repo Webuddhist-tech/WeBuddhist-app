@@ -1027,13 +1027,13 @@ abstract class AppLocalizations {
   /// No description provided for @my_recitation_collection_chant_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}'**
+  /// **'{count, plural,\n=0 {0 chants}\n=1 {1 chant}\nother {{count} chants}\n}'**
   String my_recitation_collection_chant_count(int count);
 
   /// No description provided for @my_recitation_collection_chant_count_owner.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}'**
+  /// **'{count, plural,\n=0 {0 chants • me}\n=1 {1 chant • me}\nother {{count} chants • me}\n}'**
   String my_recitation_collection_chant_count_owner(int count);
 
   /// No description provided for @bookmarks_empty_chant_collections_title.
@@ -1255,7 +1255,7 @@ abstract class AppLocalizations {
   /// No description provided for @routine_delete_block_message.
   ///
   /// In en, this message translates to:
-  /// **'The session and all its items will be removed'**
+  /// **'The time block and all its items will be removed'**
   String get routine_delete_block_message;
 
   /// No description provided for @something_went_wrong.
@@ -2557,13 +2557,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_edit_title.
   ///
   /// In en, this message translates to:
-  /// **'Edit your practices'**
+  /// **'Edit your routine'**
   String get routine_edit_title;
 
   /// No description provided for @routine_delete_block.
   ///
   /// In en, this message translates to:
-  /// **'Remove session'**
+  /// **'Remove block'**
   String get routine_delete_block;
 
   /// No description provided for @routine_session_title_hint.
@@ -2647,13 +2647,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_empty_block_delete_singular.
   ///
   /// In en, this message translates to:
-  /// **'Remove session'**
+  /// **'Remove block'**
   String get routine_empty_block_delete_singular;
 
   /// No description provided for @routine_empty_block_delete_plural.
   ///
   /// In en, this message translates to:
-  /// **'Remove sessions'**
+  /// **'Remove blocks'**
   String get routine_empty_block_delete_plural;
 
   /// No description provided for @routine_notification_title.
