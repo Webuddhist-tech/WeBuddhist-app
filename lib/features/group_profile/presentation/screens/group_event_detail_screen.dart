@@ -17,14 +17,12 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_link_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
-import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_recitation_collection_row.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
@@ -43,7 +41,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-enum _EventTab { videos, about, accumulations, recitations }
+enum _EventTab { videos, about, accumulations }
 
 class GroupEventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -155,12 +153,10 @@ class _GroupEventDetailScreenState
     final totalAttending = _attendeeCount(event, isAttending);
     final videos = _videoLinks(event);
     final groupAccumulator = event.groupAccumulator;
-    final collection = event.groupRecitationCollection;
     final tabs = <_EventTab>[
       if (videos.isNotEmpty) _EventTab.videos,
       _EventTab.about,
       if (groupAccumulator != null) _EventTab.accumulations,
-      if (collection != null) _EventTab.recitations,
     ];
     final selectedTab =
         tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
@@ -198,11 +194,6 @@ class _GroupEventDetailScreenState
             _EventTab.accumulations => _EventAccumulatorPanel(
               accumulatorId: groupAccumulator!.id,
               groupTitle: event.groupName,
-              isDark: isDark,
-            ),
-            _EventTab.recitations => _EventRecitationsPanel(
-              groupId: event.groupId,
-              collectionId: collection!.id,
               isDark: isDark,
             ),
           },
@@ -346,7 +337,6 @@ class _GroupEventDetailScreenState
     _EventTab.videos => context.l10n.connect_event_tab_videos,
     _EventTab.about => context.l10n.connect_event_tab_about,
     _EventTab.accumulations => context.l10n.connect_event_tab_accumulations,
-    _EventTab.recitations => context.l10n.connect_event_tab_recitations,
   };
 
   /// Opens the event's puja: auto-enrolls in its series and opens the (only)
@@ -399,9 +389,8 @@ class _GroupEventDetailScreenState
     final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
     if (!mounted) return;
     if (!enrollments.contains(seriesId)) {
-      final ok = await ref
-          .read(seriesEnrollmentProvider(seriesId).notifier)
-          .enroll();
+      final ok =
+          await ref.read(seriesEnrollmentProvider(seriesId).notifier).enroll();
       if (!mounted) return;
       if (!ok) {
         final state = ref.read(seriesEnrollmentProvider(seriesId));
@@ -1395,144 +1384,6 @@ class _EventSubTabButton extends StatelessWidget {
                     : (isDark ? AppColors.cardBorderDark : AppColors.grey300),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Recitations tab: the collection's chants, each opening the reader.
-class _EventRecitationsPanel extends ConsumerWidget {
-  final String groupId;
-  final String collectionId;
-  final bool isDark;
-
-  const _EventRecitationsPanel({
-    required this.groupId,
-    required this.collectionId,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final key = GroupRecitationCollectionKey(
-      groupId: groupId,
-      collectionId: collectionId,
-    );
-    final detailAsync = ref.watch(groupRecitationCollectionDetailProvider(key));
-    final completionState = ref.watch(
-      groupRecitationCollectionCompletionProvider(key),
-    );
-    void retry() =>
-        ref.invalidate(groupRecitationCollectionDetailProvider(key));
-
-    return detailAsync.when(
-      loading:
-          () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(child: CircularProgressIndicator()),
-          ),
-      error: (error, _) => ErrorStateWidget(error: error, onRetry: retry),
-      data:
-          (either) => either.fold(
-            (failure) => ErrorStateWidget(error: failure, onRetry: retry),
-            (collection) => _buildCollection(
-              context,
-              ref,
-              key,
-              collection,
-              completionState,
-            ),
-          ),
-    );
-  }
-
-  Widget _buildCollection(
-    BuildContext context,
-    WidgetRef ref,
-    GroupRecitationCollectionKey key,
-    GroupRecitationCollection collection,
-    GroupRecitationCollectionCompletionState completionState,
-  ) {
-    final primaryColor =
-        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap:
-              () => context.push(
-                '/home/group/$groupId/recitation-collections/${collection.id}',
-                extra: {'title': collection.name},
-              ),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    collection.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: primaryColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(AppAssets.caretRight, size: 18, color: secondaryColor),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (collection.items.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: Text(
-                context.l10n.noContentAvailable,
-                style: TextStyle(fontSize: 15, color: secondaryColor),
-              ),
-            ),
-          )
-        else
-          for (final item in collection.items)
-            GroupRecitationCollectionRow(
-              item: item,
-              isDark: isDark,
-              isCompleted: completionState.isCompleted(item.id),
-              isSubmitting: completionState.isSubmitting(item.id),
-              onTap: () => _openReader(context, ref, key, collection, item),
-            ),
-      ],
-    );
-  }
-
-  void _openReader(
-    BuildContext context,
-    WidgetRef ref,
-    GroupRecitationCollectionKey key,
-    GroupRecitationCollection collection,
-    GroupRecitationCollectionItem item,
-  ) {
-    final textId = item.textId.trim();
-    if (textId.isEmpty || item.id.trim().isEmpty) return;
-
-    context.push(
-      '/reader/$textId',
-      extra: groupRecitationCollectionNavigationContext(
-        key: key,
-        collection: collection,
-        item: item,
-        completionState: ref.read(
-          groupRecitationCollectionCompletionProvider(key),
-        ),
       ),
     );
   }

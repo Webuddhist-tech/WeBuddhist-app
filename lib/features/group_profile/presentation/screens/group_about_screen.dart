@@ -118,18 +118,19 @@ class _SectionHeader extends StatelessWidget {
 
     return Text(
       title,
-      style: large
-          ? TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: titleColor,
-            )
-          : TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-              color: secondaryColor,
-            ),
+      style:
+          large
+              ? TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: titleColor,
+              )
+              : TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+                color: secondaryColor,
+              ),
     );
   }
 }
@@ -142,8 +143,7 @@ class _AboutLinkTile extends StatelessWidget {
 
   Future<void> _launchUrl(BuildContext context) async {
     final uri = Uri.tryParse(link.url.trim());
-    if (uri == null ||
-        (uri.scheme != 'http' && uri.scheme != 'https')) {
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
       _logger.warning('Blocked invalid group link URL: ${link.url}');
       if (context.mounted) {
         _showSnackBar(context, context.l10n.link_invalid);
@@ -173,9 +173,9 @@ class _AboutLinkTile extends StatelessWidget {
   }
 
   void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
