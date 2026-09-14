@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_events_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_lazy_segment_mixin.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_discover_tab_gate.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_empty_state.dart';
@@ -68,6 +69,7 @@ class _ConnectEventsTabState extends ConsumerState<ConnectEventsTab>
           scrollViewKey: const PageStorageKey<String>('connect_events_my'),
           header: scrollHeader,
           useHairlineDividers: false,
+          separatorHeight: ConnectFeedCardLayout.listItemGap,
           items: myState.events,
           isLoading: myState.isLoading,
           isLoadingMore: myState.isLoadingMore,
@@ -91,6 +93,7 @@ class _ConnectEventsTabState extends ConsumerState<ConnectEventsTab>
           ),
           header: scrollHeader,
           useHairlineDividers: false,
+          separatorHeight: ConnectFeedCardLayout.listItemGap,
           items: discoverState.events,
           isLoading: discoverState.isLoading,
           isLoadingMore: discoverState.isLoadingMore,

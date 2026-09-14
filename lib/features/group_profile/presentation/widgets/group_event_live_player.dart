@@ -202,8 +202,7 @@ JSON.stringify((function () {
 
   bool get _isPlaying => _playerState == PlayerState.playing;
 
-  bool get _isBuffering =>
-      !_isReady || _playerState == PlayerState.buffering;
+  bool get _isBuffering => !_isReady || _playerState == PlayerState.buffering;
 
   bool get _showLoader => !_isReady || _switching || widget.isSwitching;
 
@@ -417,8 +416,7 @@ JSON.stringify((function () {
     final fraction =
         span <= 0 ? 1.0 : ((current - start) / span).clamp(0.0, 1.0);
     final atLiveEdge =
-        atHead ??
-        (span <= 0 || end - current <= _liveEdgeTolerance.inSeconds);
+        atHead ?? (span <= 0 || end - current <= _liveEdgeTolerance.inSeconds);
     return _LiveProgress(
       fraction: fraction,
       atLiveEdge: atLiveEdge,
@@ -531,7 +529,8 @@ player.playVideo();
       fit: StackFit.expand,
       children: [
         CachedNetworkImageWidget(
-          imageUrl: 'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
+          imageUrl:
+              'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
           fit: BoxFit.cover,
           placeholder: const ColoredBox(color: Colors.black),
           errorWidget: const ColoredBox(color: Colors.black),
