@@ -51,8 +51,8 @@ class GroupEventListTile extends StatelessWidget {
               Positioned(
                 left: 0,
                 top: 0,
-                bottom: 0,
                 width: _imageSize,
+                height: _imageSize,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child:
