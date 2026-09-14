@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -10,10 +11,18 @@ import 'package:intl/intl.dart';
 class GroupEventNotStartedCard extends StatefulWidget {
   final DateTime? startsAt;
 
+  /// Fills the card behind the frosted countdown; grey when null.
+  final Widget? background;
+
   /// Fires once when the countdown reaches zero.
   final VoidCallback? onStarted;
 
-  const GroupEventNotStartedCard({super.key, this.startsAt, this.onStarted});
+  const GroupEventNotStartedCard({
+    super.key,
+    this.startsAt,
+    this.background,
+    this.onStarted,
+  });
 
   @override
   State<GroupEventNotStartedCard> createState() =>
@@ -88,72 +97,107 @@ class _GroupEventNotStartedCardState extends State<GroupEventNotStartedCard> {
     final remaining = _remaining;
     final counting = remaining != null && remaining > Duration.zero;
     final dateText = _formatStart(context);
+    final background = widget.background;
+    final onImage = background != null;
 
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: ColoredBox(
-        color: isDark ? AppColors.surfaceDark : AppColors.greyLight,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      isDark
-                          ? AppColors.chipBackgroundDark
-                          : AppColors.grey800,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          background ??
+              ColoredBox(
+                color: isDark ? AppColors.surfaceDark : AppColors.greyLight,
+              ),
+          // Dim the cover so the white text stays readable on bright art.
+          if (onImage) const ColoredBox(color: Colors.black26),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      counting
-                          ? context.l10n.event_puja_starts_in
-                          : context.l10n.event_puja_not_started,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            onImage
+                                ? Colors.black.withValues(alpha: 0.45)
+                                : isDark
+                                ? AppColors.chipBackgroundDark
+                                : AppColors.grey800,
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            onImage
+                                ? Border.all(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                )
+                                : null,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            counting
+                                ? context.l10n.event_puja_starts_in
+                                : context.l10n.event_puja_not_started,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (counting) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              _formatCountdown(remaining),
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1,
+                                color: Colors.white,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (counting) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatCountdown(remaining),
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1,
-                          color: Colors.white,
-                          fontFeatures: [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (dateText != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  dateText,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color:
-                        isDark
-                            ? AppColors.textTertiaryDark
-                            : AppColors.textSecondary,
                   ),
                 ),
+                if (dateText != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    dateText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color:
+                          onImage
+                              ? Colors.white.withValues(alpha: 0.9)
+                              : isDark
+                              ? AppColors.textTertiaryDark
+                              : AppColors.textSecondary,
+                      shadows:
+                          onImage
+                              ? const [
+                                Shadow(
+                                  color: Colors.black54,
+                                  blurRadius: 6,
+                                ),
+                              ]
+                              : null,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

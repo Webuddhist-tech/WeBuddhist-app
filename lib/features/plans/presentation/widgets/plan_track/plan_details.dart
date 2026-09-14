@@ -12,6 +12,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
@@ -410,6 +411,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       language: _liveLanguage,
       audioOnly: _liveAudioOnly,
       fallbackTitle: widget.plan.title,
+      notStartedBackground: ResponsiveCoverImage(
+        image: widget.plan.coverImage,
+        fit: BoxFit.cover,
+      ),
     );
   }
 

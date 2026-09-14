@@ -38,12 +38,16 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
   final bool audioOnly;
   final String fallbackTitle;
 
+  /// Cover art behind the "not started" card.
+  final Widget? notStartedBackground;
+
   const GroupEventLiveHeader({
     super.key,
     required this.eventId,
     required this.language,
     required this.audioOnly,
     required this.fallbackTitle,
+    this.notStartedBackground,
   });
 
   @override
@@ -89,6 +93,7 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     } else {
       child = GroupEventNotStartedCard(
         startsAt: _startsAt,
+        background: widget.notStartedBackground,
         // The stream link is often attached right at start time.
         onStarted: () => ref.invalidate(groupEventInLanguageProvider(_key)),
       );
