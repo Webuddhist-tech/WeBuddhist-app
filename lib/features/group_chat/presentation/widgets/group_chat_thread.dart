@@ -587,9 +587,12 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
       for (final message in targets) message.id,
     ]);
     if (!mounted) return;
-    _selectedIds.removeAll(outcome.deleted);
 
     if (outcome.failed.isEmpty) {
+      // Cleared while the set is still populated: `_clearSelection` treats
+      // an already-empty set as nothing to do and would not tell the screen,
+      // leaving the selection header and the row tint in place over
+      // freshly deleted rows.
       _clearSelection();
       messenger.showSnackBar(
         SnackBar(
@@ -600,6 +603,9 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
       );
       return;
     }
+    // Partial success (the one-call-each fallback): the deleted rows leave
+    // the selection, the refused ones stay in it for a retry.
+    _selectedIds.removeAll(outcome.deleted);
     _publishSelection();
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.group_chat_delete_failed)),
