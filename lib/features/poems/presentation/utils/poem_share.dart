@@ -14,9 +14,11 @@ Future<void> sharePoem(BuildContext context, Poem poem) async {
   if (!context.mounted) return;
 
   final title = poem.title.trim();
+  final formattedTitle =
+      title.isNotEmpty ? context.l10n.share_poem_title(title) : null;
   final message =
-      title.isNotEmpty
-          ? '$shareMessage\n\n$title\n\n$shareUrl'
+      formattedTitle != null
+          ? '$shareMessage\n\n$formattedTitle\n\n$shareUrl'
           : '$shareMessage\n\n$shareUrl';
   await SharePlus.instance.share(
     ShareParams(

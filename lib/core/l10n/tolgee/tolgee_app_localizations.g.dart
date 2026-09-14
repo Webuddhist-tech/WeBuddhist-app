@@ -4348,6 +4348,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String share_poem_title(String title) => TolgeeBridge.format(
+    localeName,
+    'share_poem_title',
+    <String, Object>{'title': title},
+    () => _fallback.share_poem_title(title),
+  );
+
+  @override
   String get share_mala_message => TolgeeBridge.get(
     localeName,
     'share_mala_message',

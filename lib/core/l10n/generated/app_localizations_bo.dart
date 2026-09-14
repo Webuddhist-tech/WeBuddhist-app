@@ -2246,6 +2246,11 @@ class AppLocalizationsBo extends AppLocalizations {
       'ངས་ WeBuddhist ཐོག་གི་སྙན་ངག་འདི་ཡག་པོ་མཐོང་སོང་བས་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་།';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'ངས་ WeBuddhist ཐོག་གི་གློག་རྡུལ་ཕྲེང་བ་འདི་བཀོལ་སྤྱོད་བྱེད་ཀྱི་ཡོད་ཅིང་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་། ཁྱེད་གང་དུ་སོང་ཡང་བེད་སྤྱོད་བྱེད་པར་སྟབས་བདེ་པོ་ཡོད།';
 

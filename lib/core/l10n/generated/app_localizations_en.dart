@@ -2223,6 +2223,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'I liked this poem from WeBuddhist and wanted to share it with you.';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'I\'ve been using this digital mala on WeBuddhist and wanted to share it with you. It\'s an easy way to practice wherever you go.';
 
