@@ -4999,6 +4999,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live'**
   String get event_live_go_live;
+
+  /// No description provided for @event_puja_starts_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Puja starts in'**
+  String get event_puja_starts_in;
+
+  /// No description provided for @event_puja_not_started.
+  ///
+  /// In en, this message translates to:
+  /// **'Puja not started yet'**
+  String get event_puja_not_started;
 }
 
 class _AppLocalizationsDelegate

@@ -1362,5 +1362,7 @@
   "event_live_audio": "Live audio",
   "event_live_video_mode": "Video",
   "event_live_audio_mode": "Audio",
-  "event_live_go_live": "Live"
+  "event_live_go_live": "Live",
+  "event_puja_starts_in": "Puja starts in",
+  "event_puja_not_started": "Puja not started yet"
 }

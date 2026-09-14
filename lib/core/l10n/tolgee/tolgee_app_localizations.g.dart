@@ -5529,4 +5529,18 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'event_live_go_live',
     () => _fallback.event_live_go_live,
   );
+
+  @override
+  String get event_puja_starts_in => TolgeeBridge.get(
+    localeName,
+    'event_puja_starts_in',
+    () => _fallback.event_puja_starts_in,
+  );
+
+  @override
+  String get event_puja_not_started => TolgeeBridge.get(
+    localeName,
+    'event_puja_not_started',
+    () => _fallback.event_puja_not_started,
+  );
 }

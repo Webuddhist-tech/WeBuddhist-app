@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_event
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_player.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_toggles.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_not_started_card.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
@@ -20,11 +21,13 @@ import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_cover_image.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:intl/intl.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
   @override
@@ -130,8 +133,7 @@ Future<void> _pumpLiveEventDetails(
           (ref, key) =>
               streamKnownAbsent
                   ? Future.value(const Left(NetworkFailure('test')))
-                  : (stream ?? Completer<Either<Failure, GroupEvent>>())
-                      .future,
+                  : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
         ),
         userPlanDayContentFutureProvider.overrideWith(
           (ref, params) => Stream.value(Right(day)),
@@ -167,8 +169,7 @@ Future<void> _pumpLiveEventDetails(
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-Finder _body() =>
-    find.textContaining('swift protector', findRichText: true);
+Finder _body() => find.textContaining('swift protector', findRichText: true);
 
 // The pending stream shimmers forever, so settle for a fixed time instead.
 Future<void> _settle(WidgetTester tester) =>
@@ -221,6 +222,34 @@ void main() {
     expect(find.byType(GroupEventLanguageToggle), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
+    // No cover image: the header says the puja has not started.
+    expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
+    expect(find.text('Puja not started yet'), findsOneWidget);
+    expect(find.byType(PlanCoverImage), findsNothing);
+  });
+
+  testWidgets('an event without a stream counts down to its start', (
+    tester,
+  ) async {
+    final stream = Completer<Either<Failure, GroupEvent>>();
+    await _pumpLiveEventDetails(tester, stream: stream);
+
+    final startsAt = DateTime.now().add(
+      const Duration(hours: 2, minutes: 14, seconds: 30),
+    );
+    stream.complete(
+      Right(GroupEvent(id: 'event-1', groupId: 'group-1', startDate: startsAt)),
+    );
+    await _settle(tester);
+
+    expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
+    expect(find.text('Puja starts in'), findsOneWidget);
+    expect(find.text('02 : 14 : 30'), findsOneWidget);
+    final local = startsAt.toLocal();
+    final date = DateFormat('EEE d MMM').format(local);
+    final time = DateFormat.jm().format(local).toLowerCase();
+    expect(find.text('$date · $time ${local.timeZoneName}'), findsOneWidget);
+    expect(find.byType(PlanCoverImage), findsNothing);
   });
 
   testWidgets('a failed stream request keeps an open task in place', (

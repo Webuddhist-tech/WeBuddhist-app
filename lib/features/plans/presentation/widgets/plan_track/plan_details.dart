@@ -410,14 +410,6 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       language: _liveLanguage,
       audioOnly: _liveAudioOnly,
       fallbackTitle: widget.plan.title,
-      fallback: LayoutBuilder(
-        builder:
-            (context, constraints) => PlanCoverImage(
-              image: widget.plan.coverImage,
-              height: constraints.maxWidth * 9 / 16,
-              edgeToEdge: true,
-            ),
-      ),
     );
   }
 

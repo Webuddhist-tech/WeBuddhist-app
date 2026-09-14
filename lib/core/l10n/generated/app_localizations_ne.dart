@@ -2842,4 +2842,10 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
 }
