@@ -2434,6 +2434,12 @@ class AppLocalizationsNe extends AppLocalizations {
   String get player_forward_10 => '१० सेकेन्ड अगाडि';
 
   @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
+
+  @override
   String get session_plans_load_error =>
       'योजनाहरू लोड गर्न असमर्थ।\nकृपया पछि पुनः प्रयास गर्नुहोस्।';
 

@@ -2401,6 +2401,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get player_forward_10 => 'Forward 10 seconds';
 
   @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
+
+  @override
   String get session_plans_load_error =>
       'Unable to load plans.\nPlease try again later.';
 

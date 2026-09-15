@@ -2284,6 +2284,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get player_forward_10 => '快進 10 秒';
 
   @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
+
+  @override
   String get session_plans_load_error => '無法載入計畫。\n請稍後重試。';
 
   @override
