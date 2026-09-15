@@ -253,6 +253,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     state = state.copyWith(
       requests:
           state.requests.where((request) => request.id != messageId).toList(),
+      skip: state.skip > 0 ? state.skip - 1 : 0,
     );
   }
 
