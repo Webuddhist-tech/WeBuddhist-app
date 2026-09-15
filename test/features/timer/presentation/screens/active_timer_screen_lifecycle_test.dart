@@ -26,7 +26,7 @@ void main() {
     tester,
   ) async {
     final clock = _FakeClock();
-    final notifier = _FakeTimerSessionNotifications.withControlledSchedules();
+    final notifier = _FakeTimerSessionNotifications();
     final soundPlayer = _FakeTimerBellPlayer();
 
     await _pumpScreen(
@@ -76,6 +76,7 @@ void main() {
       await tester.pump();
 
       expect(notifier.scheduleRequests, hasLength(1));
+      await tester.pump();
       clock.advance(_timerDuration + const Duration(milliseconds: 1));
 
       binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
@@ -119,7 +120,7 @@ void main() {
     'reordered schedule and cancel futures leave newest alarm armed',
     (tester) async {
       final clock = _FakeClock();
-      final notifier = _FakeTimerSessionNotifications();
+      final notifier = _FakeTimerSessionNotifications.withControlledSchedules();
       final soundPlayer = _FakeTimerBellPlayer();
 
       await _pumpScreen(
