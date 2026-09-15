@@ -290,7 +290,7 @@ class _PostMediaGallery extends StatefulWidget {
 }
 
 class _PostMediaGalleryState extends State<_PostMediaGallery> {
-  late final PageController _controller;
+  late PageController _controller;
   late int _page;
 
   /// Per-post slot; the default PageView slot is shared by every card under
@@ -319,7 +319,13 @@ class _PostMediaGalleryState extends State<_PostMediaGallery> {
       return;
     }
     _page = _savedPage;
-    if (_controller.hasClients) _controller.jumpToPage(_page);
+    if (_controller.hasClients) {
+      _controller.jumpToPage(_page);
+      return;
+    }
+    // Not attached (single-image post): a fresh controller sets the start page.
+    _controller.dispose();
+    _controller = PageController(initialPage: _page, keepPage: false);
   }
 
   @override
