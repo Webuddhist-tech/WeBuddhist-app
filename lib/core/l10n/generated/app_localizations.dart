@@ -4298,6 +4298,18 @@ abstract class AppLocalizations {
   /// **'Forward 10 seconds'**
   String get player_forward_10;
 
+  /// No description provided for @player_fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get player_fullscreen;
+
+  /// No description provided for @player_exit_fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit fullscreen'**
+  String get player_exit_fullscreen;
+
   /// No description provided for @session_plans_load_error.
   ///
   /// In en, this message translates to:
