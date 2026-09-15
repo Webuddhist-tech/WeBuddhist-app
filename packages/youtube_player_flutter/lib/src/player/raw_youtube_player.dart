@@ -34,6 +34,7 @@ class _RawYoutubePlayerState extends State<RawYoutubePlayer>
   PlayerState? _cachedPlayerState;
   bool _isPlayerReady = false;
   bool _onLoadStopCalled = false;
+  int _resumeAttempt = 0;
 
   @override
   void initState() {
@@ -53,6 +54,8 @@ class _RawYoutubePlayerState extends State<RawYoutubePlayer>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Any lifecycle change invalidates pending background resume retries.
+    _resumeAttempt++;
     switch (state) {
       case AppLifecycleState.resumed:
         if (_wasPlaying) controller?.play();
@@ -77,9 +80,11 @@ class _RawYoutubePlayerState extends State<RawYoutubePlayer>
   // iOS pauses web media on lock; nudge the player back a few times.
   void _resumeInBackground() {
     if (!_wasPlaying) return;
+    final attempt = _resumeAttempt;
     for (final delay in const [300, 1500, 4000]) {
       Future.delayed(Duration(milliseconds: delay), () {
-        if (mounted && controller?.value.isReady == true) controller!.play();
+        if (!mounted || attempt != _resumeAttempt || !_wasPlaying) return;
+        if (controller?.value.isReady == true) controller!.play();
       });
     }
   }
