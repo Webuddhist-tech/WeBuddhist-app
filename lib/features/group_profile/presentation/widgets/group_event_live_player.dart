@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -198,6 +200,11 @@ JSON.stringify((function () {
   bool _switching = true;
   Timer? _switchTimeout;
   final _live = ValueNotifier<_LiveProgress>(const _LiveProgress());
+  // Fullscreen moves the player into its own route; the key keeps the WebView.
+  final _playerKey = GlobalKey();
+  final _fullscreenTick = ValueNotifier<int>(0);
+  bool _fullscreen = false;
+  Route<void>? _fullscreenRoute;
 
   bool get _isLiveStream => _probedIsLive ?? widget.isLive;
 
@@ -213,6 +220,13 @@ JSON.stringify((function () {
     _controller = _createController(widget.videoId);
     _switchTimeout = Timer(_switchTimeoutDuration, _endSwitch);
     unawaited(_setAudioSessionActive(true));
+  }
+
+  // The fullscreen route builds outside this subtree, so nudge it as well.
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    if (_fullscreenRoute != null) _fullscreenTick.value++;
   }
 
   // iOS only keeps web audio alive when locked under a playback session.
@@ -269,6 +283,11 @@ JSON.stringify((function () {
   @override
   void didUpdateWidget(GroupEventLivePlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_fullscreenRoute != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _fullscreenRoute != null) _fullscreenTick.value++;
+      });
+    }
     if (widget.isLive != oldWidget.isLive) _syncLivePolling();
     final isReady = _controller.value.isReady;
     if (widget.isSwitching && !oldWidget.isSwitching) {
@@ -321,6 +340,16 @@ JSON.stringify((function () {
   void dispose() {
     _livePoll?.cancel();
     _switchTimeout?.cancel();
+    final route = _fullscreenRoute;
+    if (route != null) {
+      // Unmounted underneath fullscreen: drop the route once this frame ends.
+      _fullscreenRoute = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (route.isActive) route.navigator?.removeRoute(route);
+      });
+      unawaited(_setFullscreenChrome(false));
+    }
+    _fullscreenTick.dispose();
     _live.dispose();
     _disposeController();
     unawaited(_setAudioSessionActive(false));
@@ -507,7 +536,82 @@ player.playVideo();
     }
   }
 
+  Future<void> _setFullscreenChrome(bool on) async {
+    try {
+      if (on) {
+        await SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } else {
+        await SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.portraitUp,
+        ]);
+        await SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.manual,
+          overlays: SystemUiOverlay.values,
+        );
+      }
+    } catch (e) {
+      _logger.warning('Fullscreen ${on ? 'enter' : 'exit'}: $e');
+    }
+  }
+
+  void _toggleFullscreen() {
+    if (_fullscreen) {
+      _exitFullscreen();
+    } else {
+      _enterFullscreen();
+    }
+  }
+
+  void _enterFullscreen() {
+    if (_fullscreenRoute != null) return;
+    final route = PageRouteBuilder<void>(
+      settings: const RouteSettings(name: 'group-event-live-fullscreen'),
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+      pageBuilder: (_, __, ___) => _buildFullscreen(),
+    );
+    _fullscreenRoute = route;
+    // The inline slot and the route rebuild in the same frame, so the keyed
+    // player moves across without recreating the WebView.
+    setState(() => _fullscreen = true);
+    _controller.updateValue(_controller.value.copyWith(isFullScreen: true));
+    unawaited(_setFullscreenChrome(true));
+    unawaited(
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(route).then((_) => _onFullscreenClosed(route)),
+    );
+  }
+
+  void _exitFullscreen() {
+    final route = _fullscreenRoute;
+    if (route == null) return;
+    if (route.isCurrent) {
+      route.navigator?.pop();
+      return;
+    }
+    if (route.isActive) route.navigator?.removeRoute(route);
+    _onFullscreenClosed(route);
+  }
+
+  void _onFullscreenClosed(Route<void> route) {
+    if (_fullscreenRoute != route || !mounted) return;
+    setState(() => _fullscreen = false);
+    _fullscreenRoute = null;
+    _controller.updateValue(_controller.value.copyWith(isFullScreen: false));
+    unawaited(_setFullscreenChrome(false));
+  }
+
   List<Widget> _bottomActions() {
+    final fullscreenButton = _FullscreenButton(
+      isFullscreen: _fullscreen,
+      onTap: _toggleFullscreen,
+    );
     if (_isLiveStream) {
       return [
         const SizedBox(width: 14),
@@ -525,7 +629,9 @@ player.playVideo();
               (context, live, _) =>
                   _LiveChip(atLiveEdge: live.atLiveEdge, onTap: _seekToLive),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 2),
+        fullscreenButton,
+        const SizedBox(width: 4),
       ];
     }
     return [
@@ -535,7 +641,9 @@ player.playVideo();
       ProgressBar(isExpanded: true, colors: _progressColors),
       const SizedBox(width: 8),
       const RemainingDuration(),
-      const SizedBox(width: 14),
+      const SizedBox(width: 2),
+      fullscreenButton,
+      const SizedBox(width: 4),
     ];
   }
 
@@ -566,6 +674,64 @@ player.playVideo();
     );
   }
 
+  Widget _buildPlayer(double width) {
+    return KeyedSubtree(
+      key: _playerKey,
+      child: YoutubePlayer(
+        key: ValueKey(_playerGeneration),
+        controller: _controller,
+        width: width,
+        thumbnail: _buildCover(),
+        progressIndicatorColor: AppColors.primary,
+        progressColors: _progressColors,
+        showVideoProgressIndicator: true,
+        bottomActions: _bottomActions(),
+      ),
+    );
+  }
+
+  // Loader and live badge, shared by the inline and fullscreen layouts.
+  List<Widget> _buildVideoOverlays() {
+    return [
+      // Cover the player until YouTube is ready so nothing flickers.
+      Positioned.fill(
+        child: IgnorePointer(
+          child: AnimatedOpacity(
+            opacity: _showLoader ? 1 : 0,
+            duration: const Duration(milliseconds: 250),
+            child: const GroupEventLivePlaceholder(),
+          ),
+        ),
+      ),
+      if (_isLiveStream)
+        Positioned(top: 10, left: 10, child: _buildLiveBadge()),
+    ];
+  }
+
+  Widget _buildFullscreen() {
+    return ListenableBuilder(
+      listenable: _fullscreenTick,
+      builder: (context, _) {
+        // Player handed back to the inline slot; the route is on its way out.
+        if (!_fullscreen) return const ColoredBox(color: Colors.black);
+        final size = MediaQuery.sizeOf(context);
+        final width = math.min(size.width, size.height * 16 / 9);
+        return ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: SizedBox(
+              width: width,
+              height: width * 9 / 16,
+              child: Stack(
+                children: [_buildPlayer(width), ..._buildVideoOverlays()],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -588,35 +754,17 @@ player.playVideo();
                   maxWidth: width,
                   minHeight: playerHeight,
                   maxHeight: playerHeight,
-                  child: YoutubePlayer(
-                    key: ValueKey(_playerGeneration),
-                    controller: _controller,
-                    width: width,
-                    thumbnail: _buildCover(),
-                    progressIndicatorColor: AppColors.primary,
-                    progressColors: _progressColors,
-                    showVideoProgressIndicator: true,
-                    bottomActions: _bottomActions(),
-                  ),
+                  child:
+                      _fullscreen
+                          ? const ColoredBox(color: Colors.black)
+                          : _buildPlayer(width),
                 ),
               ),
             ),
             if (widget.audioOnly)
               _buildAudioRow(context, isDark)
-            else ...[
-              // Cover the player until YouTube is ready so nothing flickers.
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: _showLoader ? 1 : 0,
-                    duration: const Duration(milliseconds: 250),
-                    child: const GroupEventLivePlaceholder(),
-                  ),
-                ),
-              ),
-              if (_isLiveStream)
-                Positioned(top: 10, left: 10, child: _buildLiveBadge()),
-            ],
+            else
+              ..._buildVideoOverlays(),
           ],
         );
       },
@@ -878,6 +1026,32 @@ class _LiveBadge extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Enters or leaves the landscape fullscreen player.
+class _FullscreenButton extends StatelessWidget {
+  final bool isFullscreen;
+  final VoidCallback onTap;
+
+  const _FullscreenButton({required this.isFullscreen, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip:
+          isFullscreen
+              ? context.l10n.player_exit_fullscreen
+              : context.l10n.player_fullscreen,
+      iconSize: 24,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+      color: Colors.white,
+      onPressed: onTap,
+      icon: Icon(
+        isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
       ),
     );
   }

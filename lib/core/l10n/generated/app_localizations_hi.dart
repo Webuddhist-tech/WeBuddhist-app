@@ -2423,6 +2423,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get player_forward_10 => '10 सेकंड आगे';
 
   @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
+
+  @override
   String get session_plans_load_error =>
       'योजनाएँ लोड करने में असमर्थ।\nकृपया बाद में पुनः प्रयास करें।';
 
