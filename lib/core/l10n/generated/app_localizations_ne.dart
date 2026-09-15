@@ -1677,6 +1677,15 @@ class AppLocalizationsNe extends AppLocalizations {
   String get parallel_version => 'समानान्तर संस्करण';
 
   @override
+  String get reader_languages_title => 'भाषाहरू';
+
+  @override
+  String get reader_original_label => 'मूल';
+
+  @override
+  String get reader_translation_label => 'अनुवाद';
+
+  @override
   String get version_not_available => 'उपलब्ध छैन';
 
   @override
@@ -2842,4 +2851,39 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'प्रार्थना अनुरोध';
+
+  @override
+  String get event_prayer_empty_title => 'अहिले कुनै प्रार्थना अनुरोध छैन';
+
+  @override
+  String get event_prayer_empty_body =>
+      'तपाईं र तपाईंको समुदायको अनुरोध यहाँ देखिनेछ';
+
+  @override
+  String get event_prayer_add => 'प्रार्थना अनुरोध थप्नुहोस्';
+
+  @override
+  String get event_prayer_hint => 'आज हामी तपाईंका लागि के प्रार्थना गरौं';
+
+  @override
+  String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड गर्न सकिएन।';
+
+  @override
+  String get event_prayer_closed =>
+      'यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।';
+
+  @override
+  String get event_prayer_pray => 'प्रार्थना गर्नुहोस्';
+
+  @override
+  String get event_prayer_praying => 'प्रार्थना गर्दै';
 }

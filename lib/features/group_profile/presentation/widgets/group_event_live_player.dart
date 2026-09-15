@@ -11,6 +11,7 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_not_started_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -29,13 +30,16 @@ class GroupEventLiveStream {
   });
 }
 
-/// Event stream in the selected language; [fallback] when there is none.
+/// Event stream in the selected language; a "not started" card when there is
+/// none, counting down to the event's start.
 class GroupEventLiveHeader extends ConsumerStatefulWidget {
   final String eventId;
   final String language;
   final bool audioOnly;
   final String fallbackTitle;
-  final Widget fallback;
+
+  /// Cover art behind the "not started" card.
+  final Widget? notStartedBackground;
 
   const GroupEventLiveHeader({
     super.key,
@@ -43,7 +47,7 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
     required this.language,
     required this.audioOnly,
     required this.fallbackTitle,
-    required this.fallback,
+    this.notStartedBackground,
   });
 
   @override
@@ -52,21 +56,54 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
 }
 
 class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
+  // The stream link is often attached after the start time, so keep asking.
+  static const _retryInterval = Duration(seconds: 30);
+
   GroupEventLiveStream? _stream;
+  DateTime? _startsAt;
+  Timer? _retry;
+
+  GroupEventLanguageKey get _key => (
+    eventId: widget.eventId,
+    language: widget.language,
+  );
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    ref.invalidate(groupEventInLanguageProvider(_key));
+  }
+
+  void _syncRetry({required bool waiting}) {
+    if (!waiting) {
+      _retry?.cancel();
+      _retry = null;
+      return;
+    }
+    _retry ??= Timer.periodic(_retryInterval, (_) => _refresh());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final eventAsync = ref.watch(
-      groupEventInLanguageProvider((
-        eventId: widget.eventId,
-        language: widget.language,
-      )),
-    );
-    // Keep the current stream playing while another language loads.
-    eventAsync.valueOrNull?.fold((_) {}, (event) => _stream = _resolve(event));
+    final eventAsync = ref.watch(groupEventInLanguageProvider(_key));
+    // Keep the current stream playing while another language loads; a failed
+    // fetch drops it so the old language's player does not linger.
+    eventAsync.valueOrNull?.fold((_) => _stream = null, (event) {
+      _stream = _resolve(event);
+      _startsAt = event.startDate;
+    });
 
     final stream = _stream;
     final fetching = eventAsync.isLoading && !eventAsync.hasValue;
+    final startsAt = _startsAt;
+    final started = startsAt != null && !startsAt.isAfter(DateTime.now());
+    _syncRetry(waiting: stream == null && !fetching && started);
+
     final Widget child;
     if (stream != null) {
       child = GroupEventLivePlayer(
@@ -77,13 +114,17 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
         isSwitching: fetching,
       );
     } else if (fetching) {
-      // Skeleton, not the cover, so the cover never flashes before the video.
+      // Skeleton, not the card, so nothing flashes before the video.
       child = const AspectRatio(
         aspectRatio: 16 / 9,
         child: GroupEventLivePlaceholder(),
       );
     } else {
-      child = widget.fallback;
+      child = GroupEventNotStartedCard(
+        startsAt: startsAt,
+        background: widget.notStartedBackground,
+        onStarted: _refresh,
+      );
     }
     return child;
   }
@@ -161,8 +202,7 @@ JSON.stringify((function () {
 
   bool get _isPlaying => _playerState == PlayerState.playing;
 
-  bool get _isBuffering =>
-      !_isReady || _playerState == PlayerState.buffering;
+  bool get _isBuffering => !_isReady || _playerState == PlayerState.buffering;
 
   bool get _showLoader => !_isReady || _switching || widget.isSwitching;
 
@@ -376,8 +416,7 @@ JSON.stringify((function () {
     final fraction =
         span <= 0 ? 1.0 : ((current - start) / span).clamp(0.0, 1.0);
     final atLiveEdge =
-        atHead ??
-        (span <= 0 || end - current <= _liveEdgeTolerance.inSeconds);
+        atHead ?? (span <= 0 || end - current <= _liveEdgeTolerance.inSeconds);
     return _LiveProgress(
       fraction: fraction,
       atLiveEdge: atLiveEdge,
@@ -490,7 +529,8 @@ player.playVideo();
       fit: StackFit.expand,
       children: [
         CachedNetworkImageWidget(
-          imageUrl: 'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
+          imageUrl:
+              'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
           fit: BoxFit.cover,
           placeholder: const ColoredBox(color: Colors.black),
           errorWidget: const ColoredBox(color: Colors.black),

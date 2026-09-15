@@ -45,7 +45,7 @@ class ReaderPanelContentBlock extends StatelessWidget {
     final localizations = context.l10n;
     final fontFamily = getFontFamily(language);
     final lineHeight = getLineHeight(language);
-    final fontSize = getLocalizedFontSize(AppTextSize.content);
+    final fontSize = getLocalizedFontSize(AppTextSize.body);
 
     final plainText = _plainTextFromHtml(content);
     final isToggleable =

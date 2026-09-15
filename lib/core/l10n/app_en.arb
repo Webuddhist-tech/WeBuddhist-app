@@ -768,6 +768,9 @@
   "second_version_msg": "The second version will appear below each verse of the main text",
   "version": "Versions",
   "parallel_version": "Parallel version",
+  "reader_languages_title": "Languages",
+  "reader_original_label": "Original",
+  "reader_translation_label": "Translation",
   "version_not_available": "Not available",
   "read_full_text": "Read full text",
   "reader_source_label": "Source",
@@ -1362,5 +1365,16 @@
   "event_live_audio": "Live audio",
   "event_live_video_mode": "Video",
   "event_live_audio_mode": "Audio",
-  "event_live_go_live": "Live"
+  "event_live_go_live": "Live",
+  "event_puja_starts_in": "Puja starts in",
+  "event_puja_not_started": "Puja not started yet",
+  "event_prayer_requests": "Prayer requests",
+  "event_prayer_empty_title": "No prayer requests yet",
+  "event_prayer_empty_body": "Your request and your community's will appear here",
+  "event_prayer_add": "Add a prayer request",
+  "event_prayer_hint": "How can we pray for you today",
+  "event_prayer_load_failed": "Prayer requests couldn't be loaded.",
+  "event_prayer_closed": "Prayer requests are closed for this event.",
+  "event_prayer_pray": "Pray",
+  "event_prayer_praying": "Praying"
 }

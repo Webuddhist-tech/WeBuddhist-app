@@ -40,84 +40,87 @@ class GroupEventListTile extends StatelessWidget {
     final dateLabel = _formatDateLabel(context, event);
     final chips = _buildChips(context);
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: _imageSize),
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: _imageSize,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child:
-                      event.image != null && !event.image!.isEmpty
-                          ? ResponsiveCoverImage(
-                            image: event.image,
-                            fit: BoxFit.cover,
-                          )
-                          : ColoredBox(
-                            color:
-                                isDark
-                                    ? AppColors.surfaceVariantDark
-                                    : AppColors.grey100,
-                            child: Icon(
-                              AppAssets.calendarDots,
-                              size: 32,
+    return Material(
+      color: isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: _imageSize),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  width: _imageSize,
+                  height: _imageSize,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child:
+                        event.image != null && !event.image!.isEmpty
+                            ? ResponsiveCoverImage(
+                              image: event.image,
+                              fit: BoxFit.cover,
+                            )
+                            : ColoredBox(
                               color:
                                   isDark
-                                      ? AppColors.grey500
-                                      : AppColors.grey600,
+                                      ? AppColors.surfaceVariantDark
+                                      : AppColors.grey100,
+                              child: Icon(
+                                AppAssets.calendarDots,
+                                size: 32,
+                                color:
+                                    isDark
+                                        ? AppColors.grey500
+                                        : AppColors.grey600,
+                              ),
                             ),
-                          ),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: _imageSize + 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (showGroup && groupName.isNotEmpty) ...[
-                      _buildGroupRow(groupName, secondaryColor),
-                      const SizedBox(height: 4),
-                    ],
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        height: lineHeight,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (dateLabel != null) ...[
-                      const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.only(left: _imageSize + 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (showGroup && groupName.isNotEmpty) ...[
+                        _buildGroupRow(groupName, secondaryColor),
+                        const SizedBox(height: 4),
+                      ],
                       Text(
-                        dateLabel,
+                        title,
                         style: TextStyle(
-                          fontSize: 14,
-                          color: secondaryColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           height: lineHeight,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (dateLabel != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          dateLabel,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: secondaryColor,
+                            height: lineHeight,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      if (chips.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(spacing: 8, runSpacing: 6, children: chips),
+                      ],
                     ],
-                    if (chips.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Wrap(spacing: 8, runSpacing: 6, children: chips),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -215,8 +218,7 @@ class GroupEventListTile extends StatelessWidget {
     if (recurrenceLabel != null) return '$recurrenceLabel · $time';
 
     final end = event.endDate?.toLocal();
-    final isMultiDay =
-        end != null && !DateUtils.isSameDay(start, end);
+    final isMultiDay = end != null && !DateUtils.isSameDay(start, end);
     if (isMultiDay) {
       return '${dayFormat.format(start)} - ${dayFormat.format(end)}';
     }
@@ -270,19 +272,25 @@ class _EventChip extends StatelessWidget {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: color),
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icon, size: 14, color: color),
+          ),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: color,
-              height: lineHeight,
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: color,
+                height: lineHeight,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

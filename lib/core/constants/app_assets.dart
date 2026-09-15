@@ -98,6 +98,9 @@ class AppAssets {
   static const IconData dotsThreeVertical =
       PhosphorIconsRegular.dotsThreeVertical;
   static const IconData paperPlaneRight = PhosphorIconsRegular.paperPlaneRight;
+  static const IconData arrowCircleUp = PhosphorIconsFill.arrowCircleUp;
+  static const IconData handsPraying = PhosphorIconsRegular.handsPraying;
+  static const IconData handsPrayingFill = PhosphorIconsFill.handsPraying;
   static const IconData arrowBendUpLeft = PhosphorIconsRegular.arrowBendUpLeft;
   static const IconData copy = PhosphorIconsRegular.copy;
 

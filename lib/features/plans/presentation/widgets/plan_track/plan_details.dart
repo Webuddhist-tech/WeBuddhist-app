@@ -12,7 +12,12 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
@@ -203,6 +208,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
+                _buildPrayerRequestsButton(),
                 if (retryLive != null) _buildLiveEventError(retryLive),
                 // The edge-to-edge event cover has no margin of its own.
                 if (widget.eventId != null) const SizedBox(height: 12),
@@ -227,6 +233,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       child: Column(
         children: [
           _buildHeader(),
+          _buildPrayerRequestsButton(),
           if (_embedded.isOpen)
             Expanded(child: PlanEmbeddedPanel(controller: _embedded))
           else ...[
@@ -242,12 +249,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                 ),
               ),
             ),
-            // Built below the scope so "Practice now" opens in place too.
-            Builder(
-              builder:
-                  (context) =>
-                      _buildStartReadingButton(context, localizations),
-            ),
+            _buildStartReadingButton(context, localizations),
           ],
         ],
       ),
@@ -415,15 +417,32 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       language: _liveLanguage,
       audioOnly: _liveAudioOnly,
       fallbackTitle: widget.plan.title,
-      fallback: LayoutBuilder(
-        builder:
-            (context, constraints) => PlanCoverImage(
-              image: widget.plan.coverImage,
-              height: constraints.maxWidth * 9 / 16,
-              edgeToEdge: true,
-            ),
+      notStartedBackground: ResponsiveCoverImage(
+        image: widget.plan.coverImage,
+        fit: BoxFit.cover,
       ),
     );
+  }
+
+  /// Only once the event says its chat room is on.
+  Widget _buildPrayerRequestsButton() {
+    final eventId = widget.eventId;
+    if (eventId == null) return const SizedBox.shrink();
+    final event = ref
+        .watch(groupEventInLanguageProvider(_liveKey))
+        .valueOrNull
+        ?.fold((_) => null, (event) => event);
+    if (event == null || !event.chatEnabled) return const SizedBox.shrink();
+    return PrayerRequestsButton(onTap: () => _openPrayerRequests(eventId));
+  }
+
+  void _openPrayerRequests(String eventId) {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
   }
 
   Widget _buildDayCarouselSection(String language) {
@@ -989,6 +1008,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         dayData.isCompleted &&
         shareableImageUrl != null &&
         shareableImageUrl.isNotEmpty;
+
+    // From an event the user is already practicing; only Share remains.
+    if (!showShareButton && widget.eventId != null) {
+      return const SizedBox.shrink();
+    }
 
     final buttonStyle = FilledButton.styleFrom(
       backgroundColor: Theme.of(context).colorScheme.onSurface,

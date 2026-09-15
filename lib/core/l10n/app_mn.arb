@@ -644,6 +644,9 @@
   "second_version_msg": "Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ",
   "version": "Хувилбарууд",
   "parallel_version": "Зэрэгцээ хувилбар",
+  "reader_languages_title": "Хэл",
+  "reader_original_label": "Эх бичвэр",
+  "reader_translation_label": "Орчуулга",
   "version_not_available": "Байхгүй",
   "read_full_text": "Бүтэн бичвэрийг унших",
   "reader_source_label": "Эх сурвалж",
@@ -1141,5 +1144,14 @@
   "edit": "Засах",
   "group_post_edit_title": "Нийтлэлийг засах",
   "group_post_update_error": "Таны өөрчлөлтийг хадгалж чадсангүй. Дахин оролдоно уу.",
-  "group_post_updated": "Таны өөрчлөлт хадгалагдлаа."
+  "group_post_updated": "Таны өөрчлөлт хадгалагдлаа.",
+  "event_prayer_requests": "Залбирлын хүсэлт",
+  "event_prayer_empty_title": "Одоогоор залбирлын хүсэлт алга",
+  "event_prayer_empty_body": "Таны болон нийгэмлэгийн хүсэлт энд харагдана",
+  "event_prayer_add": "Залбирлын хүсэлт нэмэх",
+  "event_prayer_hint": "Өнөөдөр бид таны төлөө юуны төлөө залбирах вэ",
+  "event_prayer_load_failed": "Залбирлын хүсэлтийг ачаалж чадсангүй.",
+  "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.",
+  "event_prayer_pray": "Залбирах",
+  "event_prayer_praying": "Залбирч байна"
 }

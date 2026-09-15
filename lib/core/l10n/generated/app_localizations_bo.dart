@@ -1672,6 +1672,15 @@ class AppLocalizationsBo extends AppLocalizations {
   String get parallel_version => 'ཀློག་མཁན་གྱི་སྒྲིག་འགོད།';
 
   @override
+  String get reader_languages_title => 'སྐད་ཡིག';
+
+  @override
+  String get reader_original_label => 'མ་ཡིག';
+
+  @override
+  String get reader_translation_label => 'འགྱུར་མ།';
+
+  @override
   String get version_not_available => 'མི་འདུག';
 
   @override
@@ -2837,4 +2846,38 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'སྨོན་ལམ་ཞུ་བ།';
+
+  @override
+  String get event_prayer_empty_title => 'ད་ལྟ་སྨོན་ལམ་ཞུ་བ་མེད།';
+
+  @override
+  String get event_prayer_empty_body =>
+      'ཁྱེད་དང་ཁྱེད་ཀྱི་ཚོགས་པའི་ཞུ་བ་འདིར་མངོན་ངེས།';
+
+  @override
+  String get event_prayer_add => 'སྨོན་ལམ་ཞུ་བ་སྣོན་པ།';
+
+  @override
+  String get event_prayer_hint => 'དེ་རིང་ཁྱེད་ལ་སྨོན་ལམ་ཅི་ཞིག་འདེབས་དགོས།';
+
+  @override
+  String get event_prayer_load_failed => 'སྨོན་ལམ་ཞུ་བ་ཁུར་མ་ཐུབ།';
+
+  @override
+  String get event_prayer_closed => 'ལས་རིམ་འདིའི་སྨོན་ལམ་ཞུ་བ་བཀག་ཟིན།';
+
+  @override
+  String get event_prayer_pray => 'སྨོན་ལམ་འདེབས།';
+
+  @override
+  String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན།';
 }

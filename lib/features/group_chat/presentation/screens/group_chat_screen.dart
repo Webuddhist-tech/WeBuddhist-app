@@ -401,6 +401,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         deletedAt: final deletedAt,
       ):
         _onMessageDeleted(messageId, deletedAt);
+      // Prayer state is only rendered in the event sheet.
+      case ChatLivePrayersUpdated():
+      case ChatLiveRoomClosed():
       case ChatLiveTyping():
       case ChatLivePresence():
       case ChatLiveUnknown():
