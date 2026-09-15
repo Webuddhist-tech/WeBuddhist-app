@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -211,6 +212,20 @@ JSON.stringify((function () {
     super.initState();
     _controller = _createController(widget.videoId);
     _switchTimeout = Timer(_switchTimeoutDuration, _endSwitch);
+    unawaited(_setAudioSessionActive(true));
+  }
+
+  // iOS only keeps web audio alive when locked under a playback session.
+  Future<void> _setAudioSessionActive(bool active) async {
+    try {
+      final session = await AudioSession.instance;
+      if (active) {
+        await session.configure(const AudioSessionConfiguration.music());
+      }
+      await session.setActive(active);
+    } catch (e) {
+      _logger.warning('Audio session ${active ? 'activate' : 'release'}: $e');
+    }
   }
 
   YoutubePlayerController _createController(String videoId) {
@@ -222,6 +237,7 @@ JSON.stringify((function () {
         disableDragSeek: true,
         useHybridComposition: true,
         enableCaption: false,
+        playInBackground: true,
       ),
     );
     controller.addListener(_onControllerChanged);
@@ -307,6 +323,7 @@ JSON.stringify((function () {
     _switchTimeout?.cancel();
     _live.dispose();
     _disposeController();
+    unawaited(_setAudioSessionActive(false));
     super.dispose();
   }
 
