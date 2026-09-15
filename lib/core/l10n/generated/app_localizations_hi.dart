@@ -2846,4 +2846,33 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'प्रार्थना अनुरोध';
+
+  @override
+  String get event_prayer_empty_title => 'अभी कोई प्रार्थना अनुरोध नहीं';
+
+  @override
+  String get event_prayer_empty_body =>
+      'आपका और आपके समुदाय का अनुरोध यहाँ दिखाई देगा';
+
+  @override
+  String get event_prayer_add => 'प्रार्थना अनुरोध जोड़ें';
+
+  @override
+  String get event_prayer_hint => 'आज हम आपके लिए क्या प्रार्थना करें';
+
+  @override
+  String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड नहीं हो सके।';
+
+  @override
+  String get event_prayer_closed =>
+      'इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं।';
+
+  @override
+  String get event_prayer_pray => 'प्रार्थना करें';
+
+  @override
+  String get event_prayer_praying => 'प्रार्थना कर रहे हैं';
 }

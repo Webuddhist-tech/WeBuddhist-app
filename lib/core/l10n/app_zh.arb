@@ -1078,5 +1078,14 @@
   "edit": "編輯",
   "group_post_edit_title": "編輯貼文",
   "group_post_update_error": "無法儲存你的變更，請再試一次。",
-  "group_post_updated": "你的變更已儲存。"
+  "group_post_updated": "你的變更已儲存。",
+  "event_prayer_requests": "祈願請求",
+  "event_prayer_empty_title": "尚無祈願請求",
+  "event_prayer_empty_body": "你和社群的請求會顯示在這裡",
+  "event_prayer_add": "新增祈願請求",
+  "event_prayer_hint": "今天我們能為你祈願什麼",
+  "event_prayer_load_failed": "無法載入祈願請求。",
+  "event_prayer_closed": "此活動的祈願請求已關閉。",
+  "event_prayer_pray": "祈願",
+  "event_prayer_praying": "祈願中"
 }

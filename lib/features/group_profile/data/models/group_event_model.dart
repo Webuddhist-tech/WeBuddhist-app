@@ -230,6 +230,8 @@ class GroupEventModel {
   final String? locationId;
   final GroupEventLocationModel? location;
   final String? eventFormat;
+  final bool chatEnabled;
+  final String? chatRoomId;
 
   const GroupEventModel({
     required this.id,
@@ -264,6 +266,8 @@ class GroupEventModel {
     this.locationId,
     this.location,
     this.eventFormat,
+    this.chatEnabled = false,
+    this.chatRoomId,
   });
 
   factory GroupEventModel.fromJson(
@@ -316,6 +320,8 @@ class GroupEventModel {
               ? GroupEventLocationModel.fromJson(locationJson)
               : null,
       eventFormat: json['event_format'] as String?,
+      chatEnabled: json['chat_enabled'] as bool? ?? false,
+      chatRoomId: json['chat_room_id'] as String?,
     );
   }
 
@@ -355,6 +361,8 @@ class GroupEventModel {
       locationId: locationId,
       location: location?.toEntity(),
       eventFormat: eventFormat,
+      chatEnabled: chatEnabled,
+      chatRoomId: chatRoomId,
     );
   }
 

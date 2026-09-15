@@ -2688,4 +2688,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => '祈願請求';
+
+  @override
+  String get event_prayer_empty_title => '尚無祈願請求';
+
+  @override
+  String get event_prayer_empty_body => '你和社群的請求會顯示在這裡';
+
+  @override
+  String get event_prayer_add => '新增祈願請求';
+
+  @override
+  String get event_prayer_hint => '今天我們能為你祈願什麼';
+
+  @override
+  String get event_prayer_load_failed => '無法載入祈願請求。';
+
+  @override
+  String get event_prayer_closed => '此活動的祈願請求已關閉。';
+
+  @override
+  String get event_prayer_pray => '祈願';
+
+  @override
+  String get event_prayer_praying => '祈願中';
 }

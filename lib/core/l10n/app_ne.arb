@@ -1144,5 +1144,14 @@
   "edit": "सम्पादन गर्नुहोस्",
   "group_post_edit_title": "पोस्ट सम्पादन गर्नुहोस्",
   "group_post_update_error": "तपाईंका परिवर्तनहरू सुरक्षित गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।",
-  "group_post_updated": "तपाईंका परिवर्तनहरू सुरक्षित गरियो।"
+  "group_post_updated": "तपाईंका परिवर्तनहरू सुरक्षित गरियो।",
+  "event_prayer_requests": "प्रार्थना अनुरोध",
+  "event_prayer_empty_title": "अहिले कुनै प्रार्थना अनुरोध छैन",
+  "event_prayer_empty_body": "तपाईं र तपाईंको समुदायको अनुरोध यहाँ देखिनेछ",
+  "event_prayer_add": "प्रार्थना अनुरोध थप्नुहोस्",
+  "event_prayer_hint": "आज हामी तपाईंका लागि के प्रार्थना गरौं",
+  "event_prayer_load_failed": "प्रार्थना अनुरोध लोड गर्न सकिएन।",
+  "event_prayer_closed": "यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।",
+  "event_prayer_pray": "प्रार्थना गर्नुहोस्",
+  "event_prayer_praying": "प्रार्थना गर्दै"
 }

@@ -2852,4 +2852,35 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'Залбирлын хүсэлт';
+
+  @override
+  String get event_prayer_empty_title => 'Одоогоор залбирлын хүсэлт алга';
+
+  @override
+  String get event_prayer_empty_body =>
+      'Таны болон нийгэмлэгийн хүсэлт энд харагдана';
+
+  @override
+  String get event_prayer_add => 'Залбирлын хүсэлт нэмэх';
+
+  @override
+  String get event_prayer_hint =>
+      'Өнөөдөр бид таны төлөө юуны төлөө залбирах вэ';
+
+  @override
+  String get event_prayer_load_failed =>
+      'Залбирлын хүсэлтийг ачаалж чадсангүй.';
+
+  @override
+  String get event_prayer_closed =>
+      'Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.';
+
+  @override
+  String get event_prayer_pray => 'Залбирах';
+
+  @override
+  String get event_prayer_praying => 'Залбирч байна';
 }

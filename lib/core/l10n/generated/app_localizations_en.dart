@@ -2821,4 +2821,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'Prayer requests';
+
+  @override
+  String get event_prayer_empty_title => 'No prayer requests yet';
+
+  @override
+  String get event_prayer_empty_body =>
+      'Your request and your community\'s will appear here';
+
+  @override
+  String get event_prayer_add => 'Add a prayer request';
+
+  @override
+  String get event_prayer_hint => 'How can we pray for you today';
+
+  @override
+  String get event_prayer_load_failed => 'Prayer requests couldn\'t be loaded.';
+
+  @override
+  String get event_prayer_closed =>
+      'Prayer requests are closed for this event.';
+
+  @override
+  String get event_prayer_pray => 'Pray';
+
+  @override
+  String get event_prayer_praying => 'Praying';
 }

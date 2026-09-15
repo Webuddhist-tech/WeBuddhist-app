@@ -5029,6 +5029,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Puja not started yet'**
   String get event_puja_not_started;
+
+  /// No description provided for @event_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests'**
+  String get event_prayer_requests;
+
+  /// No description provided for @event_prayer_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests yet'**
+  String get event_prayer_empty_title;
+
+  /// No description provided for @event_prayer_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request and your community\'s will appear here'**
+  String get event_prayer_empty_body;
+
+  /// No description provided for @event_prayer_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a prayer request'**
+  String get event_prayer_add;
+
+  /// No description provided for @event_prayer_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we pray for you today'**
+  String get event_prayer_hint;
+
+  /// No description provided for @event_prayer_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests couldn\'t be loaded.'**
+  String get event_prayer_load_failed;
+
+  /// No description provided for @event_prayer_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests are closed for this event.'**
+  String get event_prayer_closed;
+
+  /// No description provided for @event_prayer_pray.
+  ///
+  /// In en, this message translates to:
+  /// **'Pray'**
+  String get event_prayer_pray;
+
+  /// No description provided for @event_prayer_praying.
+  ///
+  /// In en, this message translates to:
+  /// **'Praying'**
+  String get event_prayer_praying;
 }
 
 class _AppLocalizationsDelegate
