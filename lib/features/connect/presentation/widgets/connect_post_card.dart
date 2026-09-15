@@ -297,14 +297,29 @@ class _PostMediaGalleryState extends State<_PostMediaGallery> {
   /// the feed's PageStorageKey, so carousels restored each other's page.
   String get _storageId => 'connect_post_gallery:${widget.postId}';
 
-  @override
-  void initState() {
-    super.initState();
+  int get _savedPage {
     final saved = PageStorage.maybeOf(
       context,
     )?.readState(context, identifier: _storageId);
-    _page = saved is int ? saved.clamp(0, widget.media.length - 1) : 0;
+    return saved is int ? saved.clamp(0, widget.media.length - 1) : 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _page = _savedPage;
     _controller = PageController(initialPage: _page, keepPage: false);
+  }
+
+  @override
+  void didUpdateWidget(_PostMediaGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.postId == oldWidget.postId &&
+        widget.media.length == oldWidget.media.length) {
+      return;
+    }
+    _page = _savedPage;
+    if (_controller.hasClients) _controller.jumpToPage(_page);
   }
 
   @override
@@ -376,10 +391,7 @@ class _PostMediaGalleryState extends State<_PostMediaGallery> {
             right: 12,
             child: IgnorePointer(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(999),
