@@ -100,7 +100,10 @@ class NotificationChannels {
   static const String timerSessionDescription =
       'Shows the remaining time while a meditation timer is running';
 
-  static const String timerCompleteId = 'timer_complete';
+  // Versioned because Android binds sound to a channel the first time it is
+  // created. Older installs may already have a silent `timer_complete` channel,
+  // so a new id is required for the bell sound to take effect after upgrade.
+  static const String timerCompleteId = 'timer_complete_v2';
   static const String timerCompleteName = 'Meditation Timer Finished';
   static const String timerCompleteDescription =
       'Rings the bell when a meditation timer finishes';
@@ -203,34 +206,34 @@ class NotificationChannels {
     String? androidActionButtonText,
   }) =>
       NotificationDetails(
-        android: AndroidNotificationDetails(
-          routineBlockId,
-          routineBlockName,
-          channelDescription: routineBlockDescription,
-          importance: Importance.high,
-          priority: Priority.high,
-          styleInformation: styleInformation,
-          icon: icon,
-          largeIcon: largeIcon,
-          enableVibration: true,
-          playSound: true,
-          sound: routineAndroidSound,
+    android: AndroidNotificationDetails(
+      routineBlockId,
+      routineBlockName,
+      channelDescription: routineBlockDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      styleInformation: styleInformation,
+      icon: icon,
+      largeIcon: largeIcon,
+      enableVibration: true,
+      playSound: true,
+      sound: routineAndroidSound,
           actions: androidActionButtonText == null
               ? null
               : <AndroidNotificationAction>[
-                  AndroidNotificationAction(
-                    specialPlanActionId,
-                    androidActionButtonText,
-                    showsUserInterface: true,
-                    cancelNotification: true,
-                  ),
-                ],
-        ),
+                AndroidNotificationAction(
+                  specialPlanActionId,
+                  androidActionButtonText,
+                  showsUserInterface: true,
+                  cancelNotification: true,
+                ),
+              ],
+    ),
         iOS: iOSDetails ?? DarwinNotificationDetails(
           sound: routineIosSoundFile,
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
         ),
-      );
+  );
 }

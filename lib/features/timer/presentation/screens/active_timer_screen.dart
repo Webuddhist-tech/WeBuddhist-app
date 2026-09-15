@@ -63,6 +63,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   late final TimerSoundPlayer _soundPlayer;
   late final TimerSessionNotifier _notifier;
   late final TimerLiveActivity _liveActivity;
+  DateTime? _scheduledCompletionEndsAt;
 
   int get _totalMs => widget.presetTimer.durationMs;
 
@@ -122,18 +123,20 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       case AppLifecycleState.resumed:
         _onResumed();
         break;
+      case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         _onBackgrounded();
         break;
-      case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;
     }
   }
 
-  /// About to be suspended: hand the bell over to a scheduled notification, so
-  /// it rings on time even though this isolate is about to stop executing.
+  /// About to lose reliable frame/timer callbacks: hand the bell over to a
+  /// scheduled notification, so it rings on time even if this isolate is
+  /// suspended. Screen lock may pass through `inactive` before `paused`, and on
+  /// some devices that is the last dependable moment to arm the OS alarm.
   void _onBackgrounded() {
     if (_phase != _TimerPhase.running || _isPaused) return;
     final endsAt = _endsAt;
@@ -144,16 +147,17 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   /// Back in the foreground: take the bell back and resync to the wall clock,
   /// which is where the time that passed while suspended gets accounted for.
   void _onResumed() {
-    unawaited(_notifier.cancelCompletion());
+    _cancelCompletionBell();
 
     if (_phase != _TimerPhase.running || _isPaused) return;
     final endsAt = _endsAt;
     if (endsAt == null) return;
 
     if (!endsAt.isAfter(DateTime.now())) {
-      // Ran out while we were suspended. The scheduled notification has already
-      // rung, so completing silently here avoids a second bell.
-      _completeSession(playBell: false);
+      // Ran out while suspended. The OS notification may have rung, but it can
+      // also arrive silently (muted channel, Focus, Doze). Play the in-app bell
+      // as a fallback — a rare double-ring beats no bell at all.
+      _completeSession(playBell: true);
       return;
     }
 
@@ -217,6 +221,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       ),
     );
     _showRunningNotification(endsAt);
+    _armCompletionBellIfBackgrounded(endsAt);
   }
 
   void _onMainTimerTick() {
@@ -232,11 +237,9 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     setState(() => _remainingMs = remainingMs);
   }
 
-  /// Ends the session at zero.
-  ///
-  /// [playBell] is false when the timer ran out while the app was suspended:
-  /// the scheduled notification already rang, so ringing again on resume would
-  /// double the bell.
+  /// Ends the session at zero. [playBell] should be true whenever the user
+  /// should hear the completion bell (foreground tick or resume after a
+  /// background finish).
   void _completeSession({required bool playBell}) {
     _timer?.cancel();
     _timer = null;
@@ -270,11 +273,12 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     });
 
     if (enteringPause) {
-      unawaited(_notifier.cancelCompletion());
+      _cancelCompletionBell();
       _showPausedNotification();
       _reportTimerStop();
     } else {
       _showRunningNotification(_endsAt!);
+      _armCompletionBellIfBackgrounded(_endsAt!);
     }
 
     unawaited(
@@ -350,18 +354,44 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     );
   }
 
+  bool get _isInForeground =>
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  /// Schedules the OS completion bell when the app is not in the foreground.
+  /// Skipped while resumed so the in-app bell owns completion and we avoid a
+  /// double-ring; also covers the case where the main timer starts while the
+  /// app is already backgrounded (no second lifecycle event to arm the alarm).
+  void _armCompletionBellIfBackgrounded(DateTime endsAt) {
+    if (_isInForeground) return;
+    _scheduleCompletionBell(endsAt);
+  }
+
   void _scheduleCompletionBell(DateTime endsAt) {
     if (!mounted) return;
+    if (_scheduledCompletionEndsAt == endsAt) return;
+
+    _scheduledCompletionEndsAt = endsAt;
     unawaited(
       _notifier.scheduleCompletion(
-        endsAt: endsAt,
-        title: _sessionTitle,
-        body: context.l10n.timer_notification_complete,
-      ),
+            endsAt: endsAt,
+            title: _sessionTitle,
+            body: context.l10n.timer_notification_complete,
+          )
+          .then((_) {
+            if (_scheduledCompletionEndsAt != endsAt) {
+              unawaited(_notifier.cancelCompletion());
+            }
+          }),
     );
   }
 
+  void _cancelCompletionBell() {
+    _scheduledCompletionEndsAt = null;
+    unawaited(_notifier.cancelCompletion());
+  }
+
   void _clearBackgroundSurfaces() {
+    _scheduledCompletionEndsAt = null;
     unawaited(_notifier.cancelAll());
     unawaited(_liveActivity.end());
   }
