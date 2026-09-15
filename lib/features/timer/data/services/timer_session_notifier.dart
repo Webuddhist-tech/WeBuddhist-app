@@ -26,7 +26,27 @@ import 'package:timezone/timezone.dart' as tz;
 ///
 /// Nothing here may throw into the timer: a session must keep running correctly
 /// even with notification permission denied, so every call is best-effort.
-class TimerSessionNotifier {
+abstract class TimerSessionNotifications {
+  Future<void> showRunning({
+    required DateTime endsAt,
+    required String title,
+    required String body,
+  });
+
+  Future<void> showPaused({required String title, required String body});
+
+  Future<bool> scheduleCompletion({
+    required DateTime endsAt,
+    required String title,
+    required String body,
+  });
+
+  Future<void> cancelCompletion();
+
+  Future<void> cancelAll();
+}
+
+class TimerSessionNotifier implements TimerSessionNotifications {
   TimerSessionNotifier() : _logger = AppLogger('TimerSessionNotifier');
 
   final AppLogger _logger;
@@ -45,6 +65,7 @@ class TimerSessionNotifier {
 
   /// Shows (or updates) the ongoing "session in progress" notification counting
   /// down to [endsAt]. Android only.
+  @override
   Future<void> showRunning({
     required DateTime endsAt,
     required String title,
@@ -62,10 +83,8 @@ class TimerSessionNotifier {
   }
 
   /// Replaces the ongoing notification with a frozen, paused one. Android only.
-  Future<void> showPaused({
-    required String title,
-    required String body,
-  }) async {
+  @override
+  Future<void> showPaused({required String title, required String body}) async {
     if (!Platform.isAndroid) return;
     await _show(
       title: title,
@@ -100,12 +119,13 @@ class TimerSessionNotifier {
   /// Mirrors the exact/inexact degradation used by the routine sync engine:
   /// exact-alarm permission can be revoked between the check and the call, and
   /// a late bell beats no bell.
-  Future<void> scheduleCompletion({
+  @override
+  Future<bool> scheduleCompletion({
     required DateTime endsAt,
     required String title,
     required String body,
   }) async {
-    if (!endsAt.isAfter(DateTime.now())) return;
+    if (!endsAt.isAfter(DateTime.now())) return false;
 
     Future<void> schedule(AndroidScheduleMode mode) => _plugin.zonedSchedule(
       NotificationIdScheme.timerSessionCompleteId,
@@ -125,19 +145,24 @@ class TimerSessionNotifier {
 
     try {
       await schedule(mode);
+      return true;
     } on PlatformException catch (e) {
       if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
         _logger.warning('Exact bell schedule failed (${e.code}) — inexact');
         try {
           await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
+          return true;
         } catch (e) {
           _logger.warning('Failed to schedule timer completion bell: $e');
+          return false;
         }
       } else {
         _logger.warning('Failed to schedule timer completion bell: $e');
+        return false;
       }
     } catch (e) {
       _logger.warning('Failed to schedule timer completion bell: $e');
+      return false;
     }
   }
 
@@ -152,12 +177,12 @@ class TimerSessionNotifier {
 
   /// Cancels the pending completion bell, leaving the ongoing notification up.
   /// Called on resume — from then on the in-app bell owns completion.
-  Future<void> cancelCompletion() => _cancel(
-    NotificationIdScheme.timerSessionCompleteId,
-    'completion bell',
-  );
+  @override
+  Future<void> cancelCompletion() =>
+      _cancel(NotificationIdScheme.timerSessionCompleteId, 'completion bell');
 
   /// Tears down both notifications. Safe to call when nothing is showing.
+  @override
   Future<void> cancelAll() async {
     await _cancel(NotificationIdScheme.timerSessionOngoingId, 'ongoing');
     await cancelCompletion();

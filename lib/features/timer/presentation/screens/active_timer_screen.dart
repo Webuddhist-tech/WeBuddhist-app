@@ -17,10 +17,26 @@ import 'package:go_router/go_router.dart';
 
 enum _TimerPhase { countdown, running, finished }
 
+typedef TimerClock = DateTime Function();
+
 class ActiveTimerScreen extends ConsumerStatefulWidget {
-  const ActiveTimerScreen({super.key, required this.presetTimer});
+  const ActiveTimerScreen({
+    super.key,
+    required this.presetTimer,
+    @visibleForTesting TimerBellPlayer? soundPlayer,
+    @visibleForTesting TimerSessionNotifications? sessionNotifier,
+    @visibleForTesting TimerLockScreenActivity? liveActivity,
+    @visibleForTesting TimerClock? clock,
+  }) : _soundPlayer = soundPlayer,
+       _sessionNotifier = sessionNotifier,
+       _liveActivity = liveActivity,
+       _clock = clock;
 
   final PresetTimer presetTimer;
+  final TimerBellPlayer? _soundPlayer;
+  final TimerSessionNotifications? _sessionNotifier;
+  final TimerLockScreenActivity? _liveActivity;
+  final TimerClock? _clock;
 
   @override
   ConsumerState<ActiveTimerScreen> createState() => _ActiveTimerScreenState();
@@ -60,13 +76,18 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   int? _lastReportedMs;
 
   Timer? _timer;
-  late final TimerSoundPlayer _soundPlayer;
-  late final TimerSessionNotifier _notifier;
-  late final TimerLiveActivity _liveActivity;
+  late final TimerBellPlayer _soundPlayer;
+  late final TimerSessionNotifications _notifier;
+  late final TimerLockScreenActivity _liveActivity;
+  DateTime? _desiredCompletionEndsAt;
+  DateTime? _armedCompletionEndsAt;
+  Future<void> _completionBellOperation = Future<void>.value();
 
   int get _totalMs => widget.presetTimer.durationMs;
 
   int get _elapsedMs => _totalMs - _remainingFromClock();
+
+  DateTime get _now => (widget._clock ?? DateTime.now)();
 
   /// Remaining time recomputed from the wall clock. Falls back to the stored
   /// value when there is no end time (paused or finished), which is exactly the
@@ -74,10 +95,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   int _remainingFromClock() {
     final endsAt = _endsAt;
     if (endsAt == null) return _remainingMs;
-    return endsAt
-        .difference(DateTime.now())
-        .inMilliseconds
-        .clamp(0, _totalMs);
+    return endsAt.difference(_now).inMilliseconds.clamp(0, _totalMs);
   }
 
   double get _elapsedProgress {
@@ -98,10 +116,10 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   void initState() {
     super.initState();
     _remainingMs = _totalMs;
-    _soundPlayer = TimerSoundPlayer();
+    _soundPlayer = widget._soundPlayer ?? TimerSoundPlayer();
     _soundPlayer.init();
-    _notifier = TimerSessionNotifier();
-    _liveActivity = TimerLiveActivity();
+    _notifier = widget._sessionNotifier ?? TimerSessionNotifier();
+    _liveActivity = widget._liveActivity ?? TimerLiveActivity();
     WidgetsBinding.instance.addObserver(this);
     _startCountdown();
   }
@@ -122,18 +140,20 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       case AppLifecycleState.resumed:
         _onResumed();
         break;
+      case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
         _onBackgrounded();
         break;
-      case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         break;
     }
   }
 
-  /// About to be suspended: hand the bell over to a scheduled notification, so
-  /// it rings on time even though this isolate is about to stop executing.
+  /// About to lose reliable frame/timer callbacks: hand the bell over to a
+  /// scheduled notification, so it rings on time even if this isolate is
+  /// suspended. Screen lock may pass through `inactive` before `paused`, and on
+  /// some devices that is the last dependable moment to arm the OS alarm.
   void _onBackgrounded() {
     if (_phase != _TimerPhase.running || _isPaused) return;
     final endsAt = _endsAt;
@@ -144,16 +164,24 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   /// Back in the foreground: take the bell back and resync to the wall clock,
   /// which is where the time that passed while suspended gets accounted for.
   void _onResumed() {
-    unawaited(_notifier.cancelCompletion());
+    if (_phase != _TimerPhase.running || _isPaused) {
+      _cancelCompletionBell();
+      return;
+    }
 
-    if (_phase != _TimerPhase.running || _isPaused) return;
     final endsAt = _endsAt;
-    if (endsAt == null) return;
+    if (endsAt == null) {
+      _cancelCompletionBell();
+      return;
+    }
 
-    if (!endsAt.isAfter(DateTime.now())) {
-      // Ran out while we were suspended. The scheduled notification has already
-      // rung, so completing silently here avoids a second bell.
-      _completeSession(playBell: false);
+    final completionBellWasArmed = _armedCompletionEndsAt == endsAt;
+    _cancelCompletionBell();
+
+    if (!endsAt.isAfter(_now)) {
+      // If the OS bell was armed, it owns the audible completion while the app
+      // was suspended. Only use the in-app bell when no OS alarm was installed.
+      _completeSession(playBell: !completionBellWasArmed);
       return;
     }
 
@@ -161,9 +189,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _startCountdown() {
-    _countdownEndsAt = DateTime.now().add(
-      const Duration(seconds: _countdownStart),
-    );
+    _countdownEndsAt = _now.add(const Duration(seconds: _countdownStart));
     _timer?.cancel();
     _timer = Timer.periodic(
       const Duration(seconds: 1),
@@ -177,7 +203,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     final endsAt = _countdownEndsAt;
     if (endsAt == null) return;
 
-    final remainingMs = endsAt.difference(DateTime.now()).inMilliseconds;
+    final remainingMs = endsAt.difference(_now).inMilliseconds;
     if (remainingMs <= 0) {
       _timer?.cancel();
       _startMainTimer();
@@ -193,7 +219,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   void _startMainTimer() {
     _soundPlayer.play();
 
-    final endsAt = DateTime.now().add(Duration(milliseconds: _totalMs));
+    final endsAt = _now.add(Duration(milliseconds: _totalMs));
 
     setState(() {
       _phase = _TimerPhase.running;
@@ -217,6 +243,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       ),
     );
     _showRunningNotification(endsAt);
+    _armCompletionBellIfBackgrounded(endsAt);
   }
 
   void _onMainTimerTick() {
@@ -232,11 +259,9 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     setState(() => _remainingMs = remainingMs);
   }
 
-  /// Ends the session at zero.
-  ///
-  /// [playBell] is false when the timer ran out while the app was suspended:
-  /// the scheduled notification already rang, so ringing again on resume would
-  /// double the bell.
+  /// Ends the session at zero. [playBell] should be true whenever the user
+  /// should hear the completion bell (foreground tick or resume after a
+  /// background finish).
   void _completeSession({required bool playBell}) {
     _timer?.cancel();
     _timer = null;
@@ -264,17 +289,18 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
         _remainingMs = _remainingFromClock();
         _endsAt = null;
       } else {
-        _endsAt = DateTime.now().add(Duration(milliseconds: _remainingMs));
+        _endsAt = _now.add(Duration(milliseconds: _remainingMs));
       }
       _isPaused = enteringPause;
     });
 
     if (enteringPause) {
-      unawaited(_notifier.cancelCompletion());
+      _cancelCompletionBell();
       _showPausedNotification();
       _reportTimerStop();
     } else {
       _showRunningNotification(_endsAt!);
+      _armCompletionBellIfBackgrounded(_endsAt!);
     }
 
     unawaited(
@@ -350,18 +376,64 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     );
   }
 
+  bool get _isInForeground =>
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  /// Schedules the OS completion bell when the app is not in the foreground.
+  /// Skipped while resumed so the in-app bell owns completion and we avoid a
+  /// double-ring; also covers the case where the main timer starts while the
+  /// app is already backgrounded (no second lifecycle event to arm the alarm).
+  void _armCompletionBellIfBackgrounded(DateTime endsAt) {
+    if (_isInForeground) return;
+    _scheduleCompletionBell(endsAt);
+  }
+
   void _scheduleCompletionBell(DateTime endsAt) {
     if (!mounted) return;
-    unawaited(
-      _notifier.scheduleCompletion(
+    if (_desiredCompletionEndsAt == endsAt) return;
+
+    final title = _sessionTitle;
+    final body = context.l10n.timer_notification_complete;
+    _desiredCompletionEndsAt = endsAt;
+    _enqueueCompletionBellOperation(() async {
+      if (_desiredCompletionEndsAt != endsAt) return;
+
+      final scheduled = await _notifier.scheduleCompletion(
         endsAt: endsAt,
-        title: _sessionTitle,
-        body: context.l10n.timer_notification_complete,
-      ),
-    );
+        title: title,
+        body: body,
+      );
+
+      if (_desiredCompletionEndsAt == endsAt && scheduled) {
+        _armedCompletionEndsAt = endsAt;
+      }
+
+      if (_desiredCompletionEndsAt != endsAt) {
+        await _notifier.cancelCompletion();
+        if (_armedCompletionEndsAt == endsAt) {
+          _armedCompletionEndsAt = null;
+        }
+      }
+    });
+  }
+
+  void _cancelCompletionBell() {
+    _desiredCompletionEndsAt = null;
+    _armedCompletionEndsAt = null;
+    _enqueueCompletionBellOperation(_notifier.cancelCompletion);
+  }
+
+  void _enqueueCompletionBellOperation(Future<void> Function() operation) {
+    final next = _completionBellOperation.then((_) => operation());
+    _completionBellOperation = next.catchError((Object e, StackTrace st) {
+      _logger.warning('Timer completion bell operation failed: $e');
+    });
+    unawaited(_completionBellOperation);
   }
 
   void _clearBackgroundSurfaces() {
+    _desiredCompletionEndsAt = null;
+    _armedCompletionEndsAt = null;
     unawaited(_notifier.cancelAll());
     unawaited(_liveActivity.end());
   }
