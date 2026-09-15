@@ -129,8 +129,8 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   }
 }
 
-/// One carousel page: Tibetan script (when present) above the transliteration,
-/// both centered within the page. Long content stays vertically scrollable
+/// One carousel page: smaller script line (when present) above the larger
+/// localized transliteration, both centered. Long content stays scrollable
 /// without a visible scrollbar so it does not clash with the chevrons.
 ///
 /// Each page owns a [ScrollController] and sets `primary: false`. A
@@ -191,19 +191,19 @@ class _MantraPageState extends State<_MantraPage> {
                           child: Text(
                             widget.tibetan!,
                             textAlign: TextAlign.center,
-                            style: widget.theme.textTheme.headlineMedium
-                                ?.copyWith(
-                                  fontFamily: widget.tibetanFontFamily,
-                                  height: 1.4,
-                                ),
+                            style: widget.theme.textTheme.titleMedium?.copyWith(
+                              fontFamily: widget.tibetanFontFamily,
+                              height: 1.4,
+                              color: widget.theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                       ],
                       Text(
                         widget.transliteration,
                         textAlign: TextAlign.center,
-                        style: widget.theme.textTheme.titleMedium?.copyWith(
+                        style: widget.theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
                         ),
