@@ -103,6 +103,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   ScaffoldMessengerState? _messenger;
   AppLocalizations? _l10n;
 
+  /// Cached for the same reason: [_showsPush] runs from the push stream, and
+  /// `ModalRoute.of` on a deactivated element is an ancestor lookup.
+  ModalRoute<dynamic>? _route;
+
   /// The message a reply is being composed for, quoted above the composer.
   ChatMessageDTO? _replyingTo;
 
@@ -129,6 +133,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         .read(pushMessagingRepositoryProvider)
         .onForegroundMessage
         .listen(_onForegroundPush);
+    // The banner for a message this screen shows would only lead back here.
+    // The subscription above still runs for such a push: suppressing the
+    // banner must not weaken the socket check it feeds.
+    _providers.read(foregroundPushFilterProvider).claim(this, _showsPush);
   }
 
   @override
@@ -136,6 +144,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     super.didChangeDependencies();
     _messenger = ScaffoldMessenger.maybeOf(context);
     _l10n = context.l10n;
+    _route ??= ModalRoute.of(context);
   }
 
   @override
@@ -145,10 +154,32 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     _reconnectTimer?.cancel();
     unawaited(_pushSub?.cancel());
     _pushSub = null;
+    _providers.read(foregroundPushFilterProvider).release(this);
     unawaited(_tearDownLive());
     _bodyController.dispose();
     _bodyFocusNode.dispose();
     super.dispose();
+  }
+
+  /// True when the member is looking at this room and the push is about it.
+  ///
+  /// Every guard is about *looking at*: a route pushed on top, or the app no
+  /// longer resumed, means the member is not, and the banner is the way they
+  /// hear about the message. Room matching is [chatPushTargets]', which also
+  /// covers a group with no room yet — the socket is group-scoped, so that
+  /// first message reaches the thread too.
+  ///
+  /// `isCurrent` cannot tell a page pushed on top from a sheet or dialog
+  /// opened here (the report sheet, the emoji picker, the delete confirm),
+  /// so a banner can show while one of those is open. Telling them apart
+  /// needs a `RouteObserver` on the router, which the app does not have yet.
+  bool _showsPush(Map<String, dynamic> data) {
+    if (_disposed) return false;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return false;
+    }
+    if (!(_route?.isCurrent ?? false)) return false;
+    return chatPushTargets(data, roomId: _roomId, groupId: widget.groupId);
   }
 
   @override
