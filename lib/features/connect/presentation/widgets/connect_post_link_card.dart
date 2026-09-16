@@ -5,8 +5,8 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_link_utils.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Link attached to a post: a YouTube thumbnail card, an Open Graph preview
 /// card, or a plain link row when no preview is available.
@@ -73,7 +73,7 @@ class ConnectPostLinkCard extends ConsumerWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(onTap: onTap ?? () => _open(url), child: body),
+      child: InkWell(onTap: onTap ?? () => openUrl(url), child: body),
     );
 
     if (onRemove == null) return card;
@@ -84,14 +84,6 @@ class ConnectPostLinkCard extends ConsumerWidget {
         Positioned(top: 10, right: 10, child: _RemoveBadge(onTap: onRemove!)),
       ],
     );
-  }
-
-  Future<void> _open(String url) async {
-    final uri = Uri.tryParse(url.trim());
-    if (uri == null) return;
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
   }
 }
 

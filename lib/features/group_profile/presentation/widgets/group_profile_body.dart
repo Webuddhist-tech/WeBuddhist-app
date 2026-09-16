@@ -8,6 +8,7 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
@@ -36,7 +37,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class GroupProfileBody extends ConsumerStatefulWidget {
   final GroupProfile profile;
@@ -1364,14 +1364,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     );
   }
 
-  Future<void> _launchUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {}
-  }
+  Future<void> _launchUrl(String url) => openUrl(url);
 }
 
 class _GroupFollowButton extends ConsumerWidget {
