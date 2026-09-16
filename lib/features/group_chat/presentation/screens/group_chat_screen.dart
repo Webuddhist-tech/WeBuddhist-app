@@ -589,6 +589,22 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           presentChatSendError(context, failure);
         },
         (message) async {
+          // Both events are recorded here, before anything is awaited: the
+          // server has accepted the message, so they count whether or not
+          // this screen is still around to show it. The join in particular
+          // must land before the cache write below yields — the socket is
+          // already up, and its `message_created` echo can arrive in that
+          // gap and reach `_adoptRoomId`, which would otherwise claim the
+          // join as `live` when it was this member's own first send.
+          _trackJoined(message.roomId, source: ChatJoinSource.firstSend);
+          _providers
+              .read(groupChatAnalyticsProvider)
+              .messageSent(
+                groupId: widget.groupId,
+                roomId: message.roomId,
+                messageId: message.id,
+                parentMessageId: parent?.id,
+              );
           await _persistRoomId(message.roomId);
           if (!mounted) return;
           _bodyController.clear();
@@ -603,15 +619,6 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _providers
               .read(groupChatThreadProvider(message.roomId).notifier)
               .appendLive(message);
-          _trackJoined(message.roomId, source: ChatJoinSource.firstSend);
-          _providers
-              .read(groupChatAnalyticsProvider)
-              .messageSent(
-                groupId: widget.groupId,
-                roomId: message.roomId,
-                messageId: message.id,
-                parentMessageId: parent?.id,
-              );
           // Your own message is read the moment it is sent. The server counts
           // it as unread until `last_read_at` moves past it, so without this
           // the chats list shows the sender their own message with a badge.

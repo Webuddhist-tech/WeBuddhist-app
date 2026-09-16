@@ -907,6 +907,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     final previousReactions = baseline;
 
     final repository = ref.read(groupChatRepositoryProvider);
+    // Read before the await: `ref` is unusable once this notifier is torn
+    // down, and a confirmed tap still has to be counted then.
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result =
         isRemoval
             ? await repository.removeReaction(
@@ -920,9 +923,24 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
               emoji: emoji,
             );
 
+    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    if (failure == null) {
+      // This call is confirmed, so the tap counts even if a swap's cleanup
+      // below fails, and even if the member has already left the screen:
+      // the new emoji is on the server either way.
+      analytics.messageReacted(
+        roomId: roomIdForCall,
+        messageId: messageId,
+        emoji: emoji,
+        action: chatReactionActionFor(
+          previousEmoji: previousEmoji,
+          emoji: emoji,
+        ),
+      );
+    }
+
     if (!mounted) return null;
 
-    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
     if (failure != null) {
       // Rolling back to this operation's baseline would wipe a newer tap.
       if (_isCurrent(messageId, seq)) {
@@ -930,20 +948,6 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       }
       return failure;
     }
-
-    // This call is confirmed, so the tap counts even if a swap's cleanup
-    // below fails: the new emoji is on the server either way.
-    ref
-        .read(groupChatAnalyticsProvider)
-        .messageReacted(
-          roomId: roomIdForCall,
-          messageId: messageId,
-          emoji: emoji,
-          action: chatReactionActionFor(
-            previousEmoji: previousEmoji,
-            emoji: emoji,
-          ),
-        );
 
     var summary = result.getOrElse((_) => const []);
 
@@ -1130,19 +1134,21 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     );
     if (index >= 0 && state.messages[index].deletedAt != null) return null;
 
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result = await ref
         .read(groupChatRepositoryProvider)
         .deleteMessage(roomId, messageId: messageId);
 
-    if (!mounted) return null;
+    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    if (failure == null) _trackDeleted(analytics, messageId);
 
-    return result.fold((failure) => failure, (_) {
-      // 204 with no body, so there is nothing to adopt: the row is stamped now
-      // and the next fetch replaces this with the server's own value.
-      applyDeletion(messageId, deletedAt: _nowIso());
-      _trackDeleted(messageId);
-      return null;
-    });
+    if (!mounted) return null;
+    if (failure != null) return failure;
+
+    // 204 with no body, so there is nothing to adopt: the row is stamped now
+    // and the next fetch replaces this with the server's own value.
+    applyDeletion(messageId, deletedAt: _nowIso());
+    return null;
   }
 
   /// Deletes several of this member's own messages.
@@ -1162,27 +1168,32 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     if (ids.isEmpty) return const ChatDeleteOutcome();
     if (ids.length == 1) return _deleteOneByOne(ids);
 
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result = await ref
         .read(groupChatRepositoryProvider)
         .deleteMessages(roomId, messageIds: ids);
+
+    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    if (failure == null) {
+      for (final id in ids) {
+        _trackDeleted(analytics, id);
+      }
+    }
+
     if (!mounted) return ChatDeleteOutcome(failed: ids.toSet());
 
-    return result.fold<Future<ChatDeleteOutcome>>(
-      (failure) async {
-        if (failure is ChatBulkDeleteUnsupportedFailure) {
-          return _deleteOneByOne(ids);
-        }
-        return ChatDeleteOutcome(failed: ids.toSet());
-      },
-      (_) async {
-        final deletedAt = _nowIso();
-        for (final id in ids) {
-          applyDeletion(id, deletedAt: deletedAt);
-          _trackDeleted(id);
-        }
-        return ChatDeleteOutcome(deleted: ids.toSet());
-      },
-    );
+    if (failure != null) {
+      if (failure is ChatBulkDeleteUnsupportedFailure) {
+        return _deleteOneByOne(ids);
+      }
+      return ChatDeleteOutcome(failed: ids.toSet());
+    }
+
+    final deletedAt = _nowIso();
+    for (final id in ids) {
+      applyDeletion(id, deletedAt: deletedAt);
+    }
+    return ChatDeleteOutcome(deleted: ids.toSet());
   }
 
   /// The fallback: one call per id, in order, stopping only if the notifier
@@ -1203,10 +1214,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
 
   /// One event per message: the bulk route confirms every id at once and the
   /// fallback confirms them one call each, so both report the same way.
-  void _trackDeleted(String messageId) {
-    ref
-        .read(groupChatAnalyticsProvider)
-        .messageDeleted(roomId: roomId, messageId: messageId);
+  ///
+  /// Takes the [analytics] the caller read *before* its request went out, so
+  /// a deletion the server accepted while the member was leaving the screen
+  /// is still counted — `ref` cannot be read once this notifier is disposed.
+  void _trackDeleted(GroupChatAnalytics analytics, String messageId) {
+    analytics.messageDeleted(roomId: roomId, messageId: messageId);
   }
 
   static String _nowIso() => DateTime.now().toUtc().toIso8601String();

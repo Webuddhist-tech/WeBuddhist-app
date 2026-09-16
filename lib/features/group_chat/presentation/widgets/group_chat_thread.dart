@@ -698,6 +698,21 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final notifier = ref.read(groupChatThreadProvider(widget.roomId).notifier);
     final user = ref.watch(userProvider).user;
 
+    // The header holds the gates it was last handed. A selection made while
+    // the profile was still loading had no viewer to compare senders against,
+    // so Delete and Report were off; once the identity lands, hand the header
+    // a fresh selection or it stays that way until the next tap.
+    ref.listen(userProvider, (previous, next) {
+      if (!_hasSelection) return;
+      final before = previous?.user;
+      final after = next.user;
+      if (before?.id?.trim() == after?.id?.trim() &&
+          before?.email == after?.email) {
+        return;
+      }
+      _publishSelection();
+    });
+
     ref.listen(groupChatThreadProvider(widget.roomId), (_, next) {
       // Before the arrival check: a deletion changes rows without changing
       // which one is newest, and it is exactly what the selection has to

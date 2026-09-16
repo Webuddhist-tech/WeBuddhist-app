@@ -148,12 +148,19 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   /// Ids the single-message route refuses; others succeed.
   Set<String> failDeleteOf = const {};
 
+  /// Holds the next single delete until completed, so the caller can be torn
+  /// down while it is in flight.
+  Completer<void>? holdNextDelete;
+
   @override
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,
   }) async {
     deleteCalls.add(messageId);
+    final hold = holdNextDelete;
+    holdNextDelete = null;
+    if (hold != null) await hold.future;
     final failure = deleteFailure;
     if (failure != null) return Left(failure);
     if (failDeleteOf.contains(messageId)) {
@@ -179,19 +186,33 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     return const Right(unit);
   }
 
+  /// Holds the next reaction call until completed. The call is still
+  /// recorded (and its answer decided) up front, so call order is unaffected.
+  Completer<void>? holdNextReaction;
+
   @override
   Future<Either<Failure, List<ChatMessageReactionDTO>>> addReaction(
     String roomId, {
     required String messageId,
     required String emoji,
-  }) async => _reaction('POST $emoji');
+  }) => _reactionCall('POST $emoji');
 
   @override
   Future<Either<Failure, List<ChatMessageReactionDTO>>> removeReaction(
     String roomId, {
     required String messageId,
     required String emoji,
-  }) async => _reaction('DELETE $emoji');
+  }) => _reactionCall('DELETE $emoji');
+
+  Future<Either<Failure, List<ChatMessageReactionDTO>>> _reactionCall(
+    String call,
+  ) async {
+    final response = _reaction(call);
+    final hold = holdNextReaction;
+    holdNextReaction = null;
+    if (hold != null) await hold.future;
+    return response;
+  }
 
   Either<Failure, List<ChatMessageReactionDTO>> _reaction(String call) {
     reactionCalls.add(call);
@@ -2078,6 +2099,73 @@ void main() {
         'message_id': 'm1',
       });
     });
+
+    test(
+      'a reaction confirmed after the notifier is torn down still counts',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final subscription = container.listen(
+          groupChatThreadProvider('room-1'),
+          (_, _) {},
+        );
+        final notifier = container.read(
+          groupChatThreadProvider('room-1').notifier,
+        );
+        await _settle();
+
+        final hold = Completer<void>();
+        repository.holdNextReaction = hold;
+        final toggle = notifier.toggleReaction(
+          'm1',
+          thumbsUp,
+          roomIdForCall: 'room-1',
+        );
+        await _settle();
+
+        // The member backs out of the chat while the POST is in flight.
+        subscription.close();
+        await _settle();
+        expect(notifier.mounted, isFalse);
+
+        hold.complete();
+        await toggle;
+
+        expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+        expect(analytics.events.single.properties['action'], 'added');
+      },
+    );
+
+    test(
+      'a delete confirmed after the notifier is torn down still counts',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final subscription = container.listen(
+          groupChatThreadProvider('room-1'),
+          (_, _) {},
+        );
+        final notifier = container.read(
+          groupChatThreadProvider('room-1').notifier,
+        );
+        await _settle();
+
+        final hold = Completer<void>();
+        repository.holdNextDelete = hold;
+        final delete = notifier.deleteMessage('m1');
+        await _settle();
+
+        subscription.close();
+        await _settle();
+        expect(notifier.mounted, isFalse);
+
+        hold.complete();
+        await delete;
+
+        expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
+        expect(analytics.events.single.properties['message_id'], 'm1');
+      },
+    );
 
     test('a failed delete fires nothing', () async {
       repository = _FakeGroupChatRepository(history: [_message('m1')]);
