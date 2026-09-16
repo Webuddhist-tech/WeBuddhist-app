@@ -37,8 +37,12 @@ class ConnectPostLinkCard extends ConsumerWidget {
             ? ref.watch(chatLinkPreviewProvider(url)).valueOrNull
             : null;
     final trimmedLabel = label?.trim();
+    final hasLabel = trimmedLabel != null && trimmedLabel.isNotEmpty;
+    // A YouTube label is often just "YouTube"; the fetched video title wins.
     final title =
-        trimmedLabel != null && trimmedLabel.isNotEmpty
+        videoId != null
+            ? preview?.title ?? (hasLabel ? trimmedLabel : null)
+            : hasLabel
             ? trimmedLabel
             : preview?.title;
 
