@@ -156,6 +156,27 @@ class GroupPractice extends Equatable {
     this.plan,
   });
 
+  GroupPractice copyWith({
+    String? groupId,
+    String? groupName,
+    String? groupSlug,
+    String? groupAvatarUrl,
+  }) {
+    return GroupPractice(
+      type: type,
+      practiceAt: practiceAt,
+      isJoined: isJoined,
+      groupId: groupId ?? this.groupId,
+      groupName: groupName ?? this.groupName,
+      groupSlug: groupSlug ?? this.groupSlug,
+      groupAvatarUrl: groupAvatarUrl ?? this.groupAvatarUrl,
+      series: series,
+      accumulator: accumulator,
+      collection: collection,
+      plan: plan,
+    );
+  }
+
   @override
   List<Object?> get props => [
     type,
