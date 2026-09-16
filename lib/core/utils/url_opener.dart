@@ -6,8 +6,9 @@ Future<bool> openUrl(String url) async {
   if (uri == null || !uri.hasScheme) return false;
   final isWeb = uri.scheme == 'http' || uri.scheme == 'https';
   try {
-    if (isWeb) {
-      return await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+    if (isWeb &&
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
+      return true;
     }
     return await launchUrl(uri, mode: LaunchMode.externalApplication);
   } catch (_) {
