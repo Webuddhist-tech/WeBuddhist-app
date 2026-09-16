@@ -14,22 +14,30 @@ enum GroupNotificationToggle { chat, content }
 class GroupNotificationPreferencesState {
   final GroupNotificationPreferences preferences;
 
+  /// True until the first read from the backend has settled, one way or the
+  /// other. The sheet holds its switches back meanwhile so a default never
+  /// flashes and then snaps to the stored value.
+  final bool isLoading;
+
   /// The failure of the most recent save, cleared by the next successful one.
   /// Surfaced once by the sheet as a snackbar.
   final Failure? lastFailure;
 
   const GroupNotificationPreferencesState({
     required this.preferences,
+    this.isLoading = false,
     this.lastFailure,
   });
 
   GroupNotificationPreferencesState copyWith({
     GroupNotificationPreferences? preferences,
+    bool? isLoading,
     Failure? lastFailure,
     bool clearFailure = false,
   }) {
     return GroupNotificationPreferencesState(
       preferences: preferences ?? this.preferences,
+      isLoading: isLoading ?? this.isLoading,
       lastFailure: clearFailure ? null : (lastFailure ?? this.lastFailure),
     );
   }
@@ -37,8 +45,7 @@ class GroupNotificationPreferencesState {
 
 /// Holds one group's push toggles and saves flips optimistically.
 ///
-/// Seeded from the group profile when it already carries the viewer's
-/// preferences, otherwise fetched. Every flip updates the UI at once and
+/// Fetched when the sheet opens. Every flip updates the UI at once and
 /// sends a partial PUT; on failure only the flag that request changed is
 /// reverted, and a response that has been overtaken by a newer flip of the
 /// same flag is ignored so the screen never snaps back to a stale value.
@@ -59,29 +66,33 @@ class GroupNotificationPreferencesNotifier
     required String groupId,
     required GroupProfileRepositoryInterface repository,
     required UpdateGroupNotificationPreferencesUseCase update,
-    GroupNotificationPreferences? initial,
   }) : _groupId = groupId,
        _repository = repository,
        _update = update,
        super(
-         GroupNotificationPreferencesState(
-           preferences: initial ?? GroupNotificationPreferences.allOn,
+         const GroupNotificationPreferencesState(
+           preferences: GroupNotificationPreferences.allOn,
+           isLoading: true,
          ),
        ) {
-    if (initial == null) _load();
+    _load();
   }
 
   Future<void> _load() async {
     final result = await _repository.getGroupNotificationPreferences(_groupId);
     if (!mounted) return;
     result.fold(
-      // Not a member, or the backend does not serve the field yet: keep the
-      // defaults rather than blocking the sheet on an error.
-      (_) {},
+      // Not a member, or the backend is unreachable: fall back to the
+      // defaults rather than blocking the sheet on an error. A save from
+      // that state still reports its own failure.
+      (_) => state = state.copyWith(isLoading: false),
       (preferences) {
         // A flip made while loading wins over the fetched snapshot.
-        if (_sequence.values.any((n) => n > 0)) return;
-        state = state.copyWith(preferences: preferences);
+        final flipped = _sequence.values.any((n) => n > 0);
+        state = state.copyWith(
+          preferences: flipped ? null : preferences,
+          isLoading: false,
+        );
       },
     );
   }
@@ -151,23 +162,16 @@ final updateGroupNotificationPreferencesUseCaseProvider =
     });
 
 /// Push toggles for [groupId]. Auto-disposed when the sheet closes, so the
-/// next open re-seeds from the (possibly refreshed) group profile.
+/// next open fetches fresh.
 final groupNotificationPreferencesProvider = StateNotifierProvider.autoDispose
     .family<
       GroupNotificationPreferencesNotifier,
       GroupNotificationPreferencesState,
       String
     >((ref, groupId) {
-      final profile =
-          ref
-              .read(groupProfileProvider(groupId))
-              .valueOrNull
-              ?.toOption()
-              .toNullable();
       return GroupNotificationPreferencesNotifier(
         groupId: groupId,
         repository: ref.watch(groupProfileRepositoryProvider),
         update: ref.watch(updateGroupNotificationPreferencesUseCaseProvider),
-        initial: profile?.myNotificationPreferences,
       );
     });

@@ -69,16 +69,20 @@ class GroupProfileRemoteDatasource {
     }
   }
 
-  /// `GET /author/groups/{groupId}/notification-preferences`.
+  static String _notificationPreferencesPath(String groupId) =>
+      '/users/me/notification-preferences/groups/$groupId';
+
+  /// `GET /users/me/notification-preferences/groups/{groupId}`.
   ///
   /// 404 means the caller is not a member; the repository maps it to
-  /// [NotFoundFailure] so the UI can fall back to defaults.
+  /// [NotFoundFailure] so the UI can fall back to defaults. The `PUSH`
+  /// channel is the backend default, so it is not sent.
   Future<GroupNotificationPreferencesModel> fetchGroupNotificationPreferences(
     String groupId,
   ) async {
     try {
       final response = await dio.get(
-        '/author/groups/$groupId/notification-preferences',
+        _notificationPreferencesPath(groupId),
         options: Options(extra: {'no_cache': true}),
       );
       if (response.statusCode == 200) {
@@ -96,19 +100,19 @@ class GroupProfileRemoteDatasource {
     }
   }
 
-  /// `PUT /author/groups/{groupId}/notification-preferences`.
+  /// `PATCH /users/me/notification-preferences/groups/{groupId}`.
   ///
-  /// Sends only the flags that were passed, so flipping one toggle never
-  /// overwrites the other with a stale value. Returns the full preference
-  /// object the backend now holds.
+  /// The body is a merge: only the types behind the toggles that were passed
+  /// are sent, so flipping one toggle never overwrites the other. Returns
+  /// the full per-group state the backend now holds.
   Future<GroupNotificationPreferencesModel> updateGroupNotificationPreferences(
     String groupId, {
     bool? chat,
     bool? content,
   }) async {
     try {
-      final response = await dio.put(
-        '/author/groups/$groupId/notification-preferences',
+      final response = await dio.patch(
+        _notificationPreferencesPath(groupId),
         data: GroupNotificationPreferencesModel.toRequestJson(
           chat: chat,
           content: content,

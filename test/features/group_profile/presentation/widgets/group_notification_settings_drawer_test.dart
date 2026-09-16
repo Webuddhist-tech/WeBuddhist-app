@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -13,8 +15,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
-  /// Mirrors [_profile]: the sheet seeds from the profile when it is already
-  /// loaded and fetches otherwise, and both must show the same thing.
   GroupNotificationPreferences server = const GroupNotificationPreferences(
     chat: false,
     content: true,
@@ -22,9 +22,16 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   Failure? updateFailure;
   final List<({bool? chat, bool? content})> updates = [];
 
+  /// When set, the read waits on it so a test can look at the loading state.
+  Completer<void>? holdGet;
+
   @override
   Future<Either<Failure, GroupNotificationPreferences>>
-  getGroupNotificationPreferences(String groupId) async => Right(server);
+  getGroupNotificationPreferences(String groupId) async {
+    final hold = holdGet;
+    if (hold != null) await hold.future;
+    return Right(server);
+  }
 
   @override
   Future<Either<Failure, GroupNotificationPreferences>>
@@ -58,10 +65,6 @@ const _profile = GroupProfile(
   id: 'grp-1',
   title: 'Lodhen Sangha',
   isPublic: true,
-  myNotificationPreferences: GroupNotificationPreferences(
-    chat: false,
-    content: true,
-  ),
 );
 
 const _followKey = GroupFollowKey(
@@ -73,6 +76,8 @@ Future<void> _pump(
   WidgetTester tester, {
   required _FakeRepository repository,
   bool masterOn = true,
+  // A held read keeps the spinners animating, so those tests pump one frame.
+  bool settle = true,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -97,7 +102,11 @@ Future<void> _pump(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
 }
 
 Switch _switchAfter(WidgetTester tester, String label) {
@@ -108,7 +117,28 @@ Switch _switchAfter(WidgetTester tester, String label) {
 }
 
 void main() {
-  testWidgets('shows both toggles seeded from the profile', (tester) async {
+  testWidgets('holds the switches back until the stored values arrive', (
+    tester,
+  ) async {
+    final repository = _FakeRepository()..holdGet = Completer<void>();
+    await _pump(tester, repository: repository, settle: false);
+
+    expect(find.byType(Switch), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
+
+    await tester.tap(find.text('Group chat'));
+    await tester.pump();
+    expect(repository.updates, isEmpty);
+
+    repository.holdGet!.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(_switchAfter(tester, 'Group chat').value, isFalse);
+    expect(_switchAfter(tester, 'Group content').value, isTrue);
+  });
+
+  testWidgets('shows both toggles from the stored values', (tester) async {
     await _pump(tester, repository: _FakeRepository());
 
     expect(find.text('Notifications'), findsOneWidget);

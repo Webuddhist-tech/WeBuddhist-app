@@ -135,6 +135,7 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
               label: l10n.group_notifications_chat,
               value: masterOn && preferences.chat,
               enabled: masterOn,
+              loading: prefsState.isLoading,
               onChanged: notifier.setChat,
             ),
             _ToggleRow(
@@ -142,6 +143,7 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
               label: l10n.group_notifications_content,
               value: masterOn && preferences.content,
               enabled: masterOn,
+              loading: prefsState.isLoading,
               onChanged: notifier.setContent,
             ),
             const SizedBox(height: 8),
@@ -189,6 +191,10 @@ class _ToggleRow extends StatelessWidget {
   final String label;
   final bool value;
   final bool enabled;
+
+  /// Stored values not read yet: the switch is replaced by a spinner so a
+  /// default never shows and then snaps.
+  final bool loading;
   final ValueChanged<bool> onChanged;
 
   const _ToggleRow({
@@ -197,6 +203,7 @@ class _ToggleRow extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onChanged,
+    this.loading = false,
   });
 
   @override
@@ -209,7 +216,7 @@ class _ToggleRow extends StatelessWidget {
 
     return MergeSemantics(
       child: InkWell(
-        onTap: enabled ? () => onChanged(!value) : null,
+        onTap: enabled && !loading ? () => onChanged(!value) : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
           child: Row(
@@ -223,11 +230,21 @@ class _ToggleRow extends StatelessWidget {
                   style: TextStyle(fontSize: 17, color: contentColor),
                 ),
               ),
-              Switch.adaptive(
-                value: value,
-                onChanged: enabled ? onChanged : null,
-                activeTrackColor: AppColors.brandblue,
-              ),
+              if (loading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                Switch.adaptive(
+                  value: value,
+                  onChanged: enabled ? onChanged : null,
+                  activeTrackColor: AppColors.brandblue,
+                ),
             ],
           ),
         ),
@@ -260,9 +277,9 @@ class _MasterOffNotice extends StatelessWidget {
           TextButton(
             // The profile page navigates once the sheet has closed.
             onPressed:
-                () => Navigator.of(context).pop(
-                  GroupNotificationSheetResult.openNotificationSettings,
-                ),
+                () => Navigator.of(
+                  context,
+                ).pop(GroupNotificationSheetResult.openNotificationSettings),
             child: Text(l10n.group_notifications_open_settings),
           ),
         ],

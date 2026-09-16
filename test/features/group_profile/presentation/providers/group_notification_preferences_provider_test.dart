@@ -49,53 +49,43 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   void release(int index) => holds[index].complete();
 }
 
-GroupNotificationPreferencesNotifier _notifier(
-  _FakeRepository repository, {
-  GroupNotificationPreferences? initial,
-}) {
+GroupNotificationPreferencesNotifier _notifier(_FakeRepository repository) {
   return GroupNotificationPreferencesNotifier(
     groupId: 'grp-1',
     repository: repository,
     update: UpdateGroupNotificationPreferencesUseCase(repository),
-    initial: initial,
   );
 }
 
 void main() {
   group('GroupNotificationPreferencesNotifier', () {
-    test('seeds from the profile without fetching', () async {
-      final repo = _FakeRepository()..getFailure = const ServerFailure('boom');
-      final notifier = _notifier(
-        repo,
-        initial: const GroupNotificationPreferences(chat: false, content: true),
-      );
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        notifier.state.preferences,
-        const GroupNotificationPreferences(chat: false, content: true),
-      );
-    });
+    test(
+      'starts loading with defaults, then shows the stored values',
+      () async {
+        final repo =
+            _FakeRepository()
+              ..server = const GroupNotificationPreferences(
+                chat: true,
+                content: false,
+              );
+        final notifier = _notifier(repo);
+        expect(notifier.state.isLoading, isTrue);
+        expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
 
-    test('fetches when the profile has no preferences', () async {
-      final repo =
-          _FakeRepository()
-            ..server = const GroupNotificationPreferences(
-              chat: true,
-              content: false,
-            );
-      final notifier = _notifier(repo);
-      expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        notifier.state.preferences,
-        const GroupNotificationPreferences(chat: true, content: false),
-      );
-    });
+        await Future<void>.delayed(Duration.zero);
+        expect(notifier.state.isLoading, isFalse);
+        expect(
+          notifier.state.preferences,
+          const GroupNotificationPreferences(chat: true, content: false),
+        );
+      },
+    );
 
-    test('keeps defaults when the fetch fails', () async {
+    test('keeps defaults and stops loading when the fetch fails', () async {
       final repo = _FakeRepository()..getFailure = const NotFoundFailure('no');
       final notifier = _notifier(repo);
       await Future<void>.delayed(Duration.zero);
+      expect(notifier.state.isLoading, isFalse);
       expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
       expect(notifier.state.lastFailure, isNull);
     });
@@ -116,10 +106,7 @@ void main() {
 
     test('flips optimistically and sends only the changed flag', () async {
       final repo = _FakeRepository();
-      final notifier = _notifier(
-        repo,
-        initial: GroupNotificationPreferences.allOn,
-      );
+      final notifier = _notifier(repo);
 
       final flip = notifier.setContent(false);
       expect(notifier.state.preferences.content, isFalse);
@@ -135,20 +122,14 @@ void main() {
 
     test('flipping to the current value is a no-op', () async {
       final repo = _FakeRepository();
-      final notifier = _notifier(
-        repo,
-        initial: GroupNotificationPreferences.allOn,
-      );
+      final notifier = _notifier(repo);
       expect(await notifier.setChat(true), isTrue);
       expect(repo.updates, isEmpty);
     });
 
     test('reverts only the failed flag and reports the failure', () async {
       final repo = _FakeRepository()..updateFailure = const NetworkFailure('x');
-      final notifier = _notifier(
-        repo,
-        initial: GroupNotificationPreferences.allOn,
-      );
+      final notifier = _notifier(repo);
 
       final flip = notifier.setChat(false);
       repo.release(0);
@@ -161,10 +142,7 @@ void main() {
       'a failed chat flip does not undo an in-flight content flip',
       () async {
         final repo = _FakeRepository();
-        final notifier = _notifier(
-          repo,
-          initial: GroupNotificationPreferences.allOn,
-        );
+        final notifier = _notifier(repo);
 
         final chatFlip = notifier.setChat(false);
         final contentFlip = notifier.setContent(false);
@@ -194,10 +172,7 @@ void main() {
 
     test('an overtaken response never snaps the toggle back', () async {
       final repo = _FakeRepository();
-      final notifier = _notifier(
-        repo,
-        initial: GroupNotificationPreferences.allOn,
-      );
+      final notifier = _notifier(repo);
 
       final first = notifier.setChat(false);
       final second = notifier.setChat(true);
@@ -215,10 +190,7 @@ void main() {
 
     test('clears the last failure on the next flip', () async {
       final repo = _FakeRepository()..updateFailure = const ServerFailure('x');
-      final notifier = _notifier(
-        repo,
-        initial: GroupNotificationPreferences.allOn,
-      );
+      final notifier = _notifier(repo);
 
       final failed = notifier.setChat(false);
       repo.release(0);

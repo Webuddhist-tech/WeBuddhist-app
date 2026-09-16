@@ -1,4 +1,3 @@
-import 'package:flutter_pecha/features/group_profile/data/models/group_notification_preferences_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 
@@ -18,7 +17,6 @@ class GroupProfileModel {
   final int followerCount;
   final int memberCount;
   final GroupJoinRequestStatus? myJoinRequestStatus;
-  final GroupNotificationPreferencesModel? myNotificationPreferences;
 
   GroupProfileModel({
     required this.id,
@@ -36,7 +34,6 @@ class GroupProfileModel {
     this.followerCount = 0,
     this.memberCount = 0,
     this.myJoinRequestStatus,
-    this.myNotificationPreferences,
   });
 
   factory GroupProfileModel.fromJson(Map<String, dynamic> json) {
@@ -68,11 +65,6 @@ class GroupProfileModel {
       myJoinRequestStatus: GroupJoinRequestStatus.fromApi(
         json['my_join_request_status'] as String?,
       ),
-      myNotificationPreferences: switch (json['my_notification_preferences']) {
-        final Map<String, dynamic> prefs =>
-          GroupNotificationPreferencesModel.fromJson(prefs),
-        _ => null,
-      },
     );
   }
 
@@ -96,7 +88,6 @@ class GroupProfileModel {
       followerCount: followerCount,
       memberCount: memberCount,
       myJoinRequestStatus: myJoinRequestStatus,
-      myNotificationPreferences: myNotificationPreferences?.toEntity(),
     );
   }
 

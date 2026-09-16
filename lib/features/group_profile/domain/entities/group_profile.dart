@@ -1,4 +1,3 @@
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 
 enum GroupType {
@@ -97,12 +96,6 @@ class GroupProfile {
   final int memberCount;
   final GroupJoinRequestStatus? myJoinRequestStatus;
 
-  /// The viewer's push preferences for this group. Null when the viewer has
-  /// not joined (the backend only reports them for members) or when the
-  /// backend does not expose the field yet, in which case the toggles fall
-  /// back to the backend defaults until the first successful read.
-  final GroupNotificationPreferences? myNotificationPreferences;
-
   const GroupProfile({
     required this.id,
     this.slug = '',
@@ -122,7 +115,6 @@ class GroupProfile {
     this.followerCount = 0,
     this.memberCount = 0,
     this.myJoinRequestStatus,
-    this.myNotificationPreferences,
   });
 
   bool get isPrivateCommunity => groupType == GroupType.community && !isPublic;
@@ -136,7 +128,6 @@ class GroupProfile {
     int? followerCount,
     int? memberCount,
     GroupJoinRequestStatus? myJoinRequestStatus,
-    GroupNotificationPreferences? myNotificationPreferences,
   }) {
     return GroupProfile(
       id: id,
@@ -157,8 +148,6 @@ class GroupProfile {
       followerCount: followerCount ?? this.followerCount,
       memberCount: memberCount ?? this.memberCount,
       myJoinRequestStatus: myJoinRequestStatus ?? this.myJoinRequestStatus,
-      myNotificationPreferences:
-          myNotificationPreferences ?? this.myNotificationPreferences,
     );
   }
 
