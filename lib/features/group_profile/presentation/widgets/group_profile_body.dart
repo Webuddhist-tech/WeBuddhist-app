@@ -1157,7 +1157,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
   Widget _buildPracticeCard(GroupProfile profile, GroupPractice practice) {
     final withGroup = practice.copyWith(
-      groupId: practice.groupId ?? profile.id,
+      groupId: profile.id,
       groupName: practice.groupName ?? profile.title,
       groupAvatarUrl: practice.groupAvatarUrl ?? profile.avatarUrl,
     );
