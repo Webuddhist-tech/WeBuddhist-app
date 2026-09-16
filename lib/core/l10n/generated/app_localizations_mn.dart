@@ -2251,6 +2251,11 @@ class AppLocalizationsMn extends AppLocalizations {
       'Надад WeBuddhist дээрх энэ шүлэг таалагдсан тул тантай хуваалцахыг хүссэн.';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'Би WeBuddhist дээрх энэ тоолуурыг ашиглаж байгаа бөгөөд тантай хуваалцахыг хүссэн. Хаана ч байсан дадлагажуулахад хялбар арга юм.';
 

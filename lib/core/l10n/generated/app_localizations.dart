@@ -4010,6 +4010,12 @@ abstract class AppLocalizations {
   /// **'I liked this poem from WeBuddhist and wanted to share it with you.'**
   String get share_poem_message;
 
+  /// No description provided for @share_poem_title.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}”'**
+  String share_poem_title(String title);
+
   /// No description provided for @share_mala_message.
   ///
   /// In en, this message translates to:

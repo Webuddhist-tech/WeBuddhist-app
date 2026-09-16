@@ -1081,6 +1081,14 @@
   "share_chant_message": "I wanted to share this chant with you. You can practice it and find a whole library of other chants and texts on WeBuddhist.",
   "share_quote_message": "I liked this quote from WeBuddhist and wanted to share it with you. Read more such insightful quotes on the WeBuddhist App",
   "share_poem_message": "I liked this poem from WeBuddhist and wanted to share it with you.",
+  "share_poem_title": "\u201c{title}\u201d",
+  "@share_poem_title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "share_mala_message": "I've been using this digital mala on WeBuddhist and wanted to share it with you. It's an easy way to practice wherever you go.",
   "share_passage_message": "I liked this passage and wanted to share it with you. You can read the whole quote in context on WeBuddhist.",
   "share_timer_message": "I wanted to share this meditation timer from WeBuddhist with you. It makes it easy to build a meditation practice.",

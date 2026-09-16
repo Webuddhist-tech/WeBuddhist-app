@@ -2127,6 +2127,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get share_poem_message => '我喜欢WeBuddhist上的这首诗，想和你分享。';
 
   @override
+  String share_poem_title(String title) {
+    return '「$title」';
+  }
+
+  @override
   String get share_mala_message =>
       '我一直在WeBuddhist上使用这串电子念珠，想和你分享。这是一个随时随地修行的便捷方式。';
 
