@@ -60,6 +60,44 @@ class ChatLivePresence extends ChatLiveEvent {
   const ChatLivePresence({required this.count, required this.online});
 }
 
+/// Someone prayed or un-prayed. One frame covers a whole batch.
+class ChatLivePrayersUpdated extends ChatLiveEvent {
+  final List<ChatLivePrayerUpdate> prayers;
+  const ChatLivePrayersUpdated({required this.prayers});
+}
+
+/// Shared by every member: derive `prayed_by_me` from [userIds].
+class ChatLivePrayerUpdate {
+  final String messageId;
+  final int prayerCount;
+  final List<String> userIds;
+  const ChatLivePrayerUpdate({
+    required this.messageId,
+    required this.prayerCount,
+    required this.userIds,
+  });
+
+  factory ChatLivePrayerUpdate.fromJson(Map<String, dynamic> json) {
+    final count = json['prayer_count'];
+    return ChatLivePrayerUpdate(
+      messageId: json['message_id'] as String? ?? '',
+      prayerCount: count is num ? count.toInt() : 0,
+      userIds:
+          (json['user_ids'] as List<dynamic>?)
+              ?.map((id) => id.toString())
+              .toList() ??
+          const [],
+    );
+  }
+}
+
+/// The room stopped serving: chat switched off, event deleted, group
+/// unpublished.
+class ChatLiveRoomClosed extends ChatLiveEvent {
+  final String reason;
+  const ChatLiveRoomClosed({required this.reason});
+}
+
 class ChatLiveError extends ChatLiveEvent {
   final String code;
   final String message;
@@ -79,12 +117,18 @@ class ChatLiveClient {
   final WebSocketChannel Function(Uri uri) _connect;
   WebSocketChannel? _channel;
 
+  /// Exactly one of [groupId] / [eventId] scopes the socket.
   static Uri liveUri({
     required String restBaseUrl,
     required String token,
-    required String groupId,
+    String? groupId,
+    String? eventId,
     String? roomId,
   }) {
+    assert(
+      (groupId != null) != (eventId != null),
+      'liveUri needs exactly one of groupId or eventId',
+    );
     final rest = Uri.parse(restBaseUrl);
     final scheme = rest.scheme == 'http' ? 'ws' : 'wss';
     final basePath = rest.path.replaceAll(RegExp(r'/+$'), '');
@@ -93,7 +137,8 @@ class ChatLiveClient {
       path: '$basePath/chat/live',
       queryParameters: {
         'token': token,
-        'group_id': groupId,
+        if (groupId != null) 'group_id': groupId,
+        if (eventId != null) 'event_id': eventId,
         if (roomId != null && roomId.isNotEmpty) 'room_id': roomId,
       },
     );
@@ -137,6 +182,21 @@ class ChatLiveClient {
         count: json['count'] is num ? (json['count'] as num).toInt() : 0,
         online: json['online'] as List<dynamic>? ?? const [],
       ),
+      'prayers_updated' => ChatLivePrayersUpdated(
+        prayers:
+            (json['prayers'] as List<dynamic>?)
+                ?.whereType<Map>()
+                .map(
+                  (item) => ChatLivePrayerUpdate.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList() ??
+            const [],
+      ),
+      'room_closed' => ChatLiveRoomClosed(
+        reason: json['reason'] as String? ?? '',
+      ),
       'error' => ChatLiveError(
         code: json['code'] as String? ?? '',
         message: json['message'] as String? ?? '',
@@ -145,11 +205,16 @@ class ChatLiveClient {
     };
   }
 
-  static String encodeMessage({required String body, String? parentMessageId}) {
+  static String encodeMessage({
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  }) {
     return jsonEncode({
       'type': 'message',
       'body': body,
       if (parentMessageId != null) 'parent_message_id': parentMessageId,
+      if (messageType != null) 'message_type': messageType,
     });
   }
 
@@ -169,9 +234,17 @@ class ChatLiveClient {
     });
   }
 
-  void sendMessage({required String body, String? parentMessageId}) {
+  void sendMessage({
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  }) {
     _channel?.sink.add(
-      encodeMessage(body: body, parentMessageId: parentMessageId),
+      encodeMessage(
+        body: body,
+        parentMessageId: parentMessageId,
+        messageType: messageType,
+      ),
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -13,17 +14,35 @@ abstract class GroupChatRepository {
 
   Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId);
 
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId);
+
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
     int skip = 0,
     int limit = 20,
+    String? messageType,
   });
 
   Future<Either<Failure, ChatMessageDTO>> sendGroupMessage(
     String groupId, {
     required String body,
     String? parentMessageId,
+    String? messageType,
   });
+
+  Future<Either<Failure, ChatMessageDTO>> sendEventMessage(
+    String eventId, {
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  });
+
+  Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
+    String roomId, {
+    required List<String> messageIds,
+  });
+
+  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(String messageId);
 
   Future<Either<Failure, ChatRoomMembersPage>> listRoomMembers(
     String roomId, {

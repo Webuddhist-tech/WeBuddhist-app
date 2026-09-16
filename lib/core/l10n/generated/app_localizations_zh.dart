@@ -1575,6 +1575,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get parallel_version => '對讀版本';
 
   @override
+  String get reader_languages_title => '語言';
+
+  @override
+  String get reader_original_label => '原文';
+
+  @override
+  String get reader_translation_label => '譯文';
+
+  @override
   String get version_not_available => '無可用版本';
 
   @override
@@ -2673,4 +2682,37 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => '祈願請求';
+
+  @override
+  String get event_prayer_empty_title => '尚無祈願請求';
+
+  @override
+  String get event_prayer_empty_body => '你和社群的請求會顯示在這裡';
+
+  @override
+  String get event_prayer_add => '新增祈願請求';
+
+  @override
+  String get event_prayer_hint => '今天我們能為你祈願什麼';
+
+  @override
+  String get event_prayer_load_failed => '無法載入祈願請求。';
+
+  @override
+  String get event_prayer_closed => '此活動的祈願請求已關閉。';
+
+  @override
+  String get event_prayer_pray => '祈願';
+
+  @override
+  String get event_prayer_praying => '祈願中';
 }

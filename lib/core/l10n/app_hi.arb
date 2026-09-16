@@ -644,6 +644,9 @@
   "second_version_msg": "दूसरा संस्करण मुख्य पाठ के हर श्लोक के नीचे दिखाई देगा",
   "version": "संस्करण",
   "parallel_version": "समानांतर संस्करण",
+  "reader_languages_title": "भाषाएँ",
+  "reader_original_label": "मूल",
+  "reader_translation_label": "अनुवाद",
   "version_not_available": "उपलब्ध नहीं है",
   "read_full_text": "पूरा पाठ पढ़ें",
   "reader_source_label": "स्रोत",
@@ -1141,5 +1144,14 @@
   "edit": "संपादित करें",
   "group_post_edit_title": "पोस्ट संपादित करें",
   "group_post_update_error": "आपके बदलाव सहेजे नहीं जा सके। कृपया फिर से प्रयास करें।",
-  "group_post_updated": "आपके बदलाव सहेज लिए गए।"
+  "group_post_updated": "आपके बदलाव सहेज लिए गए।",
+  "event_prayer_requests": "प्रार्थना अनुरोध",
+  "event_prayer_empty_title": "अभी कोई प्रार्थना अनुरोध नहीं",
+  "event_prayer_empty_body": "आपका और आपके समुदाय का अनुरोध यहाँ दिखाई देगा",
+  "event_prayer_add": "प्रार्थना अनुरोध जोड़ें",
+  "event_prayer_hint": "आज हम आपके लिए क्या प्रार्थना करें",
+  "event_prayer_load_failed": "प्रार्थना अनुरोध लोड नहीं हो सके।",
+  "event_prayer_closed": "इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं।",
+  "event_prayer_pray": "प्रार्थना करें",
+  "event_prayer_praying": "प्रार्थना कर रहे हैं"
 }

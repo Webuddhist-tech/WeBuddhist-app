@@ -18,7 +18,6 @@ import 'package:share_plus/share_plus.dart';
 ///
 /// Contains:
 ///   • Font-size A / A buttons
-///   • Parallel version (scholar dual-slot settings)
 ///   • "+ Add to my practices" action
 ///   • Bookmark toggle action
 class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
@@ -29,7 +28,6 @@ class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
     this.showOfflineRecitation = false,
     this.onAddToPractices,
     this.onAddOfflineRecitation,
-    this.onParallelVersion,
   });
 
   final String textId;
@@ -37,7 +35,6 @@ class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
   final bool showOfflineRecitation;
   final VoidCallback? onAddToPractices;
   final VoidCallback? onAddOfflineRecitation;
-  final VoidCallback? onParallelVersion;
 
   @override
   ConsumerState<ReaderMoreBottomSheet> createState() =>
@@ -185,23 +182,6 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
                 ),
               ],
             ),
-          ),
-
-          _SectionDivider(theme: theme),
-          ListTile(
-            leading: Icon(
-              AppAssets.readerVersionSettings,
-              color: theme.colorScheme.onSurface,
-            ),
-            title: Text(
-              l10n.parallel_version,
-              style: theme.textTheme.bodyLarge,
-            ),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Navigator.of(context).pop();
-              widget.onParallelVersion?.call();
-            },
           ),
 
           if (widget.showAddToPractices) ...[
@@ -364,7 +344,6 @@ void showReaderMoreBottomSheet(
   bool showOfflineRecitation = false,
   VoidCallback? onAddToPractices,
   VoidCallback? onAddOfflineRecitation,
-  VoidCallback? onParallelVersion,
 }) {
   showModalBottomSheet(
     context: context,
@@ -379,7 +358,6 @@ void showReaderMoreBottomSheet(
           showOfflineRecitation: showOfflineRecitation,
           onAddToPractices: onAddToPractices,
           onAddOfflineRecitation: onAddOfflineRecitation,
-          onParallelVersion: onParallelVersion,
         ),
   );
 }

@@ -3194,6 +3194,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get reader_languages_title => TolgeeBridge.get(
+    localeName,
+    'reader_languages_title',
+    () => _fallback.reader_languages_title,
+  );
+
+  @override
+  String get reader_original_label => TolgeeBridge.get(
+    localeName,
+    'reader_original_label',
+    () => _fallback.reader_original_label,
+  );
+
+  @override
+  String get reader_translation_label => TolgeeBridge.get(
+    localeName,
+    'reader_translation_label',
+    () => _fallback.reader_translation_label,
+  );
+
+  @override
   String get version_not_available => TolgeeBridge.get(
     localeName,
     'version_not_available',
@@ -5528,5 +5549,82 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_live_go_live',
     () => _fallback.event_live_go_live,
+  );
+
+  @override
+  String get event_puja_starts_in => TolgeeBridge.get(
+    localeName,
+    'event_puja_starts_in',
+    () => _fallback.event_puja_starts_in,
+  );
+
+  @override
+  String get event_puja_not_started => TolgeeBridge.get(
+    localeName,
+    'event_puja_not_started',
+    () => _fallback.event_puja_not_started,
+  );
+
+  @override
+  String get event_prayer_requests => TolgeeBridge.get(
+    localeName,
+    'event_prayer_requests',
+    () => _fallback.event_prayer_requests,
+  );
+
+  @override
+  String get event_prayer_empty_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_empty_title',
+    () => _fallback.event_prayer_empty_title,
+  );
+
+  @override
+  String get event_prayer_empty_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_empty_body',
+    () => _fallback.event_prayer_empty_body,
+  );
+
+  @override
+  String get event_prayer_add => TolgeeBridge.get(
+    localeName,
+    'event_prayer_add',
+    () => _fallback.event_prayer_add,
+  );
+
+  @override
+  String get event_prayer_hint => TolgeeBridge.get(
+    localeName,
+    'event_prayer_hint',
+    () => _fallback.event_prayer_hint,
+  );
+
+  @override
+  String get event_prayer_load_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_load_failed',
+    () => _fallback.event_prayer_load_failed,
+  );
+
+  @override
+  String get event_prayer_closed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_closed',
+    () => _fallback.event_prayer_closed,
+  );
+
+  @override
+  String get event_prayer_pray => TolgeeBridge.get(
+    localeName,
+    'event_prayer_pray',
+    () => _fallback.event_prayer_pray,
+  );
+
+  @override
+  String get event_prayer_praying => TolgeeBridge.get(
+    localeName,
+    'event_prayer_praying',
+    () => _fallback.event_prayer_praying,
   );
 }

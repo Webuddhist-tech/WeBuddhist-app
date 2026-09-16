@@ -10,23 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 String normalizeReaderLanguageCode(String code) => code.trim().toLowerCase();
 
-bool isReaderTranslateAvailable({
-  required String settingsLanguage,
-  required String? sourceLanguage,
-  required List<ReaderLanguageOption>? languages,
-}) {
-  if (sourceLanguage == null ||
-      normalizeReaderLanguageCode(sourceLanguage).isEmpty) {
-    return false;
-  }
-  if (readerLanguagesMatch(settingsLanguage, sourceLanguage)) return false;
-  if (languages == null || languages.isEmpty) return false;
-  for (final language in languages) {
-    if (readerLanguagesMatch(language.code, settingsLanguage)) return true;
-  }
-  return false;
-}
-
 bool readerLanguagesMatch(String a, String b) =>
     normalizeReaderLanguageCode(a) == normalizeReaderLanguageCode(b);
 

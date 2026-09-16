@@ -588,6 +588,9 @@
   "second_version_msg": "འགྱུར་གཞན་འདི་རྩ་བ་གཙོ་བོའི་འོག་རང་ལ་འཆར་ཡོང་།",
   "version": "པར་གཞི།",
   "parallel_version": "ཀློག་མཁན་གྱི་སྒྲིག་འགོད།",
+  "reader_languages_title": "སྐད་ཡིག",
+  "reader_original_label": "མ་ཡིག",
+  "reader_translation_label": "འགྱུར་མ།",
   "version_not_available": "མི་འདུག",
   "read_full_text": "ཆ་ཚང་ཀློག",
   "reader_source_label": "ཡོང་ཁུངས།",
@@ -1075,5 +1078,14 @@
   "edit": "བཟོ་བཅོས།",
   "group_post_edit_title": "སྤེལ་བ་བཟོ་བཅོས།",
   "group_post_update_error": "བཟོ་བཅོས་ཉར་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
-  "group_post_updated": "བཟོ་བཅོས་ཉར་ཟིན།"
+  "group_post_updated": "བཟོ་བཅོས་ཉར་ཟིན།",
+  "event_prayer_requests": "སྨོན་ལམ་ཞུ་བ།",
+  "event_prayer_empty_title": "ད་ལྟ་སྨོན་ལམ་ཞུ་བ་མེད།",
+  "event_prayer_empty_body": "ཁྱེད་དང་ཁྱེད་ཀྱི་ཚོགས་པའི་ཞུ་བ་འདིར་མངོན་ངེས།",
+  "event_prayer_add": "སྨོན་ལམ་ཞུ་བ་སྣོན་པ།",
+  "event_prayer_hint": "དེ་རིང་ཁྱེད་ལ་སྨོན་ལམ་ཅི་ཞིག་འདེབས་དགོས།",
+  "event_prayer_load_failed": "སྨོན་ལམ་ཞུ་བ་ཁུར་མ་ཐུབ།",
+  "event_prayer_closed": "ལས་རིམ་འདིའི་སྨོན་ལམ་ཞུ་བ་བཀག་ཟིན།",
+  "event_prayer_pray": "སྨོན་ལམ་འདེབས།",
+  "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན།"
 }

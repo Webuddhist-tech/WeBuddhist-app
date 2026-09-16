@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_member_dto.dart';
 
@@ -87,15 +88,35 @@ class GroupChatRemoteDatasource {
     }
   }
 
+  /// Resolves an event's room, creating it and joining the caller on first
+  /// use. 404 once chat is switched off or the event is gone.
+  Future<ChatRoomDTO> getEventRoom(String eventId) async {
+    try {
+      final response = await _dio.get(
+        '/chat/events/$eventId/room',
+        options: _noCache,
+      );
+      return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// [messageType] narrows the page to one kind, e.g. `PRAYER`.
   Future<ChatMessagesPage> listMessages(
     String roomId, {
     int skip = 0,
     int limit = 20,
+    String? messageType,
   }) async {
     try {
       final response = await _dio.get(
         '/chat/rooms/$roomId/messages',
-        queryParameters: {'skip': skip, 'limit': limit},
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+          if (messageType != null) 'message_type': messageType,
+        },
         options: _noCache,
       );
       final data = response.data as Map<String, dynamic>;
@@ -119,19 +140,89 @@ class GroupChatRemoteDatasource {
     String groupId, {
     required String body,
     String? parentMessageId,
+    String? messageType,
+  }) async {
+    return _sendMessage(
+      '/chat/groups/$groupId/messages',
+      body: body,
+      parentMessageId: parentMessageId,
+      messageType: messageType,
+    );
+  }
+
+  Future<ChatMessageDTO> sendEventMessage(
+    String eventId, {
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  }) async {
+    return _sendMessage(
+      '/chat/events/$eventId/messages',
+      body: body,
+      parentMessageId: parentMessageId,
+      messageType: messageType,
+    );
+  }
+
+  Future<ChatMessageDTO> _sendMessage(
+    String path, {
+    required String body,
+    String? parentMessageId,
+    String? messageType,
   }) async {
     try {
       final response = await _dio.post(
-        '/chat/groups/$groupId/messages',
+        path,
         data: {
           'body': body,
           if (parentMessageId != null) 'parent_message_id': parentMessageId,
+          if (messageType != null) 'message_type': messageType,
         },
       );
       return ChatMessageDTO.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _unwrap(e);
     }
+  }
+
+  /// Prays for one or more requests. Idempotent; ids that are no longer live
+  /// prayer requests are skipped and absent from the result.
+  Future<List<ChatPrayerSummaryDTO>> prayFor(
+    String roomId, {
+    required List<String> messageIds,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/chat/rooms/$roomId/prayers',
+        data: {'message_ids': messageIds},
+      );
+      final data = response.data as Map<String, dynamic>;
+      return _readPrayers(data['prayers']);
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// Takes the caller's prayer back. Idempotent.
+  Future<ChatPrayerSummaryDTO> removePrayer(String messageId) async {
+    try {
+      final response = await _dio.delete(
+        '/chat/messages/$messageId/prayers/me',
+      );
+      return ChatPrayerSummaryDTO.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  static List<ChatPrayerSummaryDTO> _readPrayers(Object? data) {
+    return (data as List<dynamic>?)
+            ?.whereType<Map<String, dynamic>>()
+            .map(ChatPrayerSummaryDTO.fromJson)
+            .toList() ??
+        const [];
   }
 
   /// Active members of a room. Names only — the payload has no avatar field.

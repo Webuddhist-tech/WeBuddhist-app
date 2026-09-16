@@ -11,6 +11,7 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_not_started_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -29,13 +30,16 @@ class GroupEventLiveStream {
   });
 }
 
-/// Event stream in the selected language; [fallback] when there is none.
+/// Event stream in the selected language; a "not started" card when there is
+/// none, counting down to the event's start.
 class GroupEventLiveHeader extends ConsumerStatefulWidget {
   final String eventId;
   final String language;
   final bool audioOnly;
   final String fallbackTitle;
-  final Widget fallback;
+
+  /// Cover art behind the "not started" card.
+  final Widget? notStartedBackground;
 
   const GroupEventLiveHeader({
     super.key,
@@ -43,7 +47,7 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
     required this.language,
     required this.audioOnly,
     required this.fallbackTitle,
-    required this.fallback,
+    this.notStartedBackground,
   });
 
   @override
@@ -52,21 +56,88 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
 }
 
 class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
+  // The stream link is often attached after the start time, so keep asking
+  // while the event is on.
+  static const _retryInterval = Duration(seconds: 30);
+
+  /// How long past its start an event is still polled when it has no end of
+  /// its own. One occurrence of a recurring event is bounded the same way.
+  static const _liveGrace = Duration(hours: 6);
+
   GroupEventLiveStream? _stream;
+  DateTime? _startsAt;
+  DateTime? _endsAt;
+  Timer? _retry;
+
+  GroupEventLanguageKey get _key => (
+    eventId: widget.eventId,
+    language: widget.language,
+  );
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    ref.invalidate(groupEventInLanguageProvider(_key));
+  }
+
+  /// Whether the stream link can still turn up at [now]: from the start until
+  /// the event ends. Outside that window a poll only costs requests — an
+  /// event that ended last month is never going to get a link.
+  bool _inLiveWindow(DateTime now) {
+    final start = _startsAt;
+    if (start == null || now.isBefore(start)) return false;
+    return now.isBefore(_endsAt ?? start.add(_liveGrace));
+  }
+
+  /// When the event ends, or null to fall back to [_liveGrace]. A recurring
+  /// event's end date closes the whole series, not the occurrence on screen.
+  static DateTime? _liveEndOf(GroupEvent event) {
+    if (event.isRecurring) return null;
+    final start = event.startDate;
+    final end = event.endDate;
+    if (end == null || (start != null && !end.isAfter(start))) return null;
+    return end;
+  }
+
+  void _syncRetry({required bool waiting}) {
+    if (!waiting) {
+      _retry?.cancel();
+      _retry = null;
+      return;
+    }
+    _retry ??= Timer.periodic(_retryInterval, (_) {
+      // Stop on our own once the window closes; nothing else rebuilds us.
+      if (_inLiveWindow(DateTime.now())) {
+        _refresh();
+      } else {
+        _syncRetry(waiting: false);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final eventAsync = ref.watch(
-      groupEventInLanguageProvider((
-        eventId: widget.eventId,
-        language: widget.language,
-      )),
-    );
-    // Keep the current stream playing while another language loads.
-    eventAsync.valueOrNull?.fold((_) {}, (event) => _stream = _resolve(event));
+    final eventAsync = ref.watch(groupEventInLanguageProvider(_key));
+    // Keep the current stream playing while another language loads; a failed
+    // fetch drops it so the old language's player does not linger.
+    eventAsync.valueOrNull?.fold((_) => _stream = null, (event) {
+      _stream = _resolve(event);
+      _startsAt = event.startDate;
+      _endsAt = _liveEndOf(event);
+    });
 
     final stream = _stream;
     final fetching = eventAsync.isLoading && !eventAsync.hasValue;
+    final startsAt = _startsAt;
+    _syncRetry(
+      waiting: stream == null && !fetching && _inLiveWindow(DateTime.now()),
+    );
+
     final Widget child;
     if (stream != null) {
       child = GroupEventLivePlayer(
@@ -77,13 +148,17 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
         isSwitching: fetching,
       );
     } else if (fetching) {
-      // Skeleton, not the cover, so the cover never flashes before the video.
+      // Skeleton, not the card, so nothing flashes before the video.
       child = const AspectRatio(
         aspectRatio: 16 / 9,
         child: GroupEventLivePlaceholder(),
       );
     } else {
-      child = widget.fallback;
+      child = GroupEventNotStartedCard(
+        startsAt: startsAt,
+        background: widget.notStartedBackground,
+        onStarted: _refresh,
+      );
     }
     return child;
   }
@@ -161,8 +236,7 @@ JSON.stringify((function () {
 
   bool get _isPlaying => _playerState == PlayerState.playing;
 
-  bool get _isBuffering =>
-      !_isReady || _playerState == PlayerState.buffering;
+  bool get _isBuffering => !_isReady || _playerState == PlayerState.buffering;
 
   bool get _showLoader => !_isReady || _switching || widget.isSwitching;
 
@@ -376,8 +450,7 @@ JSON.stringify((function () {
     final fraction =
         span <= 0 ? 1.0 : ((current - start) / span).clamp(0.0, 1.0);
     final atLiveEdge =
-        atHead ??
-        (span <= 0 || end - current <= _liveEdgeTolerance.inSeconds);
+        atHead ?? (span <= 0 || end - current <= _liveEdgeTolerance.inSeconds);
     return _LiveProgress(
       fraction: fraction,
       atLiveEdge: atLiveEdge,
@@ -490,7 +563,8 @@ player.playVideo();
       fit: StackFit.expand,
       children: [
         CachedNetworkImageWidget(
-          imageUrl: 'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
+          imageUrl:
+              'https://img.youtube.com/vi/${widget.videoId}/hqdefault.jpg',
           fit: BoxFit.cover,
           placeholder: const ColoredBox(color: Colors.black),
           errorWidget: const ColoredBox(color: Colors.black),

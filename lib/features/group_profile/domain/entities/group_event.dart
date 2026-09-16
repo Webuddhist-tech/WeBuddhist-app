@@ -126,6 +126,12 @@ class GroupEvent {
   /// `event_format` from the API: "online", "offline" or "hybrid".
   final String? eventFormat;
 
+  /// Whether the event's chat room (prayer requests) is switched on.
+  final bool chatEnabled;
+
+  /// Null until the room is created on first use.
+  final String? chatRoomId;
+
   const GroupEvent({
     required this.id,
     required this.groupId,
@@ -161,6 +167,8 @@ class GroupEvent {
     this.locationId,
     this.location,
     this.eventFormat,
+    this.chatEnabled = false,
+    this.chatRoomId,
   });
 
   /// A plan or a series (never both) marks the event as a puja to enter.
