@@ -56,11 +56,17 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
 }
 
 class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
-  // The stream link is often attached after the start time, so keep asking.
+  // The stream link is often attached after the start time, so keep asking
+  // while the event is on.
   static const _retryInterval = Duration(seconds: 30);
+
+  /// How long past its start an event is still polled when it has no end of
+  /// its own. One occurrence of a recurring event is bounded the same way.
+  static const _liveGrace = Duration(hours: 6);
 
   GroupEventLiveStream? _stream;
   DateTime? _startsAt;
+  DateTime? _endsAt;
   Timer? _retry;
 
   GroupEventLanguageKey get _key => (
@@ -79,13 +85,39 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     ref.invalidate(groupEventInLanguageProvider(_key));
   }
 
+  /// Whether the stream link can still turn up at [now]: from the start until
+  /// the event ends. Outside that window a poll only costs requests — an
+  /// event that ended last month is never going to get a link.
+  bool _inLiveWindow(DateTime now) {
+    final start = _startsAt;
+    if (start == null || now.isBefore(start)) return false;
+    return now.isBefore(_endsAt ?? start.add(_liveGrace));
+  }
+
+  /// When the event ends, or null to fall back to [_liveGrace]. A recurring
+  /// event's end date closes the whole series, not the occurrence on screen.
+  static DateTime? _liveEndOf(GroupEvent event) {
+    if (event.isRecurring) return null;
+    final start = event.startDate;
+    final end = event.endDate;
+    if (end == null || (start != null && !end.isAfter(start))) return null;
+    return end;
+  }
+
   void _syncRetry({required bool waiting}) {
     if (!waiting) {
       _retry?.cancel();
       _retry = null;
       return;
     }
-    _retry ??= Timer.periodic(_retryInterval, (_) => _refresh());
+    _retry ??= Timer.periodic(_retryInterval, (_) {
+      // Stop on our own once the window closes; nothing else rebuilds us.
+      if (_inLiveWindow(DateTime.now())) {
+        _refresh();
+      } else {
+        _syncRetry(waiting: false);
+      }
+    });
   }
 
   @override
@@ -96,13 +128,15 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     eventAsync.valueOrNull?.fold((_) => _stream = null, (event) {
       _stream = _resolve(event);
       _startsAt = event.startDate;
+      _endsAt = _liveEndOf(event);
     });
 
     final stream = _stream;
     final fetching = eventAsync.isLoading && !eventAsync.hasValue;
     final startsAt = _startsAt;
-    final started = startsAt != null && !startsAt.isAfter(DateTime.now());
-    _syncRetry(waiting: stream == null && !fetching && started);
+    _syncRetry(
+      waiting: stream == null && !fetching && _inLiveWindow(DateTime.now()),
+    );
 
     final Widget child;
     if (stream != null) {

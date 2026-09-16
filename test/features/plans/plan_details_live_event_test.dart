@@ -116,6 +116,8 @@ Future<void> _pumpLiveEventDetails(
   WidgetTester tester, {
   bool streamKnownAbsent = false,
   Completer<Either<Failure, GroupEvent>>? stream,
+  // Answers every fetch, including the retries a started event makes.
+  Future<Either<Failure, GroupEvent>> Function()? fetch,
 }) async {
   // Phone portrait: the pinned 16:9 stream must leave room for the list.
   tester.view.physicalSize = const Size(390, 844);
@@ -131,7 +133,9 @@ Future<void> _pumpLiveEventDetails(
         // Still loading counts as live; a failure means no stream.
         groupEventInLanguageProvider.overrideWith(
           (ref, key) =>
-              streamKnownAbsent
+              fetch != null
+                  ? fetch()
+                  : streamKnownAbsent
                   ? Future.value(const Left(NetworkFailure('test')))
                   : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
         ),
@@ -250,6 +254,62 @@ void main() {
     final time = DateFormat.jm().format(local).toLowerCase();
     expect(find.text('$date · $time ${local.timeZoneName}'), findsOneWidget);
     expect(find.byType(PlanCoverImage), findsNothing);
+  });
+
+  testWidgets('a started event without a stream keeps asking for its link', (
+    tester,
+  ) async {
+    var fetches = 0;
+    final now = DateTime.now();
+    await _pumpLiveEventDetails(
+      tester,
+      fetch: () async {
+        fetches++;
+        return Right(
+          GroupEvent(
+            id: 'event-1',
+            groupId: 'group-1',
+            startDate: now.subtract(const Duration(minutes: 5)),
+          ),
+        );
+      },
+    );
+    await _settle(tester);
+    expect(fetches, 1);
+    expect(find.text('Puja not started yet'), findsOneWidget);
+
+    // The link is usually attached a little after the start, so poll for it.
+    await tester.pump(const Duration(seconds: 31));
+    await _settle(tester);
+    expect(fetches, 2);
+  });
+
+  testWidgets('an event that has ended stops asking for a stream', (
+    tester,
+  ) async {
+    var fetches = 0;
+    final now = DateTime.now();
+    await _pumpLiveEventDetails(
+      tester,
+      fetch: () async {
+        fetches++;
+        return Right(
+          GroupEvent(
+            id: 'event-1',
+            groupId: 'group-1',
+            startDate: now.subtract(const Duration(days: 2)),
+            endDate: now.subtract(const Duration(days: 1)),
+          ),
+        );
+      },
+    );
+    await _settle(tester);
+    expect(fetches, 1);
+
+    // No link is ever coming, so no request goes out however long we stay.
+    await tester.pump(const Duration(minutes: 2));
+    await _settle(tester);
+    expect(fetches, 1);
   });
 
   testWidgets('a failed stream request keeps an open task in place', (
