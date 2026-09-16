@@ -106,6 +106,7 @@ class _GroupPostAddLinkSheetState extends ConsumerState<GroupPostAddLinkSheet> {
     final borderColor = isDark ? AppColors.cardBorderDark : AppColors.grey300;
 
     final url = _resolvedUrl;
+    final isYoutube = url != null && ConnectPostLinkUtils.isYoutube(url);
     final previewAsync =
         url != null && ChatLinkPreviewService.isPreviewableUrl(url)
             ? ref.watch(chatLinkPreviewProvider(url))
