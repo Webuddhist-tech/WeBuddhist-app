@@ -441,7 +441,11 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   /// room membership follows group membership, so opening a chat that has a
   /// room is the closest observable moment.
   void _trackJoined(String roomId, {required ChatJoinSource source}) {
-    if (_joinTracked || _disposed || roomId.isEmpty) return;
+    if (_joinTracked || roomId.isEmpty) return;
+    // A late socket frame or lookup for a screen that is gone is not a join.
+    // This member's own first send is: the server has the message, so the
+    // room was joined whether or not they stayed to see it.
+    if (_disposed && source != ChatJoinSource.firstSend) return;
     _joinTracked = true;
     _providers
         .read(groupChatAnalyticsProvider)
@@ -567,6 +571,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     final parent = _replyingTo;
     setState(() => _sending = true);
     try {
+      // Read before the await, matching the thread notifier: a confirmed
+      // send still has to be counted after this screen is gone.
+      final analytics = _providers.read(groupChatAnalyticsProvider);
       final result = await _providers
           .read(groupChatRepositoryProvider)
           .sendGroupMessage(
@@ -574,6 +581,23 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
             body: body,
             parentMessageId: parent?.id,
           );
+      // Both events are recorded here, before the `mounted` check and before
+      // anything else is awaited: the server has accepted the message, so
+      // they count whether or not this screen is still around to show it.
+      // The join in particular must land before the cache write below
+      // yields — the socket is already up, and its `message_created` echo
+      // can arrive in that gap and reach `_adoptRoomId`, which would
+      // otherwise claim the join as `live` when it was this member's own
+      // first send.
+      result.map((message) {
+        _trackJoined(message.roomId, source: ChatJoinSource.firstSend);
+        analytics.messageSent(
+          groupId: widget.groupId,
+          roomId: message.roomId,
+          messageId: message.id,
+          parentMessageId: parent?.id,
+        );
+      });
       if (!mounted) return;
       await result.fold(
         (failure) async {
@@ -589,22 +613,6 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           presentChatSendError(context, failure);
         },
         (message) async {
-          // Both events are recorded here, before anything is awaited: the
-          // server has accepted the message, so they count whether or not
-          // this screen is still around to show it. The join in particular
-          // must land before the cache write below yields — the socket is
-          // already up, and its `message_created` echo can arrive in that
-          // gap and reach `_adoptRoomId`, which would otherwise claim the
-          // join as `live` when it was this member's own first send.
-          _trackJoined(message.roomId, source: ChatJoinSource.firstSend);
-          _providers
-              .read(groupChatAnalyticsProvider)
-              .messageSent(
-                groupId: widget.groupId,
-                roomId: message.roomId,
-                messageId: message.id,
-                parentMessageId: parent?.id,
-              );
           await _persistRoomId(message.roomId);
           if (!mounted) return;
           _bodyController.clear();
