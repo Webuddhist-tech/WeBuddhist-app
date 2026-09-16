@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -930,6 +931,20 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       return failure;
     }
 
+    // This call is confirmed, so the tap counts even if a swap's cleanup
+    // below fails: the new emoji is on the server either way.
+    ref
+        .read(groupChatAnalyticsProvider)
+        .messageReacted(
+          roomId: roomIdForCall,
+          messageId: messageId,
+          emoji: emoji,
+          action: chatReactionActionFor(
+            previousEmoji: previousEmoji,
+            emoji: emoji,
+          ),
+        );
+
     var summary = result.getOrElse((_) => const []);
 
     // This call is confirmed, so the server's state for this member is known
@@ -1125,6 +1140,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       // 204 with no body, so there is nothing to adopt: the row is stamped now
       // and the next fetch replaces this with the server's own value.
       applyDeletion(messageId, deletedAt: _nowIso());
+      _trackDeleted(messageId);
       return null;
     });
   }
@@ -1162,6 +1178,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         final deletedAt = _nowIso();
         for (final id in ids) {
           applyDeletion(id, deletedAt: deletedAt);
+          _trackDeleted(id);
         }
         return ChatDeleteOutcome(deleted: ids.toSet());
       },
@@ -1182,6 +1199,14 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       (failure == null ? deleted : failed).add(id);
     }
     return ChatDeleteOutcome(deleted: deleted, failed: failed);
+  }
+
+  /// One event per message: the bulk route confirms every id at once and the
+  /// fallback confirms them one call each, so both report the same way.
+  void _trackDeleted(String messageId) {
+    ref
+        .read(groupChatAnalyticsProvider)
+        .messageDeleted(roomId: roomId, messageId: messageId);
   }
 
   static String _nowIso() => DateTime.now().toUtc().toIso8601String();

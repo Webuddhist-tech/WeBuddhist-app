@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/domain/usecases/resolve_group_
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_composer_controller.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_link_spans.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
@@ -71,6 +72,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   bool _resolvingRoom = false;
   _RoomState _roomState = _RoomState.resolving;
   String? _roomId;
+
+  /// Whether `group_chat_joined` has fired for this screen. See [_trackJoined].
+  bool _joinTracked = false;
 
   /// The JWT `sub`, used **only** to namespace this account's local room
   /// cache. It is a different id space from chat's `sender_id`, so it must
@@ -245,6 +249,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _roomId = roomId;
           _roomState = _RoomState.joined;
         });
+        _trackJoined(roomId, source: ChatJoinSource.resolved);
         await _ensureLiveConnected();
         await _markRoomRead();
       case GroupChatRoomMissing():
@@ -424,8 +429,23 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       _roomId = roomId;
       _roomState = _RoomState.joined;
     });
+    _trackJoined(roomId, source: ChatJoinSource.live);
     unawaited(_persistRoomId(roomId));
     unawaited(_markRoomRead());
+  }
+
+  /// Fires `group_chat_joined` once per screen, the first time it has a room
+  /// to talk in. The room may come from the lookup on open, from the socket
+  /// when another member creates it, or from this member's own first send;
+  /// the event says which. There is no separate "join" action in the app:
+  /// room membership follows group membership, so opening a chat that has a
+  /// room is the closest observable moment.
+  void _trackJoined(String roomId, {required ChatJoinSource source}) {
+    if (_joinTracked || _disposed || roomId.isEmpty) return;
+    _joinTracked = true;
+    _providers
+        .read(groupChatAnalyticsProvider)
+        .chatJoined(groupId: widget.groupId, roomId: roomId, source: source);
   }
 
   void _onMessageCreated(Map<String, dynamic> json) {
@@ -583,6 +603,15 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _providers
               .read(groupChatThreadProvider(message.roomId).notifier)
               .appendLive(message);
+          _trackJoined(message.roomId, source: ChatJoinSource.firstSend);
+          _providers
+              .read(groupChatAnalyticsProvider)
+              .messageSent(
+                groupId: widget.groupId,
+                roomId: message.roomId,
+                messageId: message.id,
+                parentMessageId: parent?.id,
+              );
           // Your own message is read the moment it is sent. The server counts
           // it as unread until `last_read_at` moves past it, so without this
           // the chats list shows the sender their own message with a badge.

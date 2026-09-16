@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_copy_text.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_haptics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
@@ -603,6 +604,7 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final l10n = context.l10n;
     final report = _ChatReport(
       repository: ref.read(groupChatRepositoryProvider),
+      analytics: ref.read(groupChatAnalyticsProvider),
       connectivity: ref.read(connectivityServiceProvider),
       messenger: ScaffoldMessenger.of(context),
       l10n: l10n,
@@ -1006,6 +1008,7 @@ class _ThreadError extends StatelessWidget {
 class _ChatReport {
   const _ChatReport({
     required this.repository,
+    required this.analytics,
     required this.connectivity,
     required this.messenger,
     required this.l10n,
@@ -1016,6 +1019,7 @@ class _ChatReport {
   });
 
   final GroupChatRepository repository;
+  final GroupChatAnalytics analytics;
   final ConnectivityService connectivity;
   final ScaffoldMessengerState messenger;
   final AppLocalizations l10n;
@@ -1044,6 +1048,14 @@ class _ChatReport {
 
     switch (feedback) {
       case ChatReportFeedback.sent:
+        // A repeat report folds into `sent` too (the data layer treats the
+        // server's 409 as success), so a member re-reporting the same
+        // message fires this again. That is the tap that happened.
+        analytics.messageReported(
+          roomId: roomId,
+          messageId: messageId,
+          reason: reason,
+        );
         messenger.showSnackBar(
           SnackBar(content: Text(l10n.group_chat_report_thanks)),
         );

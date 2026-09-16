@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -15,6 +17,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/group_c
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/analytics/recording_analytics_service.dart';
 
 const thumbsUp = '\u{1F44D}';
 const heart = '\u{2764}\u{FE0F}';
@@ -227,11 +231,16 @@ Future<void> _settle() async {
 
 void main() {
   late _FakeGroupChatRepository repository;
+  late RecordingAnalyticsService analytics;
   late ProviderContainer container;
 
   ProviderContainer buildContainer() {
+    analytics = RecordingAnalyticsService();
     return ProviderContainer(
-      overrides: [groupChatRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        groupChatRepositoryProvider.overrideWithValue(repository),
+        analyticsServiceProvider.overrideWithValue(analytics),
+      ],
     );
   }
 
@@ -1988,6 +1997,148 @@ void main() {
       await refresh;
 
       expect(_byId(notifier, 'm1').deletedAt, '2026-09-03T10:00:00Z');
+    });
+  });
+
+  group('analytics', () {
+    ChatMessageDTO mine(String id, String emoji) {
+      return _message(id).copyWith(
+        reactions: [
+          ChatMessageReactionDTO(emoji: emoji, count: 1, reactedByMe: true),
+        ],
+      );
+    }
+
+    test('a confirmed reaction fires group_message_reacted', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', thumbsUp, roomIdForCall: 'room-1');
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+      expect(analytics.events.single.properties, {
+        'room_id': 'room-1',
+        'message_id': 'm1',
+        'emoji': thumbsUp,
+        'action': 'added',
+      });
+    });
+
+    test('taking my own emoji off reports a removal', () async {
+      repository = _FakeGroupChatRepository(history: [mine('m1', thumbsUp)]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', thumbsUp, roomIdForCall: 'room-1');
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+      expect(analytics.events.single.properties['action'], 'removed');
+    });
+
+    test('a swap fires once, for the new emoji, not for the cleanup', () async {
+      repository = _FakeGroupChatRepository(history: [mine('m1', thumbsUp)]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', heart, roomIdForCall: 'room-1');
+
+      expect(repository.reactionCalls, ['POST $heart', 'DELETE $thumbsUp']);
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+      expect(analytics.events.single.properties['emoji'], heart);
+      expect(analytics.events.single.properties['action'], 'swapped');
+    });
+
+    test('a failed reaction fires nothing', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      repository.reactionFailure = const NetworkFailure('offline');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', thumbsUp, roomIdForCall: 'room-1');
+
+      expect(analytics.events, isEmpty);
+    });
+
+    test('a confirmed delete fires group_message_deleted', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessage('m1');
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
+      expect(analytics.events.single.properties, {
+        'room_id': 'room-1',
+        'message_id': 'm1',
+      });
+    });
+
+    test('a failed delete fires nothing', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      repository.deleteFailure = const ServerFailure('boom');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessage('m1');
+
+      expect(analytics.events, isEmpty);
+    });
+
+    test('a bulk delete fires one event per message', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(analytics.eventNames, [
+        AnalyticsEvents.groupMessageDeleted,
+        AnalyticsEvents.groupMessageDeleted,
+      ]);
+      expect(
+        analytics.events.map((e) => e.properties['message_id']).toSet(),
+        {'m1', 'm2'},
+      );
+    });
+
+    test('a refused bulk delete fires nothing', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ServerFailure('NOT_SENDER: m2');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(analytics.events, isEmpty);
+    });
+
+    test('the one-call-each fallback reports only what succeeded', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ChatBulkDeleteUnsupportedFailure();
+      repository.failDeleteOf = {'m2'};
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
+      expect(analytics.events.single.properties['message_id'], 'm1');
     });
   });
 
