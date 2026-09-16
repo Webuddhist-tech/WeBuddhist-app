@@ -1154,6 +1154,8 @@
   "player_pause": "Pause",
   "player_play": "Play",
   "player_forward_10": "Forward 10 seconds",
+  "player_fullscreen": "Fullscreen",
+  "player_exit_fullscreen": "Exit fullscreen",
   "session_plans_load_error": "Unable to load plans.\nPlease try again later.",
   "session_chants_load_error": "Unable to load chants",
   "session_no_chants": "No chants found",

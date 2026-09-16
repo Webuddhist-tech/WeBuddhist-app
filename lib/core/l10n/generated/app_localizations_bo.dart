@@ -2433,6 +2433,12 @@ class AppLocalizationsBo extends AppLocalizations {
   String get player_forward_10 => 'སྐར་ཆ་ ༡༠ མདུན་སྐྱོད';
 
   @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
+
+  @override
   String get session_plans_load_error =>
       'ཐུན་འཆར་སྟོན་ཐུབ་མ་སོང་།\nཏོག་ཙམ་རྗེས་ནས་ཚོད་ལྟ་གནང་རོགས།';
 

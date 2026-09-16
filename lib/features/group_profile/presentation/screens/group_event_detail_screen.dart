@@ -860,7 +860,7 @@ class _EventInfoCard extends StatelessWidget {
     final startTime = DateFormat.jm(locale).format(start).toLowerCase();
     final end = event.endDate?.toLocal();
     if (end == null || end.isAtSameMomentAs(start)) {
-      return '$date · $startTime ${start.timeZoneName}';
+      return '$date\n$startTime ${start.timeZoneName}';
     }
 
     final endTime = DateFormat.jm(locale).format(end).toLowerCase();
@@ -870,12 +870,13 @@ class _EventInfoCard extends StatelessWidget {
         start.timeZoneName == endZone
             ? startTime
             : '$startTime ${start.timeZoneName}';
+    // Dates on one line, times on the next, so the range stays scannable.
     final isMultiDay = !DateUtils.isSameDay(start, end);
-    if (isMultiDay) {
-      final endDate = DateFormat('EEE d MMM y', locale).format(end);
-      return '$date · $startLabel – $endDate · $endTime $endZone';
-    }
-    return '$date · $startLabel – $endTime $endZone';
+    final dateLine =
+        isMultiDay
+            ? '$date – ${DateFormat('EEE d MMM y', locale).format(end)}'
+            : date;
+    return '$dateLine\n$startLabel – $endTime $endZone';
   }
 
   String? _formatRecurrenceText(BuildContext context, GroupEvent event) {

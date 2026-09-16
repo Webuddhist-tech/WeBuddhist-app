@@ -4712,6 +4712,20 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get player_fullscreen => TolgeeBridge.get(
+    localeName,
+    'player_fullscreen',
+    () => _fallback.player_fullscreen,
+  );
+
+  @override
+  String get player_exit_fullscreen => TolgeeBridge.get(
+    localeName,
+    'player_exit_fullscreen',
+    () => _fallback.player_exit_fullscreen,
+  );
+
+  @override
   String get session_plans_load_error => TolgeeBridge.get(
     localeName,
     'session_plans_load_error',

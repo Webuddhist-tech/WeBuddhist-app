@@ -105,8 +105,7 @@ class _GroupAccumulatorMyContributionsListState
 
 /// Paginated leaderboard for one accumulation.
 ///
-/// [embedded] lays it out inline for a parent scroll view and swaps the
-/// scroll-driven pagination for a "show more" tail.
+/// [embedded] lays it out inline and paginates off the parent scroll view.
 class GroupAccumulatorLeaderboardList extends ConsumerStatefulWidget {
   final String accumulatorId;
   final bool isDark;
@@ -127,6 +126,7 @@ class GroupAccumulatorLeaderboardList extends ConsumerStatefulWidget {
 class _GroupAccumulatorLeaderboardListState
     extends ConsumerState<GroupAccumulatorLeaderboardList> {
   final ScrollController _scrollController = ScrollController();
+  ScrollPosition? _ancestorPosition;
   bool _hasRequestedInitialLoad = false;
   GroupAccumulatorMemberSort _sort = GroupAccumulatorMemberSort.total;
 
@@ -143,7 +143,18 @@ class _GroupAccumulatorLeaderboardListState
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.embedded) return;
+    final position = Scrollable.maybeOf(context)?.position;
+    if (identical(position, _ancestorPosition)) return;
+    _ancestorPosition?.removeListener(_onAncestorScroll);
+    _ancestorPosition = position?..addListener(_onAncestorScroll);
+  }
+
+  @override
   void dispose() {
+    _ancestorPosition?.removeListener(_onAncestorScroll);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -162,10 +173,16 @@ class _GroupAccumulatorLeaderboardListState
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _loadMore();
-    }
+    _loadMoreIfNearEnd(_scrollController.position);
+  }
+
+  void _onAncestorScroll() {
+    final position = _ancestorPosition;
+    if (position != null) _loadMoreIfNearEnd(position);
+  }
+
+  void _loadMoreIfNearEnd(ScrollPosition position) {
+    if (position.pixels >= position.maxScrollExtent - 200) _loadMore();
   }
 
   void _loadMore() {
@@ -238,11 +255,6 @@ class _GroupAccumulatorLeaderboardListState
         !membersState.isLoading &&
         !membersState.isLoadingMore &&
         membersState.error == null;
-    final showMoreButton =
-        widget.embedded &&
-        !showEmptyMessage &&
-        membersState.hasMore &&
-        !membersState.isLoadingMore;
 
     return ListView.builder(
       controller: widget.embedded ? null : _scrollController,
@@ -252,8 +264,7 @@ class _GroupAccumulatorLeaderboardListState
       itemCount:
           1 +
           (showEmptyMessage ? 1 : sortedMembers.length) +
-          (membersState.isLoadingMore ? 1 : 0) +
-          (showMoreButton ? 1 : 0),
+          (membersState.isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -320,22 +331,6 @@ class _GroupAccumulatorLeaderboardListState
                   style: _nameStyle(widget.isDark),
                 ),
               ],
-            ),
-          );
-        }
-
-        if (showMoreButton && memberIndex == sortedMembers.length) {
-          return Center(
-            child: TextButton(
-              onPressed: _loadMore,
-              child: Text(
-                context.l10n.show_more,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: secondaryColor,
-                ),
-              ),
             ),
           );
         }
