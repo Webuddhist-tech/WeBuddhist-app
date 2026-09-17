@@ -57,6 +57,13 @@ abstract class GroupChatRepository {
     required String messageId,
   });
 
+  /// One request for several messages, all or nothing. Left with
+  /// `ChatBulkDeleteUnsupportedFailure` when the server has no such route.
+  Future<Either<Failure, Unit>> deleteMessages(
+    String roomId, {
+    required List<String> messageIds,
+  });
+
   Future<Either<Failure, Unit>> reportMessage(
     String roomId, {
     required String messageId,

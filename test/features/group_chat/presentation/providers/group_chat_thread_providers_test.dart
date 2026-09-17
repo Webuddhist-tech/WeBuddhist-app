@@ -3,10 +3,12 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
@@ -139,6 +141,9 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   final List<String> deleteCalls = [];
   Failure? deleteFailure;
 
+  /// Ids the single-message route refuses; others succeed.
+  Set<String> failDeleteOf = const {};
+
   @override
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
@@ -146,6 +151,26 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async {
     deleteCalls.add(messageId);
     final failure = deleteFailure;
+    if (failure != null) return Left(failure);
+    if (failDeleteOf.contains(messageId)) {
+      return const Left(ServerFailure('refused'));
+    }
+    return const Right(unit);
+  }
+
+  /// Each bulk call's ids, in call order.
+  final List<List<String>> bulkDeleteCalls = [];
+
+  /// The bulk route's refusal when set; otherwise it answers 204.
+  Failure? bulkDeleteFailure;
+
+  @override
+  Future<Either<Failure, Unit>> deleteMessages(
+    String roomId, {
+    required List<String> messageIds,
+  }) async {
+    bulkDeleteCalls.add(messageIds);
+    final failure = bulkDeleteFailure;
     if (failure != null) return Left(failure);
     return const Right(unit);
   }
@@ -1666,6 +1691,97 @@ void main() {
     });
   });
 
+  group('deleteMessages', () {
+    test('one id takes the single route, no bulk call', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1']);
+
+      expect(outcome.deleted, {'m1'});
+      expect(outcome.failed, isEmpty);
+      expect(repository.deleteCalls, ['m1']);
+      expect(repository.bulkDeleteCalls, isEmpty);
+    });
+
+    test('several ids go in one bulk call and all tombstone on 204', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m3'), _message('m2'), _message('m1')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(outcome.deleted, {'m1', 'm2'});
+      expect(outcome.failed, isEmpty);
+      expect(repository.bulkDeleteCalls, [
+        ['m1', 'm2'],
+      ]);
+      expect(repository.deleteCalls, isEmpty);
+      // 204 carries no body: stamped locally, like a single delete.
+      expect(_byId(notifier, 'm1').deletedAt, isNotNull);
+      expect(_byId(notifier, 'm2').deletedAt, isNotNull);
+      expect(_byId(notifier, 'm3').deletedAt, isNull);
+    });
+
+    test('duplicate and empty ids are dropped before the call', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', '', 'm2', 'm1']);
+
+      expect(repository.bulkDeleteCalls, [
+        ['m1', 'm2'],
+      ]);
+      expect(outcome.deleted, {'m1', 'm2'});
+    });
+
+    test('a server without the bulk route falls back to one call each', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m3'), _message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ChatBulkDeleteUnsupportedFailure();
+      repository.failDeleteOf = {'m2'};
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', 'm2', 'm3']);
+
+      expect(repository.bulkDeleteCalls, hasLength(1));
+      expect(repository.deleteCalls, ['m1', 'm2', 'm3']);
+      expect(outcome.deleted, {'m1', 'm3'});
+      expect(outcome.failed, {'m2'});
+      expect(_byId(notifier, 'm1').deletedAt, isNotNull);
+      expect(_byId(notifier, 'm2').deletedAt, isNull);
+    });
+
+    test('a refusal is all or nothing: every id fails, nothing tombstones', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ServerFailure('NOT_SENDER: m2');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(outcome.deleted, isEmpty);
+      expect(outcome.failed, {'m1', 'm2'});
+      expect(repository.deleteCalls, isEmpty);
+      expect(_byId(notifier, 'm1').deletedAt, isNull);
+    });
+  });
+
   group('applyDeletion', () {
     test('a broadcast tombstones a loaded message', () async {
       repository = _FakeGroupChatRepository(
@@ -1710,6 +1826,103 @@ void main() {
       await refresh;
 
       expect(_byId(notifier, 'm1').deletedAt, '2026-09-03T10:00:00Z');
+    });
+
+    test('stamps every loaded reply quoting the deleted message', () async {
+      final reply = ChatMessageDTO(
+        id: 'r1',
+        roomId: 'room-1',
+        senderId: 'b',
+        senderEmail: 'b@example.com',
+        body: 'ok',
+        createdAt: '2026-08-28T12:01:00Z',
+        parent: const ChatMessageParentDTO(
+          id: 'gone',
+          senderId: 'a',
+          senderEmail: 'a@example.com',
+          body: 'hello',
+          createdAt: '2026-08-28T12:00:00Z',
+        ),
+      );
+      repository = _FakeGroupChatRepository(
+        history: [reply, _message('m0')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      // The original is outside the loaded window; the quote still turns
+      // into a tombstone, and the reply itself stays live.
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+      expect(_byId(notifier, 'm0').deletedAt, isNull);
+    });
+
+    test('a refresh keeps the quote a tombstone when the original is outside '
+        'the window', () async {
+      // The server does not stamp `deleted_at` onto an embedded parent, so
+      // the refetched reply quotes the original as live.
+      final reply = ChatMessageDTO(
+        id: 'r1',
+        roomId: 'room-1',
+        senderId: 'b',
+        senderEmail: 'b@example.com',
+        body: 'ok',
+        createdAt: '2026-08-28T12:01:00Z',
+        parent: const ChatMessageParentDTO(
+          id: 'gone',
+          senderId: 'a',
+          senderEmail: 'a@example.com',
+          body: 'hello',
+          createdAt: '2026-08-28T12:00:00Z',
+        ),
+      );
+      repository = _FakeGroupChatRepository(history: [reply, _message('m0')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      // No fetch in flight: nothing is held for a page, only remembered.
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').parent?.deletedAt, isNotNull);
+
+      await notifier.refreshLatest();
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+    });
+
+    test('a reply arriving after its original was deleted quotes a '
+        'tombstone', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m0')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+
+      notifier.appendLive(
+        ChatMessageDTO(
+          id: 'r1',
+          roomId: 'room-1',
+          senderId: 'b',
+          senderEmail: 'b@example.com',
+          body: 'ok',
+          createdAt: '2026-08-28T12:01:00Z',
+          parent: const ChatMessageParentDTO(
+            id: 'gone',
+            senderId: 'a',
+            senderEmail: 'a@example.com',
+            body: 'hello',
+            createdAt: '2026-08-28T12:00:00Z',
+          ),
+        ),
+      );
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
     });
 
     test('a deletion for a message no page brings back is dropped', () async {
