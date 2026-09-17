@@ -16,7 +16,7 @@ class PrayerRequestsButton extends StatelessWidget {
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Material(

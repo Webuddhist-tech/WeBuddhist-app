@@ -71,6 +71,7 @@ class GroupEventParticipantModel {
   final String? username;
   final String? fullname;
   final String? avatarUrl;
+  final String? participationType;
 
   const GroupEventParticipantModel({
     required this.userId,
@@ -78,6 +79,7 @@ class GroupEventParticipantModel {
     this.username,
     this.fullname,
     this.avatarUrl,
+    this.participationType,
   });
 
   factory GroupEventParticipantModel.fromJson(Map<String, dynamic> json) {
@@ -87,6 +89,7 @@ class GroupEventParticipantModel {
       username: json['username'] as String?,
       fullname: json['fullname'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      participationType: json['participation_type'] as String?,
     );
   }
 
@@ -97,6 +100,7 @@ class GroupEventParticipantModel {
       username: username,
       fullname: fullname,
       avatarUrl: avatarUrl,
+      participationType: GroupEventParticipationType.fromApi(participationType),
     );
   }
 }
@@ -230,6 +234,7 @@ class GroupEventModel {
   final String? locationId;
   final GroupEventLocationModel? location;
   final String? eventFormat;
+  final String? myParticipationType;
   final bool chatEnabled;
   final String? chatRoomId;
 
@@ -266,6 +271,7 @@ class GroupEventModel {
     this.locationId,
     this.location,
     this.eventFormat,
+    this.myParticipationType,
     this.chatEnabled = false,
     this.chatRoomId,
   });
@@ -320,6 +326,7 @@ class GroupEventModel {
               ? GroupEventLocationModel.fromJson(locationJson)
               : null,
       eventFormat: json['event_format'] as String?,
+      myParticipationType: json['my_participation_type'] as String?,
       chatEnabled: json['chat_enabled'] as bool? ?? false,
       chatRoomId: json['chat_room_id'] as String?,
     );
@@ -361,6 +368,9 @@ class GroupEventModel {
       locationId: locationId,
       location: location?.toEntity(),
       eventFormat: eventFormat,
+      myParticipationType: GroupEventParticipationType.fromApi(
+        myParticipationType,
+      ),
       chatEnabled: chatEnabled,
       chatRoomId: chatRoomId,
     );

@@ -369,6 +369,9 @@
   "connect_group_fallback_title": "Group",
   "connect_event_attend": "Attend",
   "connect_event_attending": "Attending",
+  "connect_event_participation_prompt": "How are you attending?",
+  "connect_event_joining_in_person": "Joining in person",
+  "connect_event_joining_online": "Joining online",
   "connect_event_participants_attending": "{count} attending",
   "@connect_event_participants_attending": {
     "placeholders": {

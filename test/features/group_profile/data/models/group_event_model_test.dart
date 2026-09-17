@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -70,6 +71,53 @@ void main() {
           }).toEntity();
 
       expect(event.links.single.language, 'EN');
+    });
+  });
+
+  group('GroupEventModel participation', () {
+    test('reads my_participation_type', () {
+      final event =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'event_format': 'hybrid',
+            'is_joined': true,
+            'my_participation_type': 'offline',
+          }).toEntity();
+
+      expect(event.myParticipationType, GroupEventParticipationType.offline);
+    });
+
+    test('is undecided when the field is absent or unknown', () {
+      final absent =
+          GroupEventModel.fromJson({'id': 'e1', 'group_id': 'g1'}).toEntity();
+      final unknown =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'my_participation_type': 'hybrid',
+          }).toEntity();
+
+      expect(absent.myParticipationType, isNull);
+      expect(unknown.myParticipationType, isNull);
+    });
+
+    test('reads each participant participation_type', () {
+      final page =
+          GroupEventParticipantsPageModel.fromJson({
+            'participants': [
+              {'user_id': 'u1', 'participation_type': 'online'},
+              {'user_id': 'u2'},
+            ],
+            'skip': 0,
+            'limit': 20,
+            'total': 2,
+          }).toEntity();
+
+      expect(
+        page.participants.map((p) => p.participationType),
+        [GroupEventParticipationType.online, null],
+      );
     });
   });
 }
