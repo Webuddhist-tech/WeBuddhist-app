@@ -63,6 +63,7 @@ class PlanDetails extends ConsumerStatefulWidget {
     required this.startDate,
     this.seriesId,
     this.eventId,
+    this.showLiveStream = true,
   });
   final UserPlansModel plan;
   final int selectedDay;
@@ -71,6 +72,9 @@ class PlanDetails extends ConsumerStatefulWidget {
 
   /// Set when opened from an event, to show its live stream above the days.
   final String? eventId;
+
+  /// False for in-person attendees: plain cover, tasks open as routes.
+  final bool showLiveStream;
 
   @override
   ConsumerState<PlanDetails> createState() => _PlanDetailsState();
@@ -168,11 +172,13 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     language: _liveLanguage,
   );
 
+  bool get _hasEventHeader => widget.eventId != null && widget.showLiveStream;
+
   /// Sticky once a stream was seen, so a language without one keeps the
   /// toggles reachable. A failed request is `failed`, never `none`, so a
   /// network blip cannot hide an active stream.
   _LiveStatus _liveStatus() {
-    if (widget.eventId == null) return _LiveStatus.none;
+    if (!_hasEventHeader) return _LiveStatus.none;
     final eventAsync = ref.watch(groupEventInLanguageProvider(_liveKey));
     final either = eventAsync.valueOrNull;
     if (either == null) {
@@ -210,7 +216,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                 _buildHeader(),
                 _buildPrayerRequestsButton(),
                 if (retryLive != null) _buildLiveEventError(retryLive),
-                // The edge-to-edge event cover has no margin of its own.
+                // Room under the prayer requests chip, whichever header sits
+                // above it.
                 if (widget.eventId != null) const SizedBox(height: 12),
                 _buildDayCarouselSection(language),
                 _buildDayContentSection(context, language),
@@ -410,10 +417,19 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   }
 
   Widget _buildHeader() {
-    final eventId = widget.eventId;
-    if (eventId == null) return PlanCoverImage(image: widget.plan.coverImage);
+    if (widget.eventId == null) {
+      return PlanCoverImage(image: widget.plan.coverImage);
+    }
+    if (!widget.showLiveStream) {
+      // Same 16:9 edge-to-edge block the live header fills.
+      return PlanCoverImage(
+        image: widget.plan.coverImage,
+        height: MediaQuery.sizeOf(context).width * 9 / 16,
+        edgeToEdge: true,
+      );
+    }
     return GroupEventLiveHeader(
-      eventId: eventId,
+      eventId: widget.eventId!,
       language: _liveLanguage,
       audioOnly: _liveAudioOnly,
       fallbackTitle: widget.plan.title,

@@ -970,6 +970,15 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_event_attending => 'ཞུགས་ཟིན།';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return 'ཞུགས་མཁན་ $count';
   }
