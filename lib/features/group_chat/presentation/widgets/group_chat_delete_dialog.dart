@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsRole;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -35,6 +37,10 @@ class _DeleteMessageDialog extends StatelessWidget {
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return Dialog(
+      // What `AlertDialog` did for screen readers: the route is an alert and
+      // the title names it, so opening the dialog is announced rather than
+      // silent.
+      semanticsRole: SemanticsRole.alertDialog,
       backgroundColor:
           isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -45,20 +51,25 @@ class _DeleteMessageDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              count > 1
-                  ? l10n.group_chat_delete_title_many(count)
-                  : l10n.group_chat_delete_title,
-              strutStyle: context.tibetanStrutStyle(18, compact: true),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: titleColor,
+            Semantics(
+              namesRoute: true,
+              container: true,
+              header: true,
+              child: Text(
+                count > 1
+                    ? l10n.group_chat_delete_title_many(count)
+                    : l10n.group_chat_delete_title,
+                strutStyle: context.tibetanStrutStyle(18, compact: true),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                ),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.group_chat_delete_confirm_body,
+              l10n.group_chat_delete_confirm_body(count),
               strutStyle: context.tibetanStrutStyle(14),
               style: TextStyle(
                 fontSize: 14,

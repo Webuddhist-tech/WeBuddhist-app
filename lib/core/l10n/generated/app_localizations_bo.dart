@@ -2668,11 +2668,26 @@ class AppLocalizationsBo extends AppLocalizations {
   }
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'འཕྲིན་ཐུང་འདི་དག་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།',
+      one: 'འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'འཕྲིན་ཐུང་སུབ་མ་ཐུབ།';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'འཕྲིན་ཐུང་ $count སུབ་མ་ཐུབ།',
+      one: 'འཕྲིན་ཐུང་སུབ་མ་ཐུབ།',
+    );
+    return '$_temp0';
+  }
 
   @override
   String group_chat_message_deleted_toast(int count) {

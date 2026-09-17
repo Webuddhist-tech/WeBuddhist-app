@@ -2515,10 +2515,26 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get group_chat_delete_confirm_body => '此訊息將從聊天中為所有人移除。';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '這些訊息將從聊天中為所有人移除。',
+      one: '此訊息將從聊天中為所有人移除。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => '無法刪除訊息。';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '有 $count 則訊息無法刪除。',
+      one: '無法刪除訊息。',
+    );
+    return '$_temp0';
+  }
 
   @override
   String group_chat_message_deleted_toast(int count) {

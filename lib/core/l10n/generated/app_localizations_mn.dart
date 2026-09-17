@@ -2667,11 +2667,26 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'Энэ мессеж чатаас бүх хүний хувьд устгагдана.';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Эдгээр мессежүүд чатаас бүх хүний хувьд устгагдана.',
+      one: 'Энэ мессеж чатаас бүх хүний хувьд устгагдана.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'Мессежийг устгаж чадсангүй.';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count мессежийг устгаж чадсангүй.',
+      one: 'Мессежийг устгаж чадсангүй.',
+    );
+    return '$_temp0';
+  }
 
   @override
   String group_chat_message_deleted_toast(int count) {

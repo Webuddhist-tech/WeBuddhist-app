@@ -691,6 +691,13 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(userProvider).user;
+    // The selection belongs to the thread State that published it. Any other
+    // body means that State is gone — a profile reload swaps in the spinner
+    // — and a disposed State can never publish the null that dismisses the
+    // bar, so its header would stay up with every action pointing at dead
+    // widgets. Dropped here rather than in the thread's `dispose`, which
+    // cannot call back into a parent mid-build.
+    if (body is! GroupChatThread) _selection = null;
     final selection = _selection;
 
     return Scaffold(

@@ -1026,8 +1026,22 @@
   "group_chat_delete": "སུབ།",
   "group_chat_delete_title": "འཕྲིན་ཐུང་སུབ་དགོས་སམ།",
   "group_chat_delete_title_many": "འཕྲིན་ཐུང་ {count} སུབ་དགོས་སམ།",
-  "group_chat_delete_confirm_body": "འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།",
-  "group_chat_delete_failed": "འཕྲིན་ཐུང་སུབ་མ་ཐུབ།",
+  "group_chat_delete_confirm_body": "{count, plural, =1{འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།} other{འཕྲིན་ཐུང་འདི་དག་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{འཕྲིན་ཐུང་སུབ་མ་ཐུབ།} other{འཕྲིན་ཐུང་ {count} སུབ་མ་ཐུབ།}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "group_chat_message_deleted_toast": "{count, plural, =1{འཕྲིན་ཐུང་བསུབས་ཟིན།} other{འཕྲིན་ཐུང་རྣམས་བསུབས་ཟིན།}}",
   "group_chat_selection_limit": "འཕྲིན་ཐུང་མང་ཤོས་ {count} འདེམས་ཆོག",
   "group_chat_message_deleted_by_sender": "འཕྲིན་ཐུང་འདི་བསུབས་ཟིན།",

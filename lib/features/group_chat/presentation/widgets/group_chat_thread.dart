@@ -89,8 +89,13 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   /// same ids on top of a request still running.
   bool _deleteInFlight = false;
 
-  /// Gap between the pill and the bubble it floats over.
+  /// Gap between the pill and the bubble it floats over, and its clearance
+  /// from the edges of the stack it is positioned in.
   static const double _pillGap = 8;
+
+  /// The keyboard inset last seen. The composer grows by it, which shrinks
+  /// this thread and moves every row without a scroll event.
+  double _viewInsetBottom = 0;
 
   /// The newest message already seen, so an arrival can be told from a rebuild.
   String? _newestId;
@@ -132,6 +137,21 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The keyboard opening or closing resizes the stack the pill is measured
+    // against, so its rect no longer points at its row. Same policy as a
+    // scroll: the pill goes, the selection stays. No `setState` — a rebuild
+    // follows this callback anyway.
+    final inset = MediaQuery.viewInsetsOf(context).bottom;
+    if (inset != _viewInsetBottom) {
+      _viewInsetBottom = inset;
+      _pillRect = null;
+      _pillMessageId = null;
+    }
   }
 
   @override
@@ -210,6 +230,9 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   void _onNewestChanged(ChatMessageDTO newest, bool isMine) {
     final follow = isMine || _isNearBottom;
     _newestId = newest.id;
+    // A new row at the reversed end pushes the others up without a scroll
+    // notification, so the pill would be left over a different message.
+    _hidePill();
     if (!follow) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _scrollToNewest();
@@ -472,6 +495,12 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
 
     var top = rowRect.top - GroupChatEmojiPill.height - _pillGap;
     if (top < 0) top = rowRect.bottom + _pillGap;
+    // A row taller than the space left — a long message at the bottom with
+    // the keyboard up — has no room above or below. The stack clips, so the
+    // pill would land out of sight; keep it over the bubble's lower edge
+    // instead.
+    final maxTop = stack.size.height - GroupChatEmojiPill.height - _pillGap;
+    if (top > maxTop) top = maxTop < 0 ? 0 : maxTop;
 
     setState(() {
       _pillMessageId = message.id;
@@ -651,7 +680,9 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     _selectedIds.removeAll(outcome.deleted);
     _publishSelection();
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.group_chat_delete_failed)),
+      SnackBar(
+        content: Text(l10n.group_chat_delete_failed(outcome.failed.length)),
+      ),
     );
   }
 

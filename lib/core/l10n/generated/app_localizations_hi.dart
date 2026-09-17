@@ -2660,11 +2660,26 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'यह संदेश चैट से सभी के लिए हटा दिया जाएगा।';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ये संदेश चैट से सभी के लिए हटा दिए जाएंगे।',
+      one: 'यह संदेश चैट से सभी के लिए हटा दिया जाएगा।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'संदेश हटाया नहीं जा सका।';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count संदेश हटाए नहीं जा सके।',
+      one: 'संदेश हटाया नहीं जा सका।',
+    );
+    return '$_temp0';
+  }
 
   @override
   String group_chat_message_deleted_toast(int count) {

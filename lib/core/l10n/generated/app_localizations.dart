@@ -4703,14 +4703,14 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'This message will be removed from the chat for everyone.'**
-  String get group_chat_delete_confirm_body;
+  /// **'{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}'**
+  String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'The message couldn\'t be deleted.'**
-  String get group_chat_delete_failed;
+  /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
+  String group_chat_delete_failed(int count);
 
   /// No description provided for @group_chat_message_deleted_toast.
   ///

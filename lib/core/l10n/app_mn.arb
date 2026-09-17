@@ -1092,8 +1092,22 @@
   "group_chat_delete": "Устгах",
   "group_chat_delete_title": "Мессежийг устгах уу?",
   "group_chat_delete_title_many": "{count} мессежийг устгах уу?",
-  "group_chat_delete_confirm_body": "Энэ мессеж чатаас бүх хүний хувьд устгагдана.",
-  "group_chat_delete_failed": "Мессежийг устгаж чадсангүй.",
+  "group_chat_delete_confirm_body": "{count, plural, =1{Энэ мессеж чатаас бүх хүний хувьд устгагдана.} other{Эдгээр мессежүүд чатаас бүх хүний хувьд устгагдана.}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{Мессежийг устгаж чадсангүй.} other{{count} мессежийг устгаж чадсангүй.}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "group_chat_message_deleted_toast": "{count, plural, =1{Мессеж устгагдлаа} other{Мессежүүд устгагдлаа}}",
   "group_chat_selection_limit": "Та хамгийн ихдээ {count} мессеж сонгох боломжтой",
   "group_chat_message_deleted_by_sender": "Энэ мессежийг устгасан",

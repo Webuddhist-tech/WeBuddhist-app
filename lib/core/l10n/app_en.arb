@@ -1306,8 +1306,22 @@
       }
     }
   },
-  "group_chat_delete_confirm_body": "This message will be removed from the chat for everyone.",
-  "group_chat_delete_failed": "The message couldn't be deleted.",
+  "group_chat_delete_confirm_body": "{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{The message couldn't be deleted.} other{{count} messages couldn't be deleted.}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "group_chat_message_deleted_toast": "{count, plural, =1{Message deleted} other{Messages deleted}}",
   "@group_chat_message_deleted_toast": {
     "placeholders": {

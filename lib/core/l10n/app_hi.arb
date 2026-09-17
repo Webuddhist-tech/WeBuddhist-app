@@ -1092,8 +1092,22 @@
   "group_chat_delete": "हटाएँ",
   "group_chat_delete_title": "संदेश हटाएँ?",
   "group_chat_delete_title_many": "{count} संदेश हटाएँ?",
-  "group_chat_delete_confirm_body": "यह संदेश चैट से सभी के लिए हटा दिया जाएगा।",
-  "group_chat_delete_failed": "संदेश हटाया नहीं जा सका।",
+  "group_chat_delete_confirm_body": "{count, plural, =1{यह संदेश चैट से सभी के लिए हटा दिया जाएगा।} other{ये संदेश चैट से सभी के लिए हटा दिए जाएंगे।}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{संदेश हटाया नहीं जा सका।} other{{count} संदेश हटाए नहीं जा सके।}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "group_chat_message_deleted_toast": "{count, plural, =1{संदेश हटा दिया गया} other{संदेश हटा दिए गए}}",
   "group_chat_selection_limit": "आप अधिकतम {count} संदेश चुन सकते हैं",
   "group_chat_message_deleted_by_sender": "यह संदेश हटा दिया गया",
