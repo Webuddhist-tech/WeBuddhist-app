@@ -11,8 +11,12 @@ class PlanEmbeddedController extends ChangeNotifier {
   NavigationContext? _navigationContext;
   Completer<Object?>? _completer;
   int _generation = 0;
+  bool _contentScrollingDown = false;
 
   PlanTextItem? get item => _item;
+
+  /// True while the hosted screen's content is being scrolled down.
+  bool get isContentScrollingDown => _contentScrollingDown;
 
   NavigationContext? get navigationContext => _navigationContext;
 
@@ -43,13 +47,22 @@ class PlanEmbeddedController extends ChangeNotifier {
     _completer = null;
     _item = null;
     _navigationContext = null;
+    _contentScrollingDown = false;
     notifyListeners();
     completer.complete(result);
+  }
+
+  /// Reported by the hosted screen so the host can collapse its chrome.
+  void setContentScrollingDown(bool value) {
+    if (_contentScrollingDown == value) return;
+    _contentScrollingDown = value;
+    notifyListeners();
   }
 
   void _show(PlanTextItem item, NavigationContext navigationContext) {
     _item = item;
     _navigationContext = navigationContext;
+    _contentScrollingDown = false;
     _generation++;
     notifyListeners();
   }

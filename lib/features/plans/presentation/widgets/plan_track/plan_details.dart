@@ -14,6 +14,7 @@ import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
+import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
@@ -128,6 +129,12 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     if (mounted) setState(() {});
   }
 
+  /// Audio mode slides the top chrome away on scroll-down; video stays pinned.
+  bool get _chromeVisible =>
+      !(_embedded.isOpen &&
+          _liveAudioOnly &&
+          _embedded.isContentScrollingDown);
+
   @override
   Widget build(BuildContext context) {
     final language = widget.plan.language;
@@ -135,6 +142,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     _listenForDayCompletion();
     final live = _liveStatus();
+    // Only the live layout hosts the embedded panel, so a task opened
+    // while the stream was still loading stays put even if the request
+    // then fails or finds no stream; the plain layout takes over once the
+    // user closes it. Nothing is lost on a retryable network error.
+    final usesLiveBody =
+        _embedded.isOpen ||
+        live == _LiveStatus.loading ||
+        live == _LiveStatus.live;
 
     return PopScope(
       canPop: !_embedded.isOpen,
@@ -142,27 +157,20 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         if (!didPop) _embedded.close();
       },
       child: Scaffold(
-        appBar: _buildAppBar(context, language, localizations, live: live),
-        // Only the live layout hosts the embedded panel, so a task opened
-        // while the stream was still loading stays put even if the request
-        // then fails or finds no stream; the plain layout takes over once the
-        // user closes it. Nothing is lost on a retryable network error.
+        // The live layout hosts its own app bar so it can collapse on scroll.
+        appBar:
+            usesLiveBody
+                ? null
+                : _buildAppBar(context, language, localizations, live: live),
         body:
-            _embedded.isOpen
-                ? _buildLiveEventBody(language, localizations)
-                : switch (live) {
-                  _LiveStatus.none => _buildPlanBody(language, localizations),
-                  _LiveStatus.failed => _buildPlanBody(
-                    language,
-                    localizations,
-                    retryLive: _retryLiveEvent,
-                  ),
-                  _LiveStatus.loading ||
-                  _LiveStatus.live => _buildLiveEventBody(
-                    language,
-                    localizations,
-                  ),
-                },
+            usesLiveBody
+                ? _buildLiveEventBody(language, localizations, live: live)
+                : _buildPlanBody(
+                  language,
+                  localizations,
+                  retryLive:
+                      live == _LiveStatus.failed ? _retryLiveEvent : null,
+                ),
       ),
     );
   }
@@ -233,32 +241,53 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   /// The stream stays pinned; a tapped task opens below it, not as a route.
   Widget _buildLiveEventBody(
     String language,
-    AppLocalizations localizations,
-  ) {
+    AppLocalizations localizations, {
+    required _LiveStatus live,
+  }) {
     return PlanEmbeddedScope(
       controller: _embedded,
-      child: Column(
-        children: [
-          _buildHeader(),
-          _buildPrayerRequestsButton(),
-          if (_embedded.isOpen)
-            Expanded(child: PlanEmbeddedPanel(controller: _embedded))
-          else ...[
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    _buildDayCarouselSection(language),
-                    _buildDayContentSection(context, language),
-                  ],
-                ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Stays mounted while hidden so the live player keeps playing.
+            SlideAwayHeader(
+              visible: _chromeVisible,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildAppBar(
+                    context,
+                    language,
+                    localizations,
+                    live: live,
+                    primary: false,
+                  ),
+                  _buildHeader(),
+                  _buildPrayerRequestsButton(),
+                ],
               ),
             ),
-            _buildStartReadingButton(context, localizations),
+            if (_embedded.isOpen)
+              Expanded(child: PlanEmbeddedPanel(controller: _embedded))
+            else ...[
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      _buildDayCarouselSection(language),
+                      _buildDayContentSection(context, language),
+                    ],
+                  ),
+                ),
+              ),
+              _buildStartReadingButton(context, localizations),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -364,9 +393,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     String language,
     AppLocalizations localizations, {
     required _LiveStatus live,
+    bool primary = true,
   }) {
     final isLiveEvent = live == _LiveStatus.live;
     return AppBar(
+      primary: primary,
       leading: IconButton(
         icon: const Icon(AppAssets.arrowLeft),
         onPressed: () {
