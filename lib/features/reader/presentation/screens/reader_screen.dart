@@ -357,6 +357,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final state = ref.watch(readerNotifierProvider(_params));
     final notifier = ref.read(readerNotifierProvider(_params).notifier);
     final readerTheme = _readerTheme(context);
+    // The embedded host drops its video to audio while a panel is open.
+    ref.listen(
+      readerNotifierProvider(
+        _params,
+      ).select((s) => s.isCommentaryOpen || s.isTranslationOpen),
+      (_, isPanelOpen) =>
+          PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
+    );
 
     if (_isGroupAccumulatorChant) {
       final presetId = _chantContext!.presetAccumulatorId!;

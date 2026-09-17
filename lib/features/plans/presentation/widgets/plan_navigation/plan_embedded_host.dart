@@ -12,11 +12,15 @@ class PlanEmbeddedController extends ChangeNotifier {
   Completer<Object?>? _completer;
   int _generation = 0;
   bool _contentScrollingDown = false;
+  bool _panelOpen = false;
 
   PlanTextItem? get item => _item;
 
   /// True while the hosted screen's content is being scrolled down.
   bool get isContentScrollingDown => _contentScrollingDown;
+
+  /// True while the hosted screen shows a commentary or versions panel.
+  bool get isPanelOpen => _panelOpen;
 
   NavigationContext? get navigationContext => _navigationContext;
 
@@ -48,6 +52,7 @@ class PlanEmbeddedController extends ChangeNotifier {
     _item = null;
     _navigationContext = null;
     _contentScrollingDown = false;
+    _panelOpen = false;
     notifyListeners();
     completer.complete(result);
   }
@@ -59,10 +64,18 @@ class PlanEmbeddedController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Reported by the hosted screen so the host can drop to audio-only.
+  void setPanelOpen(bool value) {
+    if (_panelOpen == value) return;
+    _panelOpen = value;
+    notifyListeners();
+  }
+
   void _show(PlanTextItem item, NavigationContext navigationContext) {
     _item = item;
     _navigationContext = navigationContext;
     _contentScrollingDown = false;
+    _panelOpen = false;
     _generation++;
     notifyListeners();
   }

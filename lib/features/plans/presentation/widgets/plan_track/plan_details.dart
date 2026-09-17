@@ -129,11 +129,13 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     if (mounted) setState(() {});
   }
 
+  /// A commentary / versions panel forces audio; the user's choice returns
+  /// once it closes.
+  bool get _audioOnly => _liveAudioOnly || _embedded.isPanelOpen;
+
   /// Audio mode slides the top chrome away on scroll-down; video stays pinned.
   bool get _chromeVisible =>
-      !(_embedded.isOpen &&
-          _liveAudioOnly &&
-          _embedded.isContentScrollingDown);
+      !(_embedded.isOpen && _audioOnly && _embedded.isContentScrollingDown);
 
   @override
   Widget build(BuildContext context) {
@@ -429,7 +431,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           isLiveEvent
               ? [
                 GroupEventMediaToggle(
-                  audioOnly: _liveAudioOnly,
+                  audioOnly: _audioOnly,
                   onChanged:
                       (audioOnly) =>
                           setState(() => _liveAudioOnly = audioOnly),
@@ -462,7 +464,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     return GroupEventLiveHeader(
       eventId: widget.eventId!,
       language: _liveLanguage,
-      audioOnly: _liveAudioOnly,
+      audioOnly: _audioOnly,
       fallbackTitle: widget.plan.title,
       notStartedBackground: ResponsiveCoverImage(
         image: widget.plan.coverImage,
