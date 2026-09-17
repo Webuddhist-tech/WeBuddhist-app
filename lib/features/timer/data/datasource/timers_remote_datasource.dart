@@ -57,6 +57,45 @@ class TimersRemoteDatasource {
     }
   }
 
+  /// Creates a user-defined timer via `POST /timers/user`.
+  ///
+  /// `group_id` and `parent_preset_id` are intentionally never sent — this
+  /// app has no notion of either yet.
+  Future<PresetTimerModel> createUserTimer({
+    required String name,
+    required String description,
+    required int durationMs,
+    String? ambientSoundId,
+    required bool bellAtStart,
+    required bool bellAtEnd,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/timers/user',
+        data: {
+          'name': name,
+          'description': description,
+          'duration': durationMs,
+          'ambient_sound_id': ambientSoundId,
+          'bell_at_start': bellAtStart,
+          'bell_at_end': bellAtEnd,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return PresetTimerModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error('Failed to create timer: ${response.statusCode}');
+      throw _statusToException(response.statusCode, 'Failed to create timer');
+    } on DioException catch (e) {
+      _logger.error('Dio error in createUserTimer', e);
+      throw _dioToException(e, 'Failed to create timer');
+    }
+  }
+
   Exception _statusToException(int? statusCode, String label) {
     if (statusCode == 401) {
       return const AuthenticationException('Unauthorized');

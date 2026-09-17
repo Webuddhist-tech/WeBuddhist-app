@@ -135,6 +135,38 @@ class TimersRepository implements TimersRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, PresetTimer>> createUserTimer({
+    required String name,
+    required String description,
+    required int durationMs,
+    String? ambientSoundId,
+    required bool bellAtStart,
+    required bool bellAtEnd,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    try {
+      final created = await remote.createUserTimer(
+        name: name,
+        description: description,
+        durationMs: durationMs,
+        ambientSoundId: ambientSoundId,
+        bellAtStart: bellAtStart,
+        bellAtEnd: bellAtEnd,
+      );
+      // Resync the cached list so it shows up under "Your timers" — the
+      // watcher on `watchPresetTimers` picks this up via the Hive box watch.
+      await refreshPresetTimers();
+      return Right(created.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to create timer'));
+    }
+  }
+
+  @override
   Future<void> flushPendingTimerStops() async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) return;

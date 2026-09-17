@@ -18,6 +18,17 @@ abstract class TimersRepositoryInterface {
     int limit,
   });
 
+  /// Creates a user-defined timer (`POST /timers/user`) and refreshes the
+  /// cached preset timer list so it shows up under "Your timers".
+  Future<Either<Failure, PresetTimer>> createUserTimer({
+    required String name,
+    required String description,
+    required int durationMs,
+    String? ambientSoundId,
+    required bool bellAtStart,
+    required bool bellAtEnd,
+  });
+
   Future<Either<Failure, void>> stopUserTimer({
     required String timerId,
     required int durationMs,
