@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_inline_format.dart';
@@ -16,7 +17,6 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_quoted_message.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reaction_badges.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// One message row: self on the right in a warm-tinted bubble, everyone else
 /// on the left in a white one with a coloured sender name.
@@ -460,11 +460,7 @@ class GroupChatMessageBubble extends StatelessWidget {
     return context.isTibetanLocale ? toTibetanDigits(formatted) : formatted;
   }
 
-  static Future<void> _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
+  static Future<void> _openUrl(String url) => openUrl(url);
 }
 
 /// Message body with tappable links and inline formatting.
