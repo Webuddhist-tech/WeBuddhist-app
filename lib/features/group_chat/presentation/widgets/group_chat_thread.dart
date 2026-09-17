@@ -4,21 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
-import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_copy_text.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_haptics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_report_feedback.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_report_request.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_report_reason.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_selection.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
@@ -601,9 +599,10 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     // chat and still tap Retry — so nothing past this point may reach back
     // through `context` or `ref`.
     final l10n = context.l10n;
-    final report = _ChatReport(
+    final report = ChatReportRequest(
       repository: ref.read(groupChatRepositoryProvider),
-      connectivity: ref.read(connectivityServiceProvider),
+      analytics: ref.read(groupChatAnalyticsProvider),
+      isOnline: ref.read(connectivityServiceProvider).checkConnectivity,
       messenger: ScaffoldMessenger.of(context),
       l10n: l10n,
       roomId: widget.roomId,
@@ -695,6 +694,21 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final state = ref.watch(groupChatThreadProvider(widget.roomId));
     final notifier = ref.read(groupChatThreadProvider(widget.roomId).notifier);
     final user = ref.watch(userProvider).user;
+
+    // The header holds the gates it was last handed. A selection made while
+    // the profile was still loading had no viewer to compare senders against,
+    // so Delete and Report were off; once the identity lands, hand the header
+    // a fresh selection or it stays that way until the next tap.
+    ref.listen(userProvider, (previous, next) {
+      if (!_hasSelection) return;
+      final before = previous?.user;
+      final after = next.user;
+      if (before?.id?.trim() == after?.id?.trim() &&
+          before?.email == after?.email) {
+        return;
+      }
+      _publishSelection();
+    });
 
     ref.listen(groupChatThreadProvider(widget.roomId), (_, next) {
       // Before the arrival check: a deletion changes rows without changing
@@ -996,81 +1010,5 @@ class _ThreadError extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-/// One report, with everything needed to send it and to say how it went.
-///
-/// Self-contained on purpose: the Retry on its snackbar sends this same
-/// object again, and by then the thread that built it may be gone.
-class _ChatReport {
-  const _ChatReport({
-    required this.repository,
-    required this.connectivity,
-    required this.messenger,
-    required this.l10n,
-    required this.roomId,
-    required this.messageId,
-    required this.reason,
-    required this.description,
-  });
-
-  final GroupChatRepository repository;
-  final ConnectivityService connectivity;
-  final ScaffoldMessengerState messenger;
-  final AppLocalizations l10n;
-  final String roomId;
-  final String messageId;
-  final String reason;
-  final String? description;
-
-  Future<void> send() async {
-    final result = await repository.reportMessage(
-      roomId,
-      messageId: messageId,
-      reason: reason,
-      description: description,
-    );
-    final failure = result.fold<Failure?>((f) => f, (_) => null);
-
-    // "Offline" is more honest than "something went wrong" when the request
-    // never left. The failure type alone cannot tell us that, and the cached
-    // flag may be stale (it is only refreshed on connectivity events), so
-    // probe live. The probe only runs when the failure makes it relevant.
-    final feedback = await chatReportFeedbackFor(
-      failure,
-      isOnline: connectivity.checkConnectivity,
-    );
-
-    switch (feedback) {
-      case ChatReportFeedback.sent:
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.group_chat_report_thanks)),
-        );
-      case ChatReportFeedback.rejected:
-        // The server would answer the same way again, so no Retry.
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.group_chat_report_failed)),
-        );
-      case ChatReportFeedback.offline:
-      case ChatReportFeedback.failed:
-        // Retry is offered for both. The probe is a DNS lookup that can fail
-        // on a network where the API is still reachable (a filtered resolver,
-        // a slow one), so "offline" only changes the wording; it must never
-        // cost the member the one action that gets the report through.
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              feedback == ChatReportFeedback.offline
-                  ? l10n.group_chat_report_offline
-                  : l10n.group_chat_report_failed,
-            ),
-            action: SnackBarAction(
-              label: l10n.group_chat_report_retry,
-              onPressed: send,
-            ),
-          ),
-        );
-    }
   }
 }

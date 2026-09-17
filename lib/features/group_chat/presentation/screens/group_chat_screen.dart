@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/domain/usecases/resolve_group_
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_composer_controller.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_link_spans.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
@@ -71,6 +72,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   bool _resolvingRoom = false;
   _RoomState _roomState = _RoomState.resolving;
   String? _roomId;
+
+  /// Fires `group_chat_opened` at most once for this screen. See [_trackOpened].
+  final _openTracker = ChatOpenTracker();
 
   /// The JWT `sub`, used **only** to namespace this account's local room
   /// cache. It is a different id space from chat's `sender_id`, so it must
@@ -245,6 +249,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _roomId = roomId;
           _roomState = _RoomState.joined;
         });
+        _trackOpened(roomId, source: ChatOpenSource.resolved);
         await _ensureLiveConnected();
         await _markRoomRead();
       case GroupChatRoomMissing():
@@ -424,8 +429,25 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       _roomId = roomId;
       _roomState = _RoomState.joined;
     });
+    _trackOpened(roomId, source: ChatOpenSource.live);
     unawaited(_persistRoomId(roomId));
     unawaited(_markRoomRead());
+  }
+
+  /// Fires `group_chat_opened` once per screen, the first time it has a room
+  /// to talk in. The room may come from the lookup on open, from the socket
+  /// when another member creates it, or from this member's own first send;
+  /// the event says which. It counts opens, not members: every visit to a
+  /// chat that has a room fires it again, and a chat with no room fires
+  /// nothing until one exists.
+  void _trackOpened(String roomId, {required ChatOpenSource source}) {
+    _openTracker.track(
+      _providers.read(groupChatAnalyticsProvider),
+      groupId: widget.groupId,
+      roomId: roomId,
+      source: source,
+      screenDisposed: _disposed,
+    );
   }
 
   void _onMessageCreated(Map<String, dynamic> json) {
@@ -547,6 +569,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     final parent = _replyingTo;
     setState(() => _sending = true);
     try {
+      // Read before the await, matching the thread notifier: a confirmed
+      // send still has to be counted after this screen is gone.
+      final analytics = _providers.read(groupChatAnalyticsProvider);
       final result = await _providers
           .read(groupChatRepositoryProvider)
           .sendGroupMessage(
@@ -554,6 +579,23 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
             body: body,
             parentMessageId: parent?.id,
           );
+      // Both events are recorded here, before the `mounted` check and before
+      // anything else is awaited: the server has accepted the message, so
+      // they count whether or not this screen is still around to show it.
+      // The open in particular must land before the cache write below
+      // yields — the socket is already up, and its `message_created` echo
+      // can arrive in that gap and reach `_adoptRoomId`, which would
+      // otherwise claim the open as `live` when it was this member's own
+      // first send.
+      result.map((message) {
+        _trackOpened(message.roomId, source: ChatOpenSource.firstSend);
+        analytics.messageSent(
+          groupId: widget.groupId,
+          roomId: message.roomId,
+          messageId: message.id,
+          parentMessageId: parent?.id,
+        );
+      });
       if (!mounted) return;
       await result.fold(
         (failure) async {
