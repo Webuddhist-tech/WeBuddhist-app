@@ -379,7 +379,11 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   void _onLongPressRow(ChatMessageDTO message) {
     unawaited(chatLongPressHaptic());
     if (!_selectedIds.contains(message.id) && !_trySelect(message)) return;
-    _showPillFor(message);
+    if (_selectedIds.length == 1) {
+      _showPillFor(message);
+    } else {
+      _hidePill();
+    }
   }
 
   /// Tap while a selection exists toggles the row. Outside selection mode the
