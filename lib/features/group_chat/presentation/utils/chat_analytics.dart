@@ -8,8 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('GroupChatAnalytics');
 
-/// How the screen came to have a room, carried on `group_chat_joined`.
-enum ChatJoinSource {
+/// How the screen came to have a room, carried on `group_chat_opened`.
+enum ChatOpenSource {
   /// The lookup on open found the group's existing room.
   resolved,
 
@@ -24,15 +24,40 @@ enum ChatJoinSource {
 /// What a confirmed reaction toggle did on the server.
 enum ChatReactionAction { added, removed, swapped }
 
-/// Names the toggle from what the member held on the message before the tap.
-/// Mirrors how the thread decides between a POST, a DELETE and a swap.
+/// Names the toggle from the same flags that chose its request, so the label
+/// always describes the call that was actually sent: a DELETE is a removal,
+/// a POST that replaces another emoji is a swap, any other POST is an add.
 ChatReactionAction chatReactionActionFor({
-  required String? previousEmoji,
-  required String emoji,
+  required bool isRemoval,
+  required bool isSwap,
 }) {
-  if (previousEmoji == null) return ChatReactionAction.added;
-  if (previousEmoji == emoji) return ChatReactionAction.removed;
-  return ChatReactionAction.swapped;
+  if (isRemoval) return ChatReactionAction.removed;
+  if (isSwap) return ChatReactionAction.swapped;
+  return ChatReactionAction.added;
+}
+
+/// Fires `group_chat_opened` at most once for one screen.
+///
+/// Kept out of the screen so the rule can be tested without a socket, a room
+/// lookup and a signed-in session behind it.
+class ChatOpenTracker {
+  bool _tracked = false;
+
+  void track(
+    GroupChatAnalytics analytics, {
+    required String groupId,
+    required String roomId,
+    required ChatOpenSource source,
+    required bool screenDisposed,
+  }) {
+    if (_tracked || roomId.isEmpty) return;
+    // A late socket frame or lookup for a screen that is gone is not an open.
+    // This member's own first send is: the server has the message, so the
+    // chat was used whether or not they stayed to see it.
+    if (screenDisposed && source != ChatOpenSource.firstSend) return;
+    _tracked = true;
+    analytics.chatOpened(groupId: groupId, roomId: roomId, source: source);
+  }
 }
 
 /// Product analytics for group chat: one method per tracked action, so the
@@ -47,13 +72,14 @@ class GroupChatAnalytics {
   final AnalyticsService _analytics;
 
   /// The screen has a room to talk in. Fired once per screen open by the
-  /// screen itself; [source] says how the room was found.
-  void chatJoined({
+  /// screen itself, so it counts visits, not new members; [source] says how
+  /// the room was found.
+  void chatOpened({
     required String groupId,
     required String roomId,
-    required ChatJoinSource source,
+    required ChatOpenSource source,
   }) {
-    _track(AnalyticsEvents.groupChatJoined, {
+    _track(AnalyticsEvents.groupChatOpened, {
       AnalyticsProperties.groupId: groupId,
       AnalyticsProperties.roomId: roomId,
       AnalyticsProperties.source: source.name,

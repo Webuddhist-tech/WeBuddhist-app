@@ -73,8 +73,8 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   _RoomState _roomState = _RoomState.resolving;
   String? _roomId;
 
-  /// Whether `group_chat_joined` has fired for this screen. See [_trackJoined].
-  bool _joinTracked = false;
+  /// Fires `group_chat_opened` at most once for this screen. See [_trackOpened].
+  final _openTracker = ChatOpenTracker();
 
   /// The JWT `sub`, used **only** to namespace this account's local room
   /// cache. It is a different id space from chat's `sender_id`, so it must
@@ -249,7 +249,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _roomId = roomId;
           _roomState = _RoomState.joined;
         });
-        _trackJoined(roomId, source: ChatJoinSource.resolved);
+        _trackOpened(roomId, source: ChatOpenSource.resolved);
         await _ensureLiveConnected();
         await _markRoomRead();
       case GroupChatRoomMissing():
@@ -429,27 +429,25 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       _roomId = roomId;
       _roomState = _RoomState.joined;
     });
-    _trackJoined(roomId, source: ChatJoinSource.live);
+    _trackOpened(roomId, source: ChatOpenSource.live);
     unawaited(_persistRoomId(roomId));
     unawaited(_markRoomRead());
   }
 
-  /// Fires `group_chat_joined` once per screen, the first time it has a room
+  /// Fires `group_chat_opened` once per screen, the first time it has a room
   /// to talk in. The room may come from the lookup on open, from the socket
   /// when another member creates it, or from this member's own first send;
-  /// the event says which. There is no separate "join" action in the app:
-  /// room membership follows group membership, so opening a chat that has a
-  /// room is the closest observable moment.
-  void _trackJoined(String roomId, {required ChatJoinSource source}) {
-    if (_joinTracked || roomId.isEmpty) return;
-    // A late socket frame or lookup for a screen that is gone is not a join.
-    // This member's own first send is: the server has the message, so the
-    // room was joined whether or not they stayed to see it.
-    if (_disposed && source != ChatJoinSource.firstSend) return;
-    _joinTracked = true;
-    _providers
-        .read(groupChatAnalyticsProvider)
-        .chatJoined(groupId: widget.groupId, roomId: roomId, source: source);
+  /// the event says which. It counts opens, not members: every visit to a
+  /// chat that has a room fires it again, and a chat with no room fires
+  /// nothing until one exists.
+  void _trackOpened(String roomId, {required ChatOpenSource source}) {
+    _openTracker.track(
+      _providers.read(groupChatAnalyticsProvider),
+      groupId: widget.groupId,
+      roomId: roomId,
+      source: source,
+      screenDisposed: _disposed,
+    );
   }
 
   void _onMessageCreated(Map<String, dynamic> json) {
@@ -584,13 +582,13 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       // Both events are recorded here, before the `mounted` check and before
       // anything else is awaited: the server has accepted the message, so
       // they count whether or not this screen is still around to show it.
-      // The join in particular must land before the cache write below
+      // The open in particular must land before the cache write below
       // yields — the socket is already up, and its `message_created` echo
       // can arrive in that gap and reach `_adoptRoomId`, which would
-      // otherwise claim the join as `live` when it was this member's own
+      // otherwise claim the open as `live` when it was this member's own
       // first send.
       result.map((message) {
-        _trackJoined(message.roomId, source: ChatJoinSource.firstSend);
+        _trackOpened(message.roomId, source: ChatOpenSource.firstSend);
         analytics.messageSent(
           groupId: widget.groupId,
           roomId: message.roomId,

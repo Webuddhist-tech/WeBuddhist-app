@@ -23,7 +23,7 @@ abstract final class AnalyticsEvents {
   static const String malaMantraSwitched = 'mala_mantra_switched';
 
   // Group chat
-  static const String groupChatJoined = 'group_chat_joined';
+  static const String groupChatOpened = 'group_chat_opened';
   static const String groupMessageSent = 'group_message_sent';
   static const String groupMessageDeleted = 'group_message_deleted';
   static const String groupMessageReacted = 'group_message_reacted';

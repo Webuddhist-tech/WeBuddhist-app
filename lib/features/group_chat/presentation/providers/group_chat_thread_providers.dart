@@ -923,7 +923,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
               emoji: emoji,
             );
 
-    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    final failure = result.getLeft().toNullable();
     if (failure == null) {
       // This call is confirmed, so the tap counts even if a swap's cleanup
       // below fails, and even if the member has already left the screen:
@@ -932,10 +932,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         roomId: roomIdForCall,
         messageId: messageId,
         emoji: emoji,
-        action: chatReactionActionFor(
-          previousEmoji: previousEmoji,
-          emoji: emoji,
-        ),
+        action: chatReactionActionFor(isRemoval: isRemoval, isSwap: isSwap),
       );
     }
 
@@ -1139,7 +1136,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         .read(groupChatRepositoryProvider)
         .deleteMessage(roomId, messageId: messageId);
 
-    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    final failure = result.getLeft().toNullable();
     if (failure == null) _trackDeleted(analytics, messageId);
 
     if (!mounted) return null;
@@ -1173,7 +1170,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         .read(groupChatRepositoryProvider)
         .deleteMessages(roomId, messageIds: ids);
 
-    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    final failure = result.getLeft().toNullable();
     if (failure == null) {
       for (final id in ids) {
         _trackDeleted(analytics, id);
