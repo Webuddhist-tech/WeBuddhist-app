@@ -25,7 +25,7 @@ class _SlideAwayHeaderState extends State<SlideAwayHeader>
     duration: widget.duration,
     value: widget.visible ? 1 : 0,
   );
-  late final Animation<double> _height = CurvedAnimation(
+  late final CurvedAnimation _height = CurvedAnimation(
     parent: _controller,
     curve: Curves.easeInOut,
   );
@@ -45,6 +45,7 @@ class _SlideAwayHeaderState extends State<SlideAwayHeader>
 
   @override
   void dispose() {
+    _height.dispose();
     _controller.dispose();
     super.dispose();
   }
