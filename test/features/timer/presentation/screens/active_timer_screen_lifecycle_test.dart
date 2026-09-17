@@ -89,10 +89,45 @@ void main() {
   );
 
   testWidgets(
+    'resume after an inexact background completion keeps fallback bell',
+    (tester) async {
+      final clock = _FakeClock();
+      final notifier = _FakeTimerSessionNotifications(
+        scheduleResult: TimerCompletionScheduleResult.inexact,
+      );
+      final soundPlayer = _FakeTimerBellPlayer();
+
+      await _pumpScreen(
+        tester,
+        clock: clock,
+        notifier: notifier,
+        soundPlayer: soundPlayer,
+      );
+      await _advanceThroughCountdown(tester, clock);
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+
+      expect(notifier.scheduleRequests, hasLength(1));
+      await tester.pump();
+      clock.advance(_timerDuration + const Duration(milliseconds: 1));
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      expect(soundPlayer.playCount, 2);
+      expect(notifier.cancelCompletionCount, 1);
+      expect(notifier.cancelAllCount, 1);
+    },
+  );
+
+  testWidgets(
     'resume after an unarmed background completion plays fallback bell',
     (tester) async {
       final clock = _FakeClock();
-      final notifier = _FakeTimerSessionNotifications(scheduleResult: false);
+      final notifier = _FakeTimerSessionNotifications(
+        scheduleResult: TimerCompletionScheduleResult.none,
+      );
       final soundPlayer = _FakeTimerBellPlayer();
 
       await _pumpScreen(
@@ -146,7 +181,7 @@ void main() {
       expect(notifier.scheduleRequests, hasLength(1));
       expect(notifier.cancelCompletionCount, 0);
 
-      notifier.completeNextSchedule(true);
+      notifier.completeNextSchedule(TimerCompletionScheduleResult.exact);
       await tester.pump();
       await tester.pump();
 
@@ -154,7 +189,7 @@ void main() {
       expect(notifier.scheduleRequests, hasLength(2));
       expect(notifier.pendingSchedules, hasLength(1));
 
-      notifier.completeNextSchedule(true);
+      notifier.completeNextSchedule(TimerCompletionScheduleResult.exact);
       await tester.pump();
 
       clock.advance(_timerDuration + const Duration(milliseconds: 1));
@@ -250,19 +285,19 @@ class _FakeTimerSessionNotifications implements TimerSessionNotifications {
 
   _FakeTimerSessionNotifications.withControlledSchedules()
     : scheduleResult = null,
-      _scheduleCompleters = Queue<Completer<bool>>();
+      _scheduleCompleters = Queue<Completer<TimerCompletionScheduleResult>>();
 
-  final bool? scheduleResult;
-  final Queue<Completer<bool>>? _scheduleCompleters;
+  final TimerCompletionScheduleResult? scheduleResult;
+  final Queue<Completer<TimerCompletionScheduleResult>>? _scheduleCompleters;
   final List<DateTime> scheduleRequests = [];
   final List<DateTime> runningNotifications = [];
   int cancelCompletionCount = 0;
   int cancelAllCount = 0;
 
-  List<Completer<bool>> get pendingSchedules =>
+  List<Completer<TimerCompletionScheduleResult>> get pendingSchedules =>
       List.unmodifiable(_scheduleCompleters ?? const []);
 
-  void completeNextSchedule(bool value) {
+  void completeNextSchedule(TimerCompletionScheduleResult value) {
     _scheduleCompleters!.removeFirst().complete(value);
   }
 
@@ -282,18 +317,18 @@ class _FakeTimerSessionNotifications implements TimerSessionNotifications {
   }) async {}
 
   @override
-  Future<bool> scheduleCompletion({
+  Future<TimerCompletionScheduleResult> scheduleCompletion({
     required DateTime endsAt,
     required String title,
     required String body,
   }) async {
     scheduleRequests.add(endsAt);
     if (_scheduleCompleters != null) {
-      final completer = Completer<bool>();
+      final completer = Completer<TimerCompletionScheduleResult>();
       _scheduleCompleters.add(completer);
       return completer.future;
     }
-    return scheduleResult ?? true;
+    return scheduleResult ?? TimerCompletionScheduleResult.exact;
   }
 
   @override

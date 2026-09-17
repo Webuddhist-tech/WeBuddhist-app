@@ -9,6 +9,8 @@ import 'package:flutter_pecha/features/notifications/data/notification_id_scheme
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+enum TimerCompletionScheduleResult { none, exact, inexact }
+
 /// Lock-screen surfaces for a running meditation timer, on Android.
 ///
 /// Two notifications, both owned end to end by the timer screen:
@@ -35,7 +37,7 @@ abstract class TimerSessionNotifications {
 
   Future<void> showPaused({required String title, required String body});
 
-  Future<bool> scheduleCompletion({
+  Future<TimerCompletionScheduleResult> scheduleCompletion({
     required DateTime endsAt,
     required String title,
     required String body,
@@ -120,12 +122,14 @@ class TimerSessionNotifier implements TimerSessionNotifications {
   /// exact-alarm permission can be revoked between the check and the call, and
   /// a late bell beats no bell.
   @override
-  Future<bool> scheduleCompletion({
+  Future<TimerCompletionScheduleResult> scheduleCompletion({
     required DateTime endsAt,
     required String title,
     required String body,
   }) async {
-    if (!endsAt.isAfter(DateTime.now())) return false;
+    if (!endsAt.isAfter(DateTime.now())) {
+      return TimerCompletionScheduleResult.none;
+    }
 
     Future<void> schedule(AndroidScheduleMode mode) => _plugin.zonedSchedule(
       NotificationIdScheme.timerSessionCompleteId,
@@ -145,24 +149,26 @@ class TimerSessionNotifier implements TimerSessionNotifications {
 
     try {
       await schedule(mode);
-      return true;
+      return mode == AndroidScheduleMode.exactAllowWhileIdle
+          ? TimerCompletionScheduleResult.exact
+          : TimerCompletionScheduleResult.inexact;
     } on PlatformException catch (e) {
       if (mode == AndroidScheduleMode.exactAllowWhileIdle) {
         _logger.warning('Exact bell schedule failed (${e.code}) — inexact');
         try {
           await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
-          return true;
+          return TimerCompletionScheduleResult.inexact;
         } catch (e) {
           _logger.warning('Failed to schedule timer completion bell: $e');
-          return false;
+          return TimerCompletionScheduleResult.none;
         }
       } else {
         _logger.warning('Failed to schedule timer completion bell: $e');
-        return false;
+        return TimerCompletionScheduleResult.none;
       }
     } catch (e) {
       _logger.warning('Failed to schedule timer completion bell: $e');
-      return false;
+      return TimerCompletionScheduleResult.none;
     }
   }
 

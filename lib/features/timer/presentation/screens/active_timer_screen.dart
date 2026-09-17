@@ -80,7 +80,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   late final TimerSessionNotifications _notifier;
   late final TimerLockScreenActivity _liveActivity;
   DateTime? _desiredCompletionEndsAt;
-  DateTime? _armedCompletionEndsAt;
+  DateTime? _exactCompletionEndsAt;
   Future<void> _completionBellOperation = Future<void>.value();
 
   int get _totalMs => widget.presetTimer.durationMs;
@@ -175,13 +175,13 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       return;
     }
 
-    final completionBellWasArmed = _armedCompletionEndsAt == endsAt;
+    final completionBellWasExact = _exactCompletionEndsAt == endsAt;
     _cancelCompletionBell();
 
     if (!endsAt.isAfter(_now)) {
-      // If the OS bell was armed, it owns the audible completion while the app
-      // was suspended. Only use the in-app bell when no OS alarm was installed.
-      _completeSession(playBell: !completionBellWasArmed);
+      // Exact OS alarms should already have rung at the deadline. Inexact alarms
+      // may still be delayed, so keep the in-app fallback when resuming first.
+      _completeSession(playBell: !completionBellWasExact);
       return;
     }
 
@@ -398,20 +398,21 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _enqueueCompletionBellOperation(() async {
       if (_desiredCompletionEndsAt != endsAt) return;
 
-      final scheduled = await _notifier.scheduleCompletion(
+      final scheduleResult = await _notifier.scheduleCompletion(
         endsAt: endsAt,
         title: title,
         body: body,
       );
 
-      if (_desiredCompletionEndsAt == endsAt && scheduled) {
-        _armedCompletionEndsAt = endsAt;
+      if (_desiredCompletionEndsAt == endsAt &&
+          scheduleResult == TimerCompletionScheduleResult.exact) {
+        _exactCompletionEndsAt = endsAt;
       }
 
       if (_desiredCompletionEndsAt != endsAt) {
         await _notifier.cancelCompletion();
-        if (_armedCompletionEndsAt == endsAt) {
-          _armedCompletionEndsAt = null;
+        if (_exactCompletionEndsAt == endsAt) {
+          _exactCompletionEndsAt = null;
         }
       }
     });
@@ -419,7 +420,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   void _cancelCompletionBell() {
     _desiredCompletionEndsAt = null;
-    _armedCompletionEndsAt = null;
+    _exactCompletionEndsAt = null;
     _enqueueCompletionBellOperation(_notifier.cancelCompletion);
   }
 
@@ -433,7 +434,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   void _clearBackgroundSurfaces() {
     _desiredCompletionEndsAt = null;
-    _armedCompletionEndsAt = null;
+    _exactCompletionEndsAt = null;
     unawaited(_notifier.cancelAll());
     unawaited(_liveActivity.end());
   }
