@@ -7,11 +7,16 @@ class Segment {
   final String? content;
   final Translation? translation;
 
+  /// Ids of this same line in the text's other languages, from `mappings`.
+  /// Lets a live position published against one language land here.
+  final List<String> mappedSegmentIds;
+
   const Segment({
     required this.segmentId,
     required this.segmentNumber,
     this.content,
     this.translation,
+    this.mappedSegmentIds = const [],
   });
 
   factory Segment.fromJson(Map<String, dynamic> json) {
@@ -25,7 +30,31 @@ class Segment {
                 json['translation'] as Map<String, dynamic>,
               )
               : null,
+      mappedSegmentIds: parseMappedSegmentIds(json['mappings']),
     );
+  }
+
+  /// Collects every segment id in a `mappings` value, whatever its shape:
+  /// `{lang: id}`, `{lang: {id, ...}}`, `[{segment_id, ...}]` or `[id]`.
+  static List<String> parseMappedSegmentIds(Object? raw) {
+    final ids = <String>{};
+    void collect(Object? node) {
+      if (node is String) {
+        if (node.isNotEmpty) ids.add(node);
+      } else if (node is List) {
+        node.forEach(collect);
+      } else if (node is Map) {
+        final id = node['segment_id'] ?? node['id'];
+        if (id is String) {
+          collect(id);
+          return;
+        }
+        node.values.forEach(collect);
+      }
+    }
+
+    collect(raw);
+    return List.unmodifiable(ids);
   }
 
   Map<String, dynamic> toJson() {
@@ -34,6 +63,7 @@ class Segment {
       'segment_number': segmentNumber,
       'content': content ?? '',
       'translation': translation?.toJson(),
+      if (mappedSegmentIds.isNotEmpty) 'mappings': mappedSegmentIds,
     };
   }
 

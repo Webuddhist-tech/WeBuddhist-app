@@ -5682,4 +5682,61 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'event_prayer_praying',
     () => _fallback.event_prayer_praying,
   );
+
+  @override
+  String get recitation_live_label => TolgeeBridge.get(
+    localeName,
+    'recitation_live_label',
+    () => _fallback.recitation_live_label,
+  );
+
+  @override
+  String recitation_live_round(int number) => TolgeeBridge.format(
+    localeName,
+    'recitation_live_round',
+    <String, Object>{'number': number},
+    () => _fallback.recitation_live_round(number),
+  );
+
+  @override
+  String get recitation_live_sync => TolgeeBridge.get(
+    localeName,
+    'recitation_live_sync',
+    () => _fallback.recitation_live_sync,
+  );
+
+  @override
+  String get recitation_live_unsync => TolgeeBridge.get(
+    localeName,
+    'recitation_live_unsync',
+    () => _fallback.recitation_live_unsync,
+  );
+
+  @override
+  String get recitation_live_resync => TolgeeBridge.get(
+    localeName,
+    'recitation_live_resync',
+    () => _fallback.recitation_live_resync,
+  );
+
+  @override
+  String get recitation_live_reconnecting => TolgeeBridge.get(
+    localeName,
+    'recitation_live_reconnecting',
+    () => _fallback.recitation_live_reconnecting,
+  );
+
+  @override
+  String get recitation_live_out_of_sync => TolgeeBridge.get(
+    localeName,
+    'recitation_live_out_of_sync',
+    () => _fallback.recitation_live_out_of_sync,
+  );
+
+  @override
+  String get recitation_live_session_ended => TolgeeBridge.get(
+    localeName,
+    'recitation_live_session_ended',
+    () => _fallback.recitation_live_session_ended,
+  );
 }

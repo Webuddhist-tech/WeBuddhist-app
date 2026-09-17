@@ -5125,6 +5125,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Praying'**
   String get event_prayer_praying;
+
+  /// No description provided for @recitation_live_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get recitation_live_label;
+
+  /// No description provided for @recitation_live_round.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {number}'**
+  String recitation_live_round(int number);
+
+  /// No description provided for @recitation_live_sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get recitation_live_sync;
+
+  /// No description provided for @recitation_live_unsync.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsync'**
+  String get recitation_live_unsync;
+
+  /// No description provided for @recitation_live_resync.
+  ///
+  /// In en, this message translates to:
+  /// **'Resync'**
+  String get recitation_live_resync;
+
+  /// No description provided for @recitation_live_reconnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting…'**
+  String get recitation_live_reconnecting;
+
+  /// No description provided for @recitation_live_out_of_sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of sync'**
+  String get recitation_live_out_of_sync;
+
+  /// No description provided for @recitation_live_session_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'The live session has ended'**
+  String get recitation_live_session_ended;
 }
 
 class _AppLocalizationsDelegate

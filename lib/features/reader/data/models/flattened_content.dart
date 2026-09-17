@@ -29,6 +29,22 @@ class FlattenedContent {
   bool containsSegment(String segmentId) =>
       segmentIndexMap.containsKey(segmentId);
 
+  /// Index of the segment whose `mappings` name [segmentId]: the same line
+  /// in another language. Linear, only used after [getSegmentIndex] misses.
+  int? findSegmentIndexByAlias(String segmentId) {
+    for (var i = 0; i < items.length; i++) {
+      final segment = items[i].segment;
+      if (segment != null && segment.mappedSegmentIds.contains(segmentId)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  /// [getSegmentIndex], falling back to [findSegmentIndexByAlias].
+  int? resolveSegmentIndex(String segmentId) =>
+      getSegmentIndex(segmentId) ?? findSegmentIndexByAlias(segmentId);
+
   /// Check if the content is empty
   bool get isEmpty => items.isEmpty;
 

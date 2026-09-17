@@ -655,6 +655,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     planId: widget.plan.id,
                     dayNumber: selectedDay,
                     dayAudioUrl: dayContent.audioUrl,
+                    eventId: widget.eventId,
                     onActivityToggled:
                         (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
                     onGroupAccumulationPracticed:
@@ -1007,6 +1008,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       planTextItems: planTextItems,
       currentTextIndex: index,
       dayAudioUrl: audioUrl,
+      eventId: widget.eventId,
     );
 
     PlanNavigator.push(

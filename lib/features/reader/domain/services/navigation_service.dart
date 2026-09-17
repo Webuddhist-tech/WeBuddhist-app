@@ -42,19 +42,50 @@ class NavigationService {
         direction == SwipeDirection.next
             ? currentContext.currentTextIndex! + 1
             : currentContext.currentTextIndex! - 1;
+    return createNavigationContextForIndex(
+      currentContext,
+      newIndex,
+      direction: direction,
+      autoPlay: autoPlay,
+    );
+  }
+
+  /// Context for jumping to any [index] of the sequence, e.g. when a live
+  /// recitation moves to another text. Null when [index] is out of range or
+  /// already current. [direction] defaults to the side [index] lies on.
+  NavigationContext? createNavigationContextForIndex(
+    NavigationContext currentContext,
+    int index, {
+    SwipeDirection? direction,
+    bool autoPlay = false,
+  }) {
+    final items = currentContext.planTextItems;
+    final currentIndex = currentContext.currentTextIndex;
+    if (items == null ||
+        currentIndex == null ||
+        index < 0 ||
+        index >= items.length ||
+        index == currentIndex) {
+      return null;
+    }
+    final target = items[index];
+    final resolvedDirection =
+        direction ??
+        (index > currentIndex ? SwipeDirection.next : SwipeDirection.previous);
 
     // Handle recitation collection navigation.
     if (currentContext.source == NavigationSource.groupRecitationCollection ||
         currentContext.source == NavigationSource.myRecitationCollection) {
       return NavigationContext(
         source: currentContext.source,
-        targetSegmentId: adjacentText.firstSegmentId,
-        planTextItems: currentContext.planTextItems,
-        currentTextIndex: newIndex,
-        navigationDirection: direction,
+        targetSegmentId: target.firstSegmentId,
+        planTextItems: items,
+        currentTextIndex: index,
+        navigationDirection: resolvedDirection,
         groupId: currentContext.groupId,
         collectionId: currentContext.collectionId,
-        language: adjacentText.language,
+        language: target.language,
+        eventId: currentContext.eventId,
       );
     }
 
@@ -63,12 +94,13 @@ class NavigationService {
       source: NavigationSource.plan,
       planId: currentContext.planId,
       dayNumber: currentContext.dayNumber,
-      targetSegmentId: adjacentText.firstSegmentId,
-      planTextItems: currentContext.planTextItems,
-      currentTextIndex: newIndex,
-      navigationDirection: direction,
+      targetSegmentId: target.firstSegmentId,
+      planTextItems: items,
+      currentTextIndex: index,
+      navigationDirection: resolvedDirection,
       dayAudioUrl: currentContext.dayAudioUrl,
       autoPlay: autoPlay,
+      eventId: currentContext.eventId,
     );
   }
 

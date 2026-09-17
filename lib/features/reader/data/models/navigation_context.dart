@@ -365,6 +365,10 @@ class NavigationContext {
   /// [NavigationSource.groupRecitationCollection].
   final String? collectionId;
 
+  /// Set when the reader was reached from a group event: the reader then
+  /// follows the event's live recitation position.
+  final String? eventId;
+
   const NavigationContext({
     required this.source,
     this.planId,
@@ -382,7 +386,11 @@ class NavigationContext {
     this.groupAccumulatorSessionCount,
     this.language,
     this.collectionId,
+    this.eventId,
   });
+
+  /// True when the reader should follow the event's live recitation.
+  bool get isLiveRecitation => eventId != null && eventId!.isNotEmpty;
 
   /// True when the reader should show chant-again / finish-session controls
   /// and increment the group accumulation count.
@@ -494,6 +502,7 @@ class NavigationContext {
     int? groupAccumulatorSessionCount,
     String? language,
     String? collectionId,
+    String? eventId,
   }) {
     return NavigationContext(
       source: source ?? this.source,
@@ -513,6 +522,7 @@ class NavigationContext {
           groupAccumulatorSessionCount ?? this.groupAccumulatorSessionCount,
       language: language ?? this.language,
       collectionId: collectionId ?? this.collectionId,
+      eventId: eventId ?? this.eventId,
     );
   }
 
@@ -540,6 +550,6 @@ class NavigationContext {
 
   @override
   String toString() {
-    return 'NavigationContext(source: $source, planId: $planId, dayNumber: $dayNumber, targetSegmentId: $targetSegmentId, currentTextIndex: $currentTextIndex, navigationDirection: $navigationDirection, autoPlay: $autoPlay)';
+    return 'NavigationContext(source: $source, planId: $planId, dayNumber: $dayNumber, targetSegmentId: $targetSegmentId, currentTextIndex: $currentTextIndex, navigationDirection: $navigationDirection, autoPlay: $autoPlay, eventId: $eventId)';
   }
 }
