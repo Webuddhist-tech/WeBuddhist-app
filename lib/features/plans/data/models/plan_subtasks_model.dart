@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_group_accumulation_ref.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
@@ -36,7 +37,7 @@ class PlanSubtasksModel {
 
   /// True when this subtask carries its own audio file. A subtask-level
   /// [audioUrl] takes precedence over the day-level audio track.
-  bool get hasOwnAudio => audioUrl != null;
+  bool get hasOwnAudio => hasPlayableAudio(audioUrl);
 
   /// Group accumulation id when this is a GROUP_ACCUMULATION subtask.
   String? get groupAccumulationId {
