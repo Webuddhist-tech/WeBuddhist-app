@@ -3,6 +3,22 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 
+abstract class TimerLockScreenActivity {
+  Future<void> start({
+    required String sessionName,
+    required DateTime endsAt,
+    required int totalSeconds,
+  });
+
+  Future<void> update({
+    required DateTime? endsAt,
+    required bool isPaused,
+    required int remainingSeconds,
+  });
+
+  Future<void> end();
+}
+
 /// iOS Live Activity for a running meditation timer — the lock-screen and
 /// Dynamic Island countdown.
 ///
@@ -16,7 +32,7 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 /// Live Activities can be turned off system-wide or per-app in Settings, and
 /// are unavailable below iOS 16.2 — every call here is best-effort so a missing
 /// Live Activity can never break the session itself.
-class TimerLiveActivity {
+class TimerLiveActivity implements TimerLockScreenActivity {
   TimerLiveActivity() : _logger = AppLogger('TimerLiveActivity');
 
   final AppLogger _logger;
@@ -32,6 +48,7 @@ class TimerLiveActivity {
   /// The Swift side first ends any orphaned activity: the app can be killed
   /// mid-session and cannot end its own activity from a dead process, so
   /// cleanup happens on the next start.
+  @override
   Future<void> start({
     required String sessionName,
     required DateTime endsAt,
@@ -46,14 +63,14 @@ class TimerLiveActivity {
 
   /// Pushes a new content state. Only needed for pause and resume — while
   /// running, the system ticks the countdown on its own.
+  @override
   Future<void> update({
     required DateTime? endsAt,
     required bool isPaused,
     required int remainingSeconds,
   }) => _invoke('update', {
     'endTimestamp':
-        (endsAt ??
-                DateTime.now().add(Duration(seconds: remainingSeconds)))
+        (endsAt ?? DateTime.now().add(Duration(seconds: remainingSeconds)))
             .millisecondsSinceEpoch /
         1000.0,
     'isPaused': isPaused,
@@ -61,6 +78,7 @@ class TimerLiveActivity {
   });
 
   /// Dismisses the activity. Called on finish, discard and dispose.
+  @override
   Future<void> end() => _invoke('end', const {});
 
   Future<void> _invoke(String method, Map<String, dynamic> args) async {

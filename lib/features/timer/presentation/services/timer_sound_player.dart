@@ -2,6 +2,12 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:just_audio/just_audio.dart';
 
+abstract class TimerBellPlayer {
+  Future<void> init();
+  Future<void> play();
+  Future<void> dispose();
+}
+
 /// Plays the meditation bell for the timer's start and completion.
 ///
 /// Hardened against the "sometimes no sound" reports, especially when the timer
@@ -12,7 +18,7 @@ import 'package:just_audio/just_audio.dart';
 ///    play after process start) recreates the player and retries once.
 ///  - a failed load is cleared so a later [play] can retry instead of staying
 ///    permanently silent.
-class TimerSoundPlayer {
+class TimerSoundPlayer implements TimerBellPlayer {
   TimerSoundPlayer() : _logger = AppLogger('TimerSoundPlayer');
 
   final AppLogger _logger;
@@ -22,6 +28,7 @@ class TimerSoundPlayer {
 
   /// Begins loading the bell asset. Idempotent — repeated calls share the same
   /// in-flight load, and a failed load is cleared so the next [play] retries.
+  @override
   Future<void> init() => _loadFuture ??= _load();
 
   Future<void> _load() async {
@@ -42,6 +49,7 @@ class TimerSoundPlayer {
 
   /// Plays the bell from the start. Waits for loading to finish, and retries
   /// once with a fresh player if the first playback throws.
+  @override
   Future<void> play() async {
     for (var attempt = 1; attempt <= 2; attempt++) {
       if (_disposed) return;
@@ -76,6 +84,7 @@ class TimerSoundPlayer {
     await init();
   }
 
+  @override
   Future<void> dispose() async {
     _disposed = true;
     final player = _player;

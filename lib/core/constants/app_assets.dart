@@ -27,6 +27,11 @@ class AppAssets {
   static const String meditationSound = 'assets/audios/meditation.wav';
   static const String malaSound = 'assets/audios/mala.wav';
 
+  /// Two seconds of silence, looped to hold the iOS audio session open while a
+  /// meditation timer runs so the bell can ring with the screen locked (see
+  /// timer_keep_alive.dart).
+  static const String silence = 'assets/audios/silence.wav';
+
   // ========== LOGOS ==========
   static const String weBuddhistLogo = 'assets/images/webuddhist_logo.png';
   static const String googleIcon = 'assets/images/google-icon.png';

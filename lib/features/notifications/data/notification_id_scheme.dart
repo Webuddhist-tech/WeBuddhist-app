@@ -96,15 +96,17 @@ class NotificationIdScheme {
 
   // ── Meditation timer session ────────────────────────────────────────────
   // A running timer session posts an ongoing status notification and, while the
-  // app is backgrounded, schedules its completion bell. Only one session can be
-  // active at a time, so these are fixed IDs rather than a derived range.
+  // app is backgrounded, schedules its start and completion bells. Only one
+  // session can be active at a time, so these are fixed IDs rather than a
+  // derived range.
   //
   // These are deliberately NOT reported by [isOurs]: the reconcile pass cancels
   // every "ours" ID it doesn't expect to be scheduled, and a routine sync firing
   // mid-session would silently kill the user's running meditation timer. The
-  // timer screen owns these two IDs end to end and cancels them itself.
+  // timer screen owns these IDs end to end and cancels them itself.
   static const int timerSessionOngoingId = 22000001;
   static const int timerSessionCompleteId = 22000002;
+  static const int timerSessionStartId = 22000003;
 
   /// True when [id] is a routine daily-repeat: recitation/chants via
   /// [routineBlockMin]–[routineBlockMax], mala via the accumulator range, a
