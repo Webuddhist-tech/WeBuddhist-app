@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/timer/data/services/timer_session_notifie
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
+import 'package:flutter_pecha/features/timer/presentation/services/timer_keep_alive.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_progress_ring.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,16 +27,19 @@ class ActiveTimerScreen extends ConsumerStatefulWidget {
     @visibleForTesting TimerBellPlayer? soundPlayer,
     @visibleForTesting TimerSessionNotifications? sessionNotifier,
     @visibleForTesting TimerLockScreenActivity? liveActivity,
+    @visibleForTesting TimerKeepAlive? keepAlive,
     @visibleForTesting TimerClock? clock,
   }) : _soundPlayer = soundPlayer,
        _sessionNotifier = sessionNotifier,
        _liveActivity = liveActivity,
+       _keepAlive = keepAlive,
        _clock = clock;
 
   final PresetTimer presetTimer;
   final TimerBellPlayer? _soundPlayer;
   final TimerSessionNotifications? _sessionNotifier;
   final TimerLockScreenActivity? _liveActivity;
+  final TimerKeepAlive? _keepAlive;
   final TimerClock? _clock;
 
   @override
@@ -79,9 +83,19 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   late final TimerBellPlayer _soundPlayer;
   late final TimerSessionNotifications _notifier;
   late final TimerLockScreenActivity _liveActivity;
-  DateTime? _desiredCompletionEndsAt;
-  DateTime? _exactCompletionEndsAt;
-  Future<void> _completionBellOperation = Future<void>.value();
+
+  /// Holds the app running while the session is in progress, so the bells below
+  /// can be rung by the app itself rather than by the OS.
+  late final TimerKeepAlive _keepAlive;
+
+  /// The scheduled-notification bells, armed while backgrounded as a backstop
+  /// for the app being suspended before it can ring the bell itself.
+  final _startBell = _BellAlarm();
+  final _completionBell = _BellAlarm();
+
+  /// Serializes every schedule/cancel call so they reach the plugin in the
+  /// order they were requested, whatever order their futures complete in.
+  Future<void> _bellOperations = Future<void>.value();
 
   int get _totalMs => widget.presetTimer.durationMs;
 
@@ -120,6 +134,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _soundPlayer.init();
     _notifier = widget._sessionNotifier ?? TimerSessionNotifier();
     _liveActivity = widget._liveActivity ?? TimerLiveActivity();
+    _keepAlive = widget._keepAlive ?? TimerAudioKeepAlive();
+    unawaited(_keepAlive.start());
     WidgetsBinding.instance.addObserver(this);
     _startCountdown();
   }
@@ -129,6 +145,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _soundPlayer.dispose();
+    unawaited(_keepAlive.dispose());
     _clearBackgroundSurfaces();
     super.dispose();
   }
@@ -150,32 +167,84 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     }
   }
 
-  /// About to lose reliable frame/timer callbacks: hand the bell over to a
-  /// scheduled notification, so it rings on time even if this isolate is
-  /// suspended. Screen lock may pass through `inactive` before `paused`, and on
-  /// some devices that is the last dependable moment to arm the OS alarm.
+  /// About to lose the foreground: arm the notification bells as a backstop.
+  ///
+  /// The app normally rings the bell itself — [_keepAlive] holds iOS awake, and
+  /// Android keeps ticking with the screen off — and disarms these a moment
+  /// before it does (see [_reclaimBellIfDue]), so they only ring if the app was
+  /// suspended before getting that far.
+  ///
+  /// `inactive` is included because screen lock passes through it before
+  /// `paused`, and on some devices that is the last dependable moment to arm an
+  /// alarm. During the pre-roll both instants are already known — the session
+  /// starts at [_countdownEndsAt] and ends a full duration later — so both
+  /// bells are armed up front.
   void _onBackgrounded() {
-    if (_phase != _TimerPhase.running || _isPaused) return;
-    final endsAt = _endsAt;
-    if (endsAt == null) return;
-    _scheduleCompletionBell(endsAt);
+    switch (_phase) {
+      case _TimerPhase.countdown:
+        final startsAt = _countdownEndsAt;
+        if (startsAt == null) return;
+        _scheduleStartBell(startsAt);
+        _scheduleCompletionBell(_sessionEndFor(startsAt));
+        break;
+      case _TimerPhase.running:
+        final endsAt = _endsAt;
+        if (_isPaused || endsAt == null) return;
+        _scheduleCompletionBell(endsAt);
+        break;
+      case _TimerPhase.finished:
+        break;
+    }
   }
 
-  /// Back in the foreground: take the bell back and resync to the wall clock,
+  /// Back in the foreground: take the bells back and resync to the wall clock,
   /// which is where the time that passed while suspended gets accounted for.
   void _onResumed() {
-    if (_phase != _TimerPhase.running || _isPaused) {
+    switch (_phase) {
+      case _TimerPhase.countdown:
+        _resumeCountdown();
+        break;
+      case _TimerPhase.running:
+        _resumeRunning();
+        break;
+      case _TimerPhase.finished:
+        _cancelStartBell();
+        _cancelCompletionBell();
+        break;
+    }
+  }
+
+  void _resumeCountdown() {
+    final startsAt = _countdownEndsAt;
+    if (startsAt == null || startsAt.isAfter(_now)) {
+      _cancelStartBell();
       _cancelCompletionBell();
+      if (startsAt != null) _onCountdownTick();
       return;
     }
+
+    // The pre-roll ran out while suspended. Start the session from the moment
+    // it was due, not from now, so the locked time counts. An exact OS alarm
+    // has already rung the start bell; otherwise ring it here — unless the
+    // whole session is over too, where the completion bell speaks for both.
+    final startBellWasExact = _startBell.isExactFor(startsAt);
+    _cancelStartBell();
+    final sessionAlsoEnded = !_sessionEndFor(startsAt).isAfter(_now);
+    _timer?.cancel();
+    _startMainTimer(playBell: !startBellWasExact && !sessionAlsoEnded);
+    _resumeRunning();
+  }
+
+  void _resumeRunning() {
+    _cancelStartBell();
 
     final endsAt = _endsAt;
-    if (endsAt == null) {
+    if (_isPaused || endsAt == null) {
       _cancelCompletionBell();
       return;
     }
 
-    final completionBellWasExact = _exactCompletionEndsAt == endsAt;
+    final completionBellWasExact = _completionBell.isExactFor(endsAt);
     _cancelCompletionBell();
 
     if (!endsAt.isAfter(_now)) {
@@ -187,6 +256,9 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
     setState(() => _remainingMs = _remainingFromClock());
   }
+
+  DateTime _sessionEndFor(DateTime startsAt) =>
+      startsAt.add(Duration(milliseconds: _totalMs));
 
   void _startCountdown() {
     _countdownEndsAt = _now.add(const Duration(seconds: _countdownStart));
@@ -204,9 +276,12 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     if (endsAt == null) return;
 
     final remainingMs = endsAt.difference(_now).inMilliseconds;
+    _reclaimBellIfDue(_startBell, remainingMs, _cancelStartBell);
     if (remainingMs <= 0) {
       _timer?.cancel();
-      _startMainTimer();
+      // If the alarm is still armed, this tick came too late to disarm it — the
+      // OS is about to ring, or already has, so don't ring on top of it.
+      _startMainTimer(playBell: !_startBell.isExactFor(endsAt));
       return;
     }
 
@@ -216,10 +291,10 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     }
   }
 
-  void _startMainTimer() {
-    _soundPlayer.play();
+  void _startMainTimer({required bool playBell}) {
+    if (playBell) _soundPlayer.play();
 
-    final endsAt = _now.add(Duration(milliseconds: _totalMs));
+    final endsAt = _sessionEndFor(_countdownEndsAt ?? _now);
 
     setState(() {
       _phase = _TimerPhase.running;
@@ -251,8 +326,9 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     if (_endsAt == null) return;
 
     final remainingMs = _remainingFromClock();
+    _reclaimBellIfDue(_completionBell, remainingMs, _cancelCompletionBell);
     if (remainingMs <= 0) {
-      _completeSession(playBell: true);
+      _completeSession(playBell: !_completionBell.isExactFor(_endsAt!));
       return;
     }
 
@@ -273,9 +349,32 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       _phase = _TimerPhase.finished;
     });
 
-    if (playBell) _soundPlayer.play();
+    if (playBell) {
+      unawaited(_ringBellThenRelease());
+    } else {
+      unawaited(_keepAlive.stop());
+    }
     _clearBackgroundSurfaces();
     _reportTimerStop();
+  }
+
+  /// Rings the completion bell, holding the app awake until it has finished.
+  ///
+  /// [TimerSoundPlayer.play] only completes when playback does. Releasing the
+  /// keep-alive before then tears down the audio session the bell is playing
+  /// through, which on a locked iOS screen silences it — the session ends, so
+  /// nothing else is holding the app awake. Bounded so a player that never
+  /// completes cannot hold the session open for the rest of the day.
+  static const _bellHoldLimit = Duration(seconds: 30);
+
+  Future<void> _ringBellThenRelease() async {
+    try {
+      await _soundPlayer.play().timeout(_bellHoldLimit);
+    } catch (e) {
+      _logger.warning('Completion bell failed: $e');
+    } finally {
+      await _keepAlive.stop();
+    }
   }
 
   void _togglePause() {
@@ -295,10 +394,13 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     });
 
     if (enteringPause) {
+      // Nothing left to ring while paused, so let the app be suspended again.
+      unawaited(_keepAlive.stop());
       _cancelCompletionBell();
       _showPausedNotification();
       _reportTimerStop();
     } else {
+      unawaited(_keepAlive.start());
       _showRunningNotification(_endsAt!);
       _armCompletionBellIfBackgrounded(_endsAt!);
     }
@@ -314,6 +416,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   void _finish() {
     _timer?.cancel();
+    unawaited(_keepAlive.stop());
     if (_phase == _TimerPhase.running) {
       _reportTimerStop();
     }
@@ -323,6 +426,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   void _discardSession() {
     _timer?.cancel();
+    unawaited(_keepAlive.stop());
     _clearBackgroundSurfaces();
     context.pop();
   }
@@ -379,63 +483,114 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   bool get _isInForeground =>
       WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
-  /// Schedules the OS completion bell when the app is not in the foreground.
-  /// Skipped while resumed so the in-app bell owns completion and we avoid a
-  /// double-ring; also covers the case where the main timer starts while the
-  /// app is already backgrounded (no second lifecycle event to arm the alarm).
+  /// How far ahead of a bell the app takes it back from the OS. A tick this
+  /// close to the deadline proves the app is still executing (iOS suspends
+  /// within a second or two of its audio session stopping), so it can ring the
+  /// real bell itself and the scheduled notification is no longer wanted.
+  static const _bellHandoffLead = Duration(seconds: 2);
+
+  void _reclaimBellIfDue(
+    _BellAlarm alarm,
+    int remainingMs,
+    void Function() cancel,
+  ) {
+    if (alarm.desiredAt == null) return;
+    if (remainingMs > _bellHandoffLead.inMilliseconds) return;
+    cancel();
+  }
+
+  /// Arms the OS completion bell when the app is not in the foreground.
+  /// Skipped while resumed, where the in-app bell owns completion; also covers
+  /// a session that starts while already backgrounded, which gets no further
+  /// lifecycle event to arm the alarm.
   void _armCompletionBellIfBackgrounded(DateTime endsAt) {
     if (_isInForeground) return;
     _scheduleCompletionBell(endsAt);
   }
 
+  void _scheduleStartBell(DateTime startsAt) {
+    if (!mounted) return;
+    final title = _sessionTitle;
+    final body = context.l10n.timer_notification_in_progress;
+    _scheduleBell(
+      _startBell,
+      startsAt,
+      () =>
+          _notifier.scheduleStart(startsAt: startsAt, title: title, body: body),
+    );
+  }
+
   void _scheduleCompletionBell(DateTime endsAt) {
     if (!mounted) return;
-    if (_desiredCompletionEndsAt == endsAt) return;
-
     final title = _sessionTitle;
     final body = context.l10n.timer_notification_complete;
-    _desiredCompletionEndsAt = endsAt;
-    _enqueueCompletionBellOperation(() async {
-      if (_desiredCompletionEndsAt != endsAt) return;
-
-      final scheduleResult = await _notifier.scheduleCompletion(
+    _scheduleBell(
+      _completionBell,
+      endsAt,
+      () => _notifier.scheduleCompletion(
         endsAt: endsAt,
         title: title,
         body: body,
-      );
+      ),
+    );
+  }
 
-      if (_desiredCompletionEndsAt == endsAt &&
-          scheduleResult == TimerCompletionScheduleResult.exact) {
-        _exactCompletionEndsAt = endsAt;
-      }
+  void _scheduleBell(
+    _BellAlarm alarm,
+    DateTime at,
+    Future<TimerBellScheduleResult> Function() schedule,
+  ) {
+    if (alarm.desiredAt == at) return;
 
-      if (_desiredCompletionEndsAt != endsAt) {
-        await _notifier.cancelCompletion();
-        if (_exactCompletionEndsAt == endsAt) {
-          _exactCompletionEndsAt = null;
-        }
+    final generation = alarm.request(at);
+    _enqueueBellOperation(() async {
+      if (alarm.generation != generation) return;
+
+      final result = await schedule();
+
+      // A later schedule or cancel is queued behind this one and will settle
+      // the alarm; recording this result would describe an alarm that is gone.
+      if (alarm.generation != generation) return;
+
+      switch (result) {
+        case TimerBellScheduleResult.exact:
+          alarm.exactAt = at;
+          break;
+        case TimerBellScheduleResult.inexact:
+          break;
+        case TimerBellScheduleResult.none:
+          // Forget the request so the next lifecycle event retries it.
+          alarm.desiredAt = null;
+          break;
       }
     });
+  }
+
+  void _cancelStartBell() {
+    _startBell.clear();
+    _enqueueBellOperation(_notifier.cancelStart);
   }
 
   void _cancelCompletionBell() {
-    _desiredCompletionEndsAt = null;
-    _exactCompletionEndsAt = null;
-    _enqueueCompletionBellOperation(_notifier.cancelCompletion);
+    _completionBell.clear();
+    _enqueueBellOperation(_notifier.cancelCompletion);
   }
 
-  void _enqueueCompletionBellOperation(Future<void> Function() operation) {
-    final next = _completionBellOperation.then((_) => operation());
-    _completionBellOperation = next.catchError((Object e, StackTrace st) {
-      _logger.warning('Timer completion bell operation failed: $e');
+  void _enqueueBellOperation(Future<void> Function() operation) {
+    _bellOperations = _bellOperations.then((_) => operation()).catchError((
+      Object e,
+    ) {
+      _logger.warning('Timer bell operation failed: $e');
     });
-    unawaited(_completionBellOperation);
+    unawaited(_bellOperations);
   }
 
   void _clearBackgroundSurfaces() {
-    _desiredCompletionEndsAt = null;
-    _exactCompletionEndsAt = null;
-    unawaited(_notifier.cancelAll());
+    // Queued rather than fired directly, so a schedule still in flight cannot
+    // land after this and leave a bell armed for a finished session.
+    _startBell.clear();
+    _completionBell.clear();
+    _enqueueBellOperation(_notifier.cancelAll);
     unawaited(_liveActivity.end());
   }
 
@@ -603,5 +758,33 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     final minutesText = minutes.toString().padLeft(2, '0');
     final secondsText = seconds.toString().padLeft(2, '0');
     return '$minutesText$separator$secondsText';
+  }
+}
+
+/// Bookkeeping for one OS-scheduled bell.
+class _BellAlarm {
+  /// The instant most recently requested, or null when none is wanted.
+  DateTime? desiredAt;
+
+  /// Set once the OS confirmed an exact alarm for [desiredAt] — the only case
+  /// where the screen can trust the bell rang on time without it.
+  DateTime? exactAt;
+
+  /// Bumped by every request and clear, so an in-flight schedule can tell it
+  /// has been superseded.
+  int generation = 0;
+
+  bool isExactFor(DateTime at) => exactAt == at;
+
+  int request(DateTime at) {
+    desiredAt = at;
+    exactAt = null;
+    return ++generation;
+  }
+
+  void clear() {
+    desiredAt = null;
+    exactAt = null;
+    generation++;
   }
 }

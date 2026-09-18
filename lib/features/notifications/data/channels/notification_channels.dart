@@ -100,13 +100,20 @@ class NotificationChannels {
   static const String timerSessionDescription =
       'Shows the remaining time while a meditation timer is running';
 
-  // Versioned because Android binds sound to a channel the first time it is
-  // created. Older installs may already have a silent `timer_complete` channel,
-  // so a new id is required for the bell sound to take effect after upgrade.
-  static const String timerCompleteId = 'timer_complete_v2';
-  static const String timerCompleteName = 'Meditation Timer Finished';
-  static const String timerCompleteDescription =
-      'Rings the bell when a meditation timer finishes';
+  // A new id rather than reusing `timer_complete`: Android binds sound to a
+  // channel the first time it is created, and older installs may already hold
+  // a silent `timer_complete` channel that the bell sound can never reach.
+  static const String timerBellId = 'timer_bell';
+  static const String timerBellName = 'Meditation Timer Bell';
+  static const String timerBellDescription =
+      'Rings the bell when a meditation timer starts and finishes';
+
+  /// Channels replaced by [timerBellId], deleted on startup so upgraded
+  /// installs don't keep a dead, silent entry in system settings.
+  static const List<String> legacyTimerBellIds = [
+    'timer_complete',
+    'timer_complete_v2',
+  ];
 
   /// Silent, low-importance channel for the ongoing "session in progress"
   /// notification. Low importance keeps it out of the heads-up lane — it is a
@@ -121,14 +128,15 @@ class NotificationChannels {
         enableVibration: false,
       );
 
-  /// The completion bell. Shares the routine reminder sound so the app has one
-  /// notification voice; Android 8+ binds sound to the channel, so it must be
-  /// declared here rather than per-notification.
-  static const AndroidNotificationChannel timerCompleteChannel =
+  /// The start and completion bells, used only as a backstop for when the app
+  /// cannot ring the bell itself. Shares the routine reminder sound so the app
+  /// has one notification voice; Android 8+ binds sound to the channel, so it
+  /// must be declared here rather than per-notification.
+  static const AndroidNotificationChannel timerBellChannel =
       AndroidNotificationChannel(
-        timerCompleteId,
-        timerCompleteName,
-        description: timerCompleteDescription,
+        timerBellId,
+        timerBellName,
+        description: timerBellDescription,
         importance: Importance.high,
         playSound: true,
         sound: routineAndroidSound,
@@ -166,13 +174,13 @@ class NotificationChannels {
     ),
   );
 
-  /// Completion bell, scheduled for the session's end time so it rings on time
-  /// even while the app is suspended.
-  static const NotificationDetails timerCompleteDetails = NotificationDetails(
+  /// Start or completion bell, scheduled for the moment the session starts or
+  /// ends so it still rings if the app is suspended before it gets there.
+  static const NotificationDetails timerBellDetails = NotificationDetails(
     android: AndroidNotificationDetails(
-      timerCompleteId,
-      timerCompleteName,
-      channelDescription: timerCompleteDescription,
+      timerBellId,
+      timerBellName,
+      channelDescription: timerBellDescription,
       importance: Importance.high,
       priority: Priority.high,
       icon: 'ic_notification',
@@ -206,34 +214,34 @@ class NotificationChannels {
     String? androidActionButtonText,
   }) =>
       NotificationDetails(
-    android: AndroidNotificationDetails(
-      routineBlockId,
-      routineBlockName,
-      channelDescription: routineBlockDescription,
-      importance: Importance.high,
-      priority: Priority.high,
-      styleInformation: styleInformation,
-      icon: icon,
-      largeIcon: largeIcon,
-      enableVibration: true,
-      playSound: true,
-      sound: routineAndroidSound,
+        android: AndroidNotificationDetails(
+          routineBlockId,
+          routineBlockName,
+          channelDescription: routineBlockDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          styleInformation: styleInformation,
+          icon: icon,
+          largeIcon: largeIcon,
+          enableVibration: true,
+          playSound: true,
+          sound: routineAndroidSound,
           actions: androidActionButtonText == null
               ? null
               : <AndroidNotificationAction>[
-                AndroidNotificationAction(
-                  specialPlanActionId,
-                  androidActionButtonText,
-                  showsUserInterface: true,
-                  cancelNotification: true,
-                ),
-              ],
-    ),
+                  AndroidNotificationAction(
+                    specialPlanActionId,
+                    androidActionButtonText,
+                    showsUserInterface: true,
+                    cancelNotification: true,
+                  ),
+                ],
+        ),
         iOS: iOSDetails ?? DarwinNotificationDetails(
           sound: routineIosSoundFile,
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
         ),
-  );
+      );
 }

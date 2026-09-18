@@ -6,9 +6,8 @@ void main() {
   group('NotificationChannels', () {
     group('routineBlock constants', () {
       test('channel ID is stable — changing it silently breaks existing scheduled notifications on devices', () {
-          expect(NotificationChannels.routineBlockId, 'routine_block_reminder');
-        },
-      );
+        expect(NotificationChannels.routineBlockId, 'routine_block_reminder');
+      });
 
       test('channel name is correct', () {
         expect(NotificationChannels.routineBlockName, 'Routine Block Reminder');
@@ -47,14 +46,13 @@ void main() {
       });
 
       test('sound is set on channel (Android 8+ requires this for custom sound)', () {
-          expect(
-            NotificationChannels.routineBlockChannel.sound,
-            isA<RawResourceAndroidNotificationSound>(),
-          );
-          final sound = NotificationChannels.routineBlockChannel.sound!;
-          expect(sound.sound, 'routine');
-        },
-      );
+        expect(
+          NotificationChannels.routineBlockChannel.sound,
+          isA<RawResourceAndroidNotificationSound>(),
+        );
+        final sound = NotificationChannels.routineBlockChannel.sound!;
+        expect(sound.sound, 'routine');
+      });
 
       test('channel ID matches routineBlockId constant', () {
         expect(
@@ -124,43 +122,32 @@ void main() {
       });
     });
 
-    group('timerCompleteChannel', () {
-      test('channel ID is versioned so Android recreates sound settings', () {
-        expect(NotificationChannels.timerCompleteId, 'timer_complete_v2');
-      });
-
-      test('sound is set on channel', () {
+    group('timerBellChannel', () {
+      test('uses a new id, and retires the silent channels it replaces', () {
+        expect(NotificationChannels.timerBellId, 'timer_bell');
         expect(
-          NotificationChannels.timerCompleteChannel.sound,
-          isA<RawResourceAndroidNotificationSound>(),
+          NotificationChannels.legacyTimerBellIds,
+          contains('timer_complete'),
         );
-        final sound = NotificationChannels.timerCompleteChannel.sound!;
-        expect(sound.sound, 'routine');
-      });
-
-      test('alerts with high importance', () {
         expect(
-          NotificationChannels.timerCompleteChannel.importance,
-          Importance.high,
+          NotificationChannels.legacyTimerBellIds,
+          isNot(contains(NotificationChannels.timerBellId)),
         );
-        expect(NotificationChannels.timerCompleteChannel.playSound, isTrue);
       });
-    });
 
-    group('timerCompleteDetails', () {
-      test('Android details use the timer completion channel and sound', () {
-        final android = NotificationChannels.timerCompleteDetails.android!;
+      test('rings at high importance with the routine sound', () {
+        const channel = NotificationChannels.timerBellChannel;
+        expect(channel.importance, Importance.high);
+        expect(channel.playSound, isTrue);
+        expect(channel.sound!.sound, 'routine');
+      });
 
-        expect(android.channelId, NotificationChannels.timerCompleteId);
-        expect(android.sound, isA<RawResourceAndroidNotificationSound>());
-        final sound = android.sound!;
-        expect(sound.sound, 'routine');
+      test('details use the bell channel on both platforms', () {
+        final android = NotificationChannels.timerBellDetails.android!;
+        expect(android.channelId, NotificationChannels.timerBellId);
         expect(android.playSound, isTrue);
-      });
 
-      test('iOS details present the bundled bell sound', () {
-        final ios = NotificationChannels.timerCompleteDetails.iOS!;
-
+        final ios = NotificationChannels.timerBellDetails.iOS!;
         expect(ios.sound, 'routine.caf');
         expect(ios.presentSound, isTrue);
       });
