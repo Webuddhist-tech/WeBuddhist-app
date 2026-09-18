@@ -16,13 +16,17 @@ class GroupRecitationCompletionService {
 
   final Ref _ref;
 
-  /// Chant IDs already completed (or in flight) this session.
+  /// Chant IDs already completed (or in flight) *today*.
   ///
   /// A [NavigationContext] snapshots each item's `isCompleted` flag once, on
   /// entry — it never reflects completions made while swiping. Without this
   /// set, swiping back over an already-finished chant would re-fire the
-  /// completion POST, which the backend rejects.
+  /// completion POST, which the backend rejects. Completion is a daily fact,
+  /// so the set is scoped to [_completedOn] and cleared when the local date
+  /// rolls over — otherwise an app left resident past midnight would skip the
+  /// next day's completions.
   final Set<String> _completedChantIds = {};
+  DateTime? _completedOn;
 
   /// Completes the current chant in [navContext], then refreshes the
   /// completion state once the API confirms success.
@@ -45,6 +49,8 @@ class GroupRecitationCompletionService {
     final chantId = currentItem.subtaskId;
     if (chantId == null || chantId.isEmpty) return;
     if (currentItem.isCompleted) return;
+
+    _resetIfDayChanged();
     if (_completedChantIds.contains(chantId)) return;
 
     final groupId = navContext.groupId;
@@ -79,6 +85,16 @@ class GroupRecitationCompletionService {
     } catch (e) {
       _logger.error('Failed to complete chant $chantId', e);
       _completedChantIds.remove(chantId);
+    }
+  }
+
+  /// Drops yesterday's claims so the same chant can be completed again today.
+  void _resetIfDayChanged() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (_completedOn != today) {
+      _completedChantIds.clear();
+      _completedOn = today;
     }
   }
 }

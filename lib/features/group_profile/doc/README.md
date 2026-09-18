@@ -9,7 +9,7 @@ Group/community profile pages: follow, events, practices, members, collective ac
 ## User-facing functionality
 
 - Group profile with banner, avatar, follow/join, about, social links
-- Tabs: events, practices, members (posts tab reserved — `_hasPosts => false`)
+- Tabs: posts, events, practices, members (posts tab shows when the group has posts or the user may post)
 - Follow/unfollow (community vs page types)
 - Series enrollment through a group (auto-join on enroll)
 - Event detail + join/leave
@@ -34,6 +34,7 @@ group_profile/
 |------|-------|
 | Main screen | `presentation/screens/group_profile_screen.dart` |
 | Provider hub | `presentation/providers/group_profile_providers.dart` |
+| Posts | `group_post_providers.dart`, `group_profile_posts_tab.dart`, `group_post_composer_screen.dart` |
 | Accumulator | `group_accumulator_providers.dart`, `group_accumulator_screen.dart` |
 | Recitation collection | `group_recitation_collection_screen.dart`, completion providers |
 | Repository | `GroupProfileRepositoryInterface` (note naming) |
@@ -49,14 +50,14 @@ group_profile/
 
 ## Data sources
 
-- **Remote API** — profile, members, events, practices, follow, accumulators, recitation completions
+- **Remote API** — profile, members, events, practices, follow, accumulators, recitation completions, posts (`GroupPostRemoteDatasource`: permission, list, CMS create + media upload)
 - Language-aware via `contentLanguageProvider`
 - Offline chant dialog for accumulator contributions (synced via **mala**)
 
 ## Cross-feature dependencies
 
 - **auth** — login gating, bearer-sensitive `is_group_enrolled`
-- **connect** — pending groups, my groups, discover sync
+- **connect** — pending groups, my groups, discover sync; posts reuse `ConnectPost` + `ConnectPostCard`
 - **home** — series enrollment helpers
 - **mala** — accumulator sync, group session counts
 - **plans** — markdown, date formatting on practice cards
@@ -90,7 +91,7 @@ group_profile/
 
 ### Don't
 
-- Don't enable posts tab without backend (`_hasPosts` guard)
+- Don't gate the posts tab on the profile payload — `groupPostPermissionProvider` (`/users/me/permission/{groupId}`) decides who may post
 - Don't duplicate connect feed logic here
 - Don't break mala group sync when changing accumulator API fields
 - Don't fetch members tab aggressively — use lazy refresh providers

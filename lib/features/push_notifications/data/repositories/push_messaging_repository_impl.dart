@@ -21,8 +21,8 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
   final Dio _dio;
 
   PushMessagingRepositoryImpl({required Dio dio, FirebaseMessaging? messaging})
-      : _dio = dio,
-        _messaging = messaging ?? FirebaseMessaging.instance;
+    : _dio = dio,
+      _messaging = messaging ?? FirebaseMessaging.instance;
 
   @override
   Future<bool> requestPermission() async {
@@ -94,8 +94,8 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
   }
 
   PushMessage _toPushMessage(RemoteMessage m) => PushMessage(
-        title: m.notification?.title,
-        body: m.notification?.body,
-        data: m.data,
-      );
+    title: m.notification?.title,
+    body: m.notification?.body,
+    data: m.data,
+  );
 }

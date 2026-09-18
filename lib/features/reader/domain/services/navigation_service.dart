@@ -43,16 +43,18 @@ class NavigationService {
             ? currentContext.currentTextIndex! + 1
             : currentContext.currentTextIndex! - 1;
 
-    // Handle group recitation collection navigation
-    if (currentContext.source == NavigationSource.groupRecitationCollection) {
+    // Handle recitation collection navigation.
+    if (currentContext.source == NavigationSource.groupRecitationCollection ||
+        currentContext.source == NavigationSource.myRecitationCollection) {
       return NavigationContext(
-        source: NavigationSource.groupRecitationCollection,
+        source: currentContext.source,
         targetSegmentId: adjacentText.firstSegmentId,
         planTextItems: currentContext.planTextItems,
         currentTextIndex: newIndex,
         navigationDirection: direction,
         groupId: currentContext.groupId,
         collectionId: currentContext.collectionId,
+        language: adjacentText.language,
       );
     }
 

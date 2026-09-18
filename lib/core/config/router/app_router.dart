@@ -13,10 +13,12 @@ import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.d
 import 'package:flutter_pecha/features/calendar/presentation/screens/tibetan_calendar_screen.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/connect_post_detail_screen.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_accumulator_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_detail_screen.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/screens/chats_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/group_chat_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_recitation_collection_screen.dart';
@@ -42,6 +44,7 @@ import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/pla
 import 'package:flutter_pecha/features/plans/presentation/plan_info.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_preview/plan_preview_details.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/edit_routine_screen.dart';
+import 'package:flutter_pecha/features/practice/data/models/my_recitation_collection_models.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/my_recitation_collection_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/bookmarks_screen.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/practice_explore_screen.dart';
@@ -74,11 +77,6 @@ final _logger = AppLogger('AppRouter');
 /// can call showDialog on a context that is actually inside the navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-/// Tells [RouteAware] screens on the root navigator when another page covers
-/// or uncovers them. Typed to [PageRoute] so bottom sheets and dialogs, which
-/// are popup routes, do not count as leaving the page.
-final pageRouteObserver = RouteObserver<PageRoute<dynamic>>();
-
 /// Shell navigator key for routes that share the persistent bottom nav bar.
 /// Public so [HomeShellScaffold] can pop imperatively-pushed screens on tab switch.
 final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -100,10 +98,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // deep link can be inserted twice and leave a stale page under Back.
     overridePlatformDefaultLocation: true,
     debugLogDiagnostics: true,
-    observers: [
-      ref.read(analyticsServiceProvider).routeObserver,
-      pageRouteObserver,
-    ],
+    observers: [ref.read(analyticsServiceProvider).routeObserver],
 
     // Re-evaluate redirect whenever auth state changes.
     refreshListenable: GoRouterRefreshStream(
@@ -198,6 +193,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: "/onboarding",
         name: "onboarding",
         builder: (context, state) => const OnboardingWrapper(),
+      ),
+      GoRoute(
+        path: AppRoutes.chats,
+        name: 'chats',
+        builder: (context, state) => const ChatsScreen(),
       ),
       GoRoute(
         path: AppRoutes.groupChat,
@@ -538,6 +538,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final timer = extra?['initialTimer'] as PresetTimer?;
           final groupCollection =
               extra?['initialGroupCollection'] as GroupRecitationCollection?;
+          final myCollection =
+              extra?['initialMyCollection']
+                  as MyRecitationCollectionDetailModel?;
+          final groupAccumulator =
+              extra?['initialGroupAccumulator'] as GroupAccumulator?;
           return EditRoutineScreen(
             initialPlan: plan,
             initialRecitation: recitation,
@@ -546,6 +551,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             initialMantra: mantra,
             enrollSeriesId: enrollSeriesId,
             initialGroupCollection: groupCollection,
+            initialMyCollection: myCollection,
+            initialGroupAccumulator: groupAccumulator,
           );
         },
         routes: [
@@ -576,6 +583,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final selectedDay = extra?['selectedDay'] as int?;
           final startDate = extra?['startDate'] as DateTime?;
           final seriesId = extra?['seriesId'] as String?;
+          final eventId = extra?['eventId'] as String?;
+          final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -584,6 +593,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             selectedDay: selectedDay ?? 1,
             startDate: startDate ?? DateTime.now(),
             seriesId: seriesId,
+            eventId: eventId,
+            showLiveStream: showLiveStream,
           );
         },
       ),
@@ -626,6 +637,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final selectedDay = extra?['selectedDay'] as int?;
               final startDate = extra?['startDate'] as DateTime?;
               final seriesId = extra?['seriesId'] as String?;
+              final eventId = extra?['eventId'] as String?;
+              final showLiveStream =
+                  extra?['showLiveStream'] as bool? ?? true;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }
@@ -634,6 +648,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 selectedDay: selectedDay ?? 1,
                 startDate: startDate ?? DateTime.now(),
                 seriesId: seriesId,
+                eventId: eventId,
+                showLiveStream: showLiveStream,
               );
             },
           ),
@@ -737,6 +753,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               source = NavigationSource.groupAccumulatorChant;
             } else if (sourceStr == 'groupRecitationCollection') {
               source = NavigationSource.groupRecitationCollection;
+            } else if (sourceStr == 'myRecitationCollection') {
+              source = NavigationSource.myRecitationCollection;
             }
 
             navigationContext = NavigationContext(
@@ -750,6 +768,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               groupTitle: extra['groupTitle'] as String?,
               groupAccumulatorSessionCount:
                   extra['groupAccumulatorSessionCount'] as int?,
+              language: extra['language'] as String?,
               collectionId: extra['collectionId'] as String?,
             );
           } else if (segmentId != null && segmentId.isNotEmpty) {
@@ -769,7 +788,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           if (navigationContext != null &&
               (navigationContext.source == NavigationSource.plan ||
                   navigationContext.source ==
-                      NavigationSource.groupRecitationCollection)) {
+                      NavigationSource.groupRecitationCollection ||
+                  navigationContext.source ==
+                      NavigationSource.myRecitationCollection)) {
             final direction = navigationContext.navigationDirection;
             return CustomTransitionPage(
               key: state.pageKey,

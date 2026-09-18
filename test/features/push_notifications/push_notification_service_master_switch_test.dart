@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
+import 'package:flutter_pecha/features/push_notifications/application/foreground_push_filter.dart';
 import 'package:flutter_pecha/features/push_notifications/application/push_notification_service.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/repositories/push_messaging_repository.dart';
@@ -125,6 +126,7 @@ void main() {
     service = PushNotificationService(
       repository: repo,
       storage: storage,
+      foregroundFilter: ForegroundPushFilter(),
       reconcileRetryBaseDelay: _retryDelay,
     );
   });
@@ -407,29 +409,6 @@ void main() {
         storage.values.containsKey(StorageKeys.pushDeviceServerId),
         isFalse,
       );
-    });
-  });
-
-  group('foreground suppression', () {
-    test('a suppressed message never reaches the heads-up', () async {
-      final asked = <PushMessage>[];
-      service.shouldSuppressForeground = (message) {
-        asked.add(message);
-        return true;
-      };
-      await service.initialize();
-
-      const message = PushMessage(
-        title: 'Sangha',
-        body: 'Tenzin: hello',
-        data: {'session_type': 'CHAT', 'chat_kind': 'GROUP', 'group_id': 'g'},
-      );
-      repo.foreground.add(message);
-      await _settle();
-
-      // Reaching the platform show() would throw MissingPluginException here,
-      // so a clean run means the message was dropped before it.
-      expect(asked, [message]);
     });
   });
 }

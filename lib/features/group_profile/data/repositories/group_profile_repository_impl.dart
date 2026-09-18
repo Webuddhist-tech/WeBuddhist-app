@@ -388,9 +388,15 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
-  Future<Either<Failure, void>> joinGroupEvent(String eventId) async {
+  Future<Either<Failure, void>> joinGroupEvent(
+    String eventId, {
+    GroupEventParticipationType? participationType,
+  }) async {
     try {
-      await remote.joinGroupEvent(eventId);
+      await remote.joinGroupEvent(
+        eventId,
+        participationType: participationType,
+      );
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

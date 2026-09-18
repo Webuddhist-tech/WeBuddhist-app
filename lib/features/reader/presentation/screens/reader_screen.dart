@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_bar.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_man
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_segment_audio_controller.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_subtask_completion.dart';
@@ -29,13 +31,16 @@ import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_languages_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_more_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/reader_translation_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_gestures/swipe_navigation_wrapper.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_search/reader_search_delegate.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_settings_screen.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_languages_sheet.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -103,6 +108,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
+
+  bool get _isEmbedded => PlanEmbeddedScope.maybeOf(context) != null;
 
   // ─── Audio ─────────────────────────────────────────────────────────────
   // Plays the current SOURCE_REFERENCE subtask's audio when the reader is
@@ -222,8 +229,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       _chantSessionFinished = true;
       finishedSessionCount = sessionCount;
     }
-    if (mounted && context.canPop()) {
-      context.pop(finishedSessionCount);
+    if (mounted && (_isEmbedded || context.canPop())) {
+      PlanNavigator.pop(context, finishedSessionCount);
     }
   }
 
@@ -300,14 +307,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     if (didNavigate) {
       _isAdvancing = true;
-    } else if (context.canPop()) {
+    } else if (_isEmbedded || context.canPop()) {
       // Last task in the day — close the sequence.
-      context.pop();
+      PlanNavigator.pop(context);
     }
   }
 
   void _onScrollDirectionChanged(bool isScrollingDown) {
     if (!ReaderConstants.enableAppBarAutoHide) return;
+    final host = PlanEmbeddedScope.maybeOf(context);
+    host?.setContentScrollingDown(isScrollingDown);
     if (isScrollingDown && _isAppBarVisible) {
       setState(() {
         _isAppBarVisible = false;
@@ -348,6 +357,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final state = ref.watch(readerNotifierProvider(_params));
     final notifier = ref.read(readerNotifierProvider(_params).notifier);
     final readerTheme = _readerTheme(context);
+    // The embedded host drops its video to audio while a panel is open.
+    ref.listen(
+      readerNotifierProvider(
+        _params,
+      ).select((s) => s.isCommentaryOpen || s.isTranslationOpen),
+      (_, isPanelOpen) =>
+          PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
+    );
 
     if (_isGroupAccumulatorChant) {
       final presetId = _chantContext!.presetAccumulatorId!;
@@ -360,6 +377,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         });
       });
     }
+
+    final scaffold = Scaffold(
+      backgroundColor: readerTheme.scaffoldBackgroundColor,
+      body: _buildBody(context, state, notifier),
+    );
+    // Embedded, the host owns leaving; there is no route of our own to pop.
+    if (_isEmbedded) return Theme(data: readerTheme, child: scaffold);
 
     return Theme(
       data: readerTheme,
@@ -384,10 +408,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             }
           });
         },
-        child: Scaffold(
-          backgroundColor: readerTheme.scaffoldBackgroundColor,
-          body: _buildBody(context, state, notifier),
-        ),
+        child: scaffold,
       ),
     );
   }
@@ -409,8 +430,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ) {
     final localizations = context.l10n;
     final textDetail = state.textDetail;
-    // Loading state
-    if (state.isLoading) {
+    // Loading state; also the first frame, before the initial fetch starts.
+    if (state.isLoading || state.status == ReaderStatus.initial) {
       return _buildStatusView(
         context,
         child: Center(
@@ -491,33 +512,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         SafeArea(
           child: Column(
             children: [
-              // Animated App Bar with smooth hide/show
-              AnimatedSize(
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  height: _isAppBarVisible ? null : 0,
-                  child:
-                      _isAppBarVisible
-                          ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ReaderAppBarOverlay(
-                                params: _params,
-                                colorIndex: widget.colorIndex,
-                                onSearchPressed:
-                                    () => _handleSearch(context, state),
-                                onMorePressed:
-                                    () => _openMoreBottomSheet(
-                                      context,
-                                      textDetail,
-                                    ),
-                              ),
-                            ],
-                          )
-                          : const SizedBox.shrink(),
-                ),
+              // App bar slides up out of view on scroll-down.
+              SlideAwayHeader(
+                visible: _isAppBarVisible,
+                child: _buildAppBar(context, state, textDetail),
               ),
               // Main scrollable content
               Expanded(
@@ -605,6 +603,46 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  /// Embedded: a close bar with font size and languages instead of the app bar.
+  Widget _buildAppBar(
+    BuildContext context,
+    ReaderState state,
+    TextDetail? textDetail,
+  ) {
+    if (_isEmbedded) {
+      return PlanEmbeddedHeader(
+        onClose: _closeEmbedded,
+        actions: [
+          ReaderFontSizeButton(
+            onPressed: () => showFontSizeBottomSheet(context),
+          ),
+          ReaderLanguagesButton(
+            params: _params,
+            onPressed: () => _openLanguagesSheet(context, textDetail),
+          ),
+        ],
+      );
+    }
+    return ReaderAppBarOverlay(
+      params: _params,
+      colorIndex: widget.colorIndex,
+      onSearchPressed: () => _handleSearch(context, state),
+      onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
+      onMorePressed: () => _openMoreBottomSheet(context, textDetail),
+    );
+  }
+
+  /// The embedded host has no route of its own, so the leave work that the
+  /// route's PopScope would do (see [build]) runs here instead.
+  void _closeEmbedded() {
+    _audioController?.cancel();
+    _invalidatePlanProviders();
+    if (_isGroupAccumulatorChant && !_chantSessionFinished) {
+      unawaited(ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave));
+    }
+    PlanNavigator.pop(context);
+  }
+
   /// The floating plan audio play/pause control. Keyed so its animation state
   /// survives reparenting between the behind-panel slot and the bottom overlay.
   Widget _buildAudioButton() {
@@ -635,6 +673,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// minimal app bar that always exposes a back button. This guarantees the
   /// user can leave the screen even when content fails to load.
   Widget _buildStatusView(BuildContext context, {required Widget child}) {
+    if (_isEmbedded) {
+      return Column(
+        children: [
+          PlanEmbeddedHeader(onClose: () => _navigateBack(context)),
+          Expanded(child: child),
+        ],
+      );
+    }
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -658,8 +704,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Pops back if possible, otherwise falls back to the home route so the user
   /// is never stranded (e.g. when arriving via a deep link with no history).
   void _navigateBack(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
+    if (_isEmbedded || context.canPop()) {
+      PlanNavigator.pop(context);
     } else {
       context.go(AppRoutes.home);
     }
@@ -699,7 +745,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<void> _openReaderSettings(
+  Future<void> _openLanguagesSheet(
     BuildContext context,
     TextDetail? textDetail,
   ) async {
@@ -708,25 +754,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     notifier.closeCommentary();
     notifier.closeTranslation();
 
-    // Pass the currently-loaded primary display so the settings screen can
-    // show it under "Main text" without the reader notifier having to write
-    // into a global settings store as a side effect. The backend returns a
-    // raw language code (e.g. "bo") — render it through getLanguageName so
-    // the user sees "Tibetan", not "bo". `versionId` in this API is just the
-    // loaded text's id, so textDetail.id / textDetail.title pre-fill the
-    // version row of the Main text card.
+    // Snapshot of the loaded text so the drawer can show it as "Original".
     final languageCode = textDetail?.language ?? 'en';
-    final initialPrimaryDisplay = ReaderSlotConfig(
+    final primaryDisplay = ReaderSlotConfig(
       languageCode: languageCode,
       languageLabel: getLanguageName(languageCode, context),
       versionId: textDetail?.id,
       versionLabel: textDetail?.title,
     );
 
-    await openReaderSettings(
+    await showReaderLanguagesSheet(
       context,
       textId: widget.textId,
-      initialPrimaryDisplay: initialPrimaryDisplay,
+      primaryDisplay: primaryDisplay,
     );
   }
 
@@ -752,7 +792,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               : null,
       onAddOfflineRecitation:
           _isGroupAccumulatorChant ? _addOfflineChantCount : null,
-      onParallelVersion: () => _openReaderSettings(context, textDetail),
     );
   }
 

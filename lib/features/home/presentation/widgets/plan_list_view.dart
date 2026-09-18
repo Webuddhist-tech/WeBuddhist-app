@@ -621,11 +621,11 @@ void _navigateToPlan(
   _EnrolledPlanInfo? enrolledInfo,
 }) {
   if (isEnrolled) {
-    final userPlan = enrolledInfo?.userPlan ?? _userPlanFromCatalogPlan(plan);
+    final userPlan = enrolledInfo?.userPlan ?? userPlanFromCatalogPlan(plan);
     final startDate = enrolledInfo?.startDate ?? userPlan.effectiveStartDate;
     final selectedDay =
         enrolledInfo?.selectedDay ??
-        _selectedDayForStart(startDate, userPlan.totalDays);
+        selectedDayForStart(startDate, userPlan.totalDays);
 
     context.push(
       '/practice/details',
@@ -645,7 +645,7 @@ void _navigateToPlan(
   );
 }
 
-UserPlansModel _userPlanFromCatalogPlan(Plan plan) {
+UserPlansModel userPlanFromCatalogPlan(Plan plan) {
   return UserPlansModel(
     id: plan.id,
     title: plan.title,
@@ -663,7 +663,7 @@ UserPlansModel _userPlanFromCatalogPlan(Plan plan) {
   );
 }
 
-int _selectedDayForStart(DateTime startDate, int totalDays) {
+int selectedDayForStart(DateTime startDate, int totalDays) {
   final daysSinceStart =
       DateTime.now().difference(DateUtils.dateOnly(startDate)).inDays;
   return (daysSinceStart + 1).clamp(1, totalDays);
@@ -697,7 +697,7 @@ _EnrolledPlanInfo? _getEnrolledInfoFromMyPlans(WidgetRef ref, String planId) {
   final startDate = userPlan.startDate ?? userPlan.startedAt;
   return _EnrolledPlanInfo(
     userPlan: userPlan,
-    selectedDay: _selectedDayForStart(startDate, userPlan.totalDays),
+    selectedDay: selectedDayForStart(startDate, userPlan.totalDays),
     startDate: startDate,
   );
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
@@ -16,12 +18,36 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/plans/data/utils/plan_date_format.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 
 class ConnectPracticeCard extends ConsumerStatefulWidget {
-  const ConnectPracticeCard({super.key, required this.practice});
+  const ConnectPracticeCard({
+    super.key,
+    required this.practice,
+    this.showGroupLink = true,
+    this.isSeriesEnrolled,
+    this.isEnrollingSeries,
+    this.onSeriesTap,
+    this.onSeriesJoinTap,
+    this.isJoiningAccumulator,
+    this.onAccumulatorTap,
+    this.onAccumulatorJoinTap,
+  });
 
   final GroupPractice practice;
+
+  /// False when the card is already shown inside the group's own profile.
+  final bool showGroupLink;
+
+  /// Host overrides; null falls back to the card's own Connect behaviour.
+  final bool? isSeriesEnrolled;
+  final bool? isEnrollingSeries;
+  final VoidCallback? onSeriesTap;
+  final VoidCallback? onSeriesJoinTap;
+  final bool? isJoiningAccumulator;
+  final VoidCallback? onAccumulatorTap;
+  final VoidCallback? onAccumulatorJoinTap;
 
   @override
   ConsumerState<ConnectPracticeCard> createState() =>
@@ -80,7 +106,10 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       series.startDate,
       series.endDate,
     );
-    final isEnrolled = practice.isJoined || series.isGroupEnrolled == true;
+    final isEnrolled =
+        widget.isSeriesEnrolled ??
+        (practice.isJoined || series.isGroupEnrolled == true);
+    final isEnrolling = widget.isEnrollingSeries ?? _isEnrollingSeries;
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 
@@ -88,24 +117,35 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       color: cardColor,
       child: InkWell(
         onTap:
-            _isEnrollingSeries
+            isEnrolling
                 ? null
-                : () => _navigateToSeriesDetail(practice, series, isEnrolled),
+                : widget.onSeriesTap ??
+                    () => _navigateToSeriesDetail(practice, series, isEnrolled),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
-              subtitle: dateRange,
+              groupId: widget.showGroupLink ? practice.groupId : null,
+              timestamp: practice.practiceAt,
+              stackTimestamp: true,
+              subtitle:
+                  series.enrolledCount > 0 ? '${series.enrolledCount}' : null,
+              subtitleIcon:
+                  series.enrolledCount > 0 ? AppAssets.usercard : null,
+              trailing: _buildShareButton(
+                isDark: isDark,
+                title: series.title,
+                link: DeepLinkUrlBuilder.seriesLink(seriesId: series.id),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 ConnectFeedCardLayout.horizontalPadding,
                 ConnectFeedCardLayout.bodyTopSpacing,
                 ConnectFeedCardLayout.horizontalPadding,
-                0,
+                ConnectFeedCardLayout.bodyToMediaSpacing,
               ),
               child: Text(
                 series.title,
@@ -118,7 +158,6 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            ConnectFeedCardSectionDivider(isDark: isDark),
             ConnectFeedCardMediaFrame(
               child: AspectRatio(
                 aspectRatio: 16 / 9,
@@ -147,14 +186,21 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                           !isEnrolled
                               ? _PracticeJoinButton(
                                 label: context.l10n.group_practice_with_us,
-                                isLoading: _isEnrollingSeries,
+                                isLoading: isEnrolling,
                                 isDark: isDark,
                                 onImage: true,
                                 onTap:
-                                    () => _onPracticeWithUsTap(practice, series),
+                                    widget.onSeriesJoinTap ??
+                                    () => _onPracticeWithUsTap(
+                                      practice,
+                                      series,
+                                    ),
                               )
                               : null,
-                      memberCount: series.enrolledCount,
+                      trailing:
+                          dateRange != null
+                              ? _PracticeImageBadge(label: dateRange)
+                              : null,
                     ),
                   ],
                 ),
@@ -185,7 +231,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       accumulator.startDate,
       accumulator.endDate,
     );
-    final isJoining = _joiningAccumulatorId == accumulator.id;
+    final isJoining =
+        widget.isJoiningAccumulator ??
+        (_joiningAccumulatorId == accumulator.id);
 
     return Material(
       color: cardColor,
@@ -193,22 +241,39 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
         onTap:
             isJoining
                 ? null
-                : () => _navigateToAccumulatorDetail(accumulator.id, practice),
+                : widget.onAccumulatorTap ??
+                    () =>
+                        _navigateToAccumulatorDetail(accumulator.id, practice),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
-              subtitle: dateRange,
+              groupId: widget.showGroupLink ? practice.groupId : null,
+              timestamp: practice.practiceAt,
+              stackTimestamp: true,
+              subtitle:
+                  accumulator.memberCount > 0
+                      ? '${accumulator.memberCount}'
+                      : null,
+              subtitleIcon:
+                  accumulator.memberCount > 0 ? AppAssets.usercard : null,
+              trailing: _buildShareButton(
+                isDark: isDark,
+                title: accumulator.title,
+                link: DeepLinkUrlBuilder.groupAccumulatorLink(
+                  accumulatorId: accumulator.id,
+                  groupId: groupId,
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 ConnectFeedCardLayout.horizontalPadding,
                 ConnectFeedCardLayout.bodyTopSpacing,
                 ConnectFeedCardLayout.horizontalPadding,
-                0,
+                ConnectFeedCardLayout.bodyToMediaSpacing,
               ),
               child: Text(
                 accumulator.title,
@@ -221,7 +286,6 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            ConnectFeedCardSectionDivider(isDark: isDark),
             ConnectFeedCardMediaFrame(
               child: AspectRatio(
                 aspectRatio: 16 / 9,
@@ -254,13 +318,17 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                                 isDark: isDark,
                                 onImage: true,
                                 onTap:
+                                    widget.onAccumulatorJoinTap ??
                                     () => _onJoinAccumulatorTap(
                                       practice,
                                       accumulator,
                                     ),
                               )
                               : null,
-                      memberCount: accumulator.memberCount,
+                      trailing:
+                          dateRange != null
+                              ? _PracticeImageBadge(label: dateRange)
+                              : null,
                     ),
                   ],
                 ),
@@ -296,15 +364,20 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
+              groupId: widget.showGroupLink ? practice.groupId : null,
               subtitle: details.isNotEmpty ? details : null,
+              trailing: _buildShareButton(
+                isDark: isDark,
+                title: plan.title,
+                link: DeepLinkUrlBuilder.planLink(planId: plan.id),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 ConnectFeedCardLayout.horizontalPadding,
                 ConnectFeedCardLayout.bodyTopSpacing,
                 ConnectFeedCardLayout.horizontalPadding,
-                0,
+                ConnectFeedCardLayout.bodyToMediaSpacing,
               ),
               child: Text(
                 plan.title,
@@ -317,7 +390,6 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            ConnectFeedCardSectionDivider(isDark: isDark),
             ConnectFeedCardMediaFrame(
               child: AspectRatio(
                 aspectRatio: 16 / 9,
@@ -353,11 +425,17 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     bool isDark,
     double? lineHeight,
   ) {
+    final groupId =
+        practice.groupId?.trim().isNotEmpty == true
+            ? practice.groupId!
+            : collection.groupId;
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final itemCountLabel =
         collection.itemCount > 0
-            ? context.l10n.home_recitation_count(collection.itemCount)
+            ? context.l10n.my_recitation_collection_chant_count(
+              collection.itemCount,
+            )
             : null;
 
     return Material(
@@ -370,16 +448,24 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
+              groupId: widget.showGroupLink ? practice.groupId : null,
               timestamp: practice.practiceAt,
-              subtitle: itemCountLabel,
+              stackTimestamp: true,
+              trailing: _buildShareButton(
+                isDark: isDark,
+                title: collection.name,
+                link: DeepLinkUrlBuilder.groupRecitationCollectionLink(
+                  groupId: groupId,
+                  collectionId: collection.id,
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 ConnectFeedCardLayout.horizontalPadding,
                 ConnectFeedCardLayout.bodyTopSpacing,
                 ConnectFeedCardLayout.horizontalPadding,
-                0,
+                ConnectFeedCardLayout.bodyToMediaSpacing,
               ),
               child: Text(
                 collection.name,
@@ -392,11 +478,12 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            ConnectFeedCardSectionDivider(isDark: isDark),
             ConnectFeedCardMediaFrame(
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child:
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
                     collection.imageUrl != null &&
                             collection.imageUrl!.isNotEmpty
                         ? CachedNetworkImageWidget(
@@ -415,12 +502,46 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                                 isDark ? AppColors.grey500 : AppColors.grey600,
                           ),
                         ),
+                    if (itemCountLabel != null)
+                      _PracticeImageOverlayBar(
+                        trailing: _PracticeImageBadge(label: itemCountLabel),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildShareButton({
+    required bool isDark,
+    required String title,
+    required Uri link,
+  }) {
+    return IconButton(
+      onPressed: () => _sharePractice(title, link),
+      icon: Icon(
+        AppAssets.readerShare,
+        size: 20,
+        color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+      ),
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    );
+  }
+
+  Future<void> _sharePractice(String title, Uri link) async {
+    final shareUrl = await resolveShareUrlRef(ref, link.toString());
+    if (!mounted) return;
+
+    final message =
+        shareUrl.isNotEmpty ? '${title.trim()}\n\n$shareUrl' : title.trim();
+    if (message.isEmpty) return;
+    await SharePlus.instance.share(ShareParams(text: message));
   }
 
   void _navigateToPlanDetail(GroupPractice practice, GroupPracticePlan plan) {
@@ -565,14 +686,14 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
 }
 
 class _PracticeImageOverlayBar extends StatelessWidget {
-  const _PracticeImageOverlayBar({this.leading, this.memberCount = 0});
+  const _PracticeImageOverlayBar({this.leading, this.trailing});
 
   final Widget? leading;
-  final int memberCount;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    if (leading == null && memberCount <= 0) {
+    if (leading == null && trailing == null) {
       return const SizedBox.shrink();
     }
 
@@ -584,17 +705,17 @@ class _PracticeImageOverlayBar extends StatelessWidget {
         children: [
           if (leading != null) leading!,
           const Spacer(),
-          if (memberCount > 0) _PracticeImageMemberBadge(count: memberCount),
+          if (trailing != null) trailing!,
         ],
       ),
     );
   }
 }
 
-class _PracticeImageMemberBadge extends StatelessWidget {
-  const _PracticeImageMemberBadge({required this.count});
+class _PracticeImageBadge extends StatelessWidget {
+  const _PracticeImageBadge({required this.label});
 
-  final int count;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -604,20 +725,13 @@ class _PracticeImageMemberBadge extends StatelessWidget {
         color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(AppAssets.usercard, size: 14, color: Colors.white),
-          const SizedBox(width: 4),
-          Text(
-            '$count',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
     );
   }

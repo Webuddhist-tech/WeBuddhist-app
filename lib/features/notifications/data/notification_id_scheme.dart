@@ -55,6 +55,16 @@ class NotificationIdScheme {
   static const int groupCollectionBase = 23000000;
   static const int groupCollectionMax = 23999999;
 
+  // Routine block personal recitation-collection (chants list) daily-repeat.
+  // Kept separate from group collections because a block can contain both
+  // collection kinds.
+  static const int myCollectionBase = 24000000;
+  static const int myCollectionMax = 24999999;
+
+  // Routine block group-accumulator daily-repeat, separate from the mala range.
+  static const int groupAccumulatorBase = 25000000;
+  static const int groupAccumulatorMax = 25999999;
+
   /// Stable daily-repeat ID for a mala/accumulator block. Derived from the
   /// block's own notification ID so it survives restarts, but lives in a
   /// range separate from the recitation daily-repeat
@@ -76,28 +86,40 @@ class NotificationIdScheme {
   static int groupCollectionId(int blockNotificationId) =>
       groupCollectionBase + (blockNotificationId - routineBlockMin);
 
+  /// Stable daily-repeat ID for a personal recitation collection block.
+  static int myCollectionId(int blockNotificationId) =>
+      myCollectionBase + (blockNotificationId - routineBlockMin);
+
+  /// Stable daily-repeat ID for a group-accumulator block.
+  static int groupAccumulatorId(int blockNotificationId) =>
+      groupAccumulatorBase + (blockNotificationId - routineBlockMin);
+
   // ── Meditation timer session ────────────────────────────────────────────
   // A running timer session posts an ongoing status notification and, while the
-  // app is backgrounded, schedules its completion bell. Only one session can be
-  // active at a time, so these are fixed IDs rather than a derived range.
+  // app is backgrounded, schedules its start and completion bells. Only one
+  // session can be active at a time, so these are fixed IDs rather than a
+  // derived range.
   //
   // These are deliberately NOT reported by [isOurs]: the reconcile pass cancels
   // every "ours" ID it doesn't expect to be scheduled, and a routine sync firing
   // mid-session would silently kill the user's running meditation timer. The
-  // timer screen owns these two IDs end to end and cancels them itself.
+  // timer screen owns these IDs end to end and cancels them itself.
   static const int timerSessionOngoingId = 22000001;
   static const int timerSessionCompleteId = 22000002;
+  static const int timerSessionStartId = 22000003;
 
   /// True when [id] is a routine daily-repeat: recitation/chants via
   /// [routineBlockMin]–[routineBlockMax], mala via the accumulator range, a
-  /// timer start reminder via the timer range, or a group-recitation-collection
-  /// reminder via the group-collection range. These are the only notification
-  /// kinds the engine schedules locally.
+  /// timer start reminder via the timer range, or a recitation-collection
+  /// reminder via the collection ranges. These are the only notification kinds
+  /// the engine schedules locally.
   static bool isRoutineDailyRepeat(int id) =>
       (id >= routineBlockMin && id <= routineBlockMax) ||
       (id >= accumulatorBlockBase && id <= accumulatorBlockMax) ||
       (id >= timerStartBase && id <= timerStartMax) ||
-      (id >= groupCollectionBase && id <= groupCollectionMax);
+      (id >= groupCollectionBase && id <= groupCollectionMax) ||
+      (id >= myCollectionBase && id <= myCollectionMax) ||
+      (id >= groupAccumulatorBase && id <= groupAccumulatorMax);
 
   /// True when [id] was issued by any of the schemes registered here.
   /// Used by the engine to scope reconciliation: it must NEVER cancel an
@@ -111,6 +133,8 @@ class NotificationIdScheme {
     if (id >= accumulatorBlockBase && id <= accumulatorBlockMax) return true;
     if (id >= timerStartBase && id <= timerStartMax) return true;
     if (id >= groupCollectionBase && id <= groupCollectionMax) return true;
+    if (id >= myCollectionBase && id <= myCollectionMax) return true;
+    if (id >= groupAccumulatorBase && id <= groupAccumulatorMax) return true;
     return false;
   }
 }

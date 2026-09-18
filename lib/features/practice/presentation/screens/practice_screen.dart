@@ -29,12 +29,12 @@ class PracticeScreen extends ConsumerWidget {
     context.pushNamed('edit-routine');
   }
 
+  /// Loading, error, and empty states keep a plain app bar; the filled state
+  /// draws its own header inside [RoutineFilledState] to match the design.
   PreferredSizeWidget? _appBar(
     BuildContext context,
-    AppLocalizations localizations, {
-    bool isDark = false,
-    VoidCallback? onEdit,
-  }) {
+    AppLocalizations localizations,
+  ) {
     if (!showAppBar) return null;
     return AppBar(
       leading: IconButton(
@@ -47,22 +47,6 @@ class PracticeScreen extends ConsumerWidget {
       ),
       centerTitle: false,
       scrolledUnderElevation: 0,
-      actions:
-          onEdit == null
-              ? null
-              : [
-                TextButton(
-                  onPressed: onEdit,
-                  child: Text(
-                    localizations.routine_edit,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ),
-              ],
     );
   }
 
@@ -149,19 +133,12 @@ class PracticeScreen extends ConsumerWidget {
             _onBuildRoutine(context, ref);
           }
 
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-
           return Scaffold(
-            appBar: _appBar(
-              context,
-              localizations,
-              isDark: isDark,
-              onEdit: showAppBar ? handleEdit : null,
-            ),
             body: SafeArea(
               child: RoutineFilledState(
                 routineData: routineData,
-                showTitle: !showAppBar,
+                onBack:
+                    showAppBar ? () => Navigator.of(context).pop() : null,
                 onEdit: handleEdit,
               ),
             ),

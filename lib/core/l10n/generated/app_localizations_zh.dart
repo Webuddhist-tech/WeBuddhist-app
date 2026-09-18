@@ -151,6 +151,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmark_texts => '經文';
 
   @override
+  String get bookmark_group_accumulation => 'Group accumulation';
+
+  @override
   String get mala_add_to_practice => '加入我的修持';
 
   @override
@@ -437,6 +440,81 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recitations_login_prompt => '請登錄以查看您保存的持誦';
+
+  @override
+  String get my_recitation_collection_new_title => '新收藏';
+
+  @override
+  String get my_recitation_collection_next => '下一步';
+
+  @override
+  String get my_recitation_collection_create => '建立';
+
+  @override
+  String get my_recitation_collection_create_button => '建立收藏';
+
+  @override
+  String get my_recitation_collection_change_title => '更改標題';
+
+  @override
+  String get my_recitation_collection_change => '更改';
+
+  @override
+  String get my_recitation_collection_add_chants => '加入持誦';
+
+  @override
+  String get my_recitation_collection_search_chants => '搜尋持誦';
+
+  @override
+  String get my_recitation_collection_add_to_collection => '加入收藏';
+
+  @override
+  String get my_recitation_collection_edit => '編輯收藏';
+
+  @override
+  String get my_recitation_collection_delete => '刪除收藏';
+
+  @override
+  String get my_recitation_collection_delete_title => '要刪除收藏嗎？';
+
+  @override
+  String get my_recitation_collection_delete_message => '此收藏將被永久刪除。';
+
+  @override
+  String get my_recitation_collection_fallback_title => '持誦收藏';
+
+  @override
+  String get my_recitation_collection_unavailable => '已無法使用';
+
+  @override
+  String my_recitation_collection_chant_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 項持誦',
+      one: '1 項持誦',
+      zero: '0 項持誦',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String my_recitation_collection_chant_count_owner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 項持誦 • 我',
+      one: '1 項持誦 • 我',
+      zero: '0 項持誦 • 我',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookmarks_empty_chant_collections_title => '尚未收藏任何持誦收藏。';
+
+  @override
+  String get bookmarks_empty_chant_collections_subtitle => '收藏持誦收藏後會顯示在這裡。';
 
   @override
   String get notification_settings => '通知設定';
@@ -832,6 +910,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_attending => '已參加';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count 人參加';
   }
@@ -862,6 +949,44 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get connect_event_date_tba => 'Date to be announced';
+
+  @override
+  String get connect_event_when => 'When';
+
+  @override
+  String get connect_event_where => 'Where';
+
+  @override
+  String get connect_event_practices => 'Event practices';
+
+  @override
+  String get connect_event_tab_accumulations => 'Accumulations';
+
+  @override
+  String get connect_event_tab_recitations => 'Recitations';
+
+  @override
+  String get connect_event_add_recitations => 'Add recitations';
+
+  @override
+  String get connect_event_add_recitations_message =>
+      'Add the number of recitations you did with the livestream or outside this app.';
+
+  @override
+  String get connect_event_every_day => 'Every day';
+
+  @override
+  String connect_event_every_weekday(String weekday) {
+    return 'Every $weekday';
+  }
+
+  @override
+  String get connect_event_every_month => 'Every month';
+
+  @override
+  String connect_event_every_date(String date) {
+    return 'Every $date';
+  }
 
   @override
   String get connect_event_about_empty => 'No event details yet';
@@ -1214,6 +1339,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_delete_block => '刪除時段';
 
   @override
+  String get routine_session_title_hint => 'Title...';
+
+  @override
+  String get routine_expand_all => 'Expand all';
+
+  @override
+  String get routine_collapse_all => 'Collapse all';
+
+  @override
   String get routine_delete_time_block => '移除時段';
 
   @override
@@ -1448,6 +1582,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get parallel_version => '對讀版本';
+
+  @override
+  String get reader_languages_title => '語言';
+
+  @override
+  String get reader_original_label => '原文';
+
+  @override
+  String get reader_translation_label => '譯文';
 
   @override
   String get version_not_available => '無可用版本';
@@ -1907,6 +2050,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_accumulator_join_error => '無法加入累積，請再試一次。';
 
   @override
+  String get group_accumulator_join_before_practice =>
+      'Join this accumulation before adding it to your practices';
+
+  @override
   String group_accumulator_participants(int count) {
     return '$count 位參與者';
   }
@@ -2026,6 +2173,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get share_poem_message => '我喜欢WeBuddhist上的这首诗，想和你分享。';
 
   @override
+  String share_poem_title(String title) {
+    return '「$title」';
+  }
+
+  @override
   String get share_mala_message =>
       '我一直在WeBuddhist上使用这串电子念珠，想和你分享。这是一个随时随地修行的便捷方式。';
 
@@ -2116,6 +2268,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmarks_empty_malas_subtitle => '將念珠加入書籤即可儲存於此。';
 
   @override
+  String get bookmarks_empty_group_accumulations_title =>
+      'No group accumulations bookmarked yet.';
+
+  @override
+  String get bookmarks_empty_group_accumulations_subtitle =>
+      'Bookmark a group accumulation to save it here.';
+
+  @override
   String get bookmarks_empty_timers_title => '尚無已加書籤的計時器。';
 
   @override
@@ -2173,6 +2333,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get player_forward_10 => '快進 10 秒';
+
+  @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
 
   @override
   String get session_plans_load_error => '無法載入計畫。\n請稍後重試。';
@@ -2296,6 +2462,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_title => '聊天';
 
   @override
+  String get chats_title => '聊天';
+
+  @override
+  String get chats_empty_title => '尚無聊天';
+
+  @override
+  String get chats_empty_body => '加入社群即可開始聊天。';
+
+  @override
   String get group_chat_inappropriate => '此訊息含有不允許的用語，因此無法發送。';
 
   @override
@@ -2350,22 +2525,98 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_report => '檢舉';
 
   @override
+  String get group_chat_report_title => '你為什麼要檢舉這則訊息？';
+
+  @override
+  String get group_chat_report_privacy => '你的姓名不會公開。';
+
+  @override
+  String get group_chat_report_reason_harassment => '騷擾或霸凌';
+
+  @override
+  String get group_chat_report_reason_hate => '仇恨或有害言論';
+
+  @override
+  String get group_chat_report_reason_sexual => '性相關或露骨內容';
+
+  @override
+  String get group_chat_report_reason_spam => '垃圾訊息或詐騙';
+
+  @override
+  String get group_chat_report_reason_off_topic => '離題或干擾';
+
+  @override
+  String get group_chat_report_reason_other => '其他原因';
+
+  @override
+  String get group_chat_report_note_title => '新增備註';
+
+  @override
+  String get group_chat_report_note_hint => '其他原因...';
+
+  @override
+  String get group_chat_report_submit => '送出檢舉';
+
+  @override
+  String get group_chat_report_thanks => '感謝你的回報';
+
+  @override
+  String get group_chat_report_offline => '你目前離線 — 請稍後再試';
+
+  @override
+  String get group_chat_report_failed => '無法送出檢舉';
+
+  @override
+  String get group_chat_report_retry => '重試';
+
+  @override
   String get group_chat_delete => '刪除';
 
   @override
   String get group_chat_delete_title => '刪除訊息？';
 
   @override
-  String get group_chat_delete_confirm_body => '此訊息將為聊天中的所有人刪除。';
+  String group_chat_delete_title_many(int count) {
+    return '刪除 $count 則訊息？';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => '為所有人刪除';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '這些訊息將從聊天中為所有人移除。',
+      one: '此訊息將從聊天中為所有人移除。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => '無法刪除訊息。';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '有 $count 則訊息無法刪除。',
+      one: '無法刪除訊息。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => '你已刪除此訊息';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '訊息已刪除',
+      one: '訊息已刪除',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return '最多可選取 $count 則訊息';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => '此訊息已刪除';
@@ -2392,4 +2643,164 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_chat_reply_parent_gone => '該訊息已不存在，引用已移除。請再次傳送你的訊息。';
+
+  @override
+  String get group_tab_posts => '貼文';
+
+  @override
+  String get group_tab_events => '活動';
+
+  @override
+  String get group_posts_empty_title => '尚無貼文';
+
+  @override
+  String get group_posts_empty_message => '與你的社群分享第一則動態。';
+
+  @override
+  String get group_posts_load_error => '無法載入貼文，請再試一次。';
+
+  @override
+  String get group_post_button => '發佈';
+
+  @override
+  String get group_post_new_title => '新貼文';
+
+  @override
+  String get group_post_posting_to => '發佈至：';
+
+  @override
+  String get group_post_caption_hint => '有什麼新鮮事？';
+
+  @override
+  String get group_post_photos => '相片';
+
+  @override
+  String get group_post_link => '連結';
+
+  @override
+  String get group_post_discard_title => '捨棄貼文？';
+
+  @override
+  String get group_post_discard_message => '你所寫的內容將會遺失。';
+
+  @override
+  String get group_post_keep_editing => '繼續編輯';
+
+  @override
+  String get group_post_discard => '捨棄';
+
+  @override
+  String get group_post_add_link_title => '新增連結';
+
+  @override
+  String get group_post_add_link_hint => '貼上連結，我們會顯示預覽。';
+
+  @override
+  String get group_post_link_field_hint => '連結';
+
+  @override
+  String get group_post_attach => '附加';
+
+  @override
+  String get group_post_attach_as_link => '以連結附加';
+
+  @override
+  String get group_post_preview_failed_title => '無法載入預覽';
+
+  @override
+  String get group_post_preview_failed_message => '你仍可將它以連結附加。';
+
+  @override
+  String get group_post_invalid_link => '請輸入有效的連結，例如 https://example.com';
+
+  @override
+  String group_post_photo_limit(int count) {
+    return '最多可新增 $count 張相片。';
+  }
+
+  @override
+  String get group_post_upload_error => '無法上傳相片，請再試一次。';
+
+  @override
+  String get group_post_publish_error => '無法發佈你的貼文，請再試一次。';
+
+  @override
+  String get group_post_published => '你的貼文已發佈。';
+
+  @override
+  String get group_post_delete_title => '刪除貼文？';
+
+  @override
+  String get group_post_delete_message => '這則貼文將被永久刪除。';
+
+  @override
+  String get group_post_delete_failed => '無法刪除貼文，請再試一次。';
+
+  @override
+  String get edit => '編輯';
+
+  @override
+  String get group_post_edit_title => '編輯貼文';
+
+  @override
+  String get group_post_update_error => '無法儲存你的變更，請再試一次。';
+
+  @override
+  String get group_post_updated => '你的變更已儲存。';
+
+  @override
+  String get practice_collection_already_added =>
+      'This collection is already in your practices';
+
+  @override
+  String get practice_group_accumulator_already_added =>
+      'This accumulation is already in your practices';
+
+  @override
+  String get event_live_badge => 'LIVE';
+
+  @override
+  String get event_live_audio => 'Live audio';
+
+  @override
+  String get event_live_video_mode => 'Video';
+
+  @override
+  String get event_live_audio_mode => 'Audio';
+
+  @override
+  String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => '祈願請求';
+
+  @override
+  String get event_prayer_empty_title => '尚無祈願請求';
+
+  @override
+  String get event_prayer_empty_body => '你和社群的請求會顯示在這裡';
+
+  @override
+  String get event_prayer_add => '新增祈願請求';
+
+  @override
+  String get event_prayer_hint => '今天我們能為你祈願什麼';
+
+  @override
+  String get event_prayer_load_failed => '無法載入祈願請求。';
+
+  @override
+  String get event_prayer_closed => '此活動的祈願請求已關閉。';
+
+  @override
+  String get event_prayer_pray => '祈願';
+
+  @override
+  String get event_prayer_praying => '祈願中';
 }

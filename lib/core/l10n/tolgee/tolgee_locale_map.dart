@@ -21,13 +21,6 @@ class TolgeeLocaleMap {
     }
   }
 
-  /// Locale passed to `Tolgee.setCurrentLocale` so the SDK requests
-  /// `{cdn}/{tag}.json` with hyphenated tags (`bo-IN`, `zh-Hant-TW`).
-  ///
-  /// Uses a single-argument [Locale] so `toString()` keeps hyphens; the usual
-  /// `Locale('bo', 'IN')` form stringifies as `bo_IN`, which would 404.
-  static Locale cdnLocaleFor(Locale appLocale) => Locale(cdnTagFor(appLocale));
-
   /// Canonical app language code for bridge matching (`bo`, `zh`, `en`, …).
   static String appLanguageCodeOf(String localeNameOrTag) {
     final String normalized = localeNameOrTag.replaceAll('_', '-');
@@ -39,18 +32,6 @@ class TolgeeLocaleMap {
       return 'zh';
     }
     final int separator = normalized.indexOf('-');
-    return separator == -1
-        ? normalized
-        : normalized.substring(0, separator);
-  }
-
-  /// Whether Tolgee's loaded locale is compatible with the app locale name
-  /// used by `AppLocalizations` (e.g. CDN `bo-IN` matches app `bo`).
-  static bool matchesAppLocale(String appLocaleName, Locale? tolgeeLocale) {
-    if (tolgeeLocale == null) {
-      return false;
-    }
-    return appLanguageCodeOf(appLocaleName) ==
-        appLanguageCodeOf(tolgeeLocale.toString());
+    return separator == -1 ? normalized : normalized.substring(0, separator);
   }
 }

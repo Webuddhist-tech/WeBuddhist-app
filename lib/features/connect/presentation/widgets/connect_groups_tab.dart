@@ -87,8 +87,8 @@ class _ConnectGroupsTabState extends ConsumerState<ConnectGroupsTab> {
           onRetry: () => ref.read(discoverGroupsProvider.notifier).retry(),
           emptyDiscoverMessage: context.l10n.connect_empty_discover_groups,
           useHairlineDividers: false,
-          separatorHeight: 12,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          separatorHeight: 4,
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           itemBuilder:
               (context, index) => DiscoverGroupCard(
                 group: discoverGroups[index],

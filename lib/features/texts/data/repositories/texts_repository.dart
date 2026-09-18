@@ -414,6 +414,7 @@ class TextsRepository {
     String? segmentId,
     String? direction,
     String? language,
+    int? size,
     bool forceRefresh = false,
   }) async {
     // Use consistent cache key from CacheKeys
@@ -424,6 +425,7 @@ class TextsRepository {
       segmentId: segmentId,
       direction: direction,
       language: language,
+      size: size,
     );
     final isOnline = _connectivityService.isOnline;
 
@@ -451,6 +453,7 @@ class TextsRepository {
               segmentId,
               direction,
               language,
+              size,
               cacheKey,
             );
           }
@@ -481,6 +484,7 @@ class TextsRepository {
         segmentId,
         direction,
         language,
+        size,
         cacheKey,
       );
       return Right(result);
@@ -512,6 +516,7 @@ class TextsRepository {
     String? segmentId,
     String? direction,
     String? language,
+    int? size,
     String cacheKey,
   ) async {
     final result = await remoteDatasource.fetchTextDetails(
@@ -521,6 +526,7 @@ class TextsRepository {
       segmentId: segmentId,
       direction: direction,
       language: language,
+      size: size,
     );
 
     // Cache the result
@@ -543,6 +549,7 @@ class TextsRepository {
     String? segmentId,
     String? direction,
     String? language,
+    int? size,
     String cacheKey,
   ) {
     // Prevent duplicate background refreshes for the same key
@@ -562,6 +569,7 @@ class TextsRepository {
           segmentId,
           direction,
           language,
+          size,
           cacheKey,
         );
         _logger.debug('Background text refresh completed for: $textId');

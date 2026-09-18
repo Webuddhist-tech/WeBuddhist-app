@@ -51,12 +51,6 @@ class _GroupEventParticipantsDrawerState
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref
-          .read(groupEventParticipantsProvider(widget.eventId).notifier)
-          .loadInitial();
-    });
   }
 
   @override
@@ -285,6 +279,23 @@ class _ParticipantTile extends StatelessWidget {
               ],
             ),
           ),
+          if (participant.participationType != null) ...[
+            const SizedBox(width: 12),
+            Text(
+              switch (participant.participationType!) {
+                GroupEventParticipationType.online =>
+                  context.l10n.connect_online,
+                GroupEventParticipationType.offline =>
+                  context.l10n.connect_events_filter_in_person,
+              },
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color:
+                    isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textSecondary,
+              ),
+            ),
+          ],
         ],
       ),
     );

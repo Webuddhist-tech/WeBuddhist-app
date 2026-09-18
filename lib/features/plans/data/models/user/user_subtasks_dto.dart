@@ -1,3 +1,6 @@
+import 'package:flutter_pecha/features/plans/data/models/plan_group_accumulation_ref.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+
 class UserSubtasksDto {
   final String id;
   final bool isCompleted;
@@ -11,6 +14,8 @@ class UserSubtasksDto {
   final List<String>? segmentIds;
   final int? startMs;
   final int? endMs;
+  final String? referenceId;
+  final PlanGroupAccumulationRef? reference;
 
   UserSubtasksDto({
     required this.id,
@@ -25,18 +30,30 @@ class UserSubtasksDto {
     this.segmentIds,
     this.startMs,
     this.endMs,
+    this.referenceId,
+    this.reference,
   });
 
   /// True when this subtask carries its own audio file. A subtask-level
   /// [audioUrl] takes precedence over the day-level audio track.
   bool get hasOwnAudio => audioUrl != null;
 
+  /// Group accumulation id when this is a GROUP_ACCUMULATION subtask.
+  String? get groupAccumulationId {
+    if (contentType.trim().toUpperCase() !=
+        PlanContentTypes.groupAccumulation) {
+      return null;
+    }
+    final id = reference?.id ?? referenceId;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
   factory UserSubtasksDto.fromJson(Map<String, dynamic> json) {
     return UserSubtasksDto(
       id: json['id'] as String,
       isCompleted: json['is_completed'] as bool,
       contentType: json['content_type'] as String,
-      content: json['content'] as String,
+      content: (json['content'] as String?) ?? '',
       displayOrder: json['display_order'] as int?,
       duration: json['duration'] as String?,
       audioUrl: json['audio_url'] as String?,
@@ -47,6 +64,13 @@ class UserSubtasksDto {
           .toList(),
       startMs: json['start_ms'] as int?,
       endMs: json['end_ms'] as int?,
+      referenceId: json['reference_id'] as String?,
+      reference:
+          json['reference'] is Map<String, dynamic>
+              ? PlanGroupAccumulationRef.fromJson(
+                json['reference'] as Map<String, dynamic>,
+              )
+              : null,
     );
   }
 
@@ -64,6 +88,8 @@ class UserSubtasksDto {
       'segment_ids': segmentIds,
       'start_ms': startMs,
       'end_ms': endMs,
+      'reference_id': referenceId,
+      'reference': reference?.toJson(),
     };
   }
 }

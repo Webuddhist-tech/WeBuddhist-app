@@ -12,7 +12,6 @@ import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_comments_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
-import 'package:flutter_pecha/features/connect/presentation/providers/connect_posts_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_comment_tile.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_comment_composer.dart';
@@ -60,6 +59,7 @@ class ConnectPostDetailPanel extends ConsumerStatefulWidget {
     required this.postId,
     this.initialPost,
     this.includeUnfollowed = false,
+    this.groupId,
     this.scrollController,
     this.showTopBar = false,
     this.showPostPreview = true,
@@ -68,6 +68,7 @@ class ConnectPostDetailPanel extends ConsumerStatefulWidget {
   final String postId;
   final ConnectPost? initialPost;
   final bool includeUnfollowed;
+  final String? groupId;
   final ScrollController? scrollController;
   final bool showTopBar;
   final bool showPostPreview;
@@ -82,7 +83,6 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
   late final bool _ownsScrollController;
   late ConnectPost _post;
   final ConnectOptimisticLikeState _likeState = ConnectOptimisticLikeState();
-  bool _captionExpanded = false;
   ConnectPostComment? _replyTarget;
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
@@ -178,11 +178,13 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
     setState(() {
       _post = _post.copyWith(commentCount: count);
     });
-    final provider =
-        widget.includeUnfollowed
-            ? discoverConnectPostsProvider
-            : myConnectPostsProvider;
-    ref.read(provider.notifier).updatePost(_post);
+    ref
+        .read(connectPostLikeActionsProvider)
+        .syncPost(
+          _post,
+          includeUnfollowed: widget.includeUnfollowed,
+          groupId: widget.groupId,
+        );
   }
 
   Future<void> _toggleLike() async {
@@ -204,6 +206,7 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
           wasLiked: wasLiked,
           optimisticLikeCount: _likeCount,
           includeUnfollowed: widget.includeUnfollowed,
+          groupId: widget.groupId,
         );
 
     if (!mounted) return;
@@ -380,8 +383,6 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
         _post.media
             .where((item) => item.isImage && item.url.isNotEmpty)
             .toList();
-    final shouldTruncate = caption.length > 180 && !_captionExpanded;
-
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -401,29 +402,12 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
             const SizedBox(height: 12),
             Text(
               caption,
-              maxLines: shouldTruncate ? 4 : null,
-              overflow: shouldTruncate ? TextOverflow.ellipsis : null,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 height: 1.45,
               ),
             ),
-            if (shouldTruncate)
-              GestureDetector(
-                onTap: () => setState(() => _captionExpanded = true),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    context.l10n.connect_caption_more,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
           ],
           if (imageMedia.isNotEmpty) ...[
             const SizedBox(height: 12),

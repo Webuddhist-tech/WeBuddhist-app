@@ -141,15 +141,16 @@ class _AddChantsToCollectionScreenState
                             ? AppColors.textPrimaryDark
                             : AppColors.textPrimary,
                   ),
-                  decoration: const InputDecoration(
-                    hintText: 'Search chants',
+                  decoration: InputDecoration(
+                    hintText:
+                        context.l10n.my_recitation_collection_search_chants,
                     border: InputBorder.none,
                     isDense: true,
                   ),
                 )
-                : const Text(
-                  'Add chants',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                : Text(
+                  context.l10n.my_recitation_collection_add_chants,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
         centerTitle: !_isSearching,
         scrolledUnderElevation: 0,
@@ -184,7 +185,7 @@ class _AddChantsToCollectionScreenState
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   child: Text(
-                    'Add to collection',
+                    context.l10n.my_recitation_collection_add_to_collection,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: buttonFg,

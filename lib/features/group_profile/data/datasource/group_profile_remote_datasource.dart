@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/group_profile/data/models/group_member_mo
 import 'package:flutter_pecha/features/group_profile/data/models/group_notification_preferences_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 
 /// Marker carried by the failure raised when a chant completion is rejected
@@ -503,9 +504,19 @@ class GroupProfileRemoteDatasource {
     }
   }
 
-  Future<void> joinGroupEvent(String eventId) async {
+  /// Also switches an existing participation when [participationType] is set.
+  Future<void> joinGroupEvent(
+    String eventId, {
+    GroupEventParticipationType? participationType,
+  }) async {
     try {
-      final response = await dio.post('/events/$eventId/participants');
+      final response = await dio.post(
+        '/events/$eventId/participants',
+        data:
+            participationType == null
+                ? null
+                : {'participation_type': participationType.apiValue},
+      );
       if (response.statusCode != 200 &&
           response.statusCode != 201 &&
           response.statusCode != 204) {

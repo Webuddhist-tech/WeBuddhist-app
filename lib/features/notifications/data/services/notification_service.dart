@@ -290,8 +290,11 @@ class NotificationService {
         NotificationChannels.timerSessionChannel,
       );
       await androidImplementation.createNotificationChannel(
-        NotificationChannels.timerCompleteChannel,
+        NotificationChannels.timerBellChannel,
       );
+      for (final id in NotificationChannels.legacyTimerBellIds) {
+        await androidImplementation.deleteNotificationChannel(id);
+      }
       _logger.info('Android notification channels created');
     }
   }

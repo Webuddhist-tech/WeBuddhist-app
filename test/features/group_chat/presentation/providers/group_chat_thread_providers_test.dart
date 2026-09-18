@@ -1,17 +1,24 @@
 import 'dart:async';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+
+import '../../../../core/analytics/recording_analytics_service.dart';
 
 const thumbsUp = '\u{1F44D}';
 const heart = '\u{2764}\u{FE0F}';
@@ -51,6 +58,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String roomId, {
     int skip = 0,
     int limit = 20,
+    String? messageType,
   }) async {
     listCallCount++;
     // Cleared before awaiting, so only this call is held.
@@ -87,7 +95,31 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String groupId, {
     required String body,
     String? parentMessageId,
+    String? messageType,
   }) async => Right(_message('sent'));
+
+  @override
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async =>
+      const Left(NotFoundFailure('not used'));
+
+  @override
+  Future<Either<Failure, ChatMessageDTO>> sendEventMessage(
+    String eventId, {
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  }) async => const Left(NotFoundFailure('not used'));
+
+  @override
+  Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
+    String roomId, {
+    required List<String> messageIds,
+  }) async => const Right([]);
+
+  @override
+  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
+    String messageId,
+  ) async => const Left(NotFoundFailure('not used'));
 
   @override
   Future<Either<Failure, ChatRoomMembersPage>> listRoomMembers(
@@ -102,8 +134,23 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, Unit>> markRoomRead(String roomId) async =>
       const Right(unit);
 
+  @override
+  Future<Either<Failure, Unit>> reportMessage(
+    String roomId, {
+    required String messageId,
+    required String reason,
+    String? description,
+  }) async => const Right(unit);
+
   final List<String> deleteCalls = [];
   Failure? deleteFailure;
+
+  /// Ids the single-message route refuses; others succeed.
+  Set<String> failDeleteOf = const {};
+
+  /// Holds the next single delete until completed, so the caller can be torn
+  /// down while it is in flight.
+  Completer<void>? holdNextDelete;
 
   @override
   Future<Either<Failure, Unit>> deleteMessage(
@@ -111,24 +158,61 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     required String messageId,
   }) async {
     deleteCalls.add(messageId);
+    final hold = holdNextDelete;
+    holdNextDelete = null;
+    if (hold != null) await hold.future;
     final failure = deleteFailure;
+    if (failure != null) return Left(failure);
+    if (failDeleteOf.contains(messageId)) {
+      return const Left(ServerFailure('refused'));
+    }
+    return const Right(unit);
+  }
+
+  /// Each bulk call's ids, in call order.
+  final List<List<String>> bulkDeleteCalls = [];
+
+  /// The bulk route's refusal when set; otherwise it answers 204.
+  Failure? bulkDeleteFailure;
+
+  @override
+  Future<Either<Failure, Unit>> deleteMessages(
+    String roomId, {
+    required List<String> messageIds,
+  }) async {
+    bulkDeleteCalls.add(messageIds);
+    final failure = bulkDeleteFailure;
     if (failure != null) return Left(failure);
     return const Right(unit);
   }
+
+  /// Holds the next reaction call until completed. The call is still
+  /// recorded (and its answer decided) up front, so call order is unaffected.
+  Completer<void>? holdNextReaction;
 
   @override
   Future<Either<Failure, List<ChatMessageReactionDTO>>> addReaction(
     String roomId, {
     required String messageId,
     required String emoji,
-  }) async => _reaction('POST $emoji');
+  }) => _reactionCall('POST $emoji');
 
   @override
   Future<Either<Failure, List<ChatMessageReactionDTO>>> removeReaction(
     String roomId, {
     required String messageId,
     required String emoji,
-  }) async => _reaction('DELETE $emoji');
+  }) => _reactionCall('DELETE $emoji');
+
+  Future<Either<Failure, List<ChatMessageReactionDTO>>> _reactionCall(
+    String call,
+  ) async {
+    final response = _reaction(call);
+    final hold = holdNextReaction;
+    holdNextReaction = null;
+    if (hold != null) await hold.future;
+    return response;
+  }
 
   Either<Failure, List<ChatMessageReactionDTO>> _reaction(String call) {
     reactionCalls.add(call);
@@ -168,11 +252,16 @@ Future<void> _settle() async {
 
 void main() {
   late _FakeGroupChatRepository repository;
+  late RecordingAnalyticsService analytics;
   late ProviderContainer container;
 
   ProviderContainer buildContainer() {
+    analytics = RecordingAnalyticsService();
     return ProviderContainer(
-      overrides: [groupChatRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        groupChatRepositoryProvider.overrideWithValue(repository),
+        analyticsServiceProvider.overrideWithValue(analytics),
+      ],
     );
   }
 
@@ -282,6 +371,173 @@ void main() {
         'm2',
         'm1',
       ]);
+    });
+
+    test('refreshLatest reports a message nothing else delivered', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [_message('m2'), _message('m1')];
+      expect(
+        await notifier.refreshLatest(),
+        ThreadRefreshResult.missedMessages,
+      );
+    });
+
+    test(
+      'refreshLatest reports nothing missed when the page is all held',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
+
+        expect(
+          await notifier.refreshLatest(),
+          ThreadRefreshResult.nothingMissed,
+        );
+      },
+    );
+
+    test(
+      'a message the socket delivers mid-refresh does not count as missed',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
+
+        // The push and the socket frame race the refetch; the socket wins.
+        repository.history = [_message('m2'), _message('m1')];
+        final hold = repository.holdNextList = Completer<void>();
+        final refreshing = notifier.refreshLatest();
+        notifier.appendLive(_message('m2'));
+        hold.complete();
+
+        expect(await refreshing, ThreadRefreshResult.nothingMissed);
+        expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
+      },
+    );
+
+    test('a socket frame landing just after the page is not a miss', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      // The push and the socket frame race the refetch; the page wins by
+      // a hair, and the frame follows inside the grace window.
+      repository.history = [_message('m2'), _message('m1')];
+      final refreshing = notifier.refreshLatest(
+        socketGrace: const Duration(milliseconds: 50),
+      );
+      await _settle();
+      // The row is already on screen while the verdict is pending.
+      expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
+      notifier.appendFromSocket(_message('m2'));
+
+      expect(await refreshing, ThreadRefreshResult.nothingMissed);
+      expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
+    });
+
+    test('a socket that stays silent through the grace is a miss', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [_message('m2'), _message('m1')];
+      expect(
+        await notifier.refreshLatest(
+          socketGrace: const Duration(milliseconds: 50),
+        ),
+        ThreadRefreshResult.missedMessages,
+      );
+    });
+
+    test('only the socket vouches, not an own send or a refresh', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [_message('m2'), _message('m1')];
+      final refreshing = notifier.refreshLatest(
+        socketGrace: const Duration(milliseconds: 50),
+      );
+      await _settle();
+      // The POST echo path: the same row, but it says nothing about the
+      // socket, so it must not clear the miss.
+      notifier.appendLive(_message('m2'));
+
+      expect(await refreshing, ThreadRefreshResult.missedMessages);
+    });
+
+    test('a frame for one of several missed rows is not enough', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [_message('m3'), _message('m2'), _message('m1')];
+      final refreshing = notifier.refreshLatest(
+        socketGrace: const Duration(milliseconds: 50),
+      );
+      await _settle();
+      notifier.appendFromSocket(_message('m3'));
+
+      expect(await refreshing, ThreadRefreshResult.missedMessages);
+    });
+
+    test('the grace bookkeeping is released once judged', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [_message('m2'), _message('m1')];
+      await notifier.refreshLatest(
+        socketGrace: const Duration(milliseconds: 20),
+      );
+      // A frame after the window has closed neither throws nor duplicates.
+      notifier.appendFromSocket(_message('m2'));
+      expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
+
+      // A second refresh with nothing new judges promptly and cleanly.
+      expect(
+        await notifier.refreshLatest(
+          socketGrace: const Duration(milliseconds: 20),
+        ),
+        ThreadRefreshResult.nothingMissed,
+      );
+    });
+
+    test('a restart from a full unseen page counts as missed', () async {
+      repository = _FakeGroupChatRepository(history: [_message('old')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [
+        for (var i = 0; i < 40; i++) _message('new$i'),
+        _message('old'),
+      ];
+      expect(
+        await notifier.refreshLatest(),
+        ThreadRefreshResult.missedMessages,
+      );
+    });
+
+    test('a failed refreshLatest says so', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.listFailure = const NetworkFailure('offline');
+      expect(await notifier.refreshLatest(), ThreadRefreshResult.failed);
     });
   });
 
@@ -481,276 +737,280 @@ void main() {
       expect(notifier.state.messages.single.reactions.single.emoji, heart);
     });
 
-    test('a loadMore landing mid-refresh is not counted as an arrival',
-        () async {
-      // `loadMore` gates on isLoadingMore/isLoading and a refresh sets
-      // neither, so the two overlap freely.
-      repository = _FakeGroupChatRepository(
-        history: [for (var i = 0; i < 60; i++) _message('m$i')],
-      );
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-      expect(notifier.state.messages, hasLength(30));
-      expect(notifier.state.total, 60);
+    test(
+      'a loadMore landing mid-refresh is not counted as an arrival',
+      () async {
+        // `loadMore` gates on isLoadingMore/isLoading and a refresh sets
+        // neither, so the two overlap freely.
+        repository = _FakeGroupChatRepository(
+          history: [for (var i = 0; i < 60; i++) _message('m$i')],
+        );
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
+        expect(notifier.state.messages, hasLength(30));
+        expect(notifier.state.total, 60);
 
-      final hold = Completer<void>();
-      repository.holdNextList = hold;
-      final refreshing = notifier.refreshLatest();
-      await Future<void>.delayed(Duration.zero);
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        final refreshing = notifier.refreshLatest();
+        await Future<void>.delayed(Duration.zero);
 
-      // The older page lands while the refresh is still awaiting its own.
-      await notifier.loadMore();
-      expect(notifier.state.messages, hasLength(60));
+        // The older page lands while the refresh is still awaiting its own.
+        await notifier.loadMore();
+        expect(notifier.state.messages, hasLength(60));
 
-      hold.complete();
-      await refreshing;
+        hold.complete();
+        await refreshing;
 
-      // That page is older history the server already counted, not a socket
-      // arrival — adding it would leave hasMore true past the real end and
-      // send the next loadMore at an empty offset.
-      expect(notifier.state.total, 60);
-      expect(notifier.state.hasMore, isFalse);
-    });
+        // That page is older history the server already counted, not a socket
+        // arrival — adding it would leave hasMore true past the real end and
+        // send the next loadMore at an empty offset.
+        expect(notifier.state.total, 60);
+        expect(notifier.state.hasMore, isFalse);
+      },
+    );
 
-    test('a loadMore landing mid-restart is neither prepended nor counted',
-        () async {
-      // 60 on the server: the first page holds m0..m29, loadMore can fetch
-      // m30..m59.
-      repository = _FakeGroupChatRepository(
-        history: [for (var i = 0; i < 60; i++) _message('m$i')],
-      );
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
+    test(
+      'a loadMore landing mid-restart is neither prepended nor counted',
+      () async {
+        // 60 on the server: the first page holds m0..m29, loadMore can fetch
+        // m30..m59.
+        repository = _FakeGroupChatRepository(
+          history: [for (var i = 0; i < 60; i++) _message('m$i')],
+        );
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
 
-      final hold = Completer<void>();
-      repository.holdNextList = hold;
-      final refreshing = notifier.refreshLatest();
-      await Future<void>.delayed(Duration.zero);
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        final refreshing = notifier.refreshLatest();
+        await Future<void>.delayed(Duration.zero);
 
-      // Older history lands while the refresh is still awaiting its page.
-      await notifier.loadMore();
-      expect(notifier.state.messages, hasLength(60));
+        // Older history lands while the refresh is still awaiting its page.
+        await notifier.loadMore();
+        expect(notifier.state.messages, hasLength(60));
 
-      // Meanwhile 30 new messages arrived on the server, so the newest page
-      // comes back full and shares nothing with what is held: a restart.
-      repository.history = [
-        for (var i = 0; i < 30; i++) _message('n$i'),
-        ...repository.history,
-      ];
-      hold.complete();
-      await refreshing;
+        // Meanwhile 30 new messages arrived on the server, so the newest page
+        // comes back full and shares nothing with what is held: a restart.
+        repository.history = [
+          for (var i = 0; i < 30; i++) _message('n$i'),
+          ...repository.history,
+        ];
+        hold.complete();
+        await refreshing;
 
-      final ids = notifier.state.messages.map((m) => m.id).toList();
-      // Only the newest page. The older rows loadMore appended are history
-      // the restart walks back through, not arrivals to sit on top of it.
-      expect(ids, [for (var i = 0; i < 30; i++) 'n$i']);
-      // 90 on the server, and nothing the socket added on top of that.
-      expect(notifier.state.total, 90);
-      expect(notifier.state.hasMore, isTrue);
-    });
+        final ids = notifier.state.messages.map((m) => m.id).toList();
+        // Only the newest page. The older rows loadMore appended are history
+        // the restart walks back through, not arrivals to sit on top of it.
+        expect(ids, [for (var i = 0; i < 30; i++) 'n$i']);
+        // 90 on the server, and nothing the socket added on top of that.
+        expect(notifier.state.total, 90);
+        expect(notifier.state.hasMore, isTrue);
+      },
+    );
 
-    test('a socket arrival mid-restart still sits above the new page',
-        () async {
-      repository = _FakeGroupChatRepository(
-        history: [for (var i = 0; i < 30; i++) _message('m$i')],
-      );
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
+    test(
+      'a socket arrival mid-restart still sits above the new page',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [for (var i = 0; i < 30; i++) _message('m$i')],
+        );
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
 
-      final hold = Completer<void>();
-      repository.holdNextList = hold;
-      final refreshing = notifier.refreshLatest();
-      await Future<void>.delayed(Duration.zero);
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        final refreshing = notifier.refreshLatest();
+        await Future<void>.delayed(Duration.zero);
 
-      notifier.appendLive(_message('live'));
-      repository.history = [
-        for (var i = 0; i < 30; i++) _message('n$i'),
-        ...repository.history,
-      ];
-      hold.complete();
-      await refreshing;
+        notifier.appendLive(_message('live'));
+        repository.history = [
+          for (var i = 0; i < 30; i++) _message('n$i'),
+          ...repository.history,
+        ];
+        hold.complete();
+        await refreshing;
 
-      final ids = notifier.state.messages.map((m) => m.id).toList();
-      expect(ids.first, 'live');
-      expect(ids.sublist(1), [for (var i = 0; i < 30; i++) 'n$i']);
-      // 60 on the server plus the arrival its count predates.
-      expect(notifier.state.total, 61);
-    });
+        final ids = notifier.state.messages.map((m) => m.id).toList();
+        expect(ids.first, 'live');
+        expect(ids.sublist(1), [for (var i = 0; i < 30; i++) 'n$i']);
+        // 60 on the server plus the arrival its count predates.
+        expect(notifier.state.total, 61);
+      },
+    );
 
-    test('a no-op echo arriving after a member update does not shadow it',
-        () async {
-      repository = _FakeGroupChatRepository(
-        history: [
-          reacted('m1', const [
-            ChatMessageReactionDTO(
-              emoji: thumbsUp,
-              count: 1,
-              reactedByMe: true,
-              userIds: ['me'],
-            ),
-          ]),
-        ],
-      );
-      repository.reactionResponses = const [
-        [
-          ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
-          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
-        ],
-        [ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me'])],
-      ];
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
+    test(
+      'a no-op echo arriving after a member update does not shadow it',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [
+            reacted('m1', const [
+              ChatMessageReactionDTO(
+                emoji: thumbsUp,
+                count: 1,
+                reactedByMe: true,
+                userIds: ['me'],
+              ),
+            ]),
+          ],
+        );
+        repository.reactionResponses = const [
+          [
+            ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
+            ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+          ],
+          [
+            ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+          ],
+        ];
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
 
-      final pending = notifier.toggleReaction(
-        'm1',
-        heart,
-        roomIdForCall: 'room-1',
-        currentUserId: 'me',
-      );
-      // Another member's fuller update arrives first...
-      notifier.replaceReactions(
-        'm1',
-        const [
-          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
-          ChatMessageReactionDTO(emoji: joy, count: 1, userIds: ['other']),
-        ],
-        currentUserId: 'me',
-      );
-      // ...then our own DELETE echo, computed at the same instant as the
-      // response the swap already applied, lands after it. It agrees with the
-      // settled set too; taking it as "latest" would drop the member's joy.
-      notifier.replaceReactions(
-        'm1',
-        const [ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me'])],
-        currentUserId: 'me',
-      );
-
-      await pending;
-      final emoji =
-          notifier.state.messages.single.reactions
-              .map((reaction) => reaction.emoji)
-              .toList();
-      expect(emoji, containsAll(<String>[heart, joy]));
-    });
-
-    test('a replayable broadcast survives a later echo during the swap',
-        () async {
-      repository = _FakeGroupChatRepository(
-        history: [
-          reacted('m1', const [
-            ChatMessageReactionDTO(
-              emoji: thumbsUp,
-              count: 1,
-              reactedByMe: true,
-              userIds: ['me'],
-            ),
-          ]),
-        ],
-      );
-      repository.reactionResponses = const [
-        [
-          ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
-          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
-        ],
-        [ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me'])],
-      ];
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      final pending = notifier.toggleReaction(
-        'm1',
-        heart,
-        roomIdForCall: 'room-1',
-        currentUserId: 'me',
-      );
-      // Another member's summary, computed after our swap settled on the
-      // server, arrives first...
-      notifier.replaceReactions(
-        'm1',
-        const [
+        final pending = notifier.toggleReaction(
+          'm1',
+          heart,
+          roomIdForCall: 'room-1',
+          currentUserId: 'me',
+        );
+        // Another member's fuller update arrives first...
+        notifier.replaceReactions('m1', const [
           ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
           ChatMessageReactionDTO(emoji: joy, count: 1, userIds: ['other']),
-        ],
-        currentUserId: 'me',
-      );
-      // ...and our own intermediate echo lands after it. Nothing on the wire
-      // orders them, and a single deferred slot let the echo overwrite the
-      // one summary worth keeping.
-      notifier.replaceReactions(
-        'm1',
-        const [
+        ], currentUserId: 'me');
+        // ...then our own DELETE echo, computed at the same instant as the
+        // response the swap already applied, lands after it. It agrees with the
+        // settled set too; taking it as "latest" would drop the member's joy.
+        notifier.replaceReactions('m1', const [
+          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+        ], currentUserId: 'me');
+
+        await pending;
+        final emoji =
+            notifier.state.messages.single.reactions
+                .map((reaction) => reaction.emoji)
+                .toList();
+        expect(emoji, containsAll(<String>[heart, joy]));
+      },
+    );
+
+    test(
+      'a replayable broadcast survives a later echo during the swap',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [
+            reacted('m1', const [
+              ChatMessageReactionDTO(
+                emoji: thumbsUp,
+                count: 1,
+                reactedByMe: true,
+                userIds: ['me'],
+              ),
+            ]),
+          ],
+        );
+        repository.reactionResponses = const [
+          [
+            ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
+            ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+          ],
+          [
+            ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+          ],
+        ];
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
+
+        final pending = notifier.toggleReaction(
+          'm1',
+          heart,
+          roomIdForCall: 'room-1',
+          currentUserId: 'me',
+        );
+        // Another member's summary, computed after our swap settled on the
+        // server, arrives first...
+        notifier.replaceReactions('m1', const [
+          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+          ChatMessageReactionDTO(emoji: joy, count: 1, userIds: ['other']),
+        ], currentUserId: 'me');
+        // ...and our own intermediate echo lands after it. Nothing on the wire
+        // orders them, and a single deferred slot let the echo overwrite the
+        // one summary worth keeping.
+        notifier.replaceReactions('m1', const [
           ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
           ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
-        ],
-        currentUserId: 'me',
-      );
+        ], currentUserId: 'me');
 
-      await pending;
-      final emoji =
-          notifier.state.messages.single.reactions
-              .map((reaction) => reaction.emoji)
-              .toList();
-      expect(emoji, containsAll(<String>[heart, joy]));
-    });
+        await pending;
+        final emoji =
+            notifier.state.messages.single.reactions
+                .map((reaction) => reaction.emoji)
+                .toList();
+        expect(emoji, containsAll(<String>[heart, joy]));
+      },
+    );
 
-    test('an out-of-order socket arrival mid-refresh is still counted',
-        () async {
-      // 31 on the server, so the first page of 30 leaves m31 unread.
-      repository = _FakeGroupChatRepository(
-        history: [for (var i = 1; i <= 31; i++) _message('m$i')],
-      );
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-      expect(notifier.state.hasMore, isTrue);
+    test(
+      'an out-of-order socket arrival mid-refresh is still counted',
+      () async {
+        // 31 on the server, so the first page of 30 leaves m31 unread.
+        repository = _FakeGroupChatRepository(
+          history: [for (var i = 1; i <= 31; i++) _message('m$i')],
+        );
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
+        expect(notifier.state.hasMore, isTrue);
 
-      final hold = Completer<void>();
-      repository.holdNextList = hold;
-      final refreshing = notifier.refreshLatest();
-      await Future<void>.delayed(Duration.zero);
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        final refreshing = notifier.refreshLatest();
+        await Future<void>.delayed(Duration.zero);
 
-      // The server gains m0 before its page is computed, so the page carries
-      // it. The socket then delivers a brand-new message first and m0 second,
-      // leaving the one the page *does* include on top of the one it does
-      // not. Cutting at the first shared row would hide `live`.
-      repository.history = [_message('m0'), ...repository.history];
-      notifier.appendLive(_message('live'));
-      notifier.appendLive(_message('m0'));
-      hold.complete();
-      await refreshing;
+        // The server gains m0 before its page is computed, so the page carries
+        // it. The socket then delivers a brand-new message first and m0 second,
+        // leaving the one the page *does* include on top of the one it does
+        // not. Cutting at the first shared row would hide `live`.
+        repository.history = [_message('m0'), ...repository.history];
+        notifier.appendLive(_message('live'));
+        notifier.appendLive(_message('m0'));
+        hold.complete();
+        await refreshing;
 
-      // 32 on the server, plus the arrival its count predates. Cutting at the
-      // first shared row gives 32, and with 32 rows held that reads as "all
-      // loaded" while m31 is still on the server unread.
-      expect(notifier.state.total, 33);
-      expect(notifier.state.hasMore, isTrue);
-    });
+        // 32 on the server, plus the arrival its count predates. Cutting at the
+        // first shared row gives 32, and with 32 rows held that reads as "all
+        // loaded" while m31 is still on the server unread.
+        expect(notifier.state.total, 33);
+        expect(notifier.state.hasMore, isTrue);
+      },
+    );
 
-    test('refreshLatest keeps counting messages that arrived mid-request',
-        () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-      expect(notifier.state.total, 1);
+    test(
+      'refreshLatest keeps counting messages that arrived mid-request',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final notifier = _keepAlive(container);
+        await _settle();
+        expect(notifier.state.total, 1);
 
-      // The socket delivers while the refresh is in flight, so the count that
-      // comes back with the page was taken before it existed.
-      final refreshing = notifier.refreshLatest();
-      notifier.appendLive(_message('m2'));
-      await refreshing;
+        // The socket delivers while the refresh is in flight, so the count that
+        // comes back with the page was taken before it existed.
+        final refreshing = notifier.refreshLatest();
+        notifier.appendLive(_message('m2'));
+        await refreshing;
 
-      expect(notifier.state.messages, hasLength(2));
-      // Overwriting with the page's figure would say 1 for two held rows, and
-      // hasMore would latch false with history still unread.
-      expect(notifier.state.total, 2);
-      expect(notifier.state.messages.length <= notifier.state.total, isTrue);
-    });
+        expect(notifier.state.messages, hasLength(2));
+        // Overwriting with the page's figure would say 1 for two held rows, and
+        // hasMore would latch false with history still unread.
+        expect(notifier.state.total, 2);
+        expect(notifier.state.messages.length <= notifier.state.total, isTrue);
+      },
+    );
 
     test('a summary held mid-fetch survives the row being kept', () async {
       repository = _FakeGroupChatRepository(history: [_message('m1')]);
@@ -794,7 +1054,9 @@ void main() {
           ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
         ],
         // DELETE of the old one, computed before the other member commits.
-        [ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me'])],
+        [
+          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+        ],
       ];
       container = buildContainer();
       final notifier = _keepAlive(container);
@@ -808,14 +1070,10 @@ void main() {
       );
       // Another member reacts mid-swap. This summary is newer than either of
       // our own responses, so it must survive the swap rather than be dropped.
-      notifier.replaceReactions(
-        'm1',
-        const [
-          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
-          ChatMessageReactionDTO(emoji: joy, count: 1, userIds: ['other']),
-        ],
-        currentUserId: 'me',
-      );
+      notifier.replaceReactions('m1', const [
+        ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+        ChatMessageReactionDTO(emoji: joy, count: 1, userIds: ['other']),
+      ], currentUserId: 'me');
 
       await pending;
       final emoji =
@@ -843,7 +1101,9 @@ void main() {
           ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
           ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
         ],
-        [ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me'])],
+        [
+          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+        ],
       ];
       container = buildContainer();
       final notifier = _keepAlive(container);
@@ -858,14 +1118,10 @@ void main() {
       // The broadcast the server fans back to us for our own POST: it still
       // carries the emoji being replaced, so it is older than where the swap
       // ends up and must not be replayed over it.
-      notifier.replaceReactions(
-        'm1',
-        const [
-          ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
-          ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
-        ],
-        currentUserId: 'me',
-      );
+      notifier.replaceReactions('m1', const [
+        ChatMessageReactionDTO(emoji: thumbsUp, count: 1, userIds: ['me']),
+        ChatMessageReactionDTO(emoji: heart, count: 1, userIds: ['me']),
+      ], currentUserId: 'me');
 
       await pending;
       expect(notifier.state.messages.single.reactions.single.emoji, heart);
@@ -1465,6 +1721,97 @@ void main() {
     });
   });
 
+  group('deleteMessages', () {
+    test('one id takes the single route, no bulk call', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1']);
+
+      expect(outcome.deleted, {'m1'});
+      expect(outcome.failed, isEmpty);
+      expect(repository.deleteCalls, ['m1']);
+      expect(repository.bulkDeleteCalls, isEmpty);
+    });
+
+    test('several ids go in one bulk call and all tombstone on 204', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m3'), _message('m2'), _message('m1')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(outcome.deleted, {'m1', 'm2'});
+      expect(outcome.failed, isEmpty);
+      expect(repository.bulkDeleteCalls, [
+        ['m1', 'm2'],
+      ]);
+      expect(repository.deleteCalls, isEmpty);
+      // 204 carries no body: stamped locally, like a single delete.
+      expect(_byId(notifier, 'm1').deletedAt, isNotNull);
+      expect(_byId(notifier, 'm2').deletedAt, isNotNull);
+      expect(_byId(notifier, 'm3').deletedAt, isNull);
+    });
+
+    test('duplicate and empty ids are dropped before the call', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', '', 'm2', 'm1']);
+
+      expect(repository.bulkDeleteCalls, [
+        ['m1', 'm2'],
+      ]);
+      expect(outcome.deleted, {'m1', 'm2'});
+    });
+
+    test('a server without the bulk route falls back to one call each', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m3'), _message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ChatBulkDeleteUnsupportedFailure();
+      repository.failDeleteOf = {'m2'};
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', 'm2', 'm3']);
+
+      expect(repository.bulkDeleteCalls, hasLength(1));
+      expect(repository.deleteCalls, ['m1', 'm2', 'm3']);
+      expect(outcome.deleted, {'m1', 'm3'});
+      expect(outcome.failed, {'m2'});
+      expect(_byId(notifier, 'm1').deletedAt, isNotNull);
+      expect(_byId(notifier, 'm2').deletedAt, isNull);
+    });
+
+    test('a refusal is all or nothing: every id fails, nothing tombstones', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ServerFailure('NOT_SENDER: m2');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final outcome = await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(outcome.deleted, isEmpty);
+      expect(outcome.failed, {'m1', 'm2'});
+      expect(repository.deleteCalls, isEmpty);
+      expect(_byId(notifier, 'm1').deletedAt, isNull);
+    });
+  });
+
   group('applyDeletion', () {
     test('a broadcast tombstones a loaded message', () async {
       repository = _FakeGroupChatRepository(
@@ -1511,6 +1858,103 @@ void main() {
       expect(_byId(notifier, 'm1').deletedAt, '2026-09-03T10:00:00Z');
     });
 
+    test('stamps every loaded reply quoting the deleted message', () async {
+      final reply = ChatMessageDTO(
+        id: 'r1',
+        roomId: 'room-1',
+        senderId: 'b',
+        senderEmail: 'b@example.com',
+        body: 'ok',
+        createdAt: '2026-08-28T12:01:00Z',
+        parent: const ChatMessageParentDTO(
+          id: 'gone',
+          senderId: 'a',
+          senderEmail: 'a@example.com',
+          body: 'hello',
+          createdAt: '2026-08-28T12:00:00Z',
+        ),
+      );
+      repository = _FakeGroupChatRepository(
+        history: [reply, _message('m0')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      // The original is outside the loaded window; the quote still turns
+      // into a tombstone, and the reply itself stays live.
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+      expect(_byId(notifier, 'm0').deletedAt, isNull);
+    });
+
+    test('a refresh keeps the quote a tombstone when the original is outside '
+        'the window', () async {
+      // The server does not stamp `deleted_at` onto an embedded parent, so
+      // the refetched reply quotes the original as live.
+      final reply = ChatMessageDTO(
+        id: 'r1',
+        roomId: 'room-1',
+        senderId: 'b',
+        senderEmail: 'b@example.com',
+        body: 'ok',
+        createdAt: '2026-08-28T12:01:00Z',
+        parent: const ChatMessageParentDTO(
+          id: 'gone',
+          senderId: 'a',
+          senderEmail: 'a@example.com',
+          body: 'hello',
+          createdAt: '2026-08-28T12:00:00Z',
+        ),
+      );
+      repository = _FakeGroupChatRepository(history: [reply, _message('m0')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      // No fetch in flight: nothing is held for a page, only remembered.
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').parent?.deletedAt, isNotNull);
+
+      await notifier.refreshLatest();
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+    });
+
+    test('a reply arriving after its original was deleted quotes a '
+        'tombstone', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m0')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.applyDeletion('gone', deletedAt: '2026-09-03T10:00:00Z');
+
+      notifier.appendLive(
+        ChatMessageDTO(
+          id: 'r1',
+          roomId: 'room-1',
+          senderId: 'b',
+          senderEmail: 'b@example.com',
+          body: 'ok',
+          createdAt: '2026-08-28T12:01:00Z',
+          parent: const ChatMessageParentDTO(
+            id: 'gone',
+            senderId: 'a',
+            senderEmail: 'a@example.com',
+            body: 'hello',
+            createdAt: '2026-08-28T12:00:00Z',
+          ),
+        ),
+      );
+
+      expect(_byId(notifier, 'r1').parent?.deletedAt, '2026-09-03T10:00:00Z');
+      expect(_byId(notifier, 'r1').deletedAt, isNull);
+    });
+
     test('a deletion for a message no page brings back is dropped', () async {
       repository = _FakeGroupChatRepository(history: [_message('m0')]);
       container = buildContainer();
@@ -1527,7 +1971,6 @@ void main() {
       expect(_byId(notifier, 'gone').deletedAt, isNull);
     });
   });
-
 
   group('deletion vs a page already in flight', () {
     test(
@@ -1575,6 +2018,215 @@ void main() {
       await refresh;
 
       expect(_byId(notifier, 'm1').deletedAt, '2026-09-03T10:00:00Z');
+    });
+  });
+
+  group('analytics', () {
+    ChatMessageDTO mine(String id, String emoji) {
+      return _message(id).copyWith(
+        reactions: [
+          ChatMessageReactionDTO(emoji: emoji, count: 1, reactedByMe: true),
+        ],
+      );
+    }
+
+    test('a confirmed reaction fires group_message_reacted', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', thumbsUp, roomIdForCall: 'room-1');
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+      expect(analytics.events.single.properties, {
+        'room_id': 'room-1',
+        'message_id': 'm1',
+        'emoji': thumbsUp,
+        'action': 'added',
+      });
+    });
+
+    test('taking my own emoji off reports a removal', () async {
+      repository = _FakeGroupChatRepository(history: [mine('m1', thumbsUp)]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', thumbsUp, roomIdForCall: 'room-1');
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+      expect(analytics.events.single.properties['action'], 'removed');
+    });
+
+    test('a swap fires once, for the new emoji, not for the cleanup', () async {
+      repository = _FakeGroupChatRepository(history: [mine('m1', thumbsUp)]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', heart, roomIdForCall: 'room-1');
+
+      expect(repository.reactionCalls, ['POST $heart', 'DELETE $thumbsUp']);
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+      expect(analytics.events.single.properties['emoji'], heart);
+      expect(analytics.events.single.properties['action'], 'swapped');
+    });
+
+    test('a failed reaction fires nothing', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      repository.reactionFailure = const NetworkFailure('offline');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.toggleReaction('m1', thumbsUp, roomIdForCall: 'room-1');
+
+      expect(analytics.events, isEmpty);
+    });
+
+    test('a confirmed delete fires group_message_deleted', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessage('m1');
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
+      expect(analytics.events.single.properties, {
+        'room_id': 'room-1',
+        'message_id': 'm1',
+      });
+    });
+
+    test(
+      'a reaction confirmed after the notifier is torn down still counts',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final subscription = container.listen(
+          groupChatThreadProvider('room-1'),
+          (_, _) {},
+        );
+        final notifier = container.read(
+          groupChatThreadProvider('room-1').notifier,
+        );
+        await _settle();
+
+        final hold = Completer<void>();
+        repository.holdNextReaction = hold;
+        final toggle = notifier.toggleReaction(
+          'm1',
+          thumbsUp,
+          roomIdForCall: 'room-1',
+        );
+        await _settle();
+
+        // The member backs out of the chat while the POST is in flight.
+        subscription.close();
+        await _settle();
+        expect(notifier.mounted, isFalse);
+
+        hold.complete();
+        await toggle;
+
+        expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
+        expect(analytics.events.single.properties['action'], 'added');
+      },
+    );
+
+    test(
+      'a delete confirmed after the notifier is torn down still counts',
+      () async {
+        repository = _FakeGroupChatRepository(history: [_message('m1')]);
+        container = buildContainer();
+        final subscription = container.listen(
+          groupChatThreadProvider('room-1'),
+          (_, _) {},
+        );
+        final notifier = container.read(
+          groupChatThreadProvider('room-1').notifier,
+        );
+        await _settle();
+
+        final hold = Completer<void>();
+        repository.holdNextDelete = hold;
+        final delete = notifier.deleteMessage('m1');
+        await _settle();
+
+        subscription.close();
+        await _settle();
+        expect(notifier.mounted, isFalse);
+
+        hold.complete();
+        await delete;
+
+        expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
+        expect(analytics.events.single.properties['message_id'], 'm1');
+      },
+    );
+
+    test('a failed delete fires nothing', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m1')]);
+      repository.deleteFailure = const ServerFailure('boom');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessage('m1');
+
+      expect(analytics.events, isEmpty);
+    });
+
+    test('a bulk delete fires one event per message', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(analytics.eventNames, [
+        AnalyticsEvents.groupMessageDeleted,
+        AnalyticsEvents.groupMessageDeleted,
+      ]);
+      expect(
+        analytics.events.map((e) => e.properties['message_id']).toSet(),
+        {'m1', 'm2'},
+      );
+    });
+
+    test('a refused bulk delete fires nothing', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ServerFailure('NOT_SENDER: m2');
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(analytics.events, isEmpty);
+    });
+
+    test('the one-call-each fallback reports only what succeeded', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_message('m2'), _message('m1')],
+      );
+      repository.bulkDeleteFailure = const ChatBulkDeleteUnsupportedFailure();
+      repository.failDeleteOf = {'m2'};
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.deleteMessages(['m1', 'm2']);
+
+      expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
+      expect(analytics.events.single.properties['message_id'], 'm1');
     });
   });
 

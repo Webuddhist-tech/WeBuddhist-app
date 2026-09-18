@@ -185,6 +185,39 @@
   "recitations_no_content": "沒有可用的持誦",
   "recitations_no_saved": "沒有已保存的持誦",
   "recitations_login_prompt": "請登錄以查看您保存的持誦",
+  "my_recitation_collection_new_title": "新收藏",
+  "my_recitation_collection_next": "下一步",
+  "my_recitation_collection_create": "建立",
+  "my_recitation_collection_create_button": "建立收藏",
+  "my_recitation_collection_change_title": "更改標題",
+  "my_recitation_collection_change": "更改",
+  "my_recitation_collection_add_chants": "加入持誦",
+  "my_recitation_collection_search_chants": "搜尋持誦",
+  "my_recitation_collection_add_to_collection": "加入收藏",
+  "my_recitation_collection_edit": "編輯收藏",
+  "my_recitation_collection_delete": "刪除收藏",
+  "my_recitation_collection_delete_title": "要刪除收藏嗎？",
+  "my_recitation_collection_delete_message": "此收藏將被永久刪除。",
+  "my_recitation_collection_fallback_title": "持誦收藏",
+  "my_recitation_collection_unavailable": "已無法使用",
+  "my_recitation_collection_chant_count": "{count, plural, =0{0 項持誦} =1{1 項持誦} other{{count} 項持誦}}",
+  "@my_recitation_collection_chant_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "my_recitation_collection_chant_count_owner": "{count, plural, =0{0 項持誦 • 我} =1{1 項持誦 • 我} other{{count} 項持誦 • 我}}",
+  "@my_recitation_collection_chant_count_owner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarks_empty_chant_collections_title": "尚未收藏任何持誦收藏。",
+  "bookmarks_empty_chant_collections_subtitle": "收藏持誦收藏後會顯示在這裡。",
   "notification_settings": "通知設定",
   "notification_allow_title": "允許通知",
   "notification_allow_subtitle_enabled": "此應用程式已啟用通知",
@@ -555,6 +588,9 @@
   "second_version_msg": "次要版本將會顯示在主要版本的內文下方",
   "version": "所有版本",
   "parallel_version": "對讀版本",
+  "reader_languages_title": "語言",
+  "reader_original_label": "原文",
+  "reader_translation_label": "譯文",
   "version_not_available": "無可用版本",
   "read_full_text": "閱讀完整文本",
   "reader_source_label": "來源",
@@ -775,6 +811,7 @@
   "share_chant_message": "我想和你分享这段诵文。你可以在WeBuddhist上练习它，还能找到整个诵文和经典库。",
   "share_quote_message": "我喜欢WeBuddhist上的这段引语，想和你分享。在WeBuddhist应用上阅读更多深刻的引语。",
   "share_poem_message": "我喜欢WeBuddhist上的这首诗，想和你分享。",
+  "share_poem_title": "「{title}」",
   "share_mala_message": "我一直在WeBuddhist上使用这串电子念珠，想和你分享。这是一个随时随地修行的便捷方式。",
   "share_passage_message": "我喜欢这段经文，想和你分享。你可以在WeBuddhist上阅读完整的上下文。",
   "share_timer_message": "我想和你分享WeBuddhist上的这个禅修计时器。它让建立禅修习惯变得更轻松。",
@@ -954,6 +991,9 @@
   },
   "timer_notification_complete": "你的課程已完成",
   "group_chat_title": "聊天",
+  "chats_title": "聊天",
+  "chats_empty_title": "尚無聊天",
+  "chats_empty_body": "加入社群即可開始聊天。",
   "group_chat_inappropriate": "此訊息含有不允許的用語，因此無法發送。",
   "group_chat_not_a_member": "僅限成員開啟此聊天。",
   "group_chat_open": "聊天",
@@ -972,12 +1012,42 @@
   "group_chat_copy": "複製",
   "group_chat_copied": "已複製訊息",
   "group_chat_report": "檢舉",
+  "group_chat_report_title": "你為什麼要檢舉這則訊息？",
+  "group_chat_report_privacy": "你的姓名不會公開。",
+  "group_chat_report_reason_harassment": "騷擾或霸凌",
+  "group_chat_report_reason_hate": "仇恨或有害言論",
+  "group_chat_report_reason_sexual": "性相關或露骨內容",
+  "group_chat_report_reason_spam": "垃圾訊息或詐騙",
+  "group_chat_report_reason_off_topic": "離題或干擾",
+  "group_chat_report_reason_other": "其他原因",
+  "group_chat_report_note_title": "新增備註",
+  "group_chat_report_note_hint": "其他原因...",
+  "group_chat_report_submit": "送出檢舉",
+  "group_chat_report_thanks": "感謝你的回報",
+  "group_chat_report_offline": "你目前離線 — 請稍後再試",
+  "group_chat_report_failed": "無法送出檢舉",
+  "group_chat_report_retry": "重試",
   "group_chat_delete": "刪除",
   "group_chat_delete_title": "刪除訊息？",
-  "group_chat_delete_confirm_body": "此訊息將為聊天中的所有人刪除。",
-  "group_chat_delete_for_everyone": "為所有人刪除",
-  "group_chat_delete_failed": "無法刪除訊息。",
-  "group_chat_message_deleted": "你已刪除此訊息",
+  "group_chat_delete_title_many": "刪除 {count} 則訊息？",
+  "group_chat_delete_confirm_body": "{count, plural, =1{此訊息將從聊天中為所有人移除。} other{這些訊息將從聊天中為所有人移除。}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{無法刪除訊息。} other{有 {count} 則訊息無法刪除。}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_message_deleted_toast": "{count, plural, =1{訊息已刪除} other{訊息已刪除}}",
+  "group_chat_selection_limit": "最多可選取 {count} 則訊息",
   "group_chat_message_deleted_by_sender": "此訊息已刪除",
   "group_chat_reaction_failed": "無法儲存你的回應。",
   "group_chat_reactions_count": "{count, plural, =1{1 個回應} other{{count} 個回應}}",
@@ -990,5 +1060,48 @@
   },
   "group_chat_you": "你",
   "group_chat_tap_to_remove": "點按以移除",
-  "group_chat_reply_parent_gone": "該訊息已不存在，引用已移除。請再次傳送你的訊息。"
+  "group_chat_reply_parent_gone": "該訊息已不存在，引用已移除。請再次傳送你的訊息。",
+  "group_tab_posts": "貼文",
+  "group_tab_events": "活動",
+  "group_posts_empty_title": "尚無貼文",
+  "group_posts_empty_message": "與你的社群分享第一則動態。",
+  "group_posts_load_error": "無法載入貼文，請再試一次。",
+  "group_post_button": "發佈",
+  "group_post_new_title": "新貼文",
+  "group_post_posting_to": "發佈至：",
+  "group_post_caption_hint": "有什麼新鮮事？",
+  "group_post_photos": "相片",
+  "group_post_link": "連結",
+  "group_post_discard_title": "捨棄貼文？",
+  "group_post_discard_message": "你所寫的內容將會遺失。",
+  "group_post_keep_editing": "繼續編輯",
+  "group_post_discard": "捨棄",
+  "group_post_add_link_title": "新增連結",
+  "group_post_add_link_hint": "貼上連結，我們會顯示預覽。",
+  "group_post_link_field_hint": "連結",
+  "group_post_attach": "附加",
+  "group_post_attach_as_link": "以連結附加",
+  "group_post_preview_failed_title": "無法載入預覽",
+  "group_post_preview_failed_message": "你仍可將它以連結附加。",
+  "group_post_invalid_link": "請輸入有效的連結，例如 https://example.com",
+  "group_post_photo_limit": "最多可新增 {count} 張相片。",
+  "group_post_upload_error": "無法上傳相片，請再試一次。",
+  "group_post_publish_error": "無法發佈你的貼文，請再試一次。",
+  "group_post_published": "你的貼文已發佈。",
+  "group_post_delete_title": "刪除貼文？",
+  "group_post_delete_message": "這則貼文將被永久刪除。",
+  "group_post_delete_failed": "無法刪除貼文，請再試一次。",
+  "edit": "編輯",
+  "group_post_edit_title": "編輯貼文",
+  "group_post_update_error": "無法儲存你的變更，請再試一次。",
+  "group_post_updated": "你的變更已儲存。",
+  "event_prayer_requests": "祈願請求",
+  "event_prayer_empty_title": "尚無祈願請求",
+  "event_prayer_empty_body": "你和社群的請求會顯示在這裡",
+  "event_prayer_add": "新增祈願請求",
+  "event_prayer_hint": "今天我們能為你祈願什麼",
+  "event_prayer_load_failed": "無法載入祈願請求。",
+  "event_prayer_closed": "此活動的祈願請求已關閉。",
+  "event_prayer_pray": "祈願",
+  "event_prayer_praying": "祈願中"
 }

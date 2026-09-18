@@ -17,6 +17,8 @@ class AppAssets {
   static const String verseOfDayFallback = 'assets/images/buddha.jpeg';
   static const String collectionCompletion =
       'assets/images/collection-completion.png';
+  static const String myCollectionDefault =
+      'assets/images/my_collection_default.jpg';
 
   // ========== AUDIO ==========
   // PCM WAV (not MP3): ExoPlayer's offload path mis-parses the encoded MP3 on
@@ -25,9 +27,16 @@ class AppAssets {
   static const String meditationSound = 'assets/audios/meditation.wav';
   static const String malaSound = 'assets/audios/mala.wav';
 
+  /// Two seconds of silence, looped to hold the iOS audio session open while a
+  /// meditation timer runs so the bell can ring with the screen locked (see
+  /// timer_keep_alive.dart).
+  static const String silence = 'assets/audios/silence.wav';
+
   // ========== LOGOS ==========
   static const String weBuddhistLogo = 'assets/images/webuddhist_logo.png';
   static const String googleIcon = 'assets/images/google-icon.png';
+  static const String googleMeetIcon = 'assets/images/google_meet_icon.png';
+  static const String zoomIcon = 'assets/images/zoom_icon.png';
 
   // ========== AUTH ICONS ==========
   static const IconData apple = Icons.apple;
@@ -95,6 +104,9 @@ class AppAssets {
   static const IconData dotsThreeVertical =
       PhosphorIconsRegular.dotsThreeVertical;
   static const IconData paperPlaneRight = PhosphorIconsRegular.paperPlaneRight;
+  static const IconData arrowCircleUp = PhosphorIconsFill.arrowCircleUp;
+  static const IconData handsPraying = PhosphorIconsRegular.handsPraying;
+  static const IconData handsPrayingFill = PhosphorIconsFill.handsPraying;
   static const IconData arrowBendUpLeft = PhosphorIconsRegular.arrowBendUpLeft;
   static const IconData copy = PhosphorIconsRegular.copy;
 
@@ -107,11 +119,15 @@ class AppAssets {
   static const IconData pause = PhosphorIconsFill.pause;
   static const IconData list = PhosphorIconsRegular.list;
   static const IconData trash = PhosphorIconsRegular.trash;
+  static const IconData pencilSimple = PhosphorIconsRegular.pencilSimple;
+  static const IconData prohibit = PhosphorIconsRegular.prohibit;
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
   static const IconData speakerSimpleHigh =
       PhosphorIconsRegular.speakerSimpleHigh;
+  static const IconData headphones = PhosphorIconsRegular.headphones;
+  static const IconData monitorPlay = PhosphorIconsRegular.monitorPlay;
   static const IconData vibrate = PhosphorIconsRegular.vibrate;
   static const IconData arrowCounterClockwise =
       PhosphorIconsRegular.arrowCounterClockwise;
@@ -147,6 +163,11 @@ class AppAssets {
   static const IconData usercard = PhosphorIconsRegular.users;
   static const IconData bookOpenText = PhosphorIconsRegular.bookOpenText;
   static const IconData calendarDots = PhosphorIconsRegular.calendarDots;
+  static const IconData mapPin = PhosphorIconsRegular.mapPin;
+  static const IconData videoCamera = PhosphorIconsRegular.videoCamera;
+  static const IconData clock = PhosphorIconsRegular.clock;
+  static const IconData repeat = PhosphorIconsRegular.arrowsClockwise;
+  static const IconData buildings = PhosphorIconsRegular.buildings;
   static const IconData arrowRight = PhosphorIconsRegular.arrowRight;
   static const IconData featuredSeriesPlanCount =
       PhosphorIconsRegular.calendarDots;

@@ -8,17 +8,21 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
-import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practice_card.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
-import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_card.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
@@ -26,16 +30,15 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_pr
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_links_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_members_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_posts_tab.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_pecha/features/plans/data/utils/plan_date_format.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class GroupProfileBody extends ConsumerStatefulWidget {
   final GroupProfile profile;
@@ -103,9 +106,6 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     );
   }
 
-  /// Posts have no data source yet, so the tab never has content to show.
-  bool get _hasPosts => false;
-
   bool _hasBanner(GroupProfile profile) =>
       profile.bannerUrl != null && profile.bannerUrl!.isNotEmpty;
 
@@ -156,6 +156,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
             ? _visibleTabs[previous.index]
             : null;
     var initialIndex = selectedTab == null ? -1 : tabs.indexOf(selectedTab);
+    if (initialIndex < 0) initialIndex = tabs.indexOf(_GroupProfileTab.posts);
     if (initialIndex < 0) {
       initialIndex = tabs.indexOf(_GroupProfileTab.practices);
     }
@@ -421,11 +422,26 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final isEventsLoading =
         eventsAsync.isLoading && !eventsAsync.hasValue && !eventsAsync.hasError;
 
-    // Wait for both sections before laying out the tabs, otherwise tabs would
+    final postsState = ref.watch(groupPostsProvider(profile.id));
+    final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
+    final canPost = permissionAsync.valueOrNull ?? false;
+    // Keep the posts tab when loading failed so its retry action stays
+    // reachable, and for anyone allowed to publish so the Post button shows.
+    final hasPosts =
+        postsState.posts.isNotEmpty ||
+        (postsState.hasLoaded && postsState.error != null);
+    final isPostsLoading =
+        !postsState.hasLoaded ||
+        (permissionAsync.isLoading &&
+            !permissionAsync.hasValue &&
+            !permissionAsync.hasError);
+
+    // Wait for every section before laying out the tabs, otherwise tabs would
     // pop in and out as each request settles.
-    final isTabDataLoading = isPracticesLoading || isEventsLoading;
+    final isTabDataLoading =
+        isPracticesLoading || isEventsLoading || isPostsLoading;
     final tabs = <_GroupProfileTab>[
-      if (_hasPosts) _GroupProfileTab.posts,
+      if (hasPosts || canPost) _GroupProfileTab.posts,
       if (hasEvents) _GroupProfileTab.events,
       if (hasPractices) _GroupProfileTab.practices,
       _GroupProfileTab.members,
@@ -659,9 +675,18 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final pageStorageKey = '${profile.id}-${tab.name}';
 
     return switch (tab) {
-      _GroupProfileTab.posts => GroupProfileNestedTabScrollView.centered(
+      _GroupProfileTab.posts => GroupProfilePostsTab(
+        groupId: profile.id,
+        isDark: isDark,
+        lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
-        child: _buildEmptyTab('No posts yet', isDark, lineHeight),
+        canPost: ref.watch(
+          groupPostPermissionProvider(
+            profile.id,
+          ).select((async) => async.valueOrNull ?? false),
+        ),
+        onCreatePost: () => _onCreatePost(profile),
+        onEditPost: (post) => _onEditPost(profile, post),
       ),
       _GroupProfileTab.events => GroupProfileEventsTab(
         groupId: profile.id,
@@ -672,7 +697,6 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
       _GroupProfileTab.practices => _buildPracticesTab(
         profile,
         isDark,
-        lineHeight,
         pageStorageKey: pageStorageKey,
       ),
       _GroupProfileTab.members => GroupProfileMembersTab(
@@ -683,6 +707,73 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         pageStorageKey: pageStorageKey,
       ),
     };
+  }
+
+  Future<void> _onCreatePost(GroupProfile profile) async {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    final result = await GroupPostComposerScreen.show(context, profile);
+    if (result == null || !mounted) return;
+
+    final notifier = ref.read(groupPostsProvider(profile.id).notifier);
+    notifier.prependPost(_withGroupFields(result.post, profile));
+    notifier.loadInitial();
+    if (result.saved) _showPostSnackBar(context.l10n.group_post_published);
+  }
+
+  Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {
+    final result = await GroupPostComposerScreen.show(
+      context,
+      profile,
+      post: post,
+    );
+    if (result == null || !mounted) return;
+
+    // CMS responses don't carry the viewer's like state; keep what we had.
+    final merged = _withGroupFields(result.post, profile).copyWith(
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      likedByMe: post.likedByMe,
+    );
+    final notifier = ref.read(groupPostsProvider(profile.id).notifier);
+    notifier.updatePost(merged);
+    notifier.loadInitial();
+    // A partial save already showed its error inside the composer.
+    if (result.saved) _showPostSnackBar(context.l10n.group_post_updated);
+  }
+
+  /// CMS responses may omit group fields the card needs; fill them from the
+  /// profile. The list is refetched right after so it reflects the server.
+  ConnectPost _withGroupFields(ConnectPost post, GroupProfile profile) {
+    return ConnectPost(
+      id: post.id,
+      groupId: post.groupId.isNotEmpty ? post.groupId : profile.id,
+      groupName:
+          post.groupName.trim().isNotEmpty ? post.groupName : profile.title,
+      groupAvatarUrl: post.groupAvatarUrl ?? profile.avatarUrl,
+      caption: post.caption,
+      status: post.status,
+      publishedAt: post.publishedAt ?? DateTime.now(),
+      media: post.media,
+      links: post.links,
+      creatorName: post.creatorName,
+      creatorImageUrl: post.creatorImageUrl,
+      likeCount: post.likeCount,
+      commentCount: post.commentCount,
+      createdAt: post.createdAt ?? DateTime.now(),
+      updatedAt: post.updatedAt,
+      likedByMe: post.likedByMe,
+    );
+  }
+
+  void _showPostSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
   }
 
   GroupProfile _resolveProfile() {
@@ -985,8 +1076,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
   String _tabLabel(_GroupProfileTab tab, GroupProfile profile) {
     return switch (tab) {
-      _GroupProfileTab.posts => 'Post',
-      _GroupProfileTab.events => 'Events',
+      _GroupProfileTab.posts => context.l10n.group_tab_posts,
+      _GroupProfileTab.events => context.l10n.group_tab_events,
       _GroupProfileTab.practices => context.l10n.tab_practices,
       _GroupProfileTab.members =>
         profile.groupType.isPage
@@ -997,8 +1088,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
   Widget _buildPracticesTab(
     GroupProfile profile,
-    bool isDark,
-    double? lineHeight, {
+    bool isDark, {
     required String pageStorageKey,
   }) {
     final practicesState = ref.watch(groupPracticesProvider(profile.id));
@@ -1034,9 +1124,20 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         pageStorageKey: pageStorageKey,
         slivers: [
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
+            padding: const EdgeInsets.only(
+              top: ConnectFeedCardLayout.listItemGap,
+              bottom: 32,
+            ),
+            sliver: SliverList.separated(
+              itemCount: itemCount,
+              separatorBuilder:
+                  (context, _) => ColoredBox(
+                    color: ConnectFeedCardLayout.listGapColor(isDark),
+                    child: const SizedBox(
+                      height: ConnectFeedCardLayout.listItemGap,
+                    ),
+                  ),
+              itemBuilder: (context, index) {
                 if (index >= practicesState.practices.length) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -1044,46 +1145,11 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   );
                 }
 
-                final practice = practicesState.practices[index];
-                final isLast = index == practicesState.practices.length - 1;
-
-                return Padding(
-                  padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-                  child: switch (practice.type) {
-                    GroupPracticeType.series when practice.series != null =>
-                      _buildSeriesCard(
-                        profile,
-                        practice.series!,
-                        isDark,
-                        lineHeight,
-                      ),
-                    GroupPracticeType.accumulator
-                        when practice.accumulator != null =>
-                      _buildAccumulatorCard(
-                        profile,
-                        practice.accumulator!,
-                        isDark,
-                        lineHeight,
-                      ),
-                    GroupPracticeType.collection
-                        when practice.collection != null =>
-                      _buildCollectionCard(
-                        profile,
-                        practice.collection!,
-                        isDark,
-                        lineHeight,
-                      ),
-                    GroupPracticeType.plan when practice.plan != null =>
-                      _buildPlanCard(
-                        profile,
-                        practice.plan!,
-                        isDark,
-                        lineHeight,
-                      ),
-                    _ => const SizedBox.shrink(),
-                  },
+                return _buildPracticeCard(
+                  profile,
+                  practicesState.practices[index],
                 );
-              }, childCount: itemCount),
+              },
             ),
           ),
         ],
@@ -1091,207 +1157,38 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     );
   }
 
-  Widget _buildCollectionCard(
-    GroupProfile profile,
-    GroupRecitationCollection collection,
-    bool isDark,
-    double? lineHeight,
-  ) {
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
-
-    return Material(
-      color: cardColor,
-      elevation: isDark ? 0 : 1,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          final groupId =
-              collection.groupId.trim().isNotEmpty
-                  ? collection.groupId
-                  : profile.id;
-          context.push(
-            '/home/group/$groupId/recitation-collections/${collection.id}',
-            extra: {'title': collection.name},
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 140,
-              width: double.infinity,
-              child:
-                  collection.imageUrl != null && collection.imageUrl!.isNotEmpty
-                      ? CachedNetworkImageWidget(
-                        imageUrl: collection.imageUrl!,
-                        fit: BoxFit.cover,
-                      )
-                      : ColoredBox(
-                        color:
-                            isDark
-                                ? AppColors.surfaceVariantDark
-                                : AppColors.grey100,
-                        child: Icon(
-                          AppAssets.bookOpenText,
-                          size: 40,
-                          color: isDark ? AppColors.grey500 : AppColors.grey600,
-                        ),
-                      ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    collection.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: lineHeight,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (collection.itemCount > 0) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      context.l10n.home_recitation_count(collection.itemCount),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: secondaryColor,
-                        height: lineHeight,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildPracticeCard(GroupProfile profile, GroupPractice practice) {
+    final withGroup = practice.copyWith(
+      groupId: profile.id,
+      groupName: practice.groupName ?? profile.title,
+      groupAvatarUrl: practice.groupAvatarUrl ?? profile.avatarUrl,
     );
-  }
+    final series = practice.series;
+    final accumulator = practice.accumulator;
 
-  Widget _buildPlanCard(
-    GroupProfile profile,
-    GroupPracticePlan plan,
-    bool isDark,
-    double? lineHeight,
-  ) {
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
-    final dateRange = PlanDateFormat.formatRangeOrNull(plan.startDate, null);
-
-    return Material(
-      color: cardColor,
-      elevation: isDark ? 0 : 1,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          context.push(
-            '/practice/plans/preview',
-            extra: {
-              'plan': plan.toPlan(),
-              if (plan.seriesId != null) 'seriesId': plan.seriesId,
-            },
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 140,
-              width: double.infinity,
-              child:
-                  plan.imageUrl != null && plan.imageUrl!.isNotEmpty
-                      ? CachedNetworkImageWidget(
-                        imageUrl: plan.imageUrl!,
-                        fit: BoxFit.cover,
-                      )
-                      : ColoredBox(
-                        color:
-                            isDark
-                                ? AppColors.surfaceVariantDark
-                                : AppColors.grey100,
-                        child: Icon(
-                          AppAssets.bookOpenText,
-                          size: 40,
-                          color: isDark ? AppColors.grey500 : AppColors.grey600,
-                        ),
-                      ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    plan.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: lineHeight,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (dateRange != null || plan.totalDays > 0) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      [
-                        if (dateRange != null) dateRange,
-                        if (plan.totalDays > 0)
-                          context.l10n.days_count(plan.totalDays),
-                      ].join(' · '),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: secondaryColor,
-                        height: lineHeight,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAccumulatorCard(
-    GroupProfile profile,
-    GroupAccumulator accumulator,
-    bool isDark,
-    double? lineHeight,
-  ) {
-    final localJoinedIds = ref.watch(
-      groupAccumulatorJoinCacheProvider(profile.id),
-    );
-    final hasJoined = accumulatorHasJoined(
-      accumulator,
-      localJoinedIds: localJoinedIds,
-    );
-    return GroupAccumulatorCard(
-      accumulator: accumulator,
-      hasJoined: hasJoined,
-      isDark: isDark,
-      lineHeight: lineHeight,
-      isJoining: _joiningAccumulatorId == accumulator.id,
-      onTap: () => _navigateToAccumulatorDetail(accumulator.id),
-      onJoinTap: () => _onJoinAccumulatorTap(profile, accumulator),
+    return ConnectPracticeCard(
+      practice: withGroup,
+      showGroupLink: false,
+      isSeriesEnrolled:
+          series != null ? _seriesGroupEnrollmentStatus(series) == true : null,
+      isEnrollingSeries:
+          series != null ? _enrollingSeriesId == series.id : null,
+      onSeriesTap:
+          series != null ? () => _navigateToSeriesDetail(profile, series) : null,
+      onSeriesJoinTap:
+          series != null ? () => _onPracticeWithUsTap(profile, series) : null,
+      isJoiningAccumulator:
+          accumulator != null
+              ? _joiningAccumulatorId == accumulator.id
+              : null,
+      onAccumulatorTap:
+          accumulator != null
+              ? () => _navigateToAccumulatorDetail(accumulator.id)
+              : null,
+      onAccumulatorJoinTap:
+          accumulator != null
+              ? () => _onJoinAccumulatorTap(profile, accumulator)
+              : null,
     );
   }
 
@@ -1361,17 +1258,6 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     );
   }
 
-  Widget _buildEmptyTab(String message, bool isDark, double? lineHeight) {
-    final color = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-
-    return Center(
-      child: Text(
-        message,
-        style: TextStyle(fontSize: 14, color: color, height: lineHeight),
-      ),
-    );
-  }
-
   Widget _buildDescriptionLongContent(GroupProfile profile) {
     final content = _aboutDescription(profile);
     if (content == null) {
@@ -1400,160 +1286,6 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
   String _trimTrailingZero(String value) {
     return value.endsWith('.0') ? value.substring(0, value.length - 2) : value;
-  }
-
-  Widget _buildSeriesCard(
-    GroupProfile profile,
-    GroupProfileSeries series,
-    bool isDark,
-    double? lineHeight,
-  ) {
-    final dateRange = _formatSeriesDateRange(series);
-    final enrollmentStatus = _seriesGroupEnrollmentStatus(series);
-    final showPracticeOverlay = enrollmentStatus != true;
-    final isEnrolling = _enrollingSeriesId == series.id;
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
-
-    return Material(
-      color: cardColor,
-      elevation: isDark ? 0 : 1,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap:
-            isEnrolling ? null : () => _navigateToSeriesDetail(profile, series),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 140,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  series.image != null && !series.image!.isEmpty
-                      ? ResponsiveCoverImage(
-                        image: series.image,
-                        fit: BoxFit.cover,
-                      )
-                      : ColoredBox(
-                        color:
-                            isDark
-                                ? AppColors.surfaceVariantDark
-                                : AppColors.grey100,
-                        child: Icon(
-                          AppAssets.bookOpenText,
-                          size: 40,
-                          color: isDark ? AppColors.grey500 : AppColors.grey600,
-                        ),
-                      ),
-                  if (showPracticeOverlay)
-                    Container(
-                      color: Colors.black.withValues(alpha: 0.55),
-                      alignment: Alignment.center,
-                      child:
-                          isEnrolling
-                              ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                              : GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap:
-                                    () => _onPracticeWithUsTap(profile, series),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    context.l10n.group_practice_with_us,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    series.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      height: lineHeight,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (dateRange != null || series.enrolledCount > 0) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (dateRange != null)
-                          Expanded(
-                            child: Text(
-                              dateRange,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: secondaryColor,
-                                height: lineHeight,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        if (series.enrolledCount > 0) ...[
-                          Icon(
-                            AppAssets.usercard,
-                            size: 16,
-                            color: secondaryColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${series.enrolledCount}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: secondaryColor,
-                              height: lineHeight,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String? _formatSeriesDateRange(GroupProfileSeries series) {
-    return PlanDateFormat.formatRangeOrNull(series.startDate, series.endDate);
   }
 
   void _navigateToSeriesDetail(
@@ -1634,14 +1366,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     );
   }
 
-  Future<void> _launchUrl(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {}
-  }
+  Future<void> _launchUrl(String url) => openUrl(url);
 }
 
 class _GroupFollowButton extends ConsumerWidget {

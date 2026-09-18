@@ -8,6 +8,9 @@ class ConnectPostMedia {
   final int? durationMs;
   final int displayOrder;
 
+  /// Storage key, resent when a post's media list is edited.
+  final String? mediaKey;
+
   const ConnectPostMedia({
     required this.id,
     required this.mediaType,
@@ -17,6 +20,7 @@ class ConnectPostMedia {
     this.height,
     this.durationMs,
     this.displayOrder = 0,
+    this.mediaKey,
   });
 
   bool get isImage => mediaType.toUpperCase() == 'IMAGE';
@@ -76,8 +80,12 @@ class ConnectPost {
   });
 
   ConnectPost copyWith({
+    String? caption,
+    List<ConnectPostMedia>? media,
+    List<ConnectPostLink>? links,
     int? likeCount,
     int? commentCount,
+    DateTime? updatedAt,
     bool? likedByMe,
   }) {
     return ConnectPost(
@@ -85,17 +93,17 @@ class ConnectPost {
       groupId: groupId,
       groupName: groupName,
       groupAvatarUrl: groupAvatarUrl,
-      caption: caption,
+      caption: caption ?? this.caption,
       status: status,
       publishedAt: publishedAt,
-      media: media,
-      links: links,
+      media: media ?? this.media,
+      links: links ?? this.links,
       creatorName: creatorName,
       creatorImageUrl: creatorImageUrl,
       likeCount: likeCount ?? this.likeCount,
       commentCount: commentCount ?? this.commentCount,
       createdAt: createdAt,
-      updatedAt: updatedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       likedByMe: likedByMe ?? this.likedByMe,
     );
   }

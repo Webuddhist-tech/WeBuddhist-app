@@ -77,30 +77,64 @@ void main() {
     });
   });
 
-  group('bridge active but SDK unavailable', () {
-    // `Tolgee.currentLocale` throws when the SDK was never initialized. The
-    // bridge has to swallow that rather than propagate it into a widget build.
-    setUp(() => TolgeeBridge.active = true);
+  group('payload loaded', () {
+    void load(String languageCode, Map<String, String> strings) {
+      TolgeeBridge.load(languageCode: languageCode, strings: strings);
+    }
 
-    test('falls back instead of throwing', () {
-      expect(TolgeeBridge.get('en', 'sign_in', () => 'Sign in'), 'Sign in');
+    test('serves a loaded string over the bundled one', () {
+      load('en', <String, String>{'sign_in': 'Sign in over the air'});
+
       expect(
-        TolgeeBridge.format('en', 'home_plans_count', <String, Object>{
-          'count': 3,
-        }, () => '3 plans'),
-        '3 plans',
+        TolgeeBridge.get('en', 'sign_in', () => 'bundled'),
+        'Sign in over the air',
       );
     });
 
-    test('generated overrides still resolve to bundled ARB values', () {
-      final AppLocalizations bundled = lookupAppLocalizations(
-        const Locale('bo'),
+    test('a multi-part CDN tag still serves its app locale', () {
+      // The whole reason the bridge owns this lookup. Published tags are
+      // `bo-IN` and `zh-Hant-TW` while the app locales are `bo` and `zh`, and
+      // the SDK dropped the region from one and re-cased the other, so neither
+      // ever resolved a single string.
+      load('bo-IN', <String, String>{'sign_in': 'ནང་འཛུལ།'});
+      expect(TolgeeBridge.get('bo', 'sign_in', () => 'bundled'), 'ནང་འཛུལ།');
+
+      load('zh-Hant-TW', <String, String>{'sign_in': '登入'});
+      expect(TolgeeBridge.get('zh', 'sign_in', () => 'bundled'), '登入');
+    });
+
+    test('refuses to serve one language while another is on screen', () {
+      // A language switch swaps the payload asynchronously; until it lands the
+      // bundled value is right and the old language would be a visible mix.
+      load('bo', <String, String>{'sign_in': 'ནང་འཛུལ།'});
+
+      expect(TolgeeBridge.get('hi', 'sign_in', () => 'bundled'), 'bundled');
+    });
+
+    test('a missing or blank key falls back', () {
+      load('en', <String, String>{'sign_in': ''});
+
+      expect(TolgeeBridge.get('en', 'sign_in', () => 'bundled'), 'bundled');
+      expect(TolgeeBridge.get('en', 'absent', () => 'bundled'), 'bundled');
+    });
+
+    test('invalidate makes the bridge inert again', () {
+      load('en', <String, String>{'sign_in': 'over the air'});
+      TolgeeBridge.invalidate();
+
+      expect(TolgeeBridge.active, isFalse);
+      expect(TolgeeBridge.get('en', 'sign_in', () => 'bundled'), 'bundled');
+    });
+
+    test('a placeholder string formats from the loaded payload', () {
+      load('en', <String, String>{'ai_greeting': 'Hey {name}!'});
+
+      expect(
+        TolgeeBridge.format('en', 'ai_greeting', <String, Object>{
+          'name': 'Tenzin',
+        }, () => 'bundled'),
+        'Hey Tenzin!',
       );
-      final AppLocalizations bridged = tolgeeAppLocalizationsFor(
-        const Locale('bo'),
-      );
-      expect(bridged.sign_in, bundled.sign_in);
-      expect(bridged.mala_rounds_count(3), bundled.mala_rounds_count(3));
     });
   });
 }

@@ -5,6 +5,9 @@ class ChatRoomDTO extends Equatable {
   final String id;
   final String createdBy;
   final String? groupId;
+
+  /// Set on an `EVENT` room, in place of [groupId].
+  final String? eventId;
   final String? senderId;
   final String? receiverId;
   final String kind;
@@ -22,6 +25,7 @@ class ChatRoomDTO extends Equatable {
     required this.id,
     required this.createdBy,
     this.groupId,
+    this.eventId,
     this.senderId,
     this.receiverId,
     required this.kind,
@@ -42,6 +46,7 @@ class ChatRoomDTO extends Equatable {
       id: json['id'] as String? ?? '',
       createdBy: json['created_by'] as String? ?? '',
       groupId: json['group_id'] as String?,
+      eventId: json['event_id'] as String?,
       senderId: json['sender_id'] as String?,
       receiverId: json['receiver_id'] as String?,
       kind: json['kind'] as String? ?? '',
@@ -65,6 +70,7 @@ class ChatRoomDTO extends Equatable {
       'id': id,
       'created_by': createdBy,
       if (groupId != null) 'group_id': groupId,
+      if (eventId != null) 'event_id': eventId,
       if (senderId != null) 'sender_id': senderId,
       if (receiverId != null) 'receiver_id': receiverId,
       'kind': kind,
@@ -85,6 +91,7 @@ class ChatRoomDTO extends Equatable {
     id,
     createdBy,
     groupId,
+    eventId,
     senderId,
     receiverId,
     kind,

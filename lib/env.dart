@@ -9,7 +9,8 @@ class Env {
   Env._();
 
   /// API base URL for the backend
-  static String get apiBaseUrl => dotenv.env['BASE_API_URL'] ??
+  static String get apiBaseUrl =>
+      dotenv.env['BASE_API_URL'] ??
       (throw Exception('BASE_API_URL not found in environment'));
 
   /// AI service URL
@@ -26,12 +27,10 @@ class Env {
   static String? get auth0Audience => dotenv.env['AUTH0_AUDIENCE'];
 
   /// Whether the app is running in debug mode
-  static bool get isDebug =>
-      dotenv.env['ENVIRONMENT'] != 'production';
+  static bool get isDebug => dotenv.env['ENVIRONMENT'] != 'production';
 
   /// Current environment (dev, staging, prod)
-  static String get environment =>
-      dotenv.env['ENVIRONMENT'] ?? 'development';
+  static String get environment => dotenv.env['ENVIRONMENT'] ?? 'development';
 
   /// API timeout duration
   static Duration get apiTimeout => const Duration(seconds: 30);
@@ -73,10 +72,6 @@ class Env {
   static bool get phoneLoginEnabled =>
       dotenv.env['PHONE_LOGIN_ENABLED']?.toLowerCase() == 'true';
 
-  /// Tolgee API base URL, used to list the project's languages on startup.
-  static String get tolgeeApiUrl =>
-      dotenv.env['TOLGEE_API_URL'] ?? 'https://app.tolgee.io/v2';
-
   /// Tolgee project API key.
   ///
   /// This ships inside the bundled `.env` asset and can be extracted from a
@@ -115,5 +110,4 @@ class Env {
     }
     return 'dev';
   }
-
 }

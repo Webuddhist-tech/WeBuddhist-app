@@ -3,10 +3,10 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_events_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_lazy_segment_mixin.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_discover_tab_gate.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_empty_state.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_paginated_list_view.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,14 +82,15 @@ class _ConnectEventsTabState extends ConsumerState<ConnectEventsTab>
             onBrowseTap: switchToDiscover,
           ),
           itemBuilder:
-              (context, index) => ConnectEventCard(
-                event: myState.events[index],
-              ),
+              (context, index) =>
+                  ConnectEventCard(event: myState.events[index]),
         );
       },
       discoverBuilder: (context, _, scrollHeader) {
         return ConnectPaginatedListView(
-          scrollViewKey: const PageStorageKey<String>('connect_events_discover'),
+          scrollViewKey: const PageStorageKey<String>(
+            'connect_events_discover',
+          ),
           header: scrollHeader,
           useHairlineDividers: false,
           separatorHeight: ConnectFeedCardLayout.listItemGap,
@@ -103,9 +104,8 @@ class _ConnectEventsTabState extends ConsumerState<ConnectEventsTab>
               () => ref.read(discoverConnectEventsProvider.notifier).retry(),
           emptyDiscoverMessage: context.l10n.connect_empty_discover_events,
           itemBuilder:
-              (context, index) => ConnectEventCard(
-                event: discoverState.events[index],
-              ),
+              (context, index) =>
+                  ConnectEventCard(event: discoverState.events[index]),
         );
       },
     );

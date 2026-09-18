@@ -26,6 +26,18 @@ bool isSelfChatMessage({
   return senderEmail.trim().toLowerCase() == email;
 }
 
+/// Whether the viewer can be told apart from other senders at all.
+///
+/// False while the profile is still loading or failed to load: neither an id
+/// nor an email is known, so [isSelfChatMessage] answers "not mine" for every
+/// message — including the viewer's own. Anything that must not apply to a
+/// member's own message (reporting it) has to wait for this rather than read
+/// that "not mine" as a verdict.
+bool isChatViewerKnown({String? currentUserId, String? currentUserEmail}) {
+  if ((currentUserId?.trim() ?? '').isNotEmpty) return true;
+  return (currentUserEmail?.trim() ?? '').isNotEmpty;
+}
+
 String? joinChatName(String? firstname, String? lastname) {
   final parts = [
     firstname?.trim() ?? '',

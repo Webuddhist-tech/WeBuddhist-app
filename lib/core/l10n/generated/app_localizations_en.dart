@@ -159,6 +159,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookmark_texts => 'Texts';
 
   @override
+  String get bookmark_group_accumulation => 'Group accumulation';
+
+  @override
   String get mala_add_to_practice => 'Add to my practices';
 
   @override
@@ -449,6 +452,84 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recitations_login_prompt =>
       'Sign in to view your saved recitations';
+
+  @override
+  String get my_recitation_collection_new_title => 'New Collection';
+
+  @override
+  String get my_recitation_collection_next => 'Next';
+
+  @override
+  String get my_recitation_collection_create => 'Create';
+
+  @override
+  String get my_recitation_collection_create_button => 'Create collection';
+
+  @override
+  String get my_recitation_collection_change_title => 'Change title';
+
+  @override
+  String get my_recitation_collection_change => 'Change';
+
+  @override
+  String get my_recitation_collection_add_chants => 'Add chants';
+
+  @override
+  String get my_recitation_collection_search_chants => 'Search chants';
+
+  @override
+  String get my_recitation_collection_add_to_collection => 'Add to collection';
+
+  @override
+  String get my_recitation_collection_edit => 'Edit collection';
+
+  @override
+  String get my_recitation_collection_delete => 'Delete collection';
+
+  @override
+  String get my_recitation_collection_delete_title => 'Delete collection?';
+
+  @override
+  String get my_recitation_collection_delete_message =>
+      'This collection will be permanently removed.';
+
+  @override
+  String get my_recitation_collection_fallback_title => 'Chant collection';
+
+  @override
+  String get my_recitation_collection_unavailable => 'No longer available';
+
+  @override
+  String my_recitation_collection_chant_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chants',
+      one: '1 chant',
+      zero: '0 chants',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String my_recitation_collection_chant_count_owner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count chants • me',
+      one: '1 chant • me',
+      zero: '0 chants • me',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get bookmarks_empty_chant_collections_title =>
+      'No chant collections bookmarked yet.';
+
+  @override
+  String get bookmarks_empty_chant_collections_subtitle =>
+      'Bookmark a chant collection to save it here.';
 
   @override
   String get notification_settings => 'Notification settings';
@@ -877,6 +958,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_attending => 'Attending';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count attending';
   }
@@ -907,6 +997,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_event_date_tba => 'Date to be announced';
+
+  @override
+  String get connect_event_when => 'When';
+
+  @override
+  String get connect_event_where => 'Where';
+
+  @override
+  String get connect_event_practices => 'Event practices';
+
+  @override
+  String get connect_event_tab_accumulations => 'Accumulations';
+
+  @override
+  String get connect_event_tab_recitations => 'Recitations';
+
+  @override
+  String get connect_event_add_recitations => 'Add recitations';
+
+  @override
+  String get connect_event_add_recitations_message =>
+      'Add the number of recitations you did with the livestream or outside this app.';
+
+  @override
+  String get connect_event_every_day => 'Every day';
+
+  @override
+  String connect_event_every_weekday(String weekday) {
+    return 'Every $weekday';
+  }
+
+  @override
+  String get connect_event_every_month => 'Every month';
+
+  @override
+  String connect_event_every_date(String date) {
+    return 'Every $date';
+  }
 
   @override
   String get connect_event_about_empty => 'No event details yet';
@@ -1277,6 +1405,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_delete_block => 'Remove block';
 
   @override
+  String get routine_session_title_hint => 'Title...';
+
+  @override
+  String get routine_expand_all => 'Expand all';
+
+  @override
+  String get routine_collapse_all => 'Collapse all';
+
+  @override
   String get routine_delete_time_block => 'Remove time block';
 
   @override
@@ -1523,6 +1660,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get parallel_version => 'Parallel version';
+
+  @override
+  String get reader_languages_title => 'Languages';
+
+  @override
+  String get reader_original_label => 'Original';
+
+  @override
+  String get reader_translation_label => 'Translation';
 
   @override
   String get version_not_available => 'Not available';
@@ -2004,6 +2150,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to join accumulation. Please try again.';
 
   @override
+  String get group_accumulator_join_before_practice =>
+      'Join this accumulation before adding it to your practices';
+
+  @override
   String group_accumulator_participants(int count) {
     return '$count participants';
   }
@@ -2128,6 +2278,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'I liked this poem from WeBuddhist and wanted to share it with you.';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'I\'ve been using this digital mala on WeBuddhist and wanted to share it with you. It\'s an easy way to practice wherever you go.';
 
@@ -2225,6 +2380,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Bookmark a mala to save it here.';
 
   @override
+  String get bookmarks_empty_group_accumulations_title =>
+      'No group accumulations bookmarked yet.';
+
+  @override
+  String get bookmarks_empty_group_accumulations_subtitle =>
+      'Bookmark a group accumulation to save it here.';
+
+  @override
   String get bookmarks_empty_timers_title => 'No timers bookmarked yet.';
 
   @override
@@ -2287,6 +2450,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get player_forward_10 => 'Forward 10 seconds';
+
+  @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
 
   @override
   String get session_plans_load_error =>
@@ -2413,6 +2582,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_title => 'Chat';
 
   @override
+  String get chats_title => 'Chats';
+
+  @override
+  String get chats_empty_title => 'No chats yet';
+
+  @override
+  String get chats_empty_body => 'Join a community to start chatting.';
+
+  @override
   String get group_chat_inappropriate =>
       'This message couldn\'t be sent because it contains language that isn\'t allowed.';
 
@@ -2468,23 +2646,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_report => 'Report';
 
   @override
+  String get group_chat_report_title => 'Why are you reporting this?';
+
+  @override
+  String get group_chat_report_privacy => 'Your name stays private.';
+
+  @override
+  String get group_chat_report_reason_harassment => 'Harassment or bullying';
+
+  @override
+  String get group_chat_report_reason_hate => 'Hateful or harmful speech';
+
+  @override
+  String get group_chat_report_reason_sexual => 'Sexual or explicit content';
+
+  @override
+  String get group_chat_report_reason_spam => 'Spam or scams';
+
+  @override
+  String get group_chat_report_reason_off_topic => 'Off-topic or disruptive';
+
+  @override
+  String get group_chat_report_reason_other => 'Something else';
+
+  @override
+  String get group_chat_report_note_title => 'Add a note';
+
+  @override
+  String get group_chat_report_note_hint => 'Something else...';
+
+  @override
+  String get group_chat_report_submit => 'Submit report';
+
+  @override
+  String get group_chat_report_thanks => 'Thank you for the feedback';
+
+  @override
+  String get group_chat_report_offline => 'You\'re offline — try again later';
+
+  @override
+  String get group_chat_report_failed => 'Couldn\'t send report';
+
+  @override
+  String get group_chat_report_retry => 'Retry';
+
+  @override
   String get group_chat_delete => 'Delete';
 
   @override
   String get group_chat_delete_title => 'Delete message?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'This message will be deleted for everyone in this chat.';
+  String group_chat_delete_title_many(int count) {
+    return 'Delete $count messages?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'Delete for everyone';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'These messages will be removed from the chat for everyone.',
+      one: 'This message will be removed from the chat for everyone.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'The message couldn\'t be deleted.';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages couldn\'t be deleted.',
+      one: 'The message couldn\'t be deleted.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => 'You deleted this message';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Messages deleted',
+      one: 'Message deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'You can select up to $count messages';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'This message was deleted';
@@ -2512,4 +2765,176 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get group_chat_reply_parent_gone =>
       'That message is no longer available, so the quote was removed. Send again to post your message.';
+
+  @override
+  String get group_tab_posts => 'Posts';
+
+  @override
+  String get group_tab_events => 'Events';
+
+  @override
+  String get group_posts_empty_title => 'No posts yet';
+
+  @override
+  String get group_posts_empty_message =>
+      'Share your first update with your community.';
+
+  @override
+  String get group_posts_load_error =>
+      'Unable to load posts. Please try again.';
+
+  @override
+  String get group_post_button => 'Post';
+
+  @override
+  String get group_post_new_title => 'New post';
+
+  @override
+  String get group_post_posting_to => 'Posting to:';
+
+  @override
+  String get group_post_caption_hint => 'What\'s new?';
+
+  @override
+  String get group_post_photos => 'Photos';
+
+  @override
+  String get group_post_link => 'Link';
+
+  @override
+  String get group_post_discard_title => 'Discard post?';
+
+  @override
+  String get group_post_discard_message => 'You\'ll lose what you\'ve written.';
+
+  @override
+  String get group_post_keep_editing => 'Keep editing';
+
+  @override
+  String get group_post_discard => 'Discard';
+
+  @override
+  String get group_post_add_link_title => 'Add link';
+
+  @override
+  String get group_post_add_link_hint =>
+      'Paste a link and we\'ll show a preview.';
+
+  @override
+  String get group_post_link_field_hint => 'Link';
+
+  @override
+  String get group_post_attach => 'Attach';
+
+  @override
+  String get group_post_attach_as_link => 'Attach as link';
+
+  @override
+  String get group_post_preview_failed_title => 'Couldn\'t load a preview';
+
+  @override
+  String get group_post_preview_failed_message =>
+      'You can still attach it as a link.';
+
+  @override
+  String get group_post_invalid_link =>
+      'Enter a valid link, for example https://example.com';
+
+  @override
+  String group_post_photo_limit(int count) {
+    return 'You can add up to $count photos.';
+  }
+
+  @override
+  String get group_post_upload_error =>
+      'Unable to upload photos. Please try again.';
+
+  @override
+  String get group_post_publish_error =>
+      'Unable to publish your post. Please try again.';
+
+  @override
+  String get group_post_published => 'Your post is live.';
+
+  @override
+  String get group_post_delete_title => 'Delete post?';
+
+  @override
+  String get group_post_delete_message =>
+      'This post will be permanently removed.';
+
+  @override
+  String get group_post_delete_failed =>
+      'Unable to delete the post. Please try again.';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get group_post_edit_title => 'Edit post';
+
+  @override
+  String get group_post_update_error =>
+      'Unable to save your changes. Please try again.';
+
+  @override
+  String get group_post_updated => 'Your changes are saved.';
+
+  @override
+  String get practice_collection_already_added =>
+      'This collection is already in your practices';
+
+  @override
+  String get practice_group_accumulator_already_added =>
+      'This accumulation is already in your practices';
+
+  @override
+  String get event_live_badge => 'LIVE';
+
+  @override
+  String get event_live_audio => 'Live audio';
+
+  @override
+  String get event_live_video_mode => 'Video';
+
+  @override
+  String get event_live_audio_mode => 'Audio';
+
+  @override
+  String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'Prayer requests';
+
+  @override
+  String get event_prayer_empty_title => 'No prayer requests yet';
+
+  @override
+  String get event_prayer_empty_body =>
+      'Your request and your community\'s will appear here';
+
+  @override
+  String get event_prayer_add => 'Add a prayer request';
+
+  @override
+  String get event_prayer_hint => 'How can we pray for you today';
+
+  @override
+  String get event_prayer_load_failed => 'Prayer requests couldn\'t be loaded.';
+
+  @override
+  String get event_prayer_closed =>
+      'Prayer requests are closed for this event.';
+
+  @override
+  String get event_prayer_pray => 'Pray';
+
+  @override
+  String get event_prayer_praying => 'Praying';
 }

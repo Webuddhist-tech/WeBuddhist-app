@@ -150,20 +150,6 @@ String _sessionTypeOf(Map<String, dynamic> data) {
 String _chatKindOf(Map<String, dynamic> data) =>
     (data['chat_kind'] as String?)?.trim().toUpperCase() ?? '';
 
-/// Whether [data] is a group chat push for the group whose chat screen is
-/// currently open ([activeGroupId]). Used to skip the foreground heads-up
-/// banner for a room the user is already reading.
-bool isGroupChatPushForActiveRoom(
-  Map<String, dynamic> data,
-  String? activeGroupId,
-) {
-  if (activeGroupId == null || activeGroupId.isEmpty) return false;
-  if (_sessionTypeOf(data) != PushSessionType.chat) return false;
-  if (_chatKindOf(data) != PushChatKind.group) return false;
-  final groupId = (data['group_id'] as String?)?.trim() ?? '';
-  return groupId == activeGroupId;
-}
-
 /// Single entry point for navigating after a push notification is opened.
 ///
 /// Routing must behave the same no matter how the notification was tapped:

@@ -3,10 +3,10 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 final _logger = AppLogger('GroupAboutScreen');
 
@@ -118,18 +118,19 @@ class _SectionHeader extends StatelessWidget {
 
     return Text(
       title,
-      style: large
-          ? TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: titleColor,
-            )
-          : TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
-              color: secondaryColor,
-            ),
+      style:
+          large
+              ? TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: titleColor,
+              )
+              : TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+                color: secondaryColor,
+              ),
     );
   }
 }
@@ -142,8 +143,7 @@ class _AboutLinkTile extends StatelessWidget {
 
   Future<void> _launchUrl(BuildContext context) async {
     final uri = Uri.tryParse(link.url.trim());
-    if (uri == null ||
-        (uri.scheme != 'http' && uri.scheme != 'https')) {
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
       _logger.warning('Blocked invalid group link URL: ${link.url}');
       if (context.mounted) {
         _showSnackBar(context, context.l10n.link_invalid);
@@ -152,9 +152,7 @@ class _AboutLinkTile extends StatelessWidget {
     }
 
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
+      if (!await openUrl(uri.toString())) {
         _logger.warning('Cannot launch group link URL: ${link.url}');
         if (context.mounted) {
           _showSnackBar(context, context.l10n.link_cannot_open);
@@ -173,9 +171,9 @@ class _AboutLinkTile extends StatelessWidget {
   }
 
   void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

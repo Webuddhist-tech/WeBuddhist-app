@@ -7,16 +7,23 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 /// Dialog for adding offline group-accumulation chants completed outside the app.
 ///
 /// Returns the selected chant count, or `null` when dismissed.
-Future<int?> showAddOfflineChantsDialog(BuildContext context) {
+Future<int?> showAddOfflineChantsDialog(
+  BuildContext context, {
+  String? title,
+  String? message,
+}) {
   return showDialog<int>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => const _AddOfflineChantsDialog(),
+    builder: (_) => _AddOfflineChantsDialog(title: title, message: message),
   );
 }
 
 class _AddOfflineChantsDialog extends StatefulWidget {
-  const _AddOfflineChantsDialog();
+  final String? title;
+  final String? message;
+
+  const _AddOfflineChantsDialog({this.title, this.message});
 
   @override
   State<_AddOfflineChantsDialog> createState() => _AddOfflineChantsDialogState();
@@ -63,7 +70,7 @@ class _AddOfflineChantsDialogState extends State<_AddOfflineChantsDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              l10n.group_accumulator_add_offline_chants_title,
+              widget.title ?? l10n.group_accumulator_add_offline_chants_title,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
@@ -71,7 +78,8 @@ class _AddOfflineChantsDialogState extends State<_AddOfflineChantsDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.group_accumulator_add_offline_chants_message,
+              widget.message ??
+                  l10n.group_accumulator_add_offline_chants_message,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
               ),

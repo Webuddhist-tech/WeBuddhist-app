@@ -19,6 +19,27 @@ void main() {
       final encoded = first.toJson();
       expect(encoded['sender_email'], 'parent@example.com');
       expect(ChatMessageParentDTO.fromJson(encoded), first);
+      // Absent until the backend adds it; must parse as "still standing".
+      expect(first.deletedAt, isNull);
+      expect(encoded.containsKey('deleted_at'), isFalse);
+    });
+
+    test('ChatMessageParentDTO carries deleted_at once the server sends it', () {
+      const json = {
+        'id': 'p1',
+        'sender_id': 'u1',
+        'sender_email': 'parent@example.com',
+        'body': 'hello',
+        'created_at': '2026-01-01T00:00:00Z',
+        'deleted_at': '2026-01-02T00:00:00Z',
+      };
+      final first = ChatMessageParentDTO.fromJson(json);
+      final encoded = first.toJson();
+      expect(encoded['deleted_at'], '2026-01-02T00:00:00Z');
+      expect(ChatMessageParentDTO.fromJson(encoded), first);
+      // The first timestamp stands.
+      expect(first.copyWith(deletedAt: 'later').deletedAt, 'later');
+      expect(first.copyWith().deletedAt, '2026-01-02T00:00:00Z');
     });
 
     test('ChatMessageReactionUserDTO', () {

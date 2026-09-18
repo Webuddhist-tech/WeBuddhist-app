@@ -4,9 +4,20 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// What a multi-message delete came to, by id. Every requested id lands in
+/// exactly one of the two sets.
+class ChatDeleteOutcome {
+  const ChatDeleteOutcome({this.deleted = const {}, this.failed = const {}});
+
+  final Set<String> deleted;
+  final Set<String> failed;
+}
 
 class GroupChatThreadState extends Equatable {
   /// Newest-first, exactly as the API returns them. Rendered through
@@ -68,6 +79,19 @@ class GroupChatThreadState extends Equatable {
     total,
     hasLoaded,
   ];
+}
+
+/// What a `refreshLatest` found, for the caller deciding whether the socket
+/// that should have delivered it can still be trusted.
+enum ThreadRefreshResult {
+  /// The request failed, so nothing can be said either way.
+  failed,
+
+  /// Every message the page carried was already held.
+  nothingMissed,
+
+  /// The page carried a message nothing else had delivered.
+  missedMessages,
 }
 
 class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
@@ -151,6 +175,18 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// over whatever was committed — see [_applyPendingDeletions].
   final Map<String, String> _pendingDeletions = {};
 
+  /// Every deletion this thread has learned of, for as long as it lives.
+  ///
+  /// Unlike [_pendingDeletions] this is never dropped, because the server
+  /// does not yet stamp `deleted_at` onto the parent embedded in a reply.
+  /// A reply's own row carries the marker when refetched, but its quote
+  /// does not: a refresh that replaces the held reply with the server's copy
+  /// would show the deleted original's author and body in the quote again,
+  /// and when the original is outside the loaded window nothing else in the
+  /// thread knows it is gone. Swept over the quotes of every committed row
+  /// instead — see [_withDeletedParent].
+  final Map<String, String> _deletedOriginals = {};
+
   /// How many page requests are in flight. A broadcast is only worth holding
   /// while one of them might be carrying the message it names.
   int _fetchesInFlight = 0;
@@ -181,26 +217,43 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// the map has already forgotten it. Running last, over whatever was
   /// actually committed, treats an inserted row and an already-held one alike.
   void _applyPendingDeletions() {
-    if (_pendingDeletions.isEmpty) return;
-
     var changed = false;
-    final messages = [
-      for (final message in state.messages)
-        if (message.deletedAt != null)
-          message
-        else
-          () {
-            // Read, not consumed: a second page still in flight can commit
-            // the same stale copy, and `_dropStalePending` clears the map
-            // once none is running.
-            final deletedAt = _pendingDeletions[message.id];
-            if (deletedAt == null) return message;
-            changed = true;
-            return message.copyWith(deletedAt: deletedAt);
-          }(),
-    ];
+    // Read, not consumed: a second page still in flight can commit the same
+    // stale copy, and `_dropStalePending` clears the map once none is
+    // running. Each held id is swept over the row and over any reply quoting
+    // it, the same way a live frame is applied.
+    var messages = state.messages;
+    for (final entry in _pendingDeletions.entries) {
+      messages = [
+        for (final message in messages)
+          _withDeletion(message, entry.key, entry.value, () => changed = true),
+      ];
+    }
+
+    // Quotes of every original known to be gone, whether or not a fetch was
+    // running: the page just committed carries those quotes as live.
+    if (_deletedOriginals.isNotEmpty) {
+      messages = [
+        for (final message in messages)
+          _withDeletedParent(message, () => changed = true),
+      ];
+    }
 
     if (changed) state = state.copyWith(messages: messages);
+  }
+
+  /// [message] with its quote stamped when the original it quotes is in
+  /// [_deletedOriginals] and the quote is not stamped yet.
+  ChatMessageDTO _withDeletedParent(
+    ChatMessageDTO message,
+    void Function() onChanged,
+  ) {
+    final parent = message.parent;
+    if (parent == null || parent.deletedAt != null) return message;
+    final deletedAt = _deletedOriginals[parent.id];
+    if (deletedAt == null) return message;
+    onChanged();
+    return message.copyWith(parent: parent.copyWith(deletedAt: deletedAt));
   }
 
   /// Anything still held once no fetch is running names a message no page is
@@ -298,19 +351,96 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   void appendLive(ChatMessageDTO message) {
     if (message.id.isEmpty) return;
     if (state.messages.any((existing) => existing.id == message.id)) return;
+    // A reply sent after its original was deleted arrives quoting it as
+    // live, the same way a refetched one does.
+    final stamped = _withDeletedParent(message, () {});
     state = state.copyWith(
-      messages: [message, ...state.messages],
+      messages: [stamped, ...state.messages],
       skip: state.skip + 1,
       total: state.total + 1,
       hasLoaded: true,
     );
   }
 
+  /// A `message_created` frame. Same insert as [appendLive], but it also
+  /// vouches for the socket: a `refreshLatest` waiting on this id learns the
+  /// socket did deliver it, just after the page had already landed.
+  ///
+  /// Only the socket path calls this. The POST response for an own message
+  /// and the refresh's own inserts go through [appendLive], because neither
+  /// says anything about whether the socket is working.
+  void appendFromSocket(ChatMessageDTO message) {
+    if (_awaitingSocket.containsKey(message.id)) {
+      _vouchedBySocket.add(message.id);
+    }
+    appendLive(message);
+  }
+
+  /// Ids a `refreshLatest` inserted itself and is now giving the socket a
+  /// grace window to deliver, with how many refreshes are waiting on each.
+  final Map<String, int> _awaitingSocket = {};
+
+  /// Ids in [_awaitingSocket] the socket has since delivered.
+  final Set<String> _vouchedBySocket = {};
+
+  /// Decides between `missedMessages` and `nothingMissed` for rows this
+  /// refresh inserted itself.
+  ///
+  /// The page landing before the socket frame is not proof the socket is
+  /// dead: the push, the frame and the refetch all race, and a frame held up
+  /// by a few hundred milliseconds of jitter arrives right after the page
+  /// did. Judging at the instant the page lands would call that a miss and
+  /// have the caller replace a healthy socket. So the socket is given
+  /// [grace] to deliver what the page carried, and only what it still has not
+  /// delivered by then counts.
+  Future<ThreadRefreshResult> _judgeMissed(
+    Set<String> missedIds,
+    Duration grace,
+  ) async {
+    if (missedIds.isEmpty) return ThreadRefreshResult.nothingMissed;
+    if (grace <= Duration.zero) return ThreadRefreshResult.missedMessages;
+
+    for (final id in missedIds) {
+      _awaitingSocket[id] = (_awaitingSocket[id] ?? 0) + 1;
+    }
+    await Future<void>.delayed(grace);
+
+    // Read before the release below: the last waiter clears the record.
+    final stillMissing = missedIds.any(
+      (id) => !_vouchedBySocket.contains(id),
+    );
+    for (final id in missedIds) {
+      final waiters = (_awaitingSocket[id] ?? 1) - 1;
+      if (waiters > 0) {
+        _awaitingSocket[id] = waiters;
+      } else {
+        _awaitingSocket.remove(id);
+        _vouchedBySocket.remove(id);
+      }
+    }
+    if (!mounted) return ThreadRefreshResult.failed;
+    return stillMissing
+        ? ThreadRefreshResult.missedMessages
+        : ThreadRefreshResult.nothingMissed;
+  }
+
   /// Re-reads the newest page after a reconnect and merges by id, so anything
   /// missed while the socket was down lands without duplicating what is held.
-  Future<void> refreshLatest({
+  ///
+  /// Reports whether the page carried a message nothing else had delivered by
+  /// the time it was merged. A message the socket delivered while the request
+  /// was in flight is already held when the page lands, so it does not count:
+  /// the socket did its job, just not before the refetch went out.
+  ///
+  /// [socketGrace] extends that allowance past the merge: rows this refresh
+  /// had to insert itself are reported as missed only if the socket has still
+  /// not delivered them (via [appendFromSocket]) once the window closes. The
+  /// merge itself is committed before the wait, so the rows are on screen
+  /// either way; only the verdict is delayed. Zero judges at the merge.
+  Future<ThreadRefreshResult> refreshLatest({
     String? currentUserId,
     String? currentUserEmail,
+    Duration socketGrace = Duration.zero,
   }) async {
     // Taken before the request goes out, so anything that changes while it is
     // in flight is visible on arrival.
@@ -331,9 +461,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           .listMessages(roomId, skip: 0, limit: _limit),
     );
 
-    if (!mounted) return;
+    if (!mounted) return ThreadRefreshResult.failed;
 
-    result.fold((_) {}, (page) {
+    // The ids of every row this refresh inserted itself, or null on failure.
+    // Judged after the merge is committed, not inside the fold, so the wait
+    // does not hold back rows the caller should already see.
+    final missedIds = result.fold<Set<String>?>((_) => null, (page) {
       List<ChatMessageReactionDTO> resolve(
         List<ChatMessageReactionDTO> reactions,
       ) {
@@ -408,6 +541,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       }
 
       if (state.messages.isEmpty) {
+        // Only a thread that had loaded can have missed anything: an empty
+        // list before the first page lands says nothing about the socket.
+        final missed = state.hasLoaded ? fetchedIds : <String>{};
         final messages = fetched.map(withPending).toList();
         state = state.copyWith(
           messages: messages,
@@ -417,7 +553,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           total: page.total,
           clearError: true,
         );
-        return;
+        return missed;
       }
 
       // A full page with nothing in common with what is held means more
@@ -448,7 +584,8 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           total: total,
           clearError: true,
         );
-        return;
+        // A whole page of rows nothing here had seen.
+        return fetchedIds;
       }
 
       // Refresh what is already held rather than skipping it. A reaction that
@@ -462,6 +599,11 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       // count that came back with it cannot include. Counted before the
       // page's own rows are inserted further down.
       final arrivedDuring = arrivedSince(fetchedIds).length;
+
+      // Judged against what is held now, not when the request went out, so a
+      // row the socket delivered meanwhile counts as delivered.
+      final heldNow = {for (final message in state.messages) message.id};
+      final missed = fetchedIds.difference(heldNow);
 
       state = state.copyWith(
         messages:
@@ -505,9 +647,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         total: total,
         hasMore: state.messages.length < total,
       );
+      return missed;
     });
     _applyPendingDeletions();
     _dropStalePending();
+    if (missedIds == null) return ThreadRefreshResult.failed;
+    return _judgeMissed(missedIds, socketGrace);
   }
 
   /// Rewrites one message's reactions from an authoritative summary — the
@@ -762,6 +907,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     final previousReactions = baseline;
 
     final repository = ref.read(groupChatRepositoryProvider);
+    // Read before the await: `ref` is unusable once this notifier is torn
+    // down, and a confirmed tap still has to be counted then.
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result =
         isRemoval
             ? await repository.removeReaction(
@@ -775,9 +923,21 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
               emoji: emoji,
             );
 
+    final failure = result.getLeft().toNullable();
+    if (failure == null) {
+      // This call is confirmed, so the tap counts even if a swap's cleanup
+      // below fails, and even if the member has already left the screen:
+      // the new emoji is on the server either way.
+      analytics.messageReacted(
+        roomId: roomIdForCall,
+        messageId: messageId,
+        emoji: emoji,
+        action: chatReactionActionFor(isRemoval: isRemoval, isSwap: isSwap),
+      );
+    }
+
     if (!mounted) return null;
 
-    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
     if (failure != null) {
       // Rolling back to this operation's baseline would wipe a newer tap.
       if (_isCurrent(messageId, seq)) {
@@ -920,21 +1080,40 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     // that commit, so it is held until no fetch is running. With nothing in
     // flight it is safe to drop: any later fetch carries `deleted_at` itself.
     if (_fetchesInFlight > 0) _pendingDeletions[messageId] = deletedAt;
+    // Kept for good, for the quotes: the first timestamp stands here too.
+    _deletedOriginals.putIfAbsent(messageId, () => deletedAt);
 
-    final index = state.messages.indexWhere(
-      (message) => message.id == messageId,
-    );
-    if (index < 0) return;
-    if (state.messages[index].deletedAt != null) return;
+    // The original and every loaded reply quoting it, in one pass. The
+    // replies are stamped even when the original itself is outside the loaded
+    // window: a quote of a message paged out of view still has to become a
+    // tombstone in the same frame as everyone else's copy of it.
+    var changed = false;
+    final messages = [
+      for (final message in state.messages)
+        _withDeletion(message, messageId, deletedAt, () => changed = true),
+    ];
+    if (changed) state = state.copyWith(messages: messages);
+  }
 
-    state = state.copyWith(
-      messages: [
-        for (final message in state.messages)
-          message.id == messageId
-              ? message.copyWith(deletedAt: deletedAt)
-              : message,
-      ],
-    );
+  /// [message] with [deletedAt] stamped where [messageId] is the message
+  /// itself or its quoted original. The first timestamp stands on both.
+  ChatMessageDTO _withDeletion(
+    ChatMessageDTO message,
+    String messageId,
+    String deletedAt,
+    void Function() onChanged,
+  ) {
+    var result = message;
+    if (message.id == messageId && message.deletedAt == null) {
+      result = result.copyWith(deletedAt: deletedAt);
+      onChanged();
+    }
+    final parent = message.parent;
+    if (parent != null && parent.id == messageId && parent.deletedAt == null) {
+      result = result.copyWith(parent: parent.copyWith(deletedAt: deletedAt));
+      onChanged();
+    }
+    return result;
   }
 
   /// Deletes one of this member's own messages, for everyone.
@@ -952,22 +1131,95 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     );
     if (index >= 0 && state.messages[index].deletedAt != null) return null;
 
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result = await ref
         .read(groupChatRepositoryProvider)
         .deleteMessage(roomId, messageId: messageId);
 
-    if (!mounted) return null;
+    final failure = result.getLeft().toNullable();
+    if (failure == null) _trackDeleted(analytics, messageId);
 
-    return result.fold((failure) => failure, (_) {
-      // 204 with no body, so there is nothing to adopt: the row is stamped now
-      // and the next fetch replaces this with the server's own value.
-      applyDeletion(
-        messageId,
-        deletedAt: DateTime.now().toUtc().toIso8601String(),
-      );
-      return null;
-    });
+    if (!mounted) return null;
+    if (failure != null) return failure;
+
+    // 204 with no body, so there is nothing to adopt: the row is stamped now
+    // and the next fetch replaces this with the server's own value.
+    applyDeletion(messageId, deletedAt: _nowIso());
+    return null;
   }
+
+  /// Deletes several of this member's own messages.
+  ///
+  /// One message goes through [deleteMessage]: the single route exists on
+  /// every backend and needs no bulk call. Several go in one bulk request,
+  /// which is **all or nothing** on the server: a `204` means every id is
+  /// gone, and any refusal means none is. The `204` carries no body, so each
+  /// row is stamped now and the `message_deleted` broadcast or the next
+  /// fetch brings the server's own timestamp.
+  ///
+  /// An environment without the bulk route answers with
+  /// [ChatBulkDeleteUnsupportedFailure], and the ids are then deleted one
+  /// call each.
+  Future<ChatDeleteOutcome> deleteMessages(List<String> messageIds) async {
+    final ids = messageIds.where((id) => id.isNotEmpty).toSet().toList();
+    if (ids.isEmpty) return const ChatDeleteOutcome();
+    if (ids.length == 1) return _deleteOneByOne(ids);
+
+    final analytics = ref.read(groupChatAnalyticsProvider);
+    final result = await ref
+        .read(groupChatRepositoryProvider)
+        .deleteMessages(roomId, messageIds: ids);
+
+    final failure = result.getLeft().toNullable();
+    if (failure == null) {
+      for (final id in ids) {
+        _trackDeleted(analytics, id);
+      }
+    }
+
+    if (!mounted) return ChatDeleteOutcome(failed: ids.toSet());
+
+    if (failure != null) {
+      if (failure is ChatBulkDeleteUnsupportedFailure) {
+        return _deleteOneByOne(ids);
+      }
+      return ChatDeleteOutcome(failed: ids.toSet());
+    }
+
+    final deletedAt = _nowIso();
+    for (final id in ids) {
+      applyDeletion(id, deletedAt: deletedAt);
+    }
+    return ChatDeleteOutcome(deleted: ids.toSet());
+  }
+
+  /// The fallback: one call per id, in order, stopping only if the notifier
+  /// is torn down mid-run.
+  Future<ChatDeleteOutcome> _deleteOneByOne(List<String> ids) async {
+    final deleted = <String>{};
+    final failed = <String>{};
+    for (final id in ids) {
+      final failure = await deleteMessage(id);
+      if (!mounted) {
+        failed.addAll(ids.where((other) => !deleted.contains(other)));
+        break;
+      }
+      (failure == null ? deleted : failed).add(id);
+    }
+    return ChatDeleteOutcome(deleted: deleted, failed: failed);
+  }
+
+  /// One event per message: the bulk route confirms every id at once and the
+  /// fallback confirms them one call each, so both report the same way.
+  ///
+  /// Takes the [analytics] the caller read *before* its request went out, so
+  /// a deletion the server accepted while the member was leaving the screen
+  /// is still counted — `ref` cannot be read once this notifier is disposed.
+  void _trackDeleted(GroupChatAnalytics analytics, String messageId) {
+    analytics.messageDeleted(roomId: roomId, messageId: messageId);
+  }
+
+  static String _nowIso() => DateTime.now().toUtc().toIso8601String();
 
   void retry() {
     if (state.messages.isEmpty) {

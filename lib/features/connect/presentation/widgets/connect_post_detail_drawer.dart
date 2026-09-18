@@ -11,11 +11,13 @@ class ConnectPostDetailDrawer extends ConsumerWidget {
     required this.postId,
     this.initialPost,
     this.includeUnfollowed = false,
+    this.groupId,
   });
 
   final String postId;
   final ConnectPost? initialPost;
   final bool includeUnfollowed;
+  final String? groupId;
 
   static const double _initialSize = 0.88;
   static const double _minSize = 0.45;
@@ -26,6 +28,7 @@ class ConnectPostDetailDrawer extends ConsumerWidget {
     required String postId,
     ConnectPost? initialPost,
     bool includeUnfollowed = false,
+    String? groupId,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -39,6 +42,7 @@ class ConnectPostDetailDrawer extends ConsumerWidget {
             postId: postId,
             initialPost: initialPost,
             includeUnfollowed: includeUnfollowed,
+            groupId: groupId,
           ),
     );
   }
@@ -67,6 +71,7 @@ class ConnectPostDetailDrawer extends ConsumerWidget {
                     postId: postId,
                     initialPost: initialPost,
                     includeUnfollowed: includeUnfollowed,
+                    groupId: groupId,
                     scrollController: scrollController,
                     showPostPreview: false,
                   ),

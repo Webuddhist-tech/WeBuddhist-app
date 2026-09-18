@@ -48,6 +48,7 @@ import 'core/theme/app_theme.dart';
 import 'core/localization/material_localizations_bo.dart';
 import 'core/localization/cupertino_localizations_bo.dart';
 import 'package:flutter_pecha/core/services/upgrade/force_update_gate.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:airbridge_flutter_sdk/airbridge_flutter_sdk.dart';
 
@@ -55,6 +56,8 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Portrait only; the live player switches to landscape for fullscreen.
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   try {
     await PostHogAnalyticsService.create().initialize();

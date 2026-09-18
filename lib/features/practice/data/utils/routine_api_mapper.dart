@@ -14,6 +14,7 @@ RoutineBlock routineBlockFromDto(TimeBlockDTO tb) {
   return RoutineBlock(
     id: tb.id,
     time: hhmmToTime(tb.timeInt),
+    title: RoutineBlock.normalizeTitle(tb.title),
     notificationEnabled: tb.notificationEnabled,
     apiTimeBlockId: tb.id,
     items: sessions.map(routineItemFromSessionDto).toList(),
@@ -33,6 +34,10 @@ RoutineItem routineItemFromSessionDto(SessionDTO s) {
       SessionType.accumulator => RoutineItemType.accumulator,
       SessionType.groupRecitationCollection =>
         RoutineItemType.groupRecitationCollection,
+      SessionType.recitationCollection =>
+        RoutineItemType.myRecitationCollection,
+      SessionType.groupAccumulator => RoutineItemType.groupAccumulator,
+      SessionType.unknown => RoutineItemType.unknown,
     },
     enrolledAt: s.startedAt,
     language: s.language.isEmpty ? null : s.language,
@@ -43,6 +48,7 @@ RoutineItem routineItemFromSessionDto(SessionDTO s) {
     durationMs: s.durationMs,
     firstSegment: s.firstSegment,
     itemCount: s.itemCount,
+    rawSessionType: s.rawSessionType,
   );
 }
 
@@ -68,10 +74,15 @@ List<SessionRequest> _sessionsForBlock(RoutineBlock block) {
           RoutineItemType.accumulator => SessionType.accumulator,
           RoutineItemType.groupRecitationCollection =>
             SessionType.groupRecitationCollection,
+          RoutineItemType.myRecitationCollection =>
+            SessionType.recitationCollection,
+          RoutineItemType.groupAccumulator => SessionType.groupAccumulator,
+          RoutineItemType.unknown => SessionType.unknown,
         },
         sourceId: item.id,
         displayOrder: i,
         durationMs: item.durationMs,
+        rawSessionType: item.rawSessionType,
       ),
     );
   }
@@ -84,6 +95,7 @@ TimeBlockRequest routineBlockToRequest(RoutineBlock block) {
   return TimeBlockRequest(
     time: formatRoutineTime24h(block.time),
     timeInt: timeToHHMM(block.time),
+    title: block.title,
     notificationEnabled: block.notificationEnabled,
     sessions: _sessionsForBlock(block),
   );

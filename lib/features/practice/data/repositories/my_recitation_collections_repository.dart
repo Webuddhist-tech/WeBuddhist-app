@@ -98,6 +98,29 @@ class MyRecitationCollectionsRepository {
     }
   }
 
+  Future<Either<Failure, MyRecitationCollectionItemModel>>
+  updateCollectionItemDisplayOrder({
+    required String collectionId,
+    required String itemId,
+    required double displayOrder,
+  }) async {
+    try {
+      final result = await remoteDatasource.updateCollectionItemDisplayOrder(
+        collectionId: collectionId,
+        itemId: itemId,
+        displayOrder: displayOrder,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(
+        ExceptionMapper.map(
+          e,
+          context: 'Failed to reorder chant in collection',
+        ),
+      );
+    }
+  }
+
   Future<Either<Failure, AddMyRecitationCollectionItemsResponse>>
   addItemsToCollection({
     required String collectionId,
@@ -112,6 +135,53 @@ class MyRecitationCollectionsRepository {
     } catch (e) {
       return Left(
         ExceptionMapper.map(e, context: 'Failed to add chants to collection'),
+      );
+    }
+  }
+
+  Future<Either<Failure, Set<String>>> getTodayCompletions(
+    String collectionId,
+  ) async {
+    try {
+      final result = await remoteDatasource.getTodayCompletions(
+        collectionId: collectionId,
+      );
+      return Right(result.completedChantIds);
+    } catch (e) {
+      return Left(
+        ExceptionMapper.map(e, context: 'Failed to load completed recitations'),
+      );
+    }
+  }
+
+  Future<Either<Failure, void>> completeChant({
+    required String collectionId,
+    required String chantId,
+  }) async {
+    try {
+      await remoteDatasource.completeChant(
+        collectionId: collectionId,
+        chantId: chantId,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(
+        ExceptionMapper.map(e, context: 'Failed to complete recitation'),
+      );
+    }
+  }
+
+  Future<Either<Failure, int>> getCompletionDaysCount(
+    String collectionId,
+  ) async {
+    try {
+      final result = await remoteDatasource.getCompletionDaysCount(
+        collectionId: collectionId,
+      );
+      return Right(result.dayCount);
+    } catch (e) {
+      return Left(
+        ExceptionMapper.map(e, context: 'Failed to load completion day count'),
       );
     }
   }

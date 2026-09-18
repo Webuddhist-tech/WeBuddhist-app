@@ -159,7 +159,10 @@ class _TranslationItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final content = normalizeSegmentHtml(translation.content);
+    final content = translation.segments
+        .map((s) => normalizeSegmentHtml(s.content))
+        .where((s) => s.isNotEmpty)
+        .join('<br><br>');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(

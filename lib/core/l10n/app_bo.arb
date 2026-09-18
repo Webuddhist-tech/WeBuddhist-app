@@ -185,6 +185,39 @@
   "recitations_no_content": "ཞལ་འདོན་མི་འདུག",
   "recitations_no_saved": "ཉར་ཚག་བྱས་པའི་ཞལ་འདོན་མི་འདུག",
   "recitations_login_prompt": "ཁྱེད་ཀྱིས་ཉར་ཚགས་བྱས་པའི་ཞལ་འདོན་ལ་གཟིགས་ན་ནང་འཛུལ་བྱོས།",
+  "my_recitation_collection_new_title": "ཚོགས་སྡེ་གསར་པ།",
+  "my_recitation_collection_next": "རྗེས་མ།",
+  "my_recitation_collection_create": "གསར་བཟོ།",
+  "my_recitation_collection_create_button": "ཚོགས་སྡེ་གསར་བཟོ།",
+  "my_recitation_collection_change_title": "མཚན་བྱང་བསྒྱུར།",
+  "my_recitation_collection_change": "བསྒྱུར།",
+  "my_recitation_collection_add_chants": "ཞལ་འདོན་ཁ་སྣོན།",
+  "my_recitation_collection_search_chants": "ཞལ་འདོན་འཚོལ།",
+  "my_recitation_collection_add_to_collection": "ཚོགས་སྡེར་ཁ་སྣོན།",
+  "my_recitation_collection_edit": "ཚོགས་སྡེ་བཟོ་བཅོས།",
+  "my_recitation_collection_delete": "ཚོགས་སྡེ་སུབས།",
+  "my_recitation_collection_delete_title": "ཚོགས་སྡེ་སུབ་བམ།",
+  "my_recitation_collection_delete_message": "ཚོགས་སྡེ་འདི་གཏན་དུ་སུབ་འགྲོ།",
+  "my_recitation_collection_fallback_title": "ཞལ་འདོན་ཚོགས་སྡེ།",
+  "my_recitation_collection_unavailable": "ད་ལྟ་མི་འདུག",
+  "my_recitation_collection_chant_count": "{count, plural, =0{ཞལ་འདོན་ ༠} =1{ཞལ་འདོན་ ༡} other{ཞལ་འདོན་ {count}}}",
+  "@my_recitation_collection_chant_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "my_recitation_collection_chant_count_owner": "{count, plural, =0{ཞལ་འདོན་ ༠ • ང་} =1{ཞལ་འདོན་ ༡ • ང་} other{ཞལ་འདོན་ {count} • ང་}}",
+  "@my_recitation_collection_chant_count_owner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarks_empty_chant_collections_title": "བརྟག་ཉར་བྱས་པའི་ཞལ་འདོན་ཚོགས་སྡེ་མི་འདུག",
+  "bookmarks_empty_chant_collections_subtitle": "ཞལ་འདོན་ཚོགས་སྡེ་ཞིག་བརྟག་ཉར་བྱས་ནས་འདིར་ཉར།",
   "notification_settings": "གསལ་བརྡའི་སྒྲིག་འགོད།",
   "notification_allow_title": "གསར་བརྡ་གཏོང་ཆོག",
   "notification_allow_subtitle_enabled": "མཉེན་ཆས་འདིའི་ནང་གསར་བརྡའི་སྒོ་ཕྱེས་འདུག",
@@ -555,6 +588,9 @@
   "second_version_msg": "འགྱུར་གཞན་འདི་རྩ་བ་གཙོ་བོའི་འོག་རང་ལ་འཆར་ཡོང་།",
   "version": "པར་གཞི།",
   "parallel_version": "ཀློག་མཁན་གྱི་སྒྲིག་འགོད།",
+  "reader_languages_title": "སྐད་ཡིག",
+  "reader_original_label": "མ་ཡིག",
+  "reader_translation_label": "འགྱུར་མ།",
   "version_not_available": "མི་འདུག",
   "read_full_text": "ཆ་ཚང་ཀློག",
   "reader_source_label": "ཡོང་ཁུངས།",
@@ -666,7 +702,7 @@
   "legal_privacy_policy": "སྒེར་དོན་གསང་རྒྱ།",
   "follow": "རྗེས་འབྲང་བྱོས།",
   "following": "རྗེས་འབྲང་ཟིན།",
-  "calendar_title": "ཟླ་ཐོ།",
+  "calendar_title": "ལོ་ཐོ།",
   "calendar_upcoming_events": "འབྱུང་འགྱུར་བྱེད་སྒོ།",
   "calendar_day_short": "ཚེས།",
   "calendar_day_label": "ཚེས།",
@@ -773,6 +809,7 @@
   "share_chant_message": "ངས་ཞལ་འདོན་འདི་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་། ཁྱེད་ཀྱིས་འདི་ཉམས་སུ་ལེན་ཐུབ་པ་མ་ཟད་ WeBuddhist ཐོག་ཞལ་འདོན་དང་ཡིག་ཆའི་དཔེ་མཛོད་མཇལ་ཐུབ།",
   "share_quote_message": "ངས་ WeBuddhist ཐོག་གི་ལེགས་བཤད་འདི་ཡག་པོ་མཐོང་སོང་བས་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་། WeBuddhist མཉེན་ཆས་ཐོག་འདི་ལྟ་བུའི་ལེགས་བཤད་མང་ཙམ་ཀློགས།",
   "share_poem_message": "ངས་ WeBuddhist ཐོག་གི་སྙན་ངག་འདི་ཡག་པོ་མཐོང་སོང་བས་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་།",
+  "share_poem_title": "\u201c{title}\u201d",
   "share_mala_message": "ངས་ WeBuddhist ཐོག་གི་གློག་རྡུལ་ཕྲེང་བ་འདི་བཀོལ་སྤྱོད་བྱེད་ཀྱི་ཡོད་ཅིང་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་། ཁྱེད་གང་དུ་སོང་ཡང་བེད་སྤྱོད་བྱེད་པར་སྟབས་བདེ་པོ་ཡོད།",
   "share_passage_message": "ང་གསུང་ཚན་འདི་ལ་སྣང་བ་འགྲོ་སོང་བས་ཁྱེད་ལ་མཉམ་སྤྱོད་བྱེད་འདོད་བྱུང་། ཁྱེད་ཀྱིས་ WeBuddhist ཐོག་ལེགས་བཤད་འདིའི་བརྗོད་དོན་ཆ་ཚང་བར་ལྟ་ཀློག་བྱེད་ཐུབ།",
   "share_timer_message": "ངས་ WeBuddhist ཐོག་གི་བསམ་གཏན་གྱི་སྒོམ་ཡུན་འདི་ཁྱོད་ལ་མཉམ་སྤྱོད་བྱ་འདོད་བྱུང་། འདིས་བསམ་གཏན་གྱི་ཉམས་ལེན་བསྐྱེད་པར་སྟབས་བདེ་སྐྲུན་གྱི་ཡོད།",
@@ -954,6 +991,9 @@
   },
   "timer_notification_complete": "ཁྱེད་ཀྱི་ཐུན་ཚང་སོང་།",
   "group_chat_title": "གླེང་མོལ།",
+  "chats_title": "ཁ་བརྡ།",
+  "chats_empty_title": "ད་དུང་ཁ་བརྡ་མེད།",
+  "chats_empty_body": "ཁ་བརྡ་འགོ་འཛུགས་པར་སྤྱི་ཚོགས་ཤིག་ལ་ཞུགས།",
   "group_chat_inappropriate": "སྐད་ཆ་འདི་འབྱོར་མི་ཆོག་པས་འཕྲིན་ཐུང་འདི་གཏོང་མ་ཐུབ།",
   "group_chat_not_a_member": "ཚོགས་མི་ཁོ་ནས་གླེང་མོལ་འདི་ཕྱེ་ཐུབ།",
   "group_chat_open": "གླེང་མོལ།",
@@ -972,12 +1012,42 @@
   "group_chat_copy": "འདྲ་བཤུས།",
   "group_chat_copied": "འཕྲིན་ཐུང་འདྲ་བཤུས་བྱས་ཟིན།",
   "group_chat_report": "སྙན་ཞུ།",
+  "group_chat_report_title": "ཁྱེད་ཀྱིས་འདི་ཅིའི་ཕྱིར་སྙན་ཞུ་བྱེད་པ་ཡིན།",
+  "group_chat_report_privacy": "ཁྱེད་ཀྱི་མིང་གསང་བར་གནས།",
+  "group_chat_report_reason_harassment": "གཞན་ལ་གནོད་འཚེ་དང་མནར་གཅོད།",
+  "group_chat_report_reason_hate": "ཞེ་སྡང་ངམ་གནོད་པའི་སྐད་ཆ།",
+  "group_chat_report_reason_sexual": "འཁྲིག་སྤྱོད་དང་མི་འོས་པའི་ནང་དོན།",
+  "group_chat_report_reason_spam": "སྤམ་མམ་གཡོ་སྒྱུ།",
+  "group_chat_report_reason_off_topic": "བརྗོད་གཞི་དང་མི་མཐུན་པའམ་བར་ཆད།",
+  "group_chat_report_reason_other": "གཞན་ཞིག",
+  "group_chat_report_note_title": "མཆན་འགོད།",
+  "group_chat_report_note_hint": "གཞན་ཞིག...",
+  "group_chat_report_submit": "སྙན་ཞུ་སྐུར།",
+  "group_chat_report_thanks": "བསམ་ཚུལ་གནང་བར་ཐུགས་རྗེ་ཆེ།",
+  "group_chat_report_offline": "ཁྱེད་དྲ་ཐོག་མིན། རྗེས་སུ་ཡང་བསྐྱར་འབད་རོགས།",
+  "group_chat_report_failed": "སྙན་ཞུ་སྐུར་མ་ཐུབ།",
+  "group_chat_report_retry": "ཡང་བསྐྱར་འབད།",
   "group_chat_delete": "སུབ།",
   "group_chat_delete_title": "འཕྲིན་ཐུང་སུབ་དགོས་སམ།",
-  "group_chat_delete_confirm_body": "འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་གི་མི་ཚང་མའི་ཆེད་དུ་སུབ་འགྲོ།",
-  "group_chat_delete_for_everyone": "ཚང་མའི་ཆེད་དུ་སུབ།",
-  "group_chat_delete_failed": "འཕྲིན་ཐུང་སུབ་མ་ཐུབ།",
-  "group_chat_message_deleted": "ཁྱེད་ཀྱིས་འཕྲིན་ཐུང་འདི་བསུབས་སོང་།",
+  "group_chat_delete_title_many": "འཕྲིན་ཐུང་ {count} སུབ་དགོས་སམ།",
+  "group_chat_delete_confirm_body": "{count, plural, =1{འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།} other{འཕྲིན་ཐུང་འདི་དག་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{འཕྲིན་ཐུང་སུབ་མ་ཐུབ།} other{འཕྲིན་ཐུང་ {count} སུབ་མ་ཐུབ།}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_message_deleted_toast": "{count, plural, =1{འཕྲིན་ཐུང་བསུབས་ཟིན།} other{འཕྲིན་ཐུང་རྣམས་བསུབས་ཟིན།}}",
+  "group_chat_selection_limit": "འཕྲིན་ཐུང་མང་ཤོས་ {count} འདེམས་ཆོག",
   "group_chat_message_deleted_by_sender": "འཕྲིན་ཐུང་འདི་བསུབས་ཟིན།",
   "group_chat_reaction_failed": "ཁྱེད་ཀྱི་དྲན་བརྡ་ཉར་མ་ཐུབ།",
   "group_chat_reactions_count": "{count, plural, =1{དྲན་བརྡ་ ༡} other{དྲན་བརྡ་ {count}}}",
@@ -990,5 +1060,48 @@
   },
   "group_chat_you": "ཁྱེད།",
   "group_chat_tap_to_remove": "སུབ་པར་མནན།",
-  "group_chat_reply_parent_gone": "འཕྲིན་ཐུང་དེ་མི་འདུག་པས་ལུང་འདྲེན་ཕྱིར་བསུབས། ཡང་བསྐྱར་གཏོང་རོགས།"
+  "group_chat_reply_parent_gone": "འཕྲིན་ཐུང་དེ་མི་འདུག་པས་ལུང་འདྲེན་ཕྱིར་བསུབས། ཡང་བསྐྱར་གཏོང་རོགས།",
+  "group_tab_posts": "སྤེལ་བ།",
+  "group_tab_events": "བྱེད་སྒོ།",
+  "group_posts_empty_title": "ད་དུང་སྤེལ་བ་གང་ཡང་མེད།",
+  "group_posts_empty_message": "ཁྱེད་ཀྱི་ཚོགས་པར་གསར་འགྱུར་ཐོག་མ་དེ་སྤེལ་རོགས།",
+  "group_posts_load_error": "སྤེལ་བ་ཁག་འཇུག་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_button": "སྤེལ།",
+  "group_post_new_title": "སྤེལ་བ་གསར་པ།",
+  "group_post_posting_to": "སྤེལ་ཡུལ།",
+  "group_post_caption_hint": "གསར་འགྱུར་ཅི་ཡོད།",
+  "group_post_photos": "འདྲ་པར།",
+  "group_post_link": "འབྲེལ་ཐག",
+  "group_post_discard_title": "སྤེལ་བ་འདོར་རྒྱུ་ཡིན་ནམ།",
+  "group_post_discard_message": "ཁྱེད་ཀྱིས་བྲིས་པ་རྣམས་བརླག་འགྲོ།",
+  "group_post_keep_editing": "མུ་མཐུད་འབྲི།",
+  "group_post_discard": "འདོར།",
+  "group_post_add_link_title": "འབྲེལ་ཐག་སྣོན།",
+  "group_post_add_link_hint": "འབྲེལ་ཐག་སྦྱར་ན་སྔོན་ལྟ་སྟོན་གྱི་རེད།",
+  "group_post_link_field_hint": "འབྲེལ་ཐག",
+  "group_post_attach": "སྦྱར།",
+  "group_post_attach_as_link": "འབྲེལ་ཐག་ལྟར་སྦྱར།",
+  "group_post_preview_failed_title": "སྔོན་ལྟ་འཇུག་མ་ཐུབ།",
+  "group_post_preview_failed_message": "ད་དུང་འབྲེལ་ཐག་ལྟར་སྦྱར་ཆོག",
+  "group_post_invalid_link": "འབྲེལ་ཐག་ཚད་ལྡན་ཞིག་འཇུག་རོགས། དཔེར་ན་ https://example.com",
+  "group_post_photo_limit": "འདྲ་པར་ {count} བར་སྣོན་ཆོག",
+  "group_post_upload_error": "འདྲ་པར་ཡར་འཇུག་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_publish_error": "ཁྱེད་ཀྱི་སྤེལ་བ་སྤེལ་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_published": "ཁྱེད་ཀྱི་སྤེལ་བ་སྤེལ་ཟིན།",
+  "group_post_delete_title": "སྤེལ་བ་བསུབ་རྒྱུ་ཡིན་ནམ།",
+  "group_post_delete_message": "སྤེལ་བ་འདི་གཏན་དུ་བསུབ་འགྲོ།",
+  "group_post_delete_failed": "སྤེལ་བ་བསུབ་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "edit": "བཟོ་བཅོས།",
+  "group_post_edit_title": "སྤེལ་བ་བཟོ་བཅོས།",
+  "group_post_update_error": "བཟོ་བཅོས་ཉར་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
+  "group_post_updated": "བཟོ་བཅོས་ཉར་ཟིན།",
+  "event_prayer_requests": "སྨོན་ལམ་ཞུ་བ།",
+  "event_prayer_empty_title": "ད་ལྟ་སྨོན་ལམ་ཞུ་བ་མེད།",
+  "event_prayer_empty_body": "ཁྱེད་དང་ཁྱེད་ཀྱི་ཚོགས་པའི་ཞུ་བ་འདིར་མངོན་ངེས།",
+  "event_prayer_add": "སྨོན་ལམ་ཞུ་བ་སྣོན་པ།",
+  "event_prayer_hint": "དེ་རིང་ཁྱེད་ལ་སྨོན་ལམ་ཅི་ཞིག་འདེབས་དགོས།",
+  "event_prayer_load_failed": "སྨོན་ལམ་ཞུ་བ་ཁུར་མ་ཐུབ།",
+  "event_prayer_closed": "ལས་རིམ་འདིའི་སྨོན་ལམ་ཞུ་བ་བཀག་ཟིན།",
+  "event_prayer_pray": "སྨོན་ལམ་འདེབས།",
+  "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན།"
 }

@@ -9,6 +9,7 @@ class ConnectPostMediaModel {
   final int? height;
   final int? durationMs;
   final int displayOrder;
+  final String? mediaKey;
 
   const ConnectPostMediaModel({
     required this.id,
@@ -19,6 +20,7 @@ class ConnectPostMediaModel {
     this.height,
     this.durationMs,
     this.displayOrder = 0,
+    this.mediaKey,
   });
 
   factory ConnectPostMediaModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class ConnectPostMediaModel {
       height: (json['height'] as num?)?.toInt(),
       durationMs: (json['duration_ms'] as num?)?.toInt(),
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      mediaKey: json['media_key'] as String?,
     );
   }
 
@@ -44,6 +47,7 @@ class ConnectPostMediaModel {
       height: height,
       durationMs: durationMs,
       displayOrder: displayOrder,
+      mediaKey: mediaKey,
     );
   }
 }

@@ -81,6 +81,9 @@ class ProtectedRoutes {
     // Group accumulators (group prayer accumulations)
     '/group-accumulators/',
 
+    // CMS author routes: group post create + media upload.
+    '/cms/',
+
     // Plans (public endpoints but may need auth for user-specific data)
     '/plans/{planId}',
     '/plans/{planId}/days/{dayNumber}',
@@ -110,6 +113,8 @@ class ProtectedRoutes {
     // Posts feed: sends auth when logged in so `liked_by_me` reflects the
     // current user (anonymous GET → false).
     '/groups/author/posts',
+    // A group's own posts list, same `liked_by_me` enrichment.
+    '/groups/author/{groupId}/posts',
     // Post comments list: sends auth when logged in so `liked_by_me` reflects
     // the current user on each comment.
     '/groups/author/posts/{postId}/comments',

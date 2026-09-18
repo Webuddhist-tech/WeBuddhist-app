@@ -32,10 +32,7 @@ void main() {
 
     test('empty or unknown payloads open Home, not Practice', () {
       expect(resolvePushTap(const {}).target, PushTapTarget.home);
-      expect(
-        resolvePushTap({'session_type': ''}).target,
-        PushTapTarget.home,
-      );
+      expect(resolvePushTap({'session_type': ''}).target, PushTapTarget.home);
       expect(
         resolvePushTap({'session_type': 'ANNOUNCEMENT'}).target,
         PushTapTarget.home,

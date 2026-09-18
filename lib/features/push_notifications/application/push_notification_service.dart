@@ -8,6 +8,7 @@ import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
+import 'package:flutter_pecha/features/push_notifications/application/foreground_push_filter.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/repositories/push_messaging_repository.dart';
 import 'package:uuid/uuid.dart';
@@ -34,13 +35,21 @@ class PushNotificationService {
   PushNotificationService({
     required PushMessagingRepository repository,
     required LocalStorageService storage,
+    required ForegroundPushFilter foregroundFilter,
     Duration reconcileRetryBaseDelay = const Duration(seconds: 5),
   }) : _repository = repository,
        _storage = storage,
+       _foregroundFilter = foregroundFilter,
        _reconcileRetryBaseDelay = reconcileRetryBaseDelay;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
+
+  /// Screens claim the pushes they already show, so the banner is skipped
+  /// for a message the member is looking at. Only the foreground path asks:
+  /// background and terminated pushes are displayed by the OS before the
+  /// app runs.
+  final ForegroundPushFilter _foregroundFilter;
   final _localNotifications = FlutterLocalNotificationsPlugin();
   final _logger = AppLogger('PushNotificationService');
   final _subscriptions = <StreamSubscription<dynamic>>[];
@@ -50,12 +59,6 @@ class PushNotificationService {
   /// Foreground taps reach the navigator separately (through the shared
   /// flutter_local_notifications callback), so they don't pass through here.
   void Function(PushMessage message)? onOpenMessage;
-
-  /// Asked before a foreground message is shown as a heads-up. Return true to
-  /// drop the banner (the payload is still handled by whoever owns the
-  /// screen, e.g. the open chat room receiving it live). Set by the bootstrap
-  /// layer, which knows which screen is on top.
-  bool Function(PushMessage message)? shouldSuppressForeground;
 
   String? _token;
   bool _loggedIn = false;
@@ -347,8 +350,8 @@ class PushNotificationService {
 
   Future<void> _showNotification(PushMessage message) async {
     if (!message.hasNotification) return;
-    if (shouldSuppressForeground?.call(message) ?? false) {
-      _logger.info('Foreground message suppressed: ${message.title}');
+    if (!_foregroundFilter.shouldShow(message.data)) {
+      _logger.info('Foreground push suppressed: already on screen');
       return;
     }
     _logger.info('Foreground message: ${message.title}');
