@@ -1879,6 +1879,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_participation_prompt => TolgeeBridge.get(
+    localeName,
+    'connect_event_participation_prompt',
+    () => _fallback.connect_event_participation_prompt,
+  );
+
+  @override
+  String get connect_event_joining_in_person => TolgeeBridge.get(
+    localeName,
+    'connect_event_joining_in_person',
+    () => _fallback.connect_event_joining_in_person,
+  );
+
+  @override
+  String get connect_event_joining_online => TolgeeBridge.get(
+    localeName,
+    'connect_event_joining_online',
+    () => _fallback.connect_event_joining_online,
+  );
+
+  @override
   String connect_event_participants_attending(int count) => TolgeeBridge.format(
     localeName,
     'connect_event_participants_attending',
@@ -5226,31 +5247,43 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get group_chat_delete_confirm_body => TolgeeBridge.get(
+  String group_chat_delete_title_many(int count) => TolgeeBridge.format(
+    localeName,
+    'group_chat_delete_title_many',
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_delete_title_many(count),
+  );
+
+  @override
+  String group_chat_delete_confirm_body(int count) => TolgeeBridge.format(
     localeName,
     'group_chat_delete_confirm_body',
-    () => _fallback.group_chat_delete_confirm_body,
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_delete_confirm_body(count),
   );
 
   @override
-  String get group_chat_delete_for_everyone => TolgeeBridge.get(
-    localeName,
-    'group_chat_delete_for_everyone',
-    () => _fallback.group_chat_delete_for_everyone,
-  );
-
-  @override
-  String get group_chat_delete_failed => TolgeeBridge.get(
+  String group_chat_delete_failed(int count) => TolgeeBridge.format(
     localeName,
     'group_chat_delete_failed',
-    () => _fallback.group_chat_delete_failed,
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_delete_failed(count),
   );
 
   @override
-  String get group_chat_message_deleted => TolgeeBridge.get(
+  String group_chat_message_deleted_toast(int count) => TolgeeBridge.format(
     localeName,
-    'group_chat_message_deleted',
-    () => _fallback.group_chat_message_deleted,
+    'group_chat_message_deleted_toast',
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_message_deleted_toast(count),
+  );
+
+  @override
+  String group_chat_selection_limit(int count) => TolgeeBridge.format(
+    localeName,
+    'group_chat_selection_limit',
+    <String, Object>{'count': count},
+    () => _fallback.group_chat_selection_limit(count),
   );
 
   @override

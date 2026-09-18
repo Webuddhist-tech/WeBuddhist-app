@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -62,6 +64,18 @@ class ChatLinkPreviewService {
   Future<ChatLinkPreview?> fetch(String url) async {
     if (!isPreviewableUrl(url)) return null;
     try {
+      // YouTube serves a generic "YouTube" title to non-browser clients, so
+      // its keyless oEmbed endpoint is the only way to get the video title.
+      if (isYoutubeUrl(url)) {
+        final response = await _dio.get<String>(
+          youtubeOembedUrl(url),
+          options: Options(headers: {'Accept': 'application/json'}),
+        );
+        final body = response.data;
+        if (body == null || body.isEmpty) return null;
+        return parseYoutubeOembed(body, url: url);
+      }
+
       final response = await _dio.get<String>(url);
       final body = response.data;
       if (body == null || body.isEmpty) return null;
@@ -72,6 +86,44 @@ class ChatLinkPreviewService {
     } catch (_) {
       return null;
     }
+  }
+
+  static String youtubeOembedUrl(String url) =>
+      Uri.https('www.youtube.com', '/oembed', {
+        'url': url.trim(),
+        'format': 'json',
+      }).toString();
+
+  /// Parses the oEmbed JSON; the channel name lands in [description].
+  static ChatLinkPreview? parseYoutubeOembed(
+    String body, {
+    required String url,
+  }) {
+    try {
+      final json = jsonDecode(body);
+      if (json is! Map<String, dynamic>) return null;
+      final preview = ChatLinkPreview(
+        url: url,
+        title: _nullIfEmpty(json['title'] as String?),
+        description: _nullIfEmpty(json['author_name'] as String?),
+        imageUrl: _absoluteImageUrl(
+          json['thumbnail_url'] as String?,
+          pageUrl: url,
+        ),
+      );
+      return preview.isRenderable ? preview : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool isYoutubeUrl(String url) {
+    final host = Uri.tryParse(url.trim())?.host.toLowerCase();
+    if (host == null) return false;
+    return host == 'youtu.be' ||
+        host == 'youtube.com' ||
+        host.endsWith('.youtube.com') ||
+        host == 'youtube-nocookie.com';
   }
 
   /// Parses `og:` tags with a `<title>` fallback. Pure, so the parser is

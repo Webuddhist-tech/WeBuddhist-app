@@ -1027,13 +1027,13 @@ abstract class AppLocalizations {
   /// No description provided for @my_recitation_collection_chant_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}'**
+  /// **'{count, plural,\n=0 {0 chants}\n=1 {1 chant}\nother {{count} chants}\n}'**
   String my_recitation_collection_chant_count(int count);
 
   /// No description provided for @my_recitation_collection_chant_count_owner.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}'**
+  /// **'{count, plural,\n=0 {0 chants • me}\n=1 {1 chant • me}\nother {{count} chants • me}\n}'**
   String my_recitation_collection_chant_count_owner(int count);
 
   /// No description provided for @bookmarks_empty_chant_collections_title.
@@ -1255,7 +1255,7 @@ abstract class AppLocalizations {
   /// No description provided for @routine_delete_block_message.
   ///
   /// In en, this message translates to:
-  /// **'The session and all its items will be removed'**
+  /// **'The time block and all its items will be removed'**
   String get routine_delete_block_message;
 
   /// No description provided for @something_went_wrong.
@@ -1803,6 +1803,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attending'**
   String get connect_event_attending;
+
+  /// No description provided for @connect_event_participation_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How are you attending?'**
+  String get connect_event_participation_prompt;
+
+  /// No description provided for @connect_event_joining_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining in person'**
+  String get connect_event_joining_in_person;
+
+  /// No description provided for @connect_event_joining_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining online'**
+  String get connect_event_joining_online;
 
   /// No description provided for @connect_event_participants_attending.
   ///
@@ -2557,13 +2575,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_edit_title.
   ///
   /// In en, this message translates to:
-  /// **'Edit your practices'**
+  /// **'Edit your routine'**
   String get routine_edit_title;
 
   /// No description provided for @routine_delete_block.
   ///
   /// In en, this message translates to:
-  /// **'Remove session'**
+  /// **'Remove block'**
   String get routine_delete_block;
 
   /// No description provided for @routine_session_title_hint.
@@ -2647,13 +2665,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_empty_block_delete_singular.
   ///
   /// In en, this message translates to:
-  /// **'Remove session'**
+  /// **'Remove block'**
   String get routine_empty_block_delete_singular;
 
   /// No description provided for @routine_empty_block_delete_plural.
   ///
   /// In en, this message translates to:
-  /// **'Remove sessions'**
+  /// **'Remove blocks'**
   String get routine_empty_block_delete_plural;
 
   /// No description provided for @routine_notification_title.
@@ -4736,29 +4754,35 @@ abstract class AppLocalizations {
   /// **'Delete message?'**
   String get group_chat_delete_title;
 
+  /// No description provided for @group_chat_delete_title_many.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} messages?'**
+  String group_chat_delete_title_many(int count);
+
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'This message will be deleted for everyone in this chat.'**
-  String get group_chat_delete_confirm_body;
-
-  /// No description provided for @group_chat_delete_for_everyone.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for everyone'**
-  String get group_chat_delete_for_everyone;
+  /// **'{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}'**
+  String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'The message couldn\'t be deleted.'**
-  String get group_chat_delete_failed;
+  /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
+  String group_chat_delete_failed(int count);
 
-  /// No description provided for @group_chat_message_deleted.
+  /// No description provided for @group_chat_message_deleted_toast.
   ///
   /// In en, this message translates to:
-  /// **'You deleted this message'**
-  String get group_chat_message_deleted;
+  /// **'{count, plural, =1{Message deleted} other{Messages deleted}}'**
+  String group_chat_message_deleted_toast(int count);
+
+  /// No description provided for @group_chat_selection_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can select up to {count} messages'**
+  String group_chat_selection_limit(int count);
 
   /// No description provided for @group_chat_message_deleted_by_sender.
   ///

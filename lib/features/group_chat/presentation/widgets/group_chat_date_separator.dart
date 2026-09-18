@@ -23,18 +23,27 @@ class GroupChatDateSeparator extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-            borderRadius: BorderRadius.circular(12),
+            // White on the cream page, with a soft shadow, per the mocks.
+            color:
+                isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                blurRadius: 6,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
           child: Text(
             _label(context),
-            strutStyle: context.tibetanStrutStyle(12, compact: true),
+            strutStyle: context.tibetanStrutStyle(13, compact: true),
             style: TextStyle(
-              fontSize: 12,
-              color:
-                  isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
             ),
           ),
         ),

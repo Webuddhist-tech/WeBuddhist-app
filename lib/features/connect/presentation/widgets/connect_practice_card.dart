@@ -22,9 +22,32 @@ import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 
 class ConnectPracticeCard extends ConsumerStatefulWidget {
-  const ConnectPracticeCard({super.key, required this.practice});
+  const ConnectPracticeCard({
+    super.key,
+    required this.practice,
+    this.showGroupLink = true,
+    this.isSeriesEnrolled,
+    this.isEnrollingSeries,
+    this.onSeriesTap,
+    this.onSeriesJoinTap,
+    this.isJoiningAccumulator,
+    this.onAccumulatorTap,
+    this.onAccumulatorJoinTap,
+  });
 
   final GroupPractice practice;
+
+  /// False when the card is already shown inside the group's own profile.
+  final bool showGroupLink;
+
+  /// Host overrides; null falls back to the card's own Connect behaviour.
+  final bool? isSeriesEnrolled;
+  final bool? isEnrollingSeries;
+  final VoidCallback? onSeriesTap;
+  final VoidCallback? onSeriesJoinTap;
+  final bool? isJoiningAccumulator;
+  final VoidCallback? onAccumulatorTap;
+  final VoidCallback? onAccumulatorJoinTap;
 
   @override
   ConsumerState<ConnectPracticeCard> createState() =>
@@ -83,7 +106,10 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       series.startDate,
       series.endDate,
     );
-    final isEnrolled = practice.isJoined || series.isGroupEnrolled == true;
+    final isEnrolled =
+        widget.isSeriesEnrolled ??
+        (practice.isJoined || series.isGroupEnrolled == true);
+    final isEnrolling = widget.isEnrollingSeries ?? _isEnrollingSeries;
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 
@@ -91,16 +117,17 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       color: cardColor,
       child: InkWell(
         onTap:
-            _isEnrollingSeries
+            isEnrolling
                 ? null
-                : () => _navigateToSeriesDetail(practice, series, isEnrolled),
+                : widget.onSeriesTap ??
+                    () => _navigateToSeriesDetail(practice, series, isEnrolled),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
+              groupId: widget.showGroupLink ? practice.groupId : null,
               timestamp: practice.practiceAt,
               stackTimestamp: true,
               subtitle:
@@ -159,12 +186,15 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                           !isEnrolled
                               ? _PracticeJoinButton(
                                 label: context.l10n.group_practice_with_us,
-                                isLoading: _isEnrollingSeries,
+                                isLoading: isEnrolling,
                                 isDark: isDark,
                                 onImage: true,
                                 onTap:
-                                    () =>
-                                        _onPracticeWithUsTap(practice, series),
+                                    widget.onSeriesJoinTap ??
+                                    () => _onPracticeWithUsTap(
+                                      practice,
+                                      series,
+                                    ),
                               )
                               : null,
                       trailing:
@@ -201,7 +231,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       accumulator.startDate,
       accumulator.endDate,
     );
-    final isJoining = _joiningAccumulatorId == accumulator.id;
+    final isJoining =
+        widget.isJoiningAccumulator ??
+        (_joiningAccumulatorId == accumulator.id);
 
     return Material(
       color: cardColor,
@@ -209,14 +241,16 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
         onTap:
             isJoining
                 ? null
-                : () => _navigateToAccumulatorDetail(accumulator.id, practice),
+                : widget.onAccumulatorTap ??
+                    () =>
+                        _navigateToAccumulatorDetail(accumulator.id, practice),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
+              groupId: widget.showGroupLink ? practice.groupId : null,
               timestamp: practice.practiceAt,
               stackTimestamp: true,
               subtitle:
@@ -284,6 +318,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                                 isDark: isDark,
                                 onImage: true,
                                 onTap:
+                                    widget.onAccumulatorJoinTap ??
                                     () => _onJoinAccumulatorTap(
                                       practice,
                                       accumulator,
@@ -329,7 +364,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
+              groupId: widget.showGroupLink ? practice.groupId : null,
               subtitle: details.isNotEmpty ? details : null,
               trailing: _buildShareButton(
                 isDark: isDark,
@@ -413,7 +448,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
             ConnectFeedCardHeader(
               groupName: practice.groupName ?? '',
               groupAvatarUrl: practice.groupAvatarUrl,
-              groupId: practice.groupId,
+              groupId: widget.showGroupLink ? practice.groupId : null,
               timestamp: practice.practiceAt,
               stackTimestamp: true,
               trailing: _buildShareButton(

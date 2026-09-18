@@ -108,9 +108,7 @@ class _GroupPostAddLinkSheetState extends ConsumerState<GroupPostAddLinkSheet> {
     final url = _resolvedUrl;
     final isYoutube = url != null && ConnectPostLinkUtils.isYoutube(url);
     final previewAsync =
-        url != null &&
-                !isYoutube &&
-                ChatLinkPreviewService.isPreviewableUrl(url)
+        url != null && ChatLinkPreviewService.isPreviewableUrl(url)
             ? ref.watch(chatLinkPreviewProvider(url))
             : null;
 

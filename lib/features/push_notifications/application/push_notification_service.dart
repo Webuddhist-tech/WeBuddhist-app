@@ -8,6 +8,7 @@ import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
+import 'package:flutter_pecha/features/push_notifications/application/foreground_push_filter.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/repositories/push_messaging_repository.dart';
 import 'package:uuid/uuid.dart';
@@ -34,11 +35,19 @@ class PushNotificationService {
   PushNotificationService({
     required PushMessagingRepository repository,
     required LocalStorageService storage,
+    required ForegroundPushFilter foregroundFilter,
   }) : _repository = repository,
-       _storage = storage;
+       _storage = storage,
+       _foregroundFilter = foregroundFilter;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
+
+  /// Screens claim the pushes they already show, so the banner is skipped
+  /// for a message the member is looking at. Only the foreground path asks:
+  /// background and terminated pushes are displayed by the OS before the
+  /// app runs.
+  final ForegroundPushFilter _foregroundFilter;
   final _localNotifications = FlutterLocalNotificationsPlugin();
   final _logger = AppLogger('PushNotificationService');
   final _subscriptions = <StreamSubscription<dynamic>>[];
@@ -197,6 +206,10 @@ class PushNotificationService {
 
   Future<void> _showNotification(PushMessage message) async {
     if (!message.hasNotification) return;
+    if (!_foregroundFilter.shouldShow(message.data)) {
+      _logger.info('Foreground push suppressed: already on screen');
+      return;
+    }
     _logger.info('Foreground message: ${message.title}');
     await _localNotifications.show(
       // Time-based id kept within the 32-bit range Android requires.

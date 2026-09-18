@@ -115,6 +115,7 @@ UserPlanDayDetailResponse _makeDay() => UserPlanDayDetailResponse(
 Future<void> _pumpLiveEventDetails(
   WidgetTester tester, {
   bool streamKnownAbsent = false,
+  bool showLiveStream = true,
   Completer<Either<Failure, GroupEvent>>? stream,
   // Answers every fetch, including the retries a started event makes.
   Future<Either<Failure, GroupEvent>> Function()? fetch,
@@ -165,6 +166,7 @@ Future<void> _pumpLiveEventDetails(
           // Started today, so no missed-days badge crowds the narrow row.
           startDate: DateTime.now(),
           eventId: 'event-1',
+          showLiveStream: showLiveStream,
         ),
       ),
     ),
@@ -230,6 +232,45 @@ void main() {
     expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
     expect(find.text('Puja not started yet'), findsOneWidget);
     expect(find.byType(PlanCoverImage), findsNothing);
+  });
+
+  testWidgets('an in-person attendee gets the plain layout despite a stream', (
+    tester,
+  ) async {
+    await _pumpLiveEventDetails(
+      tester,
+      showLiveStream: false,
+      fetch:
+          () async => Right(
+            GroupEvent(
+              id: 'event-1',
+              groupId: 'group-1',
+              chatEnabled: true,
+              youtube: const [
+                GroupEventLink(
+                  id: 'y1',
+                  type: 'youtube',
+                  url: 'https://youtu.be/BNDTusn8TO8',
+                  label: 'live',
+                ),
+              ],
+            ),
+          ),
+    );
+    await _settle(tester);
+
+    // Static cover, no stream, no countdown, no toggles.
+    expect(find.byType(PlanCoverImage), findsOneWidget);
+    expect(find.byType(GroupEventLiveHeader), findsNothing);
+    expect(find.byType(GroupEventNotStartedCard), findsNothing);
+    expect(find.byType(GroupEventMediaToggle), findsNothing);
+    expect(find.text('Green Tara'), findsOneWidget);
+    // Prayer requests still belong to the event.
+    expect(find.text('Prayer requests'), findsOneWidget);
+
+    // No embedded scope, so a tapped task pushes its own route.
+    expect(find.byType(PlanEmbeddedScope), findsNothing);
+    expect(find.text('Tara of the day'), findsOneWidget);
   });
 
   testWidgets('an event without a stream counts down to its start', (

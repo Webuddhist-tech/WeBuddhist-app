@@ -23,6 +23,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_ev
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participation_dialog.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
@@ -57,6 +58,7 @@ class _GroupEventDetailScreenState
     extends ConsumerState<GroupEventDetailScreen> {
   _EventTab? _selectedTab;
   bool? _attendingOverride;
+  GroupEventParticipationType? _participationOverride;
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
 
@@ -141,11 +143,20 @@ class _GroupEventDetailScreenState
     );
     final participants = participantsState.participants;
 
-    // Clear the optimistic override once the server confirms the change,
-    // so subsequent state derives purely from `event.isJoined`.
-    if (_attendingOverride != null && _attendingOverride == event.isJoined) {
+    // Clear the optimistic overrides once the server confirms the change,
+    // so subsequent state derives purely from the event.
+    final attendingConfirmed =
+        _attendingOverride != null && _attendingOverride == event.isJoined;
+    final participationConfirmed =
+        _participationOverride != null &&
+        _participationOverride == event.myParticipationType;
+    if (attendingConfirmed || participationConfirmed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _attendingOverride = null);
+        if (!mounted) return;
+        setState(() {
+          if (attendingConfirmed) _attendingOverride = null;
+          if (participationConfirmed) _participationOverride = null;
+        });
       });
     }
 
@@ -209,6 +220,24 @@ class _GroupEventDetailScreenState
     return math.max(0, count);
   }
 
+  /// A single-format event leaves no choice; hybrid stays null until picked.
+  GroupEventParticipationType? _participationOf(GroupEvent event) {
+    final chosen = _participationOverride ?? event.myParticipationType;
+    if (chosen != null) return chosen;
+    if (isGroupEventHybrid(event)) return null;
+    return isGroupEventOnline(event)
+        ? GroupEventParticipationType.online
+        : GroupEventParticipationType.offline;
+  }
+
+  String _attendingLabel(GroupEvent event) => switch (_participationOf(event)) {
+    GroupEventParticipationType.online =>
+      context.l10n.connect_event_joining_online,
+    GroupEventParticipationType.offline =>
+      context.l10n.connect_event_joining_in_person,
+    null => context.l10n.connect_event_attending,
+  };
+
   Widget _buildActionRow(
     GroupEvent event,
     bool isAttending,
@@ -246,7 +275,7 @@ class _GroupEventDetailScreenState
               )
               : Text(
                 isAttending
-                    ? context.l10n.connect_event_attending
+                    ? _attendingLabel(event)
                     : context.l10n.connect_event_attend,
               ),
     );
@@ -341,6 +370,8 @@ class _GroupEventDetailScreenState
 
   /// Opens the event's puja: auto-enrolls in its series and opens the (only)
   /// plan's day list, or previews the plan when the event has no series.
+  /// Only online attendees get the live stream; a hybrid attendee who never
+  /// picked is asked first, since the choice decides the layout.
   Future<void> _enterPuja(GroupEvent event) async {
     if (_isOpeningPuja) return;
     final seriesId = event.series?.id ?? event.seriesId;
@@ -353,16 +384,51 @@ class _GroupEventDetailScreenState
       return;
     }
 
+    var participation = _participationOf(event);
+    final needsChoice = participation == null;
+    if (needsChoice) {
+      participation = await GroupEventParticipationDialog.show(context);
+      if (participation == null || !mounted) return;
+    }
+
     setState(() => _isOpeningPuja = true);
     try {
+      if (needsChoice && !await _saveParticipation(event, participation)) {
+        return;
+      }
       if (seriesId != null) {
-        await _enterSeries(event, seriesId);
+        await _enterSeries(
+          event,
+          seriesId,
+          showLiveStream: participation == GroupEventParticipationType.online,
+        );
       } else {
         await _openPlanPreview(planId!);
       }
     } finally {
       if (mounted) setState(() => _isOpeningPuja = false);
     }
+  }
+
+  Future<bool> _saveParticipation(
+    GroupEvent event,
+    GroupEventParticipationType participation,
+  ) async {
+    final result = await ref
+        .read(groupProfileRepositoryProvider)
+        .joinGroupEvent(event.id, participationType: participation);
+    if (!mounted) return false;
+    return result.fold(
+      (failure) {
+        _showError(failure.message);
+        return false;
+      },
+      (_) {
+        setState(() => _participationOverride = participation);
+        _refreshEvent(event);
+        return true;
+      },
+    );
   }
 
   Future<void> _openPlanPreview(String planId) async {
@@ -376,7 +442,11 @@ class _GroupEventDetailScreenState
     context.push(AppRoutes.practicePlanPreview, extra: {'plan': plan});
   }
 
-  Future<void> _enterSeries(GroupEvent event, String seriesId) async {
+  Future<void> _enterSeries(
+    GroupEvent event,
+    String seriesId, {
+    required bool showLiveStream,
+  }) async {
     final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
     if (!mounted) return;
     final series = seriesEither.fold((_) => null, (s) => s);
@@ -420,6 +490,7 @@ class _GroupEventDetailScreenState
         'startDate': startDate,
         'seriesId': seriesId,
         'eventId': event.id,
+        'showLiveStream': showLiveStream,
       },
     );
   }
@@ -443,16 +514,27 @@ class _GroupEventDetailScreenState
       return;
     }
 
+    // Only a hybrid event offers a choice; the server fills in the rest.
+    GroupEventParticipationType? participation;
+    if (isGroupEventHybrid(event)) {
+      participation = await GroupEventParticipationDialog.show(context);
+      if (participation == null || !mounted) return;
+    }
+
     setState(() => _isSubmitting = true);
     final result = await joinGroupEventEnsuringGroupMembership(
       ref: ref,
       event: event,
+      participationType: participation,
     );
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
     result.fold((failure) => _showError(failure.message), (_) {
-      setState(() => _attendingOverride = true);
+      setState(() {
+        _attendingOverride = true;
+        _participationOverride = participation;
+      });
       _refreshEvent(event);
     });
   }
@@ -474,7 +556,10 @@ class _GroupEventDetailScreenState
     setState(() => _isSubmitting = false);
 
     result.fold((failure) => _showError(failure.message), (_) {
-      setState(() => _attendingOverride = false);
+      setState(() {
+        _attendingOverride = false;
+        _participationOverride = null;
+      });
       _refreshEvent(event);
     });
   }

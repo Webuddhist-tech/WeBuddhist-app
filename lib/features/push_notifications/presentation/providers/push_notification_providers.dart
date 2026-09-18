@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
 import 'package:flutter_pecha/features/notifications/presentation/providers/notification_provider.dart';
+import 'package:flutter_pecha/features/push_notifications/application/foreground_push_filter.dart';
 import 'package:flutter_pecha/features/push_notifications/application/push_notification_service.dart';
 import 'package:flutter_pecha/features/push_notifications/data/repositories/push_messaging_repository_impl.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/repositories/push_messaging_repository.dart';
@@ -17,11 +18,19 @@ final pushMessagingRepositoryProvider =
   return PushMessagingRepositoryImpl(dio: ref.watch(dioProvider));
 });
 
+/// App-lifetime registry of what is on screen. Screens claim the pushes
+/// they already render (see [ForegroundPushFilter]); the service consults it
+/// before showing a foreground banner.
+final foregroundPushFilterProvider = Provider<ForegroundPushFilter>(
+  (ref) => ForegroundPushFilter(),
+);
+
 final pushNotificationServiceProvider =
     Provider<PushNotificationService>((ref) {
   final service = PushNotificationService(
     repository: ref.watch(pushMessagingRepositoryProvider),
     storage: ref.watch(localStorageServiceProvider),
+    foregroundFilter: ref.watch(foregroundPushFilterProvider),
   );
   ref.onDispose(service.dispose);
   return service;

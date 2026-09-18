@@ -970,6 +970,15 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_event_attending => 'ཞུགས་ཟིན།';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return 'ཞུགས་མཁན་ $count';
   }
@@ -1951,7 +1960,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get following => 'རྗེས་འབྲང་ཟིན།';
 
   @override
-  String get calendar_title => 'ཟླ་ཐོ།';
+  String get calendar_title => 'ལོ་ཐོ།';
 
   @override
   String get calendar_upcoming_events => 'འབྱུང་འགྱུར་བྱེད་སྒོ།';
@@ -2686,18 +2695,47 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_chat_delete_title => 'འཕྲིན་ཐུང་སུབ་དགོས་སམ།';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་གི་མི་ཚང་མའི་ཆེད་དུ་སུབ་འགྲོ།';
+  String group_chat_delete_title_many(int count) {
+    return 'འཕྲིན་ཐུང་ $count སུབ་དགོས་སམ།';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'ཚང་མའི་ཆེད་དུ་སུབ།';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'འཕྲིན་ཐུང་འདི་དག་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།',
+      one: 'འཕྲིན་ཐུང་འདི་ཁ་བརྡའི་ནང་ནས་མི་ཚང་མའི་ཆེད་དུ་བསུབ་འགྲོ།',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'འཕྲིན་ཐུང་སུབ་མ་ཐུབ།';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'འཕྲིན་ཐུང་ $count སུབ་མ་ཐུབ།',
+      one: 'འཕྲིན་ཐུང་སུབ་མ་ཐུབ།',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted =>
-      'ཁྱེད་ཀྱིས་འཕྲིན་ཐུང་འདི་བསུབས་སོང་།';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'འཕྲིན་ཐུང་རྣམས་བསུབས་ཟིན།',
+      one: 'འཕྲིན་ཐུང་བསུབས་ཟིན།',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'འཕྲིན་ཐུང་མང་ཤོས་ $count འདེམས་ཆོག';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'འཕྲིན་ཐུང་འདི་བསུབས་ཟིན།';

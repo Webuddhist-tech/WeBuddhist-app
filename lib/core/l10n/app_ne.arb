@@ -1096,10 +1096,25 @@
   "group_chat_report_retry": "पुनः प्रयास गर्नुहोस्",
   "group_chat_delete": "मेटाउनुहोस्",
   "group_chat_delete_title": "सन्देश मेटाउने?",
-  "group_chat_delete_confirm_body": "यो सन्देश यस च्याटमा सबैका लागि मेटिनेछ।",
-  "group_chat_delete_for_everyone": "सबैका लागि मेटाउनुहोस्",
-  "group_chat_delete_failed": "सन्देश मेटाउन सकिएन।",
-  "group_chat_message_deleted": "तपाईंले यो सन्देश मेटाउनुभयो",
+  "group_chat_delete_title_many": "{count} सन्देशहरू मेटाउने?",
+  "group_chat_delete_confirm_body": "{count, plural, =1{यो सन्देश च्याटबाट सबैका लागि हटाइनेछ।} other{यी सन्देशहरू च्याटबाट सबैका लागि हटाइनेछन्।}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{सन्देश मेटाउन सकिएन।} other{{count} सन्देशहरू मेटाउन सकिएनन्।}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_message_deleted_toast": "{count, plural, =1{सन्देश मेटाइयो} other{सन्देशहरू मेटाइए}}",
+  "group_chat_selection_limit": "तपाईं बढीमा {count} सन्देश छान्न सक्नुहुन्छ",
   "group_chat_message_deleted_by_sender": "यो सन्देश मेटाइयो",
   "group_chat_reaction_failed": "तपाईंको प्रतिक्रिया सुरक्षित गर्न सकिएन।",
   "group_chat_reactions_count": "{count, plural, =1{1 प्रतिक्रिया} other{{count} प्रतिक्रियाहरू}}",

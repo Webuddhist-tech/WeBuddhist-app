@@ -910,6 +910,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_attending => '已參加';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count 人參加';
   }
@@ -2533,16 +2542,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_delete_title => '刪除訊息？';
 
   @override
-  String get group_chat_delete_confirm_body => '此訊息將為聊天中的所有人刪除。';
+  String group_chat_delete_title_many(int count) {
+    return '刪除 $count 則訊息？';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => '為所有人刪除';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '這些訊息將從聊天中為所有人移除。',
+      one: '此訊息將從聊天中為所有人移除。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => '無法刪除訊息。';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '有 $count 則訊息無法刪除。',
+      one: '無法刪除訊息。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => '你已刪除此訊息';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '訊息已刪除',
+      one: '訊息已刪除',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return '最多可選取 $count 則訊息';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => '此訊息已刪除';

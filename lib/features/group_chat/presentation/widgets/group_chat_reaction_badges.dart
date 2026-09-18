@@ -5,17 +5,19 @@ import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
 
-/// Reaction summary hung off the bubble's inner bottom corner, overlapping
-/// it — bottom-right for an incoming message, bottom-left for an outgoing one.
+/// The reaction chip: a separate element hung under the bubble's inner corner
+/// — bottom-right under an incoming message, bottom-left under one of the
+/// viewer's own. Glyphs and an aggregate count on a small surface of the same
+/// colour and shadow as the bubble.
 ///
-/// The caller positions it in a [Stack]; it is not a child of the bubble's own
-/// column, because any right-aligning wrapper in there expands to the width cap
-/// and stretches short messages across the screen the moment they are reacted
-/// to.
+/// The bubble positions it in a [Stack]; it is not a child of the bubble's
+/// own column.
 ///
 /// At most [kChatBadgeEmojiLimit] distinct emoji are shown, busiest first,
-/// followed by the total across all of them — so the badge never wraps and the
-/// bubble keeps a stable height however many emoji accumulate.
+/// followed by the total across all of them — so the chip never wraps and the
+/// bubble keeps a stable height however many emoji accumulate. An own reaction
+/// is not marked: design chose one look for every glyph, and it keeps them on
+/// one baseline.
 class GroupChatReactionBadges extends StatelessWidget {
   const GroupChatReactionBadges({
     super.key,
@@ -25,9 +27,12 @@ class GroupChatReactionBadges extends StatelessWidget {
 
   final List<ChatMessageReactionDTO> reactions;
 
-  /// Tapping the badge opens the reactions drawer, as in WhatsApp — it does
-  /// not toggle. Reacting happens from the long-press pill or the drawer.
+  /// Tapping the chip opens the reactions drawer, as in WhatsApp — it does
+  /// not toggle. Reacting happens from the pill or the drawer.
   final VoidCallback onShowAll;
+
+  /// Fixed, so the bubble can reserve exactly this much under itself.
+  static const double height = 26;
 
   @override
   Widget build(BuildContext context) {
@@ -35,31 +40,47 @@ class GroupChatReactionBadges extends StatelessWidget {
     if (badge.emoji.isEmpty) return const SizedBox.shrink();
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Both bubbles share a fill now, so the count reads the same on either.
     final countColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return GestureDetector(
       onTap: onShowAll,
       behavior: HitTestBehavior.opaque,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final reaction in badge.emoji)
-            Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: _Glyph(
-                emoji: reaction.emoji,
-                isMine: reaction.reactedByMe,
-                isDark: isDark,
-              ),
+      child: Container(
+        height: height,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color:
+              isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
+          borderRadius: BorderRadius.circular(height / 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          const SizedBox(width: 2),
-          Text(
-            _count(context, badge.total),
-            style: TextStyle(fontSize: 12, color: countColor),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            for (final reaction in badge.emoji)
+              Padding(
+                padding: const EdgeInsets.only(right: 3),
+                child: Text(
+                  reaction.emoji,
+                  style: const TextStyle(fontSize: 15, height: 1),
+                ),
+              ),
+            const SizedBox(width: 1),
+            Text(
+              _count(context, badge.total),
+              strutStyle: context.tibetanStrutStyle(14, compact: true),
+              style: TextStyle(fontSize: 14, height: 1, color: countColor),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -67,35 +88,5 @@ class GroupChatReactionBadges extends StatelessWidget {
   String _count(BuildContext context, int total) {
     final formatted = '$total';
     return context.isTibetanLocale ? toTibetanDigits(formatted) : formatted;
-  }
-}
-
-class _Glyph extends StatelessWidget {
-  const _Glyph({
-    required this.emoji,
-    required this.isMine,
-    required this.isDark,
-  });
-
-  final String emoji;
-  final bool isMine;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final glyph = Text(emoji, style: const TextStyle(fontSize: 13));
-    if (!isMine) return glyph;
-
-    // The mock only shows an unreacted badge; own reactions still need to read
-    // as mine, so they get the same gold accent as the sender name.
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-      decoration: BoxDecoration(
-        color: (isDark ? AppColors.accentGold : AppColors.accentGoldDark)
-            .withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: glyph,
-    );
   }
 }
