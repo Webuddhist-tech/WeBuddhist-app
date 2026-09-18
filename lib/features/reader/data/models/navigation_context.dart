@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 
 /// Navigation source types for reader
@@ -27,7 +29,16 @@ enum NavigationSource {
 ///   and is rendered by `PlanTextScreen`.
 /// - [inlineImage] carries an image URL via [PlanTextItem.imageUrl]
 ///   and is rendered by `PlanTextScreen`.
-enum PlanItemContentType { sourceReference, inlineText, inlineImage }
+/// - [inlineVideo] carries a YouTube URL and is rendered by `PlanTextScreen`.
+enum PlanItemContentType {
+  sourceReference,
+  inlineText,
+  inlineImage,
+  inlineVideo;
+
+  /// True for content rendered inline by `PlanTextScreen`.
+  bool get isInline => this != PlanItemContentType.sourceReference;
+}
 
 /// API-level content type strings used by the plan endpoints.
 class PlanContentTypes {
@@ -36,6 +47,7 @@ class PlanContentTypes {
   static const String sourceReference = 'SOURCE_REFERENCE';
   static const String text = 'TEXT';
   static const String image = 'IMAGE';
+  static const String video = 'VIDEO';
   static const String groupAccumulation = 'GROUP_ACCUMULATION';
 
   /// Map a raw API value to a [PlanItemContentType], or null if unknown.
@@ -47,10 +59,44 @@ class PlanContentTypes {
         return PlanItemContentType.inlineText;
       case image:
         return PlanItemContentType.inlineImage;
+      case video:
+        return PlanItemContentType.inlineVideo;
       default:
         return null;
     }
   }
+}
+
+/// One inline subtask (TEXT, IMAGE or VIDEO) shown on a combined
+/// `PlanTextScreen` page. [content] is markdown, an image URL or a video URL.
+class PlanInlineBlock {
+  final PlanItemContentType contentType;
+  final String content;
+  final String? subtaskId;
+  final bool isCompleted;
+
+  const PlanInlineBlock({
+    required this.contentType,
+    required this.content,
+    this.subtaskId,
+    this.isCompleted = false,
+  });
+
+  bool get isText => contentType == PlanItemContentType.inlineText;
+  bool get isImage => contentType == PlanItemContentType.inlineImage;
+  bool get isVideo => contentType == PlanItemContentType.inlineVideo;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlanInlineBlock &&
+          other.contentType == contentType &&
+          other.content == content &&
+          other.subtaskId == subtaskId &&
+          other.isCompleted == isCompleted;
+
+  @override
+  int get hashCode => Object.hash(contentType, content, subtaskId, isCompleted);
 }
 
 /// Represents a navigable subtask within a plan.
@@ -66,10 +112,14 @@ class PlanContentTypes {
 ///   reader features.
 /// - **IMAGE** — opens `PlanTextScreen` and renders [imageUrl] directly from
 ///   the subtask `content` field.
+/// - **VIDEO** — opens `PlanTextScreen` and embeds the YouTube video.
 ///
-/// Construct via [PlanTextItem.sourceReference], [PlanTextItem.inlineText], or
-/// [PlanTextItem.inlineImage] to get compile-time validation of which fields
-/// are required.
+/// A task whose subtasks are all inline is one item whose [blocks] are shown
+/// stacked on a single page.
+///
+/// Construct via [PlanTextItem.sourceReference], [PlanTextItem.inlineText],
+/// [PlanTextItem.inlineImage] or [PlanTextItem.inline] to get compile-time
+/// validation of which fields are required.
 class PlanTextItem {
   final PlanItemContentType contentType;
 
@@ -89,6 +139,10 @@ class PlanTextItem {
   /// Null for SOURCE_REFERENCE and TEXT items.
   final String? imageUrl;
 
+  /// Inline items only: every TEXT/IMAGE/VIDEO subtask of the task, in
+  /// display order. The first block mirrors [inlineContent] / [imageUrl].
+  final List<PlanInlineBlock> blocks;
+
   /// Display title used in app bars and bottom-bar progress text.
   final String title;
 
@@ -103,8 +157,7 @@ class PlanTextItem {
   /// unenrolled plans.
   final String? subtaskId;
 
-  /// The parent task ID. Used to look up audio windows in
-  /// [PlanDayAudioNotifier] — null for preview (unenrolled) items.
+  /// The parent task ID; groups a task's subtasks within the sequence.
   final String? taskId;
 
   /// Whether the subtask is already completed. Prevents duplicate
@@ -134,6 +187,7 @@ class PlanTextItem {
     this.segmentIds,
     this.inlineContent,
     this.imageUrl,
+    this.blocks = const [],
     this.subtaskId,
     this.taskId,
     this.isCompleted = false,
@@ -141,6 +195,36 @@ class PlanTextItem {
     this.startMs,
     this.endMs,
   });
+
+  /// Build an inline item from one or more [blocks]. Throws if empty.
+  /// [subtaskId] / [isCompleted] default to the first block's.
+  factory PlanTextItem.inline({
+    required List<PlanInlineBlock> blocks,
+    required String title,
+    String? language,
+    String? taskId,
+    String? audioUrl,
+    int? startMs,
+    int? endMs,
+  }) {
+    assert(blocks.isNotEmpty, 'inline requires at least one block');
+    final first = blocks.first;
+    return PlanTextItem._(
+      contentType: first.contentType,
+      textId: '',
+      inlineContent: first.isText ? first.content : null,
+      imageUrl: first.isImage ? first.content : null,
+      blocks: List.unmodifiable(blocks),
+      title: title,
+      language: language,
+      subtaskId: first.subtaskId,
+      taskId: taskId,
+      isCompleted: blocks.every((b) => b.isCompleted),
+      audioUrl: audioUrl,
+      startMs: startMs,
+      endMs: endMs,
+    );
+  }
 
   /// Build a SOURCE_REFERENCE item. Throws if [textId] is empty.
   factory PlanTextItem.sourceReference({
@@ -188,6 +272,14 @@ class PlanTextItem {
       contentType: PlanItemContentType.inlineText,
       textId: '',
       inlineContent: content,
+      blocks: [
+        PlanInlineBlock(
+          contentType: PlanItemContentType.inlineText,
+          content: content,
+          subtaskId: subtaskId,
+          isCompleted: isCompleted,
+        ),
+      ],
       title: title,
       language: language,
       subtaskId: subtaskId,
@@ -216,6 +308,14 @@ class PlanTextItem {
       contentType: PlanItemContentType.inlineImage,
       textId: '',
       imageUrl: imageUrl,
+      blocks: [
+        PlanInlineBlock(
+          contentType: PlanItemContentType.inlineImage,
+          content: imageUrl,
+          subtaskId: subtaskId,
+          isCompleted: isCompleted,
+        ),
+      ],
       title: title,
       language: language,
       subtaskId: subtaskId,
@@ -237,6 +337,16 @@ class PlanTextItem {
   /// True if this item is an inline IMAGE item.
   bool get isInlineImage => contentType == PlanItemContentType.inlineImage;
 
+  /// True if this item is an inline VIDEO item.
+  bool get isInlineVideo => contentType == PlanItemContentType.inlineVideo;
+
+  /// Subtask ids this item completes: its own plus every block's.
+  List<String> get subtaskIds => {
+    if (subtaskId != null) subtaskId!,
+    for (final b in blocks)
+      if (b.subtaskId != null) b.subtaskId!,
+  }.where((id) => id.isNotEmpty).toList();
+
   /// Get the first segment ID for initial scroll position
   /// (SOURCE_REFERENCE only).
   String? get firstSegmentId =>
@@ -248,6 +358,7 @@ class PlanTextItem {
     List<String>? segmentIds,
     String? inlineContent,
     String? imageUrl,
+    List<PlanInlineBlock>? blocks,
     String? title,
     String? language,
     String? subtaskId,
@@ -263,6 +374,7 @@ class PlanTextItem {
       segmentIds: segmentIds ?? this.segmentIds,
       inlineContent: inlineContent ?? this.inlineContent,
       imageUrl: imageUrl ?? this.imageUrl,
+      blocks: blocks ?? this.blocks,
       title: title ?? this.title,
       language: language ?? this.language,
       subtaskId: subtaskId ?? this.subtaskId,
@@ -289,7 +401,8 @@ class PlanTextItem {
         other.isCompleted != isCompleted ||
         other.audioUrl != audioUrl ||
         other.startMs != startMs ||
-        other.endMs != endMs) {
+        other.endMs != endMs ||
+        !listEquals(other.blocks, blocks)) {
       return false;
     }
     if (segmentIds == null && other.segmentIds == null) return true;
@@ -308,6 +421,7 @@ class PlanTextItem {
     Object.hashAll(segmentIds ?? const []),
     inlineContent,
     imageUrl,
+    Object.hashAll(blocks),
     title,
     language,
     subtaskId,
@@ -472,9 +586,10 @@ class NavigationContext {
 
   /// Resolve the audio URL for [item], applying precedence: a subtask's own
   /// [PlanTextItem.audioUrl] wins over the shared [dayAudioUrl] fallback.
+  /// Blank URLs count as absent, so `""` never shadows a usable day track.
   /// Returns null when neither is available.
   String? effectiveAudioUrlFor(PlanTextItem item) =>
-      item.audioUrl ?? dayAudioUrl;
+      normalizeAudioUrl(item.audioUrl) ?? normalizeAudioUrl(dayAudioUrl);
 
   /// Whether [item] has any playable audio once precedence is applied.
   bool hasAudioFor(PlanTextItem item) => effectiveAudioUrlFor(item) != null;

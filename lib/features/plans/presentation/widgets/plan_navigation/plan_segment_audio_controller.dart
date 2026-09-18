@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Visual state of the play/pause button driven by [PlanSegmentAudioController].
@@ -48,7 +49,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   PlanAudioButtonState _buttonState = PlanAudioButtonState.play;
   PlanAudioButtonState get buttonState => _buttonState;
 
-  bool get hasAudio => url != null;
+  bool get hasAudio => hasPlayableAudio(url);
 
   /// Incremented by [cancel] so any in-flight [_startAudio] can detect it has
   /// been superseded and abort before calling play().
