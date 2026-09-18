@@ -985,6 +985,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         context,
         ref,
         accumulatorId: accumulatorId,
+        eventId: widget.eventId,
       ).then((practiced) {
         if (practiced) _completeTask(accumulationTask.id, tasks);
         _onReaderClosed();

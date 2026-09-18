@@ -129,7 +129,12 @@ class PreviewActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
-      openGroupAccumulatorPractice(context, ref, accumulatorId: accumulatorId);
+      openGroupAccumulatorPractice(
+        context,
+        ref,
+        accumulatorId: accumulatorId,
+        eventId: eventId,
+      );
       return;
     }
 

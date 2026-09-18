@@ -134,6 +134,7 @@ class ActivityList extends ConsumerWidget {
         context,
         ref,
         accumulatorId: accumulatorId,
+        eventId: eventId,
       ).then((practiced) {
         if (practiced) onGroupAccumulationPracticed?.call(task.id);
         onReaderClosed?.call();
