@@ -102,7 +102,8 @@ class PlanSubtaskNavigation {
   // ─── Internal helpers ───────────────────────────────────────────────
 
   /// One item per task: the first navigable subtask decides the kind. An
-  /// inline item takes its audio from its first inline subtask.
+  /// inline item has one audio control, fed by the first inline subtask
+  /// with its own audio, else the first inline subtask's day-audio window.
   static PlanTextItem? _itemForTask<S>({
     required List<S> subtasks,
     required String title,
@@ -121,10 +122,14 @@ class PlanSubtaskNavigation {
         continue;
       }
       if (blockOf(subtask) == null) continue;
-      final blocks = subtasks.map(blockOf).whereType<PlanInlineBlock>();
-      final (audioUrl, startMs, endMs) = audioOf(subtask);
+      final inline = subtasks.where((s) => blockOf(s) != null).toList();
+      final audioSource = inline.firstWhere(
+        (s) => audioOf(s).$1 != null,
+        orElse: () => subtask,
+      );
+      final (audioUrl, startMs, endMs) = audioOf(audioSource);
       return PlanTextItem.inline(
-        blocks: blocks.toList(),
+        blocks: inline.map(blockOf).whereType<PlanInlineBlock>().toList(),
         title: title,
         taskId: taskId,
         audioUrl: audioUrl,
@@ -135,15 +140,15 @@ class PlanSubtaskNavigation {
     return null;
   }
 
-  /// Stable sort by `displayOrder`; items without one keep their position.
+  /// Stable sort by `displayOrder`. If any subtask lacks one, the API order
+  /// is kept as is.
   static List<T> _sortedByDisplayOrder<T>(
     List<T> subtasks,
     int? Function(T) orderOf,
   ) {
+    if (subtasks.any((s) => orderOf(s) == null)) return subtasks;
     final indexed = subtasks.asMap().entries.toList()..sort((a, b) {
-      final byOrder = (orderOf(a.value) ?? a.key).compareTo(
-        orderOf(b.value) ?? b.key,
-      );
+      final byOrder = orderOf(a.value)!.compareTo(orderOf(b.value)!);
       return byOrder != 0 ? byOrder : a.key.compareTo(b.key);
     });
     return indexed.map((e) => e.value).toList();
