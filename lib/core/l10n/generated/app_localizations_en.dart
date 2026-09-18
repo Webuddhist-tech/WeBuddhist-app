@@ -653,7 +653,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routine_delete_block_message =>
-      'The session and all its items will be removed';
+      'The time block and all its items will be removed';
 
   @override
   String get something_went_wrong => 'Something went wrong. Please try again';
@@ -956,6 +956,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_event_attending => 'Attending';
+
+  @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
 
   @override
   String connect_event_participants_attending(int count) {
@@ -1390,10 +1399,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_add_session => 'Add to session';
 
   @override
-  String get routine_edit_title => 'Edit your practices';
+  String get routine_edit_title => 'Edit your routine';
 
   @override
-  String get routine_delete_block => 'Remove session';
+  String get routine_delete_block => 'Remove block';
 
   @override
   String get routine_session_title_hint => 'Title...';
@@ -1441,10 +1450,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get routine_empty_block_add_items => 'Add items';
 
   @override
-  String get routine_empty_block_delete_singular => 'Remove session';
+  String get routine_empty_block_delete_singular => 'Remove block';
 
   @override
-  String get routine_empty_block_delete_plural => 'Remove sessions';
+  String get routine_empty_block_delete_plural => 'Remove blocks';
 
   @override
   String get routine_notification_title => 'Make practice a habit';
@@ -2651,17 +2660,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_delete_title => 'Delete message?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'This message will be deleted for everyone in this chat.';
+  String group_chat_delete_title_many(int count) {
+    return 'Delete $count messages?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'Delete for everyone';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'These messages will be removed from the chat for everyone.',
+      one: 'This message will be removed from the chat for everyone.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'The message couldn\'t be deleted.';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages couldn\'t be deleted.',
+      one: 'The message couldn\'t be deleted.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => 'You deleted this message';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Messages deleted',
+      one: 'Message deleted',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'You can select up to $count messages';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'This message was deleted';

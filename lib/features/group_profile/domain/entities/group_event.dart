@@ -18,12 +18,26 @@ class GroupEventLink {
   });
 }
 
+/// How one person attends: `participation_type` from the API.
+enum GroupEventParticipationType {
+  online('online'),
+  offline('offline');
+
+  const GroupEventParticipationType(this.apiValue);
+
+  final String apiValue;
+
+  static GroupEventParticipationType? fromApi(String? value) =>
+      values.where((type) => type.apiValue == value).firstOrNull;
+}
+
 class GroupEventParticipant {
   final String userId;
   final DateTime? createdAt;
   final String? username;
   final String? fullname;
   final String? avatarUrl;
+  final GroupEventParticipationType? participationType;
 
   const GroupEventParticipant({
     required this.userId,
@@ -31,6 +45,7 @@ class GroupEventParticipant {
     this.username,
     this.fullname,
     this.avatarUrl,
+    this.participationType,
   });
 
   String get displayName {
@@ -126,6 +141,9 @@ class GroupEvent {
   /// `event_format` from the API: "online", "offline" or "hybrid".
   final String? eventFormat;
 
+  /// The caller's own choice; null when not joined or still undecided.
+  final GroupEventParticipationType? myParticipationType;
+
   /// Whether the event's chat room (prayer requests) is switched on.
   final bool chatEnabled;
 
@@ -167,6 +185,7 @@ class GroupEvent {
     this.locationId,
     this.location,
     this.eventFormat,
+    this.myParticipationType,
     this.chatEnabled = false,
     this.chatRoomId,
   });

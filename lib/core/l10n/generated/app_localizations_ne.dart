@@ -976,6 +976,15 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_event_attending => 'सहभागी';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count सहभागी';
   }
@@ -2687,17 +2696,47 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_chat_delete_title => 'सन्देश मेटाउने?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'यो सन्देश यस च्याटमा सबैका लागि मेटिनेछ।';
+  String group_chat_delete_title_many(int count) {
+    return '$count सन्देशहरू मेटाउने?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'सबैका लागि मेटाउनुहोस्';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'यी सन्देशहरू च्याटबाट सबैका लागि हटाइनेछन्।',
+      one: 'यो सन्देश च्याटबाट सबैका लागि हटाइनेछ।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'सन्देश मेटाउन सकिएन।';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count सन्देशहरू मेटाउन सकिएनन्।',
+      one: 'सन्देश मेटाउन सकिएन।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => 'तपाईंले यो सन्देश मेटाउनुभयो';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'सन्देशहरू मेटाइए',
+      one: 'सन्देश मेटाइयो',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'तपाईं बढीमा $count सन्देश छान्न सक्नुहुन्छ';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'यो सन्देश मेटाइयो';

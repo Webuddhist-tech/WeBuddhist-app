@@ -21,6 +21,14 @@ abstract final class AnalyticsEvents {
   static const String malaRoundCompleted = 'mala_round_completed';
   static const String malaSynced = 'mala_synced';
   static const String malaMantraSwitched = 'mala_mantra_switched';
+
+  // Group chat
+  static const String groupChatOpened = 'group_chat_opened';
+  static const String groupMessageSent = 'group_message_sent';
+  static const String groupMessageDeleted = 'group_message_deleted';
+  static const String groupMessageReacted = 'group_message_reacted';
+  static const String groupMessageReplied = 'group_message_replied';
+  static const String groupMessageReported = 'group_message_reported';
 }
 
 /// Shared analytics property keys.
@@ -40,4 +48,14 @@ abstract final class AnalyticsProperties {
   // Routine
   static const String blockCount = 'block_count';
   static const String itemCount = 'item_count';
+
+  // Group chat
+  static const String groupId = 'group_id';
+  static const String roomId = 'room_id';
+  static const String messageId = 'message_id';
+  static const String parentMessageId = 'parent_message_id';
+  static const String isReply = 'is_reply';
+  static const String emoji = 'emoji';
+  static const String action = 'action';
+  static const String source = 'source';
 }

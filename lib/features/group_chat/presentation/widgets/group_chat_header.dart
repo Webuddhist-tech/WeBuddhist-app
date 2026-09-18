@@ -107,7 +107,7 @@ class _Identity extends StatelessWidget {
   final GroupProfile profile;
   final bool isDark;
 
-  static const double _titleFontSize = 16;
+  static const double _titleFontSize = 18;
 
   @override
   Widget build(BuildContext context) {

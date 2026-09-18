@@ -814,7 +814,7 @@ player.playVideo();
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
       color: isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite,
       child: Row(
         children: [
@@ -828,7 +828,7 @@ player.playVideo();
                       child: Text(
                         context.l10n.event_live_audio,
                         style: TextStyle(
-                          fontSize: 17,
+                          fontSize: 15,
                           fontWeight: FontWeight.w700,
                           color: primaryColor,
                         ),
@@ -842,10 +842,9 @@ player.playVideo();
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
                 Text(
                   widget.subtitle,
-                  style: TextStyle(fontSize: 13, color: secondaryColor),
+                  style: TextStyle(fontSize: 12, color: secondaryColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -858,7 +857,9 @@ player.playVideo();
                 _isPlaying
                     ? context.l10n.player_pause
                     : context.l10n.player_play,
-            iconSize: 28,
+            iconSize: 26,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 40, height: 40),
             color: primaryColor,
             onPressed: _isReady && !busy ? _togglePlayback : null,
             icon:
