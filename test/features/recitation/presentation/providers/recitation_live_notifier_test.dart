@@ -44,6 +44,9 @@ class _Harness {
   final channels = <_FakeChannel>[];
   late final RecitationLiveNotifier notifier;
 
+  /// The attempt number handed to the backoff on each reconnect.
+  final backoffAttempts = <int>[];
+
   _Harness({
     String? token = 'tok',
     Duration snapshotGrace = const Duration(milliseconds: 40),
@@ -63,7 +66,10 @@ class _Harness {
             },
           ),
       observeLifecycle: false,
-      backoff: (_) => backoff,
+      backoff: (attempt) {
+        backoffAttempts.add(attempt);
+        return backoff;
+      },
       snapshotGrace: snapshotGrace,
       endedNoticeDuration: endedNotice,
     );
@@ -235,19 +241,24 @@ void main() {
     h.notifier.dispose();
   });
 
-  test('repeated closes before any frame count as refused', () async {
+  test('closes before any frame keep reconnecting with growing backoff',
+      () async {
     final h = _Harness();
     await h.settle();
-    for (var i = 1; i < RecitationLiveNotifier.maxRefusals; i++) {
+    // An outage that outlasts a few retries must not disable sync for good.
+    for (var i = 1; i <= 4; i++) {
       await h.serverCloses();
+      expect(
+        h.notifier.state.connection,
+        RecitationLiveConnection.reconnecting,
+      );
       await h.waitForChannels(i + 1);
     }
-    await h.serverCloses();
-    await h.waitFor(
-      () =>
-          h.notifier.state.connection == RecitationLiveConnection.unavailable,
-    );
-    expect(h.channels, hasLength(RecitationLiveNotifier.maxRefusals));
+    expect(h.backoffAttempts, [1, 2, 3, 4]);
+
+    // Once the server is back, the session resumes as normal.
+    await h.push(_sessionInfo);
+    expect(h.notifier.state.connection, RecitationLiveConnection.connected);
     h.notifier.dispose();
   });
 

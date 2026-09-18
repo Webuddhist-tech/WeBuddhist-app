@@ -137,10 +137,6 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
 
   static const Duration pingInterval = Duration(seconds: 30);
 
-  /// Consecutive closes before any frame arrived, after which the socket is
-  /// treated as refused rather than flaky.
-  static const int maxRefusals = 3;
-
   /// How long after `session_info` to wait for the position snapshot before
   /// concluding the room has none and dropping a position kept from before
   /// a reconnect.
@@ -162,8 +158,6 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
   Timer? _snapshotTimer;
   Timer? _endedTimer;
   int _reconnectAttempt = 0;
-  int _refusals = 0;
-  bool _receivedFrame = false;
   bool _connecting = false;
   bool _stopped = false;
   bool _suspended = false;
@@ -217,7 +211,6 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
     final client = _clientFactory();
     _client = client;
     _connecting = false;
-    _receivedFrame = false;
     try {
       _sub = client
           .connect(uri)
@@ -239,9 +232,7 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
 
   void _onEvent(RecitationLiveEvent event) {
     if (_disposed) return;
-    _receivedFrame = true;
     _reconnectAttempt = 0;
-    _refusals = 0;
 
     switch (event) {
       case RecitationLiveSessionInfo(isOperator: final isOperator):
@@ -294,21 +285,12 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
 
   /// The server closed the socket, or the stream errored. A cancelled
   /// subscription never lands here, so this is only ever the far end.
+  /// A drop before any frame is retried like any other: a refused socket
+  /// announces itself with a fatal error frame instead.
   void _onClosed() {
     if (_disposed) return;
     unawaited(_tearDown());
     if (_stopped || _suspended) return;
-    if (!_receivedFrame) {
-      _refusals++;
-      if (_refusals >= maxRefusals) {
-        _stopped = true;
-        state = state.copyWith(
-          connection: RecitationLiveConnection.unavailable,
-          clearPosition: true,
-        );
-        return;
-      }
-    }
     _scheduleReconnect();
   }
 
