@@ -3454,6 +3454,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t update notification settings. Try again.'**
   String get group_notifications_update_failed;
 
+  /// No description provided for @group_notifications_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notification settings.'**
+  String get group_notifications_load_failed;
+
   /// No description provided for @group_leave.
   ///
   /// In en, this message translates to:

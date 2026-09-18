@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -48,7 +49,7 @@ class GroupChatScreen extends ConsumerStatefulWidget {
 }
 
 class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteAware {
   // Styles its own markers as they are typed.
   final _bodyController = ChatComposerController();
   final _bodyFocusNode = FocusNode();
@@ -104,13 +105,19 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   bool get _hasRoomSession =>
       _roomState == _RoomState.joined || _roomState == _RoomState.absent;
 
+  /// Whether this screen currently holds the active-room claim. The claim
+  /// follows page visibility, not widget lifetime: a page pushed on top hands
+  /// it back so that group's pushes banner again, and popping that page
+  /// takes it up again. Popup routes (sheets, dialogs) do not count.
+  bool _claimedActiveRoom = false;
+  PageRoute<dynamic>? _observedRoute;
+
   @override
   void initState() {
     super.initState();
     _providers = ProviderScope.containerOf(context, listen: false);
     WidgetsBinding.instance.addObserver(this);
-    // Lets the push layer mute foreground banners for this room while open.
-    _providers.read(activeGroupChatRoomProvider).claim(widget.groupId);
+    _claimActiveRoom();
   }
 
   @override
@@ -118,13 +125,38 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     super.didChangeDependencies();
     _messenger = ScaffoldMessenger.maybeOf(context);
     _l10n = context.l10n;
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic> && route != _observedRoute) {
+      if (_observedRoute != null) pageRouteObserver.unsubscribe(this);
+      _observedRoute = route;
+      pageRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() => _releaseActiveRoom();
+
+  @override
+  void didPopNext() => _claimActiveRoom();
+
+  void _claimActiveRoom() {
+    if (_claimedActiveRoom) return;
+    _claimedActiveRoom = true;
+    _providers.read(activeGroupChatRoomProvider).claim(widget.groupId);
+  }
+
+  void _releaseActiveRoom() {
+    if (!_claimedActiveRoom) return;
+    _claimedActiveRoom = false;
+    _providers.read(activeGroupChatRoomProvider).release(widget.groupId);
   }
 
   @override
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    _providers.read(activeGroupChatRoomProvider).release(widget.groupId);
+    if (_observedRoute != null) pageRouteObserver.unsubscribe(this);
+    _releaseActiveRoom();
     _reconnectTimer?.cancel();
     unawaited(_tearDownLive());
     _bodyController.dispose();
@@ -432,11 +464,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       final accountId = await _loadAccountId();
       await _providers
           .read(groupChatRoomCacheProvider)
-          .write(
-            userId: accountId,
-            groupId: widget.groupId,
-            roomId: roomId,
-          );
+          .write(userId: accountId, groupId: widget.groupId, roomId: roomId);
     } catch (_) {
       // Cache is best-effort; join is already committed on the server.
     }

@@ -887,6 +887,7 @@
   "group_notifications_master_off": "Notifications are turned off for the app.",
   "group_notifications_open_settings": "Turn on",
   "group_notifications_update_failed": "Couldn't update notification settings. Try again.",
+  "group_notifications_load_failed": "Couldn't load notification settings.",
   "group_leave": "Leave group",
   "group_leave_confirm_title": "Leave group?",
   "group_leave_confirm_message": "You'll stop getting messages and updates from this group.",

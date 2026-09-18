@@ -24,12 +24,15 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
 
   /// When set, the read waits on it so a test can look at the loading state.
   Completer<void>? holdGet;
+  Failure? getFailure;
 
   @override
   Future<Either<Failure, GroupNotificationPreferences>>
   getGroupNotificationPreferences(String groupId) async {
     final hold = holdGet;
     if (hold != null) await hold.future;
+    final failure = getFailure;
+    if (failure != null) return Left(failure);
     return Right(server);
   }
 
@@ -134,6 +137,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(_switchAfter(tester, 'Group chat').value, isFalse);
+    expect(_switchAfter(tester, 'Group content').value, isTrue);
+  });
+
+  testWidgets('a failed load shows an error with retry, not defaults', (
+    tester,
+  ) async {
+    final repository =
+        _FakeRepository()..getFailure = const NetworkFailure('offline');
+    await _pump(tester, repository: repository);
+
+    expect(find.byType(Switch), findsNothing);
+    expect(find.text("Couldn't load notification settings."), findsOneWidget);
+    expect(find.text('Leave group'), findsOneWidget);
+
+    repository.getFailure = null;
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Couldn't load notification settings."), findsNothing);
     expect(_switchAfter(tester, 'Group chat').value, isFalse);
     expect(_switchAfter(tester, 'Group content').value, isTrue);
   });

@@ -3693,6 +3693,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_notifications_load_failed => TolgeeBridge.get(
+    localeName,
+    'group_notifications_load_failed',
+    () => _fallback.group_notifications_load_failed,
+  );
+
+  @override
   String get group_leave =>
       TolgeeBridge.get(localeName, 'group_leave', () => _fallback.group_leave);
 

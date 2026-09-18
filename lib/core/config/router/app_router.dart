@@ -74,6 +74,11 @@ final _logger = AppLogger('AppRouter');
 /// can call showDialog on a context that is actually inside the navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
+/// Tells [RouteAware] screens on the root navigator when another page covers
+/// or uncovers them. Typed to [PageRoute] so bottom sheets and dialogs, which
+/// are popup routes, do not count as leaving the page.
+final pageRouteObserver = RouteObserver<PageRoute<dynamic>>();
+
 /// Shell navigator key for routes that share the persistent bottom nav bar.
 /// Public so [HomeShellScaffold] can pop imperatively-pushed screens on tab switch.
 final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
@@ -95,7 +100,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // deep link can be inserted twice and leave a stale page under Back.
     overridePlatformDefaultLocation: true,
     debugLogDiagnostics: true,
-    observers: [ref.read(analyticsServiceProvider).routeObserver],
+    observers: [
+      ref.read(analyticsServiceProvider).routeObserver,
+      pageRouteObserver,
+    ],
 
     // Re-evaluate redirect whenever auth state changes.
     refreshListenable: GoRouterRefreshStream(

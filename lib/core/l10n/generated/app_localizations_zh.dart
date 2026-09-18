@@ -1799,6 +1799,10 @@ class AppLocalizationsZh extends AppLocalizations {
       'Couldn\'t update notification settings. Try again.';
 
   @override
+  String get group_notifications_load_failed =>
+      'Couldn\'t load notification settings.';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override

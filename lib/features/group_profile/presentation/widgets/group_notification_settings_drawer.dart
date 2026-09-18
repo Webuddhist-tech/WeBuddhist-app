@@ -130,22 +130,27 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
               _MasterOffNotice(color: mutedColor),
             ],
             const SizedBox(height: 4),
-            _ToggleRow(
-              icon: AppAssets.chatCircleDots,
-              label: l10n.group_notifications_chat,
-              value: masterOn && preferences.chat,
-              enabled: masterOn,
-              loading: prefsState.isLoading,
-              onChanged: notifier.setChat,
-            ),
-            _ToggleRow(
-              icon: AppAssets.rows,
-              label: l10n.group_notifications_content,
-              value: masterOn && preferences.content,
-              enabled: masterOn,
-              loading: prefsState.isLoading,
-              onChanged: notifier.setContent,
-            ),
+            if (prefsState.loadFailure != null)
+              // Never show defaults as if they were saved choices.
+              _LoadFailedRow(color: mutedColor, onRetry: notifier.retry)
+            else ...[
+              _ToggleRow(
+                icon: AppAssets.chatCircleDots,
+                label: l10n.group_notifications_chat,
+                value: masterOn && preferences.chat,
+                enabled: masterOn,
+                loading: prefsState.isLoading,
+                onChanged: notifier.setChat,
+              ),
+              _ToggleRow(
+                icon: AppAssets.rows,
+                label: l10n.group_notifications_content,
+                value: masterOn && preferences.content,
+                enabled: masterOn,
+                loading: prefsState.isLoading,
+                onChanged: notifier.setContent,
+              ),
+            ],
             const SizedBox(height: 8),
             Divider(height: 1, thickness: 1, color: dividerColor),
             _LeaveGroupRow(onTap: () => _confirmLeave(context, ref)),
@@ -282,6 +287,35 @@ class _MasterOffNotice extends StatelessWidget {
                 ).pop(GroupNotificationSheetResult.openNotificationSettings),
             child: Text(l10n.group_notifications_open_settings),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadFailedRow extends StatelessWidget {
+  final Color color;
+  final VoidCallback onRetry;
+
+  const _LoadFailedRow({required this.color, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 10, 24, 14),
+      child: Row(
+        children: [
+          Icon(AppAssets.bellSlash, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              l10n.group_notifications_load_failed,
+              strutStyle: context.tibetanStrutStyle(14),
+              style: TextStyle(fontSize: 14, color: color),
+            ),
+          ),
+          TextButton(onPressed: onRetry, child: Text(l10n.retry)),
         ],
       ),
     );
