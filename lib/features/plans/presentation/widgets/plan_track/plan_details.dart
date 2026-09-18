@@ -655,8 +655,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     planId: widget.plan.id,
                     dayNumber: selectedDay,
                     dayAudioUrl: dayContent.audioUrl,
-                    // Readers follow the live recitation only in the online flow.
-                    eventId: _hasEventHeader ? widget.eventId : null,
+                    // Only in-person readers follow the live recitation: the
+                    // stream already carries the text as hardcoded overlays.
+                    eventId: widget.showLiveStream ? null : widget.eventId,
                     onActivityToggled:
                         (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
                     onGroupAccumulationPracticed:

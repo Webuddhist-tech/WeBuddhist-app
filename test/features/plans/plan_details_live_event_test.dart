@@ -199,8 +199,9 @@ void main() {
     // Already practicing via the event, so no "Practice now".
     expect(find.text('Practice now'), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
-    // Online attendees' readers follow the event's live recitation.
-    expect(_activityList(tester).eventId, 'event-1');
+    // Online readers stay off the live socket: the stream's overlays carry
+    // the text, and sync would lag behind the video.
+    expect(_activityList(tester).eventId, isNull);
 
     await tester.tap(find.text('Tara of the day'));
     await _settle(tester);
@@ -277,8 +278,8 @@ void main() {
     // No embedded scope, so a tapped task pushes its own route.
     expect(find.byType(PlanEmbeddedScope), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    // Nor does that route open the live recitation socket.
-    expect(_activityList(tester).eventId, isNull);
+    // That route follows the event's live recitation.
+    expect(_activityList(tester).eventId, 'event-1');
   });
 
   testWidgets('an event without a stream counts down to its start', (
