@@ -348,8 +348,10 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
     try {
       final sounds = await ref.read(ambientSoundsFutureProvider.future);
-      // The catalogue can resolve after the session was paused or ended.
-      if (!mounted || _phase != _TimerPhase.running || _isPaused) return;
+      // The catalogue can resolve after the session ended. A paused session
+      // still loads the track — resuming only calls resume() on the player, so
+      // bailing out here would leave the rest of the session silent.
+      if (!mounted || _phase != _TimerPhase.running) return;
 
       for (final sound in sounds) {
         if (sound.id == soundId) {
