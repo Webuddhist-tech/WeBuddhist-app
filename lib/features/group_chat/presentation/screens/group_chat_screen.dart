@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/domain/usecases/resolve_group_
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_composer_controller.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_link_spans.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
@@ -28,6 +29,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_error_state.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reply_preview.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_selection_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_thread.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
@@ -71,6 +73,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   _RoomState _roomState = _RoomState.resolving;
   String? _roomId;
 
+  /// Fires `group_chat_opened` at most once for this screen. See [_trackOpened].
+  final _openTracker = ChatOpenTracker();
+
   /// The JWT `sub`, used **only** to namespace this account's local room
   /// cache. It is a different id space from chat's `sender_id`, so it must
   /// never reach an identity check — see [_viewerId].
@@ -98,8 +103,16 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   ScaffoldMessengerState? _messenger;
   AppLocalizations? _l10n;
 
+  /// Cached for the same reason: [_showsPush] runs from the push stream, and
+  /// `ModalRoute.of` on a deactivated element is an ancestor lookup.
+  ModalRoute<dynamic>? _route;
+
   /// The message a reply is being composed for, quoted above the composer.
   ChatMessageDTO? _replyingTo;
+
+  /// Messages selected in the thread, or null. While set, the header becomes
+  /// the selection bar. The thread owns the selection; this is a view of it.
+  ChatSelection? _selection;
 
   /// Draft link previews the sender closed, so a dismissed card does not come
   /// straight back on the next keystroke.
@@ -120,6 +133,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         .read(pushMessagingRepositoryProvider)
         .onForegroundMessage
         .listen(_onForegroundPush);
+    // The banner for a message this screen shows would only lead back here.
+    // The subscription above still runs for such a push: suppressing the
+    // banner must not weaken the socket check it feeds.
+    _providers.read(foregroundPushFilterProvider).claim(this, _showsPush);
   }
 
   @override
@@ -127,6 +144,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     super.didChangeDependencies();
     _messenger = ScaffoldMessenger.maybeOf(context);
     _l10n = context.l10n;
+    _route ??= ModalRoute.of(context);
   }
 
   @override
@@ -136,10 +154,32 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     _reconnectTimer?.cancel();
     unawaited(_pushSub?.cancel());
     _pushSub = null;
+    _providers.read(foregroundPushFilterProvider).release(this);
     unawaited(_tearDownLive());
     _bodyController.dispose();
     _bodyFocusNode.dispose();
     super.dispose();
+  }
+
+  /// True when the member is looking at this room and the push is about it.
+  ///
+  /// Every guard is about *looking at*: a route pushed on top, or the app no
+  /// longer resumed, means the member is not, and the banner is the way they
+  /// hear about the message. Room matching is [chatPushTargets]', which also
+  /// covers a group with no room yet — the socket is group-scoped, so that
+  /// first message reaches the thread too.
+  ///
+  /// `isCurrent` cannot tell a page pushed on top from a sheet or dialog
+  /// opened here (the report sheet, the emoji picker, the delete confirm),
+  /// so a banner can show while one of those is open. Telling them apart
+  /// needs a `RouteObserver` on the router, which the app does not have yet.
+  bool _showsPush(Map<String, dynamic> data) {
+    if (_disposed) return false;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return false;
+    }
+    if (!(_route?.isCurrent ?? false)) return false;
+    return chatPushTargets(data, roomId: _roomId, groupId: widget.groupId);
   }
 
   @override
@@ -240,6 +280,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
           _roomId = roomId;
           _roomState = _RoomState.joined;
         });
+        _trackOpened(roomId, source: ChatOpenSource.resolved);
         await _ensureLiveConnected();
         await _markRoomRead();
       case GroupChatRoomMissing():
@@ -401,6 +442,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         deletedAt: final deletedAt,
       ):
         _onMessageDeleted(messageId, deletedAt);
+      // Prayer state is only rendered in the event sheet.
+      case ChatLivePrayersUpdated():
+      case ChatLiveRoomClosed():
       case ChatLiveTyping():
       case ChatLivePresence():
       case ChatLiveUnknown():
@@ -416,8 +460,25 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       _roomId = roomId;
       _roomState = _RoomState.joined;
     });
+    _trackOpened(roomId, source: ChatOpenSource.live);
     unawaited(_persistRoomId(roomId));
     unawaited(_markRoomRead());
+  }
+
+  /// Fires `group_chat_opened` once per screen, the first time it has a room
+  /// to talk in. The room may come from the lookup on open, from the socket
+  /// when another member creates it, or from this member's own first send;
+  /// the event says which. It counts opens, not members: every visit to a
+  /// chat that has a room fires it again, and a chat with no room fires
+  /// nothing until one exists.
+  void _trackOpened(String roomId, {required ChatOpenSource source}) {
+    _openTracker.track(
+      _providers.read(groupChatAnalyticsProvider),
+      groupId: widget.groupId,
+      roomId: roomId,
+      source: source,
+      screenDisposed: _disposed,
+    );
   }
 
   void _onMessageCreated(Map<String, dynamic> json) {
@@ -528,12 +589,20 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
 
   void _cancelReply() => setState(() => _replyingTo = null);
 
+  void _onSelectionChanged(ChatSelection? selection) {
+    if (!mounted || _disposed) return;
+    setState(() => _selection = selection);
+  }
+
   Future<void> _send() async {
     final body = _bodyController.text.trim();
     if (body.isEmpty || _sending) return;
     final parent = _replyingTo;
     setState(() => _sending = true);
     try {
+      // Read before the await, matching the thread notifier: a confirmed
+      // send still has to be counted after this screen is gone.
+      final analytics = _providers.read(groupChatAnalyticsProvider);
       final result = await _providers
           .read(groupChatRepositoryProvider)
           .sendGroupMessage(
@@ -541,6 +610,23 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
             body: body,
             parentMessageId: parent?.id,
           );
+      // Both events are recorded here, before the `mounted` check and before
+      // anything else is awaited: the server has accepted the message, so
+      // they count whether or not this screen is still around to show it.
+      // The open in particular must land before the cache write below
+      // yields — the socket is already up, and its `message_created` echo
+      // can arrive in that gap and reach `_adoptRoomId`, which would
+      // otherwise claim the open as `live` when it was this member's own
+      // first send.
+      result.map((message) {
+        _trackOpened(message.roomId, source: ChatOpenSource.firstSend);
+        analytics.messageSent(
+          groupId: widget.groupId,
+          roomId: message.roomId,
+          messageId: message.id,
+          parentMessageId: parent?.id,
+        );
+      });
       if (!mounted) return;
       await result.fold(
         (failure) async {
@@ -664,6 +750,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
                 roomId: roomId,
                 groupId: widget.groupId,
                 onReply: _startReply,
+                onSelectionChanged: _onSelectionChanged,
               ),
       },
       // A confirmed member may always write: a lookup that found no room, or
@@ -680,6 +767,14 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(userProvider).user;
+    // The selection belongs to the thread State that published it. Any other
+    // body means that State is gone — a profile reload swaps in the spinner
+    // — and a disposed State can never publish the null that dismisses the
+    // bar, so its header would stay up with every action pointing at dead
+    // widgets. Dropped here rather than in the thread's `dispose`, which
+    // cannot call back into a parent mid-build.
+    if (body is! GroupChatThread) _selection = null;
+    final selection = _selection;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -689,45 +784,71 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         bottom: false,
         child: Column(
           children: [
-            GroupChatHeader(isDark: isDark, onBack: _goBack, profile: profile),
+            // The selection bar and the header share a footprint, so the
+            // thread does not jump when they swap.
+            selection == null
+                ? GroupChatHeader(
+                  isDark: isDark,
+                  onBack: _goBack,
+                  profile: profile,
+                )
+                : GroupChatSelectionHeader(
+                  isDark: isDark,
+                  selection: selection,
+                ),
             Expanded(child: body),
-            if (showComposer)
-              // Watches the draft directly, so the rest of the screen does not
-              // rebuild on every keystroke.
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _bodyController,
-                builder: (context, value, _) {
-                  final url = firstChatLinkUrl(value.text);
-                  if (url == null || _dismissedPreviews.contains(url)) {
-                    return const SizedBox.shrink();
-                  }
-                  return GroupChatComposerLinkPreview(
-                    url: url,
-                    onDismiss:
-                        () => setState(() => _dismissedPreviews.add(url)),
-                  );
-                },
-              ),
-            if (showComposer && _replyingTo != null)
-              GroupChatReplyPreview(
-                message: _replyingTo!,
-                onCancel: _cancelReply,
-              ),
-            if (showComposer)
-              GroupChatComposer(
-                controller: _bodyController,
-                focusNode: _bodyFocusNode,
-                hintText: context.l10n.group_chat_message_hint,
-                isSending: _sending,
-                onSubmit: _send,
-                avatarUrl: user?.avatarUrl,
-                displayName:
-                    joinChatName(user?.firstName, user?.lastName) ??
-                    user?.email,
-              ),
           ],
         ),
       ),
+      // In the bottom slot rather than the body column, so a floating
+      // snackbar is laid out above the composer instead of over it. The
+      // composer still pads itself for the keyboard and the home indicator.
+      bottomNavigationBar:
+          showComposer
+              ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Watches the draft directly, so the rest of the screen does
+                  // not rebuild on every keystroke.
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _bodyController,
+                    builder: (context, value, _) {
+                      final url = firstChatLinkUrl(value.text);
+                      if (url == null || _dismissedPreviews.contains(url)) {
+                        return const SizedBox.shrink();
+                      }
+                      return GroupChatComposerLinkPreview(
+                        url: url,
+                        onDismiss:
+                            () => setState(() => _dismissedPreviews.add(url)),
+                      );
+                    },
+                  ),
+                  if (_replyingTo != null)
+                    GroupChatReplyPreview(
+                      message: _replyingTo!,
+                      onCancel: _cancelReply,
+                      isOwnMessage: isSelfChatMessage(
+                        senderId: _replyingTo!.senderId,
+                        senderEmail: _replyingTo!.senderEmail,
+                        currentUserId: _viewerId,
+                        currentUserEmail: _viewerEmail,
+                      ),
+                    ),
+                  GroupChatComposer(
+                    controller: _bodyController,
+                    focusNode: _bodyFocusNode,
+                    hintText: context.l10n.group_chat_message_hint,
+                    isSending: _sending,
+                    onSubmit: _send,
+                    avatarUrl: user?.avatarUrl,
+                    displayName:
+                        joinChatName(user?.firstName, user?.lastName) ??
+                        user?.email,
+                  ),
+                ],
+              )
+              : null,
     );
   }
 

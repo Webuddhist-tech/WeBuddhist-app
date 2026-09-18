@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_list_tile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
@@ -72,12 +73,19 @@ class GroupProfileEventsTab extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final event = page.events[index];
-                      return GroupEventListTile(
-                        event: event,
-                        showGroup: event.groupId != groupId,
-                        isDark: isDark,
-                        lineHeight: lineHeight,
-                        onTap: () => context.push('/home/events/${event.id}'),
+                      final isLast = index == page.events.length - 1;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom:
+                              isLast ? 0 : ConnectFeedCardLayout.listItemGap,
+                        ),
+                        child: GroupEventListTile(
+                          event: event,
+                          showGroup: event.groupId != groupId,
+                          isDark: isDark,
+                          lineHeight: lineHeight,
+                          onTap: () => context.push('/home/events/${event.id}'),
+                        ),
                       );
                     }, childCount: page.events.length),
                   ),

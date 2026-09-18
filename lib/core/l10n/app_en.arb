@@ -201,7 +201,7 @@
   "my_recitation_collection_delete_message": "This collection will be permanently removed.",
   "my_recitation_collection_fallback_title": "Chant collection",
   "my_recitation_collection_unavailable": "No longer available",
-  "my_recitation_collection_chant_count": "{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}",
+  "my_recitation_collection_chant_count": "{count, plural,\n=0 {0 chants}\n=1 {1 chant}\nother {{count} chants}\n}",
   "@my_recitation_collection_chant_count": {
     "placeholders": {
       "count": {
@@ -209,7 +209,7 @@
       }
     }
   },
-  "my_recitation_collection_chant_count_owner": "{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}",
+  "my_recitation_collection_chant_count_owner": "{count, plural,\n=0 {0 chants • me}\n=1 {1 chant • me}\nother {{count} chants • me}\n}",
   "@my_recitation_collection_chant_count_owner": {
     "placeholders": {
       "count": {
@@ -253,7 +253,7 @@
   "profile_guest_benefit_notifications": "Custom notifications",
   "auth_drawer_title": "Log in to continue",
   "auth_drawer_subtitle": "Continue your practice on any device, wherever you go.",
-  "routine_delete_block_message": "The session and all its items will be removed",
+  "routine_delete_block_message": "The time block and all its items will be removed",
   "something_went_wrong": "Something went wrong. Please try again",
   "onboarding_quote_citation": "— Dhammapada 122",
   "onboarding_traditions_question": "Which traditions\ndo you follow?",
@@ -369,6 +369,9 @@
   "connect_group_fallback_title": "Group",
   "connect_event_attend": "Attend",
   "connect_event_attending": "Attending",
+  "connect_event_participation_prompt": "How are you attending?",
+  "connect_event_joining_in_person": "Joining in person",
+  "connect_event_joining_online": "Joining online",
   "connect_event_participants_attending": "{count} attending",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -627,8 +630,8 @@
   "routine_empty_description": "Explore more teachings and practices to add to your routine",
   "routine_build": "Build your routine",
   "routine_add_session": "Add to session",
-  "routine_edit_title": "Edit your practices",
-  "routine_delete_block": "Remove session",
+  "routine_edit_title": "Edit your routine",
+  "routine_delete_block": "Remove block",
   "routine_session_title_hint": "Title...",
   "routine_expand_all": "Expand all",
   "routine_collapse_all": "Collapse all",
@@ -656,8 +659,8 @@
     }
   },
   "routine_empty_block_add_items": "Add items",
-  "routine_empty_block_delete_singular": "Remove session",
-  "routine_empty_block_delete_plural": "Remove sessions",
+  "routine_empty_block_delete_singular": "Remove block",
+  "routine_empty_block_delete_plural": "Remove blocks",
   "routine_notification_title": "Make practice a habit",
   "routine_notification_description": "Allow notifications so we can remind you to practice",
   "routine_notification_enable": "Enable notifications",
@@ -768,6 +771,9 @@
   "second_version_msg": "The second version will appear below each verse of the main text",
   "version": "Versions",
   "parallel_version": "Parallel version",
+  "reader_languages_title": "Languages",
+  "reader_original_label": "Original",
+  "reader_translation_label": "Translation",
   "version_not_available": "Not available",
   "read_full_text": "Read full text",
   "reader_source_label": "Source",
@@ -1078,6 +1084,14 @@
   "share_chant_message": "I wanted to share this chant with you. You can practice it and find a whole library of other chants and texts on WeBuddhist.",
   "share_quote_message": "I liked this quote from WeBuddhist and wanted to share it with you. Read more such insightful quotes on the WeBuddhist App",
   "share_poem_message": "I liked this poem from WeBuddhist and wanted to share it with you.",
+  "share_poem_title": "\u201c{title}\u201d",
+  "@share_poem_title": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "share_mala_message": "I've been using this digital mala on WeBuddhist and wanted to share it with you. It's an easy way to practice wherever you go.",
   "share_passage_message": "I liked this passage and wanted to share it with you. You can read the whole quote in context on WeBuddhist.",
   "share_timer_message": "I wanted to share this meditation timer from WeBuddhist with you. It makes it easy to build a meditation practice.",
@@ -1143,6 +1157,8 @@
   "player_pause": "Pause",
   "player_play": "Play",
   "player_forward_10": "Forward 10 seconds",
+  "player_fullscreen": "Fullscreen",
+  "player_exit_fullscreen": "Exit fullscreen",
   "session_plans_load_error": "Unable to load plans.\nPlease try again later.",
   "session_chants_load_error": "Unable to load chants",
   "session_no_chants": "No chants found",
@@ -1298,10 +1314,46 @@
   "group_chat_report_retry": "Retry",
   "group_chat_delete": "Delete",
   "group_chat_delete_title": "Delete message?",
-  "group_chat_delete_confirm_body": "This message will be deleted for everyone in this chat.",
-  "group_chat_delete_for_everyone": "Delete for everyone",
-  "group_chat_delete_failed": "The message couldn't be deleted.",
-  "group_chat_message_deleted": "You deleted this message",
+  "group_chat_delete_title_many": "Delete {count} messages?",
+  "@group_chat_delete_title_many": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_confirm_body": "{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{The message couldn't be deleted.} other{{count} messages couldn't be deleted.}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_message_deleted_toast": "{count, plural, =1{Message deleted} other{Messages deleted}}",
+  "@group_chat_message_deleted_toast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_selection_limit": "You can select up to {count} messages",
+  "@group_chat_selection_limit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "group_chat_message_deleted_by_sender": "This message was deleted",
   "group_chat_reaction_failed": "Your reaction couldn't be saved.",
   "group_chat_reactions_count": "{count, plural,\n=1 {1 reaction}\nother {{count} reactions}\n}",
@@ -1362,5 +1414,16 @@
   "event_live_audio": "Live audio",
   "event_live_video_mode": "Video",
   "event_live_audio_mode": "Audio",
-  "event_live_go_live": "Live"
+  "event_live_go_live": "Live",
+  "event_puja_starts_in": "Puja starts in",
+  "event_puja_not_started": "Puja not started yet",
+  "event_prayer_requests": "Prayer requests",
+  "event_prayer_empty_title": "No prayer requests yet",
+  "event_prayer_empty_body": "Your request and your community's will appear here",
+  "event_prayer_add": "Add a prayer request",
+  "event_prayer_hint": "How can we pray for you today",
+  "event_prayer_load_failed": "Prayer requests couldn't be loaded.",
+  "event_prayer_closed": "Prayer requests are closed for this event.",
+  "event_prayer_pray": "Pray",
+  "event_prayer_praying": "Praying"
 }

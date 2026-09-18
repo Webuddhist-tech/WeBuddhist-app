@@ -3,7 +3,9 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -35,14 +37,29 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
+    try {
+      return Right(await _remote.getEventRoom(eventId));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'getEventRoom'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
     int skip = 0,
     int limit = 20,
+    String? messageType,
   }) async {
     try {
       return Right(
-        await _remote.listMessages(roomId, skip: skip, limit: limit),
+        await _remote.listMessages(
+          roomId,
+          skip: skip,
+          limit: limit,
+          messageType: messageType,
+        ),
       );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'listMessages'));
@@ -54,6 +71,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
     String groupId, {
     required String body,
     String? parentMessageId,
+    String? messageType,
   }) async {
     try {
       return Right(
@@ -61,10 +79,55 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
           groupId,
           body: body,
           parentMessageId: parentMessageId,
+          messageType: messageType,
         ),
       );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'sendGroupMessage'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatMessageDTO>> sendEventMessage(
+    String eventId, {
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  }) async {
+    try {
+      return Right(
+        await _remote.sendEventMessage(
+          eventId,
+          body: body,
+          parentMessageId: parentMessageId,
+          messageType: messageType,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'sendEventMessage'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
+    String roomId, {
+    required List<String> messageIds,
+  }) async {
+    try {
+      return Right(await _remote.prayFor(roomId, messageIds: messageIds));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'prayFor'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
+    String messageId,
+  ) async {
+    try {
+      return Right(await _remote.removePrayer(messageId));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'removePrayer'));
     }
   }
 
@@ -103,6 +166,23 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
       return const Right(unit);
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'deleteMessage'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteMessages(
+    String roomId, {
+    required List<String> messageIds,
+  }) async {
+    try {
+      await _remote.deleteMessages(roomId, messageIds: messageIds);
+      return const Right(unit);
+    } on ChatBulkDeleteUnsupportedException {
+      // Kept distinct from every other failure: this one means "use the
+      // single-message route instead", not "tell the member it failed".
+      return const Left(ChatBulkDeleteUnsupportedFailure());
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'deleteMessages'));
     }
   }
 

@@ -644,6 +644,9 @@
   "second_version_msg": "Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ",
   "version": "Хувилбарууд",
   "parallel_version": "Зэрэгцээ хувилбар",
+  "reader_languages_title": "Хэл",
+  "reader_original_label": "Эх бичвэр",
+  "reader_translation_label": "Орчуулга",
   "version_not_available": "Байхгүй",
   "read_full_text": "Бүтэн бичвэрийг унших",
   "reader_source_label": "Эх сурвалж",
@@ -874,6 +877,7 @@
   "share_chant_message": "Би энэ дуулалыг тантай хуваалцахыг хүссэн. Та үүнийг дадлагажуулж, WeBuddhist дээр бусад дуулал болон судруудын бүтэн номын санг олж болно.",
   "share_quote_message": "Надад WeBuddhist дээрх энэ ишлэл таалагдсан тул тантай хуваалцахыг хүссэн. WeBuddhist аппликейшн дээр ийм мэдлэгтэй ишлэлүүдийг уншаарай.",
   "share_poem_message": "Надад WeBuddhist дээрх энэ шүлэг таалагдсан тул тантай хуваалцахыг хүссэн.",
+  "share_poem_title": "\u201c{title}\u201d",
   "share_mala_message": "Би WeBuddhist дээрх энэ тоолуурыг ашиглаж байгаа бөгөөд тантай хуваалцахыг хүссэн. Хаана ч байсан дадлагажуулахад хялбар арга юм.",
   "share_passage_message": "Надад энэ хэсэг таалагдсан тул тантай хуваалцахыг хүссэн. WeBuddhist дээр бүтэн ишлэлийг уншиж болно.",
   "share_timer_message": "Би WeBuddhist дээрх энэ бясалгалын таймерыг тантай хуваалцахыг хүссэн. Бясалгалын дадлага хийхэд хялбар болгодог.",
@@ -1091,10 +1095,25 @@
   "group_chat_report_retry": "Дахин оролдох",
   "group_chat_delete": "Устгах",
   "group_chat_delete_title": "Мессежийг устгах уу?",
-  "group_chat_delete_confirm_body": "Энэ мессеж энэ чат дахь бүх хүний хувьд устгагдана.",
-  "group_chat_delete_for_everyone": "Бүгдээс устгах",
-  "group_chat_delete_failed": "Мессежийг устгаж чадсангүй.",
-  "group_chat_message_deleted": "Та энэ мессежийг устгасан",
+  "group_chat_delete_title_many": "{count} мессежийг устгах уу?",
+  "group_chat_delete_confirm_body": "{count, plural, =1{Энэ мессеж чатаас бүх хүний хувьд устгагдана.} other{Эдгээр мессежүүд чатаас бүх хүний хувьд устгагдана.}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{Мессежийг устгаж чадсангүй.} other{{count} мессежийг устгаж чадсангүй.}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_message_deleted_toast": "{count, plural, =1{Мессеж устгагдлаа} other{Мессежүүд устгагдлаа}}",
+  "group_chat_selection_limit": "Та хамгийн ихдээ {count} мессеж сонгох боломжтой",
   "group_chat_message_deleted_by_sender": "Энэ мессежийг устгасан",
   "group_chat_reaction_failed": "Таны хариу үйлдлийг хадгалж чадсангүй.",
   "group_chat_reactions_count": "{count, plural, =1{1 хариу үйлдэл} other{{count} хариу үйлдэл}}",
@@ -1141,5 +1160,14 @@
   "edit": "Засах",
   "group_post_edit_title": "Нийтлэлийг засах",
   "group_post_update_error": "Таны өөрчлөлтийг хадгалж чадсангүй. Дахин оролдоно уу.",
-  "group_post_updated": "Таны өөрчлөлт хадгалагдлаа."
+  "group_post_updated": "Таны өөрчлөлт хадгалагдлаа.",
+  "event_prayer_requests": "Залбирлын хүсэлт",
+  "event_prayer_empty_title": "Одоогоор залбирлын хүсэлт алга",
+  "event_prayer_empty_body": "Таны болон нийгэмлэгийн хүсэлт энд харагдана",
+  "event_prayer_add": "Залбирлын хүсэлт нэмэх",
+  "event_prayer_hint": "Өнөөдөр бид таны төлөө юуны төлөө залбирах вэ",
+  "event_prayer_load_failed": "Залбирлын хүсэлтийг ачаалж чадсангүй.",
+  "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.",
+  "event_prayer_pray": "Залбирах",
+  "event_prayer_praying": "Залбирч байна"
 }

@@ -103,6 +103,9 @@ class AppAssets {
   static const IconData dotsThreeVertical =
       PhosphorIconsRegular.dotsThreeVertical;
   static const IconData paperPlaneRight = PhosphorIconsRegular.paperPlaneRight;
+  static const IconData arrowCircleUp = PhosphorIconsFill.arrowCircleUp;
+  static const IconData handsPraying = PhosphorIconsRegular.handsPraying;
+  static const IconData handsPrayingFill = PhosphorIconsFill.handsPraying;
   static const IconData arrowBendUpLeft = PhosphorIconsRegular.arrowBendUpLeft;
   static const IconData copy = PhosphorIconsRegular.copy;
 
@@ -116,6 +119,7 @@ class AppAssets {
   static const IconData list = PhosphorIconsRegular.list;
   static const IconData trash = PhosphorIconsRegular.trash;
   static const IconData pencilSimple = PhosphorIconsRegular.pencilSimple;
+  static const IconData prohibit = PhosphorIconsRegular.prohibit;
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;

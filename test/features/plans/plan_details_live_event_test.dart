@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_event
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_player.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_toggles.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_not_started_card.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
@@ -20,11 +21,13 @@ import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_cover_image.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:intl/intl.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
   @override
@@ -112,7 +115,10 @@ UserPlanDayDetailResponse _makeDay() => UserPlanDayDetailResponse(
 Future<void> _pumpLiveEventDetails(
   WidgetTester tester, {
   bool streamKnownAbsent = false,
+  bool showLiveStream = true,
   Completer<Either<Failure, GroupEvent>>? stream,
+  // Answers every fetch, including the retries a started event makes.
+  Future<Either<Failure, GroupEvent>> Function()? fetch,
 }) async {
   // Phone portrait: the pinned 16:9 stream must leave room for the list.
   tester.view.physicalSize = const Size(390, 844);
@@ -128,10 +134,11 @@ Future<void> _pumpLiveEventDetails(
         // Still loading counts as live; a failure means no stream.
         groupEventInLanguageProvider.overrideWith(
           (ref, key) =>
-              streamKnownAbsent
+              fetch != null
+                  ? fetch()
+                  : streamKnownAbsent
                   ? Future.value(const Left(NetworkFailure('test')))
-                  : (stream ?? Completer<Either<Failure, GroupEvent>>())
-                      .future,
+                  : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
         ),
         userPlanDayContentFutureProvider.overrideWith(
           (ref, params) => Stream.value(Right(day)),
@@ -159,6 +166,7 @@ Future<void> _pumpLiveEventDetails(
           // Started today, so no missed-days badge crowds the narrow row.
           startDate: DateTime.now(),
           eventId: 'event-1',
+          showLiveStream: showLiveStream,
         ),
       ),
     ),
@@ -167,8 +175,7 @@ Future<void> _pumpLiveEventDetails(
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-Finder _body() =>
-    find.textContaining('swift protector', findRichText: true);
+Finder _body() => find.textContaining('swift protector', findRichText: true);
 
 // The pending stream shimmers forever, so settle for a fixed time instead.
 Future<void> _settle(WidgetTester tester) =>
@@ -185,7 +192,8 @@ void main() {
     expect(find.byType(GroupEventMediaToggle), findsNothing);
     expect(find.text('Green Tara'), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    expect(find.text('Practice now'), findsOneWidget);
+    // Already practicing via the event, so no "Practice now".
+    expect(find.text('Practice now'), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
 
     await tester.tap(find.text('Tara of the day'));
@@ -204,7 +212,7 @@ void main() {
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
     expect(_body(), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    expect(find.text('Practice now'), findsOneWidget);
+    expect(find.text('Practice now'), findsNothing);
 
     // Let the deferred refresh after closing run out.
     await tester.pump(const Duration(seconds: 1));
@@ -220,6 +228,129 @@ void main() {
     expect(find.byType(GroupEventLanguageToggle), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
+    // No cover image: the header says the puja has not started.
+    expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
+    expect(find.text('Puja not started yet'), findsOneWidget);
+    expect(find.byType(PlanCoverImage), findsNothing);
+  });
+
+  testWidgets('an in-person attendee gets the plain layout despite a stream', (
+    tester,
+  ) async {
+    await _pumpLiveEventDetails(
+      tester,
+      showLiveStream: false,
+      fetch:
+          () async => Right(
+            GroupEvent(
+              id: 'event-1',
+              groupId: 'group-1',
+              chatEnabled: true,
+              youtube: const [
+                GroupEventLink(
+                  id: 'y1',
+                  type: 'youtube',
+                  url: 'https://youtu.be/BNDTusn8TO8',
+                  label: 'live',
+                ),
+              ],
+            ),
+          ),
+    );
+    await _settle(tester);
+
+    // Static cover, no stream, no countdown, no toggles.
+    expect(find.byType(PlanCoverImage), findsOneWidget);
+    expect(find.byType(GroupEventLiveHeader), findsNothing);
+    expect(find.byType(GroupEventNotStartedCard), findsNothing);
+    expect(find.byType(GroupEventMediaToggle), findsNothing);
+    expect(find.text('Green Tara'), findsOneWidget);
+    // Prayer requests still belong to the event.
+    expect(find.text('Prayer requests'), findsOneWidget);
+
+    // No embedded scope, so a tapped task pushes its own route.
+    expect(find.byType(PlanEmbeddedScope), findsNothing);
+    expect(find.text('Tara of the day'), findsOneWidget);
+  });
+
+  testWidgets('an event without a stream counts down to its start', (
+    tester,
+  ) async {
+    final stream = Completer<Either<Failure, GroupEvent>>();
+    await _pumpLiveEventDetails(tester, stream: stream);
+
+    final startsAt = DateTime.now().add(
+      const Duration(hours: 2, minutes: 14, seconds: 30),
+    );
+    stream.complete(
+      Right(GroupEvent(id: 'event-1', groupId: 'group-1', startDate: startsAt)),
+    );
+    await _settle(tester);
+
+    expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
+    expect(find.text('Puja starts in'), findsOneWidget);
+    expect(find.text('02 : 14 : 30'), findsOneWidget);
+    final local = startsAt.toLocal();
+    final date = DateFormat('EEE d MMM').format(local);
+    final time = DateFormat.jm().format(local).toLowerCase();
+    expect(find.text('$date · $time ${local.timeZoneName}'), findsOneWidget);
+    expect(find.byType(PlanCoverImage), findsNothing);
+  });
+
+  testWidgets('a started event without a stream keeps asking for its link', (
+    tester,
+  ) async {
+    var fetches = 0;
+    final now = DateTime.now();
+    await _pumpLiveEventDetails(
+      tester,
+      fetch: () async {
+        fetches++;
+        return Right(
+          GroupEvent(
+            id: 'event-1',
+            groupId: 'group-1',
+            startDate: now.subtract(const Duration(minutes: 5)),
+          ),
+        );
+      },
+    );
+    await _settle(tester);
+    expect(fetches, 1);
+    expect(find.text('Puja not started yet'), findsOneWidget);
+
+    // The link is usually attached a little after the start, so poll for it.
+    await tester.pump(const Duration(seconds: 31));
+    await _settle(tester);
+    expect(fetches, 2);
+  });
+
+  testWidgets('an event that has ended stops asking for a stream', (
+    tester,
+  ) async {
+    var fetches = 0;
+    final now = DateTime.now();
+    await _pumpLiveEventDetails(
+      tester,
+      fetch: () async {
+        fetches++;
+        return Right(
+          GroupEvent(
+            id: 'event-1',
+            groupId: 'group-1',
+            startDate: now.subtract(const Duration(days: 2)),
+            endDate: now.subtract(const Duration(days: 1)),
+          ),
+        );
+      },
+    );
+    await _settle(tester);
+    expect(fetches, 1);
+
+    // No link is ever coming, so no request goes out however long we stay.
+    await tester.pump(const Duration(minutes: 2));
+    await _settle(tester);
+    expect(fetches, 1);
   });
 
   testWidgets('a failed stream request keeps an open task in place', (
@@ -252,7 +383,7 @@ void main() {
   ) async {
     await _pumpLiveEventDetails(tester);
 
-    await tester.tap(find.text('Practice now'));
+    await tester.tap(find.text('Tara of the day'));
     await _settle(tester);
     expect(_body(), findsOneWidget);
 

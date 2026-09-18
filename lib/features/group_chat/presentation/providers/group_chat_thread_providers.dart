@@ -4,9 +4,20 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_analytics.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// What a multi-message delete came to, by id. Every requested id lands in
+/// exactly one of the two sets.
+class ChatDeleteOutcome {
+  const ChatDeleteOutcome({this.deleted = const {}, this.failed = const {}});
+
+  final Set<String> deleted;
+  final Set<String> failed;
+}
 
 class GroupChatThreadState extends Equatable {
   /// Newest-first, exactly as the API returns them. Rendered through
@@ -164,6 +175,18 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// over whatever was committed — see [_applyPendingDeletions].
   final Map<String, String> _pendingDeletions = {};
 
+  /// Every deletion this thread has learned of, for as long as it lives.
+  ///
+  /// Unlike [_pendingDeletions] this is never dropped, because the server
+  /// does not yet stamp `deleted_at` onto the parent embedded in a reply.
+  /// A reply's own row carries the marker when refetched, but its quote
+  /// does not: a refresh that replaces the held reply with the server's copy
+  /// would show the deleted original's author and body in the quote again,
+  /// and when the original is outside the loaded window nothing else in the
+  /// thread knows it is gone. Swept over the quotes of every committed row
+  /// instead — see [_withDeletedParent].
+  final Map<String, String> _deletedOriginals = {};
+
   /// How many page requests are in flight. A broadcast is only worth holding
   /// while one of them might be carrying the message it names.
   int _fetchesInFlight = 0;
@@ -194,26 +217,43 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// the map has already forgotten it. Running last, over whatever was
   /// actually committed, treats an inserted row and an already-held one alike.
   void _applyPendingDeletions() {
-    if (_pendingDeletions.isEmpty) return;
-
     var changed = false;
-    final messages = [
-      for (final message in state.messages)
-        if (message.deletedAt != null)
-          message
-        else
-          () {
-            // Read, not consumed: a second page still in flight can commit
-            // the same stale copy, and `_dropStalePending` clears the map
-            // once none is running.
-            final deletedAt = _pendingDeletions[message.id];
-            if (deletedAt == null) return message;
-            changed = true;
-            return message.copyWith(deletedAt: deletedAt);
-          }(),
-    ];
+    // Read, not consumed: a second page still in flight can commit the same
+    // stale copy, and `_dropStalePending` clears the map once none is
+    // running. Each held id is swept over the row and over any reply quoting
+    // it, the same way a live frame is applied.
+    var messages = state.messages;
+    for (final entry in _pendingDeletions.entries) {
+      messages = [
+        for (final message in messages)
+          _withDeletion(message, entry.key, entry.value, () => changed = true),
+      ];
+    }
+
+    // Quotes of every original known to be gone, whether or not a fetch was
+    // running: the page just committed carries those quotes as live.
+    if (_deletedOriginals.isNotEmpty) {
+      messages = [
+        for (final message in messages)
+          _withDeletedParent(message, () => changed = true),
+      ];
+    }
 
     if (changed) state = state.copyWith(messages: messages);
+  }
+
+  /// [message] with its quote stamped when the original it quotes is in
+  /// [_deletedOriginals] and the quote is not stamped yet.
+  ChatMessageDTO _withDeletedParent(
+    ChatMessageDTO message,
+    void Function() onChanged,
+  ) {
+    final parent = message.parent;
+    if (parent == null || parent.deletedAt != null) return message;
+    final deletedAt = _deletedOriginals[parent.id];
+    if (deletedAt == null) return message;
+    onChanged();
+    return message.copyWith(parent: parent.copyWith(deletedAt: deletedAt));
   }
 
   /// Anything still held once no fetch is running names a message no page is
@@ -311,8 +351,11 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   void appendLive(ChatMessageDTO message) {
     if (message.id.isEmpty) return;
     if (state.messages.any((existing) => existing.id == message.id)) return;
+    // A reply sent after its original was deleted arrives quoting it as
+    // live, the same way a refetched one does.
+    final stamped = _withDeletedParent(message, () {});
     state = state.copyWith(
-      messages: [message, ...state.messages],
+      messages: [stamped, ...state.messages],
       skip: state.skip + 1,
       total: state.total + 1,
       hasLoaded: true,
@@ -864,6 +907,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     final previousReactions = baseline;
 
     final repository = ref.read(groupChatRepositoryProvider);
+    // Read before the await: `ref` is unusable once this notifier is torn
+    // down, and a confirmed tap still has to be counted then.
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result =
         isRemoval
             ? await repository.removeReaction(
@@ -877,9 +923,21 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
               emoji: emoji,
             );
 
+    final failure = result.getLeft().toNullable();
+    if (failure == null) {
+      // This call is confirmed, so the tap counts even if a swap's cleanup
+      // below fails, and even if the member has already left the screen:
+      // the new emoji is on the server either way.
+      analytics.messageReacted(
+        roomId: roomIdForCall,
+        messageId: messageId,
+        emoji: emoji,
+        action: chatReactionActionFor(isRemoval: isRemoval, isSwap: isSwap),
+      );
+    }
+
     if (!mounted) return null;
 
-    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
     if (failure != null) {
       // Rolling back to this operation's baseline would wipe a newer tap.
       if (_isCurrent(messageId, seq)) {
@@ -1022,21 +1080,40 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     // that commit, so it is held until no fetch is running. With nothing in
     // flight it is safe to drop: any later fetch carries `deleted_at` itself.
     if (_fetchesInFlight > 0) _pendingDeletions[messageId] = deletedAt;
+    // Kept for good, for the quotes: the first timestamp stands here too.
+    _deletedOriginals.putIfAbsent(messageId, () => deletedAt);
 
-    final index = state.messages.indexWhere(
-      (message) => message.id == messageId,
-    );
-    if (index < 0) return;
-    if (state.messages[index].deletedAt != null) return;
+    // The original and every loaded reply quoting it, in one pass. The
+    // replies are stamped even when the original itself is outside the loaded
+    // window: a quote of a message paged out of view still has to become a
+    // tombstone in the same frame as everyone else's copy of it.
+    var changed = false;
+    final messages = [
+      for (final message in state.messages)
+        _withDeletion(message, messageId, deletedAt, () => changed = true),
+    ];
+    if (changed) state = state.copyWith(messages: messages);
+  }
 
-    state = state.copyWith(
-      messages: [
-        for (final message in state.messages)
-          message.id == messageId
-              ? message.copyWith(deletedAt: deletedAt)
-              : message,
-      ],
-    );
+  /// [message] with [deletedAt] stamped where [messageId] is the message
+  /// itself or its quoted original. The first timestamp stands on both.
+  ChatMessageDTO _withDeletion(
+    ChatMessageDTO message,
+    String messageId,
+    String deletedAt,
+    void Function() onChanged,
+  ) {
+    var result = message;
+    if (message.id == messageId && message.deletedAt == null) {
+      result = result.copyWith(deletedAt: deletedAt);
+      onChanged();
+    }
+    final parent = message.parent;
+    if (parent != null && parent.id == messageId && parent.deletedAt == null) {
+      result = result.copyWith(parent: parent.copyWith(deletedAt: deletedAt));
+      onChanged();
+    }
+    return result;
   }
 
   /// Deletes one of this member's own messages, for everyone.
@@ -1054,22 +1131,95 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     );
     if (index >= 0 && state.messages[index].deletedAt != null) return null;
 
+    final analytics = ref.read(groupChatAnalyticsProvider);
     final result = await ref
         .read(groupChatRepositoryProvider)
         .deleteMessage(roomId, messageId: messageId);
 
-    if (!mounted) return null;
+    final failure = result.getLeft().toNullable();
+    if (failure == null) _trackDeleted(analytics, messageId);
 
-    return result.fold((failure) => failure, (_) {
-      // 204 with no body, so there is nothing to adopt: the row is stamped now
-      // and the next fetch replaces this with the server's own value.
-      applyDeletion(
-        messageId,
-        deletedAt: DateTime.now().toUtc().toIso8601String(),
-      );
-      return null;
-    });
+    if (!mounted) return null;
+    if (failure != null) return failure;
+
+    // 204 with no body, so there is nothing to adopt: the row is stamped now
+    // and the next fetch replaces this with the server's own value.
+    applyDeletion(messageId, deletedAt: _nowIso());
+    return null;
   }
+
+  /// Deletes several of this member's own messages.
+  ///
+  /// One message goes through [deleteMessage]: the single route exists on
+  /// every backend and needs no bulk call. Several go in one bulk request,
+  /// which is **all or nothing** on the server: a `204` means every id is
+  /// gone, and any refusal means none is. The `204` carries no body, so each
+  /// row is stamped now and the `message_deleted` broadcast or the next
+  /// fetch brings the server's own timestamp.
+  ///
+  /// An environment without the bulk route answers with
+  /// [ChatBulkDeleteUnsupportedFailure], and the ids are then deleted one
+  /// call each.
+  Future<ChatDeleteOutcome> deleteMessages(List<String> messageIds) async {
+    final ids = messageIds.where((id) => id.isNotEmpty).toSet().toList();
+    if (ids.isEmpty) return const ChatDeleteOutcome();
+    if (ids.length == 1) return _deleteOneByOne(ids);
+
+    final analytics = ref.read(groupChatAnalyticsProvider);
+    final result = await ref
+        .read(groupChatRepositoryProvider)
+        .deleteMessages(roomId, messageIds: ids);
+
+    final failure = result.getLeft().toNullable();
+    if (failure == null) {
+      for (final id in ids) {
+        _trackDeleted(analytics, id);
+      }
+    }
+
+    if (!mounted) return ChatDeleteOutcome(failed: ids.toSet());
+
+    if (failure != null) {
+      if (failure is ChatBulkDeleteUnsupportedFailure) {
+        return _deleteOneByOne(ids);
+      }
+      return ChatDeleteOutcome(failed: ids.toSet());
+    }
+
+    final deletedAt = _nowIso();
+    for (final id in ids) {
+      applyDeletion(id, deletedAt: deletedAt);
+    }
+    return ChatDeleteOutcome(deleted: ids.toSet());
+  }
+
+  /// The fallback: one call per id, in order, stopping only if the notifier
+  /// is torn down mid-run.
+  Future<ChatDeleteOutcome> _deleteOneByOne(List<String> ids) async {
+    final deleted = <String>{};
+    final failed = <String>{};
+    for (final id in ids) {
+      final failure = await deleteMessage(id);
+      if (!mounted) {
+        failed.addAll(ids.where((other) => !deleted.contains(other)));
+        break;
+      }
+      (failure == null ? deleted : failed).add(id);
+    }
+    return ChatDeleteOutcome(deleted: deleted, failed: failed);
+  }
+
+  /// One event per message: the bulk route confirms every id at once and the
+  /// fallback confirms them one call each, so both report the same way.
+  ///
+  /// Takes the [analytics] the caller read *before* its request went out, so
+  /// a deletion the server accepted while the member was leaving the screen
+  /// is still counted — `ref` cannot be read once this notifier is disposed.
+  void _trackDeleted(GroupChatAnalytics analytics, String messageId) {
+    analytics.messageDeleted(roomId: roomId, messageId: messageId);
+  }
+
+  static String _nowIso() => DateTime.now().toUtc().toIso8601String();
 
   void retry() {
     if (state.messages.isEmpty) {

@@ -125,7 +125,9 @@ dependencies:
   screenshot: ^3.0.0
   path_provider: ^2.1.5
   scrollable_positioned_list: ^0.3.8
-  youtube_player_flutter: ^9.1.1
+  # Vendored: adds a playInBackground flag for the live player.
+  youtube_player_flutter:
+    path: packages/youtube_player_flutter
   image_gallery_saver_plus: ^4.0.1
   image_picker: ^1.1.2
 

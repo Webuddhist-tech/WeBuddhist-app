@@ -4,7 +4,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_drawer.dart';
 import 'package:flutter_pecha/features/texts/presentation/widgets/segment_drawer.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 
 /// Renders markdown content for plan TEXT subtasks.
 ///
@@ -12,7 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// - Locale-aware system (sans-serif) font and line height for Tibetan / EN / ZH.
 /// - Headings, lists, emphasis and blockquotes scale off [fontSize] so the
 ///   reader font-size bottom sheet still drives the whole document.
-/// - `[label](url)` opens in the external browser via `url_launcher`.
+/// - `[label](url)` opens in the in-app browser.
 /// - Images are intentionally disabled — plan markdown is not expected to
 ///   include them and disabling avoids accidental network fetches.
 class PlanInlineMarkdownView extends StatelessWidget {
@@ -111,10 +111,7 @@ class PlanInlineMarkdownView extends StatelessWidget {
         return;
       }
 
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-        return;
-      }
+      if (await openUrl(uri.toString())) return;
       if (context.mounted) context.showSnackBar(context.l10n.link_cannot_open);
     } catch (_) {
       if (context.mounted) context.showSnackBar(context.l10n.link_invalid);

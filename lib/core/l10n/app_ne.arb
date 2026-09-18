@@ -644,6 +644,9 @@
   "second_version_msg": "दोस्रो संस्करण मुख्य पाठको हरेक श्लोकमुनि देखिनेछ",
   "version": "संस्करणहरू",
   "parallel_version": "समानान्तर संस्करण",
+  "reader_languages_title": "भाषाहरू",
+  "reader_original_label": "मूल",
+  "reader_translation_label": "अनुवाद",
   "version_not_available": "उपलब्ध छैन",
   "read_full_text": "पूरा पाठ पढ्नुहोस्",
   "reader_source_label": "स्रोत",
@@ -874,6 +877,7 @@
   "share_chant_message": "म यो जप तपाईंसँग साझा गर्न चाहन्थें। तपाईंले यसको अभ्यास गर्न र WeBuddhist मा अन्य जप र ग्रन्थहरूको पूर्ण पुस्तकालय फेला पार्न सक्नुहुन्छ।",
   "share_quote_message": "मलाई WeBuddhist को यो उद्धरण मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें। WeBuddhist एपमा यस्ता थप ज्ञानवर्धक उद्धरणहरू पढ्नुहोस्।",
   "share_poem_message": "मलाई WeBuddhist को यो कविता मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें।",
+  "share_poem_title": "\u201c{title}\u201d",
   "share_mala_message": "म WeBuddhist मा यो डिजिटल माला प्रयोग गर्दैछु र तपाईंसँग साझा गर्न चाहन्थें। जहाँ जानुभए पनि अभ्यास गर्न सजिलो तरिका हो।",
   "share_passage_message": "मलाई यो अंश मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें। तपाईं WeBuddhist मा पूरा सन्दर्भ पढ्न सक्नुहुन्छ।",
   "share_timer_message": "म WeBuddhist को यो ध्यान टाइमर तपाईंसँग साझा गर्न चाहन्थें। यसले ध्यान अभ्यास निर्माण गर्न सजिलो बनाउँछ।",
@@ -1091,10 +1095,25 @@
   "group_chat_report_retry": "पुनः प्रयास गर्नुहोस्",
   "group_chat_delete": "मेटाउनुहोस्",
   "group_chat_delete_title": "सन्देश मेटाउने?",
-  "group_chat_delete_confirm_body": "यो सन्देश यस च्याटमा सबैका लागि मेटिनेछ।",
-  "group_chat_delete_for_everyone": "सबैका लागि मेटाउनुहोस्",
-  "group_chat_delete_failed": "सन्देश मेटाउन सकिएन।",
-  "group_chat_message_deleted": "तपाईंले यो सन्देश मेटाउनुभयो",
+  "group_chat_delete_title_many": "{count} सन्देशहरू मेटाउने?",
+  "group_chat_delete_confirm_body": "{count, plural, =1{यो सन्देश च्याटबाट सबैका लागि हटाइनेछ।} other{यी सन्देशहरू च्याटबाट सबैका लागि हटाइनेछन्।}}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural, =1{सन्देश मेटाउन सकिएन।} other{{count} सन्देशहरू मेटाउन सकिएनन्।}}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_message_deleted_toast": "{count, plural, =1{सन्देश मेटाइयो} other{सन्देशहरू मेटाइए}}",
+  "group_chat_selection_limit": "तपाईं बढीमा {count} सन्देश छान्न सक्नुहुन्छ",
   "group_chat_message_deleted_by_sender": "यो सन्देश मेटाइयो",
   "group_chat_reaction_failed": "तपाईंको प्रतिक्रिया सुरक्षित गर्न सकिएन।",
   "group_chat_reactions_count": "{count, plural, =1{1 प्रतिक्रिया} other{{count} प्रतिक्रियाहरू}}",
@@ -1141,5 +1160,14 @@
   "edit": "सम्पादन गर्नुहोस्",
   "group_post_edit_title": "पोस्ट सम्पादन गर्नुहोस्",
   "group_post_update_error": "तपाईंका परिवर्तनहरू सुरक्षित गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।",
-  "group_post_updated": "तपाईंका परिवर्तनहरू सुरक्षित गरियो।"
+  "group_post_updated": "तपाईंका परिवर्तनहरू सुरक्षित गरियो।",
+  "event_prayer_requests": "प्रार्थना अनुरोध",
+  "event_prayer_empty_title": "अहिले कुनै प्रार्थना अनुरोध छैन",
+  "event_prayer_empty_body": "तपाईं र तपाईंको समुदायको अनुरोध यहाँ देखिनेछ",
+  "event_prayer_add": "प्रार्थना अनुरोध थप्नुहोस्",
+  "event_prayer_hint": "आज हामी तपाईंका लागि के प्रार्थना गरौं",
+  "event_prayer_load_failed": "प्रार्थना अनुरोध लोड गर्न सकिएन।",
+  "event_prayer_closed": "यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।",
+  "event_prayer_pray": "प्रार्थना गर्नुहोस्",
+  "event_prayer_praying": "प्रार्थना गर्दै"
 }

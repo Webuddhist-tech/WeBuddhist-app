@@ -86,7 +86,10 @@ abstract class GroupProfileRepositoryInterface {
     required int limit,
   });
 
-  Future<Either<Failure, void>> joinGroupEvent(String eventId);
+  Future<Either<Failure, void>> joinGroupEvent(
+    String eventId, {
+    GroupEventParticipationType? participationType,
+  });
 
   Future<Either<Failure, void>> leaveGroupEvent(String eventId);
 

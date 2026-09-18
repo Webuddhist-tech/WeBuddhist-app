@@ -90,6 +90,56 @@ void main() {
     });
   });
 
+  group('parseYoutubeOembed', () {
+    test('reads the video title, channel and thumbnail', () {
+      const body =
+          '{"title":"Heart Sutra Chanting","author_name":"WeBuddhist",'
+          '"thumbnail_url":"https://i.ytimg.com/vi/abc/hqdefault.jpg"}';
+
+      final preview = ChatLinkPreviewService.parseYoutubeOembed(
+        body,
+        url: 'https://youtu.be/abc',
+      );
+
+      expect(preview?.title, 'Heart Sutra Chanting');
+      expect(preview?.description, 'WeBuddhist');
+      expect(preview?.imageUrl, 'https://i.ytimg.com/vi/abc/hqdefault.jpg');
+    });
+
+    test('returns null for a non-JSON or empty response', () {
+      expect(
+        ChatLinkPreviewService.parseYoutubeOembed(
+          'Not Found',
+          url: 'https://youtu.be/abc',
+        ),
+        isNull,
+      );
+      expect(
+        ChatLinkPreviewService.parseYoutubeOembed(
+          '{}',
+          url: 'https://youtu.be/abc',
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('isYoutubeUrl', () {
+    test('matches YouTube hosts only', () {
+      for (final url in [
+        'https://youtu.be/abc',
+        'https://www.youtube.com/watch?v=abc',
+        'https://m.youtube.com/shorts/abc',
+      ]) {
+        expect(ChatLinkPreviewService.isYoutubeUrl(url), isTrue, reason: url);
+      }
+      expect(
+        ChatLinkPreviewService.isYoutubeUrl('https://pecha.org/youtube'),
+        isFalse,
+      );
+    });
+  });
+
   group('isPreviewableUrl', () {
     test('accepts public http and https hosts', () {
       expect(

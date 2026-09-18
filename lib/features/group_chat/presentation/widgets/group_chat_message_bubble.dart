@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_inline_format.dart';
@@ -16,13 +17,12 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_quoted_message.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reaction_badges.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-/// One message row: self on the right in a dark bubble, everyone else on the
-/// left in a white one with a gold sender name.
+/// One message row: self on the right in a warm-tinted bubble, everyone else
+/// on the left in a white one with a coloured sender name.
 ///
-/// The avatar sits at the top of a same-sender run on the side the bubble is
-/// on; later rows in the run keep a gutter so the block stays aligned.
+/// Every row carries its avatar on the side the bubble is on; only the sender
+/// name is limited to the first row of a same-sender run.
 class GroupChatMessageBubble extends StatelessWidget {
   const GroupChatMessageBubble({
     super.key,
@@ -31,8 +31,10 @@ class GroupChatMessageBubble extends StatelessWidget {
     required this.isRunStart,
     this.selfAvatarUrl,
     this.selfDisplayName,
-    this.onLongPress,
     this.isHighlighted = false,
+    this.isSelected = false,
+    this.isParentDeleted = false,
+    this.isParentOwn = false,
     this.onShowReactions,
     this.onTapQuote,
   });
@@ -46,12 +48,21 @@ class GroupChatMessageBubble extends StatelessWidget {
   final String? selfAvatarUrl;
   final String? selfDisplayName;
 
-  /// Opens the long-press menu. The thread measures the row itself, so the
-  /// bubble only reports the gesture.
-  final VoidCallback? onLongPress;
-
   /// Briefly tinted after a quote jumped to this message.
   final bool isHighlighted;
+
+  /// Held in the selection: the same tint as [isHighlighted], kept until the
+  /// selection is cleared.
+  final bool isSelected;
+
+  /// The quoted original has been deleted, so the quote is a tombstone. The
+  /// thread decides this: it can read `parent.deleted_at` and, until the
+  /// server sends that, look the original up among the loaded rows.
+  final bool isParentDeleted;
+
+  /// The quoted original is the viewer's own message, so the quote's header
+  /// reads "You".
+  final bool isParentOwn;
 
   /// Deleted, per the server's own `deleted_at`. A deleted message can still
   /// arrive carrying its body, so this — never an empty body — is what decides
@@ -63,20 +74,39 @@ class GroupChatMessageBubble extends StatelessWidget {
   final VoidCallback? onTapQuote;
 
   static const double _avatarSize = 32;
+  static const double _maxWidthFactor = 0.68;
 
-  /// Space kept under the bubble for the reaction badge. Less than the badge's
-  /// own height, so the remainder overlaps the bubble's bottom edge.
-  static const double _badgeReserve = 9;
+  /// A tombstone is one line — icon, label and the time after it — and that
+  /// line does not fit under the ordinary cap once the font scales up. It
+  /// gets more room so it stays one line rather than wrapping "deleted" onto
+  /// a second.
+  static const double _tombstoneMaxWidthFactor = 0.82;
 
-  /// How far the badge is inset from the bubble's inner corner.
-  static const double _badgeInset = 10;
-  static const double _gutter = 40;
-  static const double _maxWidthFactor = 0.76;
+  /// How far the chip rides up over the bubble's bottom edge. Less than the
+  /// bubble's 10dp bottom padding, so it overlaps the bubble but stays clear
+  /// of the time label.
+  static const double _chipOverlap = 8;
+
+  /// Strip kept under the bubble for the reaction chip: what is left of it
+  /// below the overlap.
+  static const double _chipReserve =
+      GroupChatReactionBadges.height - _chipOverlap;
+
+  /// How far the chip is inset from the bubble's inner corner.
+  static const double _chipInset = 8;
+  static const double _rowPadding = 12;
+  static const double _avatarGap = 8;
+
+  /// Distance from the row's edge to the bubble's near edge: row padding, the
+  /// avatar and the gap after it. The thread aligns the emoji pill to it.
+  static const double bubbleEdgeInset = _rowPadding + _avatarSize + _avatarGap;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final maxWidth = MediaQuery.sizeOf(context).width * _maxWidthFactor;
+    final maxWidth =
+        MediaQuery.sizeOf(context).width *
+        (isDeleted ? _tombstoneMaxWidthFactor : _maxWidthFactor);
     // Identity travels with the message, so there is nothing to wait for.
     final displayName =
         (isSelf
@@ -103,51 +133,49 @@ class GroupChatMessageBubble extends StatelessWidget {
       // over a near-black background is almost no shift at all, where the same
       // alpha over the cream light background reads clearly.
       color:
-          isHighlighted
+          isHighlighted || isSelected
               ? (isDark
                   ? AppColors.accentGold.withValues(alpha: 0.26)
                   : AppColors.accentGoldDark.withValues(alpha: 0.14))
               : Colors.transparent,
-      padding: const EdgeInsets.fromLTRB(12, 2, 12, 2),
+      padding: const EdgeInsets.fromLTRB(_rowPadding, 5, _rowPadding, 5),
       child: Row(
         mainAxisAlignment:
             isSelf ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isSelf)
-            isRunStart
-                ? Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: avatar,
-                )
-                : const SizedBox(width: _gutter),
+            Padding(
+              padding: const EdgeInsets.only(right: _avatarGap),
+              child: avatar,
+            ),
           Flexible(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
+              // The reaction chip is its own element, hung under the bubble
+              // rather than drawn inside it — so a Stack, with a strip
+              // reserved under the bubble only when there is a chip to fill
+              // it. Selection gestures live on the row, in the thread, so a
+              // press beside the bubble counts too.
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Padding(
-                    // Only reserve the strip when there is a badge to hang in
-                    // it, so unreacted bubbles keep their spacing.
                     padding: EdgeInsets.only(
                       bottom:
                           message.reactions.isEmpty || isDeleted
                               ? 0
-                              : _badgeReserve,
+                              : _chipReserve,
                     ),
-                    child: GestureDetector(
-                      onLongPress: onLongPress,
-                      child: _bubble(context, isDark, displayName),
-                    ),
+                    child: _bubble(context, isDark, displayName),
                   ),
                   if (message.reactions.isNotEmpty && !isDeleted)
                     Positioned(
                       bottom: 0,
-                      // The inner corner: bottom-right on an incoming bubble,
-                      // bottom-left on an outgoing one.
-                      left: isSelf ? _badgeInset : null,
-                      right: isSelf ? null : _badgeInset,
+                      // The inner corner: bottom-right under an incoming
+                      // bubble, bottom-left under one of the viewer's own.
+                      left: isSelf ? _chipInset : null,
+                      right: isSelf ? null : _chipInset,
                       child: GroupChatReactionBadges(
                         reactions: message.reactions,
                         onShowAll: onShowReactions ?? () {},
@@ -158,12 +186,10 @@ class GroupChatMessageBubble extends StatelessWidget {
             ),
           ),
           if (isSelf)
-            isRunStart
-                ? Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: avatar,
-                )
-                : const SizedBox(width: _gutter),
+            Padding(
+              padding: const EdgeInsets.only(left: _avatarGap),
+              child: avatar,
+            ),
         ],
       ),
     );
@@ -183,27 +209,32 @@ class GroupChatMessageBubble extends StatelessWidget {
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final previewUrl = firstChatLinkUrl(message.body);
-    // The tail corner is the one nearest the avatar, which sits at the top of
-    // the run.
-    const tail = Radius.circular(4);
-    const round = Radius.circular(16);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.only(
-          topLeft: !isSelf && isRunStart ? tail : round,
-          topRight: isSelf && isRunStart ? tail : round,
-          bottomLeft: round,
-          bottomRight: round,
-        ),
+        // Uniform corners and a soft shadow, per the mocks: no tail, the
+        // avatar alone says whose bubble it is.
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       // IntrinsicWidth so the trailing time can sit against the right edge of
       // the text. An Align or a full-width Row would expand to the maxWidth
       // constraint instead, stretching every reacted bubble across the screen.
-      child: IntrinsicWidth(
-        child: Column(
+      //
+      // A reply is the exception, on purpose: the mocks give every quoting
+      // bubble the full width, with the quote panel spanning it, however
+      // short the answer underneath. Without IntrinsicWidth the stretched
+      // column takes the whole width cap.
+      child: _maybeIntrinsic(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -234,59 +265,81 @@ class GroupChatMessageBubble extends StatelessWidget {
               if (message.parent != null)
                 GroupChatQuotedMessage(
                   parent: message.parent!,
+                  onOutgoing: isSelf,
+                  isOwnOriginal: isParentOwn,
+                  isDeleted:
+                      isParentDeleted || message.parent!.deletedAt != null,
                   onTap: onTapQuote,
                 ),
               _body(context, textColor, isDark),
               if (previewUrl != null)
                 GroupChatLinkPreviewCard(url: previewUrl, onOpen: _openUrl),
             ],
-            const SizedBox(height: 2),
-            Text(
-              _timeLabel(context),
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 11,
-                color:
-                    isDark
-                        ? AppColors.textTertiaryDark
-                        : AppColors.textSecondary,
+            // A tombstone carries its time on the same line (see
+            // `_tombstone`), so the bubble stays one line tall.
+            if (!isDeleted) ...[
+              const SizedBox(height: 2),
+              Text(
+                timeLabel(context, message),
+                textAlign: TextAlign.right,
+                style: _timeStyle(isDark),
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  /// Stands in for a message this member deleted.
+  Widget _maybeIntrinsic(Widget column) {
+    final isReply = message.parent != null && !isDeleted;
+    return isReply ? column : IntrinsicWidth(child: column);
+  }
+
+  TextStyle _timeStyle(bool isDark) {
+    return TextStyle(
+      fontSize: 11,
+      color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+    );
+  }
+
+  /// Stands in for a deleted message.
   ///
   /// The quote, link preview and reaction badges all go with the body: none of
-  /// them describes anything that still exists.
+  /// them describes anything that still exists. One label for everyone, in the
+  /// ordinary text colour, per the mocks — the bubble's side already says
+  /// whose message it was.
+  ///
+  /// One line: the time sits after the label rather than under it, its
+  /// baseline a touch lower, so a deleted message is shorter than a live one.
   Widget _tombstone(BuildContext context, bool isDark) {
-    final color = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final color = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Icon(AppAssets.trash, size: 14, color: color),
-        const SizedBox(width: 6),
         Flexible(
-          child: Text(
-            // Deletion is sender-only, so the sender is the deleter and
-            // `isSelf` is enough to tell the two labels apart — and it is the
-            // one signal present on both the REST payload and the socket
-            // frame.
-            isSelf
-                ? context.l10n.group_chat_message_deleted
-                : context.l10n.group_chat_message_deleted_by_sender,
-            strutStyle: context.tibetanStrutStyle(14),
-            style: TextStyle(
-              fontSize: 14,
-              fontStyle: FontStyle.italic,
-              color: color,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            // The icon stays centred on the label even if a very large font
+            // scale still forces a wrap.
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(AppAssets.prohibit, size: 15, color: color),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  context.l10n.group_chat_message_deleted_by_sender,
+                  strutStyle: context.tibetanStrutStyle(14),
+                  style: TextStyle(fontSize: 14, color: color),
+                ),
+              ),
+            ],
           ),
         ),
+        const SizedBox(width: 8),
+        Text(timeLabel(context, message), style: _timeStyle(isDark)),
       ],
     );
   }
@@ -398,18 +451,16 @@ class GroupChatMessageBubble extends StatelessWidget {
     }
   }
 
-  String _timeLabel(BuildContext context) {
+  /// The time as the bubble paints it. Public so a multi-message copy can
+  /// prefix each line with the same value the reader sees.
+  static String timeLabel(BuildContext context, ChatMessageDTO message) {
     final formatted = DateFormat.jm(
       intlFormatLocaleOf(context),
     ).format(message.createdAtLocal);
     return context.isTibetanLocale ? toTibetanDigits(formatted) : formatted;
   }
 
-  static Future<void> _openUrl(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
+  static Future<void> _openUrl(String url) => openUrl(url);
 }
 
 /// Message body with tappable links and inline formatting.

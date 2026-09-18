@@ -12,7 +12,13 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
+import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
@@ -58,6 +64,7 @@ class PlanDetails extends ConsumerStatefulWidget {
     required this.startDate,
     this.seriesId,
     this.eventId,
+    this.showLiveStream = true,
   });
   final UserPlansModel plan;
   final int selectedDay;
@@ -66,6 +73,9 @@ class PlanDetails extends ConsumerStatefulWidget {
 
   /// Set when opened from an event, to show its live stream above the days.
   final String? eventId;
+
+  /// False for in-person attendees: plain cover, tasks open as routes.
+  final bool showLiveStream;
 
   @override
   ConsumerState<PlanDetails> createState() => _PlanDetailsState();
@@ -119,6 +129,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     if (mounted) setState(() {});
   }
 
+  /// A commentary / versions panel forces audio; the user's choice returns
+  /// once it closes.
+  bool get _audioOnly => _liveAudioOnly || _embedded.isPanelOpen;
+
+  /// Audio mode slides the top chrome away on scroll-down; video stays pinned.
+  bool get _chromeVisible =>
+      !(_embedded.isOpen && _audioOnly && _embedded.isContentScrollingDown);
+
   @override
   Widget build(BuildContext context) {
     final language = widget.plan.language;
@@ -126,6 +144,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     _listenForDayCompletion();
     final live = _liveStatus();
+    // Only the live layout hosts the embedded panel, so a task opened
+    // while the stream was still loading stays put even if the request
+    // then fails or finds no stream; the plain layout takes over once the
+    // user closes it. Nothing is lost on a retryable network error.
+    final usesLiveBody =
+        _embedded.isOpen ||
+        live == _LiveStatus.loading ||
+        live == _LiveStatus.live;
 
     return PopScope(
       canPop: !_embedded.isOpen,
@@ -133,27 +159,20 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         if (!didPop) _embedded.close();
       },
       child: Scaffold(
-        appBar: _buildAppBar(context, language, localizations, live: live),
-        // Only the live layout hosts the embedded panel, so a task opened
-        // while the stream was still loading stays put even if the request
-        // then fails or finds no stream; the plain layout takes over once the
-        // user closes it. Nothing is lost on a retryable network error.
+        // The live layout hosts its own app bar so it can collapse on scroll.
+        appBar:
+            usesLiveBody
+                ? null
+                : _buildAppBar(context, language, localizations, live: live),
         body:
-            _embedded.isOpen
-                ? _buildLiveEventBody(language, localizations)
-                : switch (live) {
-                  _LiveStatus.none => _buildPlanBody(language, localizations),
-                  _LiveStatus.failed => _buildPlanBody(
-                    language,
-                    localizations,
-                    retryLive: _retryLiveEvent,
-                  ),
-                  _LiveStatus.loading ||
-                  _LiveStatus.live => _buildLiveEventBody(
-                    language,
-                    localizations,
-                  ),
-                },
+            usesLiveBody
+                ? _buildLiveEventBody(language, localizations, live: live)
+                : _buildPlanBody(
+                  language,
+                  localizations,
+                  retryLive:
+                      live == _LiveStatus.failed ? _retryLiveEvent : null,
+                ),
       ),
     );
   }
@@ -163,11 +182,13 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     language: _liveLanguage,
   );
 
+  bool get _hasEventHeader => widget.eventId != null && widget.showLiveStream;
+
   /// Sticky once a stream was seen, so a language without one keeps the
   /// toggles reachable. A failed request is `failed`, never `none`, so a
   /// network blip cannot hide an active stream.
   _LiveStatus _liveStatus() {
-    if (widget.eventId == null) return _LiveStatus.none;
+    if (!_hasEventHeader) return _LiveStatus.none;
     final eventAsync = ref.watch(groupEventInLanguageProvider(_liveKey));
     final either = eventAsync.valueOrNull;
     if (either == null) {
@@ -203,8 +224,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
+                _buildPrayerRequestsButton(),
                 if (retryLive != null) _buildLiveEventError(retryLive),
-                // The edge-to-edge event cover has no margin of its own.
+                // Room under the prayer requests chip, whichever header sits
+                // above it.
                 if (widget.eventId != null) const SizedBox(height: 12),
                 _buildDayCarouselSection(language),
                 _buildDayContentSection(context, language),
@@ -220,36 +243,53 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   /// The stream stays pinned; a tapped task opens below it, not as a route.
   Widget _buildLiveEventBody(
     String language,
-    AppLocalizations localizations,
-  ) {
+    AppLocalizations localizations, {
+    required _LiveStatus live,
+  }) {
     return PlanEmbeddedScope(
       controller: _embedded,
-      child: Column(
-        children: [
-          _buildHeader(),
-          if (_embedded.isOpen)
-            Expanded(child: PlanEmbeddedPanel(controller: _embedded))
-          else ...[
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    _buildDayCarouselSection(language),
-                    _buildDayContentSection(context, language),
-                  ],
-                ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Stays mounted while hidden so the live player keeps playing.
+            SlideAwayHeader(
+              visible: _chromeVisible,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildAppBar(
+                    context,
+                    language,
+                    localizations,
+                    live: live,
+                    primary: false,
+                  ),
+                  _buildHeader(),
+                  _buildPrayerRequestsButton(),
+                ],
               ),
             ),
-            // Built below the scope so "Practice now" opens in place too.
-            Builder(
-              builder:
-                  (context) =>
-                      _buildStartReadingButton(context, localizations),
-            ),
+            if (_embedded.isOpen)
+              Expanded(child: PlanEmbeddedPanel(controller: _embedded))
+            else ...[
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      _buildDayCarouselSection(language),
+                      _buildDayContentSection(context, language),
+                    ],
+                  ),
+                ),
+              ),
+              _buildStartReadingButton(context, localizations),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -355,9 +395,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     String language,
     AppLocalizations localizations, {
     required _LiveStatus live,
+    bool primary = true,
   }) {
     final isLiveEvent = live == _LiveStatus.live;
     return AppBar(
+      primary: primary,
       leading: IconButton(
         icon: const Icon(AppAssets.arrowLeft),
         onPressed: () {
@@ -389,7 +431,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           isLiveEvent
               ? [
                 GroupEventMediaToggle(
-                  audioOnly: _liveAudioOnly,
+                  audioOnly: _audioOnly,
                   onChanged:
                       (audioOnly) =>
                           setState(() => _liveAudioOnly = audioOnly),
@@ -408,22 +450,48 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   }
 
   Widget _buildHeader() {
-    final eventId = widget.eventId;
-    if (eventId == null) return PlanCoverImage(image: widget.plan.coverImage);
+    if (widget.eventId == null) {
+      return PlanCoverImage(image: widget.plan.coverImage);
+    }
+    if (!widget.showLiveStream) {
+      // Same 16:9 edge-to-edge block the live header fills.
+      return PlanCoverImage(
+        image: widget.plan.coverImage,
+        height: MediaQuery.sizeOf(context).width * 9 / 16,
+        edgeToEdge: true,
+      );
+    }
     return GroupEventLiveHeader(
-      eventId: eventId,
+      eventId: widget.eventId!,
       language: _liveLanguage,
-      audioOnly: _liveAudioOnly,
+      audioOnly: _audioOnly,
       fallbackTitle: widget.plan.title,
-      fallback: LayoutBuilder(
-        builder:
-            (context, constraints) => PlanCoverImage(
-              image: widget.plan.coverImage,
-              height: constraints.maxWidth * 9 / 16,
-              edgeToEdge: true,
-            ),
+      notStartedBackground: ResponsiveCoverImage(
+        image: widget.plan.coverImage,
+        fit: BoxFit.cover,
       ),
     );
+  }
+
+  /// Only once the event says its chat room is on.
+  Widget _buildPrayerRequestsButton() {
+    final eventId = widget.eventId;
+    if (eventId == null) return const SizedBox.shrink();
+    final event = ref
+        .watch(groupEventInLanguageProvider(_liveKey))
+        .valueOrNull
+        ?.fold((_) => null, (event) => event);
+    if (event == null || !event.chatEnabled) return const SizedBox.shrink();
+    return PrayerRequestsButton(onTap: () => _openPrayerRequests(eventId));
+  }
+
+  void _openPrayerRequests(String eventId) {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
   }
 
   Widget _buildDayCarouselSection(String language) {
@@ -989,6 +1057,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         dayData.isCompleted &&
         shareableImageUrl != null &&
         shareableImageUrl.isNotEmpty;
+
+    // From an event the user is already practicing; only Share remains.
+    if (!showShareButton && widget.eventId != null) {
+      return const SizedBox.shrink();
+    }
 
     final buttonStyle = FilledButton.styleFrom(
       backgroundColor: Theme.of(context).colorScheme.onSurface,

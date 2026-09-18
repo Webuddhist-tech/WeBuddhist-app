@@ -976,6 +976,15 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_event_attending => 'सहभागी';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count सहभागी';
   }
@@ -1677,6 +1686,15 @@ class AppLocalizationsNe extends AppLocalizations {
   String get parallel_version => 'समानान्तर संस्करण';
 
   @override
+  String get reader_languages_title => 'भाषाहरू';
+
+  @override
+  String get reader_original_label => 'मूल';
+
+  @override
+  String get reader_translation_label => 'अनुवाद';
+
+  @override
   String get version_not_available => 'उपलब्ध छैन';
 
   @override
@@ -2250,6 +2268,11 @@ class AppLocalizationsNe extends AppLocalizations {
       'मलाई WeBuddhist को यो कविता मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें।';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'म WeBuddhist मा यो डिजिटल माला प्रयोग गर्दैछु र तपाईंसँग साझा गर्न चाहन्थें। जहाँ जानुभए पनि अभ्यास गर्न सजिलो तरिका हो।';
 
@@ -2423,6 +2446,12 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get player_forward_10 => '१० सेकेन्ड अगाडि';
+
+  @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
 
   @override
   String get session_plans_load_error =>
@@ -2667,17 +2696,47 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_chat_delete_title => 'सन्देश मेटाउने?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'यो सन्देश यस च्याटमा सबैका लागि मेटिनेछ।';
+  String group_chat_delete_title_many(int count) {
+    return '$count सन्देशहरू मेटाउने?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'सबैका लागि मेटाउनुहोस्';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'यी सन्देशहरू च्याटबाट सबैका लागि हटाइनेछन्।',
+      one: 'यो सन्देश च्याटबाट सबैका लागि हटाइनेछ।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'सन्देश मेटाउन सकिएन।';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count सन्देशहरू मेटाउन सकिएनन्।',
+      one: 'सन्देश मेटाउन सकिएन।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => 'तपाईंले यो सन्देश मेटाउनुभयो';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'सन्देशहरू मेटाइए',
+      one: 'सन्देश मेटाइयो',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'तपाईं बढीमा $count सन्देश छान्न सक्नुहुन्छ';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'यो सन्देश मेटाइयो';
@@ -2842,4 +2901,39 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'प्रार्थना अनुरोध';
+
+  @override
+  String get event_prayer_empty_title => 'अहिले कुनै प्रार्थना अनुरोध छैन';
+
+  @override
+  String get event_prayer_empty_body =>
+      'तपाईं र तपाईंको समुदायको अनुरोध यहाँ देखिनेछ';
+
+  @override
+  String get event_prayer_add => 'प्रार्थना अनुरोध थप्नुहोस्';
+
+  @override
+  String get event_prayer_hint => 'आज हामी तपाईंका लागि के प्रार्थना गरौं';
+
+  @override
+  String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड गर्न सकिएन।';
+
+  @override
+  String get event_prayer_closed =>
+      'यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।';
+
+  @override
+  String get event_prayer_pray => 'प्रार्थना गर्नुहोस्';
+
+  @override
+  String get event_prayer_praying => 'प्रार्थना गर्दै';
 }
