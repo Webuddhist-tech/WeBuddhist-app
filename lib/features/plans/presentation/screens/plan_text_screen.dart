@@ -251,13 +251,31 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
               ),
             )
           else if (blocks[i].isVideo)
-            ReusableYoutubePlayer(
-              videoUrl: blocks[i].content,
-              showControls: true,
-            )
+            _buildVideo(videoUrl: blocks[i].content)
           else
             _buildFlowImage(imageUrl: blocks[i].content),
         ],
+      ],
+    );
+  }
+
+  /// The WebView eats gestures, so a translucent layer above it feeds
+  /// horizontal drags to the screen's swipe handling; taps still reach it.
+  Widget _buildVideo({required String videoUrl}) {
+    final canSwipe = widget.navigationContext.canSwipe;
+    return Stack(
+      children: [
+        ReusableYoutubePlayer(videoUrl: videoUrl, showControls: true),
+        if (canSwipe)
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragStart: _onDragStart,
+              onHorizontalDragUpdate: _onDragUpdate,
+              onHorizontalDragEnd: _onDragEnd,
+              onHorizontalDragCancel: _onDragCancel,
+            ),
+          ),
       ],
     );
   }
