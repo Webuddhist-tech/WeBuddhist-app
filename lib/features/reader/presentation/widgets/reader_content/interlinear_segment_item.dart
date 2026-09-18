@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -16,6 +17,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
     required this.segment,
     required this.depth,
     required this.primaryLanguage,
+    this.showPrimary = true,
     required this.secondarySlot,
     this.secondaryContentBySegmentNumber,
     this.secondaryIsLoading = false,
@@ -29,6 +31,10 @@ class InterlinearSegmentItem extends ConsumerWidget {
   final Segment segment;
   final int depth;
   final String primaryLanguage;
+
+  /// False for "translation only": the primary line is left out and the
+  /// translation is drawn as the main text rather than in the muted tone.
+  final bool showPrimary;
   final ReaderSlotConfig secondarySlot;
 
   /// Lookup map of secondary version content keyed by segment_number.
@@ -45,14 +51,23 @@ class InterlinearSegmentItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fontSize = ref.watch(fontSizeProvider);
-    final primaryHtml = normalizeSegmentHtml(segment.content);
+    final primary = primarySegmentHtml(
+      ref,
+      content: segment.content,
+      language: primaryLanguage,
+    );
     final secondary = _resolveSecondaryContent(context);
 
     // Per Figma: the secondary (parallel) version uses a fixed muted tone that
     // differs per theme so it reads as supporting text beneath the primary.
+    // Without a primary it is the text, so it takes the default colour.
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color secondaryColor =
-        isDark ? const Color(0xFFE0E0E0) : const Color(0xFF707070);
+    final Color? secondaryColor =
+        !showPrimary
+            ? null
+            : isDark
+            ? const Color(0xFFE0E0E0)
+            : const Color(0xFF707070);
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -84,14 +99,16 @@ class InterlinearSegmentItem extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SegmentHtmlWidget(
-                        htmlContent: primaryHtml,
-                        segmentIndex: segment.segmentNumber,
-                        fontSize: fontSize,
-                        language: primaryLanguage,
-                        isSelected: isSelected,
-                      ),
-                      const SizedBox(height: 16),
+                      if (showPrimary) ...[
+                        SegmentHtmlWidget(
+                          htmlContent: primary.html,
+                          segmentIndex: segment.segmentNumber,
+                          fontSize: fontSize,
+                          language: primary.fontLanguage,
+                          isSelected: isSelected,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       if (secondary.isPlaceholder)
                         _SecondaryPlaceholder(
                           text: secondary.text,
@@ -157,7 +174,7 @@ class _SecondaryPlaceholder extends StatelessWidget {
   final String text;
   final String language;
   final double fontSize;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {

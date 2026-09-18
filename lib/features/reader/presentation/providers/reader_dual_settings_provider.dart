@@ -40,6 +40,42 @@ final readerSecondaryEnabledProvider =
   );
 });
 
+/// Global on/off for the original text when a translation is showing
+/// ("translation only"). Persisted like [ReaderSecondaryEnabledNotifier];
+/// default on.
+class ReaderOriginalVisibleNotifier extends StateNotifier<bool> {
+  ReaderOriginalVisibleNotifier({required LocalStorageService localStorage})
+      : _storage = localStorage,
+        super(true) {
+    _loadFuture = _load();
+  }
+
+  final LocalStorageService _storage;
+  late final Future<void> _loadFuture;
+
+  /// Resolves once the persisted value has been read (or determined absent).
+  Future<void> get loaded => _loadFuture;
+
+  Future<void> _load() async {
+    final stored = await _storage.get<bool>(StorageKeys.readerOriginalVisible);
+    if (stored == null || !mounted) return;
+    state = stored;
+  }
+
+  void setVisible(bool visible) {
+    if (state == visible) return;
+    state = visible;
+    _storage.set<bool>(StorageKeys.readerOriginalVisible, visible);
+  }
+}
+
+final readerOriginalVisibleProvider =
+    StateNotifierProvider<ReaderOriginalVisibleNotifier, bool>((ref) {
+  return ReaderOriginalVisibleNotifier(
+    localStorage: ref.read(localStorageServiceProvider),
+  );
+});
+
 /// Per-text dual-slot settings (the toggle + both slot configs).
 ///
 /// `secondaryEnabled` is mirrored from the global
@@ -60,6 +96,15 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
         if (!mounted) return;
         if (state.secondaryEnabled == enabled) return;
         state = state.copyWith(secondaryEnabled: enabled);
+      },
+      fireImmediately: true,
+    );
+    _ref.listen<bool>(
+      readerOriginalVisibleProvider,
+      (_, visible) {
+        if (!mounted) return;
+        if (state.originalVisible == visible) return;
+        state = state.copyWith(originalVisible: visible);
       },
       fireImmediately: true,
     );
@@ -93,6 +138,17 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     if (state.secondaryEnabled == enabled) return;
     _secondaryEnabledGeneration++;
     _ref.read(readerSecondaryEnabledProvider.notifier).setEnabled(enabled);
+    // Turning the translation off must not leave nothing on screen.
+    if (!enabled) setOriginalVisible(true);
+  }
+
+  /// Show or hide the original text. One layer is always on: hiding the
+  /// original switches the translation on (the sheet then picks a version),
+  /// and the widgets keep showing the original until that version exists.
+  void setOriginalVisible(bool visible) {
+    if (state.originalVisible == visible) return;
+    _ref.read(readerOriginalVisibleProvider.notifier).setVisible(visible);
+    if (!visible && !state.secondaryEnabled) setSecondaryEnabled(true);
   }
 
   void replacePrimary(ReaderSlotConfig config) {

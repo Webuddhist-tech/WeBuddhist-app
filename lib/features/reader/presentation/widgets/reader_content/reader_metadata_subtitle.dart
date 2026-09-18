@@ -4,6 +4,8 @@ import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dar
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ReaderMetadataSubtitle extends ConsumerWidget {
@@ -15,10 +17,25 @@ class ReaderMetadataSubtitle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(readerNotifierProvider(params));
     final settings = ref.watch(readerDualSettingsProvider(params.textId));
-    if (state.textDetail == null) return const SizedBox.shrink();
+    final textDetail = state.textDetail;
+    if (textDetail == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
-    final text = _composeLabel(context, settings, state);
+    final scriptId = ref.watch(
+      readerScriptForLanguageProvider(textDetail.language),
+    );
+    final transliteration = ref
+        .watch(transliterationServiceProvider)
+        .script(textDetail.language, scriptId);
+    final text = _composeLabel(
+      context,
+      settings,
+      state,
+      transliterationLabel:
+          transliteration == null
+              ? null
+              : transliterationScriptLabel(context, transliteration),
+    );
 
     if (text.isEmpty) return const SizedBox.shrink();
 
@@ -47,19 +64,28 @@ class ReaderMetadataSubtitle extends ConsumerWidget {
   /// Script / version labels still come from `settings.primary` because the
   /// `/texts/{id}/details` response does not echo those, and they are pure
   /// display sugar that the user explicitly selected.
+  ///
+  /// [transliterationLabel] names the script the body is transliterated into
+  /// on the phone, when the user picked one.
   String _composeLabel(
     BuildContext context,
     ReaderDualLayoutSettings settings,
-    ReaderState state,
-  ) {
+    ReaderState state, {
+    String? transliterationLabel,
+  }) {
     final primary = settings.primary;
     final loadedLanguage = _resolvePrimaryLanguageLabel(context, primary, state);
 
     if (settings.secondaryEnabled && !settings.secondary.isUnset) {
+      // Translation only: the original is hidden behind it.
+      if (!settings.originalVisible && settings.secondary.versionId != null) {
+        return settings.secondary.languageLabel.toUpperCase();
+      }
       return '$loadedLanguage + ${settings.secondary.languageLabel}';
     }
     final parts = <String>[
       loadedLanguage.toUpperCase(),
+      if (transliterationLabel != null) transliterationLabel.toUpperCase(),
       if (primary.scriptLabel != null) primary.scriptLabel!.toUpperCase(),
       if (primary.versionLabel != null) primary.versionLabel!.toUpperCase(),
     ];

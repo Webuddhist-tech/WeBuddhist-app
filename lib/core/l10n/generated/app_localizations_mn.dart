@@ -1673,6 +1673,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get reader_translation_label => 'Орчуулга';
 
   @override
+  String get reader_roman_transliteration => 'Латин галиг';
+
+  @override
   String get version_not_available => 'Байхгүй';
 
   @override

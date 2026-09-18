@@ -1686,6 +1686,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_translation_label => 'अनुवाद';
 
   @override
+  String get reader_roman_transliteration => 'रोमन लिप्यन्तरण';
+
+  @override
   String get version_not_available => 'उपलब्ध छैन';
 
   @override

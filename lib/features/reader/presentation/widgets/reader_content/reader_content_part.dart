@@ -461,6 +461,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final secondaryVersionId = dualSettings.secondary.versionId;
     final secondaryActive =
         dualSettings.secondaryEnabled && secondaryVersionId != null;
+    // "Translation only": the original can hide behind an active translation,
+    // never on its own.
+    final showOriginal = dualSettings.originalVisible || !secondaryActive;
     // Secondary's path follows the primary's effective text_id — when the
     // user changes the primary version, the secondary re-keys to fetch its
     // translation aligned against the new primary.
@@ -581,6 +584,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                     item: collapsedItems[index],
                     state: state,
                     dualSecondaryEnabled: secondaryActive,
+                    showOriginal: showOriginal,
                     secondarySlot: dualSettings.secondary,
                     secondaryState: secondaryState,
                     onSegmentTap:
@@ -599,6 +603,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   item: item,
                   state: state,
                   dualSecondaryEnabled: secondaryActive,
+                  showOriginal: showOriginal,
                   secondarySlot: dualSettings.secondary,
                   secondaryState: secondaryState,
                   onSegmentTap:
@@ -634,6 +639,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     required FlattenedItem item,
     required ReaderState state,
     required bool dualSecondaryEnabled,
+    required bool showOriginal,
     required ReaderSlotConfig secondarySlot,
     required SecondaryReaderState? secondaryState,
     required void Function(Segment) onSegmentTap,
@@ -660,6 +666,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             segment: segment,
             depth: depth,
             primaryLanguage: widget.language,
+            showPrimary: showOriginal,
             secondarySlot: secondarySlot,
             secondaryContentBySegmentNumber:
                 secondaryState?.contentBySegmentNumber,
