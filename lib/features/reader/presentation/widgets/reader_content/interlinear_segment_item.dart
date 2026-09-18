@@ -107,7 +107,9 @@ class InterlinearSegmentItem extends ConsumerWidget {
                           language: primary.fontLanguage,
                           isSelected: isSelected,
                         ),
-                        const SizedBox(height: 16),
+                        // Original and its translation belong together; the
+                        // larger gap goes between verses, below.
+                        const SizedBox(height: 6),
                       ],
                       if (secondary.isPlaceholder)
                         _SecondaryPlaceholder(
@@ -125,7 +127,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
                           isSelected: isSelected,
                           textColor: secondaryColor,
                         ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 16),
                     ],
                   ),
                 ),

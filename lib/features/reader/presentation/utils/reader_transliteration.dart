@@ -1,6 +1,3 @@
-import 'package:flutter/widgets.dart';
-import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/features/reader/domain/transliteration/script_converter.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,10 +35,3 @@ PrimarySegmentHtml primarySegmentHtml(
     fontLanguage: service.fontLanguageFor(language, scriptId) ?? language,
   );
 }
-
-/// What a script row is called: its own name in its own script, or the
-/// localised "Roman transliteration" for the Latin-alphabet row.
-String transliterationScriptLabel(
-  BuildContext context,
-  TransliterationScript script,
-) => script.roman ? context.l10n.reader_roman_transliteration : script.label;

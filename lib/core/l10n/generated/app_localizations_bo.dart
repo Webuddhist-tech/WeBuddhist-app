@@ -1690,9 +1690,6 @@ class AppLocalizationsBo extends AppLocalizations {
   String get reader_translation_label => 'འགྱུར་མ།';
 
   @override
-  String get reader_roman_transliteration => 'རོ་མན་ཡིག་སྒྱུར།';
-
-  @override
   String get version_not_available => 'མི་འདུག';
 
   @override

@@ -26,13 +26,13 @@ void main() {
     expect(() => converter.convert('བོད', 'phonetic:xx'), throwsArgumentError);
   });
 
-  test('one Roman row, labelled through l10n, in the Latin font', () {
+  test('one Roman row, called Roman, in the Latin font', () {
     final ids = converter.scripts.map((s) => s.id).toList();
     expect(ids.take(2), ['tibetan', 'phonetic']);
     expect(ids, isNot(contains('wylie')));
     final roman = converter.scriptById('phonetic')!;
     expect(roman.roman, isTrue);
-    expect(roman.label, 'Roman transliteration');
+    expect(roman.label, 'Roman');
     expect(roman.fontLanguage, 'en');
     expect(converter.scriptById('tibetan')?.fontLanguage, isNull);
   });
@@ -43,6 +43,7 @@ void main() {
       expect(ids, containsAll(['phonetic:hi', 'phonetic:si', 'phonetic:th', 'phonetic:my']));
       expect(ids, isNot(contains('phonetic:ro')));
       expect(ids, isNot(contains('phonetic:tb')));
+      expect(ids, isNot(contains('phonetic:br')), reason: 'no phone font');
       expect(ids.toSet().length, ids.length);
       expect(converter.scriptById('phonetic:si')?.label, 'සිංහල');
       expect(converter.scriptById('phonetic:si')?.roman, isFalse);
@@ -63,6 +64,29 @@ void main() {
         TibetanScriptConverter.rescriptInput('tsha dzo zhi wa nyi za tsa'),
         'cha jo shi va ñi sa ca',
       );
+    });
+
+    test('gives ཤ and ཞ each script\x27s own ś letter', () {
+      expect(converter.convert('ཤུ', 'phonetic:hi'), 'शु');
+      expect(converter.convert('ཞི', 'phonetic:hi'), 'शि');
+      expect(converter.convert('ཤུ', 'phonetic:si'), 'ශු');
+      expect(converter.convert('ཤུ', 'phonetic:th'), 'ศุ');
+      expect(converter.convert('ཤེ', 'phonetic:th'), 'เศ');
+      expect(converter.convert('ཤུ', 'phonetic:my'), 'ၐု');
+      expect(converter.convert('ཤུ', 'phonetic:km'), 'ឝុ');
+      expect(converter.convert('ཤུ', 'phonetic:be'), 'শু');
+      expect(converter.convert('ཤུ', 'phonetic:te'), 'శు');
+      expect(converter.convert('ཤུ', 'phonetic:cy'), 'шу');
+    });
+
+    test('never emits private-use glyphs or dangling stackers', () {
+      expect(converter.convert('ཉི་ཤུ', 'phonetic:th'), 'ญิ ศุ');
+      final my = converter.convert('ཕྱག་འཚལ', 'phonetic:my');
+      expect(my, isNot(contains('\u1039')));
+      expect(my, endsWith('\u103A'));
+      final km = converter.convert('ཕྱག་འཚལ', 'phonetic:km');
+      expect(km, isNot(contains('\u17D2')));
+      expect(km, endsWith('ល'));
     });
 
     test('re-scripts the phonetics into Devanagari and Sinhala', () {

@@ -11,7 +11,6 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
-import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/picker_state_views.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
@@ -172,7 +171,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
         converter.scriptById(selectedScriptId) ??
         converter.scriptById(sourceScriptId);
     if (script == null) return _translationLabel(primary);
-    return transliterationScriptLabel(context, script);
+    return script.label;
   }
 
   void _onScriptTap(String languageCode, String? scriptId) {
@@ -633,14 +632,14 @@ class _ScriptList extends StatelessWidget {
             label:
                 source == null
                     ? context.l10n.reader_original_label
-                    : transliterationScriptLabel(context, source),
+                    : source.label,
             isActive: selectedScriptId == null,
             onTap: () => onTap(null),
           ),
           for (final script in converter.scripts)
             if (script.id != sourceScriptId)
               _ScriptRow(
-                label: transliterationScriptLabel(context, script),
+                label: script.label,
                 isActive: script.id == selectedScriptId,
                 onTap: () => onTap(script.id),
               ),

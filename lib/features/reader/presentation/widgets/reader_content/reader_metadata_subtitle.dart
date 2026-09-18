@@ -5,7 +5,6 @@ import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
-import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ReaderMetadataSubtitle extends ConsumerWidget {
@@ -31,10 +30,7 @@ class ReaderMetadataSubtitle extends ConsumerWidget {
       context,
       settings,
       state,
-      transliterationLabel:
-          transliteration == null
-              ? null
-              : transliterationScriptLabel(context, transliteration),
+      transliterationLabel: transliteration?.label,
     );
 
     if (text.isEmpty) return const SizedBox.shrink();

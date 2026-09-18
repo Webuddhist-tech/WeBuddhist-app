@@ -3040,12 +3040,6 @@ abstract class AppLocalizations {
   /// **'Translation'**
   String get reader_translation_label;
 
-  /// No description provided for @reader_roman_transliteration.
-  ///
-  /// In en, this message translates to:
-  /// **'Roman transliteration'**
-  String get reader_roman_transliteration;
-
   /// No description provided for @version_not_available.
   ///
   /// In en, this message translates to:

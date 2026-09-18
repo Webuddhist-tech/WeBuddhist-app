@@ -1593,9 +1593,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_translation_label => '譯文';
 
   @override
-  String get reader_roman_transliteration => '羅馬拼音';
-
-  @override
   String get version_not_available => '無可用版本';
 
   @override

@@ -1671,9 +1671,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_translation_label => 'Translation';
 
   @override
-  String get reader_roman_transliteration => 'Roman transliteration';
-
-  @override
   String get version_not_available => 'Not available';
 
   @override

@@ -6,8 +6,8 @@ import 'package:pali_script_convertor/pali_script_convertor.dart' as psc;
 /// Roman; the package detects the source script per run of characters.
 ///
 /// Not offered: Lao and Tai Tham (their conversion tests are disabled
-/// upstream) and Assamese (shares Bengali's table in this port, so it would
-/// duplicate that row).
+/// upstream), Assamese (shares Bengali's table in this port, so it would
+/// duplicate that row) and Brahmi (no phone ships a font for it).
 class PaliScriptConverter extends ScriptConverter {
   @override
   String get languageCode => 'pi';
@@ -17,15 +17,46 @@ class PaliScriptConverter extends ScriptConverter {
 
   @override
   String convert(String text, String toScriptId) =>
-      psc.convertPali(text, toScriptId);
+      polish(psc.convertPali(text, toScriptId), toScriptId);
+
+  /// Repairs the package's output where it assumes fonts or words phones do
+  /// not have.
+  ///
+  /// - Thai: the package swaps ญ and ฐ for U+\uF70F and U+\uF700, glyphs from the
+  ///   pre-Unicode Windows Thai encoding that no current font carries, so
+  ///   they showed as boxes.
+  /// - Myanmar and Khmer: a consonant closing a syllable (chak, tsel — never
+  ///   Pali, always the Tibetan phonetics) is left with a bare stacking sign,
+  ///   which shapers draw as a dotted circle. Myanmar writes such a final
+  ///   with asat; Khmer writes it bare.
+  static String polish(String text, String scriptId) {
+    switch (scriptId) {
+      case psc.Scripts.thai:
+        return text.replaceAll('\uF70F', 'ญ').replaceAll('\uF700', 'ฐ');
+      case psc.Scripts.my:
+        return text.replaceAll(_myanmarDanglingVirama, '\u103A');
+      case psc.Scripts.km:
+        return text.replaceAll(_khmerDanglingCoeng, '');
+      default:
+        return text;
+    }
+  }
+
+  /// A Myanmar virama not followed by a letter to stack under it.
+  static final RegExp _myanmarDanglingVirama = RegExp(
+    '\u1039(?![\u1000-\u1021])',
+  );
+
+  /// A Khmer coeng not followed by a letter to subscribe.
+  static final RegExp _khmerDanglingCoeng = RegExp('\u17D2(?![\u1780-\u17A2])');
 
   /// The package's scripts, with picker labels. Also reused by
   /// [TibetanScriptConverter] to re-script Wylie output.
   static const List<TransliterationScript> paliScripts = [
     TransliterationScript(
       id: psc.Scripts.ro,
-      name: 'Roman transliteration',
-      nativeName: 'Roman transliteration',
+      name: 'Roman',
+      nativeName: 'Roman',
       roman: true,
       // Basic Latin letters, Latin-1 / Extended-A, Latin Extended Additional.
       codePointRanges: [
@@ -138,14 +169,6 @@ class PaliScriptConverter extends ScriptConverter {
       nativeName: 'Кириллица',
       codePointRanges: [
         [0x0400, 0x04FF],
-      ],
-    ),
-    TransliterationScript(
-      id: psc.Scripts.brah,
-      name: 'Brahmi',
-      nativeName: 'Brāhmī',
-      codePointRanges: [
-        [0x11000, 0x1107F],
       ],
     ),
   ];

@@ -3236,13 +3236,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get reader_roman_transliteration => TolgeeBridge.get(
-    localeName,
-    'reader_roman_transliteration',
-    () => _fallback.reader_roman_transliteration,
-  );
-
-  @override
   String get version_not_available => TolgeeBridge.get(
     localeName,
     'version_not_available',

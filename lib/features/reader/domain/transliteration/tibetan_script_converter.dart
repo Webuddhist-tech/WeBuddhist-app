@@ -34,11 +34,12 @@ class TibetanScriptConverter extends ScriptConverter {
     if (toScriptId == phoneticScriptId) return TibetanPhonetics.transcribe(text);
     if (toScriptId.startsWith(rescriptPrefix)) {
       final target = toScriptId.substring(rescriptPrefix.length);
-      return psc.convertPali(
+      final scripted = psc.convertPali(
         rescriptInput(TibetanPhonetics.transcribe(text)),
         target,
         psc.Scripts.ro,
       );
+      return _restoreSh(PaliScriptConverter.polish(scripted, target), target);
     }
     throw ArgumentError('Unsupported script id: $toScriptId');
   }
@@ -49,7 +50,9 @@ class TibetanScriptConverter extends ScriptConverter {
   /// digraphs rewritten as the Pali letters the tables expect, so ང is one
   /// letter (ṅ) rather than n + g, and ཙ ཚ ཛ take the Indic letters Tibetan
   /// script itself uses for them (c, ch, j). z and zh have no Indic letter
-  /// and fall to s and sh.
+  /// and fall to s and sh; sh then gets each script's ś letter back in
+  /// [_restoreSh], since the Pali tables carry ś only for Devanagari and
+  /// Sinhala and drop it everywhere else.
   static String rescriptInput(String roman) {
     var s = roman.replaceAll('_', ' ').replaceAll(RegExp(r"[\[\]'+.]"), '');
     for (final (from, to) in _romanToPali) {
@@ -73,6 +76,36 @@ class TibetanScriptConverter extends ScriptConverter {
     ('w', 'v'),
   ];
 
+  /// ཤ and ཞ (sh, zh) reach the scripts as s + h — स्ह, สฺห… — because the
+  /// Pali tables have no ś there. Every script has its own letter for it.
+  static String _restoreSh(String text, String scriptId) {
+    final pairs = _shLetters[scriptId];
+    if (pairs == null) return text;
+    var out = text;
+    for (final (from, to) in pairs) {
+      out = out.replaceAll(from, to);
+    }
+    return out;
+  }
+
+  /// Thai writes เ and โ before the consonant, so the cluster can be split
+  /// by a vowel; Myanmar's h is already the medial ှ after the package's
+  /// own clean-up.
+  static const Map<String, List<(String, String)>> _shLetters = {
+    psc.Scripts.hi: [('स्ह', 'श')],
+    psc.Scripts.si: [('ස්හ', 'ශ')],
+    psc.Scripts.thai: [('สฺห', 'ศ'), ('สฺเห', 'เศ'), ('สฺโห', 'โศ')],
+    psc.Scripts.my: [('သှ', 'ၐ'), ('သ္ဟ', 'ၐ')],
+    psc.Scripts.km: [('ស្ហ', 'ឝ')],
+    psc.Scripts.beng: [('স্হ', 'শ')],
+    psc.Scripts.gurm: [('ਸ੍ਹ', 'ਸ਼')],
+    psc.Scripts.guja: [('સ્હ', 'શ')],
+    psc.Scripts.telu: [('స్హ', 'శ')],
+    psc.Scripts.kann: [('ಸ್ಹ', 'ಶ')],
+    psc.Scripts.mala: [('സ്ഹ', 'ശ')],
+    psc.Scripts.cyrl: [('сх', 'ш')],
+  };
+
   static final List<TransliterationScript> _scripts = [
     const TransliterationScript(
       id: tibetanScriptId,
@@ -85,8 +118,8 @@ class TibetanScriptConverter extends ScriptConverter {
     ),
     const TransliterationScript(
       id: phoneticScriptId,
-      name: 'Roman transliteration',
-      nativeName: 'Roman transliteration',
+      name: 'Roman',
+      nativeName: 'Roman',
       roman: true,
       codePointRanges: [
         [0x41, 0x5A],

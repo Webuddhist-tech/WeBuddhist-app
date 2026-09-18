@@ -45,12 +45,13 @@ void main() {
       expect(ids, isNot(contains('lo')));
       expect(ids, isNot(contains('tt')));
       expect(ids, isNot(contains('as')));
+      expect(ids, isNot(contains('br')), reason: 'no phone font');
     });
 
-    test('labels scripts by their own name; Roman is the l10n row', () {
+    test('labels scripts by their own name, Roman included', () {
       expect(converter.scriptById('si')?.label, 'සිංහල');
       expect(converter.scriptById('si')?.roman, isFalse);
-      expect(converter.scriptById('ro')?.label, 'Roman transliteration');
+      expect(converter.scriptById('ro')?.label, 'Roman');
       expect(converter.scriptById('ro')?.roman, isTrue);
       expect(converter.scriptById('xx'), isNull);
       expect(converter.scriptById(null), isNull);
@@ -59,6 +60,26 @@ void main() {
     test('renders Tibetan output with the Tibetan font', () {
       expect(converter.scriptById('tb')?.fontLanguage, 'bo');
       expect(converter.scriptById('si')?.fontLanguage, isNull);
+    });
+  });
+
+  group('PaliScriptConverter.polish', () {
+    test('restores the Thai letters the package swaps for private-use glyphs', () {
+      final thai = converter.convert('ñāṇa', 'th');
+      expect(thai, contains('ญ'));
+      expect(thai, isNot(matches(RegExp('[\uE000-\uF8FF]'))));
+      expect(converter.convert('ṭhāna', 'th'), startsWith('ฐ'));
+      expect(PaliScriptConverter.polish('\uF70F\uF700', 'th'), 'ญฐ');
+    });
+
+    test('closes Myanmar and Khmer syllables the way those scripts write them', () {
+      // "chak" is Tibetan phonetics; Pali itself never ends a word in a consonant.
+      expect(PaliScriptConverter.polish('ဆက\u1039 ', 'my'), 'ဆက\u103A ');
+      expect(PaliScriptConverter.polish('ဆက\u1039', 'my'), 'ဆက\u103A');
+      expect(PaliScriptConverter.polish('ဒ\u1039ဓ', 'my'), 'ဒ\u1039ဓ', reason: 'a real stack');
+      expect(PaliScriptConverter.polish('ឆក\u17D2 ', 'km'), 'ឆក ');
+      expect(PaliScriptConverter.polish('ទ\u17D2ធ', 'km'), 'ទ\u17D2ធ', reason: 'a real stack');
+      expect(PaliScriptConverter.polish('abc', 'hi'), 'abc');
     });
   });
 }
