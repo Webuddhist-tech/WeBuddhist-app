@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_links_drawer.dart';
@@ -31,6 +32,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_posts_tab.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
+import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1534,15 +1536,12 @@ class _GroupFollowButton extends ConsumerWidget {
           ],
           Expanded(
             child: ElevatedButton(
+              // Opens the member menu (notification toggles + leave). Leaving
+              // is confirmed inside the sheet, never on a bare tap here.
               onPressed:
                   isLoading
                       ? null
-                      : () => _onFollowPressed(
-                        context,
-                        ref,
-                        followKey,
-                        isFollowing,
-                      ),
+                      : () => _openMemberMenu(context, followKey),
               style: buttonStyle.copyWith(
                 backgroundColor: WidgetStatePropertyAll(
                   isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
@@ -1558,15 +1557,28 @@ class _GroupFollowButton extends ConsumerWidget {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                      : Text(
-                        context.l10n.joined,
-                        textAlign: TextAlign.center,
-                        strutStyle: context.tibetanStrutStyle(fontSize),
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: getSystemFontFamily(locale.languageCode),
-                        ),
+                      : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              context.l10n.joined,
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              strutStyle: context.tibetanStrutStyle(fontSize),
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: getSystemFontFamily(
+                                  locale.languageCode,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(AppAssets.caretDown, size: 18),
+                        ],
                       ),
             ),
           ),
@@ -1901,6 +1913,34 @@ class _GroupFollowButton extends ConsumerWidget {
                 ),
               ),
     );
+  }
+
+  /// Shows the member sheet and acts on its result from this page's context,
+  /// after the sheet has closed, so no route is pushed from inside a modal
+  /// that is on its way out.
+  Future<void> _openMemberMenu(
+    BuildContext context,
+    GroupFollowKey followKey,
+  ) async {
+    final result = await GroupNotificationSettingsDrawer.show(
+      context,
+      profile,
+      followKey: followKey,
+    );
+    if (!context.mounted) return;
+    if (result == GroupNotificationSheetResult.openNotificationSettings) {
+      // This profile is a root-pushed route above the /home shell, and
+      // AppRoutes.notifications lives inside that shell. Pushing it through
+      // go_router from here makes the router insert a second /home shell page
+      // and trip its duplicate page key assertion, so the screen goes on the
+      // root navigator as a pageless route instead. Its own back button uses
+      // context.pop(), which go_router resolves to this route.
+      await Navigator.of(context, rootNavigator: true).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => const NotificationSettingsScreen(),
+        ),
+      );
+    }
   }
 
   Future<void> _onFollowPressed(

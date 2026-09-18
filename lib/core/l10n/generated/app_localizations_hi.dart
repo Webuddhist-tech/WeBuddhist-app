@@ -2029,6 +2029,43 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_invite => 'आमंत्रित करें';
 
   @override
+  String get group_notifications_title => 'Notifications';
+
+  @override
+  String get group_notifications_chat => 'Group chat';
+
+  @override
+  String get group_notifications_content => 'Group content';
+
+  @override
+  String get group_notifications_master_off =>
+      'Notifications are turned off for the app.';
+
+  @override
+  String get group_notifications_open_settings => 'Turn on';
+
+  @override
+  String get group_notifications_update_failed =>
+      'Couldn\'t update notification settings. Try again.';
+
+  @override
+  String get group_notifications_load_failed =>
+      'Couldn\'t load notification settings.';
+
+  @override
+  String get group_leave => 'Leave group';
+
+  @override
+  String get group_leave_confirm_title => 'Leave group?';
+
+  @override
+  String get group_leave_confirm_message =>
+      'You\'ll stop getting messages and updates from this group.';
+
+  @override
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+
+  @override
   String get group_request_to_join => 'शामिल होने का अनुरोध';
 
   @override

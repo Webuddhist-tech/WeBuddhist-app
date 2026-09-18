@@ -65,17 +65,24 @@ final pushNotificationBootstrapProvider = Provider<void>((ref) {
   // the JWT, so a single listener on auth is enough.
   ref.listen<AuthState>(authProvider, (_, __) => syncAuth(), fireImmediately: true);
 
-  // Re-register whenever the plan/series push gate changes so the backend can
-  // gate it — the only category delivered via FCM. That gate is master AND
-  // routine (master is the global kill-switch), so watch both. The remaining
-  // toggles (recitation/mala/timer) are local-only and ignored here.
+  // Master is the global kill-switch: OFF unregisters the device so every
+  // server push (chat, group content, reminders, routine, verse of the day)
+  // stops; ON registers it again. The routine toggle only re-sends the
+  // registration with the updated plan/series gate. The remaining toggles
+  // (recitation/mala/timer) are local-only and ignored here.
   ref.listen<NotificationState>(
     notificationProvider,
     (prev, next) {
-      final changed = prev == null ||
-          prev.appMasterEnabled != next.appMasterEnabled ||
-          prev.appRoutineEnabled != next.appRoutineEnabled;
-      if (changed) service.refreshRegistration();
+      final masterChanged =
+          prev == null || prev.appMasterEnabled != next.appMasterEnabled;
+      if (masterChanged) {
+        service.setMasterEnabled(next.appMasterEnabled);
+        return;
+      }
+      if (prev.appRoutineEnabled != next.appRoutineEnabled) {
+        service.refreshRegistration();
+      }
     },
+    fireImmediately: true,
   );
 });

@@ -36,9 +36,11 @@ class PushNotificationService {
     required PushMessagingRepository repository,
     required LocalStorageService storage,
     required ForegroundPushFilter foregroundFilter,
+    Duration reconcileRetryBaseDelay = const Duration(seconds: 5),
   }) : _repository = repository,
        _storage = storage,
-       _foregroundFilter = foregroundFilter;
+       _foregroundFilter = foregroundFilter,
+       _reconcileRetryBaseDelay = reconcileRetryBaseDelay;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
@@ -60,6 +62,12 @@ class PushNotificationService {
 
   String? _token;
   bool _loggedIn = false;
+
+  /// Mirrors the app's master notification switch. While false the device is
+  /// kept unregistered on the backend so no server push of any kind reaches
+  /// it; the OS shows background pushes before the app can filter them, so
+  /// this has to be enforced server-side. Fed by [setMasterEnabled].
+  bool _masterEnabled = true;
   bool _initialized = false;
   Future<void>? _initializing;
   int _initRetryCount = 0;
@@ -135,18 +143,144 @@ class PushNotificationService {
 
   /// Feeds in the latest auth snapshot. Registers the token with the backend on
   /// sign-in (the backend keys the device on the JWT, so no profile data is
-  /// needed). Guests are treated as signed out for push targeting.
+  /// needed). Guests are treated as signed out for push targeting. Signing in
+  /// with master off removes the registration left from an earlier session
+  /// now that the JWT is available.
   void onAuthChanged({required bool loggedIn}) {
-    final shouldRegister = loggedIn && !_loggedIn;
+    final signedIn = loggedIn && !_loggedIn;
     _loggedIn = loggedIn;
-    if (shouldRegister) unawaited(_registerToken());
+    if (signedIn) _requestReconcile();
   }
 
   /// Re-sends the device registration so the backend picks up the latest
   /// notification-category preferences. Called when the user flips a
-  /// notification toggle. No-op until a token is captured and the user is
-  /// signed in (the guards live in [_registerToken]).
-  void refreshRegistration() => unawaited(_registerToken());
+  /// notification toggle. No-op until a token is captured, the user is
+  /// signed in and the master switch is on.
+  void refreshRegistration() => _requestReconcile();
+
+  /// Applies the master notification switch. OFF unregisters the device from
+  /// the backend so every server push stops; ON registers it again. Safe to
+  /// call with the same value repeatedly.
+  void setMasterEnabled(bool enabled) {
+    if (_masterEnabled == enabled) return;
+    _masterEnabled = enabled;
+    _requestReconcile();
+  }
+
+  /// Resolves once the backend registration matches the current state, for
+  /// callers that need to wait on it (tests, teardown). Never throws.
+  Future<void> get registrationSettled => _reconciling ?? Future.value();
+
+  Future<void>? _reconciling;
+  bool _reconcileRequested = false;
+  Timer? _reconcileRetryTimer;
+  int _reconcileRetryCount = 0;
+  final Duration _reconcileRetryBaseDelay;
+
+  /// Max automatic retries after a register or unregister call fails. Beyond
+  /// this the next auth, token or toggle event tries again.
+  static const maxReconcileRetries = 5;
+
+  /// Brings the backend registration in line with the current token, login
+  /// and master-switch state.
+  ///
+  /// Register and unregister are serialized through one loop, and the loop
+  /// re-reads the desired state after every pass. That closes two races that
+  /// independent fire-and-forget calls leave open: master switched off while
+  /// a register is awaiting the backend (the unregister finds no stored id,
+  /// then the register lands and stays), and master switched back on while
+  /// an unregister is in flight (the unregister wipes the id of the fresh
+  /// registration, which then can never be removed).
+  ///
+  /// A pass that fails (backend down, offline) is retried with linear backoff
+  /// up to [maxReconcileRetries] times. Without that, master OFF on a bad
+  /// connection would leave the device registered, and background pushes
+  /// flowing, until some unrelated event happened to reconcile again.
+  void _requestReconcile() {
+    // An explicit request supersedes any pending retry.
+    _reconcileRetryTimer?.cancel();
+    _reconcileRetryTimer = null;
+    _reconcileRequested = true;
+    _reconciling ??= _runReconcile();
+  }
+
+  Future<void> _runReconcile() async {
+    var succeeded = true;
+    try {
+      while (_reconcileRequested) {
+        _reconcileRequested = false;
+        succeeded = _masterEnabled ? await _register() : await _unregister();
+      }
+    } catch (e, st) {
+      succeeded = false;
+      _logger.warning('Push registration reconcile failed: $e', e, st);
+    } finally {
+      _reconciling = null;
+      if (_reconcileRequested) {
+        // A request that arrived while the loop was unwinding starts a new one.
+        _requestReconcile();
+      } else if (succeeded) {
+        _reconcileRetryCount = 0;
+      } else {
+        _scheduleReconcileRetry();
+      }
+    }
+  }
+
+  void _scheduleReconcileRetry() {
+    if (_reconcileRetryCount >= maxReconcileRetries) {
+      _logger.warning(
+        'Push registration still out of sync after $maxReconcileRetries '
+        'retries; waiting for the next auth, token or toggle event',
+      );
+      return;
+    }
+    _reconcileRetryCount++;
+    final delay = _reconcileRetryBaseDelay * _reconcileRetryCount;
+    _reconcileRetryTimer?.cancel();
+    _reconcileRetryTimer = Timer(delay, () {
+      _reconcileRetryTimer = null;
+      _logger.info(
+        'Retrying push registration reconcile '
+        '(attempt $_reconcileRetryCount/$maxReconcileRetries)',
+      );
+      _reconcileRequested = true;
+      _reconciling ??= _runReconcile();
+    });
+  }
+
+  /// Removes this device's registration from the backend using the id kept
+  /// from the last successful register call. Nothing to do when the device
+  /// was never registered or the user is signed out (the endpoint needs the
+  /// user's JWT). The stored id is kept on failure so a later attempt can
+  /// still find the registration. Returns false when the backend call failed
+  /// and a retry is worthwhile.
+  Future<bool> _unregister() async {
+    final serverId = await _storage.get<String>(StorageKeys.pushDeviceServerId);
+    if (serverId == null || serverId.isEmpty) return true;
+    if (!_loggedIn) return true;
+
+    final result = await _repository.unregisterDeviceToken(serverId);
+    return result.fold(
+      (failure) {
+        _logger.warning('Device unregister failed: ${failure.message}');
+        return false;
+      },
+      (_) async {
+        // Only forget the id this call removed. Nothing else can register
+        // concurrently thanks to the reconcile loop, but a stale id must never
+        // shadow a newer one.
+        final stored = await _storage.get<String>(
+          StorageKeys.pushDeviceServerId,
+        );
+        if (stored == serverId) {
+          await _storage.remove(StorageKeys.pushDeviceServerId);
+        }
+        _logger.info('Device unregistered');
+        return true;
+      },
+    );
+  }
 
   Future<void> _onToken(String token) async {
     if (token == _token) return;
@@ -155,22 +289,32 @@ class PushNotificationService {
     // Full token logged at debug level only (stripped from release builds) so
     // you can copy it into the Firebase console to send a test push.
     _logger.debug('FCM token: $token');
-    await _registerToken();
+    _requestReconcile();
+    await registrationSettled;
   }
 
-  Future<void> _registerToken() async {
+  /// Returns false when the backend call failed and a retry is worthwhile.
+  Future<bool> _register() async {
     final token = _token;
-    if (token == null || !_loggedIn) return;
+    if (token == null || !_loggedIn) return true;
     final deviceId = await _deviceId();
     final result = await _repository.registerDeviceToken(
       token,
       deviceId: deviceId,
       preferences: await _readPreferences(),
     );
-    result.fold(
-      (failure) =>
-          _logger.warning('Token registration failed: ${failure.message}'),
-      (_) => _logger.info('Token registered'),
+    return result.fold(
+      (failure) {
+        _logger.warning('Token registration failed: ${failure.message}');
+        return false;
+      },
+      (serverId) async {
+        if (serverId != null) {
+          await _storage.set(StorageKeys.pushDeviceServerId, serverId);
+        }
+        _logger.info('Token registered');
+        return true;
+      },
     );
   }
 
@@ -241,6 +385,8 @@ class PushNotificationService {
   void dispose() {
     _initRetryTimer?.cancel();
     _initRetryTimer = null;
+    _reconcileRetryTimer?.cancel();
+    _reconcileRetryTimer = null;
     for (final sub in _subscriptions) {
       unawaited(sub.cancel());
     }
