@@ -27,6 +27,10 @@ class ActivityList extends ConsumerWidget {
   final int? dayNumber;
   final String? dayAudioUrl;
 
+  /// The group event this plan was opened from, so the reader follows its
+  /// live recitation.
+  final String? eventId;
+
   const ActivityList({
     super.key,
     required this.language,
@@ -41,6 +45,7 @@ class ActivityList extends ConsumerWidget {
     this.planId,
     this.dayNumber,
     this.dayAudioUrl,
+    this.eventId,
   });
 
   @override
@@ -129,6 +134,7 @@ class ActivityList extends ConsumerWidget {
         context,
         ref,
         accumulatorId: accumulatorId,
+        eventId: eventId,
       ).then((practiced) {
         if (practiced) onGroupAccumulationPracticed?.call(task.id);
         onReaderClosed?.call();
@@ -158,6 +164,7 @@ class ActivityList extends ConsumerWidget {
       currentTextIndex: index,
       autoPlay: autoPlay,
       dayAudioUrl: effectiveAudioUrl,
+      eventId: eventId,
     );
 
     PlanNavigator.push(

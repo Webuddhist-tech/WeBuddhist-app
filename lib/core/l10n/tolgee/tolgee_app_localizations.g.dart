@@ -5682,4 +5682,18 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'event_prayer_praying',
     () => _fallback.event_prayer_praying,
   );
+
+  @override
+  String get recitation_live_sync => TolgeeBridge.get(
+    localeName,
+    'recitation_live_sync',
+    () => _fallback.recitation_live_sync,
+  );
+
+  @override
+  String get recitation_live_session_ended => TolgeeBridge.get(
+    localeName,
+    'recitation_live_session_ended',
+    () => _fallback.recitation_live_session_ended,
+  );
 }

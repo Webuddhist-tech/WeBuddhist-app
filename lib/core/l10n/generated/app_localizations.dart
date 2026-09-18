@@ -5125,6 +5125,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Praying'**
   String get event_prayer_praying;
+
+  /// No description provided for @recitation_live_sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get recitation_live_sync;
+
+  /// No description provided for @recitation_live_session_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'The live session has ended'**
+  String get recitation_live_session_ended;
 }
 
 class _AppLocalizationsDelegate

@@ -28,6 +28,9 @@ import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
+import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
@@ -44,7 +47,10 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settin
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
+import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_live_sync_toggle.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -108,6 +114,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
+
+  /// Set when the reader follows a group event's live recitation.
+  String? get _liveEventId {
+    final ctx = widget.navigationContext;
+    return ctx != null && ctx.isLiveRecitation ? ctx.eventId : null;
+  }
 
   bool get _isEmbedded => PlanEmbeddedScope.maybeOf(context) != null;
 
@@ -313,6 +325,69 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
+  // ─── Live recitation ─────────────────────────────────────────────────────
+
+  void _onLiveStateChanged(
+    RecitationLiveState? previous,
+    RecitationLiveState next,
+  ) {
+    if (!mounted) return;
+    if (next.isEnded && !(previous?.isEnded ?? false)) {
+      ScaffoldMessenger.maybeOf(context)
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.recitation_live_session_ended)),
+        );
+    }
+    final position = next.position;
+    if (position == null || !next.isFollowing) return;
+    final positionChanged = previous?.position != position;
+    final followRequested = previous?.followRequest != next.followRequest;
+    if (positionChanged || followRequested) _maybeSwitchLiveText(position);
+  }
+
+  /// The operator moved to another text of this sequence: go there. Texts
+  /// outside the sequence are left alone (the content reports out of sync),
+  /// so a stray id can never pull the user off their reading list.
+  void _maybeSwitchLiveText(RecitationLivePosition position) {
+    final navContext = widget.navigationContext;
+    if (navContext == null || _isAdvancing) return;
+    final state = ref.read(readerNotifierProvider(_params));
+    final primaryVersionId =
+        ref.read(readerDualSettingsProvider(widget.textId)).primary.versionId;
+    final onThisText = LivePositionResolver.textMatches(
+      position,
+      loadedTextIds: [widget.textId, state.textDetail?.id, primaryVersionId],
+      content: state.content,
+    );
+    if (onThisText) return;
+
+    final items = navContext.planTextItems;
+    if (items == null) return;
+    final index = items.indexWhere(
+      (item) => item.isSourceReference && item.textId == position.textId,
+    );
+    if (index < 0) return;
+    final newContext = const NavigationService().createNavigationContextForIndex(
+      navContext,
+      index,
+    );
+    if (newContext == null) return;
+
+    _isAdvancing = true;
+    _audioController?.cancel();
+    if (navContext.source == NavigationSource.plan &&
+        index > (navContext.currentTextIndex ?? -1)) {
+      // Moving on with the group finishes this text, as a swipe would.
+      ref.read(planSubtaskCompletionProvider).completeCurrent(navContext);
+    }
+    final notifier = ref.read(readerNotifierProvider(_params).notifier);
+    notifier.selectSegment(null);
+    notifier.closeCommentary();
+    notifier.closeTranslation();
+    PlanNavigator.replace(context, items[index], newContext);
+  }
+
   void _onScrollDirectionChanged(bool isScrollingDown) {
     if (!ReaderConstants.enableAppBarAutoHide) return;
     final host = PlanEmbeddedScope.maybeOf(context);
@@ -365,6 +440,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       (_, isPanelOpen) =>
           PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
     );
+
+    final liveEventId = _liveEventId;
+    if (liveEventId != null) {
+      // Holds the event socket open for as long as this reader is on screen.
+      ref.watch(recitationLiveProvider(liveEventId).select((s) => s.isVisible));
+      ref.listen<RecitationLiveState>(
+        recitationLiveProvider(liveEventId),
+        _onLiveStateChanged,
+      );
+    }
 
     if (_isGroupAccumulatorChant) {
       final presetId = _chantContext!.presetAccumulatorId!;
@@ -525,9 +610,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   isAppBarVisible: _isAppBarVisible,
                   child: ReaderTranslationSplitView(
                     params: _params,
-                    // Reader content with scroll detection. The segment action
-                    // bar is hosted in the screen-level bottom overlay so it
-                    // can share a fixed gap with the floating audio button.
+                    // Reader content with scroll detection. The segment
+                    // action bar is hosted in the screen-level bottom
+                    // overlay so it can share a fixed gap with the
+                    // floating audio button.
                     mainContent: ReaderCommentarySplitView(
                       params: _params,
                       mainContent: ReaderContentPart(
@@ -604,15 +690,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   /// Embedded: a close bar with font size and languages instead of the app bar.
+  /// Either bar carries the live sync button when following an event.
   Widget _buildAppBar(
     BuildContext context,
     ReaderState state,
     TextDetail? textDetail,
   ) {
+    final liveEventId = _liveEventId;
+    final liveSyncToggle =
+        liveEventId == null
+            ? null
+            : RecitationLiveSyncToggle(eventId: liveEventId);
     if (_isEmbedded) {
       return PlanEmbeddedHeader(
         onClose: _closeEmbedded,
         actions: [
+          if (liveSyncToggle != null) liveSyncToggle,
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
@@ -626,6 +719,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     return ReaderAppBarOverlay(
       params: _params,
       colorIndex: widget.colorIndex,
+      liveSyncToggle: liveSyncToggle,
       onSearchPressed: () => _handleSearch(context, state),
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       onMorePressed: () => _openMoreBottomSheet(context, textDetail),

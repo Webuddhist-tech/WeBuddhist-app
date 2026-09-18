@@ -2929,4 +2929,10 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན།';
+
+  @override
+  String get recitation_live_sync => 'Sync';
+
+  @override
+  String get recitation_live_session_ended => 'The live session has ended';
 }
