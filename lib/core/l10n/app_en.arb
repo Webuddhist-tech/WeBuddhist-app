@@ -1426,19 +1426,6 @@
   "event_prayer_closed": "Prayer requests are closed for this event.",
   "event_prayer_pray": "Pray",
   "event_prayer_praying": "Praying",
-  "recitation_live_label": "Live",
-  "recitation_live_round": "Round {number}",
-  "@recitation_live_round": {
-    "placeholders": {
-      "number": {
-        "type": "int"
-      }
-    }
-  },
   "recitation_live_sync": "Sync",
-  "recitation_live_unsync": "Unsync",
-  "recitation_live_resync": "Resync",
-  "recitation_live_reconnecting": "Reconnecting…",
-  "recitation_live_out_of_sync": "Out of sync",
   "recitation_live_session_ended": "The live session has ended"
 }

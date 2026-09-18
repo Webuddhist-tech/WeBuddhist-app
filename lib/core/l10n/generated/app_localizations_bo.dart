@@ -2931,27 +2931,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན།';
 
   @override
-  String get recitation_live_label => 'Live';
-
-  @override
-  String recitation_live_round(int number) {
-    return 'Round $number';
-  }
-
-  @override
   String get recitation_live_sync => 'Sync';
-
-  @override
-  String get recitation_live_unsync => 'Unsync';
-
-  @override
-  String get recitation_live_resync => 'Resync';
-
-  @override
-  String get recitation_live_reconnecting => 'Reconnecting…';
-
-  @override
-  String get recitation_live_out_of_sync => 'Out of sync';
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';

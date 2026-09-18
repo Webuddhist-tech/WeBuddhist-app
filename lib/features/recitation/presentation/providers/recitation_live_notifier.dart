@@ -27,7 +27,7 @@ enum RecitationLiveFollowMode {
   /// Scroll to and highlight each new position.
   following,
 
-  /// The user scrolled away; highlight only, until they tap Resync.
+  /// The user scrolled away; highlight only, until they turn Sync back on.
   paused,
 
   /// The user opted out; neither scroll nor highlight.

@@ -50,7 +50,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
-import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_live_pill.dart';
+import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_live_sync_toggle.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -580,7 +580,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               onFinishSession: _finishChantSession,
             )
             : null;
-    final liveEventId = _liveEventId;
 
     return Stack(
       children: [
@@ -605,52 +604,36 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               ),
               // Main scrollable content
               Expanded(
-                child: Stack(
-                  children: [
-                    SwipeNavigationWrapper(
+                child: SwipeNavigationWrapper(
+                  params: _params,
+                  textDetail: state.textDetail!,
+                  isAppBarVisible: _isAppBarVisible,
+                  child: ReaderTranslationSplitView(
+                    params: _params,
+                    // Reader content with scroll detection. The segment
+                    // action bar is hosted in the screen-level bottom
+                    // overlay so it can share a fixed gap with the
+                    // floating audio button.
+                    mainContent: ReaderCommentarySplitView(
                       params: _params,
-                      textDetail: state.textDetail!,
-                      isAppBarVisible: _isAppBarVisible,
-                      child: ReaderTranslationSplitView(
+                      mainContent: ReaderContentPart(
                         params: _params,
-                        // Reader content with scroll detection. The segment
-                        // action bar is hosted in the screen-level bottom
-                        // overlay so it can share a fixed gap with the
-                        // floating audio button.
-                        mainContent: ReaderCommentarySplitView(
-                          params: _params,
-                          mainContent: ReaderContentPart(
-                            params: _params,
-                            language: state.textDetail!.language,
-                            initialSegmentId: widget.segmentId,
-                            visibleSegmentIds:
-                                widget.navigationContext?.currentSegmentIds,
-                            bottomPadding: contentBottomPadding,
-                            chantSessionFooter: chantFooter,
-                            onScrollDirectionChanged:
-                                _onScrollDirectionChanged,
-                            onScrollControllerReady: (scrollFn) {
-                              _scrollToSegment = scrollFn;
-                            },
-                            onScrollToTopReady: (scrollFn) {
-                              _scrollToTop = scrollFn;
-                            },
-                          ),
-                        ),
+                        language: state.textDetail!.language,
+                        initialSegmentId: widget.segmentId,
+                        visibleSegmentIds:
+                            widget.navigationContext?.currentSegmentIds,
+                        bottomPadding: contentBottomPadding,
+                        chantSessionFooter: chantFooter,
+                        onScrollDirectionChanged: _onScrollDirectionChanged,
+                        onScrollControllerReady: (scrollFn) {
+                          _scrollToSegment = scrollFn;
+                        },
+                        onScrollToTopReady: (scrollFn) {
+                          _scrollToTop = scrollFn;
+                        },
                       ),
                     ),
-                    // Floats over the top of the text; taps around it fall
-                    // through to the list.
-                    if (liveEventId != null)
-                      Positioned(
-                        top: 10,
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: RecitationLivePill(eventId: liveEventId),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
               if (_isGroupAccumulatorChant)
@@ -707,15 +690,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   /// Embedded: a close bar with font size and languages instead of the app bar.
+  /// Either bar carries the live sync button when following an event.
   Widget _buildAppBar(
     BuildContext context,
     ReaderState state,
     TextDetail? textDetail,
   ) {
+    final liveEventId = _liveEventId;
+    final liveSyncToggle =
+        liveEventId == null
+            ? null
+            : RecitationLiveSyncToggle(eventId: liveEventId);
     if (_isEmbedded) {
       return PlanEmbeddedHeader(
         onClose: _closeEmbedded,
         actions: [
+          if (liveSyncToggle != null) liveSyncToggle,
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
@@ -729,6 +719,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     return ReaderAppBarOverlay(
       params: _params,
       colorIndex: widget.colorIndex,
+      liveSyncToggle: liveSyncToggle,
       onSearchPressed: () => _handleSearch(context, state),
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       onMorePressed: () => _openMoreBottomSheet(context, textDetail),

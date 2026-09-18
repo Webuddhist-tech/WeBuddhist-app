@@ -166,6 +166,7 @@ class AppAssets {
   static const IconData videoCamera = PhosphorIconsRegular.videoCamera;
   static const IconData clock = PhosphorIconsRegular.clock;
   static const IconData repeat = PhosphorIconsRegular.arrowsClockwise;
+  static const IconData arrowsClockwise = PhosphorIconsRegular.arrowsClockwise;
   static const IconData buildings = PhosphorIconsRegular.buildings;
   static const IconData arrowRight = PhosphorIconsRegular.arrowRight;
   static const IconData featuredSeriesPlanCount =
