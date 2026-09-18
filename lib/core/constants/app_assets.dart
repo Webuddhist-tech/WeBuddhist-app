@@ -123,6 +123,9 @@ class AppAssets {
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
+
+  // ========== TIMER ICONS ==========
+  static const IconData timerAmbientSound = PhosphorIconsRegular.waveform;
   static const IconData speakerSimpleHigh =
       PhosphorIconsRegular.speakerSimpleHigh;
   static const IconData headphones = PhosphorIconsRegular.headphones;

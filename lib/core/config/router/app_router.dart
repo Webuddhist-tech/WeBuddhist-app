@@ -63,6 +63,7 @@ import 'package:flutter_pecha/features/texts/presentation/segment_image/create_i
 import 'package:flutter_pecha/features/texts/presentation/version_selection/language_selection.dart';
 import 'package:flutter_pecha/features/texts/presentation/version_selection/version_selection_screen.dart';
 import 'package:flutter_pecha/features/timer/presentation/screens/active_timer_screen.dart';
+import 'package:flutter_pecha/features/timer/presentation/screens/new_timer_screen.dart';
 import 'package:flutter_pecha/features/timer/presentation/screens/preset_timers_screen.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
@@ -412,6 +413,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       }
                       return ActiveTimerScreen(presetTimer: timer);
                     },
+                  ),
+                  GoRoute(
+                    path: "new",
+                    name: "home-timer-new",
+                    builder: (context, state) => const NewTimerScreen(),
                   ),
                 ],
               ),

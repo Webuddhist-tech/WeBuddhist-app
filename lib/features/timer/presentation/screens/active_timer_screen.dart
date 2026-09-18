@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/timer/data/services/timer_session_notifie
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
+import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_keep_alive.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_progress_ring.dart';
@@ -81,6 +82,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   Timer? _timer;
   late final TimerBellPlayer _soundPlayer;
+  late final AmbientSoundPlayer _ambientPlayer;
   late final TimerSessionNotifications _notifier;
   late final TimerLockScreenActivity _liveActivity;
 
@@ -98,6 +100,14 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   Future<void> _bellOperations = Future<void>.value();
 
   int get _totalMs => widget.presetTimer.durationMs;
+
+  String? get _ambientSoundId {
+    final id = widget.presetTimer.ambientSoundId;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  bool get _playsBell =>
+      widget.presetTimer.bellAtStart || widget.presetTimer.bellAtEnd;
 
   int get _elapsedMs => _totalMs - _remainingFromClock();
 
@@ -131,7 +141,13 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     super.initState();
     _remainingMs = _totalMs;
     _soundPlayer = widget._soundPlayer ?? TimerSoundPlayer();
-    _soundPlayer.init();
+    if (_playsBell) _soundPlayer.init();
+    _ambientPlayer = AmbientSoundPlayer();
+    if (_ambientSoundId != null) {
+      // The sound catalogue auto-disposes and its urls are short-lived signed
+      // links, so hold it open for as long as the session needs the track.
+      ref.listenManual(ambientSoundsFutureProvider, (_, __) {});
+    }
     _notifier = widget._sessionNotifier ?? TimerSessionNotifier();
     _liveActivity = widget._liveActivity ?? TimerLiveActivity();
     _keepAlive = widget._keepAlive ?? TimerAudioKeepAlive();
@@ -146,6 +162,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _timer?.cancel();
     _soundPlayer.dispose();
     unawaited(_keepAlive.dispose());
+    unawaited(_ambientPlayer.dispose());
     _clearBackgroundSurfaces();
     super.dispose();
   }
@@ -292,7 +309,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _startMainTimer({required bool playBell}) {
-    if (playBell) _soundPlayer.play();
+    if (playBell && widget.presetTimer.bellAtStart) _soundPlayer.play();
+    unawaited(_startAmbientSound());
 
     final endsAt = _sessionEndFor(_countdownEndsAt ?? _now);
 
@@ -319,6 +337,39 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     );
     _showRunningNotification(endsAt);
     _armCompletionBellIfBackgrounded(endsAt);
+  }
+
+  /// Starts the looping ambient track the timer was created with, resolving
+  /// its id against the sound catalogue. Best-effort: a missing or unplayable
+  /// track leaves the session running in silence.
+  Future<void> _startAmbientSound() async {
+    final soundId = _ambientSoundId;
+    if (soundId == null) return;
+
+    try {
+      final sounds = await ref.read(ambientSoundsFutureProvider.future);
+      // The catalogue can resolve after the session ended. A paused session
+      // still loads the track — resuming only calls resume() on the player, so
+      // bailing out here would leave the rest of the session silent.
+      if (!mounted || _phase != _TimerPhase.running) return;
+
+      for (final sound in sounds) {
+        if (sound.id == soundId) {
+          await _ambientPlayer.play(sound.url);
+          // The session can end (or pause) while the track is loading, after
+          // the stop/pause it issued has already run against nothing.
+          if (!mounted || _phase != _TimerPhase.running) {
+            await _ambientPlayer.stop();
+          } else if (_isPaused) {
+            await _ambientPlayer.pause();
+          }
+          return;
+        }
+      }
+      _logger.warning('Ambient sound $soundId is not in the catalogue');
+    } catch (e) {
+      _logger.warning('Failed to load ambient sound $soundId: $e');
+    }
   }
 
   void _onMainTimerTick() {
@@ -349,11 +400,12 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       _phase = _TimerPhase.finished;
     });
 
-    if (playBell) {
+    if (playBell && widget.presetTimer.bellAtEnd) {
       unawaited(_ringBellThenRelease());
     } else {
       unawaited(_keepAlive.stop());
     }
+    unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     _reportTimerStop();
   }
@@ -394,12 +446,14 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     });
 
     if (enteringPause) {
+      unawaited(_ambientPlayer.pause());
       // Nothing left to ring while paused, so let the app be suspended again.
       unawaited(_keepAlive.stop());
       _cancelCompletionBell();
       _showPausedNotification();
       _reportTimerStop();
     } else {
+      unawaited(_ambientPlayer.resume());
       unawaited(_keepAlive.start());
       _showRunningNotification(_endsAt!);
       _armCompletionBellIfBackgrounded(_endsAt!);
@@ -509,7 +563,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _scheduleStartBell(DateTime startsAt) {
-    if (!mounted) return;
+    if (!mounted || !widget.presetTimer.bellAtStart) return;
     final title = _sessionTitle;
     final body = context.l10n.timer_notification_in_progress;
     _scheduleBell(
@@ -521,7 +575,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _scheduleCompletionBell(DateTime endsAt) {
-    if (!mounted) return;
+    if (!mounted || !widget.presetTimer.bellAtEnd) return;
     final title = _sessionTitle;
     final body = context.l10n.timer_notification_complete;
     _scheduleBell(

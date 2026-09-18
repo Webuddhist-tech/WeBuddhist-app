@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_remote_datasource.dart';
+import 'package:flutter_pecha/features/timer/data/models/preset_timer_model.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/repositories/timers_repository.dart';
 
@@ -132,6 +133,78 @@ class TimersRepository implements TimersRepositoryInterface {
     } catch (e) {
       return Left(_toFailure(e, 'Failed to get preset timers'));
     }
+  }
+
+  @override
+  Future<Either<Failure, PresetTimer>> createUserTimer({
+    required String name,
+    required String description,
+    required int durationMs,
+    String? ambientSoundId,
+    required bool bellAtStart,
+    required bool bellAtEnd,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    final PresetTimerModel created;
+    try {
+      created = await remote.createUserTimer(
+        name: name,
+        description: description,
+        durationMs: durationMs,
+        ambientSoundId: ambientSoundId,
+        bellAtStart: bellAtStart,
+        bellAtEnd: bellAtEnd,
+      );
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to create timer'));
+    }
+
+    // The server has committed at this point, so nothing below may turn the
+    // creation into a failure: a retry would create a duplicate timer.
+    try {
+      // Write it into the cached list first so it shows up under "Your timers"
+      // via the Hive box watch.
+      await local.upsertPresetTimer(userId, timer: created);
+      // Best-effort resync with the server ordering.
+      await refreshPresetTimers();
+    } catch (_) {
+      // Cache is stale until the next refresh, but the timer exists remotely.
+    }
+    return Right(created.toEntity());
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteUserTimer({
+    required String timerId,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    try {
+      await remote.deleteUserTimer(timerId: timerId);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to delete timer'));
+    }
+
+    // The timer is gone on the server at this point, so nothing below may
+    // report the delete as failed: a retry would target a missing timer.
+    try {
+      // Drop it from the cache ourselves so "Your timers" updates through the
+      // Hive box watch even when the resync below fails.
+      await local.removePresetTimer(userId, timerId);
+      // Best-effort resync with the server.
+      await refreshPresetTimers();
+    } catch (_) {
+      // Cache is stale until the next refresh, but the timer is already gone
+      // remotely.
+    }
+    return const Right(null);
   }
 
   @override

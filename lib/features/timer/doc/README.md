@@ -8,7 +8,8 @@ Preset meditation timers with countdown, pause/resume, lock-screen display, sess
 
 ## User-facing functionality
 
-- Browse preset timers (authenticated)
+- Browse preset timers + user-created ("Your timers") (authenticated)
+- Create a custom timer (duration, ambient sound, bells) via "+ Custom timer"
 - 5-second countdown → running phase
 - Pause/resume with **wall-clock** remaining time (survives backgrounding)
 - Completion bell (in-app + scheduled local notification)
@@ -33,7 +34,10 @@ timer/
 
 | Area | Files |
 |------|-------|
-| Presets | `presentation/screens/preset_timers_screen.dart` |
+| Presets + Your timers | `presentation/screens/preset_timers_screen.dart` |
+| Create custom timer | `presentation/screens/new_timer_screen.dart` |
+| Duration / Ambient sound / Bells sheets | `presentation/widgets/{duration_picker_sheet,ambient_sound_sheet,bells_sheet}.dart` |
+| Ambient sound playback (preview + session) | `presentation/services/ambient_sound_player.dart` |
 | Active session | `presentation/screens/active_timer_screen.dart` |
 | Providers | `presentation/providers/timers_providers.dart` |
 | Offline queue | `data/datasource/timers_local_datasource.dart` |
@@ -50,10 +54,56 @@ timer/
 
 ## Data sources
 
-- **Remote:** `GET /timers`, `POST /timers/user/timer_stop`
+- **Remote:** `GET /timers`, `POST /timers/user` (create custom timer),
+  `DELETE /timers/user/{timer_id}` (delete user-created timer),
+  `POST /timers/user/timer_stop`, `GET /ambient-sounds`
 - **Hive:** cached presets per user, pending stop queue
 - **PreferencesService:** user ID namespacing
 - **notifications** channels for session + completion bell
+
+### Timer model (`GET /timers` / `POST /timers/user`)
+
+`PresetTimer`/`PresetTimerModel` carry the full API shape: `id`, `name`,
+`durationMs`, `userId`, `groupId`, `type` (`"preset"` or `"user_created"` —
+`isPreset`/`isUserCreated` getters), `description`, `ambientSoundId`,
+`bellAtStart`, `bellAtEnd`, `parentPresetId`, `createdAt`, `updatedAt`.
+"Your timers" on the presets screen filters on `isUserCreated`; the
+"Preset timers" grid filters on `isPreset`.
+
+`POST /timers/user` (`TimersRemoteDatasource.createUserTimer`) intentionally
+**never sends** `group_id` or `parent_preset_id` — no app concept for either
+yet. The New Timer screen has no name/description inputs, so those are
+derived: `name` = `"{n} minutes"`, `description` = `""` (always sent).
+`bellAtStart`/`bellAtEnd` default `true` per the API schema. After a
+successful create (and after a successful delete) the repository patches the
+cached list through `TimersLocalDatasource.upsertPresetTimer` /
+`removePresetTimer`, so "Your timers" updates via the existing Hive-watch
+stream. The `refreshPresetTimers()` that follows is only a best-effort resync
+with the server ordering: its failure must not turn a completed create or
+delete into an error.
+
+### Ambient sounds (`GET /ambient-sounds`)
+
+Separate small resource: `AmbientSound` entity / `AmbientSoundModel` /
+`AmbientSoundsRemoteDatasource`, exposed via `ambientSoundsFutureProvider`
+(`FutureProvider.autoDispose`, **not cached** — URLs are short-lived signed
+S3 links, so it's refetched every time the sheet opens).
+
+The "Ambient sounds" picker sheet previews a track on tap via
+`AmbientSoundPlayer` (a `just_audio` wrapper). The volume slider in
+that sheet is **local-only** — it controls preview playback volume and is
+never sent to the API (no volume field exists on `CreateTimerRequest`).
+
+`ActiveTimerScreen` uses the same player for the session track: it resolves
+`ambientSoundId` against `ambientSoundsFutureProvider` when the running phase
+starts, loops it, pauses/resumes it with the session, and stops it on
+completion. The provider is kept alive with `ref.listenManual` for the
+session because the urls expire. Ambient playback is best-effort — a missing
+or unplayable track leaves the session running silently.
+
+The bundled `assets/audios/meditation.wav` bell (`TimerSoundPlayer`) is gated
+on `bellAtStart`/`bellAtEnd`, and the scheduled completion notification is
+only armed when `bellAtEnd` is set.
 
 ## Cross-feature dependencies
 
@@ -83,6 +133,8 @@ timer/
 ### Do
 
 - Cache presets cache-first (emit cached, refresh background)
+- `GET /timers` must opt out of the HTTP cache so pull-to-refresh and
+  user-created timer mutations show the latest server list.
 - Use `StopUserTimerUseCase` for all session reporting
 - Platform-specific lock screen: Android notifier vs iOS Live Activity
 - Gate preset list for auth loading/guest states
