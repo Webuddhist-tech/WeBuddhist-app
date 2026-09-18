@@ -14,13 +14,15 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
+import 'package:flutter_pecha/shared/widgets/reusable_youtube_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Lightweight reading screen for inline plan subtasks (`TEXT` or `IMAGE`).
+/// Lightweight reading screen for inline plan subtasks (`TEXT`, `IMAGE`,
+/// `VIDEO`). A task's inline subtasks are stacked on one page in order.
 ///
 /// For `TEXT`, subtask `content` is treated as markdown and rendered via
 /// [PlanInlineMarkdownView]. For `IMAGE`, subtask `content` is treated as the
-/// image URL and rendered directly.
+/// image URL and rendered directly. For `VIDEO` it is a YouTube URL.
 ///
 /// Audio behaviour (shared with `ReaderScreen` via
 /// [PlanSegmentAudioController]):
@@ -136,6 +138,9 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
     }
 
     final canSwipe = widget.navigationContext.canSwipe;
+    final blocks = currentItem.blocks;
+    final showFontControls = blocks.any((b) => b.isText);
+    final isLoneImage = blocks.length == 1 && blocks.first.isImage;
 
     return Theme(
       data: readerTheme,
@@ -145,12 +150,12 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
             _isEmbedded
                 ? _buildEmbeddedHeader(
                   context,
-                  showFontControls: currentItem.isInlineText,
+                  showFontControls: showFontControls,
                 )
                 : _buildAppBar(
                   context,
                   currentItem.title,
-                  showFontControls: currentItem.isInlineText,
+                  showFontControls: showFontControls,
                 ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -168,25 +173,25 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                   Expanded(
                     child: Stack(
                       children: [
-                        if (currentItem.isInlineImage)
+                        if (isLoneImage)
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
                                 bottom: _hasAudio ? 72 : 0,
                               ),
-                              child: _buildInlineImage(item: currentItem),
+                              child: _buildInlineImage(
+                                imageUrl: blocks.first.content,
+                              ),
                             ),
                           )
                         else
                           SingleChildScrollView(
-                            padding: EdgeInsets.fromLTRB(
-                              20,
-                              16,
-                              20,
-                              _hasAudio ? 88 : 16,
+                            padding: EdgeInsets.only(
+                              top: 16,
+                              bottom: _hasAudio ? 88 : 16,
                             ),
-                            child: _buildInlineText(
-                              content: currentItem.inlineContent!,
+                            child: _buildBlocks(
+                              blocks: blocks,
                               fontSize: fontSize,
                             ),
                           ),
@@ -222,27 +227,70 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
   }
 
   bool _hasRenderableContent(PlanTextItem item) {
-    switch (item.contentType) {
-      case PlanItemContentType.inlineText:
-        return item.inlineContent?.trim().isNotEmpty == true;
-      case PlanItemContentType.inlineImage:
-        return item.imageUrl?.trim().isNotEmpty == true;
-      case PlanItemContentType.sourceReference:
-        return false;
-    }
+    return item.contentType.isInline &&
+        item.blocks.any((b) => b.content.trim().isNotEmpty);
   }
 
-  Widget _buildInlineText({
-    required String content,
+  /// Stacks a task's inline subtasks: images edge to edge, text padded,
+  /// videos as 16:9 embeds.
+  Widget _buildBlocks({
+    required List<PlanInlineBlock> blocks,
     required double fontSize,
   }) {
-    return PlanInlineMarkdownView(content: content, fontSize: fontSize);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < blocks.length; i++) ...[
+          if (i > 0) const SizedBox(height: 24),
+          if (blocks[i].isText)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: PlanInlineMarkdownView(
+                content: blocks[i].content,
+                fontSize: fontSize,
+              ),
+            )
+          else if (blocks[i].isVideo)
+            ReusableYoutubePlayer(
+              videoUrl: blocks[i].content,
+              showControls: true,
+            )
+          else
+            _buildFlowImage(imageUrl: blocks[i].content),
+        ],
+      ],
+    );
+  }
+
+  /// Full width, natural height, no cropping.
+  Widget _buildFlowImage({required String imageUrl}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width =
+            constraints.maxWidth.isFinite ? constraints.maxWidth : null;
+        return CachedNetworkImageWidget(
+          imageUrl: imageUrl,
+          width: width,
+          fit: BoxFit.fitWidth,
+          placeholder: const AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   /// Scales the image to fill the available viewport while preserving aspect
   /// ratio (no cropping). Uses both width and height so tall/portrait images
   /// also expand to use the full screen area.
-  Widget _buildInlineImage({required PlanTextItem item}) {
+  Widget _buildInlineImage({required String imageUrl}) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width =
@@ -251,7 +299,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
             constraints.maxHeight.isFinite ? constraints.maxHeight : null;
 
         return CachedNetworkImageWidget(
-          imageUrl: item.imageUrl,
+          imageUrl: imageUrl,
           width: width,
           height: height,
           fit: BoxFit.contain,

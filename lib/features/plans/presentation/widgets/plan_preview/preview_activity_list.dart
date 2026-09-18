@@ -141,11 +141,8 @@ class PreviewActivityList extends ConsumerWidget {
     final planTextItems = PlanSubtaskNavigation.fromPlanTasks(tasks);
     if (planTextItems.isEmpty) return;
 
-    // Find this task's position in the unified list. Without subtaskId
-    // (preview mode) we match on title — task titles are unique within
-    // a day in practice, and a stale match still navigates somewhere
-    // reasonable in the same list.
-    final index = planTextItems.indexWhere((item) => item.title == task.title);
+    // Open at the task's first subtask; next/prev walks the rest.
+    final index = planTextItems.indexWhere((item) => item.taskId == task.id);
     if (index < 0) return;
 
     final target = planTextItems[index];
