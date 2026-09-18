@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_subtasks_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.dart';
@@ -103,7 +104,8 @@ class PlanSubtaskNavigation {
 
   /// One item per task: the first navigable subtask decides the kind. An
   /// inline item has one audio control, fed by the first inline subtask
-  /// with its own audio, else the first inline subtask's day-audio window.
+  /// with its own playable audio, else the first inline subtask's day-audio
+  /// window. Blank audio URLs count as absent so day audio still wins.
   static PlanTextItem? _itemForTask<S>({
     required List<S> subtasks,
     required String title,
@@ -124,7 +126,7 @@ class PlanSubtaskNavigation {
       if (blockOf(subtask) == null) continue;
       final inline = subtasks.where((s) => blockOf(s) != null).toList();
       final audioSource = inline.firstWhere(
-        (s) => audioOf(s).$1 != null,
+        (s) => hasPlayableAudio(audioOf(s).$1),
         orElse: () => subtask,
       );
       final (audioUrl, startMs, endMs) = audioOf(audioSource);
@@ -132,7 +134,7 @@ class PlanSubtaskNavigation {
         blocks: inline.map(blockOf).whereType<PlanInlineBlock>().toList(),
         title: title,
         taskId: taskId,
-        audioUrl: audioUrl,
+        audioUrl: normalizeAudioUrl(audioUrl),
         startMs: startMs,
         endMs: endMs,
       );
@@ -177,7 +179,7 @@ class PlanSubtaskNavigation {
       subtaskId: subtask.id,
       taskId: taskId,
       isCompleted: subtask.isCompleted,
-      audioUrl: subtask.audioUrl,
+      audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
     );
@@ -198,7 +200,7 @@ class PlanSubtaskNavigation {
       title: title,
       segmentIds: subtask.segmentIds,
       taskId: taskId,
-      audioUrl: subtask.audioUrl,
+      audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
     );

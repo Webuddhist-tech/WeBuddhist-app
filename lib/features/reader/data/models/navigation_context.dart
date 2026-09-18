@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 
 /// Navigation source types for reader
@@ -585,9 +586,10 @@ class NavigationContext {
 
   /// Resolve the audio URL for [item], applying precedence: a subtask's own
   /// [PlanTextItem.audioUrl] wins over the shared [dayAudioUrl] fallback.
+  /// Blank URLs count as absent, so `""` never shadows a usable day track.
   /// Returns null when neither is available.
   String? effectiveAudioUrlFor(PlanTextItem item) =>
-      item.audioUrl ?? dayAudioUrl;
+      normalizeAudioUrl(item.audioUrl) ?? normalizeAudioUrl(dayAudioUrl);
 
   /// Whether [item] has any playable audio once precedence is applied.
   bool hasAudioFor(PlanTextItem item) => effectiveAudioUrlFor(item) != null;

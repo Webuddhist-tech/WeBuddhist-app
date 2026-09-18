@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
@@ -115,7 +116,7 @@ class PreviewActivityList extends ConsumerWidget {
   }
 
   bool _taskHasAudio(PlanTasksModel task) {
-    if (dayAudioUrl != null) return true;
+    if (hasPlayableAudio(dayAudioUrl)) return true;
     return task.subtasks.any((s) => s.hasOwnAudio);
   }
 
