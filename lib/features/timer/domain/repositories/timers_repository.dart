@@ -29,6 +29,10 @@ abstract class TimersRepositoryInterface {
     required bool bellAtEnd,
   });
 
+  /// Deletes a user-defined timer (`DELETE /timers/user/{timerId}`) and
+  /// refreshes the cached preset timer list.
+  Future<Either<Failure, void>> deleteUserTimer({required String timerId});
+
   Future<Either<Failure, void>> stopUserTimer({
     required String timerId,
     required int durationMs,

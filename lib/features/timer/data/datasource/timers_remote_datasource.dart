@@ -16,10 +16,7 @@ class TimersRemoteDatasource {
     try {
       final response = await dio.post(
         '/timers/user/timer_stop',
-        data: {
-          'timer_id': timerId,
-          'duration': durationMs,
-        },
+        data: {'timer_id': timerId, 'duration': durationMs},
       );
 
       if (response.statusCode == 201) return;
@@ -40,6 +37,7 @@ class TimersRemoteDatasource {
       final response = await dio.get(
         '/timers',
         queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
       );
 
       if (response.statusCode == 200) {
@@ -83,9 +81,7 @@ class TimersRemoteDatasource {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return PresetTimerModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return PresetTimerModel.fromJson(response.data as Map<String, dynamic>);
       }
 
       _logger.error('Failed to create timer: ${response.statusCode}');
@@ -93,6 +89,20 @@ class TimersRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in createUserTimer', e);
       throw _dioToException(e, 'Failed to create timer');
+    }
+  }
+
+  Future<void> deleteUserTimer({required String timerId}) async {
+    try {
+      final response = await dio.delete('/timers/user/$timerId');
+
+      if (response.statusCode == 200 || response.statusCode == 204) return;
+
+      _logger.error('Failed to delete timer: ${response.statusCode}');
+      throw _statusToException(response.statusCode, 'Failed to delete timer');
+    } on DioException catch (e) {
+      _logger.error('Dio error in deleteUserTimer', e);
+      throw _dioToException(e, 'Failed to delete timer');
     }
   }
 

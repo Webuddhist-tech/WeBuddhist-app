@@ -4,10 +4,14 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
+import 'package:flutter_pecha/features/timer/domain/usecases/delete_user_timer_usecase.dart';
+import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -32,13 +36,16 @@ class TimerMoreBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
+  static const _deleteTimerLabel = 'Delete timer';
+  static const _deleteTimerTitle = 'Delete timer?';
+  static const _deleteTimerMessage = 'This timer will be permanently removed.';
+
   bool _isBookmarking = false;
   bool _isSharing = false;
+  bool _isDeleting = false;
 
-  BookmarkTarget get _bookmarkTarget => BookmarkTarget(
-        type: BookmarkType.timer,
-        sourceId: widget.timer.id,
-      );
+  BookmarkTarget get _bookmarkTarget =>
+      BookmarkTarget(type: BookmarkType.timer, sourceId: widget.timer.id);
 
   Future<void> _share() async {
     if (_isSharing) return;
@@ -70,6 +77,51 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
       if (mounted && didToggle) nav.pop();
     } finally {
       if (mounted) setState(() => _isBookmarking = false);
+    }
+  }
+
+  Future<void> _deleteTimer() async {
+    if (_isDeleting || !widget.timer.isUserCreated) return;
+
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    String? failureMessage;
+
+    final result = await showDestructiveConfirmationDialog(
+      context,
+      title: _deleteTimerTitle,
+      message: _deleteTimerMessage,
+      confirmLabel: _deleteTimerLabel,
+      cancelLabel: l10n.cancel,
+      barrierDismissible: false,
+      onConfirmed: () async {
+        HapticFeedback.mediumImpact();
+        if (mounted) setState(() => _isDeleting = true);
+        try {
+          final deleteResult = await ref.read(deleteUserTimerUseCaseProvider)(
+            DeleteUserTimerParams(timerId: widget.timer.id),
+          );
+
+          return deleteResult.fold((failure) {
+            failureMessage = failure.message;
+            return false;
+          }, (_) => true);
+        } catch (_) {
+          failureMessage = l10n.something_went_wrong;
+          return false;
+        } finally {
+          if (mounted) setState(() => _isDeleting = false);
+        }
+      },
+    );
+
+    if (!mounted) return;
+    if (result == true) {
+      Navigator.of(context).pop();
+    } else if (result == false) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(failureMessage ?? l10n.something_went_wrong)),
+      );
     }
   }
 
@@ -151,13 +203,44 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
                         color: theme.colorScheme.onSurface,
                       ),
                     )
-                    : Icon(AppAssets.readerShare, color: theme.colorScheme.onSurface),
+                    : Icon(
+                      AppAssets.readerShare,
+                      color: theme.colorScheme.onSurface,
+                    ),
             title: Text(l10n.share, style: theme.textTheme.bodyLarge),
             onTap: () {
               HapticFeedback.lightImpact();
               _share();
             },
           ),
+
+          if (widget.timer.isUserCreated) ...[
+            // ── Delete timer ─────────────────────────────────────────────
+            _SectionDivider(theme: theme),
+            ListTile(
+              leading:
+                  _isDeleting
+                      ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.danger,
+                        ),
+                      )
+                      : const Icon(AppAssets.trash, color: AppColors.danger),
+              title: Text(
+                _deleteTimerLabel,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppColors.danger,
+                ),
+              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _deleteTimer();
+              },
+            ),
+          ],
 
           const SizedBox(height: 8),
         ],

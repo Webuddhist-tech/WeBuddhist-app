@@ -127,6 +127,7 @@ class PresetTimersScreen extends ConsumerWidget {
   Future<void> _refreshPresetTimers(WidgetRef ref) async {
     ref.invalidate(ambientSoundsFutureProvider);
     await ref.read(timersDomainRepositoryProvider).refreshPresetTimers();
+    ref.invalidate(presetTimersFutureProvider);
   }
 
   Widget _buildAppBar(BuildContext context, String title) {
@@ -181,10 +182,11 @@ class _TimersContent extends ConsumerWidget {
     showTimerMoreBottomSheet(
       context,
       timer: timer,
-      onAddToPractices: () => context.push(
-        AppRoutes.practiceEditRoutine,
-        extra: {'initialTimer': timer},
-      ),
+      onAddToPractices:
+          () => context.push(
+            AppRoutes.practiceEditRoutine,
+            extra: {'initialTimer': timer},
+          ),
     );
   }
 

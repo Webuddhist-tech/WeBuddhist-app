@@ -54,7 +54,9 @@ timer/
 
 ## Data sources
 
-- **Remote:** `GET /timers`, `POST /timers/user` (create custom timer), `POST /timers/user/timer_stop`, `GET /ambient-sounds`
+- **Remote:** `GET /timers`, `POST /timers/user` (create custom timer),
+  `DELETE /timers/user/{timer_id}` (delete user-created timer),
+  `POST /timers/user/timer_stop`, `GET /ambient-sounds`
 - **Hive:** cached presets per user, pending stop queue
 - **PreferencesService:** user ID namespacing
 - **notifications** channels for session + completion bell
@@ -122,6 +124,8 @@ wired up** — `TimerSoundPlayer` still always plays the bundled
 ### Do
 
 - Cache presets cache-first (emit cached, refresh background)
+- `GET /timers` must opt out of the HTTP cache so pull-to-refresh and
+  user-created timer mutations show the latest server list.
 - Use `StopUserTimerUseCase` for all session reporting
 - Platform-specific lock screen: Android notifier vs iOS Live Activity
 - Gate preset list for auth loading/guest states

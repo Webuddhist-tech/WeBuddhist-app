@@ -167,6 +167,24 @@ class TimersRepository implements TimersRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, void>> deleteUserTimer({
+    required String timerId,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    try {
+      await remote.deleteUserTimer(timerId: timerId);
+      await refreshPresetTimers();
+      return const Right(null);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to delete timer'));
+    }
+  }
+
+  @override
   Future<void> flushPendingTimerStops() async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) return;
