@@ -308,6 +308,34 @@ void main() {
       expect(notifier.state.preferences.chat, isTrue);
     });
 
+    test('a superseded success moves the revert target', () async {
+      // Chat starts off. Enabling succeeds but is superseded by a disable
+      // that then fails: the backend holds "on", so the switch must show on.
+      final repo =
+          _FakeRepository()
+            ..server = const GroupNotificationPreferences(
+              chat: false,
+              content: true,
+            );
+      final notifier = _notifier(repo);
+      await _settle();
+      expect(notifier.state.preferences.chat, isFalse);
+
+      notifier.setChat(true);
+      final last = notifier.setChat(false);
+
+      repo.release(0);
+      await _settle();
+      expect(repo.server.chat, isTrue);
+
+      repo.updateFailure = const ServerFailure('disable failed');
+      repo.release(1);
+      expect(await last, isFalse);
+
+      expect(notifier.state.preferences.chat, isTrue);
+      expect(notifier.state.lastFailure, isA<ServerFailure>());
+    });
+
     test('the two toggles queue independently', () async {
       final repo = _FakeRepository();
       final notifier = _notifier(repo);

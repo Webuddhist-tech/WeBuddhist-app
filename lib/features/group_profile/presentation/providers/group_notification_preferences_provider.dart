@@ -189,6 +189,18 @@ class GroupNotificationPreferencesNotifier
         completer.complete(false);
         return;
       }
+
+      // A success moved the backend even if a newer value is already queued
+      // behind it, so the revert target follows it: if that newer write then
+      // fails, the switch falls back to what the backend really holds. Only
+      // this toggle is taken from the response; the other one may have an
+      // optimistic flip of its own still in flight.
+      final confirmed = result.toOption().toNullable();
+      if (confirmed != null) {
+        _persisted = toggle.apply(_persisted, toggle.of(confirmed));
+      }
+
+      // Superseded: the queued write settles the switch, not this response.
       if (_pending.containsKey(toggle)) continue;
 
       succeeded = result.fold(
@@ -199,13 +211,9 @@ class GroupNotificationPreferencesNotifier
           );
           return false;
         },
-        (saved) {
-          // Only this toggle is authoritative here: the other one may have
-          // an optimistic flip of its own still in flight.
-          final value = toggle.of(saved);
-          _persisted = toggle.apply(_persisted, value);
+        (_) {
           state = state.copyWith(
-            preferences: toggle.apply(state.preferences, value),
+            preferences: toggle.apply(state.preferences, toggle.of(_persisted)),
           );
           return true;
         },
