@@ -145,11 +145,8 @@ class ActivityList extends ConsumerWidget {
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
     if (planTextItems.isEmpty) return;
 
-    final index = planTextItems.indexWhere(
-      (item) =>
-          item.subtaskId != null &&
-          task.subTasks.any((s) => s.id == item.subtaskId),
-    );
+    // Open at the task's first subtask; next/prev walks the rest.
+    final index = planTextItems.indexWhere((item) => item.taskId == task.id);
     if (index < 0) return;
 
     final target = planTextItems[index];

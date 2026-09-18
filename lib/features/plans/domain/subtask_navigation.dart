@@ -7,11 +7,11 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 /// Single source of truth for converting plan subtasks into the unified
 /// [PlanTextItem] list used by the reader / plan-text navigation strip.
 ///
-/// Validation rules (kept in one place):
-/// - SOURCE_REFERENCE → valid iff `sourceTextId` is non-null and non-empty.
-/// - TEXT             → valid iff `content.trim()` is non-empty.
-/// - IMAGE            → valid iff `content.trim()` is non-empty.
-/// - GROUP_ACCUMULATION → not a reader item; opens the group accumulator screen.
+/// Each task yields at most one item:
+/// - First navigable subtask is SOURCE_REFERENCE → a reader item for it.
+/// - First navigable subtask is TEXT / IMAGE / VIDEO → one inline item whose
+///   blocks are every inline subtask of the task, shown on a single page.
+/// - GROUP_ACCUMULATION → not a reader item; opens the group accumulator.
 /// - Anything else (unknown content type, missing fields) is silently dropped.
 ///
 /// Both task models (`UserTasksDto` for enrolled users, `PlanTasksModel` for
@@ -20,16 +20,23 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 class PlanSubtaskNavigation {
   PlanSubtaskNavigation._();
 
-  /// Build the unified item list for an enrolled user.
-  /// Tasks are sorted by `displayOrder`; the first navigable subtask of each
-  /// task is included.
+  /// Build the unified item list for an enrolled user, sorted by task
+  /// `displayOrder`.
   static List<PlanTextItem> fromUserTasks(List<UserTasksDto> tasks) {
     final sorted = List<UserTasksDto>.from(tasks)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
     final items = <PlanTextItem>[];
     for (final task in sorted) {
-      final item = _firstNavigableUserSubtask(task);
+      final item = _itemForTask(
+        subtasks: _sortedByDisplayOrder(task.subTasks, (s) => s.displayOrder),
+        title: task.title,
+        taskId: task.id,
+        contentTypeOf: (s) => s.contentType,
+        sourceOf: (s) => _toSourceItemFromUser(s, task.title, task.id),
+        blockOf: _toBlockFromUser,
+        audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
+      );
       if (item != null) items.add(item);
     }
     return items;
@@ -47,14 +54,22 @@ class PlanSubtaskNavigation {
 
     final items = <PlanTextItem>[];
     for (final task in sorted) {
-      final item = _firstNavigablePlanSubtask(task);
+      final item = _itemForTask(
+        subtasks: _sortedByDisplayOrder(task.subtasks, (s) => s.displayOrder),
+        title: task.title,
+        taskId: task.id,
+        contentTypeOf: (s) => s.contentType,
+        sourceOf: (s) => _toSourceItemFromPlan(s, task.title, task.id),
+        blockOf: _toBlockFromPlan,
+        audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
+      );
       if (item != null) items.add(item);
     }
     return items;
   }
 
   /// True if the given task has at least one navigable subtask
-  /// (SOURCE_REFERENCE, TEXT, IMAGE, or GROUP_ACCUMULATION).
+  /// (SOURCE_REFERENCE, TEXT, IMAGE, VIDEO, or GROUP_ACCUMULATION).
   static bool isUserTaskNavigable(UserTasksDto task) {
     return task.subTasks.any(_isUserSubtaskNavigable) ||
         groupAccumulationIdForUserTask(task) != null;
@@ -86,110 +101,121 @@ class PlanSubtaskNavigation {
 
   // ─── Internal helpers ───────────────────────────────────────────────
 
-  static PlanTextItem? _firstNavigableUserSubtask(UserTasksDto task) {
-    for (final subtask in task.subTasks) {
-      final item = _toItemFromUserSubtask(subtask, task.title);
-      if (item != null) return item;
+  /// One item per task: the first navigable subtask decides the kind. An
+  /// inline item takes its audio from its first inline subtask.
+  static PlanTextItem? _itemForTask<S>({
+    required List<S> subtasks,
+    required String title,
+    required String taskId,
+    required String? Function(S) contentTypeOf,
+    required PlanTextItem? Function(S) sourceOf,
+    required PlanInlineBlock? Function(S) blockOf,
+    required (String? url, int? startMs, int? endMs) Function(S) audioOf,
+  }) {
+    for (final subtask in subtasks) {
+      final type = PlanContentTypes.parse(contentTypeOf(subtask));
+      if (type == null) continue;
+      if (type == PlanItemContentType.sourceReference) {
+        final item = sourceOf(subtask);
+        if (item != null) return item;
+        continue;
+      }
+      if (blockOf(subtask) == null) continue;
+      final blocks = subtasks.map(blockOf).whereType<PlanInlineBlock>();
+      final (audioUrl, startMs, endMs) = audioOf(subtask);
+      return PlanTextItem.inline(
+        blocks: blocks.toList(),
+        title: title,
+        taskId: taskId,
+        audioUrl: audioUrl,
+        startMs: startMs,
+        endMs: endMs,
+      );
     }
     return null;
   }
 
-  static PlanTextItem? _firstNavigablePlanSubtask(PlanTasksModel task) {
-    for (final subtask in task.subtasks) {
-      final item = _toItemFromPlanSubtask(subtask, task.title);
-      if (item != null) return item;
-    }
-    return null;
+  /// Stable sort by `displayOrder`; items without one keep their position.
+  static List<T> _sortedByDisplayOrder<T>(
+    List<T> subtasks,
+    int? Function(T) orderOf,
+  ) {
+    final indexed = subtasks.asMap().entries.toList()..sort((a, b) {
+      final byOrder = (orderOf(a.value) ?? a.key).compareTo(
+        orderOf(b.value) ?? b.key,
+      );
+      return byOrder != 0 ? byOrder : a.key.compareTo(b.key);
+    });
+    return indexed.map((e) => e.value).toList();
   }
 
   static bool _isUserSubtaskNavigable(UserSubtasksDto s) =>
-      _toItemFromUserSubtask(s, '') != null;
+      _toSourceItemFromUser(s, '', null) != null || _toBlockFromUser(s) != null;
 
   static bool _isPlanSubtaskNavigable(PlanSubtasksModel s) =>
-      _toItemFromPlanSubtask(s, '') != null;
+      _toSourceItemFromPlan(s, '', null) != null || _toBlockFromPlan(s) != null;
 
-  static PlanTextItem? _toItemFromUserSubtask(
+  static PlanTextItem? _toSourceItemFromUser(
     UserSubtasksDto subtask,
     String title,
+    String? taskId,
   ) {
-    final type = PlanContentTypes.parse(subtask.contentType);
-    switch (type) {
-      case PlanItemContentType.sourceReference:
-        if (!_hasSourceText(subtask.sourceTextId)) return null;
-        return PlanTextItem.sourceReference(
-          textId: subtask.sourceTextId!,
-          title: title,
-          segmentIds: subtask.segmentIds,
-          subtaskId: subtask.id,
-          isCompleted: subtask.isCompleted,
-          audioUrl: subtask.audioUrl,
-          startMs: subtask.startMs,
-          endMs: subtask.endMs,
-        );
-      case PlanItemContentType.inlineText:
-        if (!_hasInlineContent(subtask.content)) return null;
-        return PlanTextItem.inlineText(
-          content: subtask.content,
-          title: title,
-          subtaskId: subtask.id,
-          isCompleted: subtask.isCompleted,
-          audioUrl: subtask.audioUrl,
-          startMs: subtask.startMs,
-          endMs: subtask.endMs,
-        );
-      case PlanItemContentType.inlineImage:
-        if (!_hasInlineContent(subtask.content)) return null;
-        return PlanTextItem.inlineImage(
-          imageUrl: subtask.content,
-          title: title,
-          subtaskId: subtask.id,
-          isCompleted: subtask.isCompleted,
-          audioUrl: subtask.audioUrl,
-          startMs: subtask.startMs,
-          endMs: subtask.endMs,
-        );
-      case null:
-        return null;
+    if (PlanContentTypes.parse(subtask.contentType) !=
+        PlanItemContentType.sourceReference) {
+      return null;
     }
+    if (!_hasSourceText(subtask.sourceTextId)) return null;
+    return PlanTextItem.sourceReference(
+      textId: subtask.sourceTextId!,
+      title: title,
+      segmentIds: subtask.segmentIds,
+      subtaskId: subtask.id,
+      taskId: taskId,
+      isCompleted: subtask.isCompleted,
+      audioUrl: subtask.audioUrl,
+      startMs: subtask.startMs,
+      endMs: subtask.endMs,
+    );
   }
 
-  static PlanTextItem? _toItemFromPlanSubtask(
+  static PlanTextItem? _toSourceItemFromPlan(
     PlanSubtasksModel subtask,
     String title,
+    String? taskId,
   ) {
-    final type = PlanContentTypes.parse(subtask.contentType);
-    switch (type) {
-      case PlanItemContentType.sourceReference:
-        if (!_hasSourceText(subtask.sourceTextId)) return null;
-        return PlanTextItem.sourceReference(
-          textId: subtask.sourceTextId!,
-          title: title,
-          segmentIds: subtask.segmentIds,
-          audioUrl: subtask.audioUrl,
-          startMs: subtask.startMs,
-          endMs: subtask.endMs,
-        );
-      case PlanItemContentType.inlineText:
-        if (!_hasInlineContent(subtask.content)) return null;
-        return PlanTextItem.inlineText(
-          content: subtask.content!,
-          title: title,
-          audioUrl: subtask.audioUrl,
-          startMs: subtask.startMs,
-          endMs: subtask.endMs,
-        );
-      case PlanItemContentType.inlineImage:
-        if (!_hasInlineContent(subtask.content)) return null;
-        return PlanTextItem.inlineImage(
-          imageUrl: subtask.content!,
-          title: title,
-          audioUrl: subtask.audioUrl,
-          startMs: subtask.startMs,
-          endMs: subtask.endMs,
-        );
-      case null:
-        return null;
+    if (PlanContentTypes.parse(subtask.contentType) !=
+        PlanItemContentType.sourceReference) {
+      return null;
     }
+    if (!_hasSourceText(subtask.sourceTextId)) return null;
+    return PlanTextItem.sourceReference(
+      textId: subtask.sourceTextId!,
+      title: title,
+      segmentIds: subtask.segmentIds,
+      taskId: taskId,
+      audioUrl: subtask.audioUrl,
+      startMs: subtask.startMs,
+      endMs: subtask.endMs,
+    );
+  }
+
+  static PlanInlineBlock? _toBlockFromUser(UserSubtasksDto subtask) {
+    final type = PlanContentTypes.parse(subtask.contentType);
+    if (type == null || !type.isInline) return null;
+    if (!_hasInlineContent(subtask.content)) return null;
+    return PlanInlineBlock(
+      contentType: type,
+      content: subtask.content,
+      subtaskId: subtask.id,
+      isCompleted: subtask.isCompleted,
+    );
+  }
+
+  static PlanInlineBlock? _toBlockFromPlan(PlanSubtasksModel subtask) {
+    final type = PlanContentTypes.parse(subtask.contentType);
+    if (type == null || !type.isInline) return null;
+    if (!_hasInlineContent(subtask.content)) return null;
+    return PlanInlineBlock(contentType: type, content: subtask.content!);
   }
 
   static bool _hasSourceText(String? sourceTextId) =>

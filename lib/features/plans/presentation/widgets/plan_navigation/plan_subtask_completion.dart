@@ -48,34 +48,50 @@ class PlanSubtaskCompletionService {
     }
 
     final currentItem = navContext.currentItem;
-    if (currentItem == null) return;
+    if (currentItem == null || currentItem.isCompleted) return;
 
-    final subtaskId = currentItem.subtaskId;
-    if (subtaskId == null || subtaskId.isEmpty) return;
-    if (currentItem.isCompleted) return;
-    if (_completedSubtaskIds.contains(subtaskId)) return;
+    // A combined inline item completes every subtask it shows.
+    final completedBlocks = {
+      for (final b in currentItem.blocks)
+        if (b.isCompleted && b.subtaskId != null) b.subtaskId!,
+    };
+    final pending =
+        currentItem.subtaskIds
+            .where((id) => !completedBlocks.contains(id))
+            .where((id) => !_completedSubtaskIds.contains(id))
+            .toList();
+    if (pending.isEmpty) return;
 
-    // Claim it up front so a concurrent or repeat swipe can't re-POST.
-    _completedSubtaskIds.add(subtaskId);
+    // Claim them up front so a concurrent or repeat swipe can't re-POST.
+    _completedSubtaskIds.addAll(pending);
 
+    final results = await Future.wait(pending.map(_complete));
+    if (results.any((ok) => ok)) {
+      _refreshPlanDay(navContext.planId, navContext.dayNumber);
+    }
+  }
+
+  Future<bool> _complete(String subtaskId) async {
     try {
       final useCase = _ref.read(completeSubTaskUseCaseProvider);
       final result = await useCase(
         CompleteSubTaskParams(subTaskId: subtaskId),
       );
-      result.fold(
+      return result.fold(
         (failure) {
           _logger.error('Failed to complete subtask: ${failure.message}');
           _completedSubtaskIds.remove(subtaskId); // allow a later retry
+          return false;
         },
         (_) {
           _logger.info('Marked subtask $subtaskId as complete');
-          _refreshPlanDay(navContext.planId, navContext.dayNumber);
+          return true;
         },
       );
     } catch (e) {
       _logger.error('Failed to complete subtask $subtaskId', e);
       _completedSubtaskIds.remove(subtaskId); // allow a later retry
+      return false;
     }
   }
 
