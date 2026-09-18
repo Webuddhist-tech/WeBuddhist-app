@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:just_audio/just_audio.dart';
@@ -43,54 +44,75 @@ class TimerAudioKeepAlive implements TimerKeepAlive {
   AudioPlayer? _player;
   StreamSubscription<AudioInterruptionEvent>? _interruptions;
 
-  /// Whether a session currently wants to be kept alive. Guards the async gaps
-  /// below: [stop] can land while [start] is still setting the session up.
+  /// Whether a session currently wants to be kept alive. Written the moment
+  /// [start] or [stop] is called and re-read after every await below, so the
+  /// last caller wins however the platform calls interleave.
   bool _wanted = false;
+
+  /// Whether the silent track is currently playing, so a repeated [start] does
+  /// not restart it.
+  bool _holding = false;
   bool _disposed = false;
 
-  static bool get _isSupported => Platform.isIOS;
+  /// Serializes hold and release, which the timer screen fires without
+  /// awaiting: pausing and immediately resuming must not leave a release
+  /// landing on top of the hold that replaced it.
+  Future<void> _operations = Future<void>.value();
+
+  @visibleForTesting
+  bool get isSupported => Platform.isIOS;
 
   @override
-  Future<void> start() async {
-    if (!_isSupported || _disposed || _wanted) return;
+  Future<void> start() {
+    if (!isSupported || _disposed) return Future<void>.value();
     _wanted = true;
+    return _enqueue(_hold);
+  }
+
+  @override
+  Future<void> stop() {
+    if (!isSupported) return Future<void>.value();
+    _wanted = false;
+    return _enqueue(_release);
+  }
+
+  Future<void> _hold() async {
+    if (!_wanted || _disposed || _holding) return;
 
     try {
-      final session = await AudioSession.instance;
-      await session.configure(_sessionConfiguration);
-      await session.setActive(true);
-      _interruptions ??= session.interruptionEventStream.listen(
-        _onInterruption,
-      );
-
-      final player = _player ??= AudioPlayer();
-      await player.setAsset(AppAssets.silence);
-      await player.setLoopMode(LoopMode.one);
-      if (!_wanted) return;
-      // Never awaited: with a loop, `play()` only completes when playback
-      // stops, which for the keep-alive means at the end of the session.
-      unawaited(player.play());
-      _logger.info('Holding audio session for the timer session');
+      await activateSession();
+      if (!_wanted || _disposed) return;
+      await startSilentLoop();
+      _holding = true;
+      _logger.info('Holding the audio session for the timer session');
     } catch (e) {
       _logger.warning('Could not hold the audio session: $e');
     }
   }
 
-  @override
-  Future<void> stop() async {
-    if (!_wanted) return;
-    _wanted = false;
+  Future<void> _release() async {
+    // A start queued behind this release already asked for the session back.
+    if (_wanted) return;
 
     try {
-      await _player?.stop();
-      final session = await AudioSession.instance;
-      // Leave the app's usual configuration behind rather than the timer's, so
-      // audio played elsewhere (plans, chants) is unaffected. Not re-activated:
-      // configuring alone does not interrupt anyone else's playback.
-      await session.configure(const AudioSessionConfiguration.music());
+      await stopSilentLoop();
+      _holding = false;
+      // Re-read rather than trusting the check above: a start can land while
+      // the platform call is in flight, and restoring the app's configuration
+      // on top of the hold that replaced this release is what silences the
+      // bell on a locked screen.
+      if (_wanted) return;
+      await restoreSession();
     } catch (e) {
       _logger.warning('Failed to release the audio session: $e');
     }
+  }
+
+  Future<void> _enqueue(Future<void> Function() operation) {
+    _operations = _operations.then((_) => operation()).catchError((Object e) {
+      _logger.warning('Keep-alive operation failed: $e');
+    });
+    return _operations;
   }
 
   /// A phone call, Siri or an alarm deactivates the session and pauses the
@@ -102,21 +124,50 @@ class TimerAudioKeepAlive implements TimerKeepAlive {
       _logger.info('Audio session interrupted (${event.type})');
       return;
     }
-    if (!_wanted) return;
-    unawaited(_resumeAfterInterruption());
+    if (!_wanted || _disposed) return;
+    // Through the same queue, so it cannot overtake a stop the user just made.
+    _holding = false;
+    unawaited(
+      _enqueue(() async {
+        await _hold();
+        if (_holding) _logger.info('Audio session resumed after interruption');
+      }),
+    );
   }
 
-  Future<void> _resumeAfterInterruption() async {
-    try {
-      final session = await AudioSession.instance;
-      await session.setActive(true);
-      if (!_wanted) return;
-      unawaited(_player?.play());
-      _logger.info('Audio session resumed after interruption');
-    } catch (e) {
-      _logger.warning('Failed to resume after interruption: $e');
-    }
+  @protected
+  @visibleForTesting
+  Future<void> activateSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(_sessionConfiguration);
+    await session.setActive(true);
+    _interruptions ??= session.interruptionEventStream.listen(_onInterruption);
   }
+
+  /// Leaves the app's usual configuration behind rather than the timer's, so
+  /// audio played elsewhere (plans, chants) is unaffected. Not re-activated:
+  /// configuring alone does not interrupt anyone else's playback.
+  @protected
+  @visibleForTesting
+  Future<void> restoreSession() async {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+  }
+
+  @protected
+  @visibleForTesting
+  Future<void> startSilentLoop() async {
+    final player = _player ??= AudioPlayer();
+    await player.setAsset(AppAssets.silence);
+    await player.setLoopMode(LoopMode.one);
+    // Never awaited: with a loop, `play()` only completes when playback stops,
+    // which for the keep-alive means at the end of the session.
+    unawaited(player.play());
+  }
+
+  @protected
+  @visibleForTesting
+  Future<void> stopSilentLoop() => _player?.stop() ?? Future<void>.value();
 
   static AudioSessionConfiguration get _sessionConfiguration =>
       const AudioSessionConfiguration(
@@ -129,7 +180,8 @@ class TimerAudioKeepAlive implements TimerKeepAlive {
   @override
   Future<void> dispose() async {
     _disposed = true;
-    await stop();
+    _wanted = false;
+    await _enqueue(_release);
     await _interruptions?.cancel();
     _interruptions = null;
     final player = _player;
