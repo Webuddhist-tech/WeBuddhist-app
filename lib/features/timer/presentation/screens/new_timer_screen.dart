@@ -47,6 +47,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     final selection = await AmbientSoundSheet.show(
       context,
       selectedId: _ambientSoundId,
+      selectedName: _ambientSoundName,
     );
     if (selection != null && mounted) {
       setState(() {

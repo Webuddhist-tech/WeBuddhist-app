@@ -157,8 +157,12 @@ class TimersRepository implements TimersRepositoryInterface {
         bellAtStart: bellAtStart,
         bellAtEnd: bellAtEnd,
       );
-      // Resync the cached list so it shows up under "Your timers" — the
-      // watcher on `watchPresetTimers` picks this up via the Hive box watch.
+      // Write it into the cached list first so it shows up under "Your timers"
+      // via the Hive box watch. Doing this locally means a failed resync below
+      // cannot leave the list stale while reporting the create as successful.
+      await local.upsertPresetTimer(userId, timer: created);
+      // Best-effort resync with the server ordering; the timer already exists
+      // remotely, so a failed refresh must not fail the creation.
       await refreshPresetTimers();
       return Right(created.toEntity());
     } catch (e) {
@@ -177,6 +181,11 @@ class TimersRepository implements TimersRepositoryInterface {
 
     try {
       await remote.deleteUserTimer(timerId: timerId);
+      // Drop it from the cache ourselves so "Your timers" updates through the
+      // Hive box watch even when the resync below fails.
+      await local.removePresetTimer(userId, timerId);
+      // Best-effort resync; the timer is already gone on the server, so a
+      // failed refresh must not report the delete as failed.
       await refreshPresetTimers();
       return const Right(null);
     } catch (e) {

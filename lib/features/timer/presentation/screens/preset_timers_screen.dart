@@ -62,7 +62,7 @@ class PresetTimersScreen extends ConsumerWidget {
                   return timersEither.fold(
                     (failure) => ErrorStateWidget(
                       error: failure,
-                      onRetry: () => _refreshPresetTimers(ref),
+                      onRetry: () => _retryPresetTimers(ref),
                     ),
                     (timers) {
                       final presetTimers = _sortedPresetTimers(
@@ -114,7 +114,7 @@ class PresetTimersScreen extends ConsumerWidget {
                 error:
                     (error, _) => ErrorStateWidget(
                       error: error,
-                      onRetry: () => _refreshPresetTimers(ref),
+                      onRetry: () => _retryPresetTimers(ref),
                     ),
               ),
             ),
@@ -124,9 +124,19 @@ class PresetTimersScreen extends ConsumerWidget {
     );
   }
 
+  /// Pull-to-refresh: the repository writes the fetched list to Hive, which
+  /// makes the already-watched stream emit it. Invalidating
+  /// [presetTimersFutureProvider] here would recreate that stream and fetch
+  /// the same list a second time.
   Future<void> _refreshPresetTimers(WidgetRef ref) async {
     ref.invalidate(ambientSoundsFutureProvider);
     await ref.read(timersDomainRepositoryProvider).refreshPresetTimers();
+  }
+
+  /// Retry after an error, where the stream may have ended (e.g. the auth gate
+  /// rejected it) and has to be recreated rather than nudged through Hive.
+  void _retryPresetTimers(WidgetRef ref) {
+    ref.invalidate(ambientSoundsFutureProvider);
     ref.invalidate(presetTimersFutureProvider);
   }
 

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/ambient_sound.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
-import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_preview_player.dart';
+import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_sheet_header.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,13 +21,22 @@ class AmbientSoundSelection {
 /// previous preview). The volume slider only controls preview playback here
 /// — it is local UI state and is never sent to the backend.
 class AmbientSoundSheet extends ConsumerStatefulWidget {
-  const AmbientSoundSheet({super.key, required this.selectedId});
+  const AmbientSoundSheet({
+    super.key,
+    required this.selectedId,
+    this.selectedName,
+  });
 
   final String? selectedId;
+
+  /// Name of [selectedId], so closing the sheet without picking another row
+  /// returns the current selection intact instead of an id with no name.
+  final String? selectedName;
 
   static Future<AmbientSoundSelection?> show(
     BuildContext context, {
     required String? selectedId,
+    String? selectedName,
   }) {
     return showModalBottomSheet<AmbientSoundSelection>(
       context: context,
@@ -36,7 +45,11 @@ class AmbientSoundSheet extends ConsumerStatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => AmbientSoundSheet(selectedId: selectedId),
+      builder:
+          (_) => AmbientSoundSheet(
+            selectedId: selectedId,
+            selectedName: selectedName,
+          ),
     );
   }
 
@@ -46,9 +59,9 @@ class AmbientSoundSheet extends ConsumerStatefulWidget {
 
 class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
   late String? _selectedId = widget.selectedId;
-  String? _selectedName;
+  late String? _selectedName = widget.selectedName;
   double _volume = 1;
-  final _player = AmbientSoundPreviewPlayer();
+  final _player = AmbientSoundPlayer();
 
   @override
   void dispose() {

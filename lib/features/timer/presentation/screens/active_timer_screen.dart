@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/timer/data/services/timer_session_notifie
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
+import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_progress_ring.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,10 +62,19 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   Timer? _timer;
   late final TimerSoundPlayer _soundPlayer;
+  late final AmbientSoundPlayer _ambientPlayer;
   late final TimerSessionNotifier _notifier;
   late final TimerLiveActivity _liveActivity;
 
   int get _totalMs => widget.presetTimer.durationMs;
+
+  String? get _ambientSoundId {
+    final id = widget.presetTimer.ambientSoundId;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  bool get _playsBell =>
+      widget.presetTimer.bellAtStart || widget.presetTimer.bellAtEnd;
 
   int get _elapsedMs => _totalMs - _remainingFromClock();
 
@@ -99,7 +109,13 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     super.initState();
     _remainingMs = _totalMs;
     _soundPlayer = TimerSoundPlayer();
-    _soundPlayer.init();
+    if (_playsBell) _soundPlayer.init();
+    _ambientPlayer = AmbientSoundPlayer();
+    if (_ambientSoundId != null) {
+      // The sound catalogue auto-disposes and its urls are short-lived signed
+      // links, so hold it open for as long as the session needs the track.
+      ref.listenManual(ambientSoundsFutureProvider, (_, __) {});
+    }
     _notifier = TimerSessionNotifier();
     _liveActivity = TimerLiveActivity();
     WidgetsBinding.instance.addObserver(this);
@@ -111,6 +127,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _soundPlayer.dispose();
+    unawaited(_ambientPlayer.dispose());
     _clearBackgroundSurfaces();
     super.dispose();
   }
@@ -136,6 +153,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   /// it rings on time even though this isolate is about to stop executing.
   void _onBackgrounded() {
     if (_phase != _TimerPhase.running || _isPaused) return;
+    if (!widget.presetTimer.bellAtEnd) return;
     final endsAt = _endsAt;
     if (endsAt == null) return;
     _scheduleCompletionBell(endsAt);
@@ -191,7 +209,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _startMainTimer() {
-    _soundPlayer.play();
+    if (widget.presetTimer.bellAtStart) _soundPlayer.play();
+    unawaited(_startAmbientSound());
 
     final endsAt = DateTime.now().add(Duration(milliseconds: _totalMs));
 
@@ -217,6 +236,37 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       ),
     );
     _showRunningNotification(endsAt);
+  }
+
+  /// Starts the looping ambient track the timer was created with, resolving
+  /// its id against the sound catalogue. Best-effort: a missing or unplayable
+  /// track leaves the session running in silence.
+  Future<void> _startAmbientSound() async {
+    final soundId = _ambientSoundId;
+    if (soundId == null) return;
+
+    try {
+      final sounds = await ref.read(ambientSoundsFutureProvider.future);
+      // The catalogue can resolve after the session was paused or ended.
+      if (!mounted || _phase != _TimerPhase.running || _isPaused) return;
+
+      for (final sound in sounds) {
+        if (sound.id == soundId) {
+          await _ambientPlayer.play(sound.url);
+          // The session can end (or pause) while the track is loading, after
+          // the stop/pause it issued has already run against nothing.
+          if (!mounted || _phase != _TimerPhase.running) {
+            await _ambientPlayer.stop();
+          } else if (_isPaused) {
+            await _ambientPlayer.pause();
+          }
+          return;
+        }
+      }
+      _logger.warning('Ambient sound $soundId is not in the catalogue');
+    } catch (e) {
+      _logger.warning('Failed to load ambient sound $soundId: $e');
+    }
   }
 
   void _onMainTimerTick() {
@@ -248,7 +298,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       _phase = _TimerPhase.finished;
     });
 
-    if (playBell) _soundPlayer.play();
+    if (playBell && widget.presetTimer.bellAtEnd) _soundPlayer.play();
+    unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     _reportTimerStop();
   }
@@ -270,10 +321,12 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     });
 
     if (enteringPause) {
+      unawaited(_ambientPlayer.pause());
       unawaited(_notifier.cancelCompletion());
       _showPausedNotification();
       _reportTimerStop();
     } else {
+      unawaited(_ambientPlayer.resume());
       _showRunningNotification(_endsAt!);
     }
 
