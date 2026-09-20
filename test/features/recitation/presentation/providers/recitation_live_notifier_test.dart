@@ -108,9 +108,15 @@ class _Harness {
   }
 }
 
-const _sessionInfo = '{"type":"session_info","event_id":"ev1","is_operator":false}';
+const _sessionInfo =
+    '{"type":"session_info","event_id":"ev1","is_operator":false}';
 
-String _position(String segment, int revision, {String text = 't1', int? round}) =>
+String _position(
+  String segment,
+  int revision, {
+  String text = 't1',
+  int? round,
+}) =>
     '{"type":"position","event_id":"ev1","text_id":"$text",'
     '"segment_id":"$segment","revision":$revision'
     '${round == null ? '' : ',"round_number":$round'}}';
@@ -136,6 +142,23 @@ void main() {
     expect(state.isFollowing, isTrue);
     h.notifier.dispose();
   });
+
+  test(
+    'flags the connect snapshot, but not the operator moving after it',
+    () async {
+      // The reader may not navigate a user off the text they just opened just
+      // because the room was already elsewhere; a later `set` is a real move.
+      final h = _Harness();
+      await h.settle();
+      await h.push(_sessionInfo);
+      await h.push(_position('s1', 10));
+      expect(h.notifier.state.positionIsSnapshot, isTrue);
+
+      await h.push(_position('s2', 11));
+      expect(h.notifier.state.positionIsSnapshot, isFalse);
+      h.notifier.dispose();
+    },
+  );
 
   test('drops frames older than the one it holds', () async {
     final h = _Harness();
@@ -177,25 +200,27 @@ void main() {
     h.notifier.dispose();
   });
 
-  test('session_ended clears the position, shows the notice, and stays down',
-      () async {
-    final h = _Harness();
-    await h.settle();
-    await h.push(_sessionInfo);
-    await h.push(_position('s1', 1));
-    await h.push('{"type":"session_ended"}');
-    expect(h.notifier.state.connection, RecitationLiveConnection.ended);
-    expect(h.notifier.state.position, isNull);
-    expect(h.notifier.state.isVisible, isTrue);
+  test(
+    'session_ended clears the position, shows the notice, and stays down',
+    () async {
+      final h = _Harness();
+      await h.settle();
+      await h.push(_sessionInfo);
+      await h.push(_position('s1', 1));
+      await h.push('{"type":"session_ended"}');
+      expect(h.notifier.state.connection, RecitationLiveConnection.ended);
+      expect(h.notifier.state.position, isNull);
+      expect(h.notifier.state.isVisible, isTrue);
 
-    await h.serverCloses();
-    await h.waitFor(
-      () => h.notifier.state.connection == RecitationLiveConnection.idle,
-    );
-    expect(h.channels, hasLength(1), reason: 'no reconnect after end');
-    expect(h.notifier.state.isVisible, isFalse);
-    h.notifier.dispose();
-  });
+      await h.serverCloses();
+      await h.waitFor(
+        () => h.notifier.state.connection == RecitationLiveConnection.idle,
+      );
+      expect(h.channels, hasLength(1), reason: 'no reconnect after end');
+      expect(h.notifier.state.isVisible, isFalse);
+      h.notifier.dispose();
+    },
+  );
 
   test('a dropped socket reconnects and resyncs from the snapshot', () async {
     final h = _Harness();
@@ -205,8 +230,11 @@ void main() {
 
     await h.serverCloses();
     expect(h.notifier.state.connection, RecitationLiveConnection.reconnecting);
-    expect(h.notifier.state.position?.segmentId, 's1',
-        reason: 'held across the gap');
+    expect(
+      h.notifier.state.position?.segmentId,
+      's1',
+      reason: 'held across the gap',
+    );
     await h.waitForChannels(2);
 
     await h.push(_sessionInfo);
@@ -241,26 +269,28 @@ void main() {
     h.notifier.dispose();
   });
 
-  test('closes before any frame keep reconnecting with growing backoff',
-      () async {
-    final h = _Harness();
-    await h.settle();
-    // An outage that outlasts a few retries must not disable sync for good.
-    for (var i = 1; i <= 4; i++) {
-      await h.serverCloses();
-      expect(
-        h.notifier.state.connection,
-        RecitationLiveConnection.reconnecting,
-      );
-      await h.waitForChannels(i + 1);
-    }
-    expect(h.backoffAttempts, [1, 2, 3, 4]);
+  test(
+    'closes before any frame keep reconnecting with growing backoff',
+    () async {
+      final h = _Harness();
+      await h.settle();
+      // An outage that outlasts a few retries must not disable sync for good.
+      for (var i = 1; i <= 4; i++) {
+        await h.serverCloses();
+        expect(
+          h.notifier.state.connection,
+          RecitationLiveConnection.reconnecting,
+        );
+        await h.waitForChannels(i + 1);
+      }
+      expect(h.backoffAttempts, [1, 2, 3, 4]);
 
-    // Once the server is back, the session resumes as normal.
-    await h.push(_sessionInfo);
-    expect(h.notifier.state.connection, RecitationLiveConnection.connected);
-    h.notifier.dispose();
-  });
+      // Once the server is back, the session resumes as normal.
+      await h.push(_sessionInfo);
+      expect(h.notifier.state.connection, RecitationLiveConnection.connected);
+      h.notifier.dispose();
+    },
+  );
 
   test('a signed-out user gets no socket', () async {
     final h = _Harness(token: null);

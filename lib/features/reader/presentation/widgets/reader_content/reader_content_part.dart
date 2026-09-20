@@ -545,10 +545,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           false;
       if (!inSequence) {
         liveNotifier.setOutOfSync(true);
-      } else if (initial) {
-        // Another text of the sequence on mount means the user navigated
-        // here themselves: stop following rather than bounce them away. Later
-        // it is the operator moving on, and the screen switches text.
+      } else if (initial || live.positionIsSnapshot) {
+        // Another text of the sequence, but this is only where the room
+        // already was — the user navigated here themselves, so stop
+        // following rather than bounce them away. The connect snapshot
+        // usually lands just after the first frame, so it reaches us here
+        // and not through [initial]. Once the operator actually moves on,
+        // the frame is not a snapshot and the screen switches text.
         liveNotifier.pauseFollowing();
       }
       return;
@@ -625,7 +628,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       alignment: ReaderConstants.liveFollowAlignment,
     );
     Future.delayed(
-      ReaderConstants.scrollAnimationDuration + const Duration(milliseconds: 100),
+      ReaderConstants.scrollAnimationDuration +
+          const Duration(milliseconds: 100),
       () {
         _isProgrammaticScroll = false;
         // Pull the next page in at the operator's pace, not the user's.
@@ -644,7 +648,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (!ref.read(recitationLiveProvider(eventId)).isFollowing) return;
 
     final visible = _itemPositionsListener.itemPositions.value.any(
-      (p) => p.index == liveIndex && p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1,
+      (p) =>
+          p.index == liveIndex &&
+          p.itemTrailingEdge > 0 &&
+          p.itemLeadingEdge < 1,
     );
     if (!visible) {
       ref.read(recitationLiveProvider(eventId).notifier).pauseFollowing();
@@ -764,11 +771,18 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         unawaited(
-          _applyLive(ref.read(recitationLiveProvider(liveEventId)), initial: true),
+          _applyLive(
+            ref.read(recitationLiveProvider(liveEventId)),
+            initial: true,
+          ),
         );
       });
     }
-    final liveSegmentId = _resolveLiveHighlight(content, livePosition, liveMode);
+    final liveSegmentId = _resolveLiveHighlight(
+      content,
+      livePosition,
+      liveMode,
+    );
 
     // Collapsed view: render only the active segments + a "Read Full Text"
     // footer. The extra trailing item is the footer.

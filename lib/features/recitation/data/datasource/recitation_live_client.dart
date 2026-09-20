@@ -35,7 +35,17 @@ class RecitationLivePong extends RecitationLiveEvent {
 class RecitationLiveError extends RecitationLiveEvent {
   final String code;
   final String message;
-  const RecitationLiveError({required this.code, required this.message});
+
+  /// Set when the frame itself already settles the question, whatever the
+  /// code says: a connect rejection body often carries only `detail`, but
+  /// the socket is closing behind it either way.
+  final bool? fatalOverride;
+
+  const RecitationLiveError({
+    required this.code,
+    required this.message,
+    this.fatalOverride,
+  });
 
   /// Codes that mean this socket will never serve positions: a rejected
   /// token, no such event, or an unpublished group. Not worth retrying.
@@ -48,7 +58,7 @@ class RecitationLiveError extends RecitationLiveEvent {
     '404',
   };
 
-  bool get isFatal => fatalCodes.contains(code.toUpperCase());
+  bool get isFatal => fatalOverride ?? fatalCodes.contains(code.toUpperCase());
 }
 
 class RecitationLiveUnknown extends RecitationLiveEvent {
@@ -91,11 +101,15 @@ class RecitationLiveClient {
     if (decoded is! Map) return null;
     final json = Map<String, dynamic>.from(decoded);
     final type = json['type'] as String? ?? '';
-    // A rejected connect can arrive as a bare `{"detail": ...}` body.
+    // A rejected connect can arrive as a bare `{"detail": ...}` body, and
+    // normally carries no code at all. The server only sends one to refuse
+    // us, so it is fatal on its shape alone — reading a code that is not
+    // there would leave us reconnecting into the same refusal forever.
     if (type.isEmpty && json['detail'] != null) {
       return RecitationLiveError(
         code: (json['code'] ?? json['status'] ?? '').toString(),
         message: json['detail'].toString(),
+        fatalOverride: true,
       );
     }
     return switch (type) {

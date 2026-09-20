@@ -107,10 +107,23 @@ void main() {
 
     test('a bare detail body on connect is an error', () {
       final event =
-          RecitationLiveClient.parseFrame('{"detail":"Not found","status":404}')!
+          RecitationLiveClient.parseFrame(
+                '{"detail":"Not found","status":404}',
+              )!
               as RecitationLiveError;
       expect(event.code, '404');
       expect(event.message, 'Not found');
+      expect(event.isFatal, isTrue);
+    });
+
+    test('a rejection body carrying only detail is still fatal', () {
+      // The usual shape: no code, no status. Treating it as recoverable
+      // reconnects into the same refusal for as long as the reader is open.
+      final event =
+          RecitationLiveClient.parseFrame('{"detail":"Not authorized"}')!
+              as RecitationLiveError;
+      expect(event.code, isEmpty);
+      expect(event.message, 'Not authorized');
       expect(event.isFatal, isTrue);
     });
 

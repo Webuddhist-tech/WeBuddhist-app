@@ -47,6 +47,12 @@ class RecitationLiveState {
   /// re-scrolls even when [position] itself did not change.
   final int followRequest;
 
+  /// [position] came from the frame the server sends on connect — where the
+  /// room already was — rather than from the operator moving just now. The
+  /// reader must not navigate a user away from a text they just opened on
+  /// the strength of it.
+  final bool positionIsSnapshot;
+
   const RecitationLiveState({
     this.connection = RecitationLiveConnection.idle,
     this.followMode = RecitationLiveFollowMode.following,
@@ -54,6 +60,7 @@ class RecitationLiveState {
     this.isOperator = false,
     this.outOfSync = false,
     this.followRequest = 0,
+    this.positionIsSnapshot = false,
   });
 
   bool get isFollowing => followMode == RecitationLiveFollowMode.following;
@@ -75,6 +82,7 @@ class RecitationLiveState {
     bool? outOfSync,
     int? followRequest,
     bool clearPosition = false,
+    bool? positionIsSnapshot,
   }) {
     return RecitationLiveState(
       connection: connection ?? this.connection,
@@ -83,6 +91,10 @@ class RecitationLiveState {
       isOperator: isOperator ?? this.isOperator,
       outOfSync: outOfSync ?? this.outOfSync,
       followRequest: followRequest ?? this.followRequest,
+      positionIsSnapshot:
+          clearPosition
+              ? false
+              : (positionIsSnapshot ?? this.positionIsSnapshot),
     );
   }
 
@@ -95,7 +107,8 @@ class RecitationLiveState {
         other.position == position &&
         other.isOperator == isOperator &&
         other.outOfSync == outOfSync &&
-        other.followRequest == followRequest;
+        other.followRequest == followRequest &&
+        other.positionIsSnapshot == positionIsSnapshot;
   }
 
   @override
@@ -106,6 +119,7 @@ class RecitationLiveState {
     isOperator,
     outOfSync,
     followRequest,
+    positionIsSnapshot,
   );
 }
 
@@ -161,16 +175,15 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
   bool _connecting = false;
   bool _stopped = false;
   bool _suspended = false;
+
+  /// Between `session_info` and the position frame that may follow it.
+  bool _awaitingSnapshot = false;
   bool _disposed = false;
 
   /// Never throws: the reconnect timer and the lifecycle observer call this
   /// without an error handler.
   Future<void> connect() async {
-    if (_disposed ||
-        _stopped ||
-        _suspended ||
-        _client != null ||
-        _connecting) {
+    if (_disposed || _stopped || _suspended || _client != null || _connecting) {
       return;
     }
     // Set before the first await so a racing caller backs off instead of
@@ -242,18 +255,26 @@ class RecitationLiveNotifier extends StateNotifier<RecitationLiveState>
         );
         // The snapshot, if the room has one, follows right behind. When none
         // comes, a position kept across a reconnect is stale.
+        _awaitingSnapshot = true;
         _snapshotTimer?.cancel();
         _snapshotTimer = Timer(snapshotGrace, () {
+          _awaitingSnapshot = false;
           if (_disposed || state.position == null) return;
           state = state.copyWith(clearPosition: true, outOfSync: false);
         });
       case RecitationLivePositionEvent(position: final position):
         _snapshotTimer?.cancel();
+        // The frame that follows `session_info` is where the room already
+        // was, not the operator moving now — the reader treats the two
+        // differently when it lands on another text.
+        final isSnapshot = _awaitingSnapshot;
+        _awaitingSnapshot = false;
         if (!position.isValid || !position.isNewerThan(state.position)) return;
         state = state.copyWith(
           connection: RecitationLiveConnection.connected,
           position: position,
           outOfSync: false,
+          positionIsSnapshot: isSnapshot,
         );
       case RecitationLiveSessionEnded():
         _snapshotTimer?.cancel();

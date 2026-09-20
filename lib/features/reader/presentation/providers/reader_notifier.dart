@@ -233,13 +233,18 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// position outside what pagination has fetched. False when the text does
   /// not have that segment (or the fetch failed), so the caller can report
   /// being out of sync instead of jumping.
+  ///
+  /// [segmentId] is the operator's, so in another language it never matches
+  /// this version's ids literally — both checks resolve through the
+  /// segments' `mappings` so a viewer reading English keeps following an
+  /// operator clicking through Tibetan past the loaded page.
   Future<bool> jumpToSegment(String segmentId) async {
     if (_isDisposed) return false;
-    if (state.content?.containsSegment(segmentId) ?? false) return true;
+    if (state.content?.resolveSegmentIndex(segmentId) != null) return true;
     try {
       final window = await _fetchWindow(segmentId: segmentId);
       if (_isDisposed) return false;
-      if (!window.content.containsSegment(segmentId)) return false;
+      if (window.content.resolveSegmentIndex(segmentId) == null) return false;
       final response = window.response;
       state = state.copyWith(
         content: window.content,
@@ -330,19 +335,14 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       try {
         final versions = await _ref.read(
           readerVersionsProvider(
-            ReaderLanguageQuery(
-              textId: _params.textId,
-              language: language,
-            ),
+            ReaderLanguageQuery(textId: _params.textId, language: language),
           ).future,
         );
         if (versions.isNotEmpty) {
           final id = versions.first.id.trim();
           if (id.isNotEmpty) {
             _resolvedLanguageTextId = id;
-            _logger.debug(
-              'Resolved chant language "$language" to text_id $id',
-            );
+            _logger.debug('Resolved chant language "$language" to text_id $id');
             return id;
           }
         }

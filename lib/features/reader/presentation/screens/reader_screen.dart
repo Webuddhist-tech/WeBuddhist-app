@@ -341,6 +341,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     final position = next.position;
     if (position == null || !next.isFollowing) return;
+    // Where the room already was is not the operator moving on: leave the
+    // user on the text they opened. The content part pauses following for
+    // them instead.
+    if (next.positionIsSnapshot) return;
     final positionChanged = previous?.position != position;
     final followRequested = previous?.followRequest != next.followRequest;
     if (positionChanged || followRequested) _maybeSwitchLiveText(position);
@@ -368,10 +372,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       (item) => item.isSourceReference && item.textId == position.textId,
     );
     if (index < 0) return;
-    final newContext = const NavigationService().createNavigationContextForIndex(
-      navContext,
-      index,
-    );
+    final newContext = const NavigationService()
+        .createNavigationContextForIndex(navContext, index);
     if (newContext == null) return;
 
     _isAdvancing = true;
@@ -732,7 +734,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _audioController?.cancel();
     _invalidatePlanProviders();
     if (_isGroupAccumulatorChant && !_chantSessionFinished) {
-      unawaited(ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave));
+      unawaited(
+        ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave),
+      );
     }
     PlanNavigator.pop(context);
   }
