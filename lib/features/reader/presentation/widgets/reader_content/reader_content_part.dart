@@ -545,15 +545,19 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           false;
       if (!inSequence) {
         liveNotifier.setOutOfSync(true);
-      } else if (initial || live.positionIsSnapshot) {
-        // Another text of the sequence, but this is only where the room
-        // already was — the user navigated here themselves, so stop
-        // following rather than bounce them away. The connect snapshot
-        // usually lands just after the first frame, so it reaches us here
-        // and not through [initial]. Once the operator actually moves on,
-        // the frame is not a snapshot and the screen switches text.
+      } else if (initial) {
+        // Another text of the sequence, already live before this screen had
+        // rendered: the user navigated here themselves, so stop following
+        // rather than bounce them away.
         liveNotifier.pauseFollowing();
       }
+      // A snapshot on another text falls through: the screen leaves the user
+      // where they are (reader_screen skips the switch for it) but keeps
+      // following, so the operator's next move carries them along. Nothing
+      // marks a frame as the connect snapshot, so it is inferred from
+      // arriving before the grace window closes — an operator's first move
+      // into that window looks identical. Pausing here would strand such a
+      // user off the recitation until they re-armed Sync by hand.
       return;
     }
     if (!live.isFollowing) return;
