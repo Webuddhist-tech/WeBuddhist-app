@@ -147,64 +147,22 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
-      final response = await _fetchContent(
+      final window = await _fetchWindow(
         segmentId: initialSegmentId,
-        direction: 'next',
         size: initialSize,
       );
+      if (_isDisposed) return;
+      final response = window.response;
       _logger.debug('ReaderNotifier initialized with response: $response');
-
-      if (_isDisposed) return;
-
-      // Flatten the content
-      var flattenedContent = _flattener.flatten(response.content.sections);
-      var hasPreviousPage = response.currentSegmentPosition > 1;
-
-      // Pre-load previous page when target is near the top so the widget
-      // receives content with the target already at a stable index.
-      if (hasPreviousPage && initialSegmentId != null) {
-        final targetIndex = flattenedContent.getSegmentIndex(initialSegmentId);
-        if (targetIndex != null &&
-            targetIndex <= ReaderConstants.previousLoadThreshold) {
-          _logger.debug(
-            'Pre-loading previous page during init (target at index $targetIndex)',
-          );
-          final firstSegmentId = flattenedContent.firstSegmentId;
-          if (firstSegmentId != null) {
-            try {
-              final prevResponse = await _fetchContent(
-                segmentId: firstSegmentId,
-                direction: 'previous',
-              );
-              if (!_isDisposed) {
-                flattenedContent = _merger.merge(
-                  flattenedContent,
-                  prevResponse.content.sections,
-                  PaginationDirection.previous,
-                );
-                hasPreviousPage = prevResponse.currentSegmentPosition > 1;
-                _logger.debug(
-                  'Pre-loaded previous page during init. Total items: ${flattenedContent.itemCount}',
-                );
-              }
-            } catch (e) {
-              // Graceful fallback — widget will load via normal pagination
-              _logger.debug('Pre-load previous page failed, skipping: $e');
-            }
-          }
-        }
-      }
-
-      if (_isDisposed) return;
 
       state = state.copyWith(
         status: ReaderStatus.loaded,
         textDetail: response.textDetail,
-        content: flattenedContent,
+        content: window.content,
         currentSegmentPosition: response.currentSegmentPosition,
         totalSegments: response.totalSegments,
         hasNextPage: response.currentSegmentPosition < response.totalSegments,
-        hasPreviousPage: hasPreviousPage,
+        hasPreviousPage: window.hasPreviousPage,
       );
 
       // `version_id` in this API is just the loaded text's id. Capture it so
@@ -223,6 +181,84 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
         status: ReaderStatus.error,
         errorMessage: e.toString(),
       );
+    }
+  }
+
+  /// The page at [segmentId] (the first page when null). When the target sits
+  /// near the top, the previous page is merged in first so the widget gets
+  /// it at a stable index. Throws when the page itself cannot be fetched.
+  Future<_ContentWindow> _fetchWindow({String? segmentId, int? size}) async {
+    final response = await _fetchContent(
+      segmentId: segmentId,
+      direction: 'next',
+      size: size,
+    );
+    var content = _flattener.flatten(response.content.sections);
+    var hasPreviousPage = response.currentSegmentPosition > 1;
+
+    if (hasPreviousPage && segmentId != null && !_isDisposed) {
+      final targetIndex = content.getSegmentIndex(segmentId);
+      final firstSegmentId = content.firstSegmentId;
+      if (targetIndex != null &&
+          targetIndex <= ReaderConstants.previousLoadThreshold &&
+          firstSegmentId != null) {
+        try {
+          final prevResponse = await _fetchContent(
+            segmentId: firstSegmentId,
+            direction: 'previous',
+          );
+          if (!_isDisposed) {
+            content = _merger.merge(
+              content,
+              prevResponse.content.sections,
+              PaginationDirection.previous,
+            );
+            hasPreviousPage = prevResponse.currentSegmentPosition > 1;
+          }
+        } catch (e) {
+          // Graceful fallback — the widget loads it via normal pagination.
+          _logger.debug('Pre-load previous page failed, skipping: $e');
+        }
+      }
+    }
+
+    return _ContentWindow(
+      response: response,
+      content: content,
+      hasPreviousPage: hasPreviousPage,
+    );
+  }
+
+  /// Replaces the loaded window with the page around [segmentId], for a live
+  /// position outside what pagination has fetched. False when the text does
+  /// not have that segment (or the fetch failed), so the caller can report
+  /// being out of sync instead of jumping.
+  ///
+  /// [segmentId] is the operator's, so in another language it never matches
+  /// this version's ids literally — both checks resolve through the
+  /// segments' `mappings` so a viewer reading English keeps following an
+  /// operator clicking through Tibetan past the loaded page.
+  Future<bool> jumpToSegment(String segmentId) async {
+    if (_isDisposed) return false;
+    if (state.content?.resolveSegmentIndex(segmentId) != null) return true;
+    try {
+      final window = await _fetchWindow(segmentId: segmentId);
+      if (_isDisposed) return false;
+      if (window.content.resolveSegmentIndex(segmentId) == null) return false;
+      final response = window.response;
+      state = state.copyWith(
+        content: window.content,
+        currentSegmentPosition: response.currentSegmentPosition,
+        totalSegments: response.totalSegments,
+        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasPreviousPage: window.hasPreviousPage,
+        isLoadingNext: false,
+        isLoadingPrevious: false,
+      );
+      return true;
+    } catch (e) {
+      _logger.debug('Jump to segment $segmentId failed: $e');
+      return false;
     }
   }
 
@@ -299,19 +335,14 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       try {
         final versions = await _ref.read(
           readerVersionsProvider(
-            ReaderLanguageQuery(
-              textId: _params.textId,
-              language: language,
-            ),
+            ReaderLanguageQuery(textId: _params.textId, language: language),
           ).future,
         );
         if (versions.isNotEmpty) {
           final id = versions.first.id.trim();
           if (id.isNotEmpty) {
             _resolvedLanguageTextId = id;
-            _logger.debug(
-              'Resolved chant language "$language" to text_id $id',
-            );
+            _logger.debug('Resolved chant language "$language" to text_id $id');
             return id;
           }
         }
@@ -614,6 +645,19 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     _highlightTimer?.cancel();
     super.dispose();
   }
+}
+
+/// One fetched page, flattened, with the previous page merged when needed.
+class _ContentWindow {
+  final ReaderResponse response;
+  final FlattenedContent content;
+  final bool hasPreviousPage;
+
+  const _ContentWindow({
+    required this.response,
+    required this.content,
+    required this.hasPreviousPage,
+  });
 }
 
 /// Provider for reader notifier

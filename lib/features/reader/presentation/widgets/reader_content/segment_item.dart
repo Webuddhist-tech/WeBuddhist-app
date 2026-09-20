@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -13,6 +14,9 @@ class SegmentItem extends ConsumerWidget {
   final String language;
   final bool isSelected;
   final bool isGreyedOut;
+
+  /// The line the puja leader is on right now.
+  final bool isLive;
   final VoidCallback? onTap;
 
   const SegmentItem({
@@ -22,6 +26,7 @@ class SegmentItem extends ConsumerWidget {
     required this.language,
     this.isSelected = false,
     this.isGreyedOut = false,
+    this.isLive = false,
     this.onTap,
   });
 
@@ -38,10 +43,9 @@ class SegmentItem extends ConsumerWidget {
         key: Key(segment.segmentId),
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
+        // Square-edged so the tint reads as a band across the page.
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(
-            ReaderConstants.segmentBorderRadius,
-          ),
+          color: isLive ? liveSegmentHighlightColor(context) : null,
         ),
         child: Material(
           color: Colors.transparent,
@@ -84,3 +88,9 @@ class SegmentItem extends ConsumerWidget {
     );
   }
 }
+
+/// Tint behind the live recitation line, per theme.
+Color liveSegmentHighlightColor(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+        ? AppColors.liveSegmentHighlightDark
+        : AppColors.liveSegmentHighlight;

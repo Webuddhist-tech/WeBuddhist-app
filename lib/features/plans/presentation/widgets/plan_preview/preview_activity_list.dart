@@ -26,6 +26,10 @@ class PreviewActivityList extends ConsumerWidget {
   final int? dayNumber;
   final String? dayAudioUrl;
 
+  /// The group event this plan was opened from, so the reader follows its
+  /// live recitation.
+  final String? eventId;
+
   const PreviewActivityList({
     super.key,
     required this.language,
@@ -36,6 +40,7 @@ class PreviewActivityList extends ConsumerWidget {
     this.planId,
     this.dayNumber,
     this.dayAudioUrl,
+    this.eventId,
   });
 
   List<PlanTasksModel> get _sortedTasks {
@@ -124,7 +129,12 @@ class PreviewActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
-      openGroupAccumulatorPractice(context, ref, accumulatorId: accumulatorId);
+      openGroupAccumulatorPractice(
+        context,
+        ref,
+        accumulatorId: accumulatorId,
+        eventId: eventId,
+      );
       return;
     }
 
@@ -148,6 +158,7 @@ class PreviewActivityList extends ConsumerWidget {
       currentTextIndex: index,
       autoPlay: autoPlay,
       dayAudioUrl: dayAudioUrl,
+      eventId: eventId,
     );
 
     PlanNavigator.push(context, target, navigationContext);

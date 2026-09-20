@@ -28,6 +28,10 @@ class ReaderConstants {
   static const Duration instantScrollDuration = Duration(milliseconds: 1);
   static const double scrollToSegmentAlignment = 0.0; // 30% from top
 
+  /// Where the live recitation line lands in the viewport: a little below
+  /// the top so the lines just read stay visible above it.
+  static const double liveFollowAlignment = 0.18;
+
   // Highlight durations by source
   static const Duration planHighlightDuration = Duration(seconds: 3);
   static const Duration searchHighlightDuration = Duration(seconds: 2);

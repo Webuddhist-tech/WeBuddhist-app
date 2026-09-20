@@ -2973,4 +2973,10 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get event_prayer_praying => 'प्रार्थना गर्दै';
+
+  @override
+  String get recitation_live_sync => 'Sync';
+
+  @override
+  String get recitation_live_session_ended => 'The live session has ended';
 }

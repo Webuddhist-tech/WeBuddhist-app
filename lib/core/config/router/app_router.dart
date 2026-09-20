@@ -606,6 +606,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final plan = extra?['plan'] as Plan?;
           final seriesId = extra?['seriesId'] as String?;
           final selectedDay = extra?['selectedDay'] as int?;
+          final eventId = extra?['eventId'] as String?;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -613,6 +614,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             plan: plan,
             seriesId: seriesId,
             initialDay: selectedDay,
+            eventId: eventId,
           );
         },
       ),
@@ -770,6 +772,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   extra['groupAccumulatorSessionCount'] as int?,
               language: extra['language'] as String?,
               collectionId: extra['collectionId'] as String?,
+              eventId: extra['eventId'] as String?,
             );
           } else if (segmentId != null && segmentId.isNotEmpty) {
             navigationContext = NavigationContext(
