@@ -702,7 +702,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final secondaryActive =
         dualSettings.secondaryEnabled && secondaryVersionId != null;
     // "Translation only": the original can hide behind an active translation,
-    // never on its own.
+    // never on its own — and each verse still shows it until that verse's
+    // translation has actually arrived (see interlinearLayers).
     final showOriginal = dualSettings.originalVisible || !secondaryActive;
     // Secondary's path follows the primary's effective text_id — when the
     // user changes the primary version, the secondary re-keys to fetch its

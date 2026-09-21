@@ -13,6 +13,18 @@ import 'package:flutter_pecha/features/texts/presentation/segment_html_widget.da
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Which lines a verse draws in the dual layout. "Translation only"
+/// ([showOriginal] false) still draws the original wherever there is no
+/// translation to show — still loading, failed to load, or no aligned line
+/// for this verse — so the page never turns into a column of placeholders.
+({bool original, bool translation}) interlinearLayers({
+  required bool showOriginal,
+  required bool hasTranslation,
+}) => (
+  original: showOriginal || !hasTranslation,
+  translation: showOriginal || hasTranslation,
+);
+
 class InterlinearSegmentItem extends ConsumerWidget {
   const InterlinearSegmentItem({
     super.key,
@@ -37,6 +49,8 @@ class InterlinearSegmentItem extends ConsumerWidget {
 
   /// False for "translation only": the primary line is left out and the
   /// translation is drawn as the main text rather than in the muted tone.
+  /// A verse with no translation to show keeps its primary line
+  /// ([interlinearLayers]).
   final bool showPrimary;
   final ReaderSlotConfig secondarySlot;
 
@@ -63,13 +77,17 @@ class InterlinearSegmentItem extends ConsumerWidget {
       language: primaryLanguage,
     );
     final secondary = _resolveSecondaryContent(context);
+    final layers = interlinearLayers(
+      showOriginal: showPrimary,
+      hasTranslation: !secondary.isPlaceholder,
+    );
 
     // Per Figma: the secondary (parallel) version uses a fixed muted tone that
     // differs per theme so it reads as supporting text beneath the primary.
     // Without a primary it is the text, so it takes the default colour.
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color? secondaryColor =
-        !showPrimary
+        !layers.original
             ? null
             : isDark
             ? const Color(0xFFE0E0E0)
@@ -112,8 +130,8 @@ class InterlinearSegmentItem extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (showPrimary) ...[
-                        SegmentHtmlWidget(
+                        if (layers.original) ...[
+                          SegmentHtmlWidget(
                             htmlContent: primary.html,
                             segmentIndex: segment.segmentNumber,
                             fontSize: fontSize,
@@ -121,17 +139,17 @@ class InterlinearSegmentItem extends ConsumerWidget {
                             isSelected: isSelected,
                           ),
                           // Original and its translation belong together; the
-                        // larger gap goes between verses, below.
-                        const SizedBox(height: 6),
+                          // larger gap goes between verses, below.
+                          if (layers.translation) const SizedBox(height: 6),
                         ],
-                      if (secondary.isPlaceholder)
+                        if (layers.translation && secondary.isPlaceholder)
                           _SecondaryPlaceholder(
                             text: secondary.text,
                             language: secondarySlot.languageCode,
                             fontSize: fontSize,
                             color: secondaryColor,
                           )
-                        else
+                        else if (layers.translation)
                           SegmentHtmlWidget(
                             htmlContent: secondary.text,
                             segmentIndex: segment.segmentNumber,

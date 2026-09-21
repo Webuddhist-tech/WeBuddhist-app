@@ -15,6 +15,9 @@ class ReaderSecondaryEnabledNotifier extends StateNotifier<bool> {
   final LocalStorageService _storage;
   late final Future<void> _loadFuture;
 
+  /// Set by the first real change, so a slower startup read cannot revert it.
+  bool _edited = false;
+
   /// Resolves once the persisted value has been read (or determined absent).
   Future<void> get loaded => _loadFuture;
 
@@ -22,12 +25,13 @@ class ReaderSecondaryEnabledNotifier extends StateNotifier<bool> {
     final stored = await _storage.get<bool>(
       StorageKeys.readerSecondaryEnabled,
     );
-    if (stored == null || !mounted) return;
+    if (stored == null || !mounted || _edited) return;
     state = stored;
   }
 
   void setEnabled(bool enabled) {
     if (state == enabled) return;
+    _edited = true;
     state = enabled;
     _storage.set<bool>(StorageKeys.readerSecondaryEnabled, enabled);
   }
@@ -53,17 +57,21 @@ class ReaderOriginalVisibleNotifier extends StateNotifier<bool> {
   final LocalStorageService _storage;
   late final Future<void> _loadFuture;
 
+  /// Set by the first real change, so a slower startup read cannot revert it.
+  bool _edited = false;
+
   /// Resolves once the persisted value has been read (or determined absent).
   Future<void> get loaded => _loadFuture;
 
   Future<void> _load() async {
     final stored = await _storage.get<bool>(StorageKeys.readerOriginalVisible);
-    if (stored == null || !mounted) return;
+    if (stored == null || !mounted || _edited) return;
     state = stored;
   }
 
   void setVisible(bool visible) {
     if (state == visible) return;
+    _edited = true;
     state = visible;
     _storage.set<bool>(StorageKeys.readerOriginalVisible, visible);
   }

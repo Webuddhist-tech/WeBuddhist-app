@@ -69,4 +69,41 @@ void main() {
     notifier().setScript('pi', null);
     expect(storage.values, isEmpty, reason: 'clearing twice is a no-op');
   });
+
+  test('a pick made before the load survives it and keeps the other '
+      'languages', () async {
+    storage.values[StorageKeys.readerScriptPreference] =
+        '{"pi":"si","bo":"phonetic"}';
+    final n = notifier();
+
+    n.setScript('pi', 'th');
+    expect(container.read(readerScriptPreferenceProvider), {'pi': 'th'});
+    expect(
+      storage.values[StorageKeys.readerScriptPreference],
+      '{"pi":"si","bo":"phonetic"}',
+      reason: 'no write before the stored picks are known',
+    );
+
+    await n.loaded;
+
+    const expected = {'pi': 'th', 'bo': 'phonetic'};
+    expect(container.read(readerScriptPreferenceProvider), expected);
+    expect(
+      ReaderScriptPreferenceNotifier.decode(
+        storage.values[StorageKeys.readerScriptPreference]! as String,
+      ),
+      expected,
+    );
+  });
+
+  test('clearing a pick before the load clears the stored one', () async {
+    storage.values[StorageKeys.readerScriptPreference] = '{"pi":"si"}';
+    final n = notifier();
+
+    n.setScript('pi', null);
+    await n.loaded;
+
+    expect(container.read(readerScriptPreferenceProvider), isEmpty);
+    expect(storage.values[StorageKeys.readerScriptPreference], '{}');
+  });
 }

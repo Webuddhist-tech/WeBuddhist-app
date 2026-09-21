@@ -24,6 +24,12 @@ class ReaderScriptPreferenceNotifier extends StateNotifier<Map<String, String>> 
 
   final LocalStorageService _storage;
   late final Future<void> _loadFuture;
+  bool _loaded = false;
+
+  /// Picks made before the stored ones arrived (null clears). Layered over
+  /// the stored map once it loads, so the load neither reverts them nor lets
+  /// an early write drop the other languages' picks.
+  final Map<String, String?> _pendingPicks = {};
 
   /// Resolves once the persisted value has been read (or determined absent).
   Future<void> get loaded => _loadFuture;
@@ -32,8 +38,23 @@ class ReaderScriptPreferenceNotifier extends StateNotifier<Map<String, String>> 
     final stored = await _storage.get<String>(
       StorageKeys.readerScriptPreference,
     );
-    if (stored == null || !mounted) return;
-    state = decode(stored);
+    _loaded = true;
+    if (!mounted) return;
+    if (_pendingPicks.isEmpty) {
+      if (stored != null) state = decode(stored);
+      return;
+    }
+    final merged = <String, String>{if (stored != null) ...decode(stored)};
+    for (final MapEntry(:key, :value) in _pendingPicks.entries) {
+      if (value == null) {
+        merged.remove(key);
+      } else {
+        merged[key] = value;
+      }
+    }
+    _pendingPicks.clear();
+    state = merged;
+    _persist(merged);
   }
 
   static Map<String, String> decode(String source) {
@@ -54,6 +75,8 @@ class ReaderScriptPreferenceNotifier extends StateNotifier<Map<String, String>> 
   /// Picks [scriptId] for [languageCode]; null shows the text as written.
   void setScript(String languageCode, String? scriptId) {
     final key = TransliterationService.normalizeLanguage(languageCode);
+    // Recorded even when it looks like a no-op: the state is still empty.
+    if (!_loaded) _pendingPicks[key] = scriptId;
     final next = Map<String, String>.from(state);
     if (scriptId == null) {
       if (next.remove(key) == null) return;
@@ -62,7 +85,11 @@ class ReaderScriptPreferenceNotifier extends StateNotifier<Map<String, String>> 
       next[key] = scriptId;
     }
     state = next;
-    _storage.set<String>(StorageKeys.readerScriptPreference, jsonEncode(next));
+    if (_loaded) _persist(next);
+  }
+
+  void _persist(Map<String, String> picks) {
+    _storage.set<String>(StorageKeys.readerScriptPreference, jsonEncode(picks));
   }
 }
 

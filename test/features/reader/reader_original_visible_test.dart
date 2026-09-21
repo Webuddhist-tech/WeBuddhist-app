@@ -2,6 +2,7 @@ import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,6 +47,56 @@ void main() {
 
       notifier.setVisible(true);
       expect(storage.values[StorageKeys.readerOriginalVisible], isTrue);
+    });
+
+    test('a change made before the load is not reverted by it', () async {
+      storage.values[StorageKeys.readerOriginalVisible] = true;
+      storage.values[StorageKeys.readerSecondaryEnabled] = false;
+      final original = container.read(readerOriginalVisibleProvider.notifier);
+      final secondary = container.read(
+        readerSecondaryEnabledProvider.notifier,
+      );
+
+      original.setVisible(false);
+      secondary.setEnabled(true);
+      await Future.wait([original.loaded, secondary.loaded]);
+
+      expect(container.read(readerOriginalVisibleProvider), isFalse);
+      expect(container.read(readerSecondaryEnabledProvider), isTrue);
+      expect(storage.values[StorageKeys.readerOriginalVisible], isFalse);
+      expect(storage.values[StorageKeys.readerSecondaryEnabled], isTrue);
+    });
+  });
+
+  group('interlinearLayers', () {
+    test('both layers while the original is shown', () {
+      for (final hasTranslation in [true, false]) {
+        final layers = interlinearLayers(
+          showOriginal: true,
+          hasTranslation: hasTranslation,
+        );
+        expect(layers.original, isTrue);
+        expect(layers.translation, isTrue);
+      }
+    });
+
+    test('translation only draws the translation when there is one', () {
+      final layers = interlinearLayers(
+        showOriginal: false,
+        hasTranslation: true,
+      );
+      expect(layers.original, isFalse);
+      expect(layers.translation, isTrue);
+    });
+
+    test('translation only falls back to the original while the translation '
+        'is loading, failed or missing for the verse', () {
+      final layers = interlinearLayers(
+        showOriginal: false,
+        hasTranslation: false,
+      );
+      expect(layers.original, isTrue, reason: 'never an empty verse');
+      expect(layers.translation, isFalse, reason: 'no placeholder instead');
     });
   });
 
