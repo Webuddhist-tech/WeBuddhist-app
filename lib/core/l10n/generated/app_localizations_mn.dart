@@ -966,6 +966,15 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_attending => 'Оролцож байна';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count оролцогч';
   }
@@ -1664,6 +1673,15 @@ class AppLocalizationsMn extends AppLocalizations {
   String get parallel_version => 'Зэрэгцээ хувилбар';
 
   @override
+  String get reader_languages_title => 'Хэл';
+
+  @override
+  String get reader_original_label => 'Эх бичвэр';
+
+  @override
+  String get reader_translation_label => 'Орчуулга';
+
+  @override
   String get version_not_available => 'Байхгүй';
 
   @override
@@ -2013,6 +2031,43 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_invite => 'Урих';
 
   @override
+  String get group_notifications_title => 'Notifications';
+
+  @override
+  String get group_notifications_chat => 'Group chat';
+
+  @override
+  String get group_notifications_content => 'Group content';
+
+  @override
+  String get group_notifications_master_off =>
+      'Notifications are turned off for the app.';
+
+  @override
+  String get group_notifications_open_settings => 'Turn on';
+
+  @override
+  String get group_notifications_update_failed =>
+      'Couldn\'t update notification settings. Try again.';
+
+  @override
+  String get group_notifications_load_failed =>
+      'Couldn\'t load notification settings.';
+
+  @override
+  String get group_leave => 'Leave group';
+
+  @override
+  String get group_leave_confirm_title => 'Leave group?';
+
+  @override
+  String get group_leave_confirm_message =>
+      'You\'ll stop getting messages and updates from this group.';
+
+  @override
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+
+  @override
   String get group_request_to_join => 'Нэгдэх хүсэлт илгээх';
 
   @override
@@ -2242,6 +2297,11 @@ class AppLocalizationsMn extends AppLocalizations {
       'Надад WeBuddhist дээрх энэ шүлэг таалагдсан тул тантай хуваалцахыг хүссэн.';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'Би WeBuddhist дээрх энэ тоолуурыг ашиглаж байгаа бөгөөд тантай хуваалцахыг хүссэн. Хаана ч байсан дадлагажуулахад хялбар арга юм.';
 
@@ -2415,6 +2475,12 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get player_forward_10 => '10 секунд урагшлуулах';
+
+  @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
 
   @override
   String get session_plans_load_error =>
@@ -2662,17 +2728,47 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_chat_delete_title => 'Мессежийг устгах уу?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'Энэ мессеж энэ чат дахь бүх хүний хувьд устгагдана.';
+  String group_chat_delete_title_many(int count) {
+    return '$count мессежийг устгах уу?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'Бүгдээс устгах';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Эдгээр мессежүүд чатаас бүх хүний хувьд устгагдана.',
+      one: 'Энэ мессеж чатаас бүх хүний хувьд устгагдана.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'Мессежийг устгаж чадсангүй.';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count мессежийг устгаж чадсангүй.',
+      one: 'Мессежийг устгаж чадсангүй.',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => 'Та энэ мессежийг устгасан';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Мессежүүд устгагдлаа',
+      one: 'Мессеж устгагдлаа',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'Та хамгийн ихдээ $count мессеж сонгох боломжтой';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'Энэ мессежийг устгасан';
@@ -2837,4 +2933,47 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'Залбирлын хүсэлт';
+
+  @override
+  String get event_prayer_empty_title => 'Одоогоор залбирлын хүсэлт алга';
+
+  @override
+  String get event_prayer_empty_body =>
+      'Таны болон нийгэмлэгийн хүсэлт энд харагдана';
+
+  @override
+  String get event_prayer_add => 'Залбирлын хүсэлт нэмэх';
+
+  @override
+  String get event_prayer_hint =>
+      'Өнөөдөр бид таны төлөө юуны төлөө залбирах вэ';
+
+  @override
+  String get event_prayer_load_failed =>
+      'Залбирлын хүсэлтийг ачаалж чадсангүй.';
+
+  @override
+  String get event_prayer_closed =>
+      'Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.';
+
+  @override
+  String get event_prayer_pray => 'Залбирах';
+
+  @override
+  String get event_prayer_praying => 'Залбирч байна';
+
+  @override
+  String get recitation_live_sync => 'Sync';
+
+  @override
+  String get recitation_live_session_ended => 'The live session has ended';
 }

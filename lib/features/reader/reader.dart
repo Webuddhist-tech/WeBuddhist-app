@@ -40,8 +40,8 @@ export 'presentation/screens/reader_screen.dart';
 // Presentation - Widgets
 export 'presentation/widgets/reader_app_bar/reader_app_bar.dart';
 export 'presentation/widgets/reader_app_bar/reader_font_size_button.dart';
+export 'presentation/widgets/reader_app_bar/reader_languages_button.dart';
 export 'presentation/widgets/reader_app_bar/reader_search_button.dart';
-export 'presentation/widgets/reader_app_bar/reader_translate_button.dart';
 export 'presentation/widgets/reader_content/reader_content_part.dart';
 export 'presentation/widgets/reader_content/segment_item.dart';
 export 'presentation/widgets/reader_content/section_header.dart';

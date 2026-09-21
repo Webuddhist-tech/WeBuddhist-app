@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_bar.dart';
@@ -27,24 +28,29 @@ import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
+import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_languages_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_more_bottom_sheet.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_translate_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/reader_translation_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_gestures/swipe_navigation_wrapper.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_search/reader_search_delegate.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_settings_screen.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_languages_sheet.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
+import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_live_sync_toggle.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -108,6 +114,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
+
+  /// Set when the reader follows a group event's live recitation.
+  String? get _liveEventId {
+    final ctx = widget.navigationContext;
+    return ctx != null && ctx.isLiveRecitation ? ctx.eventId : null;
+  }
 
   bool get _isEmbedded => PlanEmbeddedScope.maybeOf(context) != null;
 
@@ -313,8 +325,75 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
+  // ─── Live recitation ─────────────────────────────────────────────────────
+
+  void _onLiveStateChanged(
+    RecitationLiveState? previous,
+    RecitationLiveState next,
+  ) {
+    if (!mounted) return;
+    if (next.isEnded && !(previous?.isEnded ?? false)) {
+      ScaffoldMessenger.maybeOf(context)
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(context.l10n.recitation_live_session_ended)),
+        );
+    }
+    final position = next.position;
+    if (position == null || !next.isFollowing) return;
+    // Where the room already was is not the operator moving on: leave the
+    // user on the text they opened. The content part pauses following for
+    // them instead.
+    if (next.positionIsSnapshot) return;
+    final positionChanged = previous?.position != position;
+    final followRequested = previous?.followRequest != next.followRequest;
+    if (positionChanged || followRequested) _maybeSwitchLiveText(position);
+  }
+
+  /// The operator moved to another text of this sequence: go there. Texts
+  /// outside the sequence are left alone (the content reports out of sync),
+  /// so a stray id can never pull the user off their reading list.
+  void _maybeSwitchLiveText(RecitationLivePosition position) {
+    final navContext = widget.navigationContext;
+    if (navContext == null || _isAdvancing) return;
+    final state = ref.read(readerNotifierProvider(_params));
+    final primaryVersionId =
+        ref.read(readerDualSettingsProvider(widget.textId)).primary.versionId;
+    final onThisText = LivePositionResolver.textMatches(
+      position,
+      loadedTextIds: [widget.textId, state.textDetail?.id, primaryVersionId],
+      content: state.content,
+    );
+    if (onThisText) return;
+
+    final items = navContext.planTextItems;
+    if (items == null) return;
+    final index = items.indexWhere(
+      (item) => item.isSourceReference && item.textId == position.textId,
+    );
+    if (index < 0) return;
+    final newContext = const NavigationService()
+        .createNavigationContextForIndex(navContext, index);
+    if (newContext == null) return;
+
+    _isAdvancing = true;
+    _audioController?.cancel();
+    if (navContext.source == NavigationSource.plan &&
+        index > (navContext.currentTextIndex ?? -1)) {
+      // Moving on with the group finishes this text, as a swipe would.
+      ref.read(planSubtaskCompletionProvider).completeCurrent(navContext);
+    }
+    final notifier = ref.read(readerNotifierProvider(_params).notifier);
+    notifier.selectSegment(null);
+    notifier.closeCommentary();
+    notifier.closeTranslation();
+    PlanNavigator.replace(context, items[index], newContext);
+  }
+
   void _onScrollDirectionChanged(bool isScrollingDown) {
     if (!ReaderConstants.enableAppBarAutoHide) return;
+    final host = PlanEmbeddedScope.maybeOf(context);
+    host?.setContentScrollingDown(isScrollingDown);
     if (isScrollingDown && _isAppBarVisible) {
       setState(() {
         _isAppBarVisible = false;
@@ -355,6 +434,24 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final state = ref.watch(readerNotifierProvider(_params));
     final notifier = ref.read(readerNotifierProvider(_params).notifier);
     final readerTheme = _readerTheme(context);
+    // The embedded host drops its video to audio while a panel is open.
+    ref.listen(
+      readerNotifierProvider(
+        _params,
+      ).select((s) => s.isCommentaryOpen || s.isTranslationOpen),
+      (_, isPanelOpen) =>
+          PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
+    );
+
+    final liveEventId = _liveEventId;
+    if (liveEventId != null) {
+      // Holds the event socket open for as long as this reader is on screen.
+      ref.watch(recitationLiveProvider(liveEventId).select((s) => s.isVisible));
+      ref.listen<RecitationLiveState>(
+        recitationLiveProvider(liveEventId),
+        _onLiveStateChanged,
+      );
+    }
 
     if (_isGroupAccumulatorChant) {
       final presetId = _chantContext!.presetAccumulatorId!;
@@ -502,18 +599,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         SafeArea(
           child: Column(
             children: [
-              // Animated App Bar with smooth hide/show
-              AnimatedSize(
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut,
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  height: _isAppBarVisible ? null : 0,
-                  child:
-                      _isAppBarVisible
-                          ? _buildAppBar(context, state, textDetail)
-                          : const SizedBox.shrink(),
-                ),
+              // App bar slides up out of view on scroll-down.
+              SlideAwayHeader(
+                visible: _isAppBarVisible,
+                child: _buildAppBar(context, state, textDetail),
               ),
               // Main scrollable content
               Expanded(
@@ -523,9 +612,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   isAppBarVisible: _isAppBarVisible,
                   child: ReaderTranslationSplitView(
                     params: _params,
-                    // Reader content with scroll detection. The segment action
-                    // bar is hosted in the screen-level bottom overlay so it
-                    // can share a fixed gap with the floating audio button.
+                    // Reader content with scroll detection. The segment
+                    // action bar is hosted in the screen-level bottom
+                    // overlay so it can share a fixed gap with the
+                    // floating audio button.
                     mainContent: ReaderCommentarySplitView(
                       params: _params,
                       mainContent: ReaderContentPart(
@@ -601,24 +691,29 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  /// Embedded: a close bar with font size and translate instead of the app bar.
+  /// Embedded: a close bar with font size and languages instead of the app bar.
+  /// Either bar carries the live sync button when following an event.
   Widget _buildAppBar(
     BuildContext context,
     ReaderState state,
     TextDetail? textDetail,
   ) {
+    final liveEventId = _liveEventId;
+    final liveSyncToggle =
+        liveEventId == null
+            ? null
+            : RecitationLiveSyncToggle(eventId: liveEventId);
     if (_isEmbedded) {
       return PlanEmbeddedHeader(
         onClose: _closeEmbedded,
         actions: [
+          if (liveSyncToggle != null) liveSyncToggle,
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
-          ReaderTranslateButton(params: _params),
-          IconButton(
-            icon: const Icon(AppAssets.readerVersionSettings),
-            tooltip: context.l10n.parallel_version,
-            onPressed: () => _openReaderSettings(context, textDetail),
+          ReaderLanguagesButton(
+            params: _params,
+            onPressed: () => _openLanguagesSheet(context, textDetail),
           ),
         ],
       );
@@ -626,7 +721,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     return ReaderAppBarOverlay(
       params: _params,
       colorIndex: widget.colorIndex,
+      liveSyncToggle: liveSyncToggle,
       onSearchPressed: () => _handleSearch(context, state),
+      onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       onMorePressed: () => _openMoreBottomSheet(context, textDetail),
     );
   }
@@ -637,7 +734,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _audioController?.cancel();
     _invalidatePlanProviders();
     if (_isGroupAccumulatorChant && !_chantSessionFinished) {
-      unawaited(ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave));
+      unawaited(
+        ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave),
+      );
     }
     PlanNavigator.pop(context);
   }
@@ -744,7 +843,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<void> _openReaderSettings(
+  Future<void> _openLanguagesSheet(
     BuildContext context,
     TextDetail? textDetail,
   ) async {
@@ -753,33 +852,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     notifier.closeCommentary();
     notifier.closeTranslation();
 
-    // Pass the currently-loaded primary display so the settings screen can
-    // show it under "Main text" without the reader notifier having to write
-    // into a global settings store as a side effect. The backend returns a
-    // raw language code (e.g. "bo") — render it through getLanguageName so
-    // the user sees "Tibetan", not "bo". `versionId` in this API is just the
-    // loaded text's id, so textDetail.id / textDetail.title pre-fill the
-    // version row of the Main text card.
+    // Snapshot of the loaded text so the drawer can show it as "Original".
     final languageCode = textDetail?.language ?? 'en';
-    final initialPrimaryDisplay = ReaderSlotConfig(
+    final primaryDisplay = ReaderSlotConfig(
       languageCode: languageCode,
       languageLabel: getLanguageName(languageCode, context),
       versionId: textDetail?.id,
       versionLabel: textDetail?.title,
     );
 
-    if (_isEmbedded) {
-      await showReaderSettingsSheet(
-        context,
-        textId: widget.textId,
-        initialPrimaryDisplay: initialPrimaryDisplay,
-      );
-      return;
-    }
-    await openReaderSettings(
+    await showReaderLanguagesSheet(
       context,
       textId: widget.textId,
-      initialPrimaryDisplay: initialPrimaryDisplay,
+      primaryDisplay: primaryDisplay,
     );
   }
 
@@ -805,7 +890,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               : null,
       onAddOfflineRecitation:
           _isGroupAccumulatorChant ? _addOfflineChantCount : null,
-      onParallelVersion: () => _openReaderSettings(context, textDetail),
     );
   }
 

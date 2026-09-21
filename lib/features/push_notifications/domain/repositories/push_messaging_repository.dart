@@ -38,9 +38,20 @@ abstract class PushMessagingRepository {
   /// categories (recitation/mala/timer) are local-only and never sent. The
   /// backend must honour this — background/terminated notification messages are
   /// rendered by the OS before the app can filter locally.
-  Future<Either<Failure, Unit>> registerDeviceToken(
+  ///
+  /// Resolves to the backend's id for the registration (the `id` field of the
+  /// response), or null if the backend did not return one. The id is what
+  /// [unregisterDeviceToken] needs later.
+  Future<Either<Failure, String?>> registerDeviceToken(
     String token, {
     String? deviceId,
     Map<String, bool>? preferences,
   });
+
+  /// Removes the registration [pushDeviceId] (an id returned by
+  /// [registerDeviceToken]) so the backend stops targeting this device. This
+  /// is how the master notification switch turns server pushes off: every
+  /// push type is resolved against the device table, so one delete covers
+  /// them all. A registration the backend no longer has counts as removed.
+  Future<Either<Failure, Unit>> unregisterDeviceToken(String pushDeviceId);
 }

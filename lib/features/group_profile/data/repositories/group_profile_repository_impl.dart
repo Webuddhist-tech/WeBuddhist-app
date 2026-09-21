@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_profile/data/datasource/group_profi
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
@@ -387,9 +388,15 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
-  Future<Either<Failure, void>> joinGroupEvent(String eventId) async {
+  Future<Either<Failure, void>> joinGroupEvent(
+    String eventId, {
+    GroupEventParticipationType? participationType,
+  }) async {
     try {
-      await remote.joinGroupEvent(eventId);
+      await remote.joinGroupEvent(
+        eventId,
+        participationType: participationType,
+      );
       return const Right(null);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -438,6 +445,56 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
       return Left(AuthenticationFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure('Failed to submit join request: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupNotificationPreferences>>
+  getGroupNotificationPreferences(String groupId) async {
+    try {
+      final model = await remote.fetchGroupNotificationPreferences(groupId);
+      return Right(model.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } catch (e) {
+      return Left(
+        UnknownFailure('Failed to load group notification preferences: $e'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupNotificationPreferences>>
+  updateGroupNotificationPreferences(
+    String groupId, {
+    bool? chat,
+    bool? content,
+  }) async {
+    try {
+      final model = await remote.updateGroupNotificationPreferences(
+        groupId,
+        chat: chat,
+        content: content,
+      );
+      return Right(model.toEntity());
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } catch (e) {
+      return Left(
+        UnknownFailure('Failed to update group notification preferences: $e'),
+      );
     }
   }
 

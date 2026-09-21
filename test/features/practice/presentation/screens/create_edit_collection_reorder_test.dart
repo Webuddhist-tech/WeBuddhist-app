@@ -145,7 +145,7 @@ Future<bool> _dragBAboveAAndSave(
 
   tester
       .widget<ReorderableListView>(find.byType(ReorderableListView))
-      .onReorder(1, 0);
+      .onReorder!(1, 0);
   await tester.pump();
 
   await tester.tap(find.text('Save'));

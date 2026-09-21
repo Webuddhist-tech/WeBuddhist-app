@@ -32,10 +32,15 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
     required this.plan,
     this.seriesId,
     this.initialDay,
+    this.eventId,
   });
 
   final Plan plan;
   final String? seriesId;
+
+  /// The group event this preview was opened from, so the reader follows
+  /// its live recitation.
+  final String? eventId;
 
   /// When non-null, the day carousel opens on this day instead of computing
   /// a default from the plan start date. Used by deep links so the recipient
@@ -262,6 +267,7 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
                   planId: widget.plan.id,
                   dayNumber: selectedDay,
                   dayAudioUrl: content.audioUrl,
+                  eventId: widget.eventId,
                 ),
               );
             },

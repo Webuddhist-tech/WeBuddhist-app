@@ -14,10 +14,14 @@ class GroupChatReplyPreview extends StatelessWidget {
     super.key,
     required this.message,
     required this.onCancel,
+    this.isOwnMessage = false,
   });
 
   final ChatMessageDTO message;
   final VoidCallback onCancel;
+
+  /// Replying to one's own message: the quote's header reads "You".
+  final bool isOwnMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,7 @@ class GroupChatReplyPreview extends StatelessWidget {
             child: GroupChatQuotedMessage(
               parent: _asParent(message),
               isPreview: true,
+              isOwnOriginal: isOwnMessage,
             ),
           ),
           IconButton(

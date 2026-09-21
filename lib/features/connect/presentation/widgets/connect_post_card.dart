@@ -112,6 +112,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                         ? ConnectFeedCardLayout.bodyToMediaSpacing
                         : ConnectFeedCardLayout.actionBarTopSpacing,
                 child: _PostMediaGallery(
+                  postId: post.id,
                   media: imageMedia,
                   isDark: isDark,
                   onDoubleTapLike: _toggleLike,
@@ -273,11 +274,13 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
 
 class _PostMediaGallery extends StatefulWidget {
   const _PostMediaGallery({
+    required this.postId,
     required this.media,
     required this.isDark,
     required this.onDoubleTapLike,
   });
 
+  final String postId;
   final List<ConnectPostMedia> media;
   final bool isDark;
   final VoidCallback onDoubleTapLike;
@@ -287,7 +290,56 @@ class _PostMediaGallery extends StatefulWidget {
 }
 
 class _PostMediaGalleryState extends State<_PostMediaGallery> {
-  int _page = 0;
+  late PageController _controller;
+  late int _page;
+
+  /// Per-post slot; the default PageView slot is shared by every card under
+  /// the feed's PageStorageKey, so carousels restored each other's page.
+  String get _storageId => 'connect_post_gallery:${widget.postId}';
+
+  int get _savedPage {
+    final saved = PageStorage.maybeOf(
+      context,
+    )?.readState(context, identifier: _storageId);
+    return saved is int ? saved.clamp(0, widget.media.length - 1) : 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _page = _savedPage;
+    _controller = PageController(initialPage: _page, keepPage: false);
+  }
+
+  @override
+  void didUpdateWidget(_PostMediaGallery oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.postId == oldWidget.postId &&
+        widget.media.length == oldWidget.media.length) {
+      return;
+    }
+    _page = _savedPage;
+    if (_controller.hasClients) {
+      _controller.jumpToPage(_page);
+      return;
+    }
+    // Not attached (single-image post): a fresh controller sets the start page.
+    _controller.dispose();
+    _controller = PageController(initialPage: _page, keepPage: false);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onPageChanged(int index) {
+    PageStorage.maybeOf(
+      context,
+    )?.writeState(context, index, identifier: _storageId);
+    setState(() => _page = index);
+  }
 
   /// Carousel frame follows the first image, kept between portrait 4:5 and
   /// landscape 1.91:1 so one tall photo cannot take over the feed.
@@ -326,8 +378,9 @@ class _PostMediaGalleryState extends State<_PostMediaGallery> {
         fit: StackFit.expand,
         children: [
           PageView.builder(
+            controller: _controller,
             itemCount: media.length,
-            onPageChanged: (index) => setState(() => _page = index),
+            onPageChanged: _onPageChanged,
             itemBuilder: (context, index) {
               return GestureDetector(
                 onDoubleTap: widget.onDoubleTapLike,
@@ -344,10 +397,7 @@ class _PostMediaGalleryState extends State<_PostMediaGallery> {
             right: 12,
             child: IgnorePointer(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(999),

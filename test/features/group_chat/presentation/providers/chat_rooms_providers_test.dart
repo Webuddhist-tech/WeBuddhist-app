@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_rem
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_room_cache.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_rooms_providers.dart';
@@ -100,6 +101,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String roomId, {
     int skip = 0,
     int limit = 20,
+    String? messageType,
   }) async =>
       const Right(ChatMessagesPage(messages: [], skip: 0, limit: 0, total: 0));
 
@@ -108,7 +110,31 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String groupId, {
     required String body,
     String? parentMessageId,
+    String? messageType,
   }) async => const Left(NotFoundFailure('not used'));
+
+  @override
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async =>
+      const Left(NotFoundFailure('not used'));
+
+  @override
+  Future<Either<Failure, ChatMessageDTO>> sendEventMessage(
+    String eventId, {
+    required String body,
+    String? parentMessageId,
+    String? messageType,
+  }) async => const Left(NotFoundFailure('not used'));
+
+  @override
+  Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
+    String roomId, {
+    required List<String> messageIds,
+  }) async => const Right([]);
+
+  @override
+  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
+    String messageId,
+  ) async => const Left(NotFoundFailure('not used'));
 
   @override
   Future<Either<Failure, ChatRoomMembersPage>> listRoomMembers(
@@ -135,6 +161,12 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,
+  }) async => const Right(unit);
+
+  @override
+  Future<Either<Failure, Unit>> deleteMessages(
+    String roomId, {
+    required List<String> messageIds,
   }) async => const Right(unit);
 
   @override

@@ -40,6 +40,7 @@ bool isUserInGroup(WidgetRef ref, String groupId) {
 Future<Either<Failure, void>> joinGroupEventEnsuringGroupMembership({
   required WidgetRef ref,
   required GroupEvent event,
+  GroupEventParticipationType? participationType,
 }) async {
   final repository = ref.read(groupProfileRepositoryProvider);
 
@@ -80,5 +81,8 @@ Future<Either<Failure, void>> joinGroupEventEnsuringGroupMembership({
     }
   }
 
-  return repository.joinGroupEvent(event.id);
+  return repository.joinGroupEvent(
+    event.id,
+    participationType: participationType,
+  );
 }

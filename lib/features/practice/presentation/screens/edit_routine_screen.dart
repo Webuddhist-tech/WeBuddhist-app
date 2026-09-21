@@ -1658,7 +1658,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 _DoneButton(
                   onTap: _saveAndPop,
                   isDark: isDark,
-                  label: localizations.done,
+                  label: localizations.close,
                 ),
                 const SizedBox(height: 8),
                 Text(

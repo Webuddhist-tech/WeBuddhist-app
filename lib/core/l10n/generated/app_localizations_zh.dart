@@ -910,6 +910,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_attending => '已參加';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count 人參加';
   }
@@ -1575,6 +1584,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get parallel_version => '對讀版本';
 
   @override
+  String get reader_languages_title => '語言';
+
+  @override
+  String get reader_original_label => '原文';
+
+  @override
+  String get reader_translation_label => '譯文';
+
+  @override
   String get version_not_available => '無可用版本';
 
   @override
@@ -1904,6 +1922,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_invite => '邀請';
 
   @override
+  String get group_notifications_title => 'Notifications';
+
+  @override
+  String get group_notifications_chat => 'Group chat';
+
+  @override
+  String get group_notifications_content => 'Group content';
+
+  @override
+  String get group_notifications_master_off =>
+      'Notifications are turned off for the app.';
+
+  @override
+  String get group_notifications_open_settings => 'Turn on';
+
+  @override
+  String get group_notifications_update_failed =>
+      'Couldn\'t update notification settings. Try again.';
+
+  @override
+  String get group_notifications_load_failed =>
+      'Couldn\'t load notification settings.';
+
+  @override
+  String get group_leave => 'Leave group';
+
+  @override
+  String get group_leave_confirm_title => 'Leave group?';
+
+  @override
+  String get group_leave_confirm_message =>
+      'You\'ll stop getting messages and updates from this group.';
+
+  @override
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+
+  @override
   String get group_request_to_join => '申請加入';
 
   @override
@@ -2118,6 +2173,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get share_poem_message => '我喜欢WeBuddhist上的这首诗，想和你分享。';
 
   @override
+  String share_poem_title(String title) {
+    return '「$title」';
+  }
+
+  @override
   String get share_mala_message =>
       '我一直在WeBuddhist上使用这串电子念珠，想和你分享。这是一个随时随地修行的便捷方式。';
 
@@ -2273,6 +2333,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get player_forward_10 => '快進 10 秒';
+
+  @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
 
   @override
   String get session_plans_load_error => '無法載入計畫。\n請稍後重試。';
@@ -2510,16 +2576,47 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_delete_title => '刪除訊息？';
 
   @override
-  String get group_chat_delete_confirm_body => '此訊息將為聊天中的所有人刪除。';
+  String group_chat_delete_title_many(int count) {
+    return '刪除 $count 則訊息？';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => '為所有人刪除';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '這些訊息將從聊天中為所有人移除。',
+      one: '此訊息將從聊天中為所有人移除。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => '無法刪除訊息。';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '有 $count 則訊息無法刪除。',
+      one: '無法刪除訊息。',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => '你已刪除此訊息';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '訊息已刪除',
+      one: '訊息已刪除',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return '最多可選取 $count 則訊息';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => '此訊息已刪除';
@@ -2673,4 +2770,43 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => '祈願請求';
+
+  @override
+  String get event_prayer_empty_title => '尚無祈願請求';
+
+  @override
+  String get event_prayer_empty_body => '你和社群的請求會顯示在這裡';
+
+  @override
+  String get event_prayer_add => '新增祈願請求';
+
+  @override
+  String get event_prayer_hint => '今天我們能為你祈願什麼';
+
+  @override
+  String get event_prayer_load_failed => '無法載入祈願請求。';
+
+  @override
+  String get event_prayer_closed => '此活動的祈願請求已關閉。';
+
+  @override
+  String get event_prayer_pray => '祈願';
+
+  @override
+  String get event_prayer_praying => '祈願中';
+
+  @override
+  String get recitation_live_sync => 'Sync';
+
+  @override
+  String get recitation_live_session_ended => 'The live session has ended';
 }

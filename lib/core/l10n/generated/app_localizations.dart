@@ -1027,13 +1027,13 @@ abstract class AppLocalizations {
   /// No description provided for @my_recitation_collection_chant_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{0 chants} =1{1 chant} other{{count} chants}}'**
+  /// **'{count, plural,\n=0 {0 chants}\n=1 {1 chant}\nother {{count} chants}\n}'**
   String my_recitation_collection_chant_count(int count);
 
   /// No description provided for @my_recitation_collection_chant_count_owner.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{0 chants • me} =1{1 chant • me} other{{count} chants • me}}'**
+  /// **'{count, plural,\n=0 {0 chants • me}\n=1 {1 chant • me}\nother {{count} chants • me}\n}'**
   String my_recitation_collection_chant_count_owner(int count);
 
   /// No description provided for @bookmarks_empty_chant_collections_title.
@@ -1255,7 +1255,7 @@ abstract class AppLocalizations {
   /// No description provided for @routine_delete_block_message.
   ///
   /// In en, this message translates to:
-  /// **'The session and all its items will be removed'**
+  /// **'The time block and all its items will be removed'**
   String get routine_delete_block_message;
 
   /// No description provided for @something_went_wrong.
@@ -1803,6 +1803,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Attending'**
   String get connect_event_attending;
+
+  /// No description provided for @connect_event_participation_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'How are you attending?'**
+  String get connect_event_participation_prompt;
+
+  /// No description provided for @connect_event_joining_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining in person'**
+  String get connect_event_joining_in_person;
+
+  /// No description provided for @connect_event_joining_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining online'**
+  String get connect_event_joining_online;
 
   /// No description provided for @connect_event_participants_attending.
   ///
@@ -2557,13 +2575,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_edit_title.
   ///
   /// In en, this message translates to:
-  /// **'Edit your practices'**
+  /// **'Edit your routine'**
   String get routine_edit_title;
 
   /// No description provided for @routine_delete_block.
   ///
   /// In en, this message translates to:
-  /// **'Remove session'**
+  /// **'Remove block'**
   String get routine_delete_block;
 
   /// No description provided for @routine_session_title_hint.
@@ -2647,13 +2665,13 @@ abstract class AppLocalizations {
   /// No description provided for @routine_empty_block_delete_singular.
   ///
   /// In en, this message translates to:
-  /// **'Remove session'**
+  /// **'Remove block'**
   String get routine_empty_block_delete_singular;
 
   /// No description provided for @routine_empty_block_delete_plural.
   ///
   /// In en, this message translates to:
-  /// **'Remove sessions'**
+  /// **'Remove blocks'**
   String get routine_empty_block_delete_plural;
 
   /// No description provided for @routine_notification_title.
@@ -3003,6 +3021,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Parallel version'**
   String get parallel_version;
+
+  /// No description provided for @reader_languages_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Languages'**
+  String get reader_languages_title;
+
+  /// No description provided for @reader_original_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get reader_original_label;
+
+  /// No description provided for @reader_translation_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Translation'**
+  String get reader_translation_label;
 
   /// No description provided for @version_not_available.
   ///
@@ -3622,6 +3658,72 @@ abstract class AppLocalizations {
   /// **'Invite'**
   String get group_invite;
 
+  /// No description provided for @group_notifications_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get group_notifications_title;
+
+  /// No description provided for @group_notifications_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat'**
+  String get group_notifications_chat;
+
+  /// No description provided for @group_notifications_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Group content'**
+  String get group_notifications_content;
+
+  /// No description provided for @group_notifications_master_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off for the app.'**
+  String get group_notifications_master_off;
+
+  /// No description provided for @group_notifications_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get group_notifications_open_settings;
+
+  /// No description provided for @group_notifications_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update notification settings. Try again.'**
+  String get group_notifications_update_failed;
+
+  /// No description provided for @group_notifications_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notification settings.'**
+  String get group_notifications_load_failed;
+
+  /// No description provided for @group_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get group_leave;
+
+  /// No description provided for @group_leave_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group?'**
+  String get group_leave_confirm_title;
+
+  /// No description provided for @group_leave_confirm_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll stop getting messages and updates from this group.'**
+  String get group_leave_confirm_message;
+
+  /// No description provided for @group_leave_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave the group. Try again.'**
+  String get group_leave_failed;
+
   /// No description provided for @group_request_to_join.
   ///
   /// In en, this message translates to:
@@ -3992,6 +4094,12 @@ abstract class AppLocalizations {
   /// **'I liked this poem from WeBuddhist and wanted to share it with you.'**
   String get share_poem_message;
 
+  /// No description provided for @share_poem_title.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}”'**
+  String share_poem_title(String title);
+
   /// No description provided for @share_mala_message.
   ///
   /// In en, this message translates to:
@@ -4279,6 +4387,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Forward 10 seconds'**
   String get player_forward_10;
+
+  /// No description provided for @player_fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get player_fullscreen;
+
+  /// No description provided for @player_exit_fullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit fullscreen'**
+  String get player_exit_fullscreen;
 
   /// No description provided for @session_plans_load_error.
   ///
@@ -4694,29 +4814,35 @@ abstract class AppLocalizations {
   /// **'Delete message?'**
   String get group_chat_delete_title;
 
+  /// No description provided for @group_chat_delete_title_many.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} messages?'**
+  String group_chat_delete_title_many(int count);
+
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'This message will be deleted for everyone in this chat.'**
-  String get group_chat_delete_confirm_body;
-
-  /// No description provided for @group_chat_delete_for_everyone.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete for everyone'**
-  String get group_chat_delete_for_everyone;
+  /// **'{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}'**
+  String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'The message couldn\'t be deleted.'**
-  String get group_chat_delete_failed;
+  /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
+  String group_chat_delete_failed(int count);
 
-  /// No description provided for @group_chat_message_deleted.
+  /// No description provided for @group_chat_message_deleted_toast.
   ///
   /// In en, this message translates to:
-  /// **'You deleted this message'**
-  String get group_chat_message_deleted;
+  /// **'{count, plural, =1{Message deleted} other{Messages deleted}}'**
+  String group_chat_message_deleted_toast(int count);
+
+  /// No description provided for @group_chat_selection_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can select up to {count} messages'**
+  String group_chat_selection_limit(int count);
 
   /// No description provided for @group_chat_message_deleted_by_sender.
   ///
@@ -4999,6 +5125,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live'**
   String get event_live_go_live;
+
+  /// No description provided for @event_puja_starts_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Puja starts in'**
+  String get event_puja_starts_in;
+
+  /// No description provided for @event_puja_not_started.
+  ///
+  /// In en, this message translates to:
+  /// **'Puja not started yet'**
+  String get event_puja_not_started;
+
+  /// No description provided for @event_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests'**
+  String get event_prayer_requests;
+
+  /// No description provided for @event_prayer_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests yet'**
+  String get event_prayer_empty_title;
+
+  /// No description provided for @event_prayer_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request and your community\'s will appear here'**
+  String get event_prayer_empty_body;
+
+  /// No description provided for @event_prayer_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a prayer request'**
+  String get event_prayer_add;
+
+  /// No description provided for @event_prayer_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we pray for you today'**
+  String get event_prayer_hint;
+
+  /// No description provided for @event_prayer_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests couldn\'t be loaded.'**
+  String get event_prayer_load_failed;
+
+  /// No description provided for @event_prayer_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests are closed for this event.'**
+  String get event_prayer_closed;
+
+  /// No description provided for @event_prayer_pray.
+  ///
+  /// In en, this message translates to:
+  /// **'Pray'**
+  String get event_prayer_pray;
+
+  /// No description provided for @event_prayer_praying.
+  ///
+  /// In en, this message translates to:
+  /// **'Praying'**
+  String get event_prayer_praying;
+
+  /// No description provided for @recitation_live_sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get recitation_live_sync;
+
+  /// No description provided for @recitation_live_session_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'The live session has ended'**
+  String get recitation_live_session_ended;
 }
 
 class _AppLocalizationsDelegate

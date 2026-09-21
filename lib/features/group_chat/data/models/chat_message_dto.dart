@@ -1,8 +1,13 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 
 class ChatMessageDTO extends Equatable {
+  /// `message_type` values the API accepts.
+  static const String typeText = 'TEXT';
+  static const String typePrayer = 'PRAYER';
+
   final String id;
   final String roomId;
   final String senderId;
@@ -26,6 +31,14 @@ class ChatMessageDTO extends Equatable {
   final ChatMessageParentDTO? parent;
   final List<ChatMessageReactionDTO> reactions;
 
+  /// `TEXT` or `PRAYER`; rows from before the field existed read as `TEXT`.
+  final String messageType;
+
+  /// Only carried on a `PRAYER` message.
+  final int prayerCount;
+  final bool prayedByMe;
+  final List<ChatPrayerUserDTO> recentPrayers;
+
   const ChatMessageDTO({
     required this.id,
     required this.roomId,
@@ -38,10 +51,17 @@ class ChatMessageDTO extends Equatable {
     this.deletedAt,
     this.parent,
     this.reactions = const [],
+    this.messageType = typeText,
+    this.prayerCount = 0,
+    this.prayedByMe = false,
+    this.recentPrayers = const [],
   });
+
+  bool get isPrayerRequest => messageType == typePrayer;
 
   factory ChatMessageDTO.fromJson(Map<String, dynamic> json) {
     final parentJson = json['parent'];
+    final prayerCount = json['prayer_count'];
     return ChatMessageDTO(
       id: json['id'] as String? ?? '',
       roomId: json['room_id'] as String? ?? '',
@@ -62,6 +82,15 @@ class ChatMessageDTO extends Equatable {
               .map(ChatMessageReactionDTO.fromJson)
               .toList() ??
           const [],
+      messageType: json['message_type'] as String? ?? typeText,
+      prayerCount: prayerCount is num ? prayerCount.toInt() : 0,
+      prayedByMe: json['prayed_by_me'] as bool? ?? false,
+      recentPrayers:
+          (json['recent_prayers'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatPrayerUserDTO.fromJson)
+              .toList() ??
+          const [],
     );
   }
 
@@ -73,7 +102,11 @@ class ChatMessageDTO extends Equatable {
   ChatMessageDTO copyWith({
     String? body,
     String? deletedAt,
+    ChatMessageParentDTO? parent,
     List<ChatMessageReactionDTO>? reactions,
+    int? prayerCount,
+    bool? prayedByMe,
+    List<ChatPrayerUserDTO>? recentPrayers,
   }) {
     return ChatMessageDTO(
       id: id,
@@ -85,8 +118,12 @@ class ChatMessageDTO extends Equatable {
       body: body ?? this.body,
       createdAt: createdAt,
       deletedAt: deletedAt ?? this.deletedAt,
-      parent: parent,
+      parent: parent ?? this.parent,
       reactions: reactions ?? this.reactions,
+      messageType: messageType,
+      prayerCount: prayerCount ?? this.prayerCount,
+      prayedByMe: prayedByMe ?? this.prayedByMe,
+      recentPrayers: recentPrayers ?? this.recentPrayers,
     );
   }
 
@@ -103,6 +140,12 @@ class ChatMessageDTO extends Equatable {
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (parent != null) 'parent': parent!.toJson(),
       'reactions': reactions.map((reaction) => reaction.toJson()).toList(),
+      'message_type': messageType,
+      if (isPrayerRequest) ...{
+        'prayer_count': prayerCount,
+        'prayed_by_me': prayedByMe,
+        'recent_prayers': recentPrayers.map((user) => user.toJson()).toList(),
+      },
     };
   }
 
@@ -119,5 +162,9 @@ class ChatMessageDTO extends Equatable {
     deletedAt,
     parent,
     reactions,
+    messageType,
+    prayerCount,
+    prayedByMe,
+    recentPrayers,
   ];
 }

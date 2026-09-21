@@ -8,11 +8,7 @@ enum ConnectMyEmptyStateType { feed, events, posts, practices, groups }
 
 /// Empty state shown in Connect tabs when the My segment has no content.
 class ConnectMyEmptyState extends StatelessWidget {
-  const ConnectMyEmptyState({
-    super.key,
-    required this.type,
-    this.onBrowseTap,
-  });
+  const ConnectMyEmptyState({super.key, required this.type, this.onBrowseTap});
 
   final ConnectMyEmptyStateType type;
   final VoidCallback? onBrowseTap;
@@ -99,7 +95,8 @@ class ConnectMyEmptyState extends StatelessWidget {
     ConnectMyEmptyStateType.feed => l10n.connect_my_empty_feed_subtitle,
     ConnectMyEmptyStateType.events => l10n.connect_my_empty_events_subtitle,
     ConnectMyEmptyStateType.posts => l10n.connect_my_empty_posts_subtitle,
-    ConnectMyEmptyStateType.practices => l10n.connect_my_empty_practices_subtitle,
+    ConnectMyEmptyStateType.practices =>
+      l10n.connect_my_empty_practices_subtitle,
     ConnectMyEmptyStateType.groups => l10n.connect_my_empty_groups_subtitle,
   };
 

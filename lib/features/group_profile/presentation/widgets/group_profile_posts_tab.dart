@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_card.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
@@ -71,8 +72,6 @@ class GroupProfilePostsTab extends ConsumerWidget {
     }
 
     final itemCount = state.posts.length + (state.isLoadingMore ? 1 : 0);
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 
     return Stack(
       children: [
@@ -88,9 +87,20 @@ class GroupProfilePostsTab extends ConsumerWidget {
             pageStorageKey: pageStorageKey,
             slivers: [
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, canPost ? 96 : 32),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
+                padding: EdgeInsets.only(
+                  top: ConnectFeedCardLayout.listItemGap,
+                  bottom: canPost ? 96 : 32,
+                ),
+                sliver: SliverList.separated(
+                  itemCount: itemCount,
+                  separatorBuilder:
+                      (context, _) => ColoredBox(
+                        color: ConnectFeedCardLayout.listGapColor(isDark),
+                        child: const SizedBox(
+                          height: ConnectFeedCardLayout.listItemGap,
+                        ),
+                      ),
+                  itemBuilder: (context, index) {
                     if (index >= state.posts.length) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
@@ -99,31 +109,19 @@ class GroupProfilePostsTab extends ConsumerWidget {
                     }
 
                     final post = state.posts[index];
-                    final isLast = index == state.posts.length - 1;
-
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
-                      child: Material(
-                        color: cardColor,
-                        elevation: isDark ? 0 : 1,
-                        shadowColor: Colors.black.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(16),
-                        clipBehavior: Clip.antiAlias,
-                        child: ConnectPostCard(
-                          key: ValueKey(post.id),
-                          post: post,
-                          includeUnfollowed: true,
-                          showGroupLink: false,
-                          groupId: groupId,
-                          onEdit: canPost ? () => onEditPost(post) : null,
-                          onDelete:
-                              canPost
-                                  ? () => _confirmDelete(context, ref, post)
-                                  : null,
-                        ),
-                      ),
+                    return ConnectPostCard(
+                      key: ValueKey(post.id),
+                      post: post,
+                      includeUnfollowed: true,
+                      showGroupLink: false,
+                      groupId: groupId,
+                      onEdit: canPost ? () => onEditPost(post) : null,
+                      onDelete:
+                          canPost
+                              ? () => _confirmDelete(context, ref, post)
+                              : null,
                     );
-                  }, childCount: itemCount),
+                  },
                 ),
               ),
             ],

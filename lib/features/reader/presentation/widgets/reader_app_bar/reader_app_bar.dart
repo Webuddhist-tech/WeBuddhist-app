@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
-import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_languages_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_search_button.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_translate_button.dart';
 import 'package:flutter_pecha/features/texts/constants/text_screen_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-bool _showTranslateToggle(ReaderParams params) =>
-    params.navigationContext?.source != NavigationSource.plan;
 
 /// App bar overlay for the reader screen - animates in/out based on scroll
 class ReaderAppBarOverlay extends ConsumerWidget {
@@ -19,15 +15,23 @@ class ReaderAppBarOverlay extends ConsumerWidget {
   final int? colorIndex;
   final VoidCallback onSearchPressed;
 
+  /// Opens the Languages drawer (original + translation).
+  final VoidCallback onLanguagesPressed;
+
   /// Opens the "more" bottom sheet (font size, add-to-practices, bookmark…).
   final VoidCallback onMorePressed;
+
+  /// Live recitation sync button, shown before search.
+  final Widget? liveSyncToggle;
 
   const ReaderAppBarOverlay({
     super.key,
     required this.params,
     this.colorIndex,
     required this.onSearchPressed,
+    required this.onLanguagesPressed,
     required this.onMorePressed,
+    this.liveSyncToggle,
   });
 
   @override
@@ -59,9 +63,12 @@ class ReaderAppBarOverlay extends ConsumerWidget {
           ),
           toolbarHeight: ReaderConstants.appBarToolbarHeight,
           actions: [
+            if (liveSyncToggle != null) liveSyncToggle!,
             ReaderSearchButton(onPressed: onSearchPressed),
-            if (_showTranslateToggle(params))
-              ReaderTranslateButton(params: params),
+            ReaderLanguagesButton(
+              params: params,
+              onPressed: onLanguagesPressed,
+            ),
             const SizedBox(width: 4),
             IconButton(
               icon: const Icon(Icons.more_vert),
@@ -85,6 +92,7 @@ class ReaderAppBar extends ConsumerWidget {
   final ReaderParams params;
   final int? colorIndex;
   final VoidCallback? onSearchPressed;
+  final VoidCallback? onLanguagesPressed;
   final VoidCallback? onMorePressed;
 
   const ReaderAppBar({
@@ -92,6 +100,7 @@ class ReaderAppBar extends ConsumerWidget {
     required this.params,
     this.colorIndex,
     this.onSearchPressed,
+    this.onLanguagesPressed,
     this.onMorePressed,
   });
 
@@ -126,8 +135,10 @@ class ReaderAppBar extends ConsumerWidget {
         ReaderSearchButton(
           onPressed: onSearchPressed ?? () => _handleSearch(context, ref),
         ),
-        if (_showTranslateToggle(params))
-          ReaderTranslateButton(params: params),
+        ReaderLanguagesButton(
+          params: params,
+          onPressed: onLanguagesPressed ?? () {},
+        ),
         const SizedBox(width: 4),
         IconButton(
           icon: const Icon(Icons.more_vert),

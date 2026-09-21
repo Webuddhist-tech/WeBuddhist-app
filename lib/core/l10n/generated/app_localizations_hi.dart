@@ -966,6 +966,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_attending => 'शामिल हैं';
 
   @override
+  String get connect_event_participation_prompt => 'How are you attending?';
+
+  @override
+  String get connect_event_joining_in_person => 'Joining in person';
+
+  @override
+  String get connect_event_joining_online => 'Joining online';
+
+  @override
   String connect_event_participants_attending(int count) {
     return '$count शामिल';
   }
@@ -1666,6 +1675,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get parallel_version => 'समानांतर संस्करण';
 
   @override
+  String get reader_languages_title => 'भाषाएँ';
+
+  @override
+  String get reader_original_label => 'मूल';
+
+  @override
+  String get reader_translation_label => 'अनुवाद';
+
+  @override
   String get version_not_available => 'उपलब्ध नहीं है';
 
   @override
@@ -2011,6 +2029,43 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_invite => 'आमंत्रित करें';
 
   @override
+  String get group_notifications_title => 'Notifications';
+
+  @override
+  String get group_notifications_chat => 'Group chat';
+
+  @override
+  String get group_notifications_content => 'Group content';
+
+  @override
+  String get group_notifications_master_off =>
+      'Notifications are turned off for the app.';
+
+  @override
+  String get group_notifications_open_settings => 'Turn on';
+
+  @override
+  String get group_notifications_update_failed =>
+      'Couldn\'t update notification settings. Try again.';
+
+  @override
+  String get group_notifications_load_failed =>
+      'Couldn\'t load notification settings.';
+
+  @override
+  String get group_leave => 'Leave group';
+
+  @override
+  String get group_leave_confirm_title => 'Leave group?';
+
+  @override
+  String get group_leave_confirm_message =>
+      'You\'ll stop getting messages and updates from this group.';
+
+  @override
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+
+  @override
   String get group_request_to_join => 'शामिल होने का अनुरोध';
 
   @override
@@ -2240,6 +2295,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'मुझे WeBuddhist की यह कविता पसंद आई और मैं इसे आपके साथ साझा करना चाहता था।';
 
   @override
+  String share_poem_title(String title) {
+    return '“$title”';
+  }
+
+  @override
   String get share_mala_message =>
       'मैं WeBuddhist पर इस डिजिटल माला का उपयोग कर रहा हूँ और इसे आपके साथ साझा करना चाहता था। यह जहाँ भी जाएँ, अभ्यास करने का एक आसान तरीका है।';
 
@@ -2412,6 +2472,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get player_forward_10 => '10 सेकंड आगे';
+
+  @override
+  String get player_fullscreen => 'Fullscreen';
+
+  @override
+  String get player_exit_fullscreen => 'Exit fullscreen';
 
   @override
   String get session_plans_load_error =>
@@ -2655,17 +2721,47 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_delete_title => 'संदेश हटाएँ?';
 
   @override
-  String get group_chat_delete_confirm_body =>
-      'यह संदेश इस चैट में सभी के लिए हटा दिया जाएगा।';
+  String group_chat_delete_title_many(int count) {
+    return '$count संदेश हटाएँ?';
+  }
 
   @override
-  String get group_chat_delete_for_everyone => 'सभी के लिए हटाएँ';
+  String group_chat_delete_confirm_body(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ये संदेश चैट से सभी के लिए हटा दिए जाएंगे।',
+      one: 'यह संदेश चैट से सभी के लिए हटा दिया जाएगा।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_delete_failed => 'संदेश हटाया नहीं जा सका।';
+  String group_chat_delete_failed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count संदेश हटाए नहीं जा सके।',
+      one: 'संदेश हटाया नहीं जा सका।',
+    );
+    return '$_temp0';
+  }
 
   @override
-  String get group_chat_message_deleted => 'आपने यह संदेश हटा दिया';
+  String group_chat_message_deleted_toast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'संदेश हटा दिए गए',
+      one: 'संदेश हटा दिया गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_chat_selection_limit(int count) {
+    return 'आप अधिकतम $count संदेश चुन सकते हैं';
+  }
 
   @override
   String get group_chat_message_deleted_by_sender => 'यह संदेश हटा दिया गया';
@@ -2831,4 +2927,45 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_live_go_live => 'Live';
+
+  @override
+  String get event_puja_starts_in => 'Puja starts in';
+
+  @override
+  String get event_puja_not_started => 'Puja not started yet';
+
+  @override
+  String get event_prayer_requests => 'प्रार्थना अनुरोध';
+
+  @override
+  String get event_prayer_empty_title => 'अभी कोई प्रार्थना अनुरोध नहीं';
+
+  @override
+  String get event_prayer_empty_body =>
+      'आपका और आपके समुदाय का अनुरोध यहाँ दिखाई देगा';
+
+  @override
+  String get event_prayer_add => 'प्रार्थना अनुरोध जोड़ें';
+
+  @override
+  String get event_prayer_hint => 'आज हम आपके लिए क्या प्रार्थना करें';
+
+  @override
+  String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड नहीं हो सके।';
+
+  @override
+  String get event_prayer_closed =>
+      'इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं।';
+
+  @override
+  String get event_prayer_pray => 'प्रार्थना करें';
+
+  @override
+  String get event_prayer_praying => 'प्रार्थना कर रहे हैं';
+
+  @override
+  String get recitation_live_sync => 'Sync';
+
+  @override
+  String get recitation_live_session_ended => 'The live session has ended';
 }
