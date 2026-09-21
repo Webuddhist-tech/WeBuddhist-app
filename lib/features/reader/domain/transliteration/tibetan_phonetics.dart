@@ -29,8 +29,12 @@ class TibetanPhonetics {
       if (syllable == null) {
         final other = unit.other!.replaceAll('_', ' ');
         out.add(other);
-        // Punctuation other than the tsheg starts a new word.
-        if (other.trim().isNotEmpty) initial = true;
+        // Punctuation other than the tsheg starts a new word and ends the
+        // phrase: no nasal carries across a shad (འདྲ་མ། །འཇིག → dra ma / /jik).
+        if (other.trim().isNotEmpty) {
+          initial = true;
+          previousSyllable = null;
+        }
         continue;
       }
       final rendered = _syllable(syllable, initial: initial);

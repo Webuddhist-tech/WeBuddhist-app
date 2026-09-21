@@ -68,6 +68,18 @@ void main() {
       );
     });
 
+    test('turns line breaks a converter adds into <br> tags', () {
+      final service = TransliterationService.standard();
+      expect(
+        service.convertHtml(
+          'རྒྱ་གར། ན་མོ།<br>ཨོཾ།',
+          languageCode: 'bo',
+          toScriptId: 'phonetic',
+        ),
+        'gya gar<br>na mo<br>om',
+      );
+    });
+
     test('returns the input unchanged for an unsupported language', () {
       expect(
         service.convertHtml('namo', languageCode: 'bo', toScriptId: 'up'),

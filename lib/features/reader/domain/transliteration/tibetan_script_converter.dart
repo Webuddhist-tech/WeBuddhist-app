@@ -14,7 +14,21 @@ import 'package:pali_script_convertor/pali_script_convertor.dart' as psc;
 ///
 /// The Tibetan script itself is listed so the picker can name the text as
 /// written (བོད་ཡིག); converting to it is a no-op.
+///
+/// Tibetan punctuation (༄༅ head marks, the shad ། between lines) reaches the
+/// phonetics as Wylie signs (@#, /). [markStyle] says what the reader shows
+/// for them: nothing, a line break per shad, or [separator].
 class TibetanScriptConverter extends ScriptConverter {
+  TibetanScriptConverter({
+    this.markStyle = TibetanMarkStyle.lineBreak,
+    this.separator = '|',
+  });
+
+  final TibetanMarkStyle markStyle;
+
+  /// What replaces a shad under [TibetanMarkStyle.separator].
+  final String separator;
+
   static const String tibetanScriptId = 'tibetan';
   static const String phoneticScriptId = 'phonetic';
 
@@ -31,11 +45,11 @@ class TibetanScriptConverter extends ScriptConverter {
   @override
   String convert(String text, String toScriptId) {
     if (toScriptId == tibetanScriptId) return text;
-    if (toScriptId == phoneticScriptId) return TibetanPhonetics.transcribe(text);
+    if (toScriptId == phoneticScriptId) return _phonetics(text);
     if (toScriptId.startsWith(rescriptPrefix)) {
       final target = toScriptId.substring(rescriptPrefix.length);
       final scripted = psc.convertPali(
-        rescriptInput(TibetanPhonetics.transcribe(text)),
+        rescriptInput(_phonetics(text)),
         target,
         psc.Scripts.ro,
       );
@@ -43,6 +57,53 @@ class TibetanScriptConverter extends ScriptConverter {
     }
     throw ArgumentError('Unsupported script id: $toScriptId');
   }
+
+  String _phonetics(String text) => applyMarks(
+    TibetanPhonetics.transcribe(text),
+    markStyle,
+    separator: separator,
+  );
+
+  /// Rewrites the Wylie punctuation in Roman phonetics per [style]. Head
+  /// marks (༄༅ ༆ ༇ ༈ → @ # $ % !) never mean anything spoken and always go;
+  /// a run of shad-like signs (། ༎ ༑ ༏ ༔ → / // | ; :) becomes a space, a
+  /// newline or [separator]; ༌ (*) is a tsheg and becomes a space.
+  static String applyMarks(
+    String roman,
+    TibetanMarkStyle style, {
+    String separator = '|',
+  }) {
+    if (style == TibetanMarkStyle.keep) return roman;
+    var s = roman.replaceAll(_headMarks, '').replaceAll('*', ' ');
+    switch (style) {
+      case TibetanMarkStyle.drop:
+        s = s.replaceAll(_shadRun, ' ');
+      case TibetanMarkStyle.lineBreak:
+        s = s.replaceAll(_shadRun, '\n');
+      case TibetanMarkStyle.separator:
+        s = s.replaceAll(_shadRun, ' $separator ');
+      case TibetanMarkStyle.keep:
+        break;
+    }
+    s = s
+        .replaceAll(_spaces, ' ')
+        .replaceAll(_spaceAroundNewline, '\n')
+        .replaceAll(_newlines, '\n')
+        .trim();
+    if (style == TibetanMarkStyle.separator) {
+      // A verse ends in a shad; do not leave the separator dangling.
+      if (s.endsWith(separator)) s = s.substring(0, s.length - separator.length);
+      if (s.startsWith(separator)) s = s.substring(separator.length);
+      s = s.trim();
+    }
+    return s;
+  }
+
+  static final RegExp _headMarks = RegExp(r'[@#$%!]+');
+  static final RegExp _shadRun = RegExp(r'\s*[/|;:]+(?:\s+[/|;:]+)*\s*');
+  static final RegExp _spaces = RegExp(r'[ \t]+');
+  static final RegExp _spaceAroundNewline = RegExp(r'[ \t]*\n[ \t]*');
+  static final RegExp _newlines = RegExp(r'\n{2,}');
 
   /// Roman text prepared for the Pali script tables: `_` back to a space;
   /// `[…]` brackets, a-chung apostrophes and stack marks dropped, since none
@@ -140,4 +201,19 @@ class TibetanScriptConverter extends ScriptConverter {
           fontLanguage: 'en',
         ),
   ];
+}
+
+/// How the reader shows Tibetan punctuation in a transliteration.
+enum TibetanMarkStyle {
+  /// Wylie signs as they are: `@#/ /gya gar ke du/`.
+  keep,
+
+  /// No marks; lines of a verse run on, separated by a space.
+  drop,
+
+  /// One line per shad, the way chant books print phonetics.
+  lineBreak,
+
+  /// Lines joined with [TibetanScriptConverter.separator].
+  separator,
 }

@@ -43,6 +43,10 @@ void main() {
       expect(ph('རྒྱ་གར'), 'gya gar'); // no a-chung, no nasal
     });
 
+    test('the nasal never crosses a shad', () {
+      expect(ph('འདྲ་མ། །འཇིག་རྟེན'), 'dra ma/ /jik ten');
+    });
+
     test('particles and a-chung roots', () {
       expect(ph('དཔའི'), 'pé'.replaceAll('é', 'e'));
       expect(ph('བའི'), 'be');

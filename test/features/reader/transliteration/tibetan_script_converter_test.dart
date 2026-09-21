@@ -105,6 +105,52 @@ void main() {
     });
   });
 
+  group('Tibetan marks', () {
+    const verse = '༄༅། །རྒྱ་གར་སྐད་དུ། ན་མོ།';
+
+    test('keep leaves the Wylie signs in place', () {
+      final c = TibetanScriptConverter(markStyle: TibetanMarkStyle.keep);
+      expect(c.convert(verse, 'phonetic'), '@#/ /gya gar ke du/ na mo/');
+    });
+
+    test('drop removes them and runs the lines on', () {
+      final c = TibetanScriptConverter(markStyle: TibetanMarkStyle.drop);
+      expect(c.convert(verse, 'phonetic'), 'gya gar ke du na mo');
+    });
+
+    test('lineBreak (the default) gives one line per shad, none dangling', () {
+      expect(converter.markStyle, TibetanMarkStyle.lineBreak);
+      expect(converter.convert(verse, 'phonetic'), 'gya gar ke du\nna mo');
+      expect(converter.convert('ན་མོ། །', 'phonetic'), 'na mo');
+    });
+
+    test('separator joins the lines with the chosen sign', () {
+      final c = TibetanScriptConverter(markStyle: TibetanMarkStyle.separator);
+      expect(c.convert(verse, 'phonetic'), 'gya gar ke du | na mo');
+      final dot = TibetanScriptConverter(
+        markStyle: TibetanMarkStyle.separator,
+        separator: '·',
+      );
+      expect(dot.convert(verse, 'phonetic'), 'gya gar ke du · na mo');
+    });
+
+    test('applies to the other scripts and to every shad-like sign', () {
+      expect(converter.convert(verse, 'phonetic:hi'), 'ग्य गर् के दु\nन मो');
+      expect(
+        TibetanScriptConverter.applyMarks('a// b| c: d; e', TibetanMarkStyle.drop),
+        'a b c d e',
+      );
+      expect(
+        TibetanScriptConverter.applyMarks(
+          '@#!\$% a/ /b   /c',
+          TibetanMarkStyle.lineBreak,
+        ),
+        'a\nb\nc',
+      );
+      expect(TibetanScriptConverter.applyMarks('1 * 2', TibetanMarkStyle.drop), '1 2');
+    });
+  });
+
   test('is registered in the standard service', () {
     final service = TransliterationService.standard();
     expect(service.supports('bo'), isTrue);
