@@ -76,6 +76,11 @@ class StorageKeys {
   /// push token, so token refreshes update the same backend record. Generated
   /// once (UUID) and persisted for the lifetime of the install.
   static const String pushDeviceId = 'push_device_id';
+  /// The backend's id for this device's push registration (`id` in the
+  /// register response). Needed to `DELETE /users/me/push-devices/{id}`
+  /// when the master notification switch is turned off. Cleared after a
+  /// successful unregister.
+  static const String pushDeviceServerId = 'push_device_server_id';
 
   // ========== FEATURES ==========
   /// Profile data JSON

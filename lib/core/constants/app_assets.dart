@@ -99,6 +99,7 @@ class AppAssets {
   static const IconData heartFill = PhosphorIconsFill.heart;
   static const IconData chatCircle = PhosphorIconsRegular.chatCircle;
   static const IconData chatCircleDots = PhosphorIconsRegular.chatCircleDots;
+  static const IconData rows = PhosphorIconsRegular.rows;
   static const IconData x = PhosphorIconsRegular.x;
   static const IconData dotsThreeVertical =
       PhosphorIconsRegular.dotsThreeVertical;
@@ -169,6 +170,7 @@ class AppAssets {
   static const IconData videoCamera = PhosphorIconsRegular.videoCamera;
   static const IconData clock = PhosphorIconsRegular.clock;
   static const IconData repeat = PhosphorIconsRegular.arrowsClockwise;
+  static const IconData arrowsClockwise = PhosphorIconsRegular.arrowsClockwise;
   static const IconData buildings = PhosphorIconsRegular.buildings;
   static const IconData arrowRight = PhosphorIconsRegular.arrowRight;
   static const IconData featuredSeriesPlanCount =

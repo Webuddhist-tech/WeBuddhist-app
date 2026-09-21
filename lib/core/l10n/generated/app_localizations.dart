@@ -3658,6 +3658,72 @@ abstract class AppLocalizations {
   /// **'Invite'**
   String get group_invite;
 
+  /// No description provided for @group_notifications_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get group_notifications_title;
+
+  /// No description provided for @group_notifications_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat'**
+  String get group_notifications_chat;
+
+  /// No description provided for @group_notifications_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Group content'**
+  String get group_notifications_content;
+
+  /// No description provided for @group_notifications_master_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are turned off for the app.'**
+  String get group_notifications_master_off;
+
+  /// No description provided for @group_notifications_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get group_notifications_open_settings;
+
+  /// No description provided for @group_notifications_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update notification settings. Try again.'**
+  String get group_notifications_update_failed;
+
+  /// No description provided for @group_notifications_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notification settings.'**
+  String get group_notifications_load_failed;
+
+  /// No description provided for @group_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group'**
+  String get group_leave;
+
+  /// No description provided for @group_leave_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave group?'**
+  String get group_leave_confirm_title;
+
+  /// No description provided for @group_leave_confirm_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll stop getting messages and updates from this group.'**
+  String get group_leave_confirm_message;
+
+  /// No description provided for @group_leave_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave the group. Try again.'**
+  String get group_leave_failed;
+
   /// No description provided for @group_request_to_join.
   ///
   /// In en, this message translates to:
@@ -5125,6 +5191,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Praying'**
   String get event_prayer_praying;
+
+  /// No description provided for @recitation_live_sync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get recitation_live_sync;
+
+  /// No description provided for @recitation_live_session_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'The live session has ended'**
+  String get recitation_live_session_ended;
 }
 
 class _AppLocalizationsDelegate

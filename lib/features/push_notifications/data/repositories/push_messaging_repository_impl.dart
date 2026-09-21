@@ -21,8 +21,8 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
   final Dio _dio;
 
   PushMessagingRepositoryImpl({required Dio dio, FirebaseMessaging? messaging})
-      : _dio = dio,
-        _messaging = messaging ?? FirebaseMessaging.instance;
+    : _dio = dio,
+      _messaging = messaging ?? FirebaseMessaging.instance;
 
   @override
   Future<bool> requestPermission() async {
@@ -52,14 +52,14 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> registerDeviceToken(
+  Future<Either<Failure, String?>> registerDeviceToken(
     String token, {
     String? deviceId,
     Map<String, bool>? preferences,
   }) async {
     try {
       // Platform must be exactly "ANDROID" or "IOS" (case-sensitive).
-      await _dio.post(
+      final response = await _dio.post(
         _deviceTokenPath,
         data: {
           'token': token,
@@ -68,15 +68,34 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
           if (preferences != null) 'notification_preferences': preferences,
         },
       );
-      return const Right(unit);
+      final data = response.data;
+      final id = data is Map<String, dynamic> ? data['id'] : null;
+      return Right(id is String && id.isNotEmpty ? id : null);
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'registerDeviceToken'));
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> unregisterDeviceToken(
+    String pushDeviceId,
+  ) async {
+    try {
+      await _dio.delete('$_deviceTokenPath/$pushDeviceId');
+      return const Right(unit);
+    } on DioException catch (e) {
+      // Already gone (or never ours after a re-login): the goal, no pushes to
+      // this registration, is met either way.
+      if (e.response?.statusCode == 404) return const Right(unit);
+      return Left(ExceptionMapper.map(e, context: 'unregisterDeviceToken'));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'unregisterDeviceToken'));
+    }
+  }
+
   PushMessage _toPushMessage(RemoteMessage m) => PushMessage(
-        title: m.notification?.title,
-        body: m.notification?.body,
-        data: m.data,
-      );
+    title: m.notification?.title,
+    body: m.notification?.body,
+    data: m.data,
+  );
 }

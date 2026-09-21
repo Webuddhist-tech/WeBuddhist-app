@@ -949,6 +949,17 @@
     }
   },
   "group_invite": "Invite",
+  "group_notifications_title": "Notifications",
+  "group_notifications_chat": "Group chat",
+  "group_notifications_content": "Group content",
+  "group_notifications_master_off": "Notifications are turned off for the app.",
+  "group_notifications_open_settings": "Turn on",
+  "group_notifications_update_failed": "Couldn't update notification settings. Try again.",
+  "group_notifications_load_failed": "Couldn't load notification settings.",
+  "group_leave": "Leave group",
+  "group_leave_confirm_title": "Leave group?",
+  "group_leave_confirm_message": "You'll stop getting messages and updates from this group.",
+  "group_leave_failed": "Couldn't leave the group. Try again.",
   "group_request_to_join": "Request to join",
   "group_request": "Request",
   "group_request_sent": "Request sent",
@@ -1425,5 +1436,7 @@
   "event_prayer_load_failed": "Prayer requests couldn't be loaded.",
   "event_prayer_closed": "Prayer requests are closed for this event.",
   "event_prayer_pray": "Pray",
-  "event_prayer_praying": "Praying"
+  "event_prayer_praying": "Praying",
+  "recitation_live_sync": "Sync",
+  "recitation_live_session_ended": "The live session has ended"
 }

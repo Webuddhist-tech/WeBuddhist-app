@@ -15,10 +15,12 @@ import 'package:go_router/go_router.dart';
 
 /// Opens a group accumulation practice directly (reader or mala), joining
 /// first when needed. Returns true when the user recited at least once.
+/// [eventId] makes the reader follow that event's live recitation.
 Future<bool> openGroupAccumulatorPractice(
   BuildContext context,
   WidgetRef ref, {
   required String accumulatorId,
+  String? eventId,
 }) async {
   final authState = ref.read(authProvider);
   if (authState.isGuest || !authState.isLoggedIn) {
@@ -80,6 +82,7 @@ Future<bool> openGroupAccumulatorPractice(
       groupId: detail.groupId,
       groupTitle: groupName,
       groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+      eventId: eventId,
     ),
   );
   if (!context.mounted) return false;

@@ -86,6 +86,7 @@ class PlanNavigator {
         return '${AppRoutes.reader}/${item.textId}';
       case PlanItemContentType.inlineText:
       case PlanItemContentType.inlineImage:
+      case PlanItemContentType.inlineVideo:
         return _planTextRouteFor(item);
     }
   }

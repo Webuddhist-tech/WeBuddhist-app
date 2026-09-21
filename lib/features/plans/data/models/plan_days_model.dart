@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
 
@@ -24,7 +25,7 @@ class PlanDaysModel {
     this.videos = const [],
   });
 
-  bool get hasAudio => audioUrl != null;
+  bool get hasAudio => hasPlayableAudio(audioUrl);
 
   factory PlanDaysModel.fromJson(Map<String, dynamic> json) {
     return PlanDaysModel(

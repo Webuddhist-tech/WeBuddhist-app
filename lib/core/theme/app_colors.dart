@@ -161,6 +161,12 @@ class AppColors {
   static const Color eventOnlineChip = Color(0xFF15803D);
   static const Color eventOnlineChipDark = Color(0xFF4ADE80);
 
+  // ============ Live recitation ============
+  /// Tint behind the line the puja leader is on: the outgoing-bubble amber
+  /// at 9% over the page, the brighter amber at 15% over black.
+  static const Color liveSegmentHighlight = Color(0x17DC8600);
+  static const Color liveSegmentHighlightDark = Color(0x26FDAE33);
+
   // ============ Design System Reference ============
   // Figma file: 0TE5qdViUvrisFZfNqODpX/WeBuddhist-App
   // Design system: Monlam Colors

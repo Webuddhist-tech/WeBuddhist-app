@@ -34,6 +34,11 @@ class PushSessionType {
   /// `EVENT` pushes — a group event.
   static const String event = 'EVENT';
 
+  /// `EVENT_REMINDER` pushes — "starting soon" / "starting now" for an event
+  /// the user joined. Carries `reminder_type` (`T_MINUS_10` | `T_ZERO`) and
+  /// `source_id` = event id, so it lands on the same screen as [event].
+  static const String eventReminder = 'EVENT_REMINDER';
+
   /// Shared by `JOIN_REQUEST_CREATED` and `JOIN_REQUEST_DECIDED`; the backend
   /// does not distinguish them by `session_type`, and it doesn't need to —
   /// both currently land on the same screen.
@@ -118,6 +123,7 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
     case PushSessionType.groupPost when sourceId.isNotEmpty:
       return PushTapResolution(PushTapTarget.postDetail, sourceId: sourceId);
     case PushSessionType.event when sourceId.isNotEmpty:
+    case PushSessionType.eventReminder when sourceId.isNotEmpty:
       return PushTapResolution(PushTapTarget.eventDetail, sourceId: sourceId);
     case PushSessionType.group when sourceId.isNotEmpty:
       // Both JOIN_REQUEST_CREATED and JOIN_REQUEST_DECIDED arrive with

@@ -3936,6 +3936,80 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_notifications_title => TolgeeBridge.get(
+    localeName,
+    'group_notifications_title',
+    () => _fallback.group_notifications_title,
+  );
+
+  @override
+  String get group_notifications_chat => TolgeeBridge.get(
+    localeName,
+    'group_notifications_chat',
+    () => _fallback.group_notifications_chat,
+  );
+
+  @override
+  String get group_notifications_content => TolgeeBridge.get(
+    localeName,
+    'group_notifications_content',
+    () => _fallback.group_notifications_content,
+  );
+
+  @override
+  String get group_notifications_master_off => TolgeeBridge.get(
+    localeName,
+    'group_notifications_master_off',
+    () => _fallback.group_notifications_master_off,
+  );
+
+  @override
+  String get group_notifications_open_settings => TolgeeBridge.get(
+    localeName,
+    'group_notifications_open_settings',
+    () => _fallback.group_notifications_open_settings,
+  );
+
+  @override
+  String get group_notifications_update_failed => TolgeeBridge.get(
+    localeName,
+    'group_notifications_update_failed',
+    () => _fallback.group_notifications_update_failed,
+  );
+
+  @override
+  String get group_notifications_load_failed => TolgeeBridge.get(
+    localeName,
+    'group_notifications_load_failed',
+    () => _fallback.group_notifications_load_failed,
+  );
+
+  @override
+  String get group_leave =>
+      TolgeeBridge.get(localeName, 'group_leave', () => _fallback.group_leave);
+
+  @override
+  String get group_leave_confirm_title => TolgeeBridge.get(
+    localeName,
+    'group_leave_confirm_title',
+    () => _fallback.group_leave_confirm_title,
+  );
+
+  @override
+  String get group_leave_confirm_message => TolgeeBridge.get(
+    localeName,
+    'group_leave_confirm_message',
+    () => _fallback.group_leave_confirm_message,
+  );
+
+  @override
+  String get group_leave_failed => TolgeeBridge.get(
+    localeName,
+    'group_leave_failed',
+    () => _fallback.group_leave_failed,
+  );
+
+  @override
   String get group_request_to_join => TolgeeBridge.get(
     localeName,
     'group_request_to_join',
@@ -5681,5 +5755,19 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_prayer_praying',
     () => _fallback.event_prayer_praying,
+  );
+
+  @override
+  String get recitation_live_sync => TolgeeBridge.get(
+    localeName,
+    'recitation_live_sync',
+    () => _fallback.recitation_live_sync,
+  );
+
+  @override
+  String get recitation_live_session_ended => TolgeeBridge.get(
+    localeName,
+    'recitation_live_session_ended',
+    () => _fallback.recitation_live_session_ended,
   );
 }

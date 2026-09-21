@@ -65,7 +65,7 @@ push_notifications/
 | CHAT + `chat_kind: GROUP` | Group chat by `group_id` (`source_id` is the room id) |
 | CHAT + `chat_kind: PRIVATE` | Home tab (no private chat screen yet) |
 | GROUP_POST | Post detail by `source_id` |
-| EVENT | Event detail by `source_id` |
+| EVENT / EVENT_REMINDER | Event detail by `source_id` |
 | GROUP (join request created / decided) | Group profile by `source_id` |
 | Empty / unknown | Home tab |
 
@@ -77,8 +77,21 @@ Post-frame scheduling (`_schedule`) — defer navigation until tree ready.
 
 ## Server vs local split
 
-- **FCM:** plan, series (routine toggle gates backend prefs)
+- **FCM:** plan, series (routine toggle gates backend prefs), group chat, group posts, events, event reminders, join requests, verse of the day
 - **Local only (notifications feature):** recitation, mala, timer
+
+## Master switch
+
+The app's master notification toggle is enforced server-side by
+**unregistering the device**: OFF calls `DELETE /users/me/push-devices/{id}`
+with the id kept from the register response (`StorageKeys.pushDeviceServerId`),
+ON registers again. Token refreshes and sign-in while master is off never
+re-register; sign-in with master off removes a registration left from an
+earlier session. Register and unregister run through one reconcile loop
+(`_requestReconcile`) that re-reads state after each pass and retries a
+failed backend call with linear backoff, up to `maxReconcileRetries`.
+Per-group toggles (group_profile feature) are separate, server-stored, and
+greyed out in the UI while master is off.
 
 ---
 
