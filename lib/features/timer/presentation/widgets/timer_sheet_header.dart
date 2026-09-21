@@ -4,7 +4,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 /// Drag-handle + title row shared by the New Timer bottom sheets.
 ///
 /// Pass either [onClose] (renders an "X" button, e.g. Duration / Ambient
-/// Sound) or [onDone] (renders a "Done" text button, e.g. Bells) — not both.
+/// Sound) or [onDone] (renders a "Done" text button) — not both.
 class TimerSheetHeader extends StatelessWidget {
   const TimerSheetHeader({
     super.key,

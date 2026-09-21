@@ -5,7 +5,6 @@ import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/create_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/ambient_sound_sheet.dart';
-import 'package:flutter_pecha/features/timer/presentation/widgets/bells_sheet.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/duration_picker_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,8 +28,6 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   int _durationMinutes = NewTimerScreen._defaultDurationMinutes;
   String? _ambientSoundId;
   String? _ambientSoundName;
-  bool _bellAtStart = true;
-  bool _bellAtEnd = true;
   bool _isSubmitting = false;
 
   Future<void> _pickDuration() async {
@@ -57,20 +54,6 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     }
   }
 
-  Future<void> _pickBells() async {
-    final selection = await BellsSheet.show(
-      context,
-      bellAtStart: _bellAtStart,
-      bellAtEnd: _bellAtEnd,
-    );
-    if (selection != null && mounted) {
-      setState(() {
-        _bellAtStart = selection.bellAtStart;
-        _bellAtEnd = selection.bellAtEnd;
-      });
-    }
-  }
-
   String get _timerName => '$_durationMinutes minutes';
 
   Future<PresetTimer?> _createTimer() async {
@@ -82,8 +65,6 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
         description: '',
         durationMs: _durationMinutes * 60000,
         ambientSoundId: _ambientSoundId,
-        bellAtStart: _bellAtStart,
-        bellAtEnd: _bellAtEnd,
       ),
     );
     if (!mounted) return null;
@@ -135,12 +116,6 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
                     leadingIcon: AppAssets.timerAmbientSound,
                     onTap: _pickAmbientSound,
                   ),
-                  const SizedBox(height: 12),
-                  _SettingsRow(
-                    label: 'BELLS',
-                    value: _bellsSummary(),
-                    onTap: _pickBells,
-                  ),
                 ],
               ),
             ),
@@ -187,13 +162,6 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
         ),
       ),
     );
-  }
-
-  String _bellsSummary() {
-    if (_bellAtStart && _bellAtEnd) return 'Start & end · Standard bell';
-    if (_bellAtStart) return 'Start only · Standard bell';
-    if (_bellAtEnd) return 'End only · Standard bell';
-    return 'Off';
   }
 
   Widget _buildAppBar(BuildContext context) {

@@ -25,8 +25,6 @@ abstract class TimersRepositoryInterface {
     required String description,
     required int durationMs,
     String? ambientSoundId,
-    required bool bellAtStart,
-    required bool bellAtEnd,
   });
 
   /// Deletes a user-defined timer (`DELETE /timers/user/{timerId}`) and

@@ -141,8 +141,6 @@ class TimersRepository implements TimersRepositoryInterface {
     required String description,
     required int durationMs,
     String? ambientSoundId,
-    required bool bellAtStart,
-    required bool bellAtEnd,
   }) async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -156,8 +154,9 @@ class TimersRepository implements TimersRepositoryInterface {
         description: description,
         durationMs: durationMs,
         ambientSoundId: ambientSoundId,
-        bellAtStart: bellAtStart,
-        bellAtEnd: bellAtEnd,
+        // Always on — the backend defaults these to true as well.
+        bellAtStart: true,
+        bellAtEnd: true,
       );
     } catch (e) {
       return Left(_toFailure(e, 'Failed to create timer'));

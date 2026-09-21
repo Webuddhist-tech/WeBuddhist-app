@@ -10,26 +10,15 @@ class CreateUserTimerParams extends Equatable {
     required this.description,
     required this.durationMs,
     this.ambientSoundId,
-    required this.bellAtStart,
-    required this.bellAtEnd,
   });
 
   final String name;
   final String description;
   final int durationMs;
   final String? ambientSoundId;
-  final bool bellAtStart;
-  final bool bellAtEnd;
 
   @override
-  List<Object?> get props => [
-    name,
-    description,
-    durationMs,
-    ambientSoundId,
-    bellAtStart,
-    bellAtEnd,
-  ];
+  List<Object?> get props => [name, description, durationMs, ambientSoundId];
 }
 
 class CreateUserTimerUseCase
@@ -41,8 +30,6 @@ class CreateUserTimerUseCase
     required String description,
     required int durationMs,
     String? ambientSoundId,
-    required bool bellAtStart,
-    required bool bellAtEnd,
   })
   _createUserTimer;
 
@@ -58,8 +45,6 @@ class CreateUserTimerUseCase
       description: params.description,
       durationMs: params.durationMs,
       ambientSoundId: params.ambientSoundId,
-      bellAtStart: params.bellAtStart,
-      bellAtEnd: params.bellAtEnd,
     );
   }
 }

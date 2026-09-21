@@ -9,7 +9,7 @@ Preset meditation timers with countdown, pause/resume, lock-screen display, sess
 ## User-facing functionality
 
 - Browse preset timers + user-created ("Your timers") (authenticated)
-- Create a custom timer (duration, ambient sound, bells) via "+ Custom timer"
+- Create a custom timer (duration, ambient sound) via "+ Custom timer"
 - 5-second countdown → running phase
 - Pause/resume with **wall-clock** remaining time (survives backgrounding)
 - Completion bell (in-app + scheduled local notification)
@@ -36,7 +36,7 @@ timer/
 |------|-------|
 | Presets + Your timers | `presentation/screens/preset_timers_screen.dart` |
 | Create custom timer | `presentation/screens/new_timer_screen.dart` |
-| Duration / Ambient sound / Bells sheets | `presentation/widgets/{duration_picker_sheet,ambient_sound_sheet,bells_sheet}.dart` |
+| Duration / Ambient sound sheets | `presentation/widgets/{duration_picker_sheet,ambient_sound_sheet}.dart` |
 | Ambient sound playback (preview + session) | `presentation/services/ambient_sound_player.dart` |
 | Active session | `presentation/screens/active_timer_screen.dart` |
 | Providers | `presentation/providers/timers_providers.dart` |
@@ -74,7 +74,8 @@ timer/
 **never sends** `group_id` or `parent_preset_id` — no app concept for either
 yet. The New Timer screen has no name/description inputs, so those are
 derived: `name` = `"{n} minutes"`, `description` = `""` (always sent).
-`bellAtStart`/`bellAtEnd` default `true` per the API schema. After a
+Start/end bells are always on (backend default); the create flow does not
+expose or accept them as user-configurable params. After a
 successful create (and after a successful delete) the repository patches the
 cached list through `TimersLocalDatasource.upsertPresetTimer` /
 `removePresetTimer`, so "Your timers" updates via the existing Hive-watch
@@ -101,9 +102,9 @@ completion. The provider is kept alive with `ref.listenManual` for the
 session because the urls expire. Ambient playback is best-effort — a missing
 or unplayable track leaves the session running silently.
 
-The bundled `assets/audios/meditation.wav` bell (`TimerSoundPlayer`) is gated
-on `bellAtStart`/`bellAtEnd`, and the scheduled completion notification is
-only armed when `bellAtEnd` is set.
+The bundled `assets/audios/meditation.wav` bell (`TimerSoundPlayer`) always
+plays at session start and completion, and the scheduled start/completion
+notifications are always armed when backgrounded.
 
 ## Cross-feature dependencies
 

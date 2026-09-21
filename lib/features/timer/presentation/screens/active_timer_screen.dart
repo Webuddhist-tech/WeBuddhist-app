@@ -106,9 +106,6 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     return (id == null || id.isEmpty) ? null : id;
   }
 
-  bool get _playsBell =>
-      widget.presetTimer.bellAtStart || widget.presetTimer.bellAtEnd;
-
   int get _elapsedMs => _totalMs - _remainingFromClock();
 
   DateTime get _now => (widget._clock ?? DateTime.now)();
@@ -141,7 +138,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     super.initState();
     _remainingMs = _totalMs;
     _soundPlayer = widget._soundPlayer ?? TimerSoundPlayer();
-    if (_playsBell) _soundPlayer.init();
+    _soundPlayer.init();
     _ambientPlayer = AmbientSoundPlayer();
     if (_ambientSoundId != null) {
       // The sound catalogue auto-disposes and its urls are short-lived signed
@@ -309,7 +306,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _startMainTimer({required bool playBell}) {
-    if (playBell && widget.presetTimer.bellAtStart) _soundPlayer.play();
+    if (playBell) _soundPlayer.play();
     unawaited(_startAmbientSound());
 
     final endsAt = _sessionEndFor(_countdownEndsAt ?? _now);
@@ -400,7 +397,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       _phase = _TimerPhase.finished;
     });
 
-    if (playBell && widget.presetTimer.bellAtEnd) {
+    if (playBell) {
       unawaited(_ringBellThenRelease());
     } else {
       unawaited(_keepAlive.stop());
@@ -563,7 +560,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _scheduleStartBell(DateTime startsAt) {
-    if (!mounted || !widget.presetTimer.bellAtStart) return;
+    if (!mounted) return;
     final title = _sessionTitle;
     final body = context.l10n.timer_notification_in_progress;
     _scheduleBell(
@@ -575,7 +572,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _scheduleCompletionBell(DateTime endsAt) {
-    if (!mounted || !widget.presetTimer.bellAtEnd) return;
+    if (!mounted) return;
     final title = _sessionTitle;
     final body = context.l10n.timer_notification_complete;
     _scheduleBell(
