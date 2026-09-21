@@ -201,9 +201,16 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(AppAssets.arrowLeft),
-            onPressed: () => context.pop(),
+          SizedBox(
+            width: 88,
+            height: 48,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                icon: const Icon(AppAssets.arrowLeft),
+                onPressed: () => context.pop(),
+              ),
+            ),
           ),
           const Expanded(
             child: Center(
@@ -216,13 +223,22 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
             ),
           ),
           SizedBox(
-            width: 64,
+            width: 88,
             height: 48,
-            child: Center(
+            child: Align(
+              alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: _isSubmitting ? null : _onSave,
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 child: const Text(
                   'Save',
+                  maxLines: 1,
+                  softWrap: false,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
