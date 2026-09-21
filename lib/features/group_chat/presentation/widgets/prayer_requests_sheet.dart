@@ -107,8 +107,13 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     }
   }
 
-  /// Connects once the room is known; the socket is event-scoped.
-  void _syncRoom(String? roomId) {
+  /// Connects once the room is known; the socket is event-scoped. A closed
+  /// room keeps its id so the loaded requests still render, so the status has
+  /// to be checked too — otherwise the rebuild that follows `markClosed`
+  /// reconnects to the room the server just shut.
+  void _syncRoom(PrayerRequestsState state) {
+    if (state.roomStatus == PrayerRoomStatus.closed) return;
+    final roomId = state.roomId;
     if (roomId == null || roomId.isEmpty || roomId == _roomId) return;
     _roomId = roomId;
     unawaited(_ensureLiveConnected());
@@ -259,7 +264,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(prayerRequestsProvider(widget.eventId));
-    _syncRoom(state.roomId);
+    _syncRoom(state);
 
     final size = MediaQuery.sizeOf(context);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;

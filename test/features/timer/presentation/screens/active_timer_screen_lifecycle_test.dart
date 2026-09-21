@@ -153,6 +153,38 @@ void main() {
   );
 
   testWidgets(
+    'a tick delayed past the deadline leaves the exact bell to the OS',
+    (tester) async {
+      final clock = _FakeClock();
+      final notifier = _FakeTimerSessionNotifications();
+      final soundPlayer = _FakeTimerBellPlayer();
+
+      await _pumpScreen(
+        tester,
+        clock: clock,
+        notifier: notifier,
+        soundPlayer: soundPlayer,
+      );
+      await _advanceThroughCountdown(tester, clock);
+
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await tester.pump();
+
+      expect(notifier.scheduleRequests, hasLength(1));
+
+      // The whole session elapses between two ticks, so the next one lands at
+      // the deadline instead of inside the handoff window. The exact alarm is
+      // ringing already; the in-app bell must not ring on top of it.
+      clock.advance(_timerDuration);
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(soundPlayer.playCount, 1);
+      expect(notifier.cancelCompletionCount, 1);
+    },
+  );
+
+  testWidgets(
     'reordered schedule and cancel futures leave newest alarm armed',
     (tester) async {
       final clock = _FakeClock();

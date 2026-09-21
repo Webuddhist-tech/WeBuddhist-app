@@ -276,12 +276,15 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     if (endsAt == null) return;
 
     final remainingMs = endsAt.difference(_now).inMilliseconds;
+    // Read before the handoff, which clears the exact-alarm record as it
+    // cancels; past the deadline that record is what says the OS already rang.
+    final wasExact = _startBell.isExactFor(endsAt);
     _reclaimBellIfDue(_startBell, remainingMs, _cancelStartBell);
     if (remainingMs <= 0) {
       _timer?.cancel();
-      // If the alarm is still armed, this tick came too late to disarm it — the
-      // OS is about to ring, or already has, so don't ring on top of it.
-      _startMainTimer(playBell: !_startBell.isExactFor(endsAt));
+      // If the alarm was still armed, this tick came too late to disarm it —
+      // the OS is about to ring, or already has, so don't ring on top of it.
+      _startMainTimer(playBell: !wasExact);
       return;
     }
 
@@ -326,9 +329,12 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     if (_endsAt == null) return;
 
     final remainingMs = _remainingFromClock();
+    // Same ordering as the countdown tick: the handoff clears the exact-alarm
+    // record, so a late tick has to read it first.
+    final wasExact = _completionBell.isExactFor(_endsAt!);
     _reclaimBellIfDue(_completionBell, remainingMs, _cancelCompletionBell);
     if (remainingMs <= 0) {
-      _completeSession(playBell: !_completionBell.isExactFor(_endsAt!));
+      _completeSession(playBell: !wasExact);
       return;
     }
 
