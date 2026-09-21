@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_member_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_notification_preferences_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
@@ -65,6 +66,73 @@ class GroupProfileRemoteDatasource {
       throw _dioToException(
         e,
         groupType.isPage ? 'Failed to follow group' : 'Failed to join group',
+      );
+    }
+  }
+
+  static String _notificationPreferencesPath(String groupId) =>
+      '/users/me/notification-preferences/groups/$groupId';
+
+  /// `GET /users/me/notification-preferences/groups/{groupId}`.
+  ///
+  /// 404 means the caller is not a member; the repository maps it to
+  /// [NotFoundFailure] so the UI can fall back to defaults. The `PUSH`
+  /// channel is the backend default, so it is not sent.
+  Future<GroupNotificationPreferencesModel> fetchGroupNotificationPreferences(
+    String groupId,
+  ) async {
+    try {
+      final response = await dio.get(
+        _notificationPreferencesPath(groupId),
+        options: Options(extra: {'no_cache': true}),
+      );
+      if (response.statusCode == 200) {
+        return GroupNotificationPreferencesModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+      throw _statusToException(
+        response.statusCode,
+        'Failed to load group notification preferences',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchGroupNotificationPreferences', e);
+      throw _dioToException(e, 'Failed to load group notification preferences');
+    }
+  }
+
+  /// `PATCH /users/me/notification-preferences/groups/{groupId}`.
+  ///
+  /// The body is a merge: only the types behind the toggles that were passed
+  /// are sent, so flipping one toggle never overwrites the other. Returns
+  /// the full per-group state the backend now holds.
+  Future<GroupNotificationPreferencesModel> updateGroupNotificationPreferences(
+    String groupId, {
+    bool? chat,
+    bool? content,
+  }) async {
+    try {
+      final response = await dio.patch(
+        _notificationPreferencesPath(groupId),
+        data: GroupNotificationPreferencesModel.toRequestJson(
+          chat: chat,
+          content: content,
+        ),
+      );
+      if (response.statusCode == 200) {
+        return GroupNotificationPreferencesModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+      throw _statusToException(
+        response.statusCode,
+        'Failed to update group notification preferences',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in updateGroupNotificationPreferences', e);
+      throw _dioToException(
+        e,
+        'Failed to update group notification preferences',
       );
     }
   }
@@ -482,7 +550,10 @@ class GroupProfileRemoteDatasource {
     }
   }
 
-  Future<void> submitJoinRequest(String groupId, {required String message}) async {
+  Future<void> submitJoinRequest(
+    String groupId, {
+    required String message,
+  }) async {
     try {
       final response = await dio.post(
         '/author/groups/$groupId/join-requests',

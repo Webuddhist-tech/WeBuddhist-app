@@ -655,6 +655,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     planId: widget.plan.id,
                     dayNumber: selectedDay,
                     dayAudioUrl: dayContent.audioUrl,
+                    // Only in-person readers follow the live recitation: the
+                    // stream already carries the text as hardcoded overlays.
+                    eventId: widget.showLiveStream ? null : widget.eventId,
                     onActivityToggled:
                         (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
                     onGroupAccumulationPracticed:
@@ -984,6 +987,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         context,
         ref,
         accumulatorId: accumulatorId,
+        eventId: widget.eventId,
       ).then((practiced) {
         if (practiced) _completeTask(accumulationTask.id, tasks);
         _onReaderClosed();
@@ -1007,6 +1011,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       planTextItems: planTextItems,
       currentTextIndex: index,
       dayAudioUrl: audioUrl,
+      eventId: widget.eventId,
     );
 
     PlanNavigator.push(

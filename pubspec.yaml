@@ -33,6 +33,8 @@ dependencies:
 
   # Audio
   just_audio: ^0.9.36
+  # Configures the iOS audio session the timer holds open while a session
+  # runs (see timer_keep_alive.dart); already a just_audio dependency.
   audio_session: ^0.1.25
 
   # Localization

@@ -3,6 +3,8 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart'
+    show liveSegmentHighlightColor;
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -25,6 +27,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
     this.isHighlighted = false,
     this.highlightSource = NavigationSource.normal,
     this.isGreyedOut = false,
+    this.isLive = false,
     this.onTap,
   });
 
@@ -46,6 +49,9 @@ class InterlinearSegmentItem extends ConsumerWidget {
   final bool isHighlighted;
   final NavigationSource highlightSource;
   final bool isGreyedOut;
+
+  /// The line the puja leader is on right now.
+  final bool isLive;
   final VoidCallback? onTap;
 
   @override
@@ -73,65 +79,73 @@ class InterlinearSegmentItem extends ConsumerWidget {
       opacity: isGreyedOut ? 0.3 : 1.0,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(
-            ReaderConstants.segmentBorderRadius,
-          ),
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: ReaderConstants.segmentHorizontalPadding + (depth * 8),
-              right: ReaderConstants.segmentHorizontalPadding,
-              top: ReaderConstants.segmentVerticalPadding,
-              bottom: ReaderConstants.segmentVerticalPadding,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        // Square-edged so the tint reads as a band across the page.
+        decoration: BoxDecoration(
+          color: isLive ? liveSegmentHighlightColor(context) : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(
+              ReaderConstants.segmentBorderRadius,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SegmentNumber(
-                  segmentNumber: segment.segmentNumber,
-                  fontSize: fontSize,
-                  language: primaryLanguage,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (showPrimary) ...[
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: ReaderConstants.segmentHorizontalPadding + (depth * 8),
+                right: ReaderConstants.segmentHorizontalPadding,
+                top: ReaderConstants.segmentVerticalPadding,
+                bottom: ReaderConstants.segmentVerticalPadding,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SegmentNumber(
+                    segmentNumber: segment.segmentNumber,
+                    fontSize: fontSize,
+                    language: primaryLanguage,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (showPrimary) ...[
                         SegmentHtmlWidget(
-                          htmlContent: primary.html,
-                          segmentIndex: segment.segmentNumber,
-                          fontSize: fontSize,
-                          language: primary.fontLanguage,
-                          isSelected: isSelected,
-                        ),
-                        // Original and its translation belong together; the
+                            htmlContent: primary.html,
+                            segmentIndex: segment.segmentNumber,
+                            fontSize: fontSize,
+                            language: primary.fontLanguage,
+                            isSelected: isSelected,
+                          ),
+                          // Original and its translation belong together; the
                         // larger gap goes between verses, below.
                         const SizedBox(height: 6),
-                      ],
+                        ],
                       if (secondary.isPlaceholder)
-                        _SecondaryPlaceholder(
-                          text: secondary.text,
-                          language: secondarySlot.languageCode,
-                          fontSize: fontSize,
-                          color: secondaryColor,
-                        )
-                      else
-                        SegmentHtmlWidget(
-                          htmlContent: secondary.text,
-                          segmentIndex: segment.segmentNumber,
-                          fontSize: fontSize,
-                          language: secondarySlot.languageCode,
-                          isSelected: isSelected,
-                          textColor: secondaryColor,
-                        ),
-                      const SizedBox(height: 16),
-                    ],
+                          _SecondaryPlaceholder(
+                            text: secondary.text,
+                            language: secondarySlot.languageCode,
+                            fontSize: fontSize,
+                            color: secondaryColor,
+                          )
+                        else
+                          SegmentHtmlWidget(
+                            htmlContent: secondary.text,
+                            segmentIndex: segment.segmentNumber,
+                            fontSize: fontSize,
+                            language: secondarySlot.languageCode,
+                            isSelected: isSelected,
+                            textColor: secondaryColor,
+                          ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

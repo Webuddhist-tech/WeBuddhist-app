@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
@@ -26,6 +27,10 @@ class PreviewActivityList extends ConsumerWidget {
   final int? dayNumber;
   final String? dayAudioUrl;
 
+  /// The group event this plan was opened from, so the reader follows its
+  /// live recitation.
+  final String? eventId;
+
   const PreviewActivityList({
     super.key,
     required this.language,
@@ -36,6 +41,7 @@ class PreviewActivityList extends ConsumerWidget {
     this.planId,
     this.dayNumber,
     this.dayAudioUrl,
+    this.eventId,
   });
 
   List<PlanTasksModel> get _sortedTasks {
@@ -110,7 +116,7 @@ class PreviewActivityList extends ConsumerWidget {
   }
 
   bool _taskHasAudio(PlanTasksModel task) {
-    if (dayAudioUrl != null) return true;
+    if (hasPlayableAudio(dayAudioUrl)) return true;
     return task.subtasks.any((s) => s.hasOwnAudio);
   }
 
@@ -124,18 +130,20 @@ class PreviewActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
-      openGroupAccumulatorPractice(context, ref, accumulatorId: accumulatorId);
+      openGroupAccumulatorPractice(
+        context,
+        ref,
+        accumulatorId: accumulatorId,
+        eventId: eventId,
+      );
       return;
     }
 
     final planTextItems = PlanSubtaskNavigation.fromPlanTasks(tasks);
     if (planTextItems.isEmpty) return;
 
-    // Find this task's position in the unified list. Without subtaskId
-    // (preview mode) we match on title — task titles are unique within
-    // a day in practice, and a stale match still navigates somewhere
-    // reasonable in the same list.
-    final index = planTextItems.indexWhere((item) => item.title == task.title);
+    // Open at the task's first subtask; next/prev walks the rest.
+    final index = planTextItems.indexWhere((item) => item.taskId == task.id);
     if (index < 0) return;
 
     final target = planTextItems[index];
@@ -148,6 +156,7 @@ class PreviewActivityList extends ConsumerWidget {
       currentTextIndex: index,
       autoPlay: autoPlay,
       dayAudioUrl: dayAudioUrl,
+      eventId: eventId,
     );
 
     PlanNavigator.push(context, target, navigationContext);

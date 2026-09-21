@@ -23,6 +23,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_pr
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_cover_image.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/activity_list.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -177,6 +178,9 @@ Future<void> _pumpLiveEventDetails(
 
 Finder _body() => find.textContaining('swift protector', findRichText: true);
 
+ActivityList _activityList(WidgetTester tester) =>
+    tester.widget<ActivityList>(find.byType(ActivityList));
+
 // The pending stream shimmers forever, so settle for a fixed time instead.
 Future<void> _settle(WidgetTester tester) =>
     tester.pump(const Duration(milliseconds: 400));
@@ -195,6 +199,9 @@ void main() {
     // Already practicing via the event, so no "Practice now".
     expect(find.text('Practice now'), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
+    // Online readers stay off the live socket: the stream's overlays carry
+    // the text, and sync would lag behind the video.
+    expect(_activityList(tester).eventId, isNull);
 
     await tester.tap(find.text('Tara of the day'));
     await _settle(tester);
@@ -271,6 +278,8 @@ void main() {
     // No embedded scope, so a tapped task pushes its own route.
     expect(find.byType(PlanEmbeddedScope), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
+    // That route follows the event's live recitation.
+    expect(_activityList(tester).eventId, 'event-1');
   });
 
   testWidgets('an event without a stream counts down to its start', (

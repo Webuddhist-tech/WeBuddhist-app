@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
@@ -27,6 +28,10 @@ class ActivityList extends ConsumerWidget {
   final int? dayNumber;
   final String? dayAudioUrl;
 
+  /// The group event this plan was opened from, so the reader follows its
+  /// live recitation.
+  final String? eventId;
+
   const ActivityList({
     super.key,
     required this.language,
@@ -41,6 +46,7 @@ class ActivityList extends ConsumerWidget {
     this.planId,
     this.dayNumber,
     this.dayAudioUrl,
+    this.eventId,
   });
 
   @override
@@ -111,7 +117,7 @@ class ActivityList extends ConsumerWidget {
   bool _taskHasAudio(UserTasksDto task) {
     // A subtask plays audio when it has its own audio file, or the day-level
     // track is available as a fallback. Subtask audio takes precedence.
-    if (dayAudioUrl != null) return true;
+    if (hasPlayableAudio(dayAudioUrl)) return true;
     return task.subTasks.any((s) => s.hasOwnAudio);
   }
 
@@ -129,6 +135,7 @@ class ActivityList extends ConsumerWidget {
         context,
         ref,
         accumulatorId: accumulatorId,
+        eventId: eventId,
       ).then((practiced) {
         if (practiced) onGroupAccumulationPracticed?.call(task.id);
         onReaderClosed?.call();
@@ -139,11 +146,8 @@ class ActivityList extends ConsumerWidget {
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
     if (planTextItems.isEmpty) return;
 
-    final index = planTextItems.indexWhere(
-      (item) =>
-          item.subtaskId != null &&
-          task.subTasks.any((s) => s.id == item.subtaskId),
-    );
+    // Open at the task's first subtask; next/prev walks the rest.
+    final index = planTextItems.indexWhere((item) => item.taskId == task.id);
     if (index < 0) return;
 
     final target = planTextItems[index];
@@ -158,6 +162,7 @@ class ActivityList extends ConsumerWidget {
       currentTextIndex: index,
       autoPlay: autoPlay,
       dayAudioUrl: effectiveAudioUrl,
+      eventId: eventId,
     );
 
     PlanNavigator.push(

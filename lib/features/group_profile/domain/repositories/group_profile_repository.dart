@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 
@@ -26,6 +27,20 @@ abstract class GroupProfileRepositoryInterface {
     String groupId,
     GroupType groupType,
   );
+
+  /// The viewer's push preferences for a group they have joined.
+  /// [NotFoundFailure] when the viewer is not a member.
+  Future<Either<Failure, GroupNotificationPreferences>>
+  getGroupNotificationPreferences(String groupId);
+
+  /// Changes one or both push preferences. Pass only the flag that changed;
+  /// the returned object carries the backend's full current state.
+  Future<Either<Failure, GroupNotificationPreferences>>
+  updateGroupNotificationPreferences(
+    String groupId, {
+    bool? chat,
+    bool? content,
+  });
 
   Future<Either<Failure, GroupPracticesPage>> getGroupPractices(
     String groupId, {

@@ -21,6 +21,9 @@ class ReaderAppBarOverlay extends ConsumerWidget {
   /// Opens the "more" bottom sheet (font size, add-to-practices, bookmark…).
   final VoidCallback onMorePressed;
 
+  /// Live recitation sync button, shown before search.
+  final Widget? liveSyncToggle;
+
   const ReaderAppBarOverlay({
     super.key,
     required this.params,
@@ -28,6 +31,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
     required this.onSearchPressed,
     required this.onLanguagesPressed,
     required this.onMorePressed,
+    this.liveSyncToggle,
   });
 
   @override
@@ -59,6 +63,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
           ),
           toolbarHeight: ReaderConstants.appBarToolbarHeight,
           actions: [
+            if (liveSyncToggle != null) liveSyncToggle!,
             ReaderSearchButton(onPressed: onSearchPressed),
             ReaderLanguagesButton(
               params: params,

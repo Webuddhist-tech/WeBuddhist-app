@@ -403,7 +403,7 @@ class _GroupEventDetailScreenState
           showLiveStream: participation == GroupEventParticipationType.online,
         );
       } else {
-        await _openPlanPreview(planId!);
+        await _openPlanPreview(planId!, eventId: event.id);
       }
     } finally {
       if (mounted) setState(() => _isOpeningPuja = false);
@@ -431,7 +431,7 @@ class _GroupEventDetailScreenState
     );
   }
 
-  Future<void> _openPlanPreview(String planId) async {
+  Future<void> _openPlanPreview(String planId, {String? eventId}) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
     if (!mounted) return;
     final plan = either.fold((_) => null, (plan) => plan);
@@ -439,7 +439,10 @@ class _GroupEventDetailScreenState
       _showError(context.l10n.notFound);
       return;
     }
-    context.push(AppRoutes.practicePlanPreview, extra: {'plan': plan});
+    context.push(
+      AppRoutes.practicePlanPreview,
+      extra: {'plan': plan, if (eventId != null) 'eventId': eventId},
+    );
   }
 
   Future<void> _enterSeries(

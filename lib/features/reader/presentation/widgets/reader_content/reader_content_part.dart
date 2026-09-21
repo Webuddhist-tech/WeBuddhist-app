@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_providers.dart';
@@ -19,6 +20,8 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_conten
 // import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_skeleton.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -112,6 +115,21 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   String? _secondaryInitialSegmentId;
   bool _hasComputedSecondaryInitial = false;
 
+  // Live recitation (event puja). The operator's position arrives over the
+  // socket held by [recitationLiveProvider]; this widget places it in the
+  // loaded text, scrolls to it while following, and paints the highlight.
+  String? get _liveEventId => widget.params.navigationContext?.eventId;
+  bool get _isLiveRecitation =>
+      widget.params.navigationContext?.isLiveRecitation ?? false;
+
+  /// Rendered index of the live line, for the scrolled-away check.
+  int? _liveIndex;
+  bool _liveInitialized = false;
+  bool _liveJumpInFlight = false;
+  RecitationLiveState? _livePending;
+  int _liveGeneration = 0;
+  DateTime? _lastUserPointerAt;
+
   @override
   void initState() {
     super.initState();
@@ -141,6 +159,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     // Track scroll direction for app bar visibility
     _trackScrollDirection();
+
+    if (_isLiveRecitation) _maybePauseLiveFollow();
 
     // Disable grey-out on first user scroll
     // if (_hasUserInteracted && _isUserScrolling && _enableGreyOut) {
@@ -447,6 +467,209 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     });
   }
 
+  // ─── Live recitation ─────────────────────────────────────────────────────
+
+  void _onLiveStateChanged(
+    RecitationLiveState? previous,
+    RecitationLiveState next,
+  ) {
+    if (!mounted || next.position == null) return;
+    final positionChanged = previous?.position != next.position;
+    final followRequested = previous?.followRequest != next.followRequest;
+    if (positionChanged || followRequested) unawaited(_applyLive(next));
+  }
+
+  bool _livePositionIsInThisText(
+    RecitationLivePosition position,
+    ReaderState readerState,
+  ) {
+    final dualSettings = ref.read(
+      readerDualSettingsProvider(widget.params.textId),
+    );
+    return LivePositionResolver.textMatches(
+      position,
+      loadedTextIds: [
+        widget.params.textId,
+        readerState.textDetail?.id,
+        dualSettings.primary.versionId,
+      ],
+      content: readerState.content,
+    );
+  }
+
+  /// This text's own id for the live segment: the id itself, or the line
+  /// whose `mappings` name it (the same line in another language).
+  String? _localSegmentIdFor(FlattenedContent content, String segmentId) {
+    final index = content.resolveSegmentIndex(segmentId);
+    return index == null ? null : content.items[index].segmentId;
+  }
+
+  /// Local id of the line to highlight, or null when it is not in the loaded
+  /// content or the user opted out. Also records its rendered index.
+  String? _resolveLiveHighlight(
+    FlattenedContent content,
+    RecitationLivePosition? position,
+    RecitationLiveFollowMode mode,
+  ) {
+    if (position == null || mode == RecitationLiveFollowMode.off) {
+      _liveIndex = null;
+      return null;
+    }
+    final localId = _localSegmentIdFor(content, position.segmentId);
+    _liveIndex =
+        localId == null ? null : _renderedIndexForSegment(localId, content);
+    return localId;
+  }
+
+  /// Places [live]'s position in this text and, while following, scrolls to
+  /// it. [initial] marks the first evaluation after mount.
+  Future<void> _applyLive(
+    RecitationLiveState live, {
+    bool initial = false,
+  }) async {
+    final position = live.position;
+    if (!mounted || position == null) return;
+    final eventId = _liveEventId!;
+    final readerState = ref.read(readerNotifierProvider(widget.params));
+    final content = readerState.content;
+    if (content == null || content.isEmpty) return;
+    final liveNotifier = ref.read(recitationLiveProvider(eventId).notifier);
+
+    if (!_livePositionIsInThisText(position, readerState)) {
+      if (!live.isFollowing) return;
+      final items = widget.params.navigationContext?.planTextItems;
+      final inSequence =
+          items?.any(
+            (item) => item.isSourceReference && item.textId == position.textId,
+          ) ??
+          false;
+      if (!inSequence) {
+        liveNotifier.setOutOfSync(true);
+      } else if (initial) {
+        // Another text of the sequence, already live before this screen had
+        // rendered: the user navigated here themselves, so stop following
+        // rather than bounce them away.
+        liveNotifier.pauseFollowing();
+      }
+      // A snapshot on another text falls through: the screen leaves the user
+      // where they are (reader_screen skips the switch for it) but keeps
+      // following, so the operator's next move carries them along. Nothing
+      // marks a frame as the connect snapshot, so it is inferred from
+      // arriving before the grace window closes — an operator's first move
+      // into that window looks identical. Pausing here would strand such a
+      // user off the recitation until they re-armed Sync by hand.
+      return;
+    }
+    if (!live.isFollowing) return;
+
+    final generation = ++_liveGeneration;
+    var localId = _localSegmentIdFor(content, position.segmentId);
+    if (localId == null) {
+      // Outside the fetched window: load the page around it first. A position
+      // arriving meanwhile is applied once this fetch settles.
+      if (_liveJumpInFlight) {
+        _livePending = live;
+        return;
+      }
+      _liveJumpInFlight = true;
+      var found = false;
+      try {
+        found = await ref
+            .read(readerNotifierProvider(widget.params).notifier)
+            .jumpToSegment(position.segmentId);
+      } finally {
+        _liveJumpInFlight = false;
+      }
+      if (!mounted) return;
+      final pending = _livePending;
+      _livePending = null;
+      if (pending != null) {
+        unawaited(_applyLive(pending));
+        return;
+      }
+      if (generation != _liveGeneration) return;
+      if (!found) {
+        liveNotifier.setOutOfSync(true);
+        return;
+      }
+      // Let the list take the new window before scrolling into it.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || generation != _liveGeneration) return;
+      final refreshed = ref.read(readerNotifierProvider(widget.params)).content;
+      localId =
+          refreshed == null
+              ? null
+              : _localSegmentIdFor(refreshed, position.segmentId);
+      if (localId == null) {
+        liveNotifier.setOutOfSync(true);
+        return;
+      }
+    }
+    liveNotifier.setOutOfSync(false);
+    _scrollToLiveSegment(localId);
+  }
+
+  void _scrollToLiveSegment(String segmentId) {
+    final content = ref.read(readerNotifierProvider(widget.params)).content;
+    if (content == null) return;
+    if (_isCollapsed && !_activeSegmentIds.contains(segmentId)) {
+      // The live line is outside the collapsed block: open the full text.
+      _hasScrolledToInitial = true;
+      setState(() => _isExpanded = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToLiveSegment(segmentId);
+      });
+      return;
+    }
+    final index = _renderedIndexForSegment(segmentId, content);
+    if (index == null || !_itemScrollController.isAttached) return;
+
+    _isProgrammaticScroll = true;
+    _itemScrollController.scrollTo(
+      index: index,
+      duration: ReaderConstants.scrollAnimationDuration,
+      curve: Curves.easeInOutCubic,
+      alignment: ReaderConstants.liveFollowAlignment,
+    );
+    Future.delayed(
+      ReaderConstants.scrollAnimationDuration +
+          const Duration(milliseconds: 100),
+      () {
+        _isProgrammaticScroll = false;
+        // Pull the next page in at the operator's pace, not the user's.
+        if (mounted) _checkPaginationThresholds();
+      },
+    );
+  }
+
+  /// A user scroll that takes the live line off screen ends follow mode; a
+  /// nudge that keeps it visible does not.
+  void _maybePauseLiveFollow() {
+    if (_isProgrammaticScroll || !_recentUserGesture) return;
+    final liveIndex = _liveIndex;
+    final eventId = _liveEventId;
+    if (liveIndex == null || eventId == null) return;
+    if (!ref.read(recitationLiveProvider(eventId)).isFollowing) return;
+
+    final visible = _itemPositionsListener.itemPositions.value.any(
+      (p) =>
+          p.index == liveIndex &&
+          p.itemTrailingEdge > 0 &&
+          p.itemLeadingEdge < 1,
+    );
+    if (!visible) {
+      ref.read(recitationLiveProvider(eventId).notifier).pauseFollowing();
+    }
+  }
+
+  /// True while a finger is down or a fling from one is still running.
+  bool get _recentUserGesture {
+    if (_isUserScrolling) return true;
+    final at = _lastUserPointerAt;
+    return at != null &&
+        DateTime.now().difference(at) < const Duration(seconds: 2);
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(readerNotifierProvider(widget.params));
@@ -454,6 +677,23 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final dualSettings = ref.watch(
       readerDualSettingsProvider(widget.params.textId),
     );
+
+    RecitationLivePosition? livePosition;
+    var liveMode = RecitationLiveFollowMode.off;
+    final liveEventId = _liveEventId;
+    if (_isLiveRecitation && liveEventId != null) {
+      ref.listen<RecitationLiveState>(
+        recitationLiveProvider(liveEventId),
+        _onLiveStateChanged,
+      );
+      final live = ref.watch(
+        recitationLiveProvider(
+          liveEventId,
+        ).select((s) => (s.position, s.followMode)),
+      );
+      livePosition = live.$1;
+      liveMode = live.$2;
+    }
 
     // Subscribe to the secondary provider only when the user has enabled
     // the secondary AND picked a version. The autoDispose family means we
@@ -531,6 +771,26 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    // First live evaluation once content is on screen: lands a late joiner
+    // on the live line, or pauses if they opened a different text.
+    if (_isLiveRecitation && liveEventId != null && !_liveInitialized) {
+      _liveInitialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        unawaited(
+          _applyLive(
+            ref.read(recitationLiveProvider(liveEventId)),
+            initial: true,
+          ),
+        );
+      });
+    }
+    final liveSegmentId = _resolveLiveHighlight(
+      content,
+      livePosition,
+      liveMode,
+    );
+
     // Collapsed view: render only the active segments + a "Read Full Text"
     // footer. The extra trailing item is the footer.
     final bool isCollapsed = _isCollapsed;
@@ -554,8 +814,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             onPointerDown: (_) {
               _isUserScrolling = true;
               _hasUserInteracted = true;
+              _lastUserPointerAt = DateTime.now();
             },
+            onPointerMove: (_) => _lastUserPointerAt = DateTime.now(),
             onPointerUp: (_) {
+              _lastUserPointerAt = DateTime.now();
               Future.delayed(const Duration(milliseconds: 300), () {
                 _isUserScrolling = false;
               });
@@ -587,6 +850,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                     showOriginal: showOriginal,
                     secondarySlot: dualSettings.secondary,
                     secondaryState: secondaryState,
+                    liveSegmentId: liveSegmentId,
                     onSegmentTap:
                         (segment) => notifier.toggleSegmentSelection(segment),
                   );
@@ -606,6 +870,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   showOriginal: showOriginal,
                   secondarySlot: dualSettings.secondary,
                   secondaryState: secondaryState,
+                  liveSegmentId: liveSegmentId,
                   onSegmentTap:
                       (segment) => notifier.toggleSegmentSelection(segment),
                 );
@@ -643,6 +908,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     required ReaderSlotConfig secondarySlot,
     required SecondaryReaderState? secondaryState,
     required void Function(Segment) onSegmentTap,
+    String? liveSegmentId,
   }) {
     return item.when(
       header: (section, depth) => const SizedBox.shrink(),
@@ -660,6 +926,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         final isSelected =
             state.selectedSegment?.segmentId == segment.segmentId;
         final isHighlighted = state.highlightedSegmentId == segment.segmentId;
+        final isLive =
+            liveSegmentId != null && liveSegmentId == segment.segmentId;
 
         if (dualSecondaryEnabled) {
           return InterlinearSegmentItem(
@@ -674,6 +942,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             isSelected: isSelected,
             isHighlighted: isHighlighted,
             highlightSource: state.highlightSource,
+            isLive: isLive,
             onTap: () => onSegmentTap(segment),
           );
         }
@@ -683,6 +952,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           depth: depth,
           language: widget.language,
           isSelected: isSelected,
+          isLive: isLive,
           onTap: () {
             HapticFeedback.lightImpact();
             onSegmentTap(segment);

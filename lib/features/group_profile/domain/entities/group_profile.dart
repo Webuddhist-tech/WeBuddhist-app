@@ -53,6 +53,7 @@ class GroupProfileSeries {
   final DateTime? startDate;
   final DateTime? endDate;
   final int enrolledCount;
+
   /// Whether the current user is group-enrolled for this series.
   /// - `true`: enrolled with this group
   /// - `false`: enrolled with a different group
@@ -154,9 +155,7 @@ class GroupProfile {
     if (delta == 0) return this;
 
     if (groupType.isPage) {
-      return copyWith(
-        followerCount: (followerCount + delta).clamp(0, 1 << 31),
-      );
+      return copyWith(followerCount: (followerCount + delta).clamp(0, 1 << 31));
     }
 
     return copyWith(
