@@ -10,6 +10,7 @@ Preset meditation timers with countdown, pause/resume, lock-screen display, sess
 
 - Browse preset timers + user-created ("Your timers") (authenticated)
 - Create a custom timer (duration, ambient sound) via "+ Custom timer"
+- Edit or delete your own timers from the card's ⋮ menu
 - 5-second countdown → running phase
 - Pause/resume with **wall-clock** remaining time (survives backgrounding)
 - Completion bell (in-app + scheduled local notification)
@@ -35,7 +36,7 @@ timer/
 | Area | Files |
 |------|-------|
 | Presets + Your timers | `presentation/screens/preset_timers_screen.dart` |
-| Create custom timer | `presentation/screens/new_timer_screen.dart` |
+| Create / edit custom timer | `presentation/screens/new_timer_screen.dart` |
 | Duration / Ambient sound sheets | `presentation/widgets/{duration_picker_sheet,ambient_sound_sheet}.dart` |
 | Ambient sound playback (preview + session) | `presentation/services/ambient_sound_player.dart` |
 | Active session | `presentation/screens/active_timer_screen.dart` |
@@ -55,6 +56,7 @@ timer/
 ## Data sources
 
 - **Remote:** `GET /timers`, `POST /timers/user` (create custom timer),
+  `PUT /timers/user/{timer_id}` (edit user-created timer),
   `DELETE /timers/user/{timer_id}` (delete user-created timer),
   `POST /timers/user/timer_stop`, `GET /ambient-sounds`
 - **Hive:** cached presets per user, pending stop queue
@@ -76,12 +78,27 @@ yet. The New Timer screen has no name/description inputs, so those are
 derived: `name` = `"{n} minutes"`, `description` = `""` (always sent).
 Start/end bells are always on (backend default); the create flow does not
 expose or accept them as user-configurable params. After a
-successful create (and after a successful delete) the repository patches the
-cached list through `TimersLocalDatasource.upsertPresetTimer` /
+successful create (and after a successful edit or delete) the repository
+patches the cached list through `TimersLocalDatasource.upsertPresetTimer` /
 `removePresetTimer`, so "Your timers" updates via the existing Hive-watch
 stream. The `refreshPresetTimers()` that follows is only a best-effort resync
-with the server ordering: its failure must not turn a completed create or
-delete into an error.
+with the server ordering: its failure must not turn a completed create, edit
+or delete into an error.
+
+### Editing a user timer (`PUT /timers/user/{timer_id}`)
+
+`NewTimerScreen` doubles as the edit screen: passing `timer:` switches the
+title to "Edit timer", prefills duration + ambient sound, replaces the app-bar
+"Save"/"Begin session" pair with a single "Save changes" button, and routes
+through `UpdateUserTimerUseCase`. Route: `/home/timers/edit` with the
+`PresetTimer` as `extra`, opened from the "Edit timer" entry in
+`TimerMoreBottomSheet` (shown only when `isUserCreated`, like delete).
+
+Only `name`, `duration` and `ambient_sound_id` are sent — nothing else on the
+timer is user-owned yet. The name keeps tracking the duration (`"{n} minutes"`)
+so the card label stays truthful. `ambient_sound_id` is **always** in the body,
+including as `null`, which is how "Default (no sound)" clears an existing
+sound.
 
 ### Ambient sounds (`GET /ambient-sounds`)
 

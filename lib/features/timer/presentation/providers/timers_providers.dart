@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/timer/domain/usecases/create_user_timer_u
 import 'package:flutter_pecha/features/timer/domain/usecases/delete_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/get_preset_timers_usecase.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
+import 'package:flutter_pecha/features/timer/domain/usecases/update_user_timer_usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -47,6 +48,11 @@ final stopUserTimerUseCaseProvider = Provider<StopUserTimerUseCase>((ref) {
 final createUserTimerUseCaseProvider = Provider<CreateUserTimerUseCase>((ref) {
   final repository = ref.watch(timersDomainRepositoryProvider);
   return CreateUserTimerUseCase(repository.createUserTimer);
+});
+
+final updateUserTimerUseCaseProvider = Provider<UpdateUserTimerUseCase>((ref) {
+  final repository = ref.watch(timersDomainRepositoryProvider);
+  return UpdateUserTimerUseCase(repository.updateUserTimer);
 });
 
 final deleteUserTimerUseCaseProvider = Provider<DeleteUserTimerUseCase>((ref) {

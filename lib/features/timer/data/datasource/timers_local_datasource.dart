@@ -110,10 +110,14 @@ class TimersLocalDatasource {
     final cached = _readModelList(key, PresetTimerModel.fromJson);
     if (cached == null) return;
 
-    final updated = [
-      ...cached.where((item) => item.id != timer.id),
-      timer,
-    ];
+    final existingIndex = cached.indexWhere((item) => item.id == timer.id);
+    final updated = [...cached];
+    if (existingIndex == -1) {
+      updated.add(timer);
+    } else {
+      // Replace in place so editing a timer doesn't move its card in the grid.
+      updated[existingIndex] = timer;
+    }
     await _writeModelList(key, updated.map((item) => item.toJson()).toList());
   }
 

@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/delete_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// Bottom sheet opened from the three-dot (⋮) button on a [PresetTimerCard].
@@ -36,6 +37,7 @@ class TimerMoreBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
+  static const _editTimerLabel = 'Edit timer';
   static const _deleteTimerLabel = 'Delete timer';
   static const _deleteTimerTitle = 'Delete timer?';
   static const _deleteTimerMessage = 'This timer will be permanently removed.';
@@ -78,6 +80,13 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
     } finally {
       if (mounted) setState(() => _isBookmarking = false);
     }
+  }
+
+  void _editTimer() {
+    if (!widget.timer.isUserCreated) return;
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.push('/home/timers/edit', extra: widget.timer);
   }
 
   Future<void> _deleteTimer() async {
@@ -215,6 +224,20 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
           ),
 
           if (widget.timer.isUserCreated) ...[
+            // ── Edit timer ───────────────────────────────────────────────
+            _SectionDivider(theme: theme),
+            ListTile(
+              leading: Icon(
+                AppAssets.pencilSimple,
+                color: theme.colorScheme.onSurface,
+              ),
+              title: Text(_editTimerLabel, style: theme.textTheme.bodyLarge),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _editTimer();
+              },
+            ),
+
             // ── Delete timer ─────────────────────────────────────────────
             _SectionDivider(theme: theme),
             ListTile(

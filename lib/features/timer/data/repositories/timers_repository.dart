@@ -177,6 +177,42 @@ class TimersRepository implements TimersRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, PresetTimer>> updateUserTimer({
+    required String timerId,
+    required String name,
+    required int durationMs,
+    required String? ambientSoundId,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    final PresetTimerModel updated;
+    try {
+      updated = await remote.updateUserTimer(
+        timerId: timerId,
+        name: name,
+        durationMs: durationMs,
+        ambientSoundId: ambientSoundId,
+      );
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to update timer'));
+    }
+
+    // The server has committed at this point, so nothing below may turn the
+    // update into a failure.
+    try {
+      await local.upsertPresetTimer(userId, timer: updated);
+      await refreshPresetTimers();
+    } catch (_) {
+      // Cache is stale until the next refresh, but the timer is updated
+      // remotely.
+    }
+    return Right(updated.toEntity());
+  }
+
+  @override
   Future<Either<Failure, void>> deleteUserTimer({
     required String timerId,
   }) async {

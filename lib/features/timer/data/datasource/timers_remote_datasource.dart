@@ -92,6 +92,38 @@ class TimersRemoteDatasource {
     }
   }
 
+  /// Updates a user-defined timer via `PUT /timers/user/{timerId}`.
+  ///
+  /// Only the fields the app lets the user change are sent. `ambient_sound_id`
+  /// is always included — sending `null` clears the timer's ambient sound.
+  Future<PresetTimerModel> updateUserTimer({
+    required String timerId,
+    required String name,
+    required int durationMs,
+    required String? ambientSoundId,
+  }) async {
+    try {
+      final response = await dio.put(
+        '/timers/user/$timerId',
+        data: {
+          'name': name,
+          'duration': durationMs,
+          'ambient_sound_id': ambientSoundId,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return PresetTimerModel.fromJson(response.data as Map<String, dynamic>);
+      }
+
+      _logger.error('Failed to update timer: ${response.statusCode}');
+      throw _statusToException(response.statusCode, 'Failed to update timer');
+    } on DioException catch (e) {
+      _logger.error('Dio error in updateUserTimer', e);
+      throw _dioToException(e, 'Failed to update timer');
+    }
+  }
+
   Future<void> deleteUserTimer({required String timerId}) async {
     try {
       final response = await dio.delete('/timers/user/$timerId');

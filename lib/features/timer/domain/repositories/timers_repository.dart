@@ -27,6 +27,15 @@ abstract class TimersRepositoryInterface {
     String? ambientSoundId,
   });
 
+  /// Updates a user-defined timer (`PUT /timers/user/{timerId}`) and refreshes
+  /// the cached preset timer list. A null [ambientSoundId] clears the sound.
+  Future<Either<Failure, PresetTimer>> updateUserTimer({
+    required String timerId,
+    required String name,
+    required int durationMs,
+    required String? ambientSoundId,
+  });
+
   /// Deletes a user-defined timer (`DELETE /timers/user/{timerId}`) and
   /// refreshes the cached preset timer list.
   Future<Either<Failure, void>> deleteUserTimer({required String timerId});

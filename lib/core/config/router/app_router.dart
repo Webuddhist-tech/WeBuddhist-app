@@ -419,6 +419,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     name: "home-timer-new",
                     builder: (context, state) => const NewTimerScreen(),
                   ),
+                  GoRoute(
+                    path: "edit",
+                    name: "home-timer-edit",
+                    builder: (context, state) {
+                      final timer = state.extra as PresetTimer?;
+                      if (timer == null) {
+                        throw Exception('Missing timer to edit');
+                      }
+                      return NewTimerScreen(timer: timer);
+                    },
+                  ),
                 ],
               ),
               // settings route
