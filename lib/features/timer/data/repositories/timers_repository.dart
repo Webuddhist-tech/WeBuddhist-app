@@ -164,15 +164,9 @@ class TimersRepository implements TimersRepositoryInterface {
 
     // The server has committed at this point, so nothing below may turn the
     // creation into a failure: a retry would create a duplicate timer.
-    try {
-      // Write it into the cached list first so it shows up under "Your timers"
-      // via the Hive box watch.
-      await local.upsertPresetTimer(userId, timer: created);
-      // Best-effort resync with the server ordering.
-      await refreshPresetTimers();
-    } catch (_) {
-      // Cache is stale until the next refresh, but the timer exists remotely.
-    }
+    // Write it into the cached list first so it shows up under "Your timers"
+    // via the Hive box watch, then resync with the server ordering.
+    await _patchCache(() => local.upsertPresetTimer(userId, timer: created));
     return Right(created.toEntity());
   }
 
@@ -202,13 +196,7 @@ class TimersRepository implements TimersRepositoryInterface {
 
     // The server has committed at this point, so nothing below may turn the
     // update into a failure.
-    try {
-      await local.upsertPresetTimer(userId, timer: updated);
-      await refreshPresetTimers();
-    } catch (_) {
-      // Cache is stale until the next refresh, but the timer is updated
-      // remotely.
-    }
+    await _patchCache(() => local.upsertPresetTimer(userId, timer: updated));
     return Right(updated.toEntity());
   }
 
@@ -229,16 +217,9 @@ class TimersRepository implements TimersRepositoryInterface {
 
     // The timer is gone on the server at this point, so nothing below may
     // report the delete as failed: a retry would target a missing timer.
-    try {
-      // Drop it from the cache ourselves so "Your timers" updates through the
-      // Hive box watch even when the resync below fails.
-      await local.removePresetTimer(userId, timerId);
-      // Best-effort resync with the server.
-      await refreshPresetTimers();
-    } catch (_) {
-      // Cache is stale until the next refresh, but the timer is already gone
-      // remotely.
-    }
+    // Drop it from the cache ourselves so "Your timers" updates through the
+    // Hive box watch even when the resync fails.
+    await _patchCache(() => local.removePresetTimer(userId, timerId));
     return const Right(null);
   }
 
@@ -264,6 +245,21 @@ class TimersRepository implements TimersRepositoryInterface {
         return;
       }
     }
+  }
+
+  /// Applies a local cache patch after a committed remote write, then resyncs
+  /// with the server. Both steps are best-effort and independent: a failed
+  /// Hive patch must still let the refresh reach the watched list, and neither
+  /// may turn the completed remote write into a failure.
+  Future<void> _patchCache(Future<void> Function() patch) async {
+    try {
+      await patch();
+    } catch (_) {
+      // Cache is stale until the refresh below (or the next one) lands.
+    }
+    try {
+      await refreshPresetTimers();
+    } catch (_) {}
   }
 
   Failure _toFailure(Object error, String fallback) {

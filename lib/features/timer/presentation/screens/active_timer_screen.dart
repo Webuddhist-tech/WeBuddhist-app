@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/timer/data/services/timer_live_activity.dart';
 import 'package:flutter_pecha/features/timer/data/services/timer_session_notifier.dart';
+import 'package:flutter_pecha/features/timer/domain/entities/ambient_sound.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
@@ -336,6 +337,24 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _armCompletionBellIfBackgrounded(endsAt);
   }
 
+  /// Fetches the sound catalogue for this session.
+  ///
+  /// The catalogue is refetched rather than read, because the screens below
+  /// this one keep the auto-dispose provider alive to label their cards — its
+  /// cached value can be old enough that the signed urls have expired. Falls
+  /// back to whatever was already cached when the refetch fails (offline), so
+  /// this is never worse than reading the cached value.
+  Future<List<AmbientSound>> _loadAmbientSounds() async {
+    final cached = ref.read(ambientSoundsFutureProvider).valueOrNull;
+    try {
+      return await ref.refresh(ambientSoundsFutureProvider.future);
+    } catch (e) {
+      if (cached == null) rethrow;
+      _logger.warning('Using cached ambient sound catalogue: $e');
+      return cached;
+    }
+  }
+
   /// Starts the looping ambient track the timer was created with, resolving
   /// its id against the sound catalogue. Best-effort: a missing or unplayable
   /// track leaves the session running in silence.
@@ -344,7 +363,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     if (soundId == null) return;
 
     try {
-      final sounds = await ref.read(ambientSoundsFutureProvider.future);
+      final sounds = await _loadAmbientSounds();
       // The catalogue can resolve after the session ended. A paused session
       // still loads the track — resuming only calls resume() on the player, so
       // bailing out here would leave the rest of the session silent.

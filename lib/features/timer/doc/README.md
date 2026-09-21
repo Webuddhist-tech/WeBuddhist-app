@@ -83,7 +83,10 @@ patches the cached list through `TimersLocalDatasource.upsertPresetTimer` /
 `removePresetTimer`, so "Your timers" updates via the existing Hive-watch
 stream. The `refreshPresetTimers()` that follows is only a best-effort resync
 with the server ordering: its failure must not turn a completed create, edit
-or delete into an error.
+or delete into an error. Both steps go through `_patchCache`, which keeps them
+**independent** — a failed Hive patch must still let the refresh run, since
+otherwise no event reaches the watched list and the screen keeps showing stale
+timers until something else refreshes.
 
 ### Editing a user timer (`PUT /timers/user/{timer_id}`)
 
@@ -96,7 +99,11 @@ through `UpdateUserTimerUseCase`. Route: `/home/timers/edit` with the
 
 Only `name`, `duration` and `ambient_sound_id` are sent — nothing else on the
 timer is user-owned yet. The name keeps tracking the duration (`"{n} minutes"`)
-so the card label stays truthful. `ambient_sound_id` is **always** in the body,
+so the card label stays truthful, but **only when the duration actually
+changed**: the picker is minute-granular while `duration` is milliseconds, so
+an edit that touches just the sound must resend the stored `durationMs` (and
+stored name) verbatim rather than a re-derived `minutes * 60000`, which would
+quietly shorten e.g. a 90s timer to 60s. `ambient_sound_id` is **always** in the body,
 including as `null`, which is how "Default (no sound)" clears an existing
 sound.
 
@@ -105,7 +112,15 @@ sound.
 Separate small resource: `AmbientSound` entity / `AmbientSoundModel` /
 `AmbientSoundsRemoteDatasource`, exposed via `ambientSoundsFutureProvider`
 (`FutureProvider.autoDispose`, **not cached** — URLs are short-lived signed
-S3 links, so it's refetched every time the sheet opens).
+S3 links).
+
+Auto-dispose alone is not enough: the presets screen and `NewTimerScreen` both
+watch the catalogue to label their cards/rows and stay mounted underneath the
+picker sheet and the active session, which keeps it alive with whatever urls it
+first fetched. So the two places that actually play audio refetch explicitly —
+`AmbientSoundSheet` invalidates it in `initState`, and `ActiveTimerScreen`
+refreshes it when the session track starts (falling back to the cached
+catalogue if that refetch fails, e.g. offline).
 
 The "Ambient sounds" picker sheet previews a track on tap via
 `AmbientSoundPlayer` (a `just_audio` wrapper). The volume slider in

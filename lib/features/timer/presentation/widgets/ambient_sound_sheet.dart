@@ -64,6 +64,20 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
   final _player = AmbientSoundPlayer();
 
   @override
+  void initState() {
+    super.initState();
+    // The screen that opened this sheet keeps the auto-dispose catalogue alive
+    // to label its cards, so opening the sheet would otherwise reuse whatever
+    // it fetched — the preview urls are short-lived signed links.
+    //
+    // Deferred past the first frame: `ref` reads the ProviderScope through an
+    // inherited widget, which isn't available yet during initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.invalidate(ambientSoundsFutureProvider);
+    });
+  }
+
+  @override
   void dispose() {
     unawaited(_player.dispose());
     super.dispose();

@@ -14,10 +14,16 @@ class AmbientSoundPlayer {
   AudioPlayer? _player;
   bool _disposed = false;
 
+  /// Bumped by every [play]/[stop] request. Tapping through the picker starts
+  /// overlapping requests whose awaits can complete out of order, so a request
+  /// only installs its player while it is still the most recent one.
+  int _requestId = 0;
+
   Future<void> play(String url, {double volume = 1}) async {
     if (_disposed || url.isEmpty) return;
-    await stop();
-    if (_disposed) return;
+    final requestId = ++_requestId;
+    await _stopCurrent();
+    if (_disposed || requestId != _requestId) return;
 
     final player = AudioPlayer();
     _player = player;
@@ -25,7 +31,8 @@ class AmbientSoundPlayer {
       await player.setLoopMode(LoopMode.one);
       await player.setVolume(volume.clamp(0.0, 1.0));
       await player.setUrl(url);
-      if (_disposed || _player != player) {
+      if (_disposed || requestId != _requestId || _player != player) {
+        if (_player == player) _player = null;
         await player.dispose();
         return;
       }
@@ -54,6 +61,11 @@ class AmbientSoundPlayer {
   }
 
   Future<void> stop() async {
+    _requestId++;
+    await _stopCurrent();
+  }
+
+  Future<void> _stopCurrent() async {
     final player = _player;
     _player = null;
     if (player == null) return;

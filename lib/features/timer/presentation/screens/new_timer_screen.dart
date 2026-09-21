@@ -34,6 +34,10 @@ class NewTimerScreen extends ConsumerStatefulWidget {
 }
 
 class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
+  /// What gets saved. Kept separate from [_durationMinutes] so editing a timer
+  /// whose duration isn't a whole number of minutes doesn't round it down when
+  /// the user only changed the ambient sound.
+  late int _durationMs;
   late int _durationMinutes;
   late String? _ambientSoundId;
   String? _ambientSoundName;
@@ -41,10 +45,15 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
 
   bool get _isEditing => widget.timer != null;
 
+  bool get _didChangeDuration =>
+      widget.timer == null || _durationMs != widget.timer!.durationMs;
+
   @override
   void initState() {
     super.initState();
     final timer = widget.timer;
+    _durationMs =
+        timer?.durationMs ?? NewTimerScreen._defaultDurationMinutes * 60000;
     _durationMinutes =
         timer == null
             ? NewTimerScreen._defaultDurationMinutes
@@ -67,7 +76,10 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
       initialMinutes: _durationMinutes,
     );
     if (selected != null && mounted) {
-      setState(() => _durationMinutes = selected);
+      setState(() {
+        _durationMinutes = selected;
+        _durationMs = selected * 60000;
+      });
     }
   }
 
@@ -85,7 +97,11 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     }
   }
 
-  String get _timerName => '$_durationMinutes minutes';
+  /// The name tracks the duration, but an untouched duration keeps the stored
+  /// name so a timer of e.g. 90s isn't renamed to "1 minutes" by an edit that
+  /// only changed the ambient sound.
+  String get _timerName =>
+      _didChangeDuration ? '$_durationMinutes minutes' : widget.timer!.name;
 
   Future<PresetTimer?> _createTimer() async {
     setState(() => _isSubmitting = true);
@@ -94,7 +110,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
       CreateUserTimerParams(
         name: _timerName,
         description: '',
-        durationMs: _durationMinutes * 60000,
+        durationMs: _durationMs,
         ambientSoundId: _ambientSoundId,
       ),
     );
@@ -122,7 +138,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
       UpdateUserTimerParams(
         timerId: widget.timer!.id,
         name: _timerName,
-        durationMs: _durationMinutes * 60000,
+        durationMs: _durationMs,
         ambientSoundId: _ambientSoundId,
       ),
     );
