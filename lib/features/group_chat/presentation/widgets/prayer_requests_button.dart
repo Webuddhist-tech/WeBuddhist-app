@@ -1,7 +1,47 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Icon-only variant for a task screen's app bar; hidden until the event
+/// says its chat room is on.
+class PrayerRequestsIconButton extends ConsumerWidget {
+  final String eventId;
+
+  const PrayerRequestsIconButton({super.key, required this.eventId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final chatEnabled = ref.watch(
+      groupEventDetailProvider(eventId).select(
+        (async) =>
+            async.valueOrNull?.fold((_) => false, (e) => e.chatEnabled) ??
+            false,
+      ),
+    );
+    if (!chatEnabled) return const SizedBox.shrink();
+
+    return IconButton(
+      tooltip: context.l10n.event_prayer_requests,
+      icon: const Icon(AppAssets.handsPraying),
+      onPressed: () {
+        final authState = ref.read(authProvider);
+        if (authState.isGuest || !authState.isLoggedIn) {
+          LoginDrawer.show(context, ref);
+          return;
+        }
+        unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
+      },
+    );
+  }
+}
 
 /// Chip that opens the event's prayer requests, under the live stream or in
 /// the app bar.

@@ -390,7 +390,7 @@ void main() {
     await _settle(tester);
     expect(_body(), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    expect(find.text('Green Tara'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
   });
 

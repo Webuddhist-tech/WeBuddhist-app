@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_bar.dart';
@@ -703,11 +704,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         liveEventId == null
             ? null
             : RecitationLiveSyncToggle(eventId: liveEventId);
+    final prayerRequestsButton =
+        liveEventId == null
+            ? null
+            : PrayerRequestsIconButton(eventId: liveEventId);
     if (_isEmbedded) {
       return PlanEmbeddedHeader(
         onClose: _closeEmbedded,
         actions: [
           if (liveSyncToggle != null) liveSyncToggle,
+          if (prayerRequestsButton != null) prayerRequestsButton,
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
@@ -722,6 +728,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       params: _params,
       colorIndex: widget.colorIndex,
       liveSyncToggle: liveSyncToggle,
+      prayerRequestsButton: prayerRequestsButton,
       onSearchPressed: () => _handleSearch(context, state),
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       // The event page already offers share and offline recitations.

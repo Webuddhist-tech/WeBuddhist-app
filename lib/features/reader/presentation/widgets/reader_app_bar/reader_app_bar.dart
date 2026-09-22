@@ -25,6 +25,9 @@ class ReaderAppBarOverlay extends ConsumerWidget {
   /// Live recitation sync button, shown before search.
   final Widget? liveSyncToggle;
 
+  /// Event prayer requests, shown after the sync button.
+  final Widget? prayerRequestsButton;
+
   const ReaderAppBarOverlay({
     super.key,
     required this.params,
@@ -33,6 +36,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
     required this.onLanguagesPressed,
     this.onMorePressed,
     this.liveSyncToggle,
+    this.prayerRequestsButton,
   });
 
   @override
@@ -65,6 +69,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
           toolbarHeight: ReaderConstants.appBarToolbarHeight,
           actions: [
             if (liveSyncToggle != null) liveSyncToggle!,
+            if (prayerRequestsButton != null) prayerRequestsButton!,
             ReaderSearchButton(onPressed: onSearchPressed),
             ReaderLanguagesButton(
               params: params,
