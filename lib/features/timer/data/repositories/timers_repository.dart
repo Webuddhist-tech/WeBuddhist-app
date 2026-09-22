@@ -51,7 +51,7 @@ class TimersRepository implements TimersRepositoryInterface {
   @override
   Future<Either<Failure, List<PresetTimer>>> getPresetTimers({
     int skip = 0,
-    int limit = 20,
+    int limit = kTimersPageLimit,
   }) async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -70,7 +70,7 @@ class TimersRepository implements TimersRepositoryInterface {
   @override
   Stream<Either<Failure, List<PresetTimer>>> watchPresetTimers({
     int skip = 0,
-    int limit = 20,
+    int limit = kTimersPageLimit,
   }) async* {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -114,7 +114,7 @@ class TimersRepository implements TimersRepositoryInterface {
   @override
   Future<Either<Failure, List<PresetTimer>>> refreshPresetTimers({
     int skip = 0,
-    int limit = 20,
+    int limit = kTimersPageLimit,
   }) async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -166,7 +166,14 @@ class TimersRepository implements TimersRepositoryInterface {
     // creation into a failure: a retry would create a duplicate timer.
     // Write it into the cached list first so it shows up under "Your timers"
     // via the Hive box watch, then resync with the server ordering.
-    await _patchCache(() => local.upsertPresetTimer(userId, timer: created));
+    await _patchCache(
+      () => local.upsertPresetTimer(
+        userId,
+        timer: created,
+        skip: 0,
+        limit: kTimersPageLimit,
+      ),
+    );
     return Right(created.toEntity());
   }
 
@@ -196,7 +203,14 @@ class TimersRepository implements TimersRepositoryInterface {
 
     // The server has committed at this point, so nothing below may turn the
     // update into a failure.
-    await _patchCache(() => local.upsertPresetTimer(userId, timer: updated));
+    await _patchCache(
+      () => local.upsertPresetTimer(
+        userId,
+        timer: updated,
+        skip: 0,
+        limit: kTimersPageLimit,
+      ),
+    );
     return Right(updated.toEntity());
   }
 

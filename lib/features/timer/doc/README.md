@@ -132,7 +132,40 @@ never sent to the API (no volume field exists on `CreateTimerRequest`).
 starts, loops it, pauses/resumes it with the session, and stops it on
 completion. The provider is kept alive with `ref.listenManual` for the
 session because the urls expire. Ambient playback is best-effort — a missing
-or unplayable track leaves the session running silently.
+or unplayable track leaves the session running silently, and the whole start
+path sits behind one `try` because resolving the id touches the repository,
+which can throw rather than return a failure.
+
+A `PresetTimer` does not always arrive whole. Bookmarks and practice routines
+rebuild one from their own payload (id, name, duration) with no
+`ambient_sound_id` — the bookmark API exposes `ambient_sound_name`, which
+cannot be resolved to a playable track. `_resolveAmbientSoundId` therefore
+falls back to looking the timer up by id through the (cache-first) repository,
+so a custom timer started from a bookmark or a routine still plays its sound.
+
+### Paging
+
+`GET /timers` caps `limit` at 100 and the app does not page, so
+`kTimersPageLimit` asks for the maximum: one request has to cover the presets
+*and* every timer the user created. `skip`/`limit` also pick the Hive cache
+key, so `upsertPresetTimer` takes them as required arguments — patching a page
+the list is not reading would leave the screen stale with no visible error.
+
+### Deleting
+
+`DELETE /timers/user/{id}` is a **soft** delete: the backend sets `deleted_at`
+and keeps the row for a retention window, and `POST /timers/user/{id}/restore`
+can bring it back. That endpoint is not wired up yet, so the confirmation
+dialog describes the removal without promising it is permanent and without
+offering an undo it cannot honour.
+
+### Empty list
+
+An empty timer list is **not** an empty state. The only useful action on this
+screen is creating a timer, so it renders "Your timers" with the dashed
+"+ Custom timer" card. Showing a "nothing here" message instead left the user
+with no way to create one, because the pill FAB only appears once a custom
+timer already exists.
 
 The bundled `assets/audios/meditation.wav` bell (`TimerSoundPlayer`) always
 plays at session start and completion, and the scheduled start/completion

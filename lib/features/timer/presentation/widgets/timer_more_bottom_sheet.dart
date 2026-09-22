@@ -40,7 +40,12 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
   static const _editTimerLabel = 'Edit timer';
   static const _deleteTimerLabel = 'Delete timer';
   static const _deleteTimerTitle = 'Delete timer?';
-  static const _deleteTimerMessage = 'This timer will be permanently removed.';
+  // The backend soft-deletes (`deleted_at`) and keeps the row for a retention
+  // window, so this must not promise a permanent delete.
+  // `POST /timers/user/{id}/restore` exists but is not wired up yet — until it
+  // is, describe what the user actually sees rather than offering an undo.
+  static const _deleteTimerMessage =
+      'This timer will be removed from your timers.';
 
   bool _isBookmarking = false;
   bool _isSharing = false;

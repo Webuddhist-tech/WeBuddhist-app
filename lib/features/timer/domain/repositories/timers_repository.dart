@@ -2,6 +2,13 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 
+/// Page size for `GET /timers`.
+///
+/// The endpoint caps `limit` at 100 and the app does not page, so one request
+/// has to cover the presets *and* every timer the user created — take the
+/// largest page the server allows rather than its default of 20.
+const int kTimersPageLimit = 100;
+
 abstract class TimersRepositoryInterface {
   Future<Either<Failure, List<PresetTimer>>> getPresetTimers({
     int skip,
