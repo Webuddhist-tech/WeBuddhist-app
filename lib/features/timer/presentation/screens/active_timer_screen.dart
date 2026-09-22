@@ -141,11 +141,6 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _soundPlayer = widget._soundPlayer ?? TimerSoundPlayer();
     _soundPlayer.init();
     _ambientPlayer = AmbientSoundPlayer();
-    if (_ambientSoundId != null) {
-      // The sound catalogue auto-disposes and its urls are short-lived signed
-      // links, so hold it open for as long as the session needs the track.
-      ref.listenManual(ambientSoundsFutureProvider, (_, __) {});
-    }
     _notifier = widget._sessionNotifier ?? TimerSessionNotifier();
     _liveActivity = widget._liveActivity ?? TimerLiveActivity();
     _keepAlive = widget._keepAlive ?? TimerAudioKeepAlive();
@@ -355,14 +350,54 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     }
   }
 
+  /// The ambient sound this session should play.
+  ///
+  /// A [PresetTimer] does not always arrive whole. Bookmarks and practice
+  /// routines rebuild one from their own payload, which carries an id, a name
+  /// and a duration but no `ambient_sound_id` — the bookmark API exposes only
+  /// `ambient_sound_name`, which cannot be resolved to a playable track.
+  /// Without this lookup those entry points run the user's timer in silence.
+  ///
+  /// The repository read is cache-first, so the usual case costs nothing, and
+  /// a miss (unknown id, nothing cached, not the caller's timer) just keeps
+  /// the silent behaviour.
+  Future<String?> _resolveAmbientSoundId() async {
+    final direct = _ambientSoundId;
+    if (direct != null) return direct;
+
+    final timerId = widget.presetTimer.id;
+    if (timerId.isEmpty) return null;
+
+    final result = await ref
+        .read(timersDomainRepositoryProvider)
+        .getPresetTimers();
+    return result.fold((_) => null, (timers) {
+      for (final timer in timers) {
+        if (timer.id != timerId) continue;
+        final id = timer.ambientSoundId;
+        return (id == null || id.isEmpty) ? null : id;
+      }
+      return null;
+    });
+  }
+
   /// Starts the looping ambient track the timer was created with, resolving
   /// its id against the sound catalogue. Best-effort: a missing or unplayable
   /// track leaves the session running in silence.
+  ///
+  /// Everything here is inside one guard on purpose — resolving the id reads
+  /// the timers repository, which can throw outright rather than return a
+  /// failure. Nothing about a background track may take the session down with
+  /// it.
   Future<void> _startAmbientSound() async {
-    final soundId = _ambientSoundId;
-    if (soundId == null) return;
-
     try {
+      final soundId = await _resolveAmbientSoundId();
+      if (soundId == null || !mounted || _phase != _TimerPhase.running) return;
+
+      // The sound catalogue auto-disposes and its urls are short-lived signed
+      // links, so hold it open for as long as the session needs the track.
+      ref.listenManual(ambientSoundsFutureProvider, (_, __) {});
+
       final sounds = await _loadAmbientSounds();
       // The catalogue can resolve after the session ended. A paused session
       // still loads the track — resuming only calls resume() on the player, so
@@ -384,7 +419,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
       }
       _logger.warning('Ambient sound $soundId is not in the catalogue');
     } catch (e) {
-      _logger.warning('Failed to load ambient sound $soundId: $e');
+      _logger.warning('Failed to start ambient sound: $e');
     }
   }
 

@@ -74,30 +74,12 @@ class PresetTimersScreen extends ConsumerWidget {
                       final customTimers =
                           timers.where((timer) => timer.isUserCreated).toList();
 
-                      if (presetTimers.isEmpty && customTimers.isEmpty) {
-                        return RefreshIndicator(
-                          onRefresh: () => _refreshPresetTimers(ref),
-                          child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              SizedBox(
-                                height:
-                                    MediaQuery.sizeOf(context).height * 0.55,
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(32),
-                                    child: Text(
-                                      l10n.no_feature_content,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
+                      // An empty list falls through rather than showing an
+                      // empty-state message: the only useful action on this
+                      // screen is creating a timer, so "Your timers" plus the
+                      // dashed add card is what belongs on screen. Showing the
+                      // message instead left the user with no way to create
+                      // one, since the FAB is gated on already having one.
                       return RefreshIndicator(
                         onRefresh: () => _refreshPresetTimers(ref),
                         child: _TimersContent(

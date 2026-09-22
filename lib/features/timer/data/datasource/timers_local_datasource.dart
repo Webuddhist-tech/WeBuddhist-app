@@ -100,11 +100,15 @@ class TimersLocalDatasource {
   /// the list watcher shows a freshly created timer without depending on a
   /// successful remote refresh. No-op when nothing is cached yet — the stream
   /// fetches from the network in that case anyway.
+  ///
+  /// [skip]/[limit] are required rather than defaulted because they pick the
+  /// cache key: patching a page the list is not reading leaves the screen
+  /// stale with no visible error.
   Future<void> upsertPresetTimer(
     String userId, {
     required PresetTimerModel timer,
-    int skip = 0,
-    int limit = 20,
+    required int skip,
+    required int limit,
   }) async {
     final key = presetTimersKey(userId, skip, limit);
     final cached = _readModelList(key, PresetTimerModel.fromJson);
