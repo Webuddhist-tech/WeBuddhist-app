@@ -100,6 +100,23 @@ void main() {
     });
   });
 
+  group('interlinearTranslationFor', () {
+    test('returns the verse line when it has loaded', () {
+      expect(interlinearTranslationFor({3: 'Homage'}, 3), 'Homage');
+    });
+
+    test('is null while loading, after a failure or with no aligned line', () {
+      expect(interlinearTranslationFor(null, 3), isNull);
+      expect(interlinearTranslationFor(const {}, 3), isNull);
+      expect(interlinearTranslationFor({4: 'Homage'}, 3), isNull);
+      expect(
+        interlinearTranslationFor({3: '  \n'}, 3),
+        isNull,
+        reason: 'a blank line would show as an empty verse',
+      );
+    });
+  });
+
   group('ReaderDualSettingsNotifier', () {
     test('mirrors the global flag and restores the original when the '
         'translation is switched off', () async {

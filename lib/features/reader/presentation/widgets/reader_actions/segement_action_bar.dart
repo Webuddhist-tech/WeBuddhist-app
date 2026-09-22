@@ -9,9 +9,14 @@ import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_p
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
+import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart'
+    show interlinearTranslationFor;
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
@@ -78,16 +83,47 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
     }
   }
 
-  /// Copies the verse as shown: transliterated when a script is picked for
-  /// [language], with line breaks kept.
+  /// The translation line when "translation only" draws it in place of this
+  /// verse's original, else null — the verse then shows its original.
+  String? _translationShownAlone() {
+    final dual = ref.read(readerDualSettingsProvider(widget.params.textId));
+    final versionId = dual.secondary.versionId;
+    if (dual.originalVisible || !dual.secondaryEnabled || versionId == null) {
+      return null;
+    }
+    // The key ReaderContentPart watches (the initial segment is not part of
+    // its identity), so this reads the lines already on screen.
+    final secondary = ref.read(
+      secondaryReaderProvider(
+        SecondaryReaderKey(
+          textId: dual.primary.versionId ?? widget.params.textId,
+          versionId: versionId,
+          initialSize: widget.params.navigationContext?.initialPageSize,
+        ),
+      ),
+    );
+    // A verse with no translation yet keeps its original (interlinearLayers).
+    return interlinearTranslationFor(
+      secondary.contentBySegmentNumber,
+      widget.segment.segmentNumber,
+    );
+  }
+
+  /// Copies the verse as shown, with line breaks kept: its translation when
+  /// that stands in for a hidden original, otherwise the original,
+  /// transliterated when a script is picked for [language].
   void _handleCopy(BuildContext context, String content, String language) {
     final localizations = context.l10n;
-    final html = transliterateSegmentHtml(
-      ref.read(transliterationServiceProvider),
-      html: normalizeSegmentHtml(content),
-      language: language,
-      scriptId: ref.read(readerScriptForLanguageProvider(language)),
-    );
+    final translation = _translationShownAlone();
+    final html =
+        translation != null
+            ? normalizeSegmentHtml(translation)
+            : transliterateSegmentHtml(
+              ref.read(transliterationServiceProvider),
+              html: normalizeSegmentHtml(content),
+              language: language,
+              scriptId: ref.read(readerScriptForLanguageProvider(language)),
+            );
     final textWithLineBreaks = html.replaceAll('<br>', '\n');
     final plainText = _htmlToPlainText(textWithLineBreaks);
     Clipboard.setData(ClipboardData(text: plainText));

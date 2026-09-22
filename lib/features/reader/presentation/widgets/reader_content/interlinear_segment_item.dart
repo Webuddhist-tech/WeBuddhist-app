@@ -25,6 +25,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
   translation: showOriginal || hasTranslation,
 );
 
+/// This verse's line in the translation, or null while there is none to show
+/// — not loaded yet, failed to load, or no aligned line for the verse. Shared
+/// by the verse widget and the copy action, so both agree on which line is
+/// on screen.
+String? interlinearTranslationFor(
+  Map<int, String>? contentBySegmentNumber,
+  int segmentNumber,
+) {
+  final line = contentBySegmentNumber?[segmentNumber];
+  return line == null || line.trim().isEmpty ? null : line;
+}
+
 class InterlinearSegmentItem extends ConsumerWidget {
   const InterlinearSegmentItem({
     super.key,
@@ -172,8 +184,11 @@ class InterlinearSegmentItem extends ConsumerWidget {
   }
 
   _SecondaryResolved _resolveSecondaryContent(BuildContext context) {
-    final fromMap = secondaryContentBySegmentNumber?[segment.segmentNumber];
-    if (fromMap != null && fromMap.trim().isNotEmpty) {
+    final fromMap = interlinearTranslationFor(
+      secondaryContentBySegmentNumber,
+      segment.segmentNumber,
+    );
+    if (fromMap != null) {
       return _SecondaryResolved(
         text: normalizeSegmentHtml(fromMap),
         isPlaceholder: false,
