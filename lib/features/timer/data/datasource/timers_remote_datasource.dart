@@ -16,10 +16,7 @@ class TimersRemoteDatasource {
     try {
       final response = await dio.post(
         '/timers/user/timer_stop',
-        data: {
-          'timer_id': timerId,
-          'duration': durationMs,
-        },
+        data: {'timer_id': timerId, 'duration': durationMs},
       );
 
       if (response.statusCode == 201) return;
@@ -40,6 +37,7 @@ class TimersRemoteDatasource {
       final response = await dio.get(
         '/timers',
         queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
       );
 
       if (response.statusCode == 200) {
@@ -54,6 +52,89 @@ class TimersRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in fetchPresetTimers', e);
       throw _dioToException(e, 'Failed to load timers');
+    }
+  }
+
+  /// Creates a user-defined timer via `POST /timers/user`.
+  ///
+  /// `group_id` and `parent_preset_id` are intentionally never sent — this
+  /// app has no notion of either yet.
+  Future<PresetTimerModel> createUserTimer({
+    required String name,
+    required String description,
+    required int durationMs,
+    String? ambientSoundId,
+    required bool bellAtStart,
+    required bool bellAtEnd,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/timers/user',
+        data: {
+          'name': name,
+          'description': description,
+          'duration': durationMs,
+          'ambient_sound_id': ambientSoundId,
+          'bell_at_start': bellAtStart,
+          'bell_at_end': bellAtEnd,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return PresetTimerModel.fromJson(response.data as Map<String, dynamic>);
+      }
+
+      _logger.error('Failed to create timer: ${response.statusCode}');
+      throw _statusToException(response.statusCode, 'Failed to create timer');
+    } on DioException catch (e) {
+      _logger.error('Dio error in createUserTimer', e);
+      throw _dioToException(e, 'Failed to create timer');
+    }
+  }
+
+  /// Updates a user-defined timer via `PUT /timers/user/{timerId}`.
+  ///
+  /// Only the fields the app lets the user change are sent. `ambient_sound_id`
+  /// is always included — sending `null` clears the timer's ambient sound.
+  Future<PresetTimerModel> updateUserTimer({
+    required String timerId,
+    required String name,
+    required int durationMs,
+    required String? ambientSoundId,
+  }) async {
+    try {
+      final response = await dio.put(
+        '/timers/user/$timerId',
+        data: {
+          'name': name,
+          'duration': durationMs,
+          'ambient_sound_id': ambientSoundId,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return PresetTimerModel.fromJson(response.data as Map<String, dynamic>);
+      }
+
+      _logger.error('Failed to update timer: ${response.statusCode}');
+      throw _statusToException(response.statusCode, 'Failed to update timer');
+    } on DioException catch (e) {
+      _logger.error('Dio error in updateUserTimer', e);
+      throw _dioToException(e, 'Failed to update timer');
+    }
+  }
+
+  Future<void> deleteUserTimer({required String timerId}) async {
+    try {
+      final response = await dio.delete('/timers/user/$timerId');
+
+      if (response.statusCode == 200 || response.statusCode == 204) return;
+
+      _logger.error('Failed to delete timer: ${response.statusCode}');
+      throw _statusToException(response.statusCode, 'Failed to delete timer');
+    } on DioException catch (e) {
+      _logger.error('Dio error in deleteUserTimer', e);
+      throw _dioToException(e, 'Failed to delete timer');
     }
   }
 

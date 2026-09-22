@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_remote_datasource.dart';
+import 'package:flutter_pecha/features/timer/data/models/preset_timer_model.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/repositories/timers_repository.dart';
 
@@ -50,7 +51,7 @@ class TimersRepository implements TimersRepositoryInterface {
   @override
   Future<Either<Failure, List<PresetTimer>>> getPresetTimers({
     int skip = 0,
-    int limit = 20,
+    int limit = kTimersPageLimit,
   }) async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -69,7 +70,7 @@ class TimersRepository implements TimersRepositoryInterface {
   @override
   Stream<Either<Failure, List<PresetTimer>>> watchPresetTimers({
     int skip = 0,
-    int limit = 20,
+    int limit = kTimersPageLimit,
   }) async* {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -113,7 +114,7 @@ class TimersRepository implements TimersRepositoryInterface {
   @override
   Future<Either<Failure, List<PresetTimer>>> refreshPresetTimers({
     int skip = 0,
-    int limit = 20,
+    int limit = kTimersPageLimit,
   }) async {
     final userId = await local.currentUserId();
     if (userId == null || userId.isEmpty) {
@@ -132,6 +133,108 @@ class TimersRepository implements TimersRepositoryInterface {
     } catch (e) {
       return Left(_toFailure(e, 'Failed to get preset timers'));
     }
+  }
+
+  @override
+  Future<Either<Failure, PresetTimer>> createUserTimer({
+    required String name,
+    required String description,
+    required int durationMs,
+    String? ambientSoundId,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    final PresetTimerModel created;
+    try {
+      created = await remote.createUserTimer(
+        name: name,
+        description: description,
+        durationMs: durationMs,
+        ambientSoundId: ambientSoundId,
+        // Always on — the backend defaults these to true as well.
+        bellAtStart: true,
+        bellAtEnd: true,
+      );
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to create timer'));
+    }
+
+    // The server has committed at this point, so nothing below may turn the
+    // creation into a failure: a retry would create a duplicate timer.
+    // Write it into the cached list first so it shows up under "Your timers"
+    // via the Hive box watch, then resync with the server ordering.
+    await _patchCache(
+      () => local.upsertPresetTimer(
+        userId,
+        timer: created,
+        skip: 0,
+        limit: kTimersPageLimit,
+      ),
+    );
+    return Right(created.toEntity());
+  }
+
+  @override
+  Future<Either<Failure, PresetTimer>> updateUserTimer({
+    required String timerId,
+    required String name,
+    required int durationMs,
+    required String? ambientSoundId,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    final PresetTimerModel updated;
+    try {
+      updated = await remote.updateUserTimer(
+        timerId: timerId,
+        name: name,
+        durationMs: durationMs,
+        ambientSoundId: ambientSoundId,
+      );
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to update timer'));
+    }
+
+    // The server has committed at this point, so nothing below may turn the
+    // update into a failure.
+    await _patchCache(
+      () => local.upsertPresetTimer(
+        userId,
+        timer: updated,
+        skip: 0,
+        limit: kTimersPageLimit,
+      ),
+    );
+    return Right(updated.toEntity());
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteUserTimer({
+    required String timerId,
+  }) async {
+    final userId = await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+
+    try {
+      await remote.deleteUserTimer(timerId: timerId);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to delete timer'));
+    }
+
+    // The timer is gone on the server at this point, so nothing below may
+    // report the delete as failed: a retry would target a missing timer.
+    // Drop it from the cache ourselves so "Your timers" updates through the
+    // Hive box watch even when the resync fails.
+    await _patchCache(() => local.removePresetTimer(userId, timerId));
+    return const Right(null);
   }
 
   @override
@@ -156,6 +259,21 @@ class TimersRepository implements TimersRepositoryInterface {
         return;
       }
     }
+  }
+
+  /// Applies a local cache patch after a committed remote write, then resyncs
+  /// with the server. Both steps are best-effort and independent: a failed
+  /// Hive patch must still let the refresh reach the watched list, and neither
+  /// may turn the completed remote write into a failure.
+  Future<void> _patchCache(Future<void> Function() patch) async {
+    try {
+      await patch();
+    } catch (_) {
+      // Cache is stale until the refresh below (or the next one) lands.
+    }
+    try {
+      await refreshPresetTimers();
+    } catch (_) {}
   }
 
   Failure _toFailure(Object error, String fallback) {

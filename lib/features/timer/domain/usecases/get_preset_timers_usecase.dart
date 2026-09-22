@@ -1,10 +1,11 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
+import 'package:flutter_pecha/features/timer/domain/repositories/timers_repository.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 
 class GetPresetTimersParams {
-  const GetPresetTimersParams({this.skip = 0, this.limit = 20});
+  const GetPresetTimersParams({this.skip = 0, this.limit = kTimersPageLimit});
 
   final int skip;
   final int limit;
