@@ -230,7 +230,8 @@ void main() {
   ) async {
     await _pumpLiveEventDetails(tester, streamKnownAbsent: true);
 
-    expect(find.text('Green Tara'), findsOneWidget);
+    // An event page carries no plan title.
+    expect(find.text('Green Tara'), findsNothing);
     expect(find.byType(GroupEventMediaToggle), findsNothing);
     expect(find.byType(GroupEventLanguageToggle), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
@@ -271,9 +272,15 @@ void main() {
     expect(find.byType(GroupEventLiveHeader), findsNothing);
     expect(find.byType(GroupEventNotStartedCard), findsNothing);
     expect(find.byType(GroupEventMediaToggle), findsNothing);
-    expect(find.text('Green Tara'), findsOneWidget);
-    // Prayer requests still belong to the event.
-    expect(find.text('Prayer requests'), findsOneWidget);
+    expect(find.text('Green Tara'), findsNothing);
+    // Prayer requests still belong to the event, now in the app bar.
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Prayer requests'),
+      ),
+      findsOneWidget,
+    );
 
     // No embedded scope, so a tapped task pushes its own route.
     expect(find.byType(PlanEmbeddedScope), findsNothing);

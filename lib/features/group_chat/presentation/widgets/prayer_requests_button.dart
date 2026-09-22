@@ -3,11 +3,17 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
-/// Chip under the live stream that opens the event's prayer requests.
+/// Chip that opens the event's prayer requests, under the live stream or in
+/// the app bar.
 class PrayerRequestsButton extends StatelessWidget {
-  const PrayerRequestsButton({super.key, required this.onTap});
+  const PrayerRequestsButton({
+    super.key,
+    required this.onTap,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  });
 
   final VoidCallback onTap;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +22,7 @@ class PrayerRequestsButton extends StatelessWidget {
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: padding,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Material(
