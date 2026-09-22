@@ -199,9 +199,11 @@ void main() {
     // Already practicing via the event, so no "Practice now".
     expect(find.text('Practice now'), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
-    // Online readers stay off the live socket: the stream's overlays carry
-    // the text, and sync would lag behind the video.
-    expect(_activityList(tester).eventId, isNull);
+    // Online readers keep the event for prayer requests but stay off the
+    // live socket: the stream's overlays carry the text, and sync would lag
+    // behind the video.
+    expect(_activityList(tester).eventId, 'event-1');
+    expect(_activityList(tester).isOnlineAttendee, isTrue);
 
     await tester.tap(find.text('Tara of the day'));
     await _settle(tester);
@@ -230,7 +232,8 @@ void main() {
   ) async {
     await _pumpLiveEventDetails(tester, streamKnownAbsent: true);
 
-    expect(find.text('Green Tara'), findsOneWidget);
+    // An event page carries no plan title.
+    expect(find.text('Green Tara'), findsNothing);
     expect(find.byType(GroupEventMediaToggle), findsNothing);
     expect(find.byType(GroupEventLanguageToggle), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
@@ -271,15 +274,22 @@ void main() {
     expect(find.byType(GroupEventLiveHeader), findsNothing);
     expect(find.byType(GroupEventNotStartedCard), findsNothing);
     expect(find.byType(GroupEventMediaToggle), findsNothing);
-    expect(find.text('Green Tara'), findsOneWidget);
-    // Prayer requests still belong to the event.
-    expect(find.text('Prayer requests'), findsOneWidget);
+    expect(find.text('Green Tara'), findsNothing);
+    // Prayer requests still belong to the event, now in the app bar.
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.text('Prayer requests'),
+      ),
+      findsOneWidget,
+    );
 
     // No embedded scope, so a tapped task pushes its own route.
     expect(find.byType(PlanEmbeddedScope), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
     // That route follows the event's live recitation.
     expect(_activityList(tester).eventId, 'event-1');
+    expect(_activityList(tester).isOnlineAttendee, isFalse);
   });
 
   testWidgets('an event without a stream counts down to its start', (
@@ -383,7 +393,7 @@ void main() {
     await _settle(tester);
     expect(_body(), findsNothing);
     expect(find.text('Tara of the day'), findsOneWidget);
-    expect(find.text('Green Tara'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
     await tester.pump(const Duration(seconds: 1));
   });
 

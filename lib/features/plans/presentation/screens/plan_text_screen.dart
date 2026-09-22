@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
@@ -51,6 +52,12 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
   bool get _hasAudio => _audioController?.hasAudio ?? false;
 
   bool get _isEmbedded => PlanEmbeddedScope.maybeOf(context) != null;
+
+  /// Set when the task was opened from a group event.
+  String? get _eventId {
+    final ctx = widget.navigationContext;
+    return ctx.isFromEvent ? ctx.eventId : null;
+  }
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────
 
@@ -339,15 +346,10 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
         onPressed: _close,
       ),
       centerTitle: true,
-      actions:
-          showFontControls
-              ? [
-                ReaderFontSizeButton(
-                  onPressed: () => showFontSizeBottomSheet(context),
-                ),
-                const SizedBox(width: 12),
-              ]
-              : null,
+      actions: [
+        ..._buildActions(context, showFontControls: showFontControls),
+        const SizedBox(width: 12),
+      ],
     );
   }
 
@@ -357,13 +359,20 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
   }) {
     return PlanEmbeddedHeader(
       onClose: _close,
-      actions: [
-        if (showFontControls)
-          ReaderFontSizeButton(
-            onPressed: () => showFontSizeBottomSheet(context),
-          ),
-      ],
+      actions: _buildActions(context, showFontControls: showFontControls),
     );
+  }
+
+  List<Widget> _buildActions(
+    BuildContext context, {
+    required bool showFontControls,
+  }) {
+    final eventId = _eventId;
+    return [
+      if (eventId != null) PrayerRequestsIconButton(eventId: eventId),
+      if (showFontControls)
+        ReaderFontSizeButton(onPressed: () => showFontSizeBottomSheet(context)),
+    ];
   }
 
   Widget _buildMissingContentScaffold(BuildContext context) {

@@ -809,45 +809,42 @@ player.playVideo();
     final busy = _isBuffering || _switching || widget.isSwitching;
     final primaryColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+      padding: const EdgeInsets.fromLTRB(16, 2, 8, 2),
       color: isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite,
       child: Row(
         children: [
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        context.l10n.event_live_audio,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: primaryColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                Flexible(
+                  child: Text(
+                    context.l10n.event_live_audio_mode,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
                     ),
-                    if (_isLiveStream) ...[
-                      const SizedBox(width: 8),
-                      _buildLiveBadge(),
-                    ],
-                  ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                Text(
-                  widget.subtitle,
-                  style: TextStyle(fontSize: 12, color: secondaryColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (_isLiveStream) ...[
+                  const SizedBox(width: 8),
+                  ValueListenableBuilder<_LiveProgress>(
+                    valueListenable: _live,
+                    builder:
+                        (context, live, _) => _AudioLiveChip(
+                          active:
+                              live.atLiveEdge &&
+                              (_isPlaying ||
+                                  _playerState == PlayerState.buffering),
+                          onTap: _seekToLive,
+                        ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1055,6 +1052,55 @@ class _LiveBadge extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
+                height: 1.2,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Live" chip for the audio bar: red with a broadcast icon while playing at
+/// the live edge, grey with a dot otherwise.
+class _AudioLiveChip extends StatelessWidget {
+  final bool active;
+  final VoidCallback onTap;
+
+  const _AudioLiveChip({required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: active ? AppColors.error : AppColors.grey800,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (active)
+              const Icon(AppAssets.broadcast, size: 12, color: Colors.white)
+            else
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+              ),
+            const SizedBox(width: 4),
+            Text(
+              context.l10n.event_live_go_live,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
                 height: 1.2,
                 color: Colors.white,
               ),

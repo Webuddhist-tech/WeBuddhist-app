@@ -1804,6 +1804,24 @@ abstract class AppLocalizations {
   /// **'Attending'**
   String get connect_event_attending;
 
+  /// No description provided for @connect_event_join_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Join in person'**
+  String get connect_event_join_in_person;
+
+  /// No description provided for @connect_event_join_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Join online'**
+  String get connect_event_join_online;
+
+  /// No description provided for @connect_event_enter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get connect_event_enter;
+
   /// No description provided for @connect_event_participation_prompt.
   ///
   /// In en, this message translates to:
@@ -5183,7 +5201,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:
-  /// **'Pray'**
+  /// **'Prayer'**
   String get event_prayer_pray;
 
   /// No description provided for @event_prayer_praying.
@@ -5197,6 +5215,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync'**
   String get recitation_live_sync;
+
+  /// No description provided for @recitation_live_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get recitation_live_label;
 
   /// No description provided for @recitation_live_session_ended.
   ///

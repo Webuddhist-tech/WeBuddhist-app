@@ -59,6 +59,7 @@ class _GroupEventDetailScreenState
   _EventTab? _selectedTab;
   bool? _attendingOverride;
   GroupEventParticipationType? _participationOverride;
+  GroupEventParticipationType? _pendingJoin;
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
 
@@ -172,6 +173,8 @@ class _GroupEventDetailScreenState
     final selectedTab =
         tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
     final isPast = isGroupEventPast(event);
+    final canSwitchParticipation =
+        isGroupEventHybrid(event) && isAttending && !isPast;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 32),
@@ -191,7 +194,17 @@ class _GroupEventDetailScreenState
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
-          _EventInfoCard(event: event, isDark: isDark),
+          _EventInfoCard(
+            event: event,
+            isDark: isDark,
+            participation:
+                canSwitchParticipation ? _participationOf(event) : null,
+            onParticipationChanged:
+                canSwitchParticipation
+                    ? (type) => _changeParticipation(event, type)
+                    : null,
+            participationBusy: _isSubmitting,
+          ),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
           const SizedBox(height: 20),
@@ -247,6 +260,54 @@ class _GroupEventDetailScreenState
     final secondaryButtonColor =
         isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite;
     final secondaryBorder = isDark ? AppColors.grey800 : AppColors.grey300;
+    final isHybrid = isGroupEventHybrid(event);
+
+    // Hybrid events ask up front instead of via a dialog after tapping Attend.
+    if (isHybrid && !isAttending) {
+      Widget joinButton(GroupEventParticipationType type, String label) {
+        final isPending = _isSubmitting && _pendingJoin == type;
+        return Expanded(
+          child: OutlinedButton(
+            onPressed:
+                _isSubmitting
+                    ? null
+                    : () => _attendEvent(event, participation: type),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              backgroundColor: secondaryButtonColor,
+              foregroundColor:
+                  isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+              side: BorderSide(color: secondaryBorder),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child:
+                isPending
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Text(label),
+          ),
+        );
+      }
+
+      return Row(
+        children: [
+          joinButton(
+            GroupEventParticipationType.offline,
+            context.l10n.connect_event_join_in_person,
+          ),
+          const SizedBox(width: 12),
+          joinButton(
+            GroupEventParticipationType.online,
+            context.l10n.connect_event_join_online,
+          ),
+        ],
+      );
+    }
 
     final attendButton = ElevatedButton(
       onPressed:
@@ -301,9 +362,14 @@ class _GroupEventDetailScreenState
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-                : Text(context.l10n.start_reading),
+                : Text(
+                  isHybrid
+                      ? context.l10n.connect_event_enter
+                      : context.l10n.start_reading,
+                ),
       );
-      if (isPast) {
+      // A hybrid attendee switches their choice in the info card below.
+      if (isPast || isHybrid) {
         return SizedBox(width: double.infinity, child: pujaButton);
       }
       return Row(
@@ -396,14 +462,16 @@ class _GroupEventDetailScreenState
       if (needsChoice && !await _saveParticipation(event, participation)) {
         return;
       }
+      final showLiveStream =
+          participation == GroupEventParticipationType.online;
       if (seriesId != null) {
-        await _enterSeries(
-          event,
-          seriesId,
-          showLiveStream: participation == GroupEventParticipationType.online,
-        );
+        await _enterSeries(event, seriesId, showLiveStream: showLiveStream);
       } else {
-        await _openPlanPreview(planId!, eventId: event.id);
+        await _openPlanPreview(
+          planId!,
+          eventId: event.id,
+          showLiveStream: showLiveStream,
+        );
       }
     } finally {
       if (mounted) setState(() => _isOpeningPuja = false);
@@ -431,7 +499,24 @@ class _GroupEventDetailScreenState
     );
   }
 
-  Future<void> _openPlanPreview(String planId, {String? eventId}) async {
+  Future<void> _changeParticipation(
+    GroupEvent event,
+    GroupEventParticipationType participation,
+  ) async {
+    if (_isSubmitting || participation == _participationOf(event)) return;
+    setState(() => _isSubmitting = true);
+    try {
+      await _saveParticipation(event, participation);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _openPlanPreview(
+    String planId, {
+    String? eventId,
+    bool showLiveStream = false,
+  }) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
     if (!mounted) return;
     final plan = either.fold((_) => null, (plan) => plan);
@@ -441,7 +526,11 @@ class _GroupEventDetailScreenState
     }
     context.push(
       AppRoutes.practicePlanPreview,
-      extra: {'plan': plan, if (eventId != null) 'eventId': eventId},
+      extra: {
+        'plan': plan,
+        if (eventId != null) 'eventId': eventId,
+        'showLiveStream': showLiveStream,
+      },
     );
   }
 
@@ -508,7 +597,12 @@ class _GroupEventDetailScreenState
         .toList();
   }
 
-  Future<void> _attendEvent(GroupEvent event) async {
+  /// [participation] is only set for hybrid events; the server fills in the
+  /// rest.
+  Future<void> _attendEvent(
+    GroupEvent event, {
+    GroupEventParticipationType? participation,
+  }) async {
     if (isGroupEventPast(event)) return;
 
     final authState = ref.read(authProvider);
@@ -517,21 +611,20 @@ class _GroupEventDetailScreenState
       return;
     }
 
-    // Only a hybrid event offers a choice; the server fills in the rest.
-    GroupEventParticipationType? participation;
-    if (isGroupEventHybrid(event)) {
-      participation = await GroupEventParticipationDialog.show(context);
-      if (participation == null || !mounted) return;
-    }
-
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _pendingJoin = participation;
+    });
     final result = await joinGroupEventEnsuringGroupMembership(
       ref: ref,
       event: event,
       participationType: participation,
     );
     if (!mounted) return;
-    setState(() => _isSubmitting = false);
+    setState(() {
+      _isSubmitting = false;
+      _pendingJoin = null;
+    });
 
     result.fold((failure) => _showError(failure.message), (_) {
       setState(() {
@@ -840,7 +933,19 @@ class _EventInfoCard extends StatelessWidget {
   final GroupEvent event;
   final bool isDark;
 
-  const _EventInfoCard({required this.event, required this.isDark});
+  /// The attendee's current hybrid choice; chips show when
+  /// [onParticipationChanged] is set.
+  final GroupEventParticipationType? participation;
+  final ValueChanged<GroupEventParticipationType>? onParticipationChanged;
+  final bool participationBusy;
+
+  const _EventInfoCard({
+    required this.event,
+    required this.isDark,
+    this.participation,
+    this.onParticipationChanged,
+    this.participationBusy = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -926,6 +1031,38 @@ class _EventInfoCard extends StatelessWidget {
             const SizedBox(height: 10),
             _EventLinkText(link: link, isDark: isDark),
           ],
+          if (onParticipationChanged != null) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _ParticipationChip(
+                  label: context.l10n.connect_event_joining_in_person,
+                  selected:
+                      participation == GroupEventParticipationType.offline,
+                  isDark: isDark,
+                  onTap:
+                      participationBusy
+                          ? null
+                          : () => onParticipationChanged!(
+                            GroupEventParticipationType.offline,
+                          ),
+                ),
+                const SizedBox(width: 8),
+                _ParticipationChip(
+                  label: context.l10n.connect_event_joining_online,
+                  selected:
+                      participation == GroupEventParticipationType.online,
+                  isDark: isDark,
+                  onTap:
+                      participationBusy
+                          ? null
+                          : () => onParticipationChanged!(
+                            GroupEventParticipationType.online,
+                          ),
+                ),
+              ],
+            ),
+          ],
           if (otherLinks.isNotEmpty) ...[
             const SizedBox(height: 16),
             _EventSectionLabel(text: context.l10n.connect_event_links_title),
@@ -986,6 +1123,56 @@ class _EventInfoCard extends StatelessWidget {
       ),
       _ => null,
     };
+  }
+}
+
+/// Pill showing one way to attend a hybrid event; filled when chosen.
+class _ParticipationChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool isDark;
+  final VoidCallback? onTap;
+
+  const _ParticipationChip({
+    required this.label,
+    required this.selected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final background =
+        selected
+            ? (isDark ? AppColors.surfaceWhite : AppColors.textPrimary)
+            : (isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite);
+    final foreground =
+        selected
+            ? (isDark ? AppColors.textPrimary : AppColors.surfaceWhite)
+            : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary);
+    final border =
+        selected ? background : (isDark ? AppColors.grey800 : AppColors.grey300);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: border),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: foreground,
+          ),
+        ),
+      ),
+    );
   }
 }
 
