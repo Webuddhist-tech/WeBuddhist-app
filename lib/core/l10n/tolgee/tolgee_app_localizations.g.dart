@@ -1879,6 +1879,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_join_in_person => TolgeeBridge.get(
+    localeName,
+    'connect_event_join_in_person',
+    () => _fallback.connect_event_join_in_person,
+  );
+
+  @override
+  String get connect_event_join_online => TolgeeBridge.get(
+    localeName,
+    'connect_event_join_online',
+    () => _fallback.connect_event_join_online,
+  );
+
+  @override
+  String get connect_event_enter => TolgeeBridge.get(
+    localeName,
+    'connect_event_enter',
+    () => _fallback.connect_event_enter,
+  );
+
+  @override
   String get connect_event_participation_prompt => TolgeeBridge.get(
     localeName,
     'connect_event_participation_prompt',

@@ -1804,6 +1804,24 @@ abstract class AppLocalizations {
   /// **'Attending'**
   String get connect_event_attending;
 
+  /// No description provided for @connect_event_join_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Join in person'**
+  String get connect_event_join_in_person;
+
+  /// No description provided for @connect_event_join_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Join online'**
+  String get connect_event_join_online;
+
+  /// No description provided for @connect_event_enter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get connect_event_enter;
+
   /// No description provided for @connect_event_participation_prompt.
   ///
   /// In en, this message translates to:

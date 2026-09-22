@@ -910,6 +910,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_attending => '已參加';
 
   @override
+  String get connect_event_join_in_person => 'Join in person';
+
+  @override
+  String get connect_event_join_online => 'Join online';
+
+  @override
+  String get connect_event_enter => 'Enter';
+
+  @override
   String get connect_event_participation_prompt => 'How are you attending?';
 
   @override
