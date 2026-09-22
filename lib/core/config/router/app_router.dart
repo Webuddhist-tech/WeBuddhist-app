@@ -773,6 +773,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               language: extra['language'] as String?,
               collectionId: extra['collectionId'] as String?,
               eventId: extra['eventId'] as String?,
+              isOnlineAttendee: extra['isOnlineAttendee'] as bool? ?? false,
             );
           } else if (segmentId != null && segmentId.isNotEmpty) {
             navigationContext = NavigationContext(

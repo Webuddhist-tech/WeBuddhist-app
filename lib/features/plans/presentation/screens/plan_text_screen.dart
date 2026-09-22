@@ -56,7 +56,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
   /// Set when the task was opened from a group event.
   String? get _eventId {
     final ctx = widget.navigationContext;
-    return ctx.isLiveRecitation ? ctx.eventId : null;
+    return ctx.isFromEvent ? ctx.eventId : null;
   }
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────

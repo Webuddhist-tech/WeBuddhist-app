@@ -199,9 +199,11 @@ void main() {
     // Already practicing via the event, so no "Practice now".
     expect(find.text('Practice now'), findsNothing);
     expect(find.byType(PlanEmbeddedHeader), findsNothing);
-    // Online readers stay off the live socket: the stream's overlays carry
-    // the text, and sync would lag behind the video.
-    expect(_activityList(tester).eventId, isNull);
+    // Online readers keep the event for prayer requests but stay off the
+    // live socket: the stream's overlays carry the text, and sync would lag
+    // behind the video.
+    expect(_activityList(tester).eventId, 'event-1');
+    expect(_activityList(tester).isOnlineAttendee, isTrue);
 
     await tester.tap(find.text('Tara of the day'));
     await _settle(tester);
@@ -287,6 +289,7 @@ void main() {
     expect(find.text('Tara of the day'), findsOneWidget);
     // That route follows the event's live recitation.
     expect(_activityList(tester).eventId, 'event-1');
+    expect(_activityList(tester).isOnlineAttendee, isFalse);
   });
 
   testWidgets('an event without a stream counts down to its start', (

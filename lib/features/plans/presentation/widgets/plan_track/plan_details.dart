@@ -264,7 +264,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     primary: false,
                   ),
                   _buildHeader(),
-                  _buildPrayerRequestsButton(),
+                  // An open task carries prayer requests in its own header.
+                  if (!_embedded.isOpen) _buildPrayerRequestsButton(),
                 ],
               ),
             ),
@@ -655,9 +656,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     planId: widget.plan.id,
                     dayNumber: selectedDay,
                     dayAudioUrl: dayContent.audioUrl,
+                    eventId: widget.eventId,
                     // Only in-person readers follow the live recitation: the
                     // stream already carries the text as hardcoded overlays.
-                    eventId: widget.showLiveStream ? null : widget.eventId,
+                    isOnlineAttendee: widget.showLiveStream,
                     onActivityToggled:
                         (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
                     onGroupAccumulationPracticed:

@@ -116,6 +116,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
 
+  /// Set when the reader was opened from a group event.
+  String? get _eventId {
+    final ctx = widget.navigationContext;
+    return ctx != null && ctx.isFromEvent ? ctx.eventId : null;
+  }
+
   /// Set when the reader follows a group event's live recitation.
   String? get _liveEventId {
     final ctx = widget.navigationContext;
@@ -699,15 +705,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     ReaderState state,
     TextDetail? textDetail,
   ) {
+    final eventId = _eventId;
     final liveEventId = _liveEventId;
     final liveSyncToggle =
         liveEventId == null
             ? null
             : RecitationLiveSyncToggle(eventId: liveEventId);
     final prayerRequestsButton =
-        liveEventId == null
-            ? null
-            : PrayerRequestsIconButton(eventId: liveEventId);
+        eventId == null ? null : PrayerRequestsIconButton(eventId: eventId);
     if (_isEmbedded) {
       return PlanEmbeddedHeader(
         onClose: _closeEmbedded,
@@ -733,7 +738,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       // The event page already offers share and offline recitations.
       onMorePressed:
-          liveEventId == null
+          eventId == null
               ? () => _openMoreBottomSheet(context, textDetail)
               : null,
     );
