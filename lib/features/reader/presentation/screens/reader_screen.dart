@@ -724,7 +724,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       liveSyncToggle: liveSyncToggle,
       onSearchPressed: () => _handleSearch(context, state),
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
-      onMorePressed: () => _openMoreBottomSheet(context, textDetail),
+      // The event page already offers share and offline recitations.
+      onMorePressed:
+          liveEventId == null
+              ? () => _openMoreBottomSheet(context, textDetail)
+              : null,
     );
   }
 

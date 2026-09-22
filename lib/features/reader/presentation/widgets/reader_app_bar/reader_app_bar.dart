@@ -19,7 +19,8 @@ class ReaderAppBarOverlay extends ConsumerWidget {
   final VoidCallback onLanguagesPressed;
 
   /// Opens the "more" bottom sheet (font size, add-to-practices, bookmark…).
-  final VoidCallback onMorePressed;
+  /// The menu button is hidden when null.
+  final VoidCallback? onMorePressed;
 
   /// Live recitation sync button, shown before search.
   final Widget? liveSyncToggle;
@@ -30,7 +31,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
     this.colorIndex,
     required this.onSearchPressed,
     required this.onLanguagesPressed,
-    required this.onMorePressed,
+    this.onMorePressed,
     this.liveSyncToggle,
   });
 
@@ -70,11 +71,13 @@ class ReaderAppBarOverlay extends ConsumerWidget {
               onPressed: onLanguagesPressed,
             ),
             const SizedBox(width: 4),
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: onMorePressed,
-            ),
-            const SizedBox(width: 4),
+            if (onMorePressed != null) ...[
+              IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: onMorePressed,
+              ),
+              const SizedBox(width: 4),
+            ],
           ],
         ),
         // Bottom border
