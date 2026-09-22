@@ -607,6 +607,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final seriesId = extra?['seriesId'] as String?;
           final selectedDay = extra?['selectedDay'] as int?;
           final eventId = extra?['eventId'] as String?;
+          final showLiveStream = extra?['showLiveStream'] as bool? ?? false;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -615,6 +616,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             seriesId: seriesId,
             initialDay: selectedDay,
             eventId: eventId,
+            showLiveStream: showLiveStream,
           );
         },
       ),
@@ -640,8 +642,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final startDate = extra?['startDate'] as DateTime?;
               final seriesId = extra?['seriesId'] as String?;
               final eventId = extra?['eventId'] as String?;
-              final showLiveStream =
-                  extra?['showLiveStream'] as bool? ?? true;
+              final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }

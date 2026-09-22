@@ -462,14 +462,16 @@ class _GroupEventDetailScreenState
       if (needsChoice && !await _saveParticipation(event, participation)) {
         return;
       }
+      final showLiveStream =
+          participation == GroupEventParticipationType.online;
       if (seriesId != null) {
-        await _enterSeries(
-          event,
-          seriesId,
-          showLiveStream: participation == GroupEventParticipationType.online,
-        );
+        await _enterSeries(event, seriesId, showLiveStream: showLiveStream);
       } else {
-        await _openPlanPreview(planId!, eventId: event.id);
+        await _openPlanPreview(
+          planId!,
+          eventId: event.id,
+          showLiveStream: showLiveStream,
+        );
       }
     } finally {
       if (mounted) setState(() => _isOpeningPuja = false);
@@ -510,7 +512,11 @@ class _GroupEventDetailScreenState
     }
   }
 
-  Future<void> _openPlanPreview(String planId, {String? eventId}) async {
+  Future<void> _openPlanPreview(
+    String planId, {
+    String? eventId,
+    bool showLiveStream = false,
+  }) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
     if (!mounted) return;
     final plan = either.fold((_) => null, (plan) => plan);
@@ -520,7 +526,11 @@ class _GroupEventDetailScreenState
     }
     context.push(
       AppRoutes.practicePlanPreview,
-      extra: {'plan': plan, if (eventId != null) 'eventId': eventId},
+      extra: {
+        'plan': plan,
+        if (eventId != null) 'eventId': eventId,
+        'showLiveStream': showLiveStream,
+      },
     );
   }
 

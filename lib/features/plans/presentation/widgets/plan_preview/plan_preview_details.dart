@@ -33,6 +33,7 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
     this.seriesId,
     this.initialDay,
     this.eventId,
+    this.showLiveStream = false,
   });
 
   final Plan plan;
@@ -41,6 +42,10 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
   /// The group event this preview was opened from, so the reader follows
   /// its live recitation.
   final String? eventId;
+
+  /// Online attendees watch the stream, so the reader must not follow the
+  /// live recitation.
+  final bool showLiveStream;
 
   /// When non-null, the day carousel opens on this day instead of computing
   /// a default from the plan start date. Used by deep links so the recipient
@@ -268,6 +273,7 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
                   dayNumber: selectedDay,
                   dayAudioUrl: content.audioUrl,
                   eventId: widget.eventId,
+                  isOnlineAttendee: widget.showLiveStream,
                 ),
               );
             },
