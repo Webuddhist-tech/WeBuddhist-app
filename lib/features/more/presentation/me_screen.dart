@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/more/domain/entities/user_stats.dart';
 import 'package:flutter_pecha/shared/widgets/main_tab_app_bar.dart';
@@ -204,22 +203,20 @@ class _GuestView extends ConsumerWidget {
                   ),
                 ),
               ],
-              if (Env.phoneLoginEnabled) ...[
-                const SizedBox(height: 14),
-                _SocialButton(
-                  onTap: () => authNotifier.login(connection: 'sms'),
-                  backgroundColor: isDark ? AppColors.cardDark : Colors.white,
-                  foregroundColor: isDark ? Colors.white : Colors.black87,
-                  borderColor:
-                      isDark ? AppColors.cardBorderDark : AppColors.grey300,
-                  label: localizations.continueWithPhone,
-                  icon: Icon(
-                    Icons.phone_android,
-                    color: isDark ? Colors.white : Colors.black87,
-                    size: 23,
-                  ),
+              const SizedBox(height: 14),
+              _SocialButton(
+                onTap: () => authNotifier.login(connection: 'sms'),
+                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+                foregroundColor: isDark ? Colors.white : Colors.black87,
+                borderColor:
+                    isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                label: localizations.continueWithPhone,
+                icon: Icon(
+                  Icons.phone_android,
+                  color: isDark ? Colors.white : Colors.black87,
+                  size: 23,
                 ),
-              ],
+              ),
             ],
           ],
         ),
