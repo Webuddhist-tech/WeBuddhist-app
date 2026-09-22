@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,11 +28,29 @@ PrimarySegmentHtml primarySegmentHtml(
   }
   final service = ref.watch(transliterationServiceProvider);
   return PrimarySegmentHtml(
-    html: service.convertHtml(
-      html,
-      languageCode: language,
-      toScriptId: scriptId,
+    html: transliterateSegmentHtml(
+      service,
+      html: html,
+      language: language,
+      scriptId: scriptId,
     ),
     fontLanguage: service.fontLanguageFor(language, scriptId) ?? language,
+  );
+}
+
+/// [html] as the reader shows it: transliterated into [scriptId] when one is
+/// picked for [language], otherwise unchanged. Shared by the verse widgets
+/// and the copy action, so what is copied is what is on screen.
+String transliterateSegmentHtml(
+  TransliterationService service, {
+  required String html,
+  required String language,
+  required String? scriptId,
+}) {
+  if (scriptId == null) return html;
+  return service.convertHtml(
+    html,
+    languageCode: language,
+    toScriptId: scriptId,
   );
 }

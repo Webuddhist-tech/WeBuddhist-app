@@ -10,6 +10,8 @@ import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
@@ -76,11 +78,17 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
     }
   }
 
-  void _handleCopy(BuildContext context, String content) {
+  /// Copies the verse as shown: transliterated when a script is picked for
+  /// [language], with line breaks kept.
+  void _handleCopy(BuildContext context, String content, String language) {
     final localizations = context.l10n;
-    final textWithLineBreaks = normalizeSegmentHtml(
-      content,
-    ).replaceAll('<br>', '\n');
+    final html = transliterateSegmentHtml(
+      ref.read(transliterationServiceProvider),
+      html: normalizeSegmentHtml(content),
+      language: language,
+      scriptId: ref.read(readerScriptForLanguageProvider(language)),
+    );
+    final textWithLineBreaks = html.replaceAll('<br>', '\n');
     final plainText = _htmlToPlainText(textWithLineBreaks);
     Clipboard.setData(ClipboardData(text: plainText));
     ScaffoldMessenger.of(
@@ -120,7 +128,7 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
         label: localizations.copy,
         onTap: () {
           HapticFeedback.lightImpact();
-          _handleCopy(context, content);
+          _handleCopy(context, content, state.textDetail?.language ?? 'en');
         },
       ),
       shareButton: _ShareButton(
