@@ -150,8 +150,9 @@ class _PrayToggle extends StatelessWidget {
         isDark ? AppColors.accentGold : AppColors.accentGoldDark;
     final idleColor = isDark ? AppColors.textTertiaryDark : AppColors.grey800;
     final color = prayedByMe ? activeColor : idleColor;
+    // The label counts everyone praying; only the colour is about me.
     final label =
-        prayedByMe
+        count > 0
             ? context.l10n.event_prayer_praying
             : context.l10n.event_prayer_pray;
 

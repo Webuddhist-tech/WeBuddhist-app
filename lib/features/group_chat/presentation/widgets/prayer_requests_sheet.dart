@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -288,7 +289,28 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           top: false,
           child: Column(
             children: [
-              _buildDragHandle(context),
+              // Grey band sets the header apart from the list below.
+              Container(
+                decoration: BoxDecoration(
+                  color:
+                      isDark
+                          ? AppColors.surfaceVariantDark
+                          : AppColors.grey100,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    _buildDragHandle(context),
+                    _buildTitleBar(context, isDark),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
               if (showComposer)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -379,6 +401,34 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           onTogglePrayer: () => unawaited(_notifier.togglePrayer(request.id)),
         );
       },
+    );
+  }
+
+  Widget _buildTitleBar(BuildContext context, bool isDark) {
+    final titleColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 0, 16, 4),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(AppAssets.arrowLeft),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          Expanded(
+            child: Text(
+              context.l10n.event_prayer_requests,
+              strutStyle: context.tibetanStrutStyle(17, compact: true),
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: titleColor,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

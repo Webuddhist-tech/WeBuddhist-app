@@ -2942,7 +2942,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prayer requests are closed for this event.';
 
   @override
-  String get event_prayer_pray => 'Pray';
+  String get event_prayer_pray => 'Prayer';
 
   @override
   String get event_prayer_praying => 'Praying';

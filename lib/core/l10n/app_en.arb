@@ -1438,7 +1438,7 @@
   "event_prayer_hint": "How can we pray for you today",
   "event_prayer_load_failed": "Prayer requests couldn't be loaded.",
   "event_prayer_closed": "Prayer requests are closed for this event.",
-  "event_prayer_pray": "Pray",
+  "event_prayer_pray": "Prayer",
   "event_prayer_praying": "Praying",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",

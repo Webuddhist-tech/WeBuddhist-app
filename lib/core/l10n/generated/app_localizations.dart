@@ -5201,7 +5201,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:
-  /// **'Pray'**
+  /// **'Prayer'**
   String get event_prayer_pray;
 
   /// No description provided for @event_prayer_praying.
