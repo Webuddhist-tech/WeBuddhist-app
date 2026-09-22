@@ -67,6 +67,12 @@ abstract class ScriptConverter {
 
   /// The script most of [sample]'s letters are written in, or null when none
   /// of the known scripts appear.
+  ///
+  /// A [TransliterationScript.roman] script only wins when the sample holds
+  /// no letters of any other script. Stray Latin is common inside texts
+  /// written in a native script - loanwords, edition sigla, an English title -
+  /// so letting it vote alongside the rest reports Roman for a text that is
+  /// plainly Tibetan or Devanagari.
   String? detectScript(String sample) {
     final counts = <String, int>{};
     for (final codePoint in sample.runes) {
@@ -77,9 +83,16 @@ abstract class ScriptConverter {
         }
       }
     }
+    return _mostSeen(counts, roman: false) ?? _mostSeen(counts, roman: true);
+  }
+
+  /// The most-seen id in [counts] whose script's [TransliterationScript.roman]
+  /// is [roman], or null when no such script was seen.
+  String? _mostSeen(Map<String, int> counts, {required bool roman}) {
     String? best;
     var bestCount = 0;
     for (final entry in counts.entries) {
+      if (scriptById(entry.key)?.roman != roman) continue;
       if (entry.value > bestCount) {
         best = entry.key;
         bestCount = entry.value;

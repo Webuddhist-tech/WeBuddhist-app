@@ -24,10 +24,17 @@ class ReaderLanguagesSheet extends ConsumerStatefulWidget {
     super.key,
     required this.textId,
     required this.primaryDisplay,
+    this.sourceSample,
   });
 
   final String textId;
   final ReaderSlotConfig primaryDisplay;
+
+  /// Plain text lifted from the loaded segments, used to tell which script
+  /// the original is written in. Null (or empty) leaves the script unknown,
+  /// which only costs the first row its name. Never the title: titles are
+  /// routinely romanised even when the body is not.
+  final String? sourceSample;
 
   @override
   ConsumerState<ReaderLanguagesSheet> createState() =>
@@ -204,9 +211,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
         converter == null
             ? null
             : ref.watch(readerScriptForLanguageProvider(primary.languageCode));
-    // Titles are written in the same script as the body, and the sheet has
-    // no segment text to sample.
-    final sourceScript = converter?.detectScript(primary.versionLabel ?? '');
+    final sourceScript = converter?.detectScript(widget.sourceSample ?? '');
     final enabled = settings.secondaryEnabled;
     final busy = resolving || _filling;
     // One of the two layers is always on: the original stays on screen (and
@@ -603,6 +608,18 @@ class _VersionList extends ConsumerWidget {
   }
 }
 
+/// Which row of [_ScriptList] is ticked, given the user's pick and the script
+/// the text is written in.
+///
+/// The source script has no row of its own - it *is* the "as written" row -
+/// so a pick naming it is the same choice, and passing it through would leave
+/// the list with nothing ticked (a Sinhala pick opened on a Sinhala text).
+@visibleForTesting
+String? activeScriptRow({
+  required String? selectedScriptId,
+  required String? sourceScriptId,
+}) => selectedScriptId == sourceScriptId ? null : selectedScriptId;
+
 /// Scripts the Original text can be shown in. The first row is the text as
 /// written (its own script, or "Original" when that can't be told), followed
 /// by every other script the converter offers.
@@ -624,6 +641,10 @@ class _ScriptList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final source = converter.scriptById(sourceScriptId);
+    final picked = activeScriptRow(
+      selectedScriptId: selectedScriptId,
+      sourceScriptId: sourceScriptId,
+    );
     return Padding(
       padding: const EdgeInsets.only(top: 4, left: 16),
       child: Column(
@@ -633,14 +654,14 @@ class _ScriptList extends StatelessWidget {
                 source == null
                     ? context.l10n.reader_original_label
                     : source.label,
-            isActive: selectedScriptId == null,
+            isActive: picked == null,
             onTap: () => onTap(null),
           ),
           for (final script in converter.scripts)
             if (script.id != sourceScriptId)
               _ScriptRow(
                 label: script.label,
-                isActive: script.id == selectedScriptId,
+                isActive: script.id == picked,
                 onTap: () => onTap(script.id),
               ),
         ],
@@ -696,6 +717,7 @@ Future<void> showReaderLanguagesSheet(
   BuildContext context, {
   required String textId,
   required ReaderSlotConfig primaryDisplay,
+  String? sourceSample,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -710,6 +732,7 @@ Future<void> showReaderLanguagesSheet(
         (_) => ReaderLanguagesSheet(
           textId: textId,
           primaryDisplay: primaryDisplay,
+          sourceSample: sourceSample,
         ),
   );
 }

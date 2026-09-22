@@ -205,8 +205,12 @@ class EwtsConverter {
     return tokens;
   }
 
-  static bool _validHex(String hex) =>
-      RegExp(r'^[a-f0-9]+$').hasMatch(hex);
+  /// Both cases, as BDRC's Java converter and pyewts accept: sloppy-mode
+  /// normalisation lower-cases a stray `b` but not an `F`, so a lower-case
+  /// only pattern rejects `\u0F0B` and swallows the character.
+  static final RegExp _hex = RegExp(r'^[a-fA-F0-9]+$');
+
+  static bool _validHex(String hex) => _hex.hasMatch(hex);
 
   String? _unicodeEscape(List<String>? warns, int line, String t) {
     final hex = t.substring(2);

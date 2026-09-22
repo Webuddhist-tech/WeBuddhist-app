@@ -80,6 +80,76 @@ void main() {
       );
     });
 
+    group('footnotes', () {
+      test('leaves a footnote body and its marker as the editor wrote them', () {
+        // The note is the editor's English ("So PTS; see ..."), not the
+        // verse, so running it through the converter turns it to gibberish.
+        final out = service.convertHtml(
+          'namo<sup class="footnote-marker">*</sup>'
+          '<i class="footnote">So PTS; see page 12.</i> tassa',
+          languageCode: 'xx',
+          toScriptId: 'up',
+        );
+        expect(
+          out,
+          'NAMO<sup class="footnote-marker">*</sup>'
+          '<i class="footnote">So PTS; see page 12.</i> TASSA',
+        );
+      });
+
+      test('skips the whole footnote, nested tags and all', () {
+        final out = service.convertHtml(
+          '<i class="footnote">see <i>op. cit.</i> page 12</i>namo',
+          languageCode: 'xx',
+          toScriptId: 'up',
+        );
+        expect(
+          out,
+          '<i class="footnote">see <i>op. cit.</i> page 12</i>NAMO',
+        );
+      });
+
+      test('a self-closing footnote tag does not swallow the verse', () {
+        final out = service.convertHtml(
+          '<img class="footnote-marker"/>namo',
+          languageCode: 'xx',
+          toScriptId: 'up',
+        );
+        expect(out, '<img class="footnote-marker"/>NAMO');
+      });
+
+      test('other classes are still converted', () {
+        final out = service.convertHtml(
+          '<span class="verse">namo</span>',
+          languageCode: 'xx',
+          toScriptId: 'up',
+        );
+        expect(out, '<span class="verse">NAMO</span>');
+      });
+    });
+
+    test('a newline in the source does not cancel the breaks it adds', () {
+      // Newlines in an HTML text node are whitespace, not breaks. A
+      // pretty-printed document used to lose every <br> the mark style made.
+      final service = TransliterationService.standard();
+      expect(
+        service.convertHtml(
+          'རྒྱ་གར།\nན་མོ།',
+          languageCode: 'bo',
+          toScriptId: 'phonetic',
+        ),
+        'gya gar\nna mo',
+      );
+      expect(
+        service.convertHtml(
+          'རྒྱ་གར། ན་མོ།\nཨོཾ། ཨོཾ།',
+          languageCode: 'bo',
+          toScriptId: 'phonetic',
+        ),
+        'gya gar<br>na mo\nom<br>om',
+      );
+    });
+
     test('returns the input unchanged for an unsupported language', () {
       expect(
         service.convertHtml('namo', languageCode: 'bo', toScriptId: 'up'),

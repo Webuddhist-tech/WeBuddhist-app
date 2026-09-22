@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -53,4 +54,28 @@ String transliterateSegmentHtml(
     languageCode: language,
     toScriptId: scriptId,
   );
+}
+
+/// How much text [scriptDetectionSample] gathers. A few verses settle the
+/// script beyond doubt and the reader can hold thousands of them.
+const int _sampleLimit = 400;
+
+/// Plain text from the first loaded verses, for [ScriptConverter.detectScript].
+///
+/// The body is the only honest witness to the script a text is written in.
+/// Its title is not: catalogues romanise Tibetan and Pali titles as a matter
+/// of course, so detecting from one reports Roman for a text whose verses are
+/// in Uchen - and the Roman row, the one worth having, then looks like the
+/// script already on screen.
+String scriptDetectionSample(FlattenedContent? content) {
+  if (content == null) return '';
+  final buffer = StringBuffer();
+  for (final item in content.items) {
+    final segment = item.segment?.content;
+    if (segment == null || segment.isEmpty) continue;
+    // Markup is stripped so tag names and entities cannot vote for Roman.
+    buffer.write(segment.replaceAll(TransliterationService.markup, ' '));
+    if (buffer.length >= _sampleLimit) break;
+  }
+  return buffer.toString();
 }

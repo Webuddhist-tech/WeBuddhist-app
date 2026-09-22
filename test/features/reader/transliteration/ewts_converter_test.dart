@@ -181,4 +181,32 @@ void main() {
       expect(warns, isEmpty);
     });
   });
+
+  group('EwtsConverter.toUnicode — escapes', () {
+    test('takes a hex code in either case, as pyewts does', () {
+      // Sloppy normalisation lower-cases a stray `b` but not an `F`, so a
+      // lower-case only pattern rejected \u0F0B and dropped the character.
+      for (final escape in [r'\u0f0b', r'\u0F0B', r'\U00000F0B']) {
+        final warns = <String>[];
+        expect(
+          strict.toUnicode(escape, warns: warns),
+          '\u0F0B',
+          reason: escape,
+        );
+        // A lone tsheg still draws "No Tibetan characters found!"; what must
+        // not appear is the hex complaint.
+        expect(
+          warns,
+          isNot(contains(contains('invalid hex'))),
+          reason: escape,
+        );
+      }
+    });
+
+    test('still warns on a code that is not hex at all', () {
+      final warns = <String>[];
+      expect(strict.toUnicode(r'\u0g0b', warns: warns), '');
+      expect(warns, isNotEmpty);
+    });
+  });
 }

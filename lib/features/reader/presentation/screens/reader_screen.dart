@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/reader/domain/services/live_position_reso
 import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
@@ -865,6 +866,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       context,
       textId: widget.textId,
       primaryDisplay: primaryDisplay,
+      sourceSample: scriptDetectionSample(
+        ref.read(readerNotifierProvider(_params)).content,
+      ),
     );
   }
 
