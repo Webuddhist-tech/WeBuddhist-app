@@ -1441,5 +1441,6 @@
   "event_prayer_pray": "Pray",
   "event_prayer_praying": "Praying",
   "recitation_live_sync": "Sync",
+  "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended"
 }

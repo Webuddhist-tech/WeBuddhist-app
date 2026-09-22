@@ -5216,6 +5216,12 @@ abstract class AppLocalizations {
   /// **'Sync'**
   String get recitation_live_sync;
 
+  /// No description provided for @recitation_live_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get recitation_live_label;
+
   /// No description provided for @recitation_live_session_ended.
   ///
   /// In en, this message translates to:

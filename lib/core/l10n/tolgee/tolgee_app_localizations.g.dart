@@ -5786,6 +5786,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get recitation_live_label => TolgeeBridge.get(
+    localeName,
+    'recitation_live_label',
+    () => _fallback.recitation_live_label,
+  );
+
+  @override
   String get recitation_live_session_ended => TolgeeBridge.get(
     localeName,
     'recitation_live_session_ended',

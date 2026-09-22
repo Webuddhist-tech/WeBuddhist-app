@@ -2976,5 +2976,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get recitation_live_sync => 'Sync';
 
   @override
+  String get recitation_live_label => 'Live';
+
+  @override
   String get recitation_live_session_ended => 'The live session has ended';
 }
