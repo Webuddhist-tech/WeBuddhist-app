@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
@@ -1439,12 +1440,26 @@ class _GroupFollowButton extends ConsumerWidget {
     }
 
     if (isPrivateGroupMember(followState: followState)) {
-      return _buildJoinedActions(
-        context,
-        ref,
-        followKey,
-        isFollowing,
-        isLoading,
+      final isAdmin =
+          ref
+              .watch(groupMyPermissionProvider(profile.id))
+              .valueOrNull
+              ?.isGroupAdmin ??
+          false;
+      return Column(
+        children: [
+          _buildJoinedActions(
+            context,
+            ref,
+            followKey,
+            isFollowing,
+            isLoading,
+          ),
+          if (isAdmin) ...[
+            const SizedBox(height: 12),
+            GroupJoinRequestsRow(isDark: isDark),
+          ],
+        ],
       );
     }
 
