@@ -50,9 +50,6 @@ class AppRoutes {
   // ========== PLANS SUB ROUTES ==========
   static const String plansInfo = '/plans/info';
 
-  // ========== RECITATIONS SUB ROUTES ==========
-  static const String recitationDetail = '/recitations/detail';
-
   // ========== READER ROUTES ==========
   static const String reader = '/reader';
 
@@ -106,7 +103,6 @@ class AppRoutes {
     practiceEditRoutine, // Building routine requires auth
     profile,
     plansInfo,
-    recitationDetail,
     mala, // Mala counting is login-gated (no guest mode)
   };
 

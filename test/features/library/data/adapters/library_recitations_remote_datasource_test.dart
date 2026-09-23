@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_recitations_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/my_recitation_collections_remote_datasource.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitations_remote_datasource.dart';
@@ -87,7 +86,6 @@ LibraryTestServer _server({List<Uri>? seen}) => LibraryTestServer({
 
 LibraryRecitationsRemoteDatasource _datasource(LibraryTestServer server) {
   return LibraryRecitationsRemoteDatasource(
-    dio: Dio(),
     library: server.repository(),
     collections: MyRecitationCollectionsRemoteDatasource(dio: server.dio()),
     tagId: 'TAG',

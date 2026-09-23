@@ -45,19 +45,6 @@ class DioClient {
   /// Get the underlying Dio instance
   Dio get dio => _dio;
 
-  /// Send a request and return the response stream for SSE/Server-Sent Events.
-  ///
-  /// This is used for streaming responses like AI chat.
-  /// The response type is set to stream, and the caller can iterate over the data.
-  Stream<String> sendStreamedRequest(RequestOptions options) async* {
-    options.responseType = ResponseType.stream;
-    final response = await _dio.fetch(options);
-
-    await for (final chunk in response.data.stream) {
-      yield chunk;
-    }
-  }
-
   /// Close the client and release resources
   void close({bool force = false}) {
     _dio.close(force: force);

@@ -161,11 +161,6 @@ class CacheInterceptor extends Interceptor {
       paths.add('/users/me/stats');
     }
 
-    // Personal recitation collections are merged into GET /recitations.
-    if (path.startsWith('/users/me/recitation-collections')) {
-      paths.add('/recitations');
-    }
-
     return paths;
   }
 

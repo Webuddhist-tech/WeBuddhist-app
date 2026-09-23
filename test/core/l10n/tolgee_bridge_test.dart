@@ -42,7 +42,10 @@ void main() {
         final AppLocalizations bundled = lookupAppLocalizations(locale);
         final AppLocalizations bridged = tolgeeAppLocalizationsFor(locale);
 
-        expect(bridged.ai_greeting('Tenzin'), bundled.ai_greeting('Tenzin'));
+        expect(
+          bridged.commentary_not_available_for_language('bo'),
+          bundled.commentary_not_available_for_language('bo'),
+        );
         expect(bridged.plan_day_of(2, 9), bundled.plan_day_of(2, 9));
         for (final int count in <int>[0, 1, 7]) {
           expect(
@@ -69,7 +72,7 @@ void main() {
     test('lookups return the fallback without touching the SDK', () {
       expect(TolgeeBridge.get('en', 'sign_in', () => 'Sign in'), 'Sign in');
       expect(
-        TolgeeBridge.format('en', 'ai_greeting', <String, Object>{
+        TolgeeBridge.format('en', 'greeting', <String, Object>{
           'name': 'Tenzin',
         }, () => 'Hi Tenzin'),
         'Hi Tenzin',
@@ -127,10 +130,10 @@ void main() {
     });
 
     test('a placeholder string formats from the loaded payload', () {
-      load('en', <String, String>{'ai_greeting': 'Hey {name}!'});
+      load('en', <String, String>{'greeting': 'Hey {name}!'});
 
       expect(
-        TolgeeBridge.format('en', 'ai_greeting', <String, Object>{
+        TolgeeBridge.format('en', 'greeting', <String, Object>{
           'name': 'Tenzin',
         }, () => 'bundled'),
         'Hey Tenzin!',

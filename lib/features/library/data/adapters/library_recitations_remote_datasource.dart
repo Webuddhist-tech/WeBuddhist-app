@@ -13,7 +13,6 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 /// and saved chants still come from the main API.
 class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
   LibraryRecitationsRemoteDatasource({
-    required super.dio,
     required LibraryRepository library,
     required MyRecitationCollectionsRemoteDatasource collections,
     required String tagId,
