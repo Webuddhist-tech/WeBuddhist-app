@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/library/data/datasource/library_remote_datasource.dart';
 import 'package:flutter_pecha/features/library/data/models/library_edition.dart';
@@ -27,6 +29,7 @@ class LibraryRepository {
   final Map<String, Future<List<LibraryText>>> _families = {};
   final Map<String, Future<LibrarySegmentResources>> _resources = {};
   final Map<String, Future<LibraryReaderSegment?>> _firstSegments = {};
+  final Map<String, Future<LibraryEdition>> _resolvedEditions = {};
   Future<Map<String, String>>? _languageNames;
 
   Future<LibraryTextPage> fetchChants({
@@ -84,17 +87,43 @@ class LibraryRepository {
   Future<LibraryEdition> getEdition(String editionId) =>
       _memo(_editions, editionId, () => _datasource.fetchEdition(editionId));
 
+  /// Ids handed to the reader are edition ids; a text id still resolves to
+  /// that text's first edition so older links keep working.
+  Future<LibraryEdition> resolveEdition(String id) {
+    return _memo(_resolvedEditions, id, () async {
+      try {
+        return await getEdition(id);
+      } catch (e) {
+        if (!_isNotFound(e)) rethrow;
+      }
+      final LibraryText text;
+      try {
+        text = await getText(id);
+      } catch (e) {
+        if (_isNotFound(e)) throw NotFoundException('Edition $id not found');
+        rethrow;
+      }
+      final editionId = text.primaryEditionId;
+      if (editionId == null) {
+        throw NotFoundException('Text $id has no edition');
+      }
+      return getEdition(editionId);
+    });
+  }
+
   Future<LibrarySegment> getSegment(String segmentId) =>
       _datasource.fetchSegment(segmentId);
 
   Future<List<LibrarySearchResult>> search({
     required String query,
     String? textId,
+    String? editionId,
     int limit = 50,
   }) {
     return _datasource.searchContent(
       query: query,
       textId: textId,
+      editionId: editionId,
       limit: limit,
     );
   }
@@ -274,6 +303,10 @@ class LibraryRepository {
       source: edition?.source,
     );
   }
+
+  static bool _isNotFound(Object error) =>
+      error is NotFoundException ||
+      (error is DioException && error.response?.statusCode == 404);
 
   Future<T> _memo<T>(
     Map<String, Future<T>> cache,

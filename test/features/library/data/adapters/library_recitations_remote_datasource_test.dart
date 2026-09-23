@@ -93,7 +93,7 @@ LibraryRecitationsRemoteDatasource _datasource(LibraryTestServer server) {
 }
 
 void main() {
-  test('maps library texts to recitations with a first-verse preview', () async {
+  test('maps library texts to recitations keyed by edition id', () async {
     final seen = <Uri>[];
     final page = await _datasource(_server(seen: seen)).fetchRecitationsPage(
       queryParams: RecitationsQueryParams(language: 'en', skip: 0, limit: 20),
@@ -105,14 +105,14 @@ void main() {
       'limit': '20',
       'offset': '0',
     });
-    expect(page.recitations.map((r) => r.textId), ['T1', 'T2', 'NOED']);
+    // NOED has no edition, so it is not listed.
+    expect(page.recitations.map((r) => r.textId), ['E1', 'E2']);
     expect(page.recitations.first.title, 'Title T1');
     expect(page.recitations.first.language, 'en');
     expect(page.recitations.first.firstSegment?.id, 's1');
     expect(page.recitations.first.firstSegment?.content, 'abc⤵def');
-    // A failing preview and a text without an edition still list.
+    // A failing preview still lists the chant.
     expect(page.recitations[1].firstSegment, isNull);
-    expect(page.recitations[2].firstSegment, isNull);
     expect(page.collections, isEmpty);
     expect(page.skip, 0);
     expect(page.hasMore, isTrue);
@@ -128,7 +128,7 @@ void main() {
       ),
     );
 
-    expect(page.recitations.map((r) => r.textId), ['T3']);
+    expect(page.recitations.map((r) => r.textId), ['E3']);
     expect(page.recitations.single.firstSegment?.content, 'xy');
     expect(page.hasMore, isFalse);
     expect(page.collections, hasLength(21));

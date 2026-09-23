@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/repositories/library_repository.dart';
@@ -184,6 +185,49 @@ void main() {
       expect(server.count('/v2/texts/root'), 1);
       expect(server.count('/v2/texts/t1'), 1);
       expect(server.count('/v2/texts/t2'), 1);
+    });
+  });
+
+  group('LibraryRepository.resolveEdition', () {
+    LibraryTestServer server() => LibraryTestServer({
+      '/v2/editions/E1': (_) => jsonBody({'id': 'E1', 'text_id': 'T1'}),
+      '/v2/texts/T1': (_) => jsonBody(textJson('T1', editions: ['E1'])),
+      '/v2/texts/NOED': (_) => jsonBody(textJson('NOED')),
+    });
+
+    test('an edition id resolves directly and is memoized', () async {
+      final s = server();
+      final repository = s.repository();
+
+      final first = await repository.resolveEdition('E1');
+      final second = await repository.resolveEdition('E1');
+
+      expect(first.textId, 'T1');
+      expect(second.id, 'E1');
+      expect(s.count('/v2/editions/E1'), 1);
+    });
+
+    test('a text id falls back to its first edition', () async {
+      final s = server();
+
+      final edition = await s.repository().resolveEdition('T1');
+
+      expect(edition.id, 'E1');
+      expect(s.count('/v2/editions/T1'), 1);
+      expect(s.count('/v2/texts/T1'), 1);
+    });
+
+    test('unknown ids and edition-less texts are not found', () async {
+      final repository = server().repository();
+
+      expect(
+        () => repository.resolveEdition('NOPE'),
+        throwsA(isA<NotFoundException>()),
+      );
+      expect(
+        () => repository.resolveEdition('NOED'),
+        throwsA(isA<NotFoundException>()),
+      );
     });
   });
 

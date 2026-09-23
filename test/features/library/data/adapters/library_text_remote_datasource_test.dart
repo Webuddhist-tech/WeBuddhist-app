@@ -5,6 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../library_test_server.dart';
 
 LibraryTestServer _server() => LibraryTestServer({
+  '/v2/editions/E1':
+      (_) => jsonBody({'id': 'E1', 'text_id': 'T1', 'source': 'https://src'}),
+  '/v2/editions/E2': (_) => jsonBody({'id': 'E2', 'text_id': 'R'}),
   '/v2/texts/T1':
       (_) => jsonBody(
         textJson('T1', language: 'en', translationOf: 'R', editions: ['E1']),
@@ -27,7 +30,8 @@ LibraryTestServer _server() => LibraryTestServer({
     return jsonBody('ABCDEFGHI'.substring(start, end));
   },
   '/v2/content-search': (uri) {
-    expect(uri.queryParameters['text_id'], 'T1');
+    expect(uri.queryParameters['edition_id'], 'E1');
+    expect(uri.queryParameters.containsKey('text_id'), isFalse);
     expect(uri.queryParameters['search_type'], 'exact');
     return jsonBody([
       {
@@ -54,15 +58,16 @@ LibraryTextRemoteDatasource _datasource(LibraryTestServer server) {
 
 void main() {
   group('LibraryTextRemoteDatasource.fetchTextDetails', () {
-    test('first page keeps the path id and numbers verses', () async {
+    test('first page keeps the edition id and numbers verses', () async {
       final response = await _datasource(_server()).fetchTextDetails(
-        textId: 'T1',
+        textId: 'E1',
         direction: 'next',
       );
 
-      expect(response.textDetail.id, 'T1');
+      expect(response.textDetail.id, 'E1');
       expect(response.textDetail.title, 'Title T1');
       expect(response.textDetail.language, 'en');
+      expect(response.textDetail.sourceLink, 'https://src');
       expect(response.size, 20);
       expect(response.paginationDirection, 'next');
       expect(response.currentSegmentPosition, 1);
@@ -70,6 +75,7 @@ void main() {
 
       final section = response.content.sections.single;
       expect(section.id, 'E1');
+      expect(response.content.textId, 'T1');
       expect(section.segments.map((s) => s.segmentId), ['s1', 's2', 's3']);
       expect(section.segments.map((s) => s.segmentNumber), [1, 2, 3]);
       expect(section.segments.first.content, 'a&lt;b');
@@ -80,7 +86,7 @@ void main() {
       final ds = _datasource(_server());
 
       final next = await ds.fetchTextDetails(
-        textId: 'T1',
+        textId: 'E1',
         segmentId: 's3',
         direction: 'next',
         size: 1,
@@ -89,7 +95,7 @@ void main() {
       expect(next.currentSegmentPosition, 3);
 
       final previous = await ds.fetchTextDetails(
-        textId: 'T1',
+        textId: 'E1',
         segmentId: 's3',
         direction: 'previous',
         size: 1,
@@ -98,10 +104,10 @@ void main() {
       expect(previous.currentSegmentPosition, 2);
     });
 
-    test('a version id loads the companion into translation content', () async {
+    test('a version id loads the companion edition into translation content', () async {
       final response = await _datasource(_server()).fetchTextDetails(
-        textId: 'T1',
-        versionId: 'R',
+        textId: 'E1',
+        versionId: 'E2',
         direction: 'next',
       );
 
@@ -111,27 +117,42 @@ void main() {
       expect(segments.first.content, isNull);
       expect(segments.first.translation?.content, 'ABC');
       expect(segments.first.translation?.language, 'bo');
-      expect(segments.first.translation?.textId, 'R');
-      expect(response.textDetail.id, 'R');
+      expect(segments.first.translation?.textId, 'E2');
+      expect(response.textDetail.id, 'E2');
     });
 
-    test('a text without an edition is not found', () async {
+    test('a text id still resolves to its first edition', () async {
+      final response = await _datasource(_server()).fetchTextDetails(
+        textId: 'T1',
+      );
+
+      expect(response.textDetail.id, 'T1');
+      expect(response.content.sections.single.id, 'E1');
+      expect(response.totalSegments, 3);
+    });
+
+    test('an unknown id and a text without an edition are not found', () async {
+      final ds = _datasource(_server());
       expect(
-        () => _datasource(_server()).fetchTextDetails(textId: 'NOED'),
+        () => ds.fetchTextDetails(textId: 'NOPE'),
+        throwsA(isA<NotFoundException>()),
+      );
+      expect(
+        () => ds.fetchTextDetails(textId: 'NOED'),
         throwsA(isA<NotFoundException>()),
       );
     });
   });
 
-  test('multilingualSearch groups hits per text and dedupes segments', () async {
+  test('multilingualSearch searches the edition and keys hits by it', () async {
     final response = await _datasource(_server()).multilingualSearch(
       query: 'def',
-      textId: 'T1',
+      textId: 'E1',
     );
 
     expect(response.query, 'def');
     final source = response.sources.single;
-    expect(source.text.textId, 'T1');
+    expect(source.text.textId, 'E1');
     expect(source.text.title, 'Title T1');
     expect(source.segmentMatches.map((m) => m.segmentId), ['s2', 's3']);
     expect(source.segmentMatches.first.content, 'def');

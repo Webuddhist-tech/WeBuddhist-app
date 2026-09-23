@@ -5,8 +5,8 @@ import 'package:flutter_pecha/features/reader/data/models/reader_language_option
 import 'package:flutter_pecha/features/reader/data/models/reader_script_option.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
 
-/// Reader languages and versions from the library: a text's versions are the
-/// root text and its translations, and a version id is a library text id.
+/// Reader languages and versions from the library. The reader's text id is an
+/// edition id; versions are the editions of the root text and its translations.
 class LibraryReaderSettingsRemoteDatasource
     implements ReaderSettingsRemoteDatasource {
   LibraryReaderSettingsRemoteDatasource({required LibraryRepository library})
@@ -18,8 +18,9 @@ class LibraryReaderSettingsRemoteDatasource
   Future<ReaderLanguagesResponse> fetchLanguages({
     required String textId,
   }) async {
-    final text = await _library.getText(textId);
-    final family = await _library.getTextFamily(textId);
+    final edition = await _library.resolveEdition(textId);
+    final text = await _library.getText(edition.textId);
+    final family = await _library.getTextFamily(text.id);
     Map<String, String> names;
     try {
       names = await _library.getLanguageNames();
@@ -29,7 +30,9 @@ class LibraryReaderSettingsRemoteDatasource
 
     final counts = <String, int>{};
     for (final member in family) {
-      counts[member.language] = (counts[member.language] ?? 0) + 1;
+      if (member.editions.isEmpty) continue;
+      counts[member.language] =
+          (counts[member.language] ?? 0) + member.editions.length;
     }
     final codes = counts.keys.toList()..sort();
     if (codes.remove(text.language)) codes.insert(0, text.language);
@@ -61,23 +64,30 @@ class LibraryReaderSettingsRemoteDatasource
     );
   }
 
-  /// The requested text comes first so it stays the default for its language.
+  /// The opened edition comes first so it stays the default for its language.
   @override
   Future<ReaderVersionsResponse> fetchVersions({
     required String textId,
     required String language,
   }) async {
-    final family = await _library.getTextFamily(textId);
-    final members =
-        family.where((t) => t.language == language).toList()..sort((a, b) {
-          if (a.id == textId) return -1;
-          if (b.id == textId) return 1;
-          return 0;
-        });
+    final edition = await _library.resolveEdition(textId);
+    final family = await _library.getTextFamily(edition.textId);
+    final versions = <ReaderVersionDetail>[];
+    for (final member in family) {
+      if (member.language != language) continue;
+      for (final editionId in member.editions) {
+        final version = _version(member, editionId: editionId);
+        if (editionId == edition.id) {
+          versions.insert(0, version);
+        } else {
+          versions.add(version);
+        }
+      }
+    }
     return ReaderVersionsResponse(
       textId: textId,
       language: language,
-      availableVersions: [for (final t in members) _version(t)],
+      availableVersions: versions,
     );
   }
 
@@ -85,16 +95,18 @@ class LibraryReaderSettingsRemoteDatasource
   Future<ReaderVersionDetail> fetchVersionInfo({
     required String versionId,
   }) async {
-    final text = await _library.getText(versionId);
-    final editionId = text.primaryEditionId;
-    final edition =
-        editionId == null ? null : await _library.getEdition(editionId);
-    return _version(text, sourceLink: edition?.source);
+    final edition = await _library.resolveEdition(versionId);
+    final text = await _library.getText(edition.textId);
+    return _version(text, editionId: edition.id, sourceLink: edition.source);
   }
 
-  static ReaderVersionDetail _version(LibraryText text, {String? sourceLink}) {
+  static ReaderVersionDetail _version(
+    LibraryText text, {
+    required String editionId,
+    String? sourceLink,
+  }) {
     return ReaderVersionDetail(
-      id: text.id,
+      id: editionId,
       title: text.displayTitle,
       language: text.language,
       parentId: text.translationOf,

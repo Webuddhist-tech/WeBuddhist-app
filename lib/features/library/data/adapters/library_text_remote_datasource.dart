@@ -1,4 +1,3 @@
-import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/library/data/models/library_search_result.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/repositories/library_repository.dart';
@@ -14,6 +13,7 @@ import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation.dart';
 
 /// Serves the reader's text details and in-text search from the library API.
+/// The reader's text id and version id are both library edition ids.
 class LibraryTextRemoteDatasource implements TextRemoteDatasource {
   LibraryTextRemoteDatasource({required LibraryRepository library})
     : _library = library;
@@ -22,9 +22,8 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
 
   static const int _searchLimit = 50;
 
-  /// A version id is a library text id; its content is the first edition.
-  /// With [versionId] set (the parallel reader) the companion's lines go in
-  /// `translation.content` and its own segment ids drive pagination.
+  /// With [versionId] set (the parallel reader) the companion edition's lines
+  /// go in `translation.content` and its own segment ids drive pagination.
   @override
   Future<ReaderResponse> fetchTextDetails({
     required String textId,
@@ -37,17 +36,14 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
   }) async {
     final isSecondary =
         versionId != null && versionId.isNotEmpty && versionId != textId;
-    final loadTextId = isSecondary ? versionId : textId;
-    final text = await _library.getText(loadTextId);
-    final editionId = text.primaryEditionId;
-    if (editionId == null) {
-      throw NotFoundException('Text $loadTextId has no edition');
-    }
+    final loadId = isSecondary ? versionId : textId;
+    final edition = await _library.resolveEdition(loadId);
+    final text = await _library.getText(edition.textId);
 
     final pageSize = size ?? TextDetailsConstants.defaultPageSize;
     final pageDirection = direction ?? 'next';
     final window = await _library.loadWindow(
-      editionId: editionId,
+      editionId: edition.id,
       anchorSegmentId: segmentId,
       direction: pageDirection,
       size: pageSize,
@@ -62,7 +58,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
           translation:
               isSecondary
                   ? Translation(
-                    textId: loadTextId,
+                    textId: loadId,
                     language: text.language,
                     content: s.html,
                   )
@@ -71,13 +67,13 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
     ];
 
     return ReaderResponse(
-      textDetail: _textDetail(text, id: loadTextId),
+      textDetail: _textDetail(text, id: loadId, sourceLink: edition.source),
       content: Toc(
-        id: editionId,
-        textId: loadTextId,
+        id: edition.id,
+        textId: edition.textId,
         sections: [
           Section(
-            id: editionId,
+            id: edition.id,
             sectionNumber: 1,
             segments: segments,
             sections: const [],
@@ -91,6 +87,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
     );
   }
 
+  /// [textId] is the edition to search within; hits are keyed by edition too.
   @override
   Future<MultilingualSearchResponse> multilingualSearch({
     required String query,
@@ -99,17 +96,17 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
   }) async {
     final results = await _library.search(
       query: query,
-      textId: textId,
+      editionId: textId,
       limit: _searchLimit,
     );
-    final byText = <String, List<LibrarySearchResult>>{};
+    final byEdition = <String, List<LibrarySearchResult>>{};
     for (final result in results) {
-      byText.putIfAbsent(result.textId, () => []).add(result);
+      byEdition.putIfAbsent(result.editionId, () => []).add(result);
     }
 
     final sources = <MultilingualSourceResult>[];
-    for (final entry in byText.entries) {
-      final text = await _library.getText(entry.key);
+    for (final entry in byEdition.entries) {
+      final text = await _library.getText(entry.value.first.textId);
       final seen = <String>{};
       final matches = <MultilingualSegmentMatch>[];
       for (final result in entry.value) {
@@ -128,7 +125,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       sources.add(
         MultilingualSourceResult(
           text: TextIndex(
-            textId: text.id,
+            textId: entry.key,
             language: text.language,
             title: text.displayTitle,
             publishedDate: '',
@@ -148,7 +145,11 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
     );
   }
 
-  static TextDetail _textDetail(LibraryText text, {required String id}) {
+  static TextDetail _textDetail(
+    LibraryText text, {
+    required String id,
+    String? sourceLink,
+  }) {
     return TextDetail(
       id: id,
       title: text.displayTitle,
@@ -160,6 +161,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       updatedDate: '',
       publishedDate: '',
       publishedBy: '',
+      sourceLink: sourceLink,
       license: text.license,
       parentId: text.translationOf,
     );

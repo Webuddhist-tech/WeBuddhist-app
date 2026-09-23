@@ -32,7 +32,8 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
   static const int _collectionsPageSize = 20;
 
   /// `search` becomes the library title filter; `total` is synthesized from
-  /// `has_more` so [RecitationsPageResponse.hasMore] keeps working.
+  /// `has_more` so [RecitationsPageResponse.hasMore] keeps working. Each
+  /// chant's `textId` is its edition id, the id the rest of the app stores.
   @override
   Future<RecitationsPageResponse> fetchRecitationsPage({
     RecitationsQueryParams? queryParams,
@@ -60,7 +61,8 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
         limit: limit,
         offset: skip,
       );
-      texts = page.items;
+      // A text without an edition has nothing to open, so it is not listed.
+      texts = page.items.where((t) => t.primaryEditionId != null).toList();
       hasMore = page.hasMore && page.items.isNotEmpty;
     }
 
@@ -68,7 +70,7 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
     final recitations = [
       for (var i = 0; i < texts.length; i++)
         RecitationModel(
-          textId: texts[i].id,
+          textId: texts[i].primaryEditionId!,
           title: texts[i].displayTitle,
           language: texts[i].language,
           firstSegment: previews[i],
