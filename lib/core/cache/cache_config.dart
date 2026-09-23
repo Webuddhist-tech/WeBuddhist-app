@@ -55,7 +55,8 @@ class CacheConfig {
 class CacheKeys {
   CacheKeys._();
 
-  /// Generate key for text details (reader view with navigation)
+  /// Generate key for text details (reader view with navigation).
+  /// Versioned so entries cached from the old proxy are never served.
   static String textDetails({
     required String textId,
     String? contentId,
@@ -66,7 +67,7 @@ class CacheKeys {
     int? size,
   }) {
     final parts = [
-      'text_details',
+      'text_details_v2',
       textId,
       contentId ?? 'default',
       versionId ?? 'default',

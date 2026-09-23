@@ -7,6 +7,9 @@ class Segment {
   final String? content;
   final Translation? translation;
 
+  /// The edition's own label for this segment, e.g. `1-12` or `I-1`.
+  final String? reference;
+
   /// Ids of this same line in the text's other languages, from `mappings`.
   /// Lets a live position published against one language land here.
   final List<String> mappedSegmentIds;
@@ -16,14 +19,22 @@ class Segment {
     required this.segmentNumber,
     this.content,
     this.translation,
+    this.reference,
     this.mappedSegmentIds = const [],
   });
+
+  /// What the reader shows beside the segment.
+  String get displayNumber {
+    final label = reference?.trim();
+    return label == null || label.isEmpty ? segmentNumber.toString() : label;
+  }
 
   factory Segment.fromJson(Map<String, dynamic> json) {
     return Segment(
       segmentId: json['segment_id'] as String,
       segmentNumber: json['segment_number'] as int,
       content: json['content'] as String?,
+      reference: json['reference'] as String?,
       translation:
           json['translation'] != null
               ? Translation.fromJson(
@@ -63,6 +74,7 @@ class Segment {
       'segment_number': segmentNumber,
       'content': content ?? '',
       'translation': translation?.toJson(),
+      if (reference != null) 'reference': reference,
       if (mappedSegmentIds.isNotEmpty) 'mappings': mappedSegmentIds,
     };
   }

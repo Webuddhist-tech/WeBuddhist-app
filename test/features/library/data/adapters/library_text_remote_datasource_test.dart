@@ -78,6 +78,8 @@ void main() {
       expect(response.content.textId, 'T1');
       expect(section.segments.map((s) => s.segmentId), ['s1', 's2', 's3']);
       expect(section.segments.map((s) => s.segmentNumber), [1, 2, 3]);
+      expect(section.segments.map((s) => s.reference), ['1', '2', '3']);
+      expect(section.segments.map((s) => s.displayNumber), ['1', '2', '3']);
       expect(section.segments.first.content, 'a&lt;b');
       expect(section.segments.first.translation, isNull);
     });
@@ -119,6 +121,22 @@ void main() {
       expect(segments.first.translation?.language, 'bo');
       expect(segments.first.translation?.textId, 'E2');
       expect(response.textDetail.id, 'E2');
+    });
+
+    test('a companion anchored on a primary segment starts at that verse', () async {
+      final response = await _datasource(_server()).fetchTextDetails(
+        textId: 'E1',
+        versionId: 'E2',
+        segmentId: 's2',
+        direction: 'next',
+        size: 1,
+      );
+
+      final segments = response.content.sections.single.segments;
+      expect(segments.map((s) => s.segmentId), ['b2']);
+      expect(segments.single.segmentNumber, 2);
+      expect(segments.single.translation?.content, 'DEF');
+      expect(response.currentSegmentPosition, 2);
     });
 
     test('a text id still resolves to its first edition', () async {

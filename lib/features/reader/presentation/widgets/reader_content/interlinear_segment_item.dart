@@ -134,7 +134,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SegmentNumber(
-                    segmentNumber: segment.segmentNumber,
+                    label: segment.displayNumber,
                     fontSize: fontSize,
                     language: primaryLanguage,
                   ),

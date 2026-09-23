@@ -167,19 +167,32 @@ class LibraryRepository {
   }
 
   /// One page of [editionId]. `next` starts at the anchor (first page when
-  /// null); `previous` ends just before it. Positions are 1-based.
+  /// null); `previous` ends just before it. Positions are 1-based. An anchor
+  /// from [anchorEditionId] (the parallel reader's primary) is mapped across
+  /// by verse number.
   Future<LibraryContentWindow> loadWindow({
     required String editionId,
     String? anchorSegmentId,
+    String? anchorEditionId,
     required String direction,
     required int size,
   }) async {
     final segments = await getEditionSegments(editionId);
     final total = segments.length;
-    final anchorIndex =
+    var anchorIndex =
         anchorSegmentId == null
             ? -1
             : segments.indexWhere((s) => s.id == anchorSegmentId);
+    if (anchorIndex < 0 &&
+        anchorSegmentId != null &&
+        anchorEditionId != null &&
+        anchorEditionId != editionId) {
+      anchorIndex = await _alignedIndex(
+        anchorEditionId,
+        anchorSegmentId,
+        segments,
+      );
+    }
 
     final int start;
     final int end;
@@ -226,6 +239,19 @@ class LibraryRepository {
       currentPosition: start + 1,
       totalSegments: total,
     );
+  }
+
+  /// Index in [target] of the verse numbered like [segmentId] in [editionId].
+  Future<int> _alignedIndex(
+    String editionId,
+    String segmentId,
+    List<LibrarySegment> target,
+  ) async {
+    final source = await getEditionSegments(editionId);
+    final sourceIndex = source.indexWhere((s) => s.id == segmentId);
+    if (sourceIndex < 0) return -1;
+    final number = segmentNumbers(source)[sourceIndex];
+    return segmentNumbers(target).indexOf(number);
   }
 
   /// Numeric references when unique across the edition, else positions.

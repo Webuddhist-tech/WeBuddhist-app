@@ -139,6 +139,27 @@ void main() {
       expect(window.segments.map((x) => x.id), ['s1', 's2', 's3']);
       expect(window.currentPosition, 1);
     });
+
+    test('an anchor from another edition is mapped by verse number', () async {
+      final s = LibraryTestServer({
+        '/v2/editions/e1/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('s'))),
+        '/v2/editions/e2/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('b'))),
+        '/v2/editions/e2/content': (_) => jsonBody('ABCDEFGHI'),
+      });
+
+      final window = await s.repository().loadWindow(
+        editionId: 'e2',
+        anchorSegmentId: 's2',
+        anchorEditionId: 'e1',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.id), ['b2', 'b3']);
+      expect(window.currentPosition, 2);
+    });
   });
 
   group('LibraryRepository.segmentNumbers', () {

@@ -39,12 +39,18 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
     final loadId = isSecondary ? versionId : textId;
     final edition = await _library.resolveEdition(loadId);
     final text = await _library.getText(edition.textId);
+    // The parallel reader's first anchor is a primary segment id.
+    final anchorEdition =
+        isSecondary && segmentId != null
+            ? await _library.resolveEdition(textId)
+            : null;
 
     final pageSize = size ?? TextDetailsConstants.defaultPageSize;
     final pageDirection = direction ?? 'next';
     final window = await _library.loadWindow(
       editionId: edition.id,
       anchorSegmentId: segmentId,
+      anchorEditionId: anchorEdition?.id,
       direction: pageDirection,
       size: pageSize,
     );
@@ -54,6 +60,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
         Segment(
           segmentId: s.id,
           segmentNumber: s.number,
+          reference: s.reference,
           content: isSecondary ? null : s.html,
           translation:
               isSecondary
