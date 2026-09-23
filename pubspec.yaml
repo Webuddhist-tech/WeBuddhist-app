@@ -155,6 +155,7 @@ dependencies:
   posthog_flutter: ^5.24.0
   package_info_plus: ^9.0.0
   flutter_image_compress: ^2.4.0
+  pali_script_convertor: ^1.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

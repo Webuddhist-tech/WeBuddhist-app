@@ -28,9 +28,12 @@ class ActivityList extends ConsumerWidget {
   final int? dayNumber;
   final String? dayAudioUrl;
 
-  /// The group event this plan was opened from, so the reader follows its
-  /// live recitation.
+  /// The group event this plan was opened from.
   final String? eventId;
+
+  /// Online attendees watch the stream, so the reader must not follow the
+  /// live recitation.
+  final bool isOnlineAttendee;
 
   const ActivityList({
     super.key,
@@ -47,6 +50,7 @@ class ActivityList extends ConsumerWidget {
     this.dayNumber,
     this.dayAudioUrl,
     this.eventId,
+    this.isOnlineAttendee = false,
   });
 
   @override
@@ -136,6 +140,7 @@ class ActivityList extends ConsumerWidget {
         ref,
         accumulatorId: accumulatorId,
         eventId: eventId,
+        isOnlineAttendee: isOnlineAttendee,
       ).then((practiced) {
         if (practiced) onGroupAccumulationPracticed?.call(task.id);
         onReaderClosed?.call();
@@ -163,6 +168,7 @@ class ActivityList extends ConsumerWidget {
       autoPlay: autoPlay,
       dayAudioUrl: effectiveAudioUrl,
       eventId: eventId,
+      isOnlineAttendee: isOnlineAttendee,
     );
 
     PlanNavigator.push(

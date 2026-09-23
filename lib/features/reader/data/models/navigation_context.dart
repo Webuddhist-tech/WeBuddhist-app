@@ -479,9 +479,12 @@ class NavigationContext {
   /// [NavigationSource.groupRecitationCollection].
   final String? collectionId;
 
-  /// Set when the reader was reached from a group event: the reader then
-  /// follows the event's live recitation position.
+  /// The group event this task was opened from.
   final String? eventId;
+
+  /// Online attendees watch the stream, which already carries the text, so
+  /// the reader must not follow the live recitation position.
+  final bool isOnlineAttendee;
 
   const NavigationContext({
     required this.source,
@@ -501,10 +504,13 @@ class NavigationContext {
     this.language,
     this.collectionId,
     this.eventId,
+    this.isOnlineAttendee = false,
   });
 
+  bool get isFromEvent => eventId != null && eventId!.isNotEmpty;
+
   /// True when the reader should follow the event's live recitation.
-  bool get isLiveRecitation => eventId != null && eventId!.isNotEmpty;
+  bool get isLiveRecitation => isFromEvent && !isOnlineAttendee;
 
   /// True when the reader should show chant-again / finish-session controls
   /// and increment the group accumulation count.
@@ -618,6 +624,7 @@ class NavigationContext {
     String? language,
     String? collectionId,
     String? eventId,
+    bool? isOnlineAttendee,
   }) {
     return NavigationContext(
       source: source ?? this.source,
@@ -638,6 +645,7 @@ class NavigationContext {
       language: language ?? this.language,
       collectionId: collectionId ?? this.collectionId,
       eventId: eventId ?? this.eventId,
+      isOnlineAttendee: isOnlineAttendee ?? this.isOnlineAttendee,
     );
   }
 

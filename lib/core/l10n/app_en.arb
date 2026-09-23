@@ -369,6 +369,9 @@
   "connect_group_fallback_title": "Group",
   "connect_event_attend": "Attend",
   "connect_event_attending": "Attending",
+  "connect_event_join_in_person": "Join in person",
+  "connect_event_join_online": "Join online",
+  "connect_event_enter": "Enter",
   "connect_event_participation_prompt": "How are you attending?",
   "connect_event_joining_in_person": "Joining in person",
   "connect_event_joining_online": "Joining online",
@@ -1435,8 +1438,9 @@
   "event_prayer_hint": "How can we pray for you today",
   "event_prayer_load_failed": "Prayer requests couldn't be loaded.",
   "event_prayer_closed": "Prayer requests are closed for this event.",
-  "event_prayer_pray": "Pray",
+  "event_prayer_pray": "Prayer",
   "event_prayer_praying": "Praying",
   "recitation_live_sync": "Sync",
+  "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended"
 }

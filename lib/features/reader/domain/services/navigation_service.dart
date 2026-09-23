@@ -101,6 +101,7 @@ class NavigationService {
       dayAudioUrl: currentContext.dayAudioUrl,
       autoPlay: autoPlay,
       eventId: currentContext.eventId,
+      isOnlineAttendee: currentContext.isOnlineAttendee,
     );
   }
 

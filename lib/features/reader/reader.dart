@@ -23,6 +23,14 @@ export 'domain/services/navigation_service.dart';
 export 'domain/services/section_merger_service.dart';
 export 'domain/services/section_flattener_service.dart';
 
+// Domain - Transliteration
+export 'domain/transliteration/script_converter.dart';
+export 'domain/transliteration/ewts/ewts_converter.dart';
+export 'domain/transliteration/pali_script_converter.dart';
+export 'domain/transliteration/tibetan_phonetics.dart';
+export 'domain/transliteration/tibetan_script_converter.dart';
+export 'domain/transliteration/transliteration_service.dart';
+
 // Data - Models
 export 'data/models/reader_state.dart';
 export 'data/models/flattened_item.dart';
@@ -33,6 +41,7 @@ export 'data/models/highlight_config.dart';
 // Presentation - Providers
 export 'presentation/providers/reader_notifier.dart';
 export 'presentation/providers/reader_providers.dart';
+export 'presentation/providers/reader_script_preference_provider.dart';
 
 // Presentation - Screens
 export 'presentation/screens/reader_screen.dart';

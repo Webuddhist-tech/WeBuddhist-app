@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/env.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'social_login_button.dart';
@@ -85,116 +84,131 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Drag handle
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+          // The sheet is isScrollControlled, so it must cap its own height and
+          // scroll: at large text scales the logo, copy and three sign-in
+          // buttons can otherwise exceed the screen and overflow.
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
                 ),
-                // App logo
-                Image.asset(AppAssets.weBuddhistLogo, height: 80, width: 80),
-                const SizedBox(height: 24),
-                // Title
-                Text(
-                  l10n.auth_drawer_title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                // Subtitle
-                Text(
-                  l10n.auth_drawer_subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                // Sign-in buttons
-                if (authState.isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: CircularProgressIndicator(),
-                  )
-                else
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: SocialLoginButton(
-                          connection: 'google',
-                          icon: Icons.g_mobiledata,
-                          iconColor: Colors.black,
-                          label: l10n.continueWithGoogle,
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.black,
-                          iconWidget: Image.asset(
-                            'assets/images/google-icon.png',
-                            width: 20,
-                            height: 20,
-                          ),
-                          isBorder: true,
-                        ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Drag handle
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      if (isIOS) ...[
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: SocialLoginButton(
-                            connection: 'apple',
-                            icon: Icons.apple,
-                            iconColor: Colors.white,
-                            label: l10n.continueWithApple,
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            iconWidget: const Icon(
-                              Icons.apple,
-                              color: Colors.white,
-                              size: 24,
+                    ),
+                    // App logo
+                    Image.asset(
+                      AppAssets.weBuddhistLogo,
+                      height: 80,
+                      width: 80,
+                    ),
+                    const SizedBox(height: 24),
+                    // Title
+                    Text(
+                      l10n.auth_drawer_title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    // Subtitle
+                    Text(
+                      l10n.auth_drawer_subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    // Sign-in buttons
+                    if (authState.isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: CircularProgressIndicator(),
+                      )
+                    else
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: SocialLoginButton(
+                              connection: 'google',
+                              icon: Icons.g_mobiledata,
+                              iconColor: Colors.black,
+                              label: l10n.continueWithGoogle,
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              iconWidget: Image.asset(
+                                'assets/images/google-icon.png',
+                                width: 20,
+                                height: 20,
+                              ),
+                              isBorder: true,
                             ),
                           ),
-                        ),
-                      ],
-                      if (Env.phoneLoginEnabled) ...[
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: SocialLoginButton(
-                            connection: 'sms',
-                            icon: Icons.phone_android,
-                            iconColor: Colors.black,
-                            label: l10n.continueWithPhone,
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.black,
-                            iconWidget: const Icon(
-                              Icons.phone_android,
-                              color: Colors.black,
-                              size: 20,
+                          if (isIOS) ...[
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: SocialLoginButton(
+                                connection: 'apple',
+                                icon: Icons.apple,
+                                iconColor: Colors.white,
+                                label: l10n.continueWithApple,
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                iconWidget: const Icon(
+                                  Icons.apple,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
                             ),
-                            isBorder: true,
+                          ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: SocialLoginButton(
+                              connection: 'sms',
+                              icon: Icons.phone_android,
+                              iconColor: Colors.black,
+                              label: l10n.continueWithPhone,
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              iconWidget: const Icon(
+                                Icons.phone_android,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                              isBorder: true,
+                            ),
                           ),
-                        ),
-                      ],
-                    ],
-                  ),
-                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-              ],
+                        ],
+                      ),
+                    SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

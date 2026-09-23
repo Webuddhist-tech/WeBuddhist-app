@@ -6,7 +6,9 @@ import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
+import 'package:flutter_pecha/features/reader/domain/transliteration/script_converter.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
@@ -14,17 +16,25 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settin
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Languages drawer: read-only Original section plus a Translation toggle
-/// with an inline language › versions dropdown.
+/// Languages drawer: an Original section (with a script dropdown when the
+/// text's language can be transliterated on the phone) plus a Translation
+/// toggle with an inline language › versions dropdown.
 class ReaderLanguagesSheet extends ConsumerStatefulWidget {
   const ReaderLanguagesSheet({
     super.key,
     required this.textId,
     required this.primaryDisplay,
+    this.sourceSample,
   });
 
   final String textId;
   final ReaderSlotConfig primaryDisplay;
+
+  /// Plain text lifted from the loaded segments, used to tell which script
+  /// the original is written in. Null (or empty) leaves the script unknown,
+  /// which only costs the first row its name. Never the title: titles are
+  /// routinely romanised even when the body is not.
+  final String? sourceSample;
 
   @override
   ConsumerState<ReaderLanguagesSheet> createState() =>
@@ -33,6 +43,7 @@ class ReaderLanguagesSheet extends ConsumerStatefulWidget {
 
 class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   bool _expanded = false;
+  bool _originalExpanded = false;
   String? _expandedLanguage;
   bool _filling = false;
 
@@ -153,6 +164,39 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     return '${slot.languageLabel} ($version)';
   }
 
+  /// The Original field names the script on screen: the picked one, else
+  /// the one the text is written in. Languages with no converter keep the
+  /// translation-style label ("English (title)").
+  String _originalLabel(
+    ReaderSlotConfig primary,
+    ScriptConverter? converter,
+    String? sourceScriptId,
+    String? selectedScriptId,
+  ) {
+    if (converter == null) return _translationLabel(primary);
+    final script =
+        converter.scriptById(selectedScriptId) ??
+        converter.scriptById(sourceScriptId);
+    if (script == null) return _translationLabel(primary);
+    return script.label;
+  }
+
+  void _onScriptTap(String languageCode, String? scriptId) {
+    HapticFeedback.selectionClick();
+    ref
+        .read(readerScriptPreferenceProvider.notifier)
+        .setScript(languageCode, scriptId);
+  }
+
+  /// Hiding the original needs a translation on screen, so it switches the
+  /// translation on and picks a version the way the Translation switch does.
+  Future<void> _onOriginalToggle(bool visible) async {
+    HapticFeedback.lightImpact();
+    _notifier.setOriginalVisible(visible);
+    if (visible || _secondary.versionId != null) return;
+    await _onToggle(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -160,8 +204,20 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     final settings = ref.watch(readerDualSettingsProvider(_textId));
     final resolving = ref.watch(readerSecondaryResolvingProvider(_textId));
     final primary = _primary();
+    final converter = ref
+        .watch(transliterationServiceProvider)
+        .converterFor(primary.languageCode);
+    final selectedScript =
+        converter == null
+            ? null
+            : ref.watch(readerScriptForLanguageProvider(primary.languageCode));
+    final sourceScript = converter?.detectScript(widget.sourceSample ?? '');
     final enabled = settings.secondaryEnabled;
     final busy = resolving || _filling;
+    // One of the two layers is always on: the original stays on screen (and
+    // its switch on) until a translation is actually showing.
+    final secondaryActive = enabled && settings.secondary.versionId != null;
+    final originalShown = settings.originalVisible || !secondaryActive;
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
 
     return SafeArea(
@@ -205,13 +261,39 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionHeader(label: l10n.reader_original_label),
-                    const SizedBox(height: 10),
-                    _DropdownField(
-                      label: _translationLabel(primary),
-                      enabled: false,
-                      showChevron: false,
+                    _SectionHeader(
+                      label: l10n.reader_original_label,
+                      trailing: AppToggleSwitch(
+                        value: originalShown,
+                        onChanged: busy ? (_) {} : _onOriginalToggle,
+                      ),
                     ),
+                    const SizedBox(height: 10),
+                    Opacity(
+                      opacity: originalShown ? 1.0 : 0.45,
+                      child: _DropdownField(
+                        label: _originalLabel(
+                          primary,
+                          converter,
+                          sourceScript,
+                          selectedScript,
+                        ),
+                        enabled: converter != null && originalShown,
+                        showChevron: converter != null,
+                        expanded: _originalExpanded,
+                        onTap:
+                            () => setState(
+                              () => _originalExpanded = !_originalExpanded,
+                            ),
+                      ),
+                    ),
+                    if (converter != null && originalShown && _originalExpanded)
+                      _ScriptList(
+                        converter: converter,
+                        sourceScriptId: sourceScript,
+                        selectedScriptId: selectedScript,
+                        onTap: (id) => _onScriptTap(primary.languageCode, id),
+                      ),
                     const SizedBox(height: 24),
                     _SectionHeader(
                       label: l10n.reader_translation_label,
@@ -526,10 +608,116 @@ class _VersionList extends ConsumerWidget {
   }
 }
 
+/// Which row of [_ScriptList] is ticked, given the user's pick and the script
+/// the text is written in.
+///
+/// The source script has no row of its own - it *is* the "as written" row -
+/// so a pick naming it is the same choice, and passing it through would leave
+/// the list with nothing ticked (a Sinhala pick opened on a Sinhala text).
+@visibleForTesting
+String? activeScriptRow({
+  required String? selectedScriptId,
+  required String? sourceScriptId,
+}) => selectedScriptId == sourceScriptId ? null : selectedScriptId;
+
+/// Scripts the Original text can be shown in. The first row is the text as
+/// written (its own script, or "Original" when that can't be told), followed
+/// by every other script the converter offers.
+class _ScriptList extends StatelessWidget {
+  const _ScriptList({
+    required this.converter,
+    required this.sourceScriptId,
+    required this.selectedScriptId,
+    required this.onTap,
+  });
+
+  final ScriptConverter converter;
+  final String? sourceScriptId;
+
+  /// Null means the text is shown as written.
+  final String? selectedScriptId;
+  final ValueChanged<String?> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final source = converter.scriptById(sourceScriptId);
+    final picked = activeScriptRow(
+      selectedScriptId: selectedScriptId,
+      sourceScriptId: sourceScriptId,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, left: 16),
+      child: Column(
+        children: [
+          _ScriptRow(
+            label:
+                source == null
+                    ? context.l10n.reader_original_label
+                    : source.label,
+            isActive: picked == null,
+            onTap: () => onTap(null),
+          ),
+          for (final script in converter.scripts)
+            if (script.id != sourceScriptId)
+              _ScriptRow(
+                label: script.label,
+                isActive: script.id == picked,
+                onTap: () => onTap(script.id),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ScriptRow extends StatelessWidget {
+  const _ScriptRow({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.colorScheme.onSurface;
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: isActive ? accent : null,
+                      fontWeight: isActive ? FontWeight.w600 : null,
+                    ),
+                  ),
+                ),
+                if (isActive) Icon(AppAssets.check, size: 18, color: accent),
+              ],
+            ),
+          ),
+        ),
+        Divider(height: 1, color: theme.dividerColor),
+      ],
+    );
+  }
+}
+
 Future<void> showReaderLanguagesSheet(
   BuildContext context, {
   required String textId,
   required ReaderSlotConfig primaryDisplay,
+  String? sourceSample,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -544,6 +732,7 @@ Future<void> showReaderLanguagesSheet(
         (_) => ReaderLanguagesSheet(
           textId: textId,
           primaryDisplay: primaryDisplay,
+          sourceSample: sourceSample,
         ),
   );
 }

@@ -7,9 +7,11 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/timer/data/services/timer_live_activity.dart';
 import 'package:flutter_pecha/features/timer/data/services/timer_session_notifier.dart';
+import 'package:flutter_pecha/features/timer/domain/entities/ambient_sound.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_pecha/features/timer/domain/usecases/stop_user_timer_usecase.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
+import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_keep_alive.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_progress_ring.dart';
@@ -81,6 +83,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   Timer? _timer;
   late final TimerBellPlayer _soundPlayer;
+  late final AmbientSoundPlayer _ambientPlayer;
   late final TimerSessionNotifications _notifier;
   late final TimerLockScreenActivity _liveActivity;
 
@@ -98,6 +101,11 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   Future<void> _bellOperations = Future<void>.value();
 
   int get _totalMs => widget.presetTimer.durationMs;
+
+  String? get _ambientSoundId {
+    final id = widget.presetTimer.ambientSoundId;
+    return (id == null || id.isEmpty) ? null : id;
+  }
 
   int get _elapsedMs => _totalMs - _remainingFromClock();
 
@@ -132,6 +140,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _remainingMs = _totalMs;
     _soundPlayer = widget._soundPlayer ?? TimerSoundPlayer();
     _soundPlayer.init();
+    _ambientPlayer = AmbientSoundPlayer();
     _notifier = widget._sessionNotifier ?? TimerSessionNotifier();
     _liveActivity = widget._liveActivity ?? TimerLiveActivity();
     _keepAlive = widget._keepAlive ?? TimerAudioKeepAlive();
@@ -146,6 +155,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _timer?.cancel();
     _soundPlayer.dispose();
     unawaited(_keepAlive.dispose());
+    unawaited(_ambientPlayer.dispose());
     _clearBackgroundSurfaces();
     super.dispose();
   }
@@ -296,6 +306,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
 
   void _startMainTimer({required bool playBell}) {
     if (playBell) _soundPlayer.play();
+    unawaited(_startAmbientSound());
 
     final endsAt = _sessionEndFor(_countdownEndsAt ?? _now);
 
@@ -322,6 +333,96 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     );
     _showRunningNotification(endsAt);
     _armCompletionBellIfBackgrounded(endsAt);
+  }
+
+  /// Fetches the sound catalogue for this session.
+  ///
+  /// The catalogue is refetched rather than read, because the screens below
+  /// this one keep the auto-dispose provider alive to label their cards — its
+  /// cached value can be old enough that the signed urls have expired. Falls
+  /// back to whatever was already cached when the refetch fails (offline), so
+  /// this is never worse than reading the cached value.
+  Future<List<AmbientSound>> _loadAmbientSounds() async {
+    final cached = ref.read(ambientSoundsFutureProvider).valueOrNull;
+    try {
+      return await ref.refresh(ambientSoundsFutureProvider.future);
+    } catch (e) {
+      if (cached == null) rethrow;
+      _logger.warning('Using cached ambient sound catalogue: $e');
+      return cached;
+    }
+  }
+
+  /// The ambient sound this session should play.
+  ///
+  /// A [PresetTimer] does not always arrive whole. Bookmarks and practice
+  /// routines rebuild one from their own payload, which carries an id, a name
+  /// and a duration but no `ambient_sound_id` — the bookmark API exposes only
+  /// `ambient_sound_name`, which cannot be resolved to a playable track.
+  /// Without this lookup those entry points run the user's timer in silence.
+  ///
+  /// The repository read is cache-first, so the usual case costs nothing, and
+  /// a miss (unknown id, nothing cached, not the caller's timer) just keeps
+  /// the silent behaviour.
+  Future<String?> _resolveAmbientSoundId() async {
+    final direct = _ambientSoundId;
+    if (direct != null) return direct;
+
+    final timerId = widget.presetTimer.id;
+    if (timerId.isEmpty) return null;
+
+    final result =
+        await ref.read(timersDomainRepositoryProvider).getPresetTimers();
+    return result.fold((_) => null, (timers) {
+      for (final timer in timers) {
+        if (timer.id != timerId) continue;
+        final id = timer.ambientSoundId;
+        return (id == null || id.isEmpty) ? null : id;
+      }
+      return null;
+    });
+  }
+
+  /// Starts the looping ambient track the timer was created with, resolving
+  /// its id against the sound catalogue. Best-effort: a missing or unplayable
+  /// track leaves the session running in silence.
+  ///
+  /// Everything here is inside one guard on purpose — resolving the id reads
+  /// the timers repository, which can throw outright rather than return a
+  /// failure. Nothing about a background track may take the session down with
+  /// it.
+  Future<void> _startAmbientSound() async {
+    try {
+      final soundId = await _resolveAmbientSoundId();
+      if (soundId == null || !mounted || _phase != _TimerPhase.running) return;
+
+      // The sound catalogue auto-disposes and its urls are short-lived signed
+      // links, so hold it open for as long as the session needs the track.
+      ref.listenManual(ambientSoundsFutureProvider, (_, __) {});
+
+      final sounds = await _loadAmbientSounds();
+      // The catalogue can resolve after the session ended. A paused session
+      // still loads the track — resuming only calls resume() on the player, so
+      // bailing out here would leave the rest of the session silent.
+      if (!mounted || _phase != _TimerPhase.running) return;
+
+      for (final sound in sounds) {
+        if (sound.id == soundId) {
+          await _ambientPlayer.play(sound.url);
+          // The session can end (or pause) while the track is loading, after
+          // the stop/pause it issued has already run against nothing.
+          if (!mounted || _phase != _TimerPhase.running) {
+            await _ambientPlayer.stop();
+          } else if (_isPaused) {
+            await _ambientPlayer.pause();
+          }
+          return;
+        }
+      }
+      _logger.warning('Ambient sound $soundId is not in the catalogue');
+    } catch (e) {
+      _logger.warning('Failed to start ambient sound: $e');
+    }
   }
 
   void _onMainTimerTick() {
@@ -360,6 +461,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     } else {
       unawaited(_keepAlive.stop());
     }
+    unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     _reportTimerStop();
   }
@@ -400,12 +502,14 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     });
 
     if (enteringPause) {
+      unawaited(_ambientPlayer.pause());
       // Nothing left to ring while paused, so let the app be suspended again.
       unawaited(_keepAlive.stop());
       _cancelCompletionBell();
       _showPausedNotification();
       _reportTimerStop();
     } else {
+      unawaited(_ambientPlayer.resume());
       unawaited(_keepAlive.start());
       _showRunningNotification(_endsAt!);
       _armCompletionBellIfBackgrounded(_endsAt!);
@@ -423,6 +527,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   void _finish() {
     _timer?.cancel();
     unawaited(_keepAlive.stop());
+    unawaited(_ambientPlayer.stop());
     if (_phase == _TimerPhase.running) {
       _reportTimerStop();
     }
@@ -433,6 +538,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   void _discardSession() {
     _timer?.cancel();
     unawaited(_keepAlive.stop());
+    unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     context.pop();
   }
