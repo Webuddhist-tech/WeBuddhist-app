@@ -35,15 +35,9 @@ class ProtectedRoutes {
     '/users/me/recitations',
     '/users/me/recitations/{recitationId}',
 
-    // Community group chat (REST). Distinct from AI `/chats`.
+    // Community group chat (REST).
     '/chat/',
 
-    // AI chat
-    '/chats',
-    '/chats/', // Catch-all for chat sub-paths
-    '/threads',
-    '/threads/{threadId}',
-    '/threads/{threadId}/', // Catch-all for thread sub-paths
     // Timers
     '/timers',
     '/timers/', // Catch-all for timer sub-paths like /timers/user/timer_stop

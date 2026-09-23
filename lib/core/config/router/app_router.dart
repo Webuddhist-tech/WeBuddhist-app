@@ -4,8 +4,6 @@ import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/config/router/page_transitions.dart';
 import 'package:flutter_pecha/core/config/router/route_guard.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/ai/presentation/screens/ai_mode_screen.dart';
-import 'package:flutter_pecha/features/ai/presentation/screens/search_results_screen.dart';
 import 'package:flutter_pecha/core/config/router/pending_route_provider.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/login_page.dart';
@@ -475,25 +473,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutes.deleteAccount,
             name: "delete-account",
             builder: (context, state) => const DeleteAccountScreen(),
-          ),
-        ],
-      ),
-
-      // ai mode route
-      GoRoute(
-        path: "/ai-mode",
-        name: "ai-mode",
-        builder: (context, state) => const AiModeScreen(),
-        routes: [
-          // route - /ai-mode/search-results
-          GoRoute(
-            path: "search-results", // route - /ai-mode/search-results
-            name: "search-results",
-            builder: (context, state) {
-              final extra = state.extra as Map<String, dynamic>?;
-              final query = extra?['query'] as String? ?? '';
-              return SearchResultsScreen(initialQuery: query);
-            },
           ),
         ],
       ),

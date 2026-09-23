@@ -14,12 +14,9 @@ import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation.dart';
 
 /// Serves the reader's text details and in-text search from the library API.
-/// Everything else still reaches the main API through [TextRemoteDatasource].
-class LibraryTextRemoteDatasource extends TextRemoteDatasource {
-  LibraryTextRemoteDatasource({
-    required super.dio,
-    required LibraryRepository library,
-  }) : _library = library;
+class LibraryTextRemoteDatasource implements TextRemoteDatasource {
+  LibraryTextRemoteDatasource({required LibraryRepository library})
+    : _library = library;
 
   final LibraryRepository _library;
 

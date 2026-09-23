@@ -2,17 +2,11 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/search/search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/search/title_search_response.dart';
 import 'package:flutter_pecha/features/texts/domain/usecases/text_content_usecases.dart';
 import 'package:flutter_pecha/features/texts/domain/usecases/text_search_usecases.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'use_case_providers.dart';
-
-// Re-export the search param classes for backward compatibility
-export 'package:flutter_pecha/features/texts/domain/usecases/text_search_usecases.dart'
-    show TitleSearchParams, AuthorSearchParams;
 
 class TextDetailsParams {
   final String textId;
@@ -62,35 +56,6 @@ final textDetailsFutureProvider = FutureProvider.family<Either<Failure, ReaderRe
   ));
 });
 
-class SearchTextParams {
-  final String query;
-  final String textId;
-  const SearchTextParams({required this.query, required this.textId});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SearchTextParams &&
-          runtimeType == other.runtimeType &&
-          query == other.query &&
-          textId == other.textId;
-
-  @override
-  int get hashCode => query.hashCode ^ textId.hashCode;
-}
-
-final searchTextFutureProvider = FutureProvider.family<Either<Failure, SearchResponse>, SearchTextParams>((
-  ref,
-  SearchTextParams params,
-) async {
-  final searchTextInTextUseCase = ref.watch(searchTextInTextUseCaseProvider);
-
-  return searchTextInTextUseCase(SearchTextInTextParams(
-    query: params.query,
-    textId: params.textId,
-  ));
-});
-
 class LibrarySearchParams {
   final String query;
   final String? textId;
@@ -110,18 +75,6 @@ class LibrarySearchParams {
   int get hashCode => query.hashCode ^ textId.hashCode ^ language.hashCode;
 }
 
-final librarySearchProvider = FutureProvider.family<Either<Failure, SearchResponse>, LibrarySearchParams>((
-  ref,
-  LibrarySearchParams params,
-) async {
-  final searchTextInTextUseCase = ref.watch(searchTextInTextUseCaseProvider);
-
-  return searchTextInTextUseCase(SearchTextInTextParams(
-    query: params.query,
-    textId: params.textId,
-  ));
-});
-
 final multilingualSearchProvider = FutureProvider.family<Either<Failure, MultilingualSearchResponse>, LibrarySearchParams>((
   ref,
   LibrarySearchParams params,
@@ -135,23 +88,4 @@ final multilingualSearchProvider = FutureProvider.family<Either<Failure, Multili
     language: language,
     textId: params.textId,
   ));
-});
-
-// Export the param classes from use cases for backward compatibility
-final titleSearchProvider = FutureProvider.family<Either<Failure, TitleSearchResponse>, TitleSearchParams>((
-  ref,
-  TitleSearchParams params,
-) async {
-  final titleSearchUseCase = ref.watch(titleSearchUseCaseProvider);
-
-  return titleSearchUseCase(params);
-});
-
-final authorSearchProvider = FutureProvider.family<Either<Failure, TitleSearchResponse>, AuthorSearchParams>((
-  ref,
-  AuthorSearchParams params,
-) async {
-  final authorSearchUseCase = ref.watch(authorSearchUseCaseProvider);
-
-  return authorSearchUseCase(params);
 });

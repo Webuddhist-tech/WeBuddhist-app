@@ -26,12 +26,8 @@ class CacheConfig {
   // TTL durations for lists (in hours)
   static const Duration recitationListTtl = Duration(hours: 24);
 
-  /// TTL for text and recitation content - 48 hours (content rarely changes)
+  /// TTL for text content - 48 hours (content rarely changes)
   static const Duration textContentTtl = Duration(hours: 48);
-  static const Duration recitationContentTtl = Duration(hours: 48);
-
-  /// TTL for saved recitations - 4 hours (user-specific, changes on save/unsave)
-  static const Duration savedRecitationsTtl = Duration(hours: 4);
 
   // Cache size limits
   /// Maximum number of text contents to cache (LRU eviction after this)
@@ -82,16 +78,7 @@ class CacheKeys {
     return parts.join('_');
   }
 
-  /// Generate key for recitation content: recitation_content_{textId}_{languages}
-  static String recitationContent(String textId, List<String> languages) =>
-      'recitation_content_${textId}_${languages.join('_')}';
-
   /// Generate key for recitation list: recitation_list_{language}_{searchQuery}
   static String recitationList(String language, String? searchQuery) =>
       'recitation_list_${language}_${searchQuery ?? 'all'}';
-
-  /// Generate key for saved recitations (user-specific, stored in separate box)
-  /// Since saved recitations are user-specific and we only have one logged-in user,
-  /// we use a simple constant key. The box itself is user-scoped.
-  static const String savedRecitations = 'user_saved_recitations';
 }

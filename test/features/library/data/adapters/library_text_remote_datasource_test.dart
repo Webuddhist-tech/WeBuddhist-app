@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,10 +49,7 @@ LibraryTestServer _server() => LibraryTestServer({
 });
 
 LibraryTextRemoteDatasource _datasource(LibraryTestServer server) {
-  return LibraryTextRemoteDatasource(
-    dio: Dio(),
-    library: server.repository(),
-  );
+  return LibraryTextRemoteDatasource(library: server.repository());
 }
 
 void main() {

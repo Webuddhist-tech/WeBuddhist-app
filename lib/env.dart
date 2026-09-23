@@ -13,10 +13,6 @@ class Env {
       dotenv.env['BASE_API_URL'] ??
       (throw Exception('BASE_API_URL not found in environment'));
 
-  /// AI service URL
-  static String get aiUrl =>
-      dotenv.env['AI_URL'] ?? 'https://aichat.webuddhist.com';
-
   /// Library (texts) API base URL
   static String get libraryApiUrl =>
       dotenv.env['LIBRARY_API_URL'] ?? 'https://library.webuddhist.com';

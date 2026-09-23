@@ -17,7 +17,6 @@ class AppRoutes {
 
   // ========== MAIN ROUTES ==========
   static const String home = '/home';
-  static const String texts = "/ai-mode";
   static const String practice = "/practice";
   static const String more = "/more";
   static const String settings = '/settings';
@@ -64,9 +63,6 @@ class AppRoutes {
   /// as a [NavigationContext] whose `currentItem` carries inline content.
   static const String planText = '/plan-text';
 
-  // ========== SEARCH ROUTES ==========
-  static const String searchResults = '/search-results';
-
   // ========== CALENDAR ROUTES ==========
   /// Tibetan calendar screen. Nested under /home so the bottom nav persists.
   static const String calendar = '/home/calendar';
@@ -97,7 +93,6 @@ class AppRoutes {
     legal, // Linked from Settings; terms + privacy live as sibling routes
     termsOfService,
     privacyPolicy,
-    texts,
     practice, // Guests can see empty practice screen
     practiceMyPractices, // Guests can browse my practices empty state
     practicePlanPreview, // Allow guests to browse/preview plans

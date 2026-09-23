@@ -6,8 +6,6 @@ import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/search/search_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/search/title_search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 
 class TextsRepository {
@@ -206,21 +204,6 @@ class TextsRepository {
     });
   }
 
-  Future<Either<Failure, SearchResponse>> searchTextRepository({
-    required String query,
-    String? textId,
-  }) async {
-    try {
-      final result = await remoteDatasource.searchText(
-        query: query,
-        textId: textId,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ExceptionMapper.map(e, context: 'Failed to search text'));
-    }
-  }
-
   Future<Either<Failure, MultilingualSearchResponse>> multilingualSearchRepository({
     required String query,
     String? language,
@@ -235,42 +218,6 @@ class TextsRepository {
       return Right(result);
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'Failed to perform multilingual search'));
-    }
-  }
-
-  Future<Either<Failure, TitleSearchResponse>> titleSearchRepository({
-    String? title,
-    String? author,
-    int limit = 20,
-    int offset = 0,
-  }) async {
-    try {
-      final result = await remoteDatasource.titleSearch(
-        title: title,
-        author: author,
-        limit: limit,
-        offset: offset,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ExceptionMapper.map(e, context: 'Failed to search by title'));
-    }
-  }
-
-  Future<Either<Failure, TitleSearchResponse>> authorSearchRepository({
-    String? author,
-    int limit = 20,
-    int offset = 0,
-  }) async {
-    try {
-      final result = await remoteDatasource.authorSearch(
-        author: author,
-        limit: limit,
-        offset: offset,
-      );
-      return Right(result);
-    } catch (e) {
-      return Left(ExceptionMapper.map(e, context: 'Failed to search by author'));
     }
   }
 }

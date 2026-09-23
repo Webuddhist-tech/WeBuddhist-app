@@ -1,4 +1,3 @@
-import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_segment_repository.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
 import 'package:flutter_pecha/features/library/presentation/providers/library_providers.dart';
@@ -17,7 +16,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final textsRepositoryProvider = Provider<TextsRepository>((ref) {
   return TextsRepository(
     remoteDatasource: LibraryTextRemoteDatasource(
-      dio: ref.watch(dioProvider),
       library: ref.watch(libraryRepositoryProvider),
     ),
   );
@@ -41,28 +39,10 @@ final getTextDetailsUseCaseProvider = Provider<GetTextDetailsUseCase>((ref) {
 
 // ========== Search Use Case Providers ==========
 
-/// Provider for SearchTextInTextUseCase.
-final searchTextInTextUseCaseProvider = Provider<SearchTextInTextUseCase>((ref) {
-  final repository = ref.watch(textsRepositoryProvider);
-  return SearchTextInTextUseCase(repository);
-});
-
 /// Provider for MultilingualSearchUseCase.
 final multilingualSearchUseCaseProvider = Provider<MultilingualSearchUseCase>((ref) {
   final repository = ref.watch(textsRepositoryProvider);
   return MultilingualSearchUseCase(repository);
-});
-
-/// Provider for TitleSearchUseCase.
-final titleSearchUseCaseProvider = Provider<TitleSearchUseCase>((ref) {
-  final repository = ref.watch(textsRepositoryProvider);
-  return TitleSearchUseCase(repository);
-});
-
-/// Provider for AuthorSearchUseCase.
-final authorSearchUseCaseProvider = Provider<AuthorSearchUseCase>((ref) {
-  final repository = ref.watch(textsRepositoryProvider);
-  return AuthorSearchUseCase(repository);
 });
 
 // ========== Segment Use Case Providers ==========
