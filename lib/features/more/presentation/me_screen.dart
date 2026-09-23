@@ -140,87 +140,99 @@ class _GuestView extends ConsumerWidget {
 
     final localizations = AppLocalizations.of(context)!;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 52,
-              backgroundColor: AppColors.grey300,
-              child: Icon(
-                AppAssets.profile,
-                size: 44,
-                color: AppColors.grey600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              localizations.me_guest_headline,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 34,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localizations.me_guest_subtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.grey600),
-            ),
-            const SizedBox(height: 40),
-            if (authState.isLoading)
-              const SizedBox(
-                height: 52,
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else ...[
-              _SocialButton(
-                onTap: () => authNotifier.login(connection: 'google'),
-                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
-                foregroundColor: isDark ? Colors.white : Colors.black87,
-                borderColor:
-                    isDark ? AppColors.cardBorderDark : AppColors.grey300,
-                label: localizations.continueWithGoogle,
-                icon: Image.asset(AppAssets.googleIcon, width: 23, height: 23),
-              ),
-              if (isIOS) ...[
-                const SizedBox(height: 14),
-                _SocialButton(
-                  onTap: () => authNotifier.login(connection: 'apple'),
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  borderColor: Colors.transparent,
-                  label: localizations.continueWithApple,
-                  icon: const Icon(
-                    AppAssets.apple,
-                    color: Colors.white,
-                    size: 30,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: ConstrainedBox(
+            // Keeps the column vertically centred when it fits, and lets it
+            // scroll instead of overflowing on short screens or at large text
+            // scales, where three sign-in buttons no longer fit.
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 52,
+                  backgroundColor: AppColors.grey300,
+                  child: Icon(
+                    AppAssets.profile,
+                    size: 44,
+                    color: AppColors.grey600,
                   ),
                 ),
-              ],
-              const SizedBox(height: 14),
-              _SocialButton(
-                onTap: () => authNotifier.login(connection: 'sms'),
-                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
-                foregroundColor: isDark ? Colors.white : Colors.black87,
-                borderColor:
-                    isDark ? AppColors.cardBorderDark : AppColors.grey300,
-                label: localizations.continueWithPhone,
-                icon: Icon(
-                  Icons.phone_android,
-                  color: isDark ? Colors.white : Colors.black87,
-                  size: 23,
+                const SizedBox(height: 20),
+                Text(
+                  localizations.me_guest_headline,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 34,
+                  ),
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
+                const SizedBox(height: 12),
+                Text(
+                  localizations.me_guest_subtitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.grey600),
+                ),
+                const SizedBox(height: 40),
+                if (authState.isLoading)
+                  const SizedBox(
+                    height: 52,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else ...[
+                  _SocialButton(
+                    onTap: () => authNotifier.login(connection: 'google'),
+                    backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+                    foregroundColor: isDark ? Colors.white : Colors.black87,
+                    borderColor:
+                        isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                    label: localizations.continueWithGoogle,
+                    icon: Image.asset(
+                      AppAssets.googleIcon,
+                      width: 23,
+                      height: 23,
+                    ),
+                  ),
+                  if (isIOS) ...[
+                    const SizedBox(height: 14),
+                    _SocialButton(
+                      onTap: () => authNotifier.login(connection: 'apple'),
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      borderColor: Colors.transparent,
+                      label: localizations.continueWithApple,
+                      icon: const Icon(
+                        AppAssets.apple,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  _SocialButton(
+                    onTap: () => authNotifier.login(connection: 'sms'),
+                    backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+                    foregroundColor: isDark ? Colors.white : Colors.black87,
+                    borderColor:
+                        isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                    label: localizations.continueWithPhone,
+                    icon: Icon(
+                      Icons.phone_android,
+                      color: isDark ? Colors.white : Colors.black87,
+                      size: 23,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
