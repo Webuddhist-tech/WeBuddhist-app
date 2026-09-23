@@ -20,6 +20,13 @@ LibraryTestServer _server({List<Uri>? seen}) => LibraryTestServer({
     if (uri.queryParameters['title'] == 'zzz') {
       return jsonBody(pageJson(const [], limit: 20));
     }
+    if (offset == '3') {
+      return jsonBody(
+        pageJson([
+          textJson('NOED2', language: 'en'),
+        ], hasMore: true, offset: 3, limit: 20),
+      );
+    }
     if (offset == '20') {
       return jsonBody(
         pageJson([
@@ -88,6 +95,18 @@ void main() {
     expect(page.recitations.first.firstSegment, isNull);
     expect(page.collections, isEmpty);
     expect(page.skip, 0);
+    // The dropped text still counts towards the library offset.
+    expect(page.nextSkip, 3);
+    expect(page.hasMore, isTrue);
+  });
+
+  test('a page of texts without editions still advances the offset', () async {
+    final page = await _datasource(_server()).fetchRecitationsPage(
+      queryParams: RecitationsQueryParams(language: 'en', skip: 3, limit: 20),
+    );
+
+    expect(page.recitations, isEmpty);
+    expect(page.nextSkip, 4);
     expect(page.hasMore, isTrue);
   });
 
@@ -102,6 +121,7 @@ void main() {
     );
 
     expect(page.recitations.map((r) => r.textId), ['E3']);
+    expect(page.nextSkip, 21);
     expect(page.hasMore, isFalse);
     expect(page.collections, hasLength(21));
     expect(page.collections.last.collectionId, 'c20');

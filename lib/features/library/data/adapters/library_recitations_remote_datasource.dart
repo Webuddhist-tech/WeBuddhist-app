@@ -28,8 +28,9 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
   static const int _collectionsPageSize = 20;
 
   /// `search` becomes the library title filter; `total` is synthesized from
-  /// `has_more` so [RecitationsPageResponse.hasMore] keeps working. Each
-  /// chant's `textId` is its edition id, the id the rest of the app stores.
+  /// `has_more` so [RecitationsPageResponse.hasMore] keeps working, and
+  /// `nextSkip` is the raw library offset. Each chant's `textId` is its
+  /// edition id, the id the rest of the app stores.
   @override
   Future<RecitationsPageResponse> fetchRecitationsPage({
     RecitationsQueryParams? queryParams,
@@ -45,6 +46,7 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
 
     List<LibraryText> texts = const [];
     var hasMore = false;
+    var nextSkip = skip;
     final tooShort =
         search != null &&
         search.isNotEmpty &&
@@ -57,9 +59,11 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
         limit: limit,
         offset: skip,
       );
-      // A text without an edition has nothing to open, so it is not listed.
+      // A text without an edition has nothing to open, so it is not listed;
+      // the next offset still counts it so pages never repeat.
       texts = page.items.where((t) => t.primaryEditionId != null).toList();
       hasMore = page.hasMore && page.items.isNotEmpty;
+      nextSkip = skip + page.items.length;
     }
 
     // No first-verse preview: it cost two more calls per chant.
@@ -76,7 +80,8 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
       collections: await collectionsFuture,
       skip: skip,
       limit: limit,
-      total: skip + recitations.length + (hasMore ? 1 : 0),
+      total: nextSkip + (hasMore ? 1 : 0),
+      nextSkip: nextSkip,
     );
   }
 

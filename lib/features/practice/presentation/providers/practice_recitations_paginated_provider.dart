@@ -116,7 +116,7 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
         collections: page.collections,
         isLoading: false,
         hasMore: page.hasMore,
-        skip: page.recitations.length,
+        skip: page.nextSkip,
         total: page.total,
       );
     } catch (e) {
@@ -144,7 +144,7 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
         recitations: updatedRecitations,
         isLoadingMore: false,
         hasMore: page.hasMore,
-        skip: state.skip + page.recitations.length,
+        skip: page.nextSkip,
         total: page.total,
       );
     } catch (e) {
