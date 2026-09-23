@@ -98,11 +98,16 @@ class ReaderSlotConfig {
 
 class ReaderDualLayoutSettings {
   final bool secondaryEnabled;
+
+  /// Whether the original text shows while a translation is on. Only
+  /// meaningful together with an active secondary; readers never hide both.
+  final bool originalVisible;
   final ReaderSlotConfig primary;
   final ReaderSlotConfig secondary;
 
   const ReaderDualLayoutSettings({
     required this.secondaryEnabled,
+    this.originalVisible = true,
     required this.primary,
     required this.secondary,
   });
@@ -120,11 +125,13 @@ class ReaderDualLayoutSettings {
 
   ReaderDualLayoutSettings copyWith({
     bool? secondaryEnabled,
+    bool? originalVisible,
     ReaderSlotConfig? primary,
     ReaderSlotConfig? secondary,
   }) {
     return ReaderDualLayoutSettings(
       secondaryEnabled: secondaryEnabled ?? this.secondaryEnabled,
+      originalVisible: originalVisible ?? this.originalVisible,
       primary: primary ?? this.primary,
       secondary: secondary ?? this.secondary,
     );
@@ -132,6 +139,7 @@ class ReaderDualLayoutSettings {
 
   Map<String, dynamic> toJson() => {
         'secondaryEnabled': secondaryEnabled,
+        'originalVisible': originalVisible,
         'primary': primary.toJson(),
         'secondary': secondary.toJson(),
       };
@@ -139,6 +147,7 @@ class ReaderDualLayoutSettings {
   factory ReaderDualLayoutSettings.fromJson(Map<String, dynamic> json) {
     return ReaderDualLayoutSettings(
       secondaryEnabled: json['secondaryEnabled'] as bool? ?? false,
+      originalVisible: json['originalVisible'] as bool? ?? true,
       primary: ReaderSlotConfig.fromJson(
         (json['primary'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
@@ -164,10 +173,12 @@ class ReaderDualLayoutSettings {
     if (identical(this, other)) return true;
     return other is ReaderDualLayoutSettings &&
         other.secondaryEnabled == secondaryEnabled &&
+        other.originalVisible == originalVisible &&
         other.primary == primary &&
         other.secondary == secondary;
   }
 
   @override
-  int get hashCode => Object.hash(secondaryEnabled, primary, secondary);
+  int get hashCode =>
+      Object.hash(secondaryEnabled, originalVisible, primary, secondary);
 }

@@ -958,6 +958,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_attending => 'Attending';
 
   @override
+  String get connect_event_join_in_person => 'Join in person';
+
+  @override
+  String get connect_event_join_online => 'Join online';
+
+  @override
+  String get connect_event_enter => 'Enter';
+
+  @override
   String get connect_event_participation_prompt => 'How are you attending?';
 
   @override
@@ -2933,13 +2942,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prayer requests are closed for this event.';
 
   @override
-  String get event_prayer_pray => 'Pray';
+  String get event_prayer_pray => 'Prayer';
 
   @override
   String get event_prayer_praying => 'Praying';
 
   @override
   String get recitation_live_sync => 'Sync';
+
+  @override
+  String get recitation_live_label => 'Live';
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';

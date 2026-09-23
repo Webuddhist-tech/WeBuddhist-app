@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitation_live_client.dart';
@@ -86,43 +85,48 @@ Future<void> _send(
   await tester.pump();
 }
 
-final Finder _icon = find.byIcon(AppAssets.arrowsClockwise);
+final Finder _pill = find.text('Live');
 
-Color? _iconColor(WidgetTester tester) => tester.widget<Icon>(_icon).color;
+/// The pill's own Material is the closest one above its label.
+Color? _pillColor(WidgetTester tester) =>
+    tester
+        .widget<Material>(
+          find.ancestor(of: _pill, matching: find.byType(Material)).first,
+        )
+        .color;
 
 void main() {
-  testWidgets('appears with the first position and lights up while following', (
+  testWidgets('appears with the first position and turns red while following', (
     tester,
   ) async {
     final (notifier, channel) = await _pumpToggle(tester);
-    expect(_icon, findsNothing);
+    expect(_pill, findsNothing);
 
     await _send(tester, channel, _position);
 
-    expect(_icon, findsOneWidget);
+    expect(_pill, findsOneWidget);
     expect(find.byTooltip('Sync'), findsOneWidget);
-    // Icon only: no label, no round number.
-    expect(find.text('Sync'), findsNothing);
+    // Label only: no round number.
     expect(find.text('Round 1'), findsNothing);
-    expect(_iconColor(tester), AppColors.eventOnlineChip);
+    expect(_pillColor(tester), AppColors.primary);
 
-    await tester.tap(_icon);
+    await tester.tap(_pill);
     await tester.pump();
     expect(notifier.state.followMode, RecitationLiveFollowMode.off);
-    expect(_iconColor(tester), AppColors.grey500);
+    expect(_pillColor(tester), AppColors.grey500);
 
     // Turning it back on asks for a re-scroll to the live line.
     final requests = notifier.state.followRequest;
-    await tester.tap(_icon);
+    await tester.tap(_pill);
     await tester.pump();
     expect(notifier.state.followMode, RecitationLiveFollowMode.following);
     expect(notifier.state.followRequest, requests + 1);
-    expect(_iconColor(tester), AppColors.eventOnlineChip);
+    expect(_pillColor(tester), AppColors.primary);
 
     // Scrolling away pauses following, which reads as off.
     notifier.pauseFollowing();
     await tester.pump();
-    expect(_iconColor(tester), AppColors.grey500);
+    expect(_pillColor(tester), AppColors.grey500);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -130,10 +134,10 @@ void main() {
   testWidgets('disappears once the session ends', (tester) async {
     final (_, channel) = await _pumpToggle(tester);
     await _send(tester, channel, _position);
-    expect(_icon, findsOneWidget);
+    expect(_pill, findsOneWidget);
 
     await _send(tester, channel, _ended);
-    expect(_icon, findsNothing);
+    expect(_pill, findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });

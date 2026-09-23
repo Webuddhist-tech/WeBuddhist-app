@@ -124,6 +124,9 @@ class AppAssets {
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
+
+  // ========== TIMER ICONS ==========
+  static const IconData timerAmbientSound = PhosphorIconsRegular.waveform;
   static const IconData speakerSimpleHigh =
       PhosphorIconsRegular.speakerSimpleHigh;
   static const IconData headphones = PhosphorIconsRegular.headphones;
@@ -168,6 +171,7 @@ class AppAssets {
   static const IconData clock = PhosphorIconsRegular.clock;
   static const IconData repeat = PhosphorIconsRegular.arrowsClockwise;
   static const IconData arrowsClockwise = PhosphorIconsRegular.arrowsClockwise;
+  static const IconData broadcast = PhosphorIconsRegular.broadcast;
   static const IconData buildings = PhosphorIconsRegular.buildings;
   static const IconData arrowRight = PhosphorIconsRegular.arrowRight;
   static const IconData featuredSeriesPlanCount =

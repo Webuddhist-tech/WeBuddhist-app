@@ -31,6 +31,10 @@ class PreviewActivityList extends ConsumerWidget {
   /// live recitation.
   final String? eventId;
 
+  /// Online attendees watch the stream, so the reader must not follow the
+  /// live recitation.
+  final bool isOnlineAttendee;
+
   const PreviewActivityList({
     super.key,
     required this.language,
@@ -42,6 +46,7 @@ class PreviewActivityList extends ConsumerWidget {
     this.dayNumber,
     this.dayAudioUrl,
     this.eventId,
+    this.isOnlineAttendee = false,
   });
 
   List<PlanTasksModel> get _sortedTasks {
@@ -157,6 +162,7 @@ class PreviewActivityList extends ConsumerWidget {
       autoPlay: autoPlay,
       dayAudioUrl: dayAudioUrl,
       eventId: eventId,
+      isOnlineAttendee: isOnlineAttendee,
     );
 
     PlanNavigator.push(context, target, navigationContext);

@@ -1879,6 +1879,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_join_in_person => TolgeeBridge.get(
+    localeName,
+    'connect_event_join_in_person',
+    () => _fallback.connect_event_join_in_person,
+  );
+
+  @override
+  String get connect_event_join_online => TolgeeBridge.get(
+    localeName,
+    'connect_event_join_online',
+    () => _fallback.connect_event_join_online,
+  );
+
+  @override
+  String get connect_event_enter => TolgeeBridge.get(
+    localeName,
+    'connect_event_enter',
+    () => _fallback.connect_event_enter,
+  );
+
+  @override
   String get connect_event_participation_prompt => TolgeeBridge.get(
     localeName,
     'connect_event_participation_prompt',
@@ -5762,6 +5783,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'recitation_live_sync',
     () => _fallback.recitation_live_sync,
+  );
+
+  @override
+  String get recitation_live_label => TolgeeBridge.get(
+    localeName,
+    'recitation_live_label',
+    () => _fallback.recitation_live_label,
   );
 
   @override

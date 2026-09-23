@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_bar.dart';
@@ -32,6 +33,7 @@ import 'package:flutter_pecha/features/reader/domain/services/live_position_reso
 import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
@@ -114,6 +116,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
+
+  /// Set when the reader was opened from a group event.
+  String? get _eventId {
+    final ctx = widget.navigationContext;
+    return ctx != null && ctx.isFromEvent ? ctx.eventId : null;
+  }
 
   /// Set when the reader follows a group event's live recitation.
   String? get _liveEventId {
@@ -698,16 +706,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     ReaderState state,
     TextDetail? textDetail,
   ) {
+    final eventId = _eventId;
     final liveEventId = _liveEventId;
     final liveSyncToggle =
         liveEventId == null
             ? null
             : RecitationLiveSyncToggle(eventId: liveEventId);
+    final prayerRequestsButton =
+        eventId == null ? null : PrayerRequestsIconButton(eventId: eventId);
     if (_isEmbedded) {
       return PlanEmbeddedHeader(
         onClose: _closeEmbedded,
         actions: [
           if (liveSyncToggle != null) liveSyncToggle,
+          if (prayerRequestsButton != null) prayerRequestsButton,
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
@@ -722,9 +734,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       params: _params,
       colorIndex: widget.colorIndex,
       liveSyncToggle: liveSyncToggle,
+      prayerRequestsButton: prayerRequestsButton,
       onSearchPressed: () => _handleSearch(context, state),
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
-      onMorePressed: () => _openMoreBottomSheet(context, textDetail),
+      // The event page already offers share and offline recitations.
+      onMorePressed:
+          eventId == null
+              ? () => _openMoreBottomSheet(context, textDetail)
+              : null,
     );
   }
 
@@ -865,6 +882,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       context,
       textId: widget.textId,
       primaryDisplay: primaryDisplay,
+      sourceSample: scriptDetectionSample(
+        ref.read(readerNotifierProvider(_params)).content,
+      ),
     );
   }
 

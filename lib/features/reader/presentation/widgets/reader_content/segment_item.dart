@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/presentation/segment_html_widget.dart';
-import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SegmentItem extends ConsumerWidget {
@@ -33,7 +33,11 @@ class SegmentItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fontSize = ref.watch(fontSizeProvider);
-    final segmentHtmlContent = normalizeSegmentHtml(segment.content);
+    final primary = primarySegmentHtml(
+      ref,
+      content: segment.content,
+      language: language,
+    );
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -72,10 +76,10 @@ class SegmentItem extends ConsumerWidget {
                   // Segment content
                   Expanded(
                     child: SegmentHtmlWidget(
-                      htmlContent: segmentHtmlContent,
+                      htmlContent: primary.html,
                       segmentIndex: segment.segmentNumber,
                       fontSize: fontSize,
-                      language: language,
+                      language: primary.fontLanguage,
                       isSelected: isSelected,
                     ),
                   ),

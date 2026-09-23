@@ -45,7 +45,6 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:skeletonizer/skeletonizer.dart';
 import '../day_completion_bottom_sheet.dart';
 import '../plan_cover_image.dart';
 import '../day_carousel.dart';
@@ -224,10 +223,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                _buildPrayerRequestsButton(),
                 if (retryLive != null) _buildLiveEventError(retryLive),
-                // Room under the prayer requests chip, whichever header sits
-                // above it.
+                // Room under the edge-to-edge event header.
                 if (widget.eventId != null) const SizedBox(height: 12),
                 _buildDayCarouselSection(language),
                 _buildDayContentSection(context, language),
@@ -267,7 +264,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     primary: false,
                   ),
                   _buildHeader(),
-                  _buildPrayerRequestsButton(),
+                  // An open task carries prayer requests in its own header.
+                  if (!_embedded.isOpen) _buildPrayerRequestsButton(),
                 ],
               ),
             ),
@@ -398,6 +396,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     bool primary = true,
   }) {
     final isLiveEvent = live == _LiveStatus.live;
+    final isEvent = widget.eventId != null;
     return AppBar(
       primary: primary,
       leading: IconButton(
@@ -413,20 +412,13 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           }
         },
       ),
-      title: switch (live) {
-        _LiveStatus.loading => Skeletonizer(
-          child: Bone(
-            width: 180,
-            height: 20,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        _LiveStatus.live => null,
-        _LiveStatus.none || _LiveStatus.failed => Text(
-          widget.plan.title,
-          style: TextStyle(fontSize: 20),
-        ),
-      },
+      // An event page shows no plan title; the header names the event.
+      title:
+          isEvent
+              ? null
+              : Text(widget.plan.title, style: TextStyle(fontSize: 20)),
+      // The live toggles fill the bar, so the live layout keeps prayer
+      // requests under the stream instead.
       actions:
           isLiveEvent
               ? [
@@ -442,6 +434,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                   onChanged:
                       (language) => setState(() => _liveLanguage = language),
                 ),
+                const SizedBox(width: 12),
+              ]
+              : isEvent
+              ? [
+                _buildPrayerRequestsButton(padding: EdgeInsets.zero),
                 const SizedBox(width: 12),
               ]
               : null,
@@ -474,7 +471,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   }
 
   /// Only once the event says its chat room is on.
-  Widget _buildPrayerRequestsButton() {
+  Widget _buildPrayerRequestsButton({EdgeInsetsGeometry? padding}) {
     final eventId = widget.eventId;
     if (eventId == null) return const SizedBox.shrink();
     final event = ref
@@ -482,7 +479,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         .valueOrNull
         ?.fold((_) => null, (event) => event);
     if (event == null || !event.chatEnabled) return const SizedBox.shrink();
-    return PrayerRequestsButton(onTap: () => _openPrayerRequests(eventId));
+    return PrayerRequestsButton(
+      onTap: () => _openPrayerRequests(eventId),
+      padding:
+          padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
   }
 
   void _openPrayerRequests(String eventId) {
@@ -655,9 +656,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     planId: widget.plan.id,
                     dayNumber: selectedDay,
                     dayAudioUrl: dayContent.audioUrl,
+                    eventId: widget.eventId,
                     // Only in-person readers follow the live recitation: the
                     // stream already carries the text as hardcoded overlays.
-                    eventId: widget.showLiveStream ? null : widget.eventId,
+                    isOnlineAttendee: widget.showLiveStream,
                     onActivityToggled:
                         (taskId) => _handleTaskToggle(taskId, dayContent.tasks),
                     onGroupAccumulationPracticed:

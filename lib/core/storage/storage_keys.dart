@@ -90,6 +90,13 @@ class StorageKeys {
   /// and live in memory only — they don't survive navigating to a different
   /// text because `versionId` is text-scoped and won't resolve elsewhere.
   static const String readerSecondaryEnabled = 'reader_secondary_enabled';
+  /// JSON map of source language code → transliteration script id the
+  /// reader shows that language in (e.g. `{"pi":"si"}`). Global preference.
+  static const String readerScriptPreference = 'reader_script_preference';
+  /// Whether the reader shows the original text when a translation is on.
+  /// Global preference (bool), default true; ignored when no translation is
+  /// showing so the screen is never empty.
+  static const String readerOriginalVisible = 'reader_original_visible';
   /// Bead-tap sound on the mala counter. Default: true.
   static const String malaSoundEnabled = 'mala_sound_enabled';
   /// Haptic feedback on the mala counter. Default: true.

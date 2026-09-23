@@ -96,6 +96,59 @@ class TimersLocalDatasource {
     );
   }
 
+  /// Adds (or replaces) [timer] in the cached first page of preset timers, so
+  /// the list watcher shows a freshly created timer without depending on a
+  /// successful remote refresh. No-op when nothing is cached yet — the stream
+  /// fetches from the network in that case anyway.
+  ///
+  /// [skip]/[limit] are required rather than defaulted because they pick the
+  /// cache key: patching a page the list is not reading leaves the screen
+  /// stale with no visible error.
+  Future<void> upsertPresetTimer(
+    String userId, {
+    required PresetTimerModel timer,
+    required int skip,
+    required int limit,
+  }) async {
+    final key = presetTimersKey(userId, skip, limit);
+    final cached = _readModelList(key, PresetTimerModel.fromJson);
+    if (cached == null) return;
+
+    final existingIndex = cached.indexWhere((item) => item.id == timer.id);
+    final updated = [...cached];
+    if (existingIndex == -1) {
+      updated.add(timer);
+    } else {
+      // Replace in place so editing a timer doesn't move its card in the grid.
+      updated[existingIndex] = timer;
+    }
+    await _writeModelList(key, updated.map((item) => item.toJson()).toList());
+  }
+
+  /// Drops [timerId] from every cached page of preset timers, so a deleted
+  /// timer disappears from the list even if the remote refresh fails.
+  Future<void> removePresetTimer(String userId, String timerId) async {
+    final prefix = 'preset_timers:$userId:';
+    final keys =
+        _box.keys
+            .whereType<String>()
+            .where((key) => key.startsWith(prefix))
+            .toList();
+
+    for (final key in keys) {
+      final cached = _readModelList(key, PresetTimerModel.fromJson);
+      if (cached == null) continue;
+      if (!cached.any((item) => item.id == timerId)) continue;
+      await _writeModelList(
+        key,
+        cached
+            .where((item) => item.id != timerId)
+            .map((item) => item.toJson())
+            .toList(),
+      );
+    }
+  }
+
   List<PendingTimerStop> readPendingStops(String userId) {
     return _readModelList(pendingStopsKey(userId), PendingTimerStop.fromJson) ??
         const <PendingTimerStop>[];
