@@ -62,8 +62,20 @@ class GroupChatNotificationBell extends ConsumerWidget {
     );
   }
 
-  void _setChat(BuildContext context, WidgetRef ref, bool enabled) {
+  /// Confirms only once the save lands: a failure reverts the bell and the
+  /// listener in [build] reports it instead.
+  Future<void> _setChat(
+    BuildContext context,
+    WidgetRef ref,
+    bool enabled,
+  ) async {
     final l10n = context.l10n;
+    final provider = groupNotificationPreferencesProvider(groupId);
+    final saved = await ref.read(provider.notifier).setChat(enabled);
+    if (!saved || !context.mounted) return;
+    // A later tap may have flipped it back before this save settled; that
+    // tap's own confirmation covers it.
+    if (ref.read(provider).preferences.chat != enabled) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -75,9 +87,6 @@ class GroupChatNotificationBell extends ConsumerWidget {
           ),
         ),
       );
-    ref.read(groupNotificationPreferencesProvider(groupId).notifier).setChat(
-      enabled,
-    );
   }
 
   /// A group toggle has no effect while the app's master switch is off, so

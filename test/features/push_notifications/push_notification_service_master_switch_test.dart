@@ -529,6 +529,34 @@ void main() {
       expect(repo.registered, isEmpty);
     });
 
+    test('one deadline bounds the whole sign-out unregister', () async {
+      const timeout = Duration(milliseconds: 100);
+      service.dispose();
+      service = PushNotificationService(
+        repository: repo,
+        storage: storage,
+        foregroundFilter: ForegroundPushFilter(),
+        reconcileRetryBaseDelay: _retryDelay,
+        signOutTimeout: timeout,
+      );
+      storage.values[StorageKeys.pushDeviceServerId] = 'dev-old';
+      // Both the in-flight reconcile and the unregister request stall.
+      final stalledRegister = repo.holdRegister = Completer<void>();
+      final stalledUnregister = repo.holdUnregister = Completer<void>();
+      await service.initialize();
+      service.onAuthChanged(loggedIn: true);
+      await _settle();
+
+      final stopwatch = Stopwatch()..start();
+      await service.unregisterForSignOut();
+      stopwatch.stop();
+
+      // Separate deadlines per step would take at least twice the timeout.
+      expect(stopwatch.elapsed, lessThan(timeout * 2));
+      stalledRegister.complete();
+      stalledUnregister.complete();
+    });
+
     test('signing in again registers the fresh token', () async {
       await signIn();
       await logOut();

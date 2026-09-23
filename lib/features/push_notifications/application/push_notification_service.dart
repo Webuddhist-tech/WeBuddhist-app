@@ -37,10 +37,12 @@ class PushNotificationService {
     required LocalStorageService storage,
     required ForegroundPushFilter foregroundFilter,
     Duration reconcileRetryBaseDelay = const Duration(seconds: 5),
+    Duration signOutTimeout = const Duration(seconds: 4),
   }) : _repository = repository,
        _storage = storage,
        _foregroundFilter = foregroundFilter,
-       _reconcileRetryBaseDelay = reconcileRetryBaseDelay;
+       _reconcileRetryBaseDelay = reconcileRetryBaseDelay,
+       _signOutTimeout = signOutTimeout;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
@@ -62,6 +64,12 @@ class PushNotificationService {
 
   String? _token;
   bool _loggedIn = false;
+
+  /// False until the first settled auth snapshot arrives. While the stored
+  /// session is still being restored, [_loggedIn] is not yet meaningful, so
+  /// foreground pushes wait in [_pendingForeground] instead of being dropped.
+  bool _authKnown = false;
+  final _pendingForeground = <PushMessage>[];
 
   /// Mirrors the app's master notification switch. While false the device is
   /// kept unregistered on the backend so no server push of any kind reaches
@@ -153,6 +161,10 @@ class PushNotificationService {
   void onAuthChanged({required bool loggedIn}) {
     final signedIn = loggedIn && !_loggedIn;
     _loggedIn = loggedIn;
+    if (!_authKnown) {
+      _authKnown = true;
+      _flushPendingForeground();
+    }
     if (signedIn) _requestReconcile();
     if (!loggedIn) {
       _detaching ??= _detachFromAccount().whenComplete(
@@ -161,9 +173,10 @@ class PushNotificationService {
     }
   }
 
-  /// Upper bound on how long sign-out waits for the backend. Logging out must
-  /// never hang on a slow network; [_detachFromAccount] still kills the token.
-  static const _signOutTimeout = Duration(seconds: 4);
+  /// Upper bound on how long sign-out waits for the backend, across every
+  /// step. Logging out must never hang on a slow network;
+  /// [_detachFromAccount] still kills the token.
+  final Duration _signOutTimeout;
 
   Future<void>? _signOutUnregister;
   Future<void>? _detaching;
@@ -181,23 +194,24 @@ class PushNotificationService {
 
   Future<void> _runSignOutUnregister() async {
     try {
-      await _quiesceReconcile();
-      final serverId = await _storage.get<String>(
-        StorageKeys.pushDeviceServerId,
-      );
-      if (serverId == null || serverId.isEmpty) return;
-      final result = await _repository
-          .unregisterDeviceToken(serverId)
-          .timeout(_signOutTimeout);
-      result.fold(
-        (failure) => _logger.warning(
-          'Sign-out unregister failed: ${failure.message}',
-        ),
-        (_) => _logger.info('Device unregistered for sign-out'),
-      );
+      // One deadline for the whole sequence: separate ones on the quiesce and
+      // the request would add up past [_signOutTimeout].
+      await _unregisterStoredDevice().timeout(_signOutTimeout);
     } catch (e, st) {
       _logger.warning('Sign-out unregister failed: $e', e, st);
     }
+  }
+
+  Future<void> _unregisterStoredDevice() async {
+    await _quiesceReconcile();
+    final serverId = await _storage.get<String>(StorageKeys.pushDeviceServerId);
+    if (serverId == null || serverId.isEmpty) return;
+    final result = await _repository.unregisterDeviceToken(serverId);
+    result.fold(
+      (failure) =>
+          _logger.warning('Sign-out unregister failed: ${failure.message}'),
+      (_) => _logger.info('Device unregistered for sign-out'),
+    );
   }
 
   /// Makes sure pushes for the last signed-in account stop reaching this
@@ -449,6 +463,11 @@ class PushNotificationService {
 
   Future<void> _showNotification(PushMessage message) async {
     if (!message.hasNotification) return;
+    // The session is still being restored; judge it once auth settles.
+    if (!_authKnown) {
+      _pendingForeground.add(message);
+      return;
+    }
     // Pushes only ever target signed-in accounts. One arriving now is left
     // over from the last session, before its token was deleted.
     if (!_loggedIn) {
@@ -468,6 +487,14 @@ class PushNotificationService {
       NotificationChannels.pushDefaultDetails,
       payload: message.data.isEmpty ? null : jsonEncode(message.data),
     );
+  }
+
+  void _flushPendingForeground() {
+    final pending = List.of(_pendingForeground);
+    _pendingForeground.clear();
+    for (final message in pending) {
+      unawaited(_showNotification(message));
+    }
   }
 
   void _onNotificationTapped(PushMessage message) {
@@ -492,6 +519,7 @@ class PushNotificationService {
     _initRetryTimer = null;
     _reconcileRetryTimer?.cancel();
     _reconcileRetryTimer = null;
+    _pendingForeground.clear();
     for (final sub in _subscriptions) {
       unawaited(sub.cancel());
     }
