@@ -253,12 +253,15 @@ class PushNotificationService {
     }
   }
 
-  /// Stops queued reconcile work and waits, within [_signOutTimeout], for a
-  /// pass already in flight, so a sign-out never races a register call.
+  /// Waits, within [_signOutTimeout], for a reconcile pass already in flight,
+  /// so a sign-out never races a register call.
+  ///
+  /// Queued work is deliberately left alone. A pass that runs while signed
+  /// out is already a no-op — both [_register] and [_unregister] bail out on
+  /// [_loggedIn] — whereas cancelling it would drop a request belonging to a
+  /// session that signed back in while the sign-out was still unwinding,
+  /// leaving that session unregistered until some unrelated event.
   Future<void> _quiesceReconcile() async {
-    _reconcileRetryTimer?.cancel();
-    _reconcileRetryTimer = null;
-    _reconcileRequested = false;
     final running = _reconciling;
     if (running != null) {
       await running.timeout(_signOutTimeout, onTimeout: () {});
@@ -408,8 +411,21 @@ class PushNotificationService {
 
   /// Returns false when the backend call failed and a retry is worthwhile.
   Future<bool> _register() async {
-    final token = _token;
-    if (token == null || !_loggedIn) return true;
+    if (!_loggedIn) return true;
+    var token = _token;
+    if (token == null) {
+      // No token in hand while signed in is a failure, not a no-op: minting
+      // after the sign-out delete can come back empty (iOS, APNs token not
+      // ready yet). Reported as a failed pass so the backoff retries it,
+      // rather than leaving the install unregistered until the next launch.
+      token = await _repository.getToken();
+      if (token == null) {
+        _logger.warning('No FCM token yet; registration will be retried');
+        return false;
+      }
+      _token = token;
+      await _storage.set(StorageKeys.fcmToken, token);
+    }
     final deviceId = await _deviceId();
     final result = await _repository.registerDeviceToken(
       token,

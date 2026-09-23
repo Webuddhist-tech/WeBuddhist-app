@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -38,6 +40,10 @@ class _FakeRepository extends Fake implements PushMessagingRepository {
   Object? deleteTokenError;
   int deleteTokenCalls = 0;
 
+  /// When false, a delete leaves the install with no token at all, as on iOS
+  /// where the replacement cannot be minted until APNs is ready.
+  bool mintsReplacement = true;
+
   @override
   Future<void> deleteToken() async {
     deleteTokenCalls++;
@@ -45,7 +51,7 @@ class _FakeRepository extends Fake implements PushMessagingRepository {
     deleteTokenError = null;
     if (error != null) throw error;
     // Firebase mints a new token on the next getToken.
-    token = 'tok-${deleteTokenCalls + 1}';
+    token = mintsReplacement ? 'tok-${deleteTokenCalls + 1}' : null;
   }
 
   @override
@@ -118,6 +124,12 @@ Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
 /// Short backoff unit for the retry tests; production uses seconds.
 const _retryDelay = Duration(milliseconds: 20);
+
+/// flutter_local_notifications' platform channel, mocked so the banner the
+/// service asks for can be observed without a real plugin.
+const _localNotificationsChannel = MethodChannel(
+  'dexterous.com/flutter/local_notifications',
+);
 
 /// Waits long enough for the [attempt]th linear-backoff retry to have fired.
 Future<void> _afterRetry(int attempt) => Future<void>.delayed(
@@ -557,6 +569,74 @@ void main() {
       stalledUnregister.complete();
     });
 
+    test('a sign-out left with no token still registers the next sign-in',
+        () async {
+      await signIn();
+      // Firebase has nothing to hand back after the delete.
+      repo.mintsReplacement = false;
+
+      await logOut();
+      expect(repo.deleteTokenCalls, 1);
+      expect(storage.values.containsKey(StorageKeys.fcmToken), isFalse);
+
+      // The sign-in's first pass finds no token, so it counts as a failure
+      // rather than a silent no-op.
+      repo.serverIdToReturn = 'dev-2';
+      service.onAuthChanged(loggedIn: true);
+      await service.registrationSettled;
+      expect(repo.registered, ['tok-1']);
+
+      // The backoff retry picks the token up once FCM finally mints one.
+      repo.token = 'tok-late';
+      await _afterRetry(1);
+      await service.registrationSettled;
+
+      expect(repo.registered, ['tok-1', 'tok-late']);
+      expect(storage.values[StorageKeys.fcmToken], 'tok-late');
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-2');
+    });
+
+    test('a sign-in while the sign-out unwinds is not dropped', () async {
+      service.dispose();
+      service = PushNotificationService(
+        repository: repo,
+        storage: storage,
+        foregroundFilter: ForegroundPushFilter(),
+        reconcileRetryBaseDelay: _retryDelay,
+        signOutTimeout: const Duration(milliseconds: 30),
+      );
+      await service.initialize();
+      service.onAuthChanged(loggedIn: true);
+      await service.registrationSettled;
+
+      // Master off: its unregister pass stalls, so it is still in flight —
+      // and its outcome already stale — for the rest of the test.
+      final stalled = repo.holdUnregister = Completer<void>();
+      service.setMasterEnabled(false);
+      await _settle();
+
+      // Sign out. The unregister-for-sign-out gives up on the stalled pass
+      // after the timeout, and the detach it triggers unwinds behind it.
+      final signOut = service.unregisterForSignOut();
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+
+      // Signed back in, master on again, before any of that has settled.
+      repo.serverIdToReturn = 'dev-2';
+      service.setMasterEnabled(true);
+      service.onAuthChanged(loggedIn: true);
+
+      await signOut;
+      stalled.complete();
+      await _settle();
+      await _settle();
+      await service.registrationSettled;
+
+      // The request the sign-in queued must survive the sign-out's quiesce.
+      expect(repo.registered, ['tok-1', 'tok-1']);
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-2');
+    });
+
     test('signing in again registers the fresh token', () async {
       await signIn();
       await logOut();
@@ -569,4 +649,89 @@ void main() {
       expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-2');
     });
   });
+
+  // The last leg of "guests get no group chat notifications": a push that
+  // arrives while the app is open is filtered in-process, since the backend
+  // row and the FCM token are only torn down on the sign-out paths above.
+  group('foreground pushes', () {
+    const chatPush = PushMessage(
+      title: 'New message',
+      body: 'Hello',
+      data: {'type': 'group_chat'},
+    );
+
+    late List<MethodCall> platformCalls;
+
+    Iterable<MethodCall> shown() =>
+        platformCalls.where((call) => call.method == 'show');
+
+    setUp(() {
+      // The generated plugin registrant does not run under test, so the
+      // platform implementation the service's `show` resolves to has to be
+      // registered by hand; without it the call is a silent no-op and the
+      // test could never tell a suppressed push from a shown one.
+      IOSFlutterLocalNotificationsPlugin.registerWith();
+      platformCalls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_localNotificationsChannel, (call) async {
+            platformCalls.add(call);
+            return null;
+          });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_localNotificationsChannel, null);
+    });
+
+    test('a guest sees nothing', () async {
+      await service.initialize();
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+
+      repo.foreground.add(chatPush);
+      await _settle();
+
+      expect(shown(), isEmpty);
+    });
+
+    test('a signed-in member sees it', () async {
+      await service.initialize();
+      service.onAuthChanged(loggedIn: true);
+      await service.registrationSettled;
+
+      repo.foreground.add(chatPush);
+      await _settle();
+
+      expect(shown(), hasLength(1));
+    });
+
+    test('one arriving before auth settles waits rather than being dropped',
+        () async {
+      await service.initialize();
+
+      repo.foreground.add(chatPush);
+      await _settle();
+      expect(shown(), isEmpty);
+
+      service.onAuthChanged(loggedIn: true);
+      await _settle();
+
+      expect(shown(), hasLength(1));
+    });
+
+    test('one held from before a guest snapshot is then dropped', () async {
+      await service.initialize();
+
+      repo.foreground.add(chatPush);
+      await _settle();
+
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+
+      expect(shown(), isEmpty);
+    });
+  });
+
+
 }
