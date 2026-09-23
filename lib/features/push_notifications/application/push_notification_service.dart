@@ -146,10 +146,109 @@ class PushNotificationService {
   /// needed). Guests are treated as signed out for push targeting. Signing in
   /// with master off removes the registration left from an earlier session
   /// now that the JWT is available.
+  ///
+  /// Any signed-out snapshot (logout, expired session, guest) also detaches
+  /// the install from the account it was registered under. See
+  /// [_detachFromAccount].
   void onAuthChanged({required bool loggedIn}) {
     final signedIn = loggedIn && !_loggedIn;
     _loggedIn = loggedIn;
     if (signedIn) _requestReconcile();
+    if (!loggedIn) {
+      _detaching ??= _detachFromAccount().whenComplete(
+        () => _detaching = null,
+      );
+    }
+  }
+
+  /// Upper bound on how long sign-out waits for the backend. Logging out must
+  /// never hang on a slow network; [_detachFromAccount] still kills the token.
+  static const _signOutTimeout = Duration(seconds: 4);
+
+  Future<void>? _signOutUnregister;
+  Future<void>? _detaching;
+
+  /// Removes this device's backend registration for the user who is signing
+  /// out. Call it before the local credentials are cleared, since the endpoint
+  /// needs that user's JWT, and before auth state flips, so the detach that
+  /// the flip triggers waits for it. Best effort: never throws, and gives up
+  /// after [_signOutTimeout].
+  Future<void> unregisterForSignOut() {
+    return _signOutUnregister ??= _runSignOutUnregister().whenComplete(
+      () => _signOutUnregister = null,
+    );
+  }
+
+  Future<void> _runSignOutUnregister() async {
+    try {
+      await _quiesceReconcile();
+      final serverId = await _storage.get<String>(
+        StorageKeys.pushDeviceServerId,
+      );
+      if (serverId == null || serverId.isEmpty) return;
+      final result = await _repository
+          .unregisterDeviceToken(serverId)
+          .timeout(_signOutTimeout);
+      result.fold(
+        (failure) => _logger.warning(
+          'Sign-out unregister failed: ${failure.message}',
+        ),
+        (_) => _logger.info('Device unregistered for sign-out'),
+      );
+    } catch (e, st) {
+      _logger.warning('Sign-out unregister failed: $e', e, st);
+    }
+  }
+
+  /// Makes sure pushes for the last signed-in account stop reaching this
+  /// install once nobody is signed in.
+  ///
+  /// The backend keeps a registration until told otherwise, and the OS shows
+  /// background pushes before the app can filter them. So a device that
+  /// signed out, lost its session or switched to guest would keep receiving
+  /// that account's chat pushes. Deleting the FCM token fixes this without a
+  /// JWT: the backend row may linger, but its token no longer delivers.
+  ///
+  /// Only runs while a registration id is stored. That also covers installs
+  /// that signed out before this existed and are still receiving pushes. On
+  /// failure the id is kept, so the next signed-out snapshot tries again.
+  Future<void> _detachFromAccount() async {
+    try {
+      final pending = _signOutUnregister;
+      if (pending != null) await pending;
+      await _quiesceReconcile();
+      // Signed back in meanwhile: the registration belongs to them now.
+      if (_loggedIn) return;
+
+      final serverId = await _storage.get<String>(
+        StorageKeys.pushDeviceServerId,
+      );
+      if (serverId == null || serverId.isEmpty) return;
+
+      await _repository.deleteToken();
+      await _storage.remove(StorageKeys.pushDeviceServerId);
+      await _storage.remove(StorageKeys.fcmToken);
+      _token = null;
+      _logger.info('Push token deleted after sign-out');
+
+      // Mint the replacement now so the next sign-in has a token to register.
+      final fresh = await _repository.getToken();
+      if (fresh != null) await _onToken(fresh);
+    } catch (e, st) {
+      _logger.warning('Push detach after sign-out failed: $e', e, st);
+    }
+  }
+
+  /// Stops queued reconcile work and waits, within [_signOutTimeout], for a
+  /// pass already in flight, so a sign-out never races a register call.
+  Future<void> _quiesceReconcile() async {
+    _reconcileRetryTimer?.cancel();
+    _reconcileRetryTimer = null;
+    _reconcileRequested = false;
+    final running = _reconciling;
+    if (running != null) {
+      await running.timeout(_signOutTimeout, onTimeout: () {});
+    }
   }
 
   /// Re-sends the device registration so the backend picks up the latest
@@ -350,6 +449,12 @@ class PushNotificationService {
 
   Future<void> _showNotification(PushMessage message) async {
     if (!message.hasNotification) return;
+    // Pushes only ever target signed-in accounts. One arriving now is left
+    // over from the last session, before its token was deleted.
+    if (!_loggedIn) {
+      _logger.info('Foreground push suppressed: signed out');
+      return;
+    }
     if (!_foregroundFilter.shouldShow(message.data)) {
       _logger.info('Foreground push suppressed: already on screen');
       return;

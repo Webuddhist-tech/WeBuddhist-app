@@ -959,6 +959,10 @@
   "group_notifications_open_settings": "Turn on",
   "group_notifications_update_failed": "Couldn't update notification settings. Try again.",
   "group_notifications_load_failed": "Couldn't load notification settings.",
+  "group_chat_mute_notifications": "Mute chat notifications",
+  "group_chat_unmute_notifications": "Unmute chat notifications",
+  "group_chat_notifications_muted": "Chat notifications muted",
+  "group_chat_notifications_unmuted": "Chat notifications on",
   "group_leave": "Leave group",
   "group_leave_confirm_title": "Leave group?",
   "group_leave_confirm_message": "You'll stop getting messages and updates from this group.",
@@ -1346,14 +1350,6 @@
   },
   "group_chat_delete_failed": "{count, plural, =1{The message couldn't be deleted.} other{{count} messages couldn't be deleted.}}",
   "@group_chat_delete_failed": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "group_chat_message_deleted_toast": "{count, plural, =1{Message deleted} other{Messages deleted}}",
-  "@group_chat_message_deleted_toast": {
     "placeholders": {
       "count": {
         "type": "int"

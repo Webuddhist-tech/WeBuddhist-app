@@ -34,6 +34,20 @@ class _FakeRepository extends Fake implements PushMessagingRepository {
   @override
   Future<String?> getToken() async => token;
 
+  /// Thrown by the next [deleteToken] call, then cleared.
+  Object? deleteTokenError;
+  int deleteTokenCalls = 0;
+
+  @override
+  Future<void> deleteToken() async {
+    deleteTokenCalls++;
+    final error = deleteTokenError;
+    deleteTokenError = null;
+    if (error != null) throw error;
+    // Firebase mints a new token on the next getToken.
+    token = 'tok-${deleteTokenCalls + 1}';
+  }
+
   @override
   Stream<String> get onTokenRefresh => tokenRefresh.stream;
 
@@ -409,6 +423,122 @@ void main() {
         storage.values.containsKey(StorageKeys.pushDeviceServerId),
         isFalse,
       );
+    });
+  });
+
+  group('sign-out', () {
+    Future<void> signIn() async {
+      await service.initialize();
+      service.onAuthChanged(loggedIn: true);
+      await service.registrationSettled;
+    }
+
+    /// The order `AuthNotifier.logout` uses: unregister first, then the
+    /// state flip that triggers the detach.
+    Future<void> logOut() async {
+      final unregister = service.unregisterForSignOut();
+      service.onAuthChanged(loggedIn: false);
+      await unregister;
+      await _settle();
+      await service.registrationSettled;
+    }
+
+    test('logout unregisters, deletes the token and clears the ids', () async {
+      await signIn();
+
+      await logOut();
+
+      expect(repo.unregistered, ['dev-1']);
+      expect(repo.deleteTokenCalls, 1);
+      expect(
+        storage.values.containsKey(StorageKeys.pushDeviceServerId),
+        isFalse,
+      );
+      // The replacement token is kept for the next sign-in, not registered.
+      expect(storage.values[StorageKeys.fcmToken], 'tok-2');
+      expect(repo.registered, ['tok-1']);
+    });
+
+    test('a failed unregister still deletes the token', () async {
+      await signIn();
+      repo.unregisterFailure = const NetworkFailure('offline');
+
+      await logOut();
+
+      expect(repo.unregistered, ['dev-1']);
+      expect(repo.deleteTokenCalls, 1);
+      expect(
+        storage.values.containsKey(StorageKeys.pushDeviceServerId),
+        isFalse,
+      );
+    });
+
+    test('an expired session deletes the token without a backend call', () async {
+      await signIn();
+
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+      await service.registrationSettled;
+
+      expect(repo.unregistered, isEmpty);
+      expect(repo.deleteTokenCalls, 1);
+    });
+
+    test('a failed token delete keeps the id for the next attempt', () async {
+      await signIn();
+      repo.deleteTokenError = Exception('offline');
+
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-1');
+
+      // Any later signed-out snapshot, e.g. the next launch as a guest.
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+      await service.registrationSettled;
+
+      expect(repo.deleteTokenCalls, 2);
+      expect(
+        storage.values.containsKey(StorageKeys.pushDeviceServerId),
+        isFalse,
+      );
+    });
+
+    test('a guest install left registered by an old session is detached', () async {
+      storage.values[StorageKeys.pushDeviceServerId] = 'dev-old';
+
+      await service.initialize();
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+      await service.registrationSettled;
+
+      expect(repo.deleteTokenCalls, 1);
+      expect(repo.registered, isEmpty);
+      expect(
+        storage.values.containsKey(StorageKeys.pushDeviceServerId),
+        isFalse,
+      );
+    });
+
+    test('a guest that never registered keeps its token', () async {
+      await service.initialize();
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+
+      expect(repo.deleteTokenCalls, 0);
+      expect(repo.registered, isEmpty);
+    });
+
+    test('signing in again registers the fresh token', () async {
+      await signIn();
+      await logOut();
+
+      repo.serverIdToReturn = 'dev-2';
+      service.onAuthChanged(loggedIn: true);
+      await service.registrationSettled;
+
+      expect(repo.registered, ['tok-1', 'tok-2']);
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-2');
     });
   });
 }

@@ -3718,6 +3718,30 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load notification settings.'**
   String get group_notifications_load_failed;
 
+  /// No description provided for @group_chat_mute_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute chat notifications'**
+  String get group_chat_mute_notifications;
+
+  /// No description provided for @group_chat_unmute_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute chat notifications'**
+  String get group_chat_unmute_notifications;
+
+  /// No description provided for @group_chat_notifications_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat notifications muted'**
+  String get group_chat_notifications_muted;
+
+  /// No description provided for @group_chat_notifications_unmuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat notifications on'**
+  String get group_chat_notifications_unmuted;
+
   /// No description provided for @group_leave.
   ///
   /// In en, this message translates to:
@@ -4849,12 +4873,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
   String group_chat_delete_failed(int count);
-
-  /// No description provided for @group_chat_message_deleted_toast.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Message deleted} other{Messages deleted}}'**
-  String group_chat_message_deleted_toast(int count);
 
   /// No description provided for @group_chat_selection_limit.
   ///

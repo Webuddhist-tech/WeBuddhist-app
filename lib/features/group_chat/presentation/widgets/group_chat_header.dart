@@ -20,18 +20,22 @@ class GroupChatHeader extends StatelessWidget {
     required this.isDark,
     required this.onBack,
     this.profile,
-    this.onOverflow,
+    this.trailing,
   });
 
   final bool isDark;
   final VoidCallback onBack;
   final GroupProfile? profile;
 
-  /// Notification toggle. Null keeps the button inert but present, so wiring
-  /// mute later needs no layout change.
-  final VoidCallback? onOverflow;
+  /// Right-hand action, the notification bell once membership is confirmed.
+  /// Null keeps an empty slot of the same width, so the title does not shift
+  /// when the bell arrives.
+  final Widget? trailing;
 
   static const double _avatarSize = 40;
+
+  /// Material's minimum tap target, the width an [IconButton] takes.
+  static const double _trailingSlot = kMinInteractiveDimension;
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +53,7 @@ class GroupChatHeader extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(child: _Identity(profile: group, isDark: isDark)),
           ],
-          IconButton(
-            icon: const Icon(AppAssets.bellSlash),
-            onPressed: onOverflow,
-          ),
+          trailing ?? const SizedBox(width: _trailingSlot),
         ],
       ),
     );

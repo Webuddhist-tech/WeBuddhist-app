@@ -1046,8 +1046,11 @@
       }
     }
   },
-  "group_chat_message_deleted_toast": "{count, plural, =1{訊息已刪除} other{訊息已刪除}}",
   "group_chat_selection_limit": "最多可選取 {count} 則訊息",
+  "group_chat_mute_notifications": "將聊天通知設為靜音",
+  "group_chat_unmute_notifications": "取消聊天通知靜音",
+  "group_chat_notifications_muted": "已將聊天通知設為靜音",
+  "group_chat_notifications_unmuted": "聊天通知已開啟",
   "group_chat_message_deleted_by_sender": "此訊息已刪除",
   "group_chat_reaction_failed": "無法儲存你的回應。",
   "group_chat_reactions_count": "{count, plural, =1{1 個回應} other{{count} 個回應}}",
