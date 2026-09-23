@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/texts/data/models/segment_type.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation.dart';
 import '../../domain/entities/segment.dart';
 
@@ -10,6 +11,9 @@ class Segment {
   /// The edition's own label for this segment, e.g. `1-12` or `I-1`.
   final String? reference;
 
+  /// What kind of segment this is; the reader styles some kinds differently.
+  final SegmentType type;
+
   /// Ids of this same line in the text's other languages, from `mappings`.
   /// Lets a live position published against one language land here.
   final List<String> mappedSegmentIds;
@@ -20,6 +24,7 @@ class Segment {
     this.content,
     this.translation,
     this.reference,
+    this.type = SegmentType.unknown,
     this.mappedSegmentIds = const [],
   });
 
@@ -35,6 +40,7 @@ class Segment {
       segmentNumber: json['segment_number'] as int,
       content: json['content'] as String?,
       reference: json['reference'] as String?,
+      type: SegmentType.fromApi(json['type'] as String?),
       translation:
           json['translation'] != null
               ? Translation.fromJson(
@@ -75,6 +81,7 @@ class Segment {
       'content': content ?? '',
       'translation': translation?.toJson(),
       if (reference != null) 'reference': reference,
+      if (type != SegmentType.unknown) 'type': type.apiName,
       if (mappedSegmentIds.isNotEmpty) 'mappings': mappedSegmentIds,
     };
   }

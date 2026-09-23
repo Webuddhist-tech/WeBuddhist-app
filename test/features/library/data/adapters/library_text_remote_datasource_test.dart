@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
+import 'package:flutter_pecha/features/texts/data/models/segment_type.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -83,6 +84,7 @@ void main() {
       expect(section.segments.map((s) => s.reference), ['1', '2', '3']);
       expect(section.segments.map((s) => s.displayNumber), ['1', '2', '3']);
       expect(section.segments.first.content, 'a&lt;b');
+      expect(section.segments.first.type, SegmentType.verse);
       expect(section.segments.first.translation, isNull);
     });
 

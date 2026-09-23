@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/texts/data/models/search/multilingual_sea
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_source_result.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
+import 'package:flutter_pecha/features/texts/data/models/segment_type.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
@@ -67,6 +68,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       segmentId: s.id,
       segmentNumber: s.number,
       reference: s.reference,
+      type: SegmentType.fromApi(s.type),
       content: isSecondary ? null : s.html,
       translation:
           isSecondary
