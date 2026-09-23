@@ -612,9 +612,23 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         _buildProfileHeader(profile, isDark, lineHeight, orderedLinks),
         const SizedBox(height: 20),
         _GroupFollowButton(profile: profile, isDark: isDark),
-        SizedBox(height: bottomSpacing),
+        SizedBox(
+          height:
+              _showsAdminJoinRequestsRow(profile) ? 8 : bottomSpacing,
+        ),
       ],
     );
+  }
+
+  bool _showsAdminJoinRequestsRow(GroupProfile profile) {
+    if (!profile.isPrivateCommunity || _isContentRestricted(profile)) {
+      return false;
+    }
+    return ref
+            .watch(groupMyPermissionProvider(profile.id))
+            .valueOrNull
+            ?.isGroupAdmin ??
+        false;
   }
 
   Widget _buildRestrictedMessage(
@@ -1456,7 +1470,7 @@ class _GroupFollowButton extends ConsumerWidget {
             isLoading,
           ),
           if (isAdmin) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             GroupJoinRequestsRow(groupId: profile.id, isDark: isDark),
           ],
         ],

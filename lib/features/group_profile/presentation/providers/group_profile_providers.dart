@@ -1073,9 +1073,12 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
 
   /// Approves [requestId] and drops it from the pending list.
   ///
-  /// Returns false when the request is already in flight or the server rejects it.
+  /// Returns false when a decision or the next page is already in flight, or
+  /// the server rejects it. Deciding while [loadMore] is in flight would
+  /// delete a row the captured `skip` still counts, and the page that lands
+  /// afterward would skip the request that slid into that gap.
   Future<bool> approve(String requestId) async {
-    if (state.isDeciding) return false;
+    if (state.isDeciding || state.isLoadingMore) return false;
     if (!state.requests.any((request) => request.id == requestId)) {
       return false;
     }
@@ -1108,9 +1111,10 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
 
   /// Rejects [requestId] and drops it from the pending list.
   ///
-  /// Returns false when a decision is already in flight or the server rejects it.
+  /// Returns false when a decision or the next page is already in flight, or
+  /// the server rejects it. See [approve] for why pagination must finish first.
   Future<bool> reject(String requestId) async {
-    if (state.isDeciding) return false;
+    if (state.isDeciding || state.isLoadingMore) return false;
     if (!state.requests.any((request) => request.id == requestId)) {
       return false;
     }

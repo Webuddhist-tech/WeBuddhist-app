@@ -44,6 +44,9 @@ class _GroupJoinRequestsScreenState
   }
 
   Future<void> _approve(String requestId) async {
+    final requests = ref.read(groupJoinRequestsProvider(widget.groupId));
+    if (requests.isLoadingMore || requests.isDeciding) return;
+
     final admitted = await ref
         .read(groupJoinRequestsProvider(widget.groupId).notifier)
         .approve(requestId);
@@ -65,6 +68,9 @@ class _GroupJoinRequestsScreenState
   }
 
   Future<void> _reject(String requestId) async {
+    final requests = ref.read(groupJoinRequestsProvider(widget.groupId));
+    if (requests.isLoadingMore || requests.isDeciding) return;
+
     final denied = await ref
         .read(groupJoinRequestsProvider(widget.groupId).notifier)
         .reject(requestId);
@@ -191,14 +197,14 @@ class _GroupJoinRequestsScreenState
           }
 
           final request = state.requests[index];
-          final isDeciding = state.isDeciding;
+          final canDecide = !state.isDeciding && !state.isLoadingMore;
           return _GroupJoinRequestTile(
             request: request,
             isDark: isDark,
             isApproving: state.approvingRequestId == request.id,
             isRejecting: state.rejectingRequestId == request.id,
-            onAdmit: isDeciding ? null : () => _approve(request.id),
-            onDeny: isDeciding ? null : () => _reject(request.id),
+            onAdmit: canDecide ? () => _approve(request.id) : null,
+            onDeny: canDecide ? () => _reject(request.id) : null,
           );
         },
       ),
