@@ -1,4 +1,3 @@
-import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/repositories/library_repository.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/my_recitation_collections_remote_datasource.dart';
@@ -7,7 +6,6 @@ import 'package:flutter_pecha/features/recitation/data/datasource/recitations_re
 import 'package:flutter_pecha/features/recitation/data/models/my_recitation_list_collection_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitations_page_response.dart';
-import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 
 /// Chant catalogue and search from the library API; the user's collections
 /// and saved chants still come from the main API.
@@ -23,12 +21,10 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
   final LibraryRepository _library;
   final MyRecitationCollectionsRemoteDatasource _collections;
   final String _tagId;
-  final _logger = AppLogger('LibraryRecitationsRemoteDatasource');
 
   static const int _defaultLimit = 20;
   static const int _maxLimit = 100;
   static const int _minTitleQueryLength = 2;
-  static const int _previewConcurrency = 6;
   static const int _collectionsPageSize = 20;
 
   /// `search` becomes the library title filter; `total` is synthesized from
@@ -66,14 +62,13 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
       hasMore = page.hasMore && page.items.isNotEmpty;
     }
 
-    final previews = await _previews(texts);
+    // No first-verse preview: it cost two more calls per chant.
     final recitations = [
-      for (var i = 0; i < texts.length; i++)
+      for (final text in texts)
         RecitationModel(
-          textId: texts[i].primaryEditionId!,
-          title: texts[i].displayTitle,
-          language: texts[i].language,
-          firstSegment: previews[i],
+          textId: text.primaryEditionId!,
+          title: text.displayTitle,
+          language: text.language,
         ),
     ];
     return RecitationsPageResponse(
@@ -83,43 +78,6 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
       limit: limit,
       total: skip + recitations.length + (hasMore ? 1 : 0),
     );
-  }
-
-  Future<List<RecitationFirstSegmentModel?>> _previews(
-    List<LibraryText> texts,
-  ) async {
-    final results = List<RecitationFirstSegmentModel?>.filled(
-      texts.length,
-      null,
-    );
-    for (var i = 0; i < texts.length; i += _previewConcurrency) {
-      final end =
-          i + _previewConcurrency > texts.length
-              ? texts.length
-              : i + _previewConcurrency;
-      final batch = await Future.wait([
-        for (var j = i; j < end; j++) _firstSegment(texts[j]),
-      ]);
-      results.setRange(i, end, batch);
-    }
-    return results;
-  }
-
-  // A preview that fails to load must not drop the chant from the list.
-  Future<RecitationFirstSegmentModel?> _firstSegment(LibraryText text) async {
-    final editionId = text.primaryEditionId;
-    if (editionId == null) return null;
-    try {
-      final segment = await _library.loadFirstSegment(editionId);
-      if (segment == null) return null;
-      return RecitationFirstSegmentModel(
-        id: segment.id,
-        content: segment.lines.join(kSegmentSoftBreak),
-      );
-    } catch (e) {
-      _logger.warning('First segment of ${text.id} failed', e);
-      return null;
-    }
   }
 
   Future<List<MyRecitationListCollectionModel>> _loadAllCollections() async {

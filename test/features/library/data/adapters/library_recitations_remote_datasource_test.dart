@@ -35,33 +35,6 @@ LibraryTestServer _server({List<Uri>? seen}) => LibraryTestServer({
       ], hasMore: true, limit: 20),
     );
   },
-  '/v2/editions/E1/segmentation/segments': (uri) {
-    expect(uri.queryParameters['limit'], '1');
-    return jsonBody(
-      pageJson([
-        segmentJson('s1', '1', [
-          [0, 3],
-          [3, 6],
-        ]),
-      ], hasMore: true, limit: 1),
-    );
-  },
-  '/v2/editions/E1/content': (uri) {
-    expect(uri.queryParameters['span_start'], '0');
-    expect(uri.queryParameters['span_end'], '6');
-    return jsonBody('abcdef');
-  },
-  '/v2/editions/E2/segmentation/segments':
-      (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
-  '/v2/editions/E3/segmentation/segments':
-      (_) => jsonBody(
-        pageJson([
-          segmentJson('t1', '1', [
-            [0, 2],
-          ]),
-        ], limit: 1),
-      ),
-  '/v2/editions/E3/content': (_) => jsonBody('xy'),
   '/users/me/recitation-collections': (uri) {
     final skip = uri.queryParameters['skip'];
     if (skip == '0') {
@@ -95,7 +68,8 @@ LibraryRecitationsRemoteDatasource _datasource(LibraryTestServer server) {
 void main() {
   test('maps library texts to recitations keyed by edition id', () async {
     final seen = <Uri>[];
-    final page = await _datasource(_server(seen: seen)).fetchRecitationsPage(
+    final server = _server(seen: seen);
+    final page = await _datasource(server).fetchRecitationsPage(
       queryParams: RecitationsQueryParams(language: 'en', skip: 0, limit: 20),
     );
 
@@ -105,14 +79,13 @@ void main() {
       'limit': '20',
       'offset': '0',
     });
+    // The list is one call: no per-chant preview fetches.
+    expect(server.requests.map((u) => u.path), ['/v2/texts']);
     // NOED has no edition, so it is not listed.
     expect(page.recitations.map((r) => r.textId), ['E1', 'E2']);
     expect(page.recitations.first.title, 'Title T1');
     expect(page.recitations.first.language, 'en');
-    expect(page.recitations.first.firstSegment?.id, 's1');
-    expect(page.recitations.first.firstSegment?.content, 'abc⤵def');
-    // A failing preview still lists the chant.
-    expect(page.recitations[1].firstSegment, isNull);
+    expect(page.recitations.first.firstSegment, isNull);
     expect(page.collections, isEmpty);
     expect(page.skip, 0);
     expect(page.hasMore, isTrue);
@@ -129,7 +102,6 @@ void main() {
     );
 
     expect(page.recitations.map((r) => r.textId), ['E3']);
-    expect(page.recitations.single.firstSegment?.content, 'xy');
     expect(page.hasMore, isFalse);
     expect(page.collections, hasLength(21));
     expect(page.collections.last.collectionId, 'c20');

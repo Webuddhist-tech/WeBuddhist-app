@@ -29,7 +29,6 @@ class LibraryRepository {
   final Map<String, Future<List<LibrarySegment>>> _segments = {};
   final Map<String, Future<List<LibraryText>>> _families = {};
   final Map<String, Future<LibrarySegmentResources>> _resources = {};
-  final Map<String, Future<LibraryReaderSegment?>> _firstSegments = {};
   final Map<String, Future<LibraryEdition>> _resolvedEditions = {};
   final Map<String, Future<List<LibraryTocSection>>> _tocs = {};
   Future<Map<String, String>>? _languageNames;
@@ -48,41 +47,6 @@ class LibraryRepository {
       limit: limit,
       offset: offset,
     );
-  }
-
-  /// The first verse of [editionId], for list previews; null when empty.
-  Future<LibraryReaderSegment?> loadFirstSegment(String editionId) {
-    return _memo(_firstSegments, editionId, () async {
-      final page = await _datasource.fetchEditionSegments(
-        editionId,
-        limit: 1,
-        offset: 0,
-      );
-      LibrarySegment? first;
-      for (final segment in page.items) {
-        if (segment.lines.isNotEmpty) {
-          first = segment;
-          break;
-        }
-      }
-      if (first == null) return null;
-
-      final spanStart = first.spanStart!;
-      final content = await _datasource.fetchEditionContent(
-        editionId,
-        spanStart: spanStart,
-        spanEnd: first.spanEnd!,
-      );
-      return LibraryReaderSegment(
-        id: first.id,
-        reference: first.reference,
-        type: first.type,
-        number: 1,
-        lines: sliceLibraryLines(content, first.lines, spanStart: spanStart),
-        spanStart: spanStart,
-        spanEnd: first.spanEnd!,
-      );
-    });
   }
 
   Future<LibraryText> getText(String textId) =>
