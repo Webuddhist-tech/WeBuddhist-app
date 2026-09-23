@@ -14,6 +14,13 @@ class SeriesRepository implements SeriesRepositoryInterface {
 
   SeriesRepository({required this.remote, required this.local});
 
+  /// Series the server has answered 404 for, keyed by "language|id".
+  ///
+  /// Detail fetches run with `no_cache`, and a stale enrollment can name a
+  /// series that no longer exists, so without this every rebuild of a screen
+  /// that resolves enrolled series re-requests a known-dead id.
+  final Set<String> _missingSeriesIds = <String>{};
+
   @override
   Future<Either<Failure, List<Series>>> getFeaturedSeries({
     required String language,
@@ -21,7 +28,9 @@ class SeriesRepository implements SeriesRepositoryInterface {
   }) async {
     final cached = local.readFeaturedSeries(language, limit);
     if (cached != null) {
-      unawaited(_refreshFeaturedSeries(language: language, limit: limit));
+      _refreshInBackground(
+        () => _refreshFeaturedSeries(language: language, limit: limit),
+      );
       return Right(cached.map((m) => m.toEntity(language: language)).toList());
     }
 
@@ -61,7 +70,7 @@ class SeriesRepository implements SeriesRepositoryInterface {
   }) async {
     final cached = local.readSeriesList(language);
     if (cached != null) {
-      unawaited(_refreshSeriesList(language: language));
+      _refreshInBackground(() => _refreshSeriesList(language: language));
       return Right(cached.map((m) => m.toEntity(language: language)).toList());
     }
 
@@ -100,7 +109,7 @@ class SeriesRepository implements SeriesRepositoryInterface {
     if (cached != null) {
       final entity = cached.toEntity(language: language);
       if (!entity.isPlansPayloadPending) {
-        unawaited(_refreshSeriesById(id, language: language));
+        _refreshInBackground(() => _refreshSeriesById(id, language: language));
         return Right(entity);
       }
     }
@@ -140,8 +149,7 @@ class SeriesRepository implements SeriesRepositoryInterface {
     required String failureMessage,
   }) async* {
     final cached = read();
-    final hasDisplayableCache =
-        cached != null && !cached.isPlansPayloadPending;
+    final hasDisplayableCache = cached != null && !cached.isPlansPayloadPending;
     if (hasDisplayableCache) yield Right(cached);
 
     try {
@@ -189,7 +197,7 @@ class SeriesRepository implements SeriesRepositoryInterface {
 
     final cached = local.readEnrollments(userId);
     if (cached != null) {
-      unawaited(_refreshUserSeriesEnrollments(userId));
+      _refreshInBackground(() => _refreshUserSeriesEnrollments(userId));
       return Right(cached);
     }
 
@@ -253,8 +261,17 @@ class SeriesRepository implements SeriesRepositoryInterface {
   }
 
   Future<void> _refreshSeriesById(String id, {required String language}) async {
-    final model = await remote.fetchSeriesById(id, language: language);
-    await local.saveSeriesById(language, model);
+    final missingKey = '$language|$id';
+    if (_missingSeriesIds.contains(missingKey)) {
+      throw NotFoundException('Series with id \'$id\' not found');
+    }
+    try {
+      final model = await remote.fetchSeriesById(id, language: language);
+      await local.saveSeriesById(language, model);
+    } on NotFoundException {
+      _missingSeriesIds.add(missingKey);
+      rethrow;
+    }
   }
 
   Future<void> _refreshUserSeriesEnrollments(String userId) async {
@@ -301,6 +318,13 @@ class SeriesRepository implements SeriesRepositoryInterface {
       refresh: refresh,
       failureMessage: failureMessage,
     );
+  }
+
+  /// Cache-warming refresh whose result nobody awaits. Errors are dropped on
+  /// purpose: the caller already returned cached data, and letting them escape
+  /// would surface an uncaught async error in the zone.
+  void _refreshInBackground(Future<void> Function() refresh) {
+    unawaited(refresh().catchError((Object _) {}));
   }
 
   Failure _toFailure(Object error, String fallback) {

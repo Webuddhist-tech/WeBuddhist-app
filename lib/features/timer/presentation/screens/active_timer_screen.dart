@@ -371,9 +371,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     final timerId = widget.presetTimer.id;
     if (timerId.isEmpty) return null;
 
-    final result = await ref
-        .read(timersDomainRepositoryProvider)
-        .getPresetTimers();
+    final result =
+        await ref.read(timersDomainRepositoryProvider).getPresetTimers();
     return result.fold((_) => null, (timers) {
       for (final timer in timers) {
         if (timer.id != timerId) continue;
@@ -528,6 +527,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   void _finish() {
     _timer?.cancel();
     unawaited(_keepAlive.stop());
+    unawaited(_ambientPlayer.stop());
     if (_phase == _TimerPhase.running) {
       _reportTimerStop();
     }
@@ -538,6 +538,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   void _discardSession() {
     _timer?.cancel();
     unawaited(_keepAlive.stop());
+    unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     context.pop();
   }
