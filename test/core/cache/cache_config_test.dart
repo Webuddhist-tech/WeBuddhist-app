@@ -11,13 +11,13 @@ void main() {
         direction: 'next',
         language: 'bo',
       );
-      expect(key, 'text_details_v2_t1_default_v1_s1_next_bo');
+      expect(key, 'text_details_v3_t1_default_v1_s1_next_bo');
     });
 
     test('keeps the legacy key shape for default-sized fetches', () {
       // Entries cached before `size` existed must still resolve.
       final before = CacheKeys.textDetails(textId: 't1');
-      expect(before, 'text_details_v2_t1_default_default_start_next_default');
+      expect(before, 'text_details_v3_t1_default_default_start_next_default');
     });
 
     test('appends the size so a plan window does not collide with a page', () {

@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/library/data/models/library_reader_models
 import 'package:flutter_pecha/features/library/data/models/library_search_result.dart';
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
+import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
 import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
 
 /// Composes the library API calls into what the reader and chant list need.
@@ -30,6 +31,7 @@ class LibraryRepository {
   final Map<String, Future<LibrarySegmentResources>> _resources = {};
   final Map<String, Future<LibraryReaderSegment?>> _firstSegments = {};
   final Map<String, Future<LibraryEdition>> _resolvedEditions = {};
+  final Map<String, Future<List<LibraryTocSection>>> _tocs = {};
   Future<Map<String, String>>? _languageNames;
 
   Future<LibraryTextPage> fetchChants({
@@ -77,6 +79,8 @@ class LibraryRepository {
         type: first.type,
         number: 1,
         lines: sliceLibraryLines(content, first.lines, spanStart: spanStart),
+        spanStart: spanStart,
+        spanEnd: first.spanEnd!,
       );
     });
   }
@@ -152,6 +156,23 @@ class LibraryRepository {
         ),
       );
       return all.where((s) => s.lines.isNotEmpty).toList(growable: false);
+    });
+  }
+
+  /// Headings of [editionId]'s table of contents; empty when it has none.
+  Future<List<LibraryTocSection>> getTableOfContents(String editionId) {
+    return _memo(_tocs, editionId, () async {
+      final List<LibraryTableOfContents> tocs;
+      try {
+        tocs = await _datasource.fetchTableOfContents(editionId);
+      } catch (e) {
+        if (_isNotFound(e)) return const [];
+        rethrow;
+      }
+      for (final toc in tocs) {
+        if (toc.sections.isNotEmpty) return toc.sections;
+      }
+      return const [];
     });
   }
 
@@ -234,6 +255,8 @@ class LibraryRepository {
               segments[i].lines,
               spanStart: spanStart,
             ),
+            spanStart: segments[i].spanStart!,
+            spanEnd: segments[i].spanEnd!,
           ),
       ],
       currentPosition: start + 1,

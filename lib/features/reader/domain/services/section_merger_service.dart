@@ -57,6 +57,7 @@ class SectionMergerService {
 
       // Filter out items that already exist
       final newItems = <FlattenedItem>[];
+      final movedHeaderIds = <String>{};
       for (final item in newFlattened.items) {
         if (item.isSegment) {
           // Only add segment if it doesn't already exist
@@ -64,14 +65,19 @@ class SectionMergerService {
             newItems.add(item);
           }
         } else if (item.isHeader) {
-          // Only add header if the section doesn't already exist
-          if (!existingSectionIds.contains(item.section!.id)) {
+          final sectionId = item.section!.id;
+          if (!existingSectionIds.contains(sectionId)) {
+            newItems.add(item);
+          } else if (direction == PaginationDirection.previous) {
+            // The earlier page holds this section's first lines, so its
+            // header moves up with them.
+            movedHeaderIds.add(sectionId);
             newItems.add(item);
           }
         }
       }
 
-      if (newItems.isEmpty) {
+      if (!newItems.any((item) => item.isSegment)) {
         _logger.debug('No new items to merge (all duplicates)');
         return existing;
       }
@@ -79,8 +85,12 @@ class SectionMergerService {
       // Merge based on direction
       final List<FlattenedItem> mergedItems;
       if (direction == PaginationDirection.previous) {
+        final kept = existing.items.where(
+          (item) =>
+              !item.isHeader || !movedHeaderIds.contains(item.section!.id),
+        );
         // Prepend new items to existing
-        mergedItems = [...newItems, ...existing.items];
+        mergedItems = [...newItems, ...kept];
       } else {
         // Append new items to existing
         mergedItems = [...existing.items, ...newItems];

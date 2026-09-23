@@ -14,12 +14,15 @@ String libraryLinesToHtml(List<String> lines) {
 }
 
 /// A segment with its lines cut from the content and its reader number.
+/// [spanStart] and [spanEnd] place it in the edition for the table of contents.
 class LibraryReaderSegment {
   final String id;
   final String reference;
   final String type;
   final int number;
   final List<String> lines;
+  final int spanStart;
+  final int spanEnd;
 
   const LibraryReaderSegment({
     required this.id,
@@ -27,6 +30,8 @@ class LibraryReaderSegment {
     required this.type,
     required this.number,
     required this.lines,
+    required this.spanStart,
+    required this.spanEnd,
   });
 
   String get html => libraryLinesToHtml(lines);

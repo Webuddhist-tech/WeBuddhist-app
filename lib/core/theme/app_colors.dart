@@ -167,6 +167,11 @@ class AppColors {
   static const Color liveSegmentHighlight = Color(0x17DC8600);
   static const Color liveSegmentHighlightDark = Color(0x26FDAE33);
 
+  // ============ Reader headings ============
+  /// Table-of-contents titles: deep blue on the page, lighter on black.
+  static const Color readerSectionTitle = Color(0xFF18336B);
+  static const Color readerSectionTitleDark = Color(0xFF8CB5F8);
+
   // ============ Design System Reference ============
   // Figma file: 0TE5qdViUvrisFZfNqODpX/WeBuddhist-App
   // Design system: Monlam Colors

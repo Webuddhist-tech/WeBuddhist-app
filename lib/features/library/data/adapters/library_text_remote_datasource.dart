@@ -1,6 +1,10 @@
+import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
 import 'package:flutter_pecha/features/library/data/models/library_search_result.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
+import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
 import 'package:flutter_pecha/features/library/data/repositories/library_repository.dart';
+import 'package:flutter_pecha/features/library/domain/library_toc_sections.dart';
 import 'package:flutter_pecha/features/texts/constants/text_details_constants.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
@@ -19,6 +23,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
     : _library = library;
 
   final LibraryRepository _library;
+  final _logger = AppLogger('LibraryTextRemoteDatasource');
 
   static const int _searchLimit = 50;
 
@@ -38,6 +43,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
         versionId != null && versionId.isNotEmpty && versionId != textId;
     final loadId = isSecondary ? versionId : textId;
     final edition = await _library.resolveEdition(loadId);
+    final tocFuture = _tableOfContents(edition.id);
     final text = await _library.getText(edition.textId);
     // The parallel reader's first anchor is a primary segment id.
     final anchorEdition =
@@ -55,38 +61,46 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       size: pageSize,
     );
 
-    final segments = [
-      for (final s in window.segments)
-        Segment(
-          segmentId: s.id,
-          segmentNumber: s.number,
-          reference: s.reference,
-          content: isSecondary ? null : s.html,
-          translation:
-              isSecondary
-                  ? Translation(
-                    textId: loadId,
-                    language: text.language,
-                    content: s.html,
-                  )
-                  : null,
-        ),
-    ];
+    final toc = await tocFuture;
+
+    Segment toSegment(LibraryReaderSegment s) => Segment(
+      segmentId: s.id,
+      segmentNumber: s.number,
+      reference: s.reference,
+      content: isSecondary ? null : s.html,
+      translation:
+          isSecondary
+              ? Translation(
+                textId: loadId,
+                language: text.language,
+                content: s.html,
+              )
+              : null,
+    );
+
+    final sections =
+        toc.isEmpty
+            ? [
+              Section(
+                id: edition.id,
+                sectionNumber: 1,
+                segments: window.segments
+                    .map(toSegment)
+                    .toList(growable: false),
+                sections: const [],
+              ),
+            ]
+            : buildTocSections(
+              toc: toc,
+              segments: window.segments,
+              toSegment: toSegment,
+              language: text.language,
+              rootId: edition.id,
+            );
 
     return ReaderResponse(
       textDetail: _textDetail(text, id: loadId, sourceLink: edition.source),
-      content: Toc(
-        id: edition.id,
-        textId: edition.textId,
-        sections: [
-          Section(
-            id: edition.id,
-            sectionNumber: 1,
-            segments: segments,
-            sections: const [],
-          ),
-        ],
-      ),
+      content: Toc(id: edition.id, textId: edition.textId, sections: sections),
       size: pageSize,
       paginationDirection: pageDirection,
       currentSegmentPosition: window.currentPosition,
@@ -150,6 +164,16 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       limit: _searchLimit,
       total: sources.length,
     );
+  }
+
+  /// The text still opens when its table of contents cannot be fetched.
+  Future<List<LibraryTocSection>> _tableOfContents(String editionId) async {
+    try {
+      return await _library.getTableOfContents(editionId);
+    } catch (e) {
+      _logger.warning('Table of contents for $editionId failed', e);
+      return const [];
+    }
   }
 
   static TextDetail _textDetail(

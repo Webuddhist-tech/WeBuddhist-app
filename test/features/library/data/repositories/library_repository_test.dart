@@ -23,6 +23,45 @@ LibrarySegment _relatedSegment(List<List<int>> lines) => LibrarySegment(
 );
 
 void main() {
+  group('LibraryRepository.getTableOfContents', () {
+    test('returns the first non-empty table once per edition', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/table-of-contents':
+            (_) => jsonBody([
+              {'id': 'empty', 'edition_id': 'e1', 'sections': []},
+              {
+                'id': 'toc',
+                'edition_id': 'e1',
+                'sections': [
+                  {
+                    'id': 'h1',
+                    'title': {'en': 'One'},
+                    'span': {'start': 0, 'end': 9},
+                  },
+                ],
+              },
+            ]),
+      });
+      final repository = server.repository();
+
+      final toc = await repository.getTableOfContents('e1');
+      await repository.getTableOfContents('e1');
+
+      expect(toc.single.id, 'h1');
+      expect(server.count('/v2/editions/e1/table-of-contents'), 1);
+    });
+
+    test('an empty list or a missing table is no headings', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/table-of-contents': (_) => jsonBody([]),
+      });
+      final repository = server.repository();
+
+      expect(await repository.getTableOfContents('e1'), isEmpty);
+      expect(await repository.getTableOfContents('gone'), isEmpty);
+    });
+  });
+
   group('LibraryRepository.getEditionSegments', () {
     test('walks every page and drops segments without lines', () async {
       final server = LibraryTestServer({

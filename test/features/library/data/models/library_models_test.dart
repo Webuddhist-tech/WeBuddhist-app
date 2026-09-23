@@ -2,6 +2,7 @@ import 'package:flutter_pecha/features/library/data/models/library_edition.dart'
 import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
+import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const Map<String, dynamic> _textJson = {
@@ -159,8 +160,60 @@ void main() {
         type: 'verse',
         number: 1,
         lines: ['one', 'two'],
+        spanStart: 0,
+        spanEnd: 7,
       );
       expect(segment.html, 'one<br>two');
+    });
+  });
+
+  group('LibraryTableOfContents', () {
+    test('parses nested headings with their spans', () {
+      final toc = LibraryTableOfContents.fromJson({
+        'id': 'Lkvj4CoCjpiOmJPsWd5Ls',
+        'edition_id': 'BtqPpZvVCamzWXhjObYka',
+        'text_id': 'W5o6Tyq3hhQDxhmvdoS7B',
+        'sections': [
+          {
+            'id': '3DCy0SjQWuUsdyMcjvANE',
+            'title': {'en': 'Praises to the Twenty-One Tārās'},
+            'span': {'start': 0, 'end': 5048},
+            'subsections': [
+              {
+                'id': '39KdL1g4CwJD0ughZAPbm',
+                'title': {'en': 'Meaning of the Title'},
+                'span': {'start': 0, 'end': 197},
+                'subsections': [],
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(toc.editionId, 'BtqPpZvVCamzWXhjObYka');
+      final top = toc.sections.single;
+      expect(top.titleFor('en'), 'Praises to the Twenty-One Tārās');
+      expect(top.spanStart, 0);
+      expect(top.spanEnd, 5048);
+      final sub = top.subsections.single;
+      expect(sub.id, '39KdL1g4CwJD0ughZAPbm');
+      expect(sub.contains(196), isTrue);
+      expect(sub.contains(197), isFalse);
+      expect(sub.subsections, isEmpty);
+    });
+
+    test('titles fall back to any language and tolerate missing fields', () {
+      final section = LibraryTocSection.fromJson({
+        'id': 'x',
+        'title': {'bo': 'ཀ', 'en': ''},
+      });
+      expect(section.titleFor('en'), 'ཀ');
+      expect(section.spanStart, 0);
+      expect(section.spanEnd, 0);
+      expect(
+        LibraryTocSection.fromJson({'id': 'y', 'title': {}}).titleFor('en'),
+        isNull,
+      );
     });
   });
 }

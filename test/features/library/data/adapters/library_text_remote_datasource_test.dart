@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../library_test_server.dart';
@@ -159,6 +161,88 @@ void main() {
         () => ds.fetchTextDetails(textId: 'NOED'),
         throwsA(isA<NotFoundException>()),
       );
+    });
+  });
+
+  group('LibraryTextRemoteDatasource table of contents', () {
+    LibraryTestServer withToc(ResponseBody Function(Uri uri) toc) =>
+        LibraryTestServer({
+          ..._server().routes,
+          '/v2/editions/E1/table-of-contents': toc,
+        });
+
+    test('nests the page under the headings that span it', () async {
+      final server = withToc(
+        (_) => jsonBody([
+          {
+            'id': 'toc',
+            'edition_id': 'E1',
+            'text_id': 'T1',
+            'sections': [
+              {
+                'id': 'top',
+                'title': {'en': 'Top'},
+                'span': {'start': 0, 'end': 9},
+                'subsections': [
+                  {
+                    'id': 'one',
+                    'title': {'en': 'One'},
+                    'span': {'start': 0, 'end': 3},
+                  },
+                  {
+                    'id': 'two',
+                    'title': {'en': 'Two'},
+                    'span': {'start': 3, 'end': 9},
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+      );
+
+      final ds = _datasource(server);
+      final response = await ds.fetchTextDetails(textId: 'E1');
+
+      final top = response.content.sections.single;
+      expect(top.id, 'top');
+      expect(top.title, 'Top');
+      expect(top.segments, isEmpty);
+      final children = top.sections!;
+      expect(children.map((s) => s.title), ['One', 'Two']);
+      expect(children[0].segments.map((s) => s.segmentId), ['s1']);
+      expect(children[1].segments.map((s) => s.segmentId), ['s2', 's3']);
+      expect(children[1].segments.first.content, '&amp;cd');
+
+      // The reader cache stores pages as JSON; headings must survive it.
+      final cached = ReaderResponse.fromJson(response.toJson());
+      final cachedTop = cached.content.sections.single;
+      expect(cachedTop.title, 'Top');
+      expect(cachedTop.sections!.map((s) => s.title), ['One', 'Two']);
+      expect(cachedTop.sections![1].parentId, 'top');
+
+      final page = await ds.fetchTextDetails(
+        textId: 'E1',
+        segmentId: 's3',
+        size: 1,
+      );
+      expect(page.content.sections.single.sections!.single.id, 'two');
+      expect(server.count('/v2/editions/E1/table-of-contents'), 1);
+    });
+
+    test('the text still opens when the table fails', () async {
+      final server = withToc(
+        (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
+      );
+
+      final response = await _datasource(server).fetchTextDetails(
+        textId: 'E1',
+      );
+
+      final section = response.content.sections.single;
+      expect(section.id, 'E1');
+      expect(section.title, isNull);
+      expect(section.segments.map((s) => s.segmentId), ['s1', 's2', 's3']);
     });
   });
 
