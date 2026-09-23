@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/connect/presentation/providers/connect_pr
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_profile_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_profile/data/repositories/group_profile_repository_impl.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_request.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_member.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
@@ -966,6 +967,253 @@ final groupMembersProvider = StateNotifierProvider.autoDispose
         repository: ref.watch(groupProfileRepositoryProvider),
         groupId: groupId,
       );
+    });
+
+class GroupJoinRequestsState {
+  final List<GroupJoinRequest> requests;
+  final int total;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final String? error;
+  final bool hasMore;
+  final int skip;
+  final String? approvingRequestId;
+  final String? rejectingRequestId;
+
+  const GroupJoinRequestsState({
+    this.requests = const [],
+    this.total = 0,
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.error,
+    this.hasMore = true,
+    this.skip = 0,
+    this.approvingRequestId,
+    this.rejectingRequestId,
+  });
+
+  bool get isDeciding =>
+      approvingRequestId != null || rejectingRequestId != null;
+
+  GroupJoinRequestsState copyWith({
+    List<GroupJoinRequest>? requests,
+    int? total,
+    bool? isLoading,
+    bool? isLoadingMore,
+    String? error,
+    bool? hasMore,
+    int? skip,
+    String? approvingRequestId,
+    String? rejectingRequestId,
+    bool clearError = false,
+    bool clearApproving = false,
+    bool clearRejecting = false,
+  }) {
+    return GroupJoinRequestsState(
+      requests: requests ?? this.requests,
+      total: total ?? this.total,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      error: clearError ? null : error ?? this.error,
+      hasMore: hasMore ?? this.hasMore,
+      skip: skip ?? this.skip,
+      approvingRequestId:
+          clearApproving ? null : approvingRequestId ?? this.approvingRequestId,
+      rejectingRequestId:
+          clearRejecting ? null : rejectingRequestId ?? this.rejectingRequestId,
+    );
+  }
+}
+
+class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
+  GroupJoinRequestsNotifier({
+    required GroupProfileRepositoryInterface repository,
+    required String groupId,
+  }) : _repository = repository,
+       _groupId = groupId,
+       super(const GroupJoinRequestsState());
+
+  final GroupProfileRepositoryInterface _repository;
+  final String _groupId;
+  static const int _limit = 20;
+  int _requestGeneration = 0;
+
+  Future<void> loadInitial() async {
+    if (state.isLoading || state.isLoadingMore || state.isDeciding) {
+      return;
+    }
+
+    final generation = ++_requestGeneration;
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    final result = await _repository.getGroupJoinRequests(
+      _groupId,
+      skip: 0,
+      limit: _limit,
+    );
+
+    if (!mounted || generation != _requestGeneration) return;
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, error: failure.message);
+      },
+      (page) {
+        state = state.copyWith(
+          requests: page.requests,
+          total: page.total,
+          isLoading: false,
+          hasMore: page.hasMore,
+          skip: page.requests.length,
+          clearError: true,
+        );
+      },
+    );
+  }
+
+  /// Approves [requestId] and drops it from the pending list.
+  ///
+  /// Returns false when the request is already in flight or the server rejects it.
+  Future<bool> approve(String requestId) async {
+    if (state.isDeciding) return false;
+    if (!state.requests.any((request) => request.id == requestId)) {
+      return false;
+    }
+
+    state = state.copyWith(approvingRequestId: requestId, clearError: true);
+
+    final result = await _repository.approveGroupJoinRequest(
+      _groupId,
+      requestId: requestId,
+    );
+
+    if (!mounted) return false;
+
+    return result.fold(
+      (_) {
+        state = state.copyWith(clearApproving: true);
+        return false;
+      },
+      (decision) {
+        if (decision.status != GroupJoinRequestStatus.approved) {
+          state = state.copyWith(clearApproving: true);
+          return false;
+        }
+
+        _dropRequest(requestId);
+        return true;
+      },
+    );
+  }
+
+  /// Rejects [requestId] and drops it from the pending list.
+  ///
+  /// Returns false when a decision is already in flight or the server rejects it.
+  Future<bool> reject(String requestId) async {
+    if (state.isDeciding) return false;
+    if (!state.requests.any((request) => request.id == requestId)) {
+      return false;
+    }
+
+    state = state.copyWith(rejectingRequestId: requestId, clearError: true);
+
+    final result = await _repository.rejectGroupJoinRequest(
+      _groupId,
+      requestId: requestId,
+    );
+
+    if (!mounted) return false;
+
+    return result.fold(
+      (_) {
+        state = state.copyWith(clearRejecting: true);
+        return false;
+      },
+      (decision) {
+        if (decision.status != GroupJoinRequestStatus.rejected) {
+          state = state.copyWith(clearRejecting: true);
+          return false;
+        }
+
+        _dropRequest(requestId);
+        return true;
+      },
+    );
+  }
+
+  void _dropRequest(String requestId) {
+    final remaining = [
+      for (final request in state.requests)
+        if (request.id != requestId) request,
+    ];
+    final nextTotal = state.total > 0 ? state.total - 1 : 0;
+    state = state.copyWith(
+      requests: remaining,
+      total: nextTotal,
+      skip: remaining.length,
+      hasMore: remaining.length < nextTotal,
+      clearApproving: true,
+      clearRejecting: true,
+      clearError: true,
+    );
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        state.isDeciding) {
+      return;
+    }
+
+    final generation = _requestGeneration;
+    state = state.copyWith(isLoadingMore: true, clearError: true);
+
+    final result = await _repository.getGroupJoinRequests(
+      _groupId,
+      skip: state.skip,
+      limit: _limit,
+    );
+
+    if (!mounted || generation != _requestGeneration) return;
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(isLoadingMore: false, error: failure.message);
+      },
+      (page) {
+        state = state.copyWith(
+          requests: [...state.requests, ...page.requests],
+          total: page.total,
+          isLoadingMore: false,
+          hasMore: page.hasMore,
+          skip: state.skip + page.requests.length,
+          clearError: true,
+        );
+      },
+    );
+  }
+
+  void retry() {
+    if (state.requests.isEmpty) {
+      loadInitial();
+    } else {
+      loadMore();
+    }
+  }
+}
+
+final groupJoinRequestsProvider = StateNotifierProvider.autoDispose
+    .family<GroupJoinRequestsNotifier, GroupJoinRequestsState, String>((
+      ref,
+      groupId,
+    ) {
+      final notifier = GroupJoinRequestsNotifier(
+        repository: ref.watch(groupProfileRepositoryProvider),
+        groupId: groupId,
+      );
+      notifier.loadInitial();
+      return notifier;
     });
 
 final groupEventsProvider = FutureProvider.autoDispose

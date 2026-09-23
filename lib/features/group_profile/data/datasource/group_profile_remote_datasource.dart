@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_join_request_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_member_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_notification_preferences_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
@@ -547,6 +548,111 @@ class GroupProfileRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in leaveGroupEvent', e);
       throw _dioToException(e, 'Failed to leave event');
+    }
+  }
+
+  /// `GET /cms/author/groups/{groupId}/join-requests`.
+  ///
+  /// Admin-only. [status] defaults to pending.
+  Future<GroupJoinRequestsPageModel> fetchGroupJoinRequests(
+    String groupId, {
+    GroupJoinRequestStatus status = GroupJoinRequestStatus.pending,
+    required int skip,
+    required int limit,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/cms/author/groups/$groupId/join-requests',
+        queryParameters: {
+          'status': status.apiValue,
+          'skip': skip,
+          'limit': limit,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode == 200) {
+        return GroupJoinRequestsPageModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error(
+        'Failed to load join requests $groupId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to load join requests',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchGroupJoinRequests', e);
+      throw _dioToException(e, 'Failed to load join requests');
+    }
+  }
+
+  /// `POST /cms/author/groups/{groupId}/join-requests/{requestId}/approve`.
+  Future<GroupJoinRequestDecisionModel> approveGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/cms/author/groups/$groupId/join-requests/$requestId/approve',
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        if (data is! Map) {
+          throw const ServerException('Failed to approve join request');
+        }
+        return GroupJoinRequestDecisionModel.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+      }
+
+      _logger.error(
+        'Failed to approve join request $requestId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to approve join request',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in approveGroupJoinRequest', e);
+      throw _dioToException(e, 'Failed to approve join request');
+    }
+  }
+
+  /// `POST /cms/author/groups/{groupId}/join-requests/{requestId}/reject`.
+  Future<GroupJoinRequestDecisionModel> rejectGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/cms/author/groups/$groupId/join-requests/$requestId/reject',
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        if (data is! Map) {
+          throw const ServerException('Failed to reject join request');
+        }
+        return GroupJoinRequestDecisionModel.fromJson(
+          Map<String, dynamic>.from(data),
+        );
+      }
+
+      _logger.error(
+        'Failed to reject join request $requestId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to reject join request',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in rejectGroupJoinRequest', e);
+      throw _dioToException(e, 'Failed to reject join request');
     }
   }
 

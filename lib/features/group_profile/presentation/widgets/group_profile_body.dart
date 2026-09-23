@@ -1457,7 +1457,7 @@ class _GroupFollowButton extends ConsumerWidget {
           ),
           if (isAdmin) ...[
             const SizedBox(height: 12),
-            GroupJoinRequestsRow(isDark: isDark),
+            GroupJoinRequestsRow(groupId: profile.id, isDark: isDark),
           ],
         ],
       );
