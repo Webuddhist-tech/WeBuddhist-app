@@ -1,14 +1,13 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/recitations_repository.dart';
-import '../../data/datasource/recitations_remote_datasource.dart';
 import '../../data/models/recitation_model.dart';
 import '../../data/models/recitation_content_model.dart';
 import 'recitation_search_provider.dart';
+import 'recitations_datasource_provider.dart';
 
 // Params class for recitation content
 class RecitationContentParams {
@@ -54,9 +53,7 @@ class RecitationContentParams {
 // Repository provider
 final recitationsRepositoryProvider = Provider<RecitationsRepository>((ref) {
   return RecitationsRepository(
-    recitationsRemoteDatasource: RecitationsRemoteDatasource(
-      dio: ref.watch(dioProvider),
-    ),
+    recitationsRemoteDatasource: ref.watch(recitationsRemoteDatasourceProvider),
   );
 });
 

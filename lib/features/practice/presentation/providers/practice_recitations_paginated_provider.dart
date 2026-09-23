@@ -1,5 +1,4 @@
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -8,6 +7,7 @@ import 'package:flutter_pecha/features/recitation/data/datasource/recitations_re
 import 'package:flutter_pecha/features/recitation/data/models/my_recitation_list_collection_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_search_provider.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_datasource_provider.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -251,9 +251,10 @@ final practiceRecitationsPaginatedProvider = StateNotifierProvider.autoDispose
 
       // Defer the first fetch until auth is ready so a logged-in session
       // attaches Bearer + should_include_collections on the first request.
+      final datasource = ref.watch(recitationsRemoteDatasourceProvider);
       if (isAuthLoading) {
         return PracticeRecitationsNotifier(
-          datasource: RecitationsRemoteDatasource(dio: ref.watch(dioProvider)),
+          datasource: datasource,
           languageCode: languageCode,
           includeCollections: false,
           deferLoad: true,
@@ -261,7 +262,7 @@ final practiceRecitationsPaginatedProvider = StateNotifierProvider.autoDispose
       }
 
       return PracticeRecitationsNotifier(
-        datasource: RecitationsRemoteDatasource(dio: ref.watch(dioProvider)),
+        datasource: datasource,
         languageCode: languageCode,
         includeCollections: isLoggedIn && !isGuest,
       );

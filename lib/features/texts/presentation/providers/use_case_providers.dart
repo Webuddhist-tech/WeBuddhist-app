@@ -1,10 +1,10 @@
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/features/library/data/adapters/library_segment_repository.dart';
+import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
+import 'package:flutter_pecha/features/library/presentation/providers/library_providers.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/collections_remote_datasource.dart';
-import 'package:flutter_pecha/features/texts/data/datasource/segment_remote_datasource.dart';
-import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_detail_with_text.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/collections_repository.dart';
-import 'package:flutter_pecha/features/texts/data/repositories/segment_repository.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/texts_repository.dart';
 import 'package:flutter_pecha/features/texts/domain/repositories/collections_repository.dart';
 import 'package:flutter_pecha/features/texts/domain/repositories/segment_repository.dart';
@@ -17,10 +17,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ========== Repository Providers ==========
 
 /// Provider for the TextsRepository (data layer implementation).
+/// Reader details and in-text search come from the library API.
 final textsRepositoryProvider = Provider<TextsRepository>((ref) {
   return TextsRepository(
-    remoteDatasource: TextRemoteDatasource(
+    remoteDatasource: LibraryTextRemoteDatasource(
       dio: ref.watch(dioProvider),
+      library: ref.watch(libraryRepositoryProvider),
     ),
   );
 });
@@ -28,8 +30,8 @@ final textsRepositoryProvider = Provider<TextsRepository>((ref) {
 /// Provider for the SegmentRepository implementation (domain interface).
 final segmentDomainRepositoryProvider =
     Provider<SegmentRepositoryInterface>((ref) {
-  return SegmentRepository(
-    remoteDatasource: SegmentRemoteDatasource(dio: ref.watch(dioProvider)),
+  return LibrarySegmentRepository(
+    library: ref.watch(libraryRepositoryProvider),
   );
 });
 

@@ -17,6 +17,15 @@ class Env {
   static String get aiUrl =>
       dotenv.env['AI_URL'] ?? 'https://aichat.webuddhist.com';
 
+  /// Library (texts) API base URL
+  static String get libraryApiUrl =>
+      dotenv.env['LIBRARY_API_URL'] ?? 'https://library.webuddhist.com';
+
+  /// Library tag that marks the texts listed as chants
+  static String get libraryChantsTagId =>
+      dotenv.env['LIBRARY_CHANTS_TAG_ID'] ??
+      (throw Exception('LIBRARY_CHANTS_TAG_ID not found in environment'));
+
   /// Auth0 domain (fetched from backend /props endpoint)
   static String? get auth0Domain => dotenv.env['AUTH0_DOMAIN'];
 

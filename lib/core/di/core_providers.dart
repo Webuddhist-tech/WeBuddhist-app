@@ -15,6 +15,7 @@ import 'package:flutter_pecha/core/storage/preferences_service.dart';
 import 'package:flutter_pecha/core/storage/secure_storage_impl.dart';
 import 'package:flutter_pecha/core/storage/storage_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/ai/config/ai_config.dart';
 import 'package:flutter_pecha/features/auth/auth_service.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -213,6 +214,27 @@ final aiDioClientProvider = Provider<AiDioClient>((ref) {
 /// Provider for raw AI Dio instance (for AI datasources)
 final aiDioProvider = Provider<Dio>((ref) {
   return ref.watch(aiDioClientProvider).dio;
+});
+
+// ============ Library Dio Client ============
+
+/// Public library (texts) API client: no auth, shared cache/error/logging.
+final libraryDioProvider = Provider<Dio>((ref) {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: Env.libraryApiUrl,
+      connectTimeout: Env.apiTimeout,
+      receiveTimeout: Env.apiTimeout,
+      sendTimeout: Env.apiTimeout,
+      headers: {'Accept': 'application/json'},
+    ),
+  );
+  dio.interceptors.addAll([
+    ref.watch(cacheInterceptorProvider),
+    ref.watch(errorInterceptorProvider),
+    ref.watch(loggingInterceptorProvider),
+  ]);
+  return dio;
 });
 
 // ============ Cache ============
