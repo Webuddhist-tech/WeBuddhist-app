@@ -2064,6 +2064,18 @@ class AppLocalizationsMn extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'Чатын мэдэгдлийг хаах';
+
+  @override
+  String get group_chat_unmute_notifications => 'Чатын мэдэгдлийг нээх';
+
+  @override
+  String get group_chat_notifications_muted => 'Чатын мэдэгдэл хаагдлаа';
+
+  @override
+  String get group_chat_notifications_unmuted => 'Чатын мэдэгдэл асаалттай';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2759,17 +2771,6 @@ class AppLocalizationsMn extends AppLocalizations {
       locale: localeName,
       other: '$count мессежийг устгаж чадсангүй.',
       one: 'Мессежийг устгаж чадсангүй.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Мессежүүд устгагдлаа',
-      one: 'Мессеж устгагдлаа',
     );
     return '$_temp0';
   }

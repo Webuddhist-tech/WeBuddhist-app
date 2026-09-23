@@ -1955,6 +1955,18 @@ class AppLocalizationsZh extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => '將聊天通知設為靜音';
+
+  @override
+  String get group_chat_unmute_notifications => '取消聊天通知靜音';
+
+  @override
+  String get group_chat_notifications_muted => '已將聊天通知設為靜音';
+
+  @override
+  String get group_chat_notifications_unmuted => '聊天通知已開啟';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2607,17 +2619,6 @@ class AppLocalizationsZh extends AppLocalizations {
       locale: localeName,
       other: '有 $count 則訊息無法刪除。',
       one: '無法刪除訊息。',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '訊息已刪除',
-      one: '訊息已刪除',
     );
     return '$_temp0';
   }

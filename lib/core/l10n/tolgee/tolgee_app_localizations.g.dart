@@ -4006,6 +4006,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_chat_mute_notifications => TolgeeBridge.get(
+    localeName,
+    'group_chat_mute_notifications',
+    () => _fallback.group_chat_mute_notifications,
+  );
+
+  @override
+  String get group_chat_unmute_notifications => TolgeeBridge.get(
+    localeName,
+    'group_chat_unmute_notifications',
+    () => _fallback.group_chat_unmute_notifications,
+  );
+
+  @override
+  String get group_chat_notifications_muted => TolgeeBridge.get(
+    localeName,
+    'group_chat_notifications_muted',
+    () => _fallback.group_chat_notifications_muted,
+  );
+
+  @override
+  String get group_chat_notifications_unmuted => TolgeeBridge.get(
+    localeName,
+    'group_chat_notifications_unmuted',
+    () => _fallback.group_chat_notifications_unmuted,
+  );
+
+  @override
   String get group_leave =>
       TolgeeBridge.get(localeName, 'group_leave', () => _fallback.group_leave);
 
@@ -5356,14 +5384,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'group_chat_delete_failed',
     <String, Object>{'count': count},
     () => _fallback.group_chat_delete_failed(count),
-  );
-
-  @override
-  String group_chat_message_deleted_toast(int count) => TolgeeBridge.format(
-    localeName,
-    'group_chat_message_deleted_toast',
-    <String, Object>{'count': count},
-    () => _fallback.group_chat_message_deleted_toast(count),
   );
 
   @override

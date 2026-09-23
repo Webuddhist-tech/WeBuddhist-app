@@ -2072,6 +2072,19 @@ class AppLocalizationsNe extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'च्याट सूचनाहरू म्युट गर्नुहोस्';
+
+  @override
+  String get group_chat_unmute_notifications =>
+      'च्याट सूचनाहरू अनम्युट गर्नुहोस्';
+
+  @override
+  String get group_chat_notifications_muted => 'च्याट सूचनाहरू म्युट गरियो';
+
+  @override
+  String get group_chat_notifications_unmuted => 'च्याट सूचनाहरू सक्रिय छन्';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2764,17 +2777,6 @@ class AppLocalizationsNe extends AppLocalizations {
       locale: localeName,
       other: '$count सन्देशहरू मेटाउन सकिएनन्।',
       one: 'सन्देश मेटाउन सकिएन।',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'सन्देशहरू मेटाइए',
-      one: 'सन्देश मेटाइयो',
     );
     return '$_temp0';
   }

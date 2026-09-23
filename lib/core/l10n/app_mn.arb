@@ -1112,8 +1112,11 @@
       }
     }
   },
-  "group_chat_message_deleted_toast": "{count, plural, =1{Мессеж устгагдлаа} other{Мессежүүд устгагдлаа}}",
   "group_chat_selection_limit": "Та хамгийн ихдээ {count} мессеж сонгох боломжтой",
+  "group_chat_mute_notifications": "Чатын мэдэгдлийг хаах",
+  "group_chat_unmute_notifications": "Чатын мэдэгдлийг нээх",
+  "group_chat_notifications_muted": "Чатын мэдэгдэл хаагдлаа",
+  "group_chat_notifications_unmuted": "Чатын мэдэгдэл асаалттай",
   "group_chat_message_deleted_by_sender": "Энэ мессежийг устгасан",
   "group_chat_reaction_failed": "Таны хариу үйлдлийг хадгалж чадсангүй.",
   "group_chat_reactions_count": "{count, plural, =1{1 хариу үйлдэл} other{{count} хариу үйлдэл}}",

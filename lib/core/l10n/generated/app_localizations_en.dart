@@ -2046,6 +2046,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'Mute chat notifications';
+
+  @override
+  String get group_chat_unmute_notifications => 'Unmute chat notifications';
+
+  @override
+  String get group_chat_notifications_muted => 'Chat notifications muted';
+
+  @override
+  String get group_chat_notifications_unmuted => 'Chat notifications on';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2728,17 +2740,6 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$count messages couldn\'t be deleted.',
       one: 'The message couldn\'t be deleted.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Messages deleted',
-      one: 'Message deleted',
     );
     return '$_temp0';
   }

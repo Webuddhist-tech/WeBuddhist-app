@@ -2067,6 +2067,19 @@ class AppLocalizationsBo extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོ།';
+
+  @override
+  String get group_chat_unmute_notifications => 'ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་ཡོད་བཟོ།';
+
+  @override
+  String get group_chat_notifications_muted =>
+      'ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོས་ཟིན།';
+
+  @override
+  String get group_chat_notifications_unmuted => 'ཁ་བརྡའི་བརྡ་ཐོ་ཁ་ཕྱེ་ཟིན།';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2760,17 +2773,6 @@ class AppLocalizationsBo extends AppLocalizations {
       locale: localeName,
       other: 'འཕྲིན་ཐུང་ $count སུབ་མ་ཐུབ།',
       one: 'འཕྲིན་ཐུང་སུབ་མ་ཐུབ།',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'འཕྲིན་ཐུང་རྣམས་བསུབས་ཟིན།',
-      one: 'འཕྲིན་ཐུང་བསུབས་ཟིན།',
     );
     return '$_temp0';
   }

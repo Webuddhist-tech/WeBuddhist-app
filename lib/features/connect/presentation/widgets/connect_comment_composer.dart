@@ -84,17 +84,22 @@ class ConnectCommentComposer extends StatelessWidget {
                         : l10n.connect_comment_reply_hint,
                 onSubmit: onSubmit,
               )),
-              const SizedBox(width: 10),
               ValueListenableBuilder<TextEditingValue>(
                 valueListenable: controller,
                 builder: (context, value, _) {
-                  final canSend =
-                      value.text.trim().isNotEmpty && !isSubmitting;
-                  return _SendButton(
-                    canSend: canSend,
-                    isSubmitting: isSubmitting,
-                    isDark: isDark,
-                    onPressed: canSend ? onSubmit : null,
+                  final hasText = value.text.trim().isNotEmpty;
+                  // Nothing typed, nothing to send: the button is absent
+                  // rather than disabled, and the field takes the full width,
+                  // as in the chat composer.
+                  if (!hasText && !isSubmitting) return const SizedBox.shrink();
+                  final canSend = hasText && !isSubmitting;
+                  return Padding(
+                    padding: const EdgeInsets.only(left: 10),
+                    child: _SendButton(
+                      isSubmitting: isSubmitting,
+                      isDark: isDark,
+                      onPressed: canSend ? onSubmit : null,
+                    ),
                   );
                 },
               ),
@@ -172,23 +177,22 @@ class _CommentTextField extends StatelessWidget {
 
 class _SendButton extends StatelessWidget {
   const _SendButton({
-    required this.canSend,
     required this.isSubmitting,
     required this.isDark,
     required this.onPressed,
   });
 
-  final bool canSend;
   final bool isSubmitting;
   final bool isDark;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
+    // Black in light mode, inverted in dark so it still reads on black.
     final backgroundColor =
-        canSend
-            ? (isDark ? AppColors.grey600 : AppColors.grey800)
-            : (isDark ? AppColors.grey800 : AppColors.grey300);
+        isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
+    final foregroundColor =
+        isDark ? AppColors.textPrimary : AppColors.surfaceWhite;
 
     return Material(
       color: backgroundColor,
@@ -208,21 +212,13 @@ class _SendButton extends StatelessWidget {
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color:
-                            isDark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.surfaceWhite,
+                        color: foregroundColor,
                       ),
                     )
                     : Icon(
                       Icons.arrow_upward_rounded,
                       size: 20,
-                      color:
-                          canSend
-                              ? AppColors.surfaceWhite
-                              : (isDark
-                                  ? AppColors.textTertiaryDark
-                                  : AppColors.surfaceWhite),
+                      color: foregroundColor,
                     ),
           ),
         ),
