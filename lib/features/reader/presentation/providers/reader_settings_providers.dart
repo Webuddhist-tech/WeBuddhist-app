@@ -1,4 +1,3 @@
-import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_reader_settings_remote_datasource.dart';
 import 'package:flutter_pecha/features/library/presentation/providers/library_providers.dart';
 import 'package:flutter_pecha/features/reader/data/datasource/reader_settings_remote_datasource.dart';
@@ -11,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final readerSettingsRemoteDatasourceProvider =
     Provider<ReaderSettingsRemoteDatasource>((ref) {
   return LibraryReaderSettingsRemoteDatasource(
-    dio: ref.watch(dioProvider),
     library: ref.watch(libraryRepositoryProvider),
   );
 });

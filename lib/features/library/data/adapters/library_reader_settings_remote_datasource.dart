@@ -8,11 +8,9 @@ import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.
 /// Reader languages and versions from the library: a text's versions are the
 /// root text and its translations, and a version id is a library text id.
 class LibraryReaderSettingsRemoteDatasource
-    extends ReaderSettingsRemoteDatasource {
-  LibraryReaderSettingsRemoteDatasource({
-    required super.dio,
-    required LibraryRepository library,
-  }) : _library = library;
+    implements ReaderSettingsRemoteDatasource {
+  LibraryReaderSettingsRemoteDatasource({required LibraryRepository library})
+    : _library = library;
 
   final LibraryRepository _library;
 

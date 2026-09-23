@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,10 +57,6 @@ LibraryTextRemoteDatasource _datasource(LibraryTestServer server) {
 }
 
 void main() {
-  setUpAll(() {
-    dotenv.testLoad(fileInput: 'BASE_API_URL=https://api.test');
-  });
-
   group('LibraryTextRemoteDatasource.fetchTextDetails', () {
     test('first page keeps the path id and numbers verses', () async {
       final response = await _datasource(_server()).fetchTextDetails(

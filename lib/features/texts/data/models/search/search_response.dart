@@ -1,4 +1,4 @@
-import 'package:flutter_pecha/features/texts/data/models/collections/collections_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/search/pagination.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/search.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/source_result_item.dart';
 

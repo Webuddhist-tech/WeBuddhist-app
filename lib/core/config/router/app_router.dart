@@ -57,11 +57,6 @@ import 'package:flutter_pecha/features/notifications/presentation/notification_s
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/presentation/screens/reader_screen.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
-import 'package:flutter_pecha/features/texts/presentation/screens/chapters/chapters_screen.dart';
-import 'package:flutter_pecha/features/texts/presentation/segment_image/choose_image.dart';
-import 'package:flutter_pecha/features/texts/presentation/segment_image/create_image.dart';
-import 'package:flutter_pecha/features/texts/presentation/version_selection/language_selection.dart';
-import 'package:flutter_pecha/features/texts/presentation/version_selection/version_selection_screen.dart';
 import 'package:flutter_pecha/features/timer/presentation/screens/active_timer_screen.dart';
 import 'package:flutter_pecha/features/timer/presentation/screens/new_timer_screen.dart';
 import 'package:flutter_pecha/features/timer/presentation/screens/preset_timers_screen.dart';
@@ -499,18 +494,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final query = extra?['query'] as String? ?? '';
               return SearchResultsScreen(initialQuery: query);
             },
-            routes: [
-              GoRoute(
-                path: "text-chapters", // /ai-mode/search-results/text-chapters
-                name: "text-chapters",
-                builder: (context, state) {
-                  final extra = state.extra as Map<String, dynamic>?;
-                  final textId = extra?['textId'] as String? ?? '';
-                  final segmentId = extra?['segmentId'] as String?;
-                  return ChaptersScreen(textId: textId, segmentId: segmentId);
-                },
-              ),
-            ],
           ),
         ],
       ),
@@ -676,31 +659,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
-      // route - /choose-image (choose image)
-      GoRoute(
-        path: "/choose-image",
-        name: "choose-image",
-        builder: (context, state) {
-          final extra = state.extra as String?;
-          if (extra == null) {
-            throw Exception('Missing required parameters');
-          }
-          return ChooseImage(text: extra);
-        },
-      ),
-      // route - /create-image (create image)
-      GoRoute(
-        path: "/create-image",
-        name: "create-image",
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          return CreateImage(
-            text: extra?['text'] as String,
-            imagePath: extra?['imagePath'] as String,
-          );
-        },
-      ),
-
       // plan content route - inline TEXT/IMAGE subtasks (sibling to /reader)
       GoRoute(
         path: "/plan-text/:subtaskId",
@@ -837,32 +795,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           // Default MaterialPage for non-plan navigation
           return MaterialPage(key: state.pageKey, child: screen);
         },
-        routes: [
-          // route - /reader/:textId/versions (version selection)
-          GoRoute(
-            path: "versions",
-            name: "reader-versions",
-            builder: (context, state) {
-              final textId = state.pathParameters['textId'] ?? '';
-              return VersionSelectionScreen(textId: textId);
-            },
-            routes: [
-              // route - /reader/:textId/versions/language (language selection)
-              GoRoute(
-                path: "language",
-                name: "reader-versions-language",
-                builder: (context, state) {
-                  final extra = state.extra as Map<String, dynamic>?;
-                  final uniqueLanguages =
-                      extra?['uniqueLanguages'] as List<String>?;
-                  return LanguageSelectionScreen(
-                    uniqueLanguages: uniqueLanguages ?? [],
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
       ),
     ],
 

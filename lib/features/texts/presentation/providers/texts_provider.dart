@@ -1,10 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
-import 'package:flutter_pecha/features/texts/data/models/text/detail_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/text/toc_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/text/version_response.dart';
-import 'package:flutter_pecha/features/texts/data/models/text/commentary_text_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
@@ -48,45 +44,6 @@ class TextDetailsParams {
   @override
   int get hashCode => key.hashCode;
 }
-
-final textsFutureProvider = FutureProvider.family<Either<Failure, TextDetailResponse>, String>((ref, String termId) {
-  final languageCode = ref.watch(contentLanguageProvider);
-  final repository = ref.watch(textsRepositoryProvider);
-  return repository.getTexts(termId: termId, language: languageCode);
-});
-
-final textContentFutureProvider = FutureProvider.family<Either<Failure, TocResponse>, String>((ref, String textId) async {
-  final languageCode = ref.watch(contentLanguageProvider);
-  final getTextContentUseCase = ref.watch(getTextContentUseCaseProvider);
-
-  return getTextContentUseCase(GetTextContentParams(
-    textId: textId,
-    language: languageCode,
-  ));
-});
-
-final textVersionFutureProvider = FutureProvider.family<Either<Failure, VersionResponse>, String>((ref, String textId) async {
-  final languageCode = ref.watch(contentLanguageProvider);
-  final getTextVersionUseCase = ref.watch(getTextVersionUseCaseProvider);
-
-  return getTextVersionUseCase(GetTextVersionParams(
-    textId: textId,
-    language: languageCode,
-  ));
-});
-
-final commentaryTextFutureProvider = FutureProvider.family<Either<Failure, CommentaryTextResponse>, String>((
-  ref,
-  String textId,
-) async {
-  final languageCode = ref.watch(contentLanguageProvider);
-  final getCommentaryTextUseCase = ref.watch(getCommentaryTextUseCaseProvider);
-
-  return getCommentaryTextUseCase(GetCommentaryTextParams(
-    textId: textId,
-    language: languageCode,
-  ));
-});
 
 final textDetailsFutureProvider = FutureProvider.family<Either<Failure, ReaderResponse>, TextDetailsParams>((
   ref,

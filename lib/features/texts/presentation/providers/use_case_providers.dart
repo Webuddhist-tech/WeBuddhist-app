@@ -2,13 +2,9 @@ import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_segment_repository.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
 import 'package:flutter_pecha/features/library/presentation/providers/library_providers.dart';
-import 'package:flutter_pecha/features/texts/data/datasource/collections_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_detail_with_text.dart';
-import 'package:flutter_pecha/features/texts/data/repositories/collections_repository.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/texts_repository.dart';
-import 'package:flutter_pecha/features/texts/domain/repositories/collections_repository.dart';
 import 'package:flutter_pecha/features/texts/domain/repositories/segment_repository.dart';
-import 'package:flutter_pecha/features/texts/domain/usecases/collections_usecases.dart';
 import 'package:flutter_pecha/features/texts/domain/usecases/segment_usecases.dart';
 import 'package:flutter_pecha/features/texts/domain/usecases/text_content_usecases.dart';
 import 'package:flutter_pecha/features/texts/domain/usecases/text_search_usecases.dart';
@@ -35,33 +31,7 @@ final segmentDomainRepositoryProvider =
   );
 });
 
-/// Provider for the CollectionsRepository implementation (domain interface).
-final collectionsDomainRepositoryProvider =
-    Provider<CollectionsRepositoryInterface>((ref) {
-  return CollectionsRepository(
-    remoteDatasource: CollectionsRemoteDatasource(dio: ref.watch(dioProvider)),
-  );
-});
-
 // ========== Content Use Case Providers ==========
-
-/// Provider for GetTextContentUseCase.
-final getTextContentUseCaseProvider = Provider<GetTextContentUseCase>((ref) {
-  final repository = ref.watch(textsRepositoryProvider);
-  return GetTextContentUseCase(repository);
-});
-
-/// Provider for GetTextVersionUseCase.
-final getTextVersionUseCaseProvider = Provider<GetTextVersionUseCase>((ref) {
-  final repository = ref.watch(textsRepositoryProvider);
-  return GetTextVersionUseCase(repository);
-});
-
-/// Provider for GetCommentaryTextUseCase.
-final getCommentaryTextUseCaseProvider = Provider<GetCommentaryTextUseCase>((ref) {
-  final repository = ref.watch(textsRepositoryProvider);
-  return GetCommentaryTextUseCase(repository);
-});
 
 /// Provider for GetTextDetailsUseCase.
 final getTextDetailsUseCaseProvider = Provider<GetTextDetailsUseCase>((ref) {
@@ -116,13 +86,6 @@ final getSegmentTranslationsUseCaseProvider =
   return GetSegmentTranslationsUseCase(
     ref.watch(segmentDomainRepositoryProvider),
   );
-});
-
-// ========== Collections Use Case Providers ==========
-
-/// Provider for GetCollectionsUseCase.
-final getCollectionsUseCaseProvider = Provider<GetCollectionsUseCase>((ref) {
-  return GetCollectionsUseCase(ref.watch(collectionsDomainRepositoryProvider));
 });
 
 // ========== Segment Detail Provider ==========

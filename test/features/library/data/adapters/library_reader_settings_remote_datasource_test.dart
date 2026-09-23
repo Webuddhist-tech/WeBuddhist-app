@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_reader_settings_remote_datasource.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -23,10 +22,7 @@ LibraryTestServer _server() => LibraryTestServer({
 });
 
 LibraryReaderSettingsRemoteDatasource _datasource(LibraryTestServer server) {
-  return LibraryReaderSettingsRemoteDatasource(
-    dio: Dio(),
-    library: server.repository(),
-  );
+  return LibraryReaderSettingsRemoteDatasource(library: server.repository());
 }
 
 void main() {
