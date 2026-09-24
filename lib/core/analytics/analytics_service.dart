@@ -11,13 +11,12 @@ abstract class AnalyticsService {
 
   Future<void> reset();
 
-  Future<void> track(
-    String event, {
-    Map<String, Object?>? properties,
-  });
+  Future<void> track(String event, {Map<String, Object?>? properties});
 
   Future<void> setSuperProperties(Map<String, Object?> properties);
 
-  /// Navigator observer wired into GoRouter so screen transitions are tracked.
-  NavigatorObserver get routeObserver;
+
+  /// Fresh observers for one navigator; wired into the root and shell
+  /// navigators so screen transitions are tracked.
+  List<NavigatorObserver> get routeObservers;
 }

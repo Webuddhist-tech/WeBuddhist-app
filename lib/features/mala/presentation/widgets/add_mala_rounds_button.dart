@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_g
 import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/add_mala_rounds_dialog.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -75,7 +76,9 @@ class AddMalaRoundsButton extends ConsumerWidget {
     final counter = ref.read(malaCounterProvider(mantra));
 
     if (selection.isPersonal) {
-      ref.read(malaCounterProvider(mantra).notifier).addRounds(rounds);
+      final added =
+          ref.read(malaCounterProvider(mantra).notifier).addRounds(rounds);
+      if (added) _trackAdded(ref, rounds);
       return;
     }
 
@@ -86,7 +89,7 @@ class AddMalaRoundsButton extends ConsumerWidget {
             .read(joinedAccumulatorGroupsProvider(mantra.presetId))
             .valueOrNull ??
         const [];
-    ref
+    final added = ref
         .read(groupAccumulationCountsProvider(mantra.presetId).notifier)
         .addRounds(
           groupAccumulatorId: groupId,
@@ -94,5 +97,12 @@ class AddMalaRoundsButton extends ConsumerWidget {
           rounds: rounds,
           beadsPerRound: counter.beadsPerRound,
         );
+    if (added) _trackAdded(ref, rounds);
+  }
+
+  void _trackAdded(WidgetRef ref, int rounds) {
+    ref
+        .read(malaAnalyticsProvider)
+        .offlineRoundsAdded(presetId: mantra.presetId, rounds: rounds);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_analytics.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart'
     show interlinearTranslationFor;
@@ -69,8 +71,15 @@ class SegmentActionBar extends ConsumerStatefulWidget {
 class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
   bool _isBookmarking = false;
 
+  void _track(ReaderAction action) {
+    ref
+        .read(readerAnalyticsProvider)
+        .actionTapped(action: action, textId: widget.params.textId);
+  }
+
   Future<void> _handleBookmark() async {
     if (_isBookmarking) return;
+    _track(ReaderAction.bookmark);
     HapticFeedback.lightImpact();
     setState(() => _isBookmarking = true);
     try {
@@ -127,6 +136,7 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
     final textWithLineBreaks = html.replaceAll('<br>', '\n');
     final plainText = _htmlToPlainText(textWithLineBreaks);
     Clipboard.setData(ClipboardData(text: plainText));
+    _track(ReaderAction.copy);
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(localizations.copied)));
@@ -189,6 +199,7 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
           onTap: () {
             HapticFeedback.lightImpact();
             notifier.toggleCommentary(widget.segment.segmentId);
+            _track(ReaderAction.commentary);
             if (!state.isCommentaryOpen) {
               widget.onOpenCommentary?.call();
             }
@@ -200,6 +211,7 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
           onTap: () {
             HapticFeedback.lightImpact();
             notifier.toggleTranslation(widget.segment.segmentId);
+            _track(ReaderAction.version);
             if (!state.isTranslationOpen) {
               widget.onOpenTranslation?.call();
             }
@@ -207,6 +219,7 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
         ),
       ],
       videos: videos,
+      onVideoOpened: () => _track(ReaderAction.video),
     );
   }
 }
@@ -220,6 +233,7 @@ class _ResourcesPanel extends StatefulWidget {
   final Widget bookmarkButton;
   final List<Widget> tiles;
   final List<SegmentVideo> videos;
+  final VoidCallback onVideoOpened;
 
   const _ResourcesPanel({
     required this.onDismiss,
@@ -228,6 +242,7 @@ class _ResourcesPanel extends StatefulWidget {
     required this.bookmarkButton,
     required this.tiles,
     required this.videos,
+    required this.onVideoOpened,
   });
 
   @override
@@ -287,8 +302,10 @@ class _ResourcesPanelState extends State<_ResourcesPanel> {
     if (!mounted) return;
 
     HapticFeedback.lightImpact();
+    widget.onVideoOpened();
     await Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'video-player'),
         builder:
             (_) => YoutubeVideoPlayer(videoUrl: video.url, title: video.title),
       ),
@@ -785,6 +802,9 @@ class _ShareButtonState extends ConsumerState<_ShareButton> {
   Future<void> _handleShare() async {
     HapticFeedback.lightImpact();
     if (_isLoading) return;
+    ref
+        .read(readerAnalyticsProvider)
+        .actionTapped(action: ReaderAction.share, textId: widget.textId);
 
     setState(() {
       _isLoading = true;
@@ -803,12 +823,22 @@ class _ShareButtonState extends ConsumerState<_ShareButton> {
 
       final sharePositionOrigin = getSharePositionOrigin(context: context);
       final shareMessage = context.l10n.share_passage_message;
-      await SharePlus.instance.share(
+      final result = await SharePlus.instance.share(
         ShareParams(
           text: '$shareMessage\n\n$shareUrl',
           sharePositionOrigin: sharePositionOrigin,
         ),
       );
+      // Tracked before onClose, which removes this button from the tree.
+      if (mounted && ShareAnalytics.wasUsed(result)) {
+        ref
+            .read(shareAnalyticsProvider)
+            .contentShared(
+              surface: ShareSurface.segment,
+              targetId: widget.segmentId,
+              format: 'text',
+            );
+      }
       widget.onClose();
     } catch (e) {
       if (!mounted) return;

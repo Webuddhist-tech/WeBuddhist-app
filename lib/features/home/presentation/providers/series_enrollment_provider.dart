@@ -2,6 +2,7 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/home/domain/usecases/enroll_in_series_usecase.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/series_analytics.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,6 +46,7 @@ class SeriesEnrollmentNotifier extends StateNotifier<SeriesEnrollmentState> {
   Future<bool> enroll({String? groupId}) async {
     if (state is SeriesEnrollmentLoading) return false;
     state = const SeriesEnrollmentLoading();
+    final analytics = _ref.read(seriesAnalyticsProvider);
 
     final result = await _useCase(
       EnrollInSeriesParams(seriesId: _seriesId, groupId: groupId),
@@ -59,6 +61,7 @@ class SeriesEnrollmentNotifier extends StateNotifier<SeriesEnrollmentState> {
         if (mounted) {
           state = const SeriesEnrollmentSuccess();
         }
+        analytics.seriesEnrolled(seriesId: _seriesId, groupId: groupId);
         // Refresh user-scoped data so downstream UIs (enrolled plans/routine)
         // reflect the newly created enrollments. Backend auto-enrolls the
         // user in all plans within the series.

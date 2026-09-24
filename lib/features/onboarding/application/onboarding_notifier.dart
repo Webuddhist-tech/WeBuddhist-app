@@ -1,10 +1,7 @@
-import 'dart:async';
-
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
-import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/onboarding/application/onboarding_state.dart';
 import 'package:flutter_pecha/features/onboarding/domain/usecases/onboarding_usecases.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/utils/onboarding_analytics.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -20,13 +17,13 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     required SaveOnboardingPreferencesUseCase saveOnboardingPreferencesUseCase,
     required CompleteOnboardingUseCase completeOnboardingUseCase,
     required ClearOnboardingPreferencesUseCase clearOnboardingPreferencesUseCase,
-    required AnalyticsService analyticsService,
+    required OnboardingAnalytics analytics,
     void Function()? onCompleted,
   })  : _loadSavedPreferencesUseCase = loadSavedPreferencesUseCase,
         _saveOnboardingPreferencesUseCase = saveOnboardingPreferencesUseCase,
         _completeOnboardingUseCase = completeOnboardingUseCase,
         _clearOnboardingPreferencesUseCase = clearOnboardingPreferencesUseCase,
-        _analytics = analyticsService,
+        _analytics = analytics,
         _onCompleted = onCompleted,
         super(OnboardingState.initial()) {
     loadSavedPreferences();
@@ -36,7 +33,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   final SaveOnboardingPreferencesUseCase _saveOnboardingPreferencesUseCase;
   final CompleteOnboardingUseCase _completeOnboardingUseCase;
   final ClearOnboardingPreferencesUseCase _clearOnboardingPreferencesUseCase;
-  final AnalyticsService _analytics;
+  final OnboardingAnalytics _analytics;
   /// Called when onboarding is successfully completed so the auth layer can
   /// update its in-state flag without a network round-trip.
   final void Function()? _onCompleted;
@@ -137,7 +134,9 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       );
 
       if (completed) {
-        unawaited(_analytics.track(AnalyticsEvents.onboardingCompleted));
+        _analytics.onboardingCompleted(
+          eventPlanSelected: state.preferences.enrolledEventPlanIds.isNotEmpty,
+        );
         _onCompleted?.call();
       }
 
@@ -157,6 +156,9 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     final updatedPrefs = state.preferences.copyWith(enrolledEventPlanIds: planIds);
     state = state.copyWith(preferences: updatedPrefs, enrolledPlans: plans);
     await _savePreferences();
+    for (final plan in plans) {
+      _analytics.eventPlanSelected(planId: plan.id, planName: plan.title);
+    }
   }
 
   /// Clear all preferences and reset state.

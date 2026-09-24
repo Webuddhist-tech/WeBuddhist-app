@@ -79,6 +79,7 @@ void main() {
 
     expect(service.eventNames, [AnalyticsEvents.groupMessageReported]);
     expect(service.events.single.properties, {
+      'group_id': null,
       'room_id': 'room-1',
       'message_id': 'm1',
       'reason': 'SPAM',

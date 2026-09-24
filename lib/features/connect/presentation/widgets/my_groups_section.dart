@@ -50,6 +50,7 @@ class MyGroupsSection extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
+                        settings: const RouteSettings(name: 'my-groups'),
                         builder: (_) => const MyGroupsScreen(),
                       ),
                     );

@@ -58,7 +58,10 @@ class PracticeChantsSection extends ConsumerWidget {
 
   void _showAllRecitations(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AllRecitationsScreen()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'all-recitations'),
+        builder: (_) => const AllRecitationsScreen(),
+      ),
     );
   }
 }

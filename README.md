@@ -40,6 +40,30 @@ Each flavor should use its own PostHog project token:
 | `POSTHOG_HOST` | PostHog ingest host (default `https://us.i.posthog.com`) |
 | `POSTHOG_ENABLED` | Set to `false` to disable analytics locally |
 
+Screen views (`$screen`) come from the route observers on both the root and
+the tab-shell navigator, so every named route is tracked. Product events are
+declared once in `lib/core/analytics/analytics_events.dart` and follow the
+team tracking plan (forum post "Current state of analytics in the WeBuddhist
+app", section 5): `object_verb` names, snake_case properties, never text a
+user typed. Each feature fires them through a small analytics class
+(`PlanAnalytics`, `ReaderAnalytics`, `MalaAnalytics`, ...) in its
+`presentation/utils` folder, so screens never spell out event names or
+property keys themselves. Every share sheet reports one `content_shared`
+event with a `surface`, only after the sheet was actually used.
+
+Microsoft Clarity adds session recordings and per-screen heatmaps on top of
+PostHog. One Clarity project can serve every flavor: each session is tagged
+with `environment` and `app_flavor`, so dev traffic can be filtered out on the
+dashboard. Screens are named after the go_router route name (`reader`,
+`home-settings`, …), imperatively pushed screens after their `RouteSettings`
+name, and the four bottom tabs as `tab-home` / `tab-practice` / `tab-connect` /
+`tab-me`.
+
+| Variable | Description |
+|----------|-------------|
+| `CLARITY_PROJECT_ID` | Clarity project ID (Clarity dashboard → Settings → Overview). Empty disables Clarity |
+| `CLARITY_ENABLED` | Set to `false` to disable Clarity locally |
+
 ### 4. Run the App
 
 **Android**

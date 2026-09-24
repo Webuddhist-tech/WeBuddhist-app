@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/onboarding/presentation/screens/onboardin
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_tradition.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_5.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_language.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/utils/onboarding_analytics.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -25,6 +26,14 @@ class OnboardingWrapper extends ConsumerStatefulWidget {
 
 class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
   final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    final analytics = ref.read(onboardingAnalyticsProvider);
+    analytics.onboardingStarted();
+    analytics.stepViewed(stepIndex: ref.read(onboardingProvider).currentPage);
+  }
 
   @override
   void dispose() {
@@ -58,6 +67,9 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
       previous,
       next,
     ) {
+      if (previous != next) {
+        ref.read(onboardingAnalyticsProvider).stepViewed(stepIndex: next);
+      }
       if (_pageController.hasClients && previous != next) {
         _pageController.animateToPage(
           next,

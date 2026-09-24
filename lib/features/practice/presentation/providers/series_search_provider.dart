@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/series_remote_datasource.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/series_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SeriesSearchState {
@@ -38,10 +39,12 @@ class SeriesSearchNotifier extends StateNotifier<SeriesSearchState> {
   SeriesSearchNotifier({
     required this.datasource,
     required this.languageCode,
+    this.analytics,
   }) : super(const SeriesSearchState());
 
   final SeriesRemoteDatasource datasource;
   final String languageCode;
+  final SeriesAnalytics? analytics;
   Timer? _debounceTimer;
   static const Duration _debounceDuration = Duration(milliseconds: 500);
 
@@ -80,6 +83,10 @@ class SeriesSearchNotifier extends StateNotifier<SeriesSearchState> {
         isLoading: false,
         error: null,
       );
+      analytics?.seriesSearched(
+        queryLength: query.trim().length,
+        resultCount: models.length,
+      );
     } catch (e) {
       if (!mounted) return;
       state = state.copyWith(
@@ -114,5 +121,6 @@ final seriesSearchProvider =
   return SeriesSearchNotifier(
     datasource: SeriesRemoteDatasource(dio: dio),
     languageCode: languageCode,
+    analytics: ref.watch(seriesAnalyticsProvider),
   );
 });

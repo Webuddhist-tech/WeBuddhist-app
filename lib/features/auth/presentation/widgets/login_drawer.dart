@@ -4,18 +4,25 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/utils/auth_analytics.dart';
+import 'package:go_router/go_router.dart';
 import 'social_login_button.dart';
 
 /// Modern bottom sheet drawer for guest user login
 class LoginDrawer extends ConsumerStatefulWidget {
-  const LoginDrawer({super.key});
+  const LoginDrawer({super.key, required this.feature});
+
+  /// What asked for login, carried on the login prompt events.
+  final String feature;
 
   /// Show the login drawer as a bottom sheet
   static Future<void> show(
     BuildContext context,
     WidgetRef ref, {
     bool useRootNavigator = false,
+    String? feature,
   }) {
+    final promptFeature = feature ?? _featureOf(context);
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -24,8 +31,15 @@ class LoginDrawer extends ConsumerStatefulWidget {
       isDismissible: true,
       enableDrag: true,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (context) => const LoginDrawer(),
+      builder: (context) => LoginDrawer(feature: promptFeature),
     );
+  }
+
+  /// Names the current screen so no call site has to pass a feature.
+  static String _featureOf(BuildContext context) {
+    final routeName = ModalRoute.of(context)?.settings.name;
+    if (routeName != null && routeName.isNotEmpty) return routeName;
+    return GoRouter.maybeOf(context)?.state.name ?? 'unknown';
   }
 
   @override
@@ -36,10 +50,14 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late final AuthAnalytics _analytics;
+  bool _loggedIn = false;
 
   @override
   void initState() {
     super.initState();
+    _analytics = ref.read(authAnalyticsProvider);
+    _analytics.loginPromptShown(feature: widget.feature);
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -54,6 +72,8 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
 
   @override
   void dispose() {
+    // Closed by drag, barrier or back rather than by a login.
+    if (!_loggedIn) _analytics.loginPromptDismissed(feature: widget.feature);
     _animationController.dispose();
     super.dispose();
   }
@@ -66,6 +86,7 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
 
     // Auto-close when user successfully authenticates
     if (!authState.isGuest && authState.isLoggedIn) {
+      _loggedIn = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.of(context).pop();
@@ -164,6 +185,7 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
                                 height: 20,
                               ),
                               isBorder: true,
+                              source: AuthSource.loginDrawer,
                             ),
                           ),
                           if (isIOS) ...[
@@ -182,6 +204,7 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
                                   color: Colors.white,
                                   size: 24,
                                 ),
+                                source: AuthSource.loginDrawer,
                               ),
                             ),
                           ],
@@ -201,6 +224,7 @@ class _LoginDrawerState extends ConsumerState<LoginDrawer>
                                 size: 20,
                               ),
                               isBorder: true,
+                              source: AuthSource.loginDrawer,
                             ),
                           ),
                         ],

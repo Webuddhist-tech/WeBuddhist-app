@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
+import 'package:flutter_pecha/core/analytics/track_first_value.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -12,6 +14,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/series_analytics.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/series_more_bottom_sheet.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
@@ -65,7 +68,7 @@ class SeriesDetailScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
+    final Widget scaffold = Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
@@ -125,6 +128,20 @@ class SeriesDetailScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+
+    return TrackFirstValue<Series>(
+      value: resolvedSeries,
+      onFirstValue:
+          (series) => ref
+              .read(seriesAnalyticsProvider)
+              .seriesViewed(
+                seriesId: series.id,
+                seriesTitle: series.title,
+                planCount: series.planCount,
+                totalDays: series.totalDays,
+              ),
+      child: scaffold,
     );
   }
 
@@ -200,7 +217,11 @@ class SeriesDetailScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     final message = context.l10n.series_share_message(series.title, url);
-    await SharePlus.instance.share(ShareParams(text: message));
+    final result = await SharePlus.instance.share(ShareParams(text: message));
+    if (!context.mounted || !ShareAnalytics.wasUsed(result)) return;
+    ref
+        .read(shareAnalyticsProvider)
+        .contentShared(surface: ShareSurface.series, targetId: series.id);
   }
 
   /// Adds the series to the user's practice routine.
@@ -214,6 +235,9 @@ class SeriesDetailScreen extends ConsumerWidget {
       LoginDrawer.show(context, ref);
       return;
     }
+    ref
+        .read(seriesAnalyticsProvider)
+        .seriesAddedToPractices(seriesId: series.id);
     context.pushNamed('edit-routine', extra: {'initialSeries': series});
   }
 

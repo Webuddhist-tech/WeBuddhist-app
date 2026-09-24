@@ -2040,6 +2040,7 @@ void main() {
 
       expect(analytics.eventNames, [AnalyticsEvents.groupMessageReacted]);
       expect(analytics.events.single.properties, {
+        'group_id': null,
         'room_id': 'room-1',
         'message_id': 'm1',
         'emoji': thumbsUp,
@@ -2095,6 +2096,7 @@ void main() {
 
       expect(analytics.eventNames, [AnalyticsEvents.groupMessageDeleted]);
       expect(analytics.events.single.properties, {
+        'group_id': null,
         'room_id': 'room-1',
         'message_id': 'm1',
       });

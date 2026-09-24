@@ -74,6 +74,7 @@ class _AllRecitationsScreenState extends ConsumerState<AllRecitationsScreen> {
     final languageCode = ref.read(practiceRecitationsLanguageProvider);
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'recitations-search'),
         builder: (_) => RecitationsSearchScreen(languageCode: languageCode),
       ),
     );

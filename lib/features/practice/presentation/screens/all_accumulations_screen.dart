@@ -19,6 +19,7 @@ class AllAccumulationsScreen extends StatelessWidget {
   void _openSearch(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'accumulations-search'),
         builder:
             (_) => AccumulationsSearchScreen(language: language, onTap: onTap),
       ),

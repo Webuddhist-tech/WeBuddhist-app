@@ -459,6 +459,7 @@ class NotificationSyncEngine {
     final payload = jsonEncode({
       'itemId': firstItem.id,
       'itemType': firstItem.type.name,
+      'scheduledMinute': block.time.hour * 60 + block.time.minute,
     });
 
     return [
@@ -515,6 +516,7 @@ class NotificationSyncEngine {
     final payload = jsonEncode({
       'itemId': firstItem.id,
       'itemType': firstItem.type.name,
+      'scheduledMinute': block.time.hour * 60 + block.time.minute,
     });
 
     return [
@@ -571,6 +573,7 @@ class NotificationSyncEngine {
       'itemId': timer.id,
       'itemType': timer.type.name,
       'durationMs': durationMs,
+      'scheduledMinute': block.time.hour * 60 + block.time.minute,
     });
 
     // Next occurrence of block time (roll to tomorrow if already past).
@@ -642,6 +645,7 @@ class NotificationSyncEngine {
     final payload = jsonEncode({
       'itemId': firstItem.id,
       'itemType': firstItem.type.name,
+      'scheduledMinute': block.time.hour * 60 + block.time.minute,
     });
 
     return [
@@ -695,6 +699,7 @@ class NotificationSyncEngine {
     final payload = jsonEncode({
       'itemId': firstItem.id,
       'itemType': firstItem.type.name,
+      'scheduledMinute': block.time.hour * 60 + block.time.minute,
     });
 
     return [
@@ -746,6 +751,7 @@ class NotificationSyncEngine {
     final payload = jsonEncode({
       'itemId': firstItem.id,
       'itemType': firstItem.type.name,
+      'scheduledMinute': block.time.hour * 60 + block.time.minute,
     });
 
     return [

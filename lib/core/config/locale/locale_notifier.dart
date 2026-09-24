@@ -12,6 +12,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/content_language_analytics.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/localization/data/languages_remote_datasource.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
@@ -141,15 +142,19 @@ class LocaleNotifier extends StateNotifier<Locale> {
 /// the `language` query parameter across content endpoints.
 class ContentLanguageNotifier extends StateNotifier<String> {
   final LocalStorageService _localStorageService;
+  final ContentLanguageAnalytics? _analytics;
   bool _isInitialized = false;
   // An explicit user selection always wins over an in-flight startup read, so
   // the async initializer can never clobber a language the user just chose.
   bool _userSelected = false;
   Future<void>? _initFuture;
 
-  ContentLanguageNotifier({required LocalStorageService localStorageService})
-    : _localStorageService = localStorageService,
-      super(AppConfig.defaultLanguage) {
+  ContentLanguageNotifier({
+    required LocalStorageService localStorageService,
+    ContentLanguageAnalytics? analytics,
+  }) : _localStorageService = localStorageService,
+       _analytics = analytics,
+       super(AppConfig.defaultLanguage) {
     _initFuture = _initialize();
   }
 
@@ -183,11 +188,21 @@ class ContentLanguageNotifier extends StateNotifier<String> {
   Future<void> ensureInitialized() async => _initFuture ??= _initialize();
 
   /// Persists the raw [code] sent to content APIs. Accepts any non-empty code.
-  Future<void> setContentLanguage(String code) async {
+  Future<void> setContentLanguage(
+    String code, {
+    ContentLanguageSource? source,
+  }) async {
     if (code.isEmpty) return;
+    final previous = state;
     _userSelected = true;
     state = code;
     await _localStorageService.set(StorageKeys.contentLanguage, code);
+    if (code == previous) return;
+    _analytics?.contentLanguageChanged(
+      from: previous,
+      to: code,
+      source: source,
+    );
   }
 
   /// Enforces the server-side kill switch against [enabledCodes] — an
@@ -215,7 +230,7 @@ class ContentLanguageNotifier extends StateNotifier<String> {
       // Degenerate: the backend enabled nothing. Fall back to the app default.
       fallback = AppConfig.defaultLanguage;
     }
-    await setContentLanguage(fallback);
+    await setContentLanguage(fallback, source: ContentLanguageSource.reconcile);
     return fallback;
   }
 }
@@ -241,6 +256,7 @@ final contentLanguageProvider =
     StateNotifierProvider<ContentLanguageNotifier, String>((ref) {
       final notifier = ContentLanguageNotifier(
         localStorageService: ref.read(localStorageServiceProvider),
+        analytics: ref.read(contentLanguageAnalyticsProvider),
       );
       notifier.ensureInitialized();
       return notifier;
@@ -254,7 +270,11 @@ final contentLanguageProvider =
 /// When the user is authenticated (not a guest), awaits
 /// `PUT /users/me/language` first. Local prefs update only on success; on
 /// failure the previous language is kept. Guests update locally only.
-Future<void> selectAppLanguage(WidgetRef ref, String code) async {
+Future<void> selectAppLanguage(
+  WidgetRef ref,
+  String code, {
+  ContentLanguageSource? source,
+}) async {
   final auth = ref.read(authProvider);
   if (auth.isLoggedIn && !auth.isGuest) {
     try {
@@ -273,6 +293,8 @@ Future<void> selectAppLanguage(WidgetRef ref, String code) async {
     }
   }
 
-  await ref.read(contentLanguageProvider.notifier).setContentLanguage(code);
+  await ref
+      .read(contentLanguageProvider.notifier)
+      .setContentLanguage(code, source: source);
   await ref.read(localeProvider.notifier).applyUiLocaleForContent(code);
 }

@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/home/presentation/providers/series_provid
 import 'package:flutter_pecha/features/home/presentation/providers/today_events_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/home_screen_constants.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_analytics.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/featured_plan_section.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/group_events_section.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/home_header.dart';
@@ -28,6 +29,7 @@ import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_sk
 import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/routine_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
@@ -50,10 +52,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _trackHomeViewed();
     // Request notification permissions when home screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _requestNotificationPermissionsIfNeeded();
     });
+  }
+
+  /// Once per mount of the Home tab, with what the providers already hold.
+  void _trackHomeViewed() {
+    final streak = ref.read(streakFutureProvider).valueOrNull;
+    ref
+        .read(homeAnalyticsProvider)
+        .homeViewed(
+          hasRoutine: ref.read(routineProvider).hasItems,
+          streakCurrent: streak?.fold<int?>((_) => null, (days) => days),
+          isGuest: ref.read(authProvider).isGuest,
+        );
   }
 
   @override

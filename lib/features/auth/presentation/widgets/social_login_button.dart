@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/utils/auth_analytics.dart';
 
 class SocialLoginButton extends ConsumerWidget {
   const SocialLoginButton({
@@ -13,6 +14,7 @@ class SocialLoginButton extends ConsumerWidget {
     required this.backgroundColor,
     required this.foregroundColor,
     required this.iconWidget,
+    required this.source,
     this.isBorder = false,
   });
   final String connection;
@@ -23,6 +25,7 @@ class SocialLoginButton extends ConsumerWidget {
   final Color foregroundColor;
   final Widget iconWidget;
   final bool isBorder;
+  final AuthSource source;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,7 +48,10 @@ class SocialLoginButton extends ConsumerWidget {
           elevation: 0,
         ),
         onPressed: () async {
-          await authNotifier.login(connection: connection);
+          ref
+              .read(authAnalyticsProvider)
+              .loginStarted(method: connection, source: source);
+          await authNotifier.login(connection: connection, source: source);
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

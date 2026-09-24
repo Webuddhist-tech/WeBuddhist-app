@@ -41,6 +41,15 @@ class PlanUtils {
     return DateTime(date.year, date.month, date.day);
   }
 
+  /// Calendar days from [from] to [to]; UTC dates so DST cannot shift it.
+  static int daysBetween(DateTime from, DateTime to) {
+    final start = from.toLocal();
+    final end = to.toLocal();
+    return DateTime.utc(end.year, end.month, end.day)
+        .difference(DateTime.utc(start.year, start.month, start.day))
+        .inDays;
+  }
+
   static int calculateSelectedDay(DateTime startedAt, int totalDays) {
     final today = DateTime.now();
     final localStartedAt = startedAt.toLocal();

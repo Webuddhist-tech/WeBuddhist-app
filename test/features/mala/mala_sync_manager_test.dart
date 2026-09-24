@@ -1,16 +1,19 @@
 import 'dart:io';
 
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasource.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_count.dart';
 import 'package:flutter_pecha/features/mala/domain/usecases/mala_usecases.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
+import '../../core/analytics/recording_analytics_service.dart';
 import 'mala_sync_manager_test.mocks.dart';
 
 @GenerateMocks([
@@ -42,6 +45,7 @@ void main() {
   MalaSyncManager buildManager({
     bool loggedIn = true,
     String? userId = userA,
+    MalaAnalytics? analytics,
   }) {
     return MalaSyncManager(
       local: local,
@@ -50,6 +54,7 @@ void main() {
       submitGroupCount: submitGroup,
       isLoggedIn: () => loggedIn,
       currentUserId: () async => userId,
+      analytics: analytics,
     );
   }
 
@@ -176,6 +181,35 @@ void main() {
     final after = local.read(userA, presetId);
     expect(after.syncedTotal, 0);
     expect(after.isDirty, isTrue);
+  });
+
+  test('a failed flush reports mala_sync_failed once with the pending delta',
+      () async {
+    final recording = RecordingAnalyticsService();
+    await local.write(
+      userA,
+      presetId,
+      const LocalMalaState(total: 15, syncedTotal: 10, accumulatorId: 'acc-1'),
+    );
+    await local.writeGroup(
+      userA,
+      groupAccId,
+      const LocalGroupMalaState(total: 7, syncedTotal: 0),
+    );
+    when(update(any)).thenAnswer(
+      (_) async => const Left(NetworkFailure('offline')),
+    );
+
+    final manager = buildManager(analytics: MalaAnalytics(recording));
+    await manager.flush(SyncReason.debounce);
+    await manager.flush(SyncReason.tap); // still failing: no second event
+    manager.dispose();
+
+    expect(recording.eventNames, [AnalyticsEvents.malaSyncFailed]);
+    expect(recording.events.single.properties, {
+      'reason': 'debounce',
+      'pending_delta': 12,
+    });
   });
 
   test('does nothing when not logged in', () async {
