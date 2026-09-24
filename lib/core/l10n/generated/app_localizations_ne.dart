@@ -2140,6 +2140,54 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_members_empty => 'अहिलेसम्म कुनै सदस्य छैन';
 
   @override
+  String get group_member_admin => 'Admin';
+
+  @override
+  String group_remove_member(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get group_remove_member_title => 'Remove from group?';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name will be removed from group and blocked from joining until the ban ends';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'Blocked for :';
+
+  @override
+  String get group_remove_member_duration_day => '1 day';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 year';
+
+  @override
+  String get group_remove_member_reason_label => 'Reason (optional)';
+
+  @override
+  String get group_remove_member_reason_hint => 'Something else...';
+
+  @override
+  String get group_remove_member_action => 'Remove';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name was removed from the group.';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'Couldn\'t remove this member. Try again.';
+
+  @override
   String get group_followers_empty => 'अहिलेसम्म कुनै अनुयायी छैन';
 
   @override

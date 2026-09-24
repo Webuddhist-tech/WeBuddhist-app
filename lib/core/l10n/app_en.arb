@@ -979,6 +979,47 @@
   "group_members_load_error": "Unable to load members. Please try again.",
   "group_followers_load_error": "Unable to load followers. Please try again.",
   "group_members_empty": "No members yet",
+  "group_member_admin": "Admin",
+  "group_remove_member": "Remove {name}",
+  "@group_remove_member": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "group_remove_member_title": "Remove from group?",
+  "group_remove_member_message": "{name} will be removed from group and blocked from joining until the ban ends",
+  "@group_remove_member_message": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "group_remove_member_blocked_for": "Blocked for :",
+  "group_remove_member_duration_day": "1 day",
+  "group_remove_member_duration_days": "{count} days",
+  "@group_remove_member_duration_days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_remove_member_duration_year": "1 year",
+  "group_remove_member_reason_label": "Reason (optional)",
+  "group_remove_member_reason_hint": "Something else...",
+  "group_remove_member_action": "Remove",
+  "group_remove_member_success": "{name} was removed from the group.",
+  "@group_remove_member_success": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "group_remove_member_error": "Couldn't remove this member. Try again.",
   "group_followers_empty": "No followers yet",
   "group_follower": "follower",
   "group_followers": "followers",

@@ -374,6 +374,41 @@ class GroupProfileRemoteDatasource {
     }
   }
 
+  /// `POST /cms/author/groups/{groupId}/joined-users/{userId}/remove`.
+  Future<void> removeJoinedUser(
+    String groupId, {
+    required String userId,
+    required int banDurationDays,
+    String? reason,
+  }) async {
+    final note = reason?.trim();
+    try {
+      final response = await dio.post(
+        '/cms/author/groups/$groupId/joined-users/$userId/remove',
+        data: {
+          'ban_duration_days': banDurationDays,
+          'reason': note == null || note.isEmpty ? null : note,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return;
+      }
+
+      _logger.error(
+        'Failed to remove joined user $userId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to remove group member',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in removeJoinedUser', e);
+      throw _dioToException(e, 'Failed to remove group member');
+    }
+  }
+
   Future<GroupEventsPageModel> fetchConnectEvents({
     required bool includeUnfollowed,
     required String language,
@@ -665,6 +700,10 @@ class GroupProfileRemoteDatasource {
         '/author/groups/$groupId/join-requests',
         data: {'message': message},
       );
+      final banMessage = groupJoinBanMessage(response.data);
+      if (banMessage != null) {
+        throw AuthorizationException(banMessage);
+      }
       if (response.statusCode != 200 &&
           response.statusCode != 201 &&
           response.statusCode != 204) {
@@ -674,6 +713,10 @@ class GroupProfileRemoteDatasource {
         );
       }
     } on DioException catch (e) {
+      final banMessage = groupJoinBanMessage(e.response?.data);
+      if (banMessage != null) {
+        throw AuthorizationException(banMessage);
+      }
       _logger.error('Dio error in submitJoinRequest', e);
       throw _dioToException(e, 'Failed to submit join request');
     }
@@ -731,4 +774,20 @@ class GroupProfileRemoteDatasource {
     final detail = data['detail'];
     return detail is String && detail.contains('You have not joined event');
   }
+}
+
+/// Message from a `403` join-request body when `detail.error` is `GROUP_BANNED`.
+/// Returns null for every other shape so the caller keeps the generic error.
+String? groupJoinBanMessage(Object? data) {
+  if (data is! Map) return null;
+  final detail = data['detail'];
+  if (detail is! Map) return null;
+  final error = detail['error'];
+  if (error is! String || error.trim().toUpperCase() != 'GROUP_BANNED') {
+    return null;
+  }
+  final message = detail['message'];
+  if (message is! String) return null;
+  final trimmed = message.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }

@@ -12,8 +12,8 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
 
   static const int maxMessageLength = 200;
 
-  static Future<bool?> show(BuildContext context, GroupProfile profile) {
-    return showModalBottomSheet<bool>(
+  static Future<bool?> show(BuildContext context, GroupProfile profile) async {
+    final result = await showModalBottomSheet<Object?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -22,6 +22,11 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (_) => GroupJoinRequestDrawer(profile: profile),
     );
+    if (result is String && result.isNotEmpty && context.mounted) {
+      await _showBanDialog(context, result);
+      return false;
+    }
+    return result == true;
   }
 
   @override
@@ -45,7 +50,7 @@ class _GroupJoinRequestDrawerState
 
     setState(() => _isSubmitting = true);
 
-    final ok = await submitGroupJoinRequest(
+    final outcome = await submitGroupJoinRequest(
       ref: ref,
       groupId: widget.profile.id,
       message: _messageController.text.trim(),
@@ -53,8 +58,14 @@ class _GroupJoinRequestDrawerState
 
     if (!mounted) return;
 
-    if (ok) {
+    if (outcome.sent) {
       Navigator.of(context).pop(true);
+      return;
+    }
+
+    final banMessage = outcome.banMessage;
+    if (banMessage != null && banMessage.isNotEmpty) {
+      Navigator.of(context).pop(banMessage);
       return;
     }
 
@@ -183,4 +194,43 @@ class _GroupJoinRequestDrawerState
       ),
     );
   }
+}
+
+Future<void> _showBanDialog(BuildContext context, String message) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return Dialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.4,
+                  color:
+                      isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(dialogContext.l10n.got_it),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }

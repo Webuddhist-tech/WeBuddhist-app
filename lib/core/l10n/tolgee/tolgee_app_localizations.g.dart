@@ -4143,6 +4143,101 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_member_admin => TolgeeBridge.get(
+    localeName,
+    'group_member_admin',
+    () => _fallback.group_member_admin,
+  );
+
+  @override
+  String group_remove_member(String name) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member',
+    <String, Object>{'name': name},
+    () => _fallback.group_remove_member(name),
+  );
+
+  @override
+  String get group_remove_member_title => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_title',
+    () => _fallback.group_remove_member_title,
+  );
+
+  @override
+  String group_remove_member_message(String name) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member_message',
+    <String, Object>{'name': name},
+    () => _fallback.group_remove_member_message(name),
+  );
+
+  @override
+  String get group_remove_member_blocked_for => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_blocked_for',
+    () => _fallback.group_remove_member_blocked_for,
+  );
+
+  @override
+  String get group_remove_member_duration_day => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_duration_day',
+    () => _fallback.group_remove_member_duration_day,
+  );
+
+  @override
+  String group_remove_member_duration_days(int count) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member_duration_days',
+    <String, Object>{'count': count},
+    () => _fallback.group_remove_member_duration_days(count),
+  );
+
+  @override
+  String get group_remove_member_duration_year => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_duration_year',
+    () => _fallback.group_remove_member_duration_year,
+  );
+
+  @override
+  String get group_remove_member_reason_label => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_reason_label',
+    () => _fallback.group_remove_member_reason_label,
+  );
+
+  @override
+  String get group_remove_member_reason_hint => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_reason_hint',
+    () => _fallback.group_remove_member_reason_hint,
+  );
+
+  @override
+  String get group_remove_member_action => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_action',
+    () => _fallback.group_remove_member_action,
+  );
+
+  @override
+  String group_remove_member_success(String name) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member_success',
+    <String, Object>{'name': name},
+    () => _fallback.group_remove_member_success(name),
+  );
+
+  @override
+  String get group_remove_member_error => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_error',
+    () => _fallback.group_remove_member_error,
+  );
+
+  @override
   String get group_followers_empty => TolgeeBridge.get(
     localeName,
     'group_followers_empty',

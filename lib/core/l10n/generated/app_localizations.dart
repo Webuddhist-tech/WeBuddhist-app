@@ -3838,6 +3838,84 @@ abstract class AppLocalizations {
   /// **'No members yet'**
   String get group_members_empty;
 
+  /// No description provided for @group_member_admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get group_member_admin;
+
+  /// No description provided for @group_remove_member.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String group_remove_member(String name);
+
+  /// No description provided for @group_remove_member_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from group?'**
+  String get group_remove_member_title;
+
+  /// No description provided for @group_remove_member_message.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be removed from group and blocked from joining until the ban ends'**
+  String group_remove_member_message(String name);
+
+  /// No description provided for @group_remove_member_blocked_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked for :'**
+  String get group_remove_member_blocked_for;
+
+  /// No description provided for @group_remove_member_duration_day.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get group_remove_member_duration_day;
+
+  /// No description provided for @group_remove_member_duration_days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String group_remove_member_duration_days(int count);
+
+  /// No description provided for @group_remove_member_duration_year.
+  ///
+  /// In en, this message translates to:
+  /// **'1 year'**
+  String get group_remove_member_duration_year;
+
+  /// No description provided for @group_remove_member_reason_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get group_remove_member_reason_label;
+
+  /// No description provided for @group_remove_member_reason_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else...'**
+  String get group_remove_member_reason_hint;
+
+  /// No description provided for @group_remove_member_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get group_remove_member_action;
+
+  /// No description provided for @group_remove_member_success.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was removed from the group.'**
+  String group_remove_member_success(String name);
+
+  /// No description provided for @group_remove_member_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t remove this member. Try again.'**
+  String get group_remove_member_error;
+
   /// No description provided for @group_followers_empty.
   ///
   /// In en, this message translates to:

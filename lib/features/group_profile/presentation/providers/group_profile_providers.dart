@@ -877,6 +877,8 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
   final String _groupId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  final Set<String> _removedUserIds = {};
+  final Set<String> _removingUserIds = {};
 
   Future<void> loadInitial() async {
     if (state.isLoading || state.isLoadingMore) return;
@@ -897,9 +899,11 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
         state = state.copyWith(isLoading: false, error: failure.message);
       },
       (page) {
+        final members = _withoutRemoved(page.members);
+        final dropped = page.members.length - members.length;
         state = state.copyWith(
-          members: page.members,
-          totalMembers: page.totalMembers,
+          members: members,
+          totalMembers: _totalAfterDrop(page.totalMembers, dropped),
           isLoading: false,
           hasMore: page.hasMore,
           skip: page.members.length,
@@ -928,15 +932,73 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
+        final members = _withoutRemoved(page.members);
+        final dropped = page.members.length - members.length;
         state = state.copyWith(
-          members: [...state.members, ...page.members],
-          totalMembers: page.totalMembers,
+          members: [...state.members, ...members],
+          totalMembers: _totalAfterDrop(page.totalMembers, dropped),
           isLoadingMore: false,
           hasMore: page.hasMore,
           skip: state.skip + page.members.length,
           clearError: true,
         );
       },
+    );
+  }
+
+  /// Removes [userId] on the server, then drops them from the loaded list.
+  /// A failed request leaves the list unchanged.
+  Future<bool> removeMember({
+    required String userId,
+    required int banDurationDays,
+    String? reason,
+  }) async {
+    final id = userId.trim();
+    if (id.isEmpty || _removingUserIds.contains(id)) return false;
+    if (banDurationDays < 1 || banDurationDays > 365) return false;
+
+    _removingUserIds.add(id);
+    final result = await _repository.removeJoinedUser(
+      _groupId,
+      userId: id,
+      banDurationDays: banDurationDays,
+      reason: reason,
+    );
+    _removingUserIds.remove(id);
+    if (!mounted) return result.isRight();
+
+    return result.fold((_) => false, (_) {
+      _removedUserIds.add(id);
+      _dropMember(id);
+      return true;
+    });
+  }
+
+  List<GroupMember> _withoutRemoved(List<GroupMember> members) {
+    if (_removedUserIds.isEmpty) return members;
+    return [
+      for (final member in members)
+        if (!_removedUserIds.contains(member.userId)) member,
+    ];
+  }
+
+  int _totalAfterDrop(int total, int dropped) {
+    final next = total - dropped;
+    return next < 0 ? 0 : next;
+  }
+
+  void _dropMember(String userId) {
+    final next = [
+      for (final member in state.members)
+        if (member.userId != userId) member,
+    ];
+    final removed = state.members.length - next.length;
+    if (removed == 0) return;
+    final skip = state.skip - removed;
+    state = state.copyWith(
+      members: next,
+      totalMembers: _totalAfterDrop(state.totalMembers, removed),
+      skip: skip < 0 ? 0 : skip,
     );
   }
 
@@ -1413,7 +1475,22 @@ final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
   return notifier;
 });
 
-Future<bool> submitGroupJoinRequest({
+/// Outcome of asking to join. [banMessage] is the server text for
+/// `GROUP_BANNED`; other failures leave it null.
+class GroupJoinRequestOutcome {
+  final bool sent;
+  final String? banMessage;
+
+  const GroupJoinRequestOutcome.sent() : sent = true, banMessage = null;
+
+  const GroupJoinRequestOutcome.failed() : sent = false, banMessage = null;
+
+  const GroupJoinRequestOutcome.banned(String message)
+    : sent = false,
+      banMessage = message;
+}
+
+Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
   required WidgetRef ref,
   required String groupId,
   String message = '',
@@ -1421,10 +1498,21 @@ Future<bool> submitGroupJoinRequest({
   final result = await ref
       .read(groupProfileRepositoryProvider)
       .submitJoinRequest(groupId, message: message);
-  return result.fold((_) => false, (_) {
-    ref.invalidate(groupProfileProvider(groupId));
-    return true;
-  });
+  return result.fold(
+    (failure) {
+      final banMessage = failure is AuthorizationFailure
+          ? failure.message.trim()
+          : '';
+      if (banMessage.isNotEmpty) {
+        return GroupJoinRequestOutcome.banned(banMessage);
+      }
+      return const GroupJoinRequestOutcome.failed();
+    },
+    (_) {
+      ref.invalidate(groupProfileProvider(groupId));
+      return const GroupJoinRequestOutcome.sent();
+    },
+  );
 }
 
 Future<void> refreshGroupProfilePage({
