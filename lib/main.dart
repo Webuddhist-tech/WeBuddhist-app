@@ -306,11 +306,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // arrived during cold start and dispatch warm links immediately afterward.
     if (!_hasRegisteredDeepLinkRouters) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        AirbridgeDeepLinkService.setRouter(router);
-        AppLinksDeepLinkService.instance.setRouter(router);
+        // Analytics first: setRouter dispatches a link stored during cold
+        // start right away, and it is only tracked if analytics is set.
         final entryAnalytics = ref.read(entryAnalyticsProvider);
         AirbridgeDeepLinkService.setAnalytics(entryAnalytics);
         AppLinksDeepLinkService.instance.setAnalytics(entryAnalytics);
+        AirbridgeDeepLinkService.setRouter(router);
+        AppLinksDeepLinkService.instance.setRouter(router);
         AppLinksDeepLinkService.instance.setTabSetter((int tabIndex) {
           ref.read(mainNavigationIndexProvider.notifier).state = tabIndex;
         });

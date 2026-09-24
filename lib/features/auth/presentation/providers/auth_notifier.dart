@@ -345,6 +345,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _logger.info('Session permanently expired — routing to login');
     _invalidateAuthSession();
     await _localLogoutUseCase(const NoParams());
+    // As on logout: the next session must not carry this user's identity.
+    await _analytics.reset();
   }
 
   Future<void> _handleAuthFailure() async {
