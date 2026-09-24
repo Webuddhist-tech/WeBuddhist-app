@@ -544,6 +544,7 @@
   "main_version": "Үндсэн хувилбар",
   "second_version": "Хоёр дахь хувилбар",
   "second_version_msg": "Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ",
+  "root_text": "Эх бичвэр",
   "version": "Хувилбарууд",
   "parallel_version": "Зэрэгцээ хувилбар",
   "reader_languages_title": "Хэл",

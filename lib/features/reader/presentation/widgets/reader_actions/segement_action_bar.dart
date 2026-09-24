@@ -166,6 +166,8 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
       segmentInfoFutureProvider(widget.segment.segmentId),
     );
     final videos = segmentInfo.valueOrNull?.videos ?? const <SegmentVideo>[];
+    final hasRootText =
+        segmentInfo.valueOrNull?.relatedText.hasRootText ?? false;
 
     return _ResourcesPanel(
       onDismiss: widget.onClose,
@@ -217,6 +219,22 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
             }
           },
         ),
+        if (hasRootText)
+          _ResourceTile(
+            icon: AppAssets.readerRootText,
+            label: localizations.root_text,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              notifier.toggleTranslation(
+                widget.segment.segmentId,
+                rootText: true,
+              );
+              _track(ReaderAction.version);
+              if (!state.isTranslationOpen) {
+                widget.onOpenTranslation?.call();
+              }
+            },
+          ),
       ],
       videos: videos,
       onVideoOpened: () => _track(ReaderAction.video),
@@ -736,9 +754,7 @@ class _IconActionButton extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: foreground,
-                ),
+                style: theme.textTheme.labelMedium?.copyWith(color: foreground),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

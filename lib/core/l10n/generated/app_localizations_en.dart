@@ -1517,6 +1517,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The second version will appear below each verse of the main text';
 
   @override
+  String get root_text => 'Root text';
+
+  @override
   String get version => 'Versions';
 
   @override

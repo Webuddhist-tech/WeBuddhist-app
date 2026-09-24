@@ -1445,6 +1445,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get second_version_msg => '次要版本將會顯示在主要版本的內文下方';
 
   @override
+  String get root_text => '根本文';
+
+  @override
   String get version => '所有版本';
 
   @override

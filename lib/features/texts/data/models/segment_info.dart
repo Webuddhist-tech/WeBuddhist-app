@@ -44,10 +44,15 @@ class SegmentRelatedTextInfo {
   const SegmentRelatedTextInfo({
     required this.commentaries,
     required this.rootText,
+    this.hasRootText = false,
   });
 
   final int commentaries;
   final int rootText;
+
+  /// The open text is a commentary or a translation of one, so a Root text
+  /// button applies even when [rootText] is zero.
+  final bool hasRootText;
 
   factory SegmentRelatedTextInfo.fromJson(Map<String, dynamic> json) {
     return SegmentRelatedTextInfo(

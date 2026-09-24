@@ -1529,6 +1529,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'दूसरा संस्करण मुख्य पाठ के हर श्लोक के नीचे दिखाई देगा';
 
   @override
+  String get root_text => 'मूल पाठ';
+
+  @override
   String get version => 'संस्करण';
 
   @override

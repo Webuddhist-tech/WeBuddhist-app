@@ -44,3 +44,17 @@ class GetSegmentTranslationsUseCase {
     return await _repository.getSegmentTranslations(segmentId);
   }
 }
+
+/// Use case for getting the root text editions of a commentary segment.
+class GetSegmentRootTextsUseCase {
+  final SegmentRepositoryInterface _repository;
+
+  GetSegmentRootTextsUseCase(this._repository);
+
+  Future<SegmentTranslationResponse> call(String segmentId) async {
+    if (segmentId.isEmpty) {
+      throw ArgumentError('Segment ID cannot be empty');
+    }
+    return await _repository.getSegmentRootTexts(segmentId);
+  }
+}

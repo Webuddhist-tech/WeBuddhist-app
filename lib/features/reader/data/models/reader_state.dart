@@ -4,18 +4,10 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 
 /// Status of the reader
-enum ReaderStatus {
-  initial,
-  loading,
-  loaded,
-  error,
-}
+enum ReaderStatus { initial, loading, loaded, error }
 
 /// Direction for pagination
-enum PaginationDirection {
-  next,
-  previous,
-}
+enum PaginationDirection { next, previous }
 
 /// Main state model for the reader feature
 class ReaderState {
@@ -42,8 +34,9 @@ class ReaderState {
   // Commentary
   final String? commentarySegmentId;
 
-  // Translation
+  // Translation (versions, or the root text of a commentary)
   final String? translationSegmentId;
+  final bool showsRootText;
 
   final double splitRatio;
 
@@ -74,6 +67,7 @@ class ReaderState {
     this.selectedSegment,
     this.commentarySegmentId,
     this.translationSegmentId,
+    this.showsRootText = false,
     this.splitRatio = 0.5,
     this.highlightedSegmentId,
     this.highlightSource = NavigationSource.normal,
@@ -135,6 +129,7 @@ class ReaderState {
     Segment? selectedSegment,
     String? commentarySegmentId,
     String? translationSegmentId,
+    bool? showsRootText,
     double? splitRatio,
     String? highlightedSegmentId,
     NavigationSource? highlightSource,
@@ -162,7 +157,9 @@ class ReaderState {
       content: content ?? this.content,
       navigationContext: navigationContext ?? this.navigationContext,
       selectedSegment:
-          clearSelectedSegment ? null : (selectedSegment ?? this.selectedSegment),
+          clearSelectedSegment
+              ? null
+              : (selectedSegment ?? this.selectedSegment),
       commentarySegmentId:
           clearCommentarySegmentId
               ? null
@@ -171,6 +168,7 @@ class ReaderState {
           clearTranslationSegmentId
               ? null
               : (translationSegmentId ?? this.translationSegmentId),
+      showsRootText: showsRootText ?? this.showsRootText,
       splitRatio: splitRatio ?? this.splitRatio,
       highlightedSegmentId:
           clearHighlightedSegmentId

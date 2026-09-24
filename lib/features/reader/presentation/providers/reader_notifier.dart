@@ -265,10 +265,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     _activeVersionId = root.id;
     // An adopted layout keeps whatever the user toggled on the other screen.
     if (!adopted) {
-      dual.openAsTranslation(
-        original: _slot(root),
-        translation: _slot(opened),
-      );
+      dual.openAsTranslation(original: _slot(root), translation: _slot(opened));
     }
     state = state.copyWith(
       openedTranslation: _textDetail(opened),
@@ -343,12 +340,13 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   }
 
   // Labels are localized by the sheet from the code.
-  static ReaderSlotConfig _slot(ReaderVersionDetail version) => ReaderSlotConfig(
-    languageCode: version.language,
-    languageLabel: version.language,
-    versionId: version.id,
-    versionLabel: version.title,
-  );
+  static ReaderSlotConfig _slot(ReaderVersionDetail version) =>
+      ReaderSlotConfig(
+        languageCode: version.language,
+        languageLabel: version.language,
+        versionId: version.id,
+        versionLabel: version.title,
+      );
 
   static TextDetail _textDetail(ReaderVersionDetail version) => TextDetail(
     id: version.id,
@@ -828,12 +826,14 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     }
   }
 
-  /// Open translation panel for a segment
-  void openTranslation(String segmentId) {
+  /// Open translation panel for a segment; [rootText] shows the root work
+  /// of a commentary instead of the versions.
+  void openTranslation(String segmentId, {bool rootText = false}) {
     if (_isDisposed) return;
     final isOpening = !state.isTranslationOpen;
     state = state.copyWith(
       translationSegmentId: segmentId,
+      showsRootText: rootText,
       splitRatio:
           isOpening ? ReaderConstants.defaultSplitRatio : state.splitRatio,
     );
@@ -846,13 +846,14 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   }
 
   /// Toggle translation panel
-  void toggleTranslation(String segmentId) {
+  void toggleTranslation(String segmentId, {bool rootText = false}) {
     if (_isDisposed) return;
 
-    if (state.translationSegmentId == segmentId) {
+    if (state.translationSegmentId == segmentId &&
+        state.showsRootText == rootText) {
       closeTranslation();
     } else {
-      openTranslation(segmentId);
+      openTranslation(segmentId, rootText: rootText);
     }
   }
 

@@ -9,4 +9,8 @@ abstract class SegmentRepositoryInterface {
   Future<SegmentInfo> getSegmentInfo(String segmentId);
   Future<SegmentCommentaryResponse> getSegmentCommentaries(String segmentId);
   Future<SegmentTranslationResponse> getSegmentTranslations(String segmentId);
+
+  /// Editions of the root work, when the open text is a commentary or a
+  /// translation of one; empty otherwise.
+  Future<SegmentTranslationResponse> getSegmentRootTexts(String segmentId);
 }

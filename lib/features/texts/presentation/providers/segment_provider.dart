@@ -24,3 +24,11 @@ final segmentTranslationsFutureProvider = FutureProvider.family((
   final useCase = ref.watch(getSegmentTranslationsUseCaseProvider);
   return useCase(segmentId);
 });
+
+final segmentRootTextsFutureProvider = FutureProvider.family((
+  ref,
+  String segmentId,
+) {
+  final useCase = ref.watch(getSegmentRootTextsUseCaseProvider);
+  return useCase(segmentId);
+});

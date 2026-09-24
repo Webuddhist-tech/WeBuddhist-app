@@ -63,6 +63,7 @@ class AppAssets {
   static const IconData readerFontSize = PhosphorIconsRegular.textAa;
   static const IconData readerVersion = PhosphorIconsRegular.globe;
   static const IconData readerCommentary = PhosphorIconsRegular.chatText;
+  static const IconData readerRootText = PhosphorIconsRegular.bookOpenText;
   static const IconData readerCopy = PhosphorIconsRegular.copy;
   static const IconData readerShare = PhosphorIconsRegular.shareNetwork;
   static const IconData readerChevronRight = PhosphorIconsRegular.caretRight;

@@ -2941,6 +2941,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get root_text =>
+      TolgeeBridge.get(localeName, 'root_text', () => _fallback.root_text);
+
+  @override
   String get version =>
       TolgeeBridge.get(localeName, 'version', () => _fallback.version);
 

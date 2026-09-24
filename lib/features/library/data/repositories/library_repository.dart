@@ -181,11 +181,14 @@ class LibraryRepository {
 
   /// [text], the text it translates, and so on up to the root, which is last.
   /// A missing or cyclic parent ends the chain.
-  Future<List<LibraryText>> _translationChain(LibraryText text) async {
+  Future<List<LibraryText>> _translationChain(
+    LibraryText text, {
+    int maxLength = _maxChainLength,
+  }) async {
     final chain = [text];
     final seen = {text.id};
     var current = text;
-    while (current.isTranslation && chain.length < _maxChainLength) {
+    while (current.isTranslation && chain.length < maxLength) {
       final parentId = current.translationOf!;
       if (!seen.add(parentId)) break;
       try {
@@ -354,9 +357,13 @@ class LibraryRepository {
     return numbers;
   }
 
-  /// Related segments of [segmentId], split by their text's `commentary_of`.
+  /// Related editions of [segmentId], sorted by work the way the website
+  /// does it (see [LibrarySegmentResources]). Segments of the open text are
+  /// dropped; each remaining edition becomes one card with its aligned
+  /// segments in reading order.
   Future<LibrarySegmentResources> loadSegmentResources(String segmentId) {
     return _memo(_resources, segmentId, capacity: 200, () async {
+      final openTextId = await _textIdOfSegment(segmentId);
       final related = await _fetchAllPages(
         (offset) => _datasource.fetchRelatedSegments(
           segmentId,
@@ -366,27 +373,194 @@ class LibraryRepository {
       );
       final usable =
           related
-              .where((s) => s.textId != null && s.editionId != null)
+              .where(
+                (s) =>
+                    s.textId != null &&
+                    s.editionId != null &&
+                    s.textId != openTextId,
+              )
               .toList();
-      final texts = await Future.wait(usable.map((s) => getText(s.textId!)));
 
-      final commentaries = <LibraryRelatedResource>[];
-      final versions = <LibraryRelatedResource>[];
-      for (var i = 0; i < usable.length; i++) {
-        final resource = LibraryRelatedResource(
-          segment: usable[i],
-          text: texts[i],
-        );
-        (resource.kind == LibraryResourceKind.commentary
-                ? commentaries
-                : versions)
-            .add(resource);
+      final textIds = {
+        if (openTextId != null) openTextId,
+        for (final s in usable) s.textId!,
+      };
+      final texts = <String, LibraryText?>{};
+      await Future.wait(
+        textIds.map((id) async => texts[id] = await _tryGetText(id)),
+      );
+      final works = <String, String?>{};
+      await Future.wait(
+        texts.entries.map((e) async {
+          final text = e.value;
+          works[e.key] = text == null ? null : await _workId(text);
+        }),
+      );
+      // Originals reached only through a chain are cached; make them visible.
+      for (final workId in works.values.whereType<String>().toSet()) {
+        texts[workId] ??= await _tryGetText(workId);
       }
+
+      final openWorkId = openTextId == null ? null : works[openTextId];
+      final openWork =
+          openWorkId == null
+              ? null
+              : (texts[openWorkId] ?? await _tryGetText(openWorkId));
+      String? rootWorkId;
+      if (openWork != null && openWork.isCommentary) {
+        final root = await _tryGetText(openWork.commentaryOf!);
+        rootWorkId = root == null ? null : await _workId(root);
+      }
+
+      // Cards, one per edition, in first-seen order.
+      final byEdition = <String, List<LibrarySegment>>{};
+      for (final s in usable) {
+        byEdition.putIfAbsent(s.editionId!, () => []).add(s);
+      }
+      final cards = <LibraryRelatedEdition>[];
+      for (final entry in byEdition.entries) {
+        final segments = [...entry.value]
+          ..sort((a, b) => (a.spanStart ?? 0).compareTo(b.spanStart ?? 0));
+        cards.add(
+          LibraryRelatedEdition(
+            editionId: entry.key,
+            text: texts[segments.first.textId],
+            segments: segments,
+          ),
+        );
+      }
+
+      final translations = <LibraryRelatedEdition>[];
+      final rootTexts = <LibraryRelatedEdition>[];
+      final commentaryCards = <LibraryRelatedEdition>[];
+      for (final card in cards) {
+        final text = card.text;
+        final workId = text == null ? null : works[text.id];
+        final work = workId == null ? null : texts[workId];
+        if (text == null || workId == null) {
+          translations.add(card);
+        } else if (workId == openWorkId) {
+          translations.add(card);
+        } else if (rootWorkId != null && workId == rootWorkId) {
+          rootTexts.add(card);
+        } else if ((work ?? text).isCommentary) {
+          commentaryCards.add(card);
+        } else {
+          translations.add(card);
+        }
+      }
+
       return LibrarySegmentResources(
-        commentaries: commentaries,
-        versions: versions,
+        translations: translations,
+        commentaries: _nestCommentaryTranslations(commentaryCards, works),
+        rootTexts: rootTexts,
+        hasRootWork: rootWorkId != null,
       );
     });
+  }
+
+  /// Translations of a commentary go under that commentary's card, grouped
+  /// by work. A translation whose original is not itself related stays a card.
+  static List<LibraryRelatedEdition> _nestCommentaryTranslations(
+    List<LibraryRelatedEdition> cards,
+    Map<String, String?> works,
+  ) {
+    final byWork = <String, List<LibraryRelatedEdition>>{};
+    for (final card in cards) {
+      byWork.putIfAbsent(works[card.textId] ?? card.textId, () => []).add(card);
+    }
+    final result = <LibraryRelatedEdition>[];
+    for (final entry in byWork.entries) {
+      final originals =
+          entry.value.where((c) => c.textId == entry.key).toList();
+      if (originals.isEmpty) {
+        result.addAll(entry.value);
+        continue;
+      }
+      final translated = entry.value.where((c) => c.textId != entry.key);
+      result.add(originals.first.withTranslations(translated.toList()));
+      result.addAll(originals.skip(1));
+    }
+    return result;
+  }
+
+  /// Text of [segmentId]: from an edition already in memory (the reader
+  /// loaded it), else from the segment itself. Null when it cannot be known.
+  Future<String?> _textIdOfSegment(String segmentId) async {
+    for (final entry in _segments.entries) {
+      final segments = await entry.value.catchError((_) => <LibrarySegment>[]);
+      if (segments.any((s) => s.id == segmentId)) {
+        return (await _tryGetEdition(entry.key))?.textId;
+      }
+    }
+    try {
+      final segment = await getSegment(segmentId);
+      if (segment.textId != null) return segment.textId;
+      final editionId = segment.editionId;
+      if (editionId != null) return (await _tryGetEdition(editionId))?.textId;
+    } catch (e) {
+      _logger.warning('Segment $segmentId could not be looked up', e);
+    }
+    return null;
+  }
+
+  Future<LibraryText?> _tryGetText(String id) async {
+    try {
+      return await getText(id);
+    } catch (e) {
+      _logger.warning('Text $id failed', e);
+      return null;
+    }
+  }
+
+  Future<LibraryEdition?> _tryGetEdition(String id) async {
+    try {
+      return await getEdition(id);
+    } catch (e) {
+      _logger.warning('Edition $id failed', e);
+      return null;
+    }
+  }
+
+  /// Bound on `translation_of` hops when resolving a text's work.
+  static const _maxWorkSteps = 5;
+
+  /// The original at the top of [text]'s translation chain: its work.
+  Future<String> _workId(LibraryText text) async {
+    final chain = await _translationChain(text, maxLength: _maxWorkSteps + 1);
+    return chain.last.id;
+  }
+
+  /// The segments of a related edition sliced from one content fetch, plus
+  /// the edition's source when available.
+  Future<LibraryEditionContent> loadEditionContent(
+    LibraryRelatedEdition edition,
+  ) async {
+    final spanned = edition.segments.where((s) => s.lines.isNotEmpty);
+    if (spanned.isEmpty) {
+      return LibraryEditionContent(
+        segmentLines: [for (final _ in edition.segments) const []],
+      );
+    }
+    final editionFuture = _tryGetEdition(edition.editionId);
+    final spanStart = spanned
+        .map((s) => s.spanStart!)
+        .reduce((a, b) => a < b ? a : b);
+    final spanEnd = spanned
+        .map((s) => s.spanEnd!)
+        .reduce((a, b) => a > b ? a : b);
+    final content = await _datasource.fetchEditionContent(
+      edition.editionId,
+      spanStart: spanStart,
+      spanEnd: spanEnd,
+    );
+    return LibraryEditionContent(
+      segmentLines: [
+        for (final s in edition.segments)
+          sliceLibraryLines(content, s.lines, spanStart: spanStart),
+      ],
+      source: (await editionFuture)?.source,
+    );
   }
 
   /// A related segment's lines plus its edition's source, when available.

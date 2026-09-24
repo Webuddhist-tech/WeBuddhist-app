@@ -1535,6 +1535,9 @@ class AppLocalizationsBo extends AppLocalizations {
       'འགྱུར་གཞན་འདི་རྩ་བ་གཙོ་བོའི་འོག་རང་ལ་འཆར་ཡོང་།';
 
   @override
+  String get root_text => 'རྩ་བ།';
+
+  @override
   String get version => 'པར་གཞི།';
 
   @override
