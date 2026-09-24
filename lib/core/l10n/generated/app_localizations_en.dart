@@ -2162,6 +2162,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t remove this member. Try again.';
 
   @override
+  String group_join_banned_until(String date) {
+    return 'You were removed from this group and cannot rejoin until $date';
+  }
+
+  @override
+  String get group_join_banned =>
+      'You were removed from this group and cannot rejoin until the ban ends.';
+
+  @override
   String get group_followers_empty => 'No followers yet';
 
   @override

@@ -2139,48 +2139,57 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String group_remove_member(String name) {
-    return 'Remove $name';
+    return '$name ཕྱིར་འབུད།';
   }
 
   @override
-  String get group_remove_member_title => 'Remove from group?';
+  String get group_remove_member_title => 'ཚོགས་པ་ནས་ཕྱིར་འབུད་དམ།';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from group and blocked from joining until the ban ends';
+    return '$name ཚོགས་པ་ནས་ཕྱིར་འབུད་རྒྱུ་ཡིན་པ་དང་། བཀག་སྡོམ་མ་ཚར་བར་ཞུགས་མི་ཆོག';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'Blocked for :';
+  String get group_remove_member_blocked_for => 'བཀག་ཡུན།';
 
   @override
-  String get group_remove_member_duration_day => '1 day';
+  String get group_remove_member_duration_day => 'ཉིན་ 1';
 
   @override
   String group_remove_member_duration_days(int count) {
-    return '$count days';
+    return 'ཉིན་ $count';
   }
 
   @override
-  String get group_remove_member_duration_year => '1 year';
+  String get group_remove_member_duration_year => 'ལོ་ 1';
 
   @override
-  String get group_remove_member_reason_label => 'Reason (optional)';
+  String get group_remove_member_reason_label => 'རྒྱུ་མཚན། (འདེམས་རུང་།)';
 
   @override
-  String get group_remove_member_reason_hint => 'Something else...';
+  String get group_remove_member_reason_hint => 'གཞན་དག...';
 
   @override
-  String get group_remove_member_action => 'Remove';
+  String get group_remove_member_action => 'ཕྱིར་འབུད།';
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the group.';
+    return '$name ཚོགས་པ་ནས་ཕྱིར་བཏོན་ཟིན།';
   }
 
   @override
   String get group_remove_member_error =>
-      'Couldn\'t remove this member. Try again.';
+      'ཚོགས་མི་འདི་ཕྱིར་འབུད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་ $date བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
+  }
+
+  @override
+  String get group_join_banned =>
+      'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་བཀག་སྡོམ་མ་ཚར་བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
 
   @override
   String get group_followers_empty => 'རྗེས་འབྲང་པ་མེད།';

@@ -2020,48 +2020,55 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String group_remove_member(String name) {
-    return 'Remove $name';
+    return '移除 $name';
   }
 
   @override
-  String get group_remove_member_title => 'Remove from group?';
+  String get group_remove_member_title => '從群組移除？';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from group and blocked from joining until the ban ends';
+    return '$name 將被移出群組，並在封鎖結束前無法再次加入';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'Blocked for :';
+  String get group_remove_member_blocked_for => '封鎖時間：';
 
   @override
-  String get group_remove_member_duration_day => '1 day';
+  String get group_remove_member_duration_day => '1 天';
 
   @override
   String group_remove_member_duration_days(int count) {
-    return '$count days';
+    return '$count 天';
   }
 
   @override
-  String get group_remove_member_duration_year => '1 year';
+  String get group_remove_member_duration_year => '1 年';
 
   @override
-  String get group_remove_member_reason_label => 'Reason (optional)';
+  String get group_remove_member_reason_label => '原因（選填）';
 
   @override
-  String get group_remove_member_reason_hint => 'Something else...';
+  String get group_remove_member_reason_hint => '其他原因...';
 
   @override
-  String get group_remove_member_action => 'Remove';
+  String get group_remove_member_action => '移除';
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the group.';
+    return '已將 $name 移出群組。';
   }
 
   @override
-  String get group_remove_member_error =>
-      'Couldn\'t remove this member. Try again.';
+  String get group_remove_member_error => '無法移除此成員，請再試一次。';
+
+  @override
+  String group_join_banned_until(String date) {
+    return '您已被移出此群組，在 $date 之前無法重新加入';
+  }
+
+  @override
+  String get group_join_banned => '您已被移出此群組，在封鎖結束前無法重新加入。';
 
   @override
   String get group_followers_empty => '尚無追蹤者';

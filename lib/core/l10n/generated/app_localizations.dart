@@ -3916,6 +3916,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t remove this member. Try again.'**
   String get group_remove_member_error;
 
+  /// No description provided for @group_join_banned_until.
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from this group and cannot rejoin until {date}'**
+  String group_join_banned_until(String date);
+
+  /// No description provided for @group_join_banned.
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from this group and cannot rejoin until the ban ends.'**
+  String get group_join_banned;
+
   /// No description provided for @group_followers_empty.
   ///
   /// In en, this message translates to:

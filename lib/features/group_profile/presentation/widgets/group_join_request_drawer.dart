@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,8 +24,8 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (_) => GroupJoinRequestDrawer(profile: profile),
     );
-    if (result is String && result.isNotEmpty && context.mounted) {
-      await _showBanDialog(context, result);
+    if (result is _GroupJoinBanNotice && context.mounted) {
+      await _showBanDialog(context, result.expiresAt);
       return false;
     }
     return result == true;
@@ -63,9 +65,8 @@ class _GroupJoinRequestDrawerState
       return;
     }
 
-    final banMessage = outcome.banMessage;
-    if (banMessage != null && banMessage.isNotEmpty) {
-      Navigator.of(context).pop(banMessage);
+    if (outcome.banned) {
+      Navigator.of(context).pop(_GroupJoinBanNotice(outcome.banExpiresAt));
       return;
     }
 
@@ -144,7 +145,9 @@ class _GroupJoinRequestDrawerState
                         '${_messageController.text.length}/${GroupJoinRequestDrawer.maxMessageLength}',
                     filled: true,
                     fillColor:
-                        isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+                        isDark
+                            ? AppColors.surfaceVariantDark
+                            : AppColors.grey100,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -196,8 +199,24 @@ class _GroupJoinRequestDrawerState
   }
 }
 
-Future<void> _showBanDialog(BuildContext context, String message) {
+class _GroupJoinBanNotice {
+  final DateTime? expiresAt;
+
+  const _GroupJoinBanNotice(this.expiresAt);
+}
+
+String _groupJoinBanDialogMessage(BuildContext context, DateTime? expiresAt) {
+  final l10n = context.l10n;
+  if (expiresAt == null) return l10n.group_join_banned;
+  final date = DateFormat.yMMMd(
+    intlFormatLocaleOf(context),
+  ).format(expiresAt.toLocal());
+  return l10n.group_join_banned_until(date);
+}
+
+Future<void> _showBanDialog(BuildContext context, DateTime? expiresAt) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
+  final message = _groupJoinBanDialogMessage(context, expiresAt);
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -216,7 +235,9 @@ Future<void> _showBanDialog(BuildContext context, String message) {
                   fontSize: 16,
                   height: 1.4,
                   color:
-                      isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                      isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 12),

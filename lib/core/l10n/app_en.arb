@@ -1020,6 +1020,15 @@
     }
   },
   "group_remove_member_error": "Couldn't remove this member. Try again.",
+  "group_join_banned_until": "You were removed from this group and cannot rejoin until {date}",
+  "@group_join_banned_until": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "group_join_banned": "You were removed from this group and cannot rejoin until the ban ends.",
   "group_followers_empty": "No followers yet",
   "group_follower": "follower",
   "group_followers": "followers",

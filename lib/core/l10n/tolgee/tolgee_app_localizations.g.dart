@@ -4238,6 +4238,21 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String group_join_banned_until(String date) => TolgeeBridge.format(
+    localeName,
+    'group_join_banned_until',
+    <String, Object>{'date': date},
+    () => _fallback.group_join_banned_until(date),
+  );
+
+  @override
+  String get group_join_banned => TolgeeBridge.get(
+    localeName,
+    'group_join_banned',
+    () => _fallback.group_join_banned,
+  );
+
+  @override
   String get group_followers_empty => TolgeeBridge.get(
     localeName,
     'group_followers_empty',

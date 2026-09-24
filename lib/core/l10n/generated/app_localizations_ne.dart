@@ -2144,48 +2144,57 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String group_remove_member(String name) {
-    return 'Remove $name';
+    return '$name लाई हटाउनुहोस्';
   }
 
   @override
-  String get group_remove_member_title => 'Remove from group?';
+  String get group_remove_member_title => 'समूहबाट हटाउने?';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from group and blocked from joining until the ban ends';
+    return '$name लाई समूहबाट हटाइनेछ र प्रतिबन्ध सकिएसम्म सामेल हुनबाट रोक लगाइनेछ';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'Blocked for :';
+  String get group_remove_member_blocked_for => 'रोक अवधि :';
 
   @override
-  String get group_remove_member_duration_day => '1 day';
+  String get group_remove_member_duration_day => '1 दिन';
 
   @override
   String group_remove_member_duration_days(int count) {
-    return '$count days';
+    return '$count दिन';
   }
 
   @override
-  String get group_remove_member_duration_year => '1 year';
+  String get group_remove_member_duration_year => '1 वर्ष';
 
   @override
-  String get group_remove_member_reason_label => 'Reason (optional)';
+  String get group_remove_member_reason_label => 'कारण (वैकल्पिक)';
 
   @override
-  String get group_remove_member_reason_hint => 'Something else...';
+  String get group_remove_member_reason_hint => 'अरू केही...';
 
   @override
-  String get group_remove_member_action => 'Remove';
+  String get group_remove_member_action => 'हटाउनुहोस्';
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the group.';
+    return '$name लाई समूहबाट हटाइयो।';
   }
 
   @override
   String get group_remove_member_error =>
-      'Couldn\'t remove this member. Try again.';
+      'यो सदस्य हटाउन सकिएन। फेरि प्रयास गर्नुहोस्।';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'तपाईंलाई यो समूहबाट हटाइएको थियो र तपाईं $date सम्म फेरि सामेल हुन सक्नुहुन्न';
+  }
+
+  @override
+  String get group_join_banned =>
+      'तपाईंलाई यो समूहबाट हटाइएको थियो र प्रतिबन्ध सकिएसम्म तपाईं फेरि सामेल हुन सक्नुहुन्न।';
 
   @override
   String get group_followers_empty => 'अहिलेसम्म कुनै अनुयायी छैन';

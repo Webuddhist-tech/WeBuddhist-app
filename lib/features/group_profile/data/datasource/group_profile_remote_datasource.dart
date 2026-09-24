@@ -700,9 +700,9 @@ class GroupProfileRemoteDatasource {
         '/author/groups/$groupId/join-requests',
         data: {'message': message},
       );
-      final banMessage = groupJoinBanMessage(response.data);
-      if (banMessage != null) {
-        throw AuthorizationException(banMessage);
+      final ban = groupJoinBan(response.data);
+      if (ban != null) {
+        throw AuthorizationException(ban.payload);
       }
       if (response.statusCode != 200 &&
           response.statusCode != 201 &&
@@ -713,9 +713,9 @@ class GroupProfileRemoteDatasource {
         );
       }
     } on DioException catch (e) {
-      final banMessage = groupJoinBanMessage(e.response?.data);
-      if (banMessage != null) {
-        throw AuthorizationException(banMessage);
+      final ban = groupJoinBan(e.response?.data);
+      if (ban != null) {
+        throw AuthorizationException(ban.payload);
       }
       _logger.error('Dio error in submitJoinRequest', e);
       throw _dioToException(e, 'Failed to submit join request');
@@ -776,18 +776,53 @@ class GroupProfileRemoteDatasource {
   }
 }
 
-/// Message from a `403` join-request body when `detail.error` is `GROUP_BANNED`.
+/// Marker stored on [AuthorizationException] when a join request is `GROUP_BANNED`.
+/// The date, when present, is appended as `GROUP_BANNED|<iso8601>`.
+const String groupJoinBannedCode = 'GROUP_BANNED';
+
+/// A `GROUP_BANNED` join-request body. The UI localizes the sentence and
+/// formats [expiresAt]; the English `message` from the server is not shown.
+class GroupJoinBan {
+  final DateTime? expiresAt;
+
+  const GroupJoinBan({this.expiresAt});
+
+  String get payload {
+    final expires = expiresAt;
+    if (expires == null) return groupJoinBannedCode;
+    return '$groupJoinBannedCode|${expires.toUtc().toIso8601String()}';
+  }
+}
+
+/// Returns a ban when `detail.error` is `GROUP_BANNED`.
 /// Returns null for every other shape so the caller keeps the generic error.
-String? groupJoinBanMessage(Object? data) {
+GroupJoinBan? groupJoinBan(Object? data) {
   if (data is! Map) return null;
   final detail = data['detail'];
   if (detail is! Map) return null;
   final error = detail['error'];
-  if (error is! String || error.trim().toUpperCase() != 'GROUP_BANNED') {
+  if (error is! String || error.trim().toUpperCase() != groupJoinBannedCode) {
     return null;
   }
-  final message = detail['message'];
-  if (message is! String) return null;
+  return GroupJoinBan(expiresAt: _parseExpiresAt(detail['expires_at']));
+}
+
+bool isGroupJoinBanned(String message) {
   final trimmed = message.trim();
-  return trimmed.isEmpty ? null : trimmed;
+  return trimmed == groupJoinBannedCode ||
+      trimmed.startsWith('$groupJoinBannedCode|');
+}
+
+DateTime? groupJoinBanExpiresAt(String message) {
+  final trimmed = message.trim();
+  final prefix = '$groupJoinBannedCode|';
+  if (!trimmed.startsWith(prefix)) return null;
+  return DateTime.tryParse(trimmed.substring(prefix.length));
+}
+
+DateTime? _parseExpiresAt(Object? value) {
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return null;
+  return DateTime.tryParse(trimmed);
 }

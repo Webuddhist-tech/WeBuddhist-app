@@ -2136,48 +2136,57 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String group_remove_member(String name) {
-    return 'Remove $name';
+    return '$name-г хасах';
   }
 
   @override
-  String get group_remove_member_title => 'Remove from group?';
+  String get group_remove_member_title => 'Бүлгээс хасах уу?';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from group and blocked from joining until the ban ends';
+    return '$name-г бүлгээс хасаж, хориг дуустал дахин нэгдэхийг хориглоно';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'Blocked for :';
+  String get group_remove_member_blocked_for => 'Хориглох хугацаа:';
 
   @override
-  String get group_remove_member_duration_day => '1 day';
+  String get group_remove_member_duration_day => '1 өдөр';
 
   @override
   String group_remove_member_duration_days(int count) {
-    return '$count days';
+    return '$count өдөр';
   }
 
   @override
-  String get group_remove_member_duration_year => '1 year';
+  String get group_remove_member_duration_year => '1 жил';
 
   @override
-  String get group_remove_member_reason_label => 'Reason (optional)';
+  String get group_remove_member_reason_label => 'Шалтгаан (заавал биш)';
 
   @override
-  String get group_remove_member_reason_hint => 'Something else...';
+  String get group_remove_member_reason_hint => 'Өөр зүйл...';
 
   @override
-  String get group_remove_member_action => 'Remove';
+  String get group_remove_member_action => 'Хасах';
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the group.';
+    return '$name-г бүлгээс хаслаа.';
   }
 
   @override
   String get group_remove_member_error =>
-      'Couldn\'t remove this member. Try again.';
+      'Энэ гишүүнийг хасаж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'Та энэ бүлгээс хасагдсан тул $date хүртэл дахин нэгдэх боломжгүй';
+  }
+
+  @override
+  String get group_join_banned =>
+      'Та энэ бүлгээс хасагдсан тул хориг дуустал дахин нэгдэх боломжгүй.';
 
   @override
   String get group_followers_empty => 'Одоогоор дагагч байхгүй';

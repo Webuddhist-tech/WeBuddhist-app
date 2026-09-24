@@ -131,10 +131,7 @@ void main() {
       final ds = _datasource((options) async {
         sent = options.data;
         expect(options.method, 'POST');
-        expect(
-          options.path,
-          '/cms/author/groups/g1/joined-users/u1/remove',
-        );
+        expect(options.path, '/cms/author/groups/g1/joined-users/u1/remove');
         return ResponseBody.fromString('{}', 200);
       });
 
@@ -166,35 +163,45 @@ void main() {
     });
   });
 
-  group('groupJoinBanMessage', () {
-    test('reads the ban message from a GROUP_BANNED body', () {
+  group('groupJoinBan', () {
+    test('reads expires_at from a GROUP_BANNED body', () {
+      final ban = groupJoinBan({
+        'detail': {
+          'error': 'GROUP_BANNED',
+          'message':
+              'You were removed from this group and cannot rejoin until 25 Sep 2026',
+          'expires_at': '2026-09-25T10:11:15.952092+00:00',
+        },
+      });
+
       expect(
-        groupJoinBanMessage({
-          'detail': {
-            'error': 'GROUP_BANNED',
-            'message':
-                'You were removed from this group and cannot rejoin until 25 Sep 2026',
-            'expires_at': '2026-09-25T10:11:15.952092+00:00',
-          },
-        }),
-        'You were removed from this group and cannot rejoin until 25 Sep 2026',
+        ban?.expiresAt,
+        DateTime.parse('2026-09-25T10:11:15.952092+00:00'),
+      );
+      expect(
+        groupJoinBanExpiresAt(ban!.payload),
+        DateTime.parse('2026-09-25T10:11:15.952092+00:00'),
       );
     });
 
-    test('ignores other errors and a blank message', () {
+    test('still treats a blank message as a ban when the error matches', () {
+      final ban = groupJoinBan({
+        'detail': {'error': 'GROUP_BANNED', 'message': '  '},
+      });
+
+      expect(ban, isNotNull);
+      expect(ban!.expiresAt, isNull);
+      expect(isGroupJoinBanned(ban.payload), isTrue);
+    });
+
+    test('ignores other errors', () {
       expect(
-        groupJoinBanMessage({
+        groupJoinBan({
           'detail': {'error': 'OTHER', 'message': 'nope'},
         }),
         isNull,
       );
-      expect(
-        groupJoinBanMessage({
-          'detail': {'error': 'GROUP_BANNED', 'message': '  '},
-        }),
-        isNull,
-      );
-      expect(groupJoinBanMessage({'detail': 'Group not found'}), isNull);
+      expect(groupJoinBan({'detail': 'Group not found'}), isNull);
     });
   });
 
@@ -202,7 +209,7 @@ void main() {
     test('throws the ban message on GROUP_BANNED', () async {
       final ds = _datasource(
         (options) async => ResponseBody.fromString(
-          '{"detail":{"error":"GROUP_BANNED","message":"Cannot rejoin until 25 Sep 2026"}}',
+          '{"detail":{"error":"GROUP_BANNED","message":"Cannot rejoin until 25 Sep 2026","expires_at":"2026-09-25T10:11:15.952092+00:00"}}',
           403,
           headers: {
             Headers.contentTypeHeader: [Headers.jsonContentType],
@@ -214,9 +221,9 @@ void main() {
         () => ds.submitJoinRequest('g1', message: 'let me back'),
         throwsA(
           isA<AuthorizationException>().having(
-            (error) => error.message,
-            'message',
-            'Cannot rejoin until 25 Sep 2026',
+            (error) => groupJoinBanExpiresAt(error.message),
+            'expiresAt',
+            DateTime.parse('2026-09-25T10:11:15.952092+00:00'),
           ),
         ),
       );

@@ -1475,19 +1475,27 @@ final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
   return notifier;
 });
 
-/// Outcome of asking to join. [banMessage] is the server text for
-/// `GROUP_BANNED`; other failures leave it null.
+/// Outcome of asking to join. [banned] is set for `GROUP_BANNED`.
+/// [banExpiresAt] is the server `expires_at`, used to fill the localized notice.
 class GroupJoinRequestOutcome {
   final bool sent;
-  final String? banMessage;
+  final bool banned;
+  final DateTime? banExpiresAt;
 
-  const GroupJoinRequestOutcome.sent() : sent = true, banMessage = null;
+  const GroupJoinRequestOutcome.sent()
+    : sent = true,
+      banned = false,
+      banExpiresAt = null;
 
-  const GroupJoinRequestOutcome.failed() : sent = false, banMessage = null;
-
-  const GroupJoinRequestOutcome.banned(String message)
+  const GroupJoinRequestOutcome.failed()
     : sent = false,
-      banMessage = message;
+      banned = false,
+      banExpiresAt = null;
+
+  const GroupJoinRequestOutcome.banned(DateTime? expiresAt)
+    : sent = false,
+      banned = true,
+      banExpiresAt = expiresAt;
 }
 
 Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
@@ -1500,11 +1508,11 @@ Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
       .submitJoinRequest(groupId, message: message);
   return result.fold(
     (failure) {
-      final banMessage = failure is AuthorizationFailure
-          ? failure.message.trim()
-          : '';
-      if (banMessage.isNotEmpty) {
-        return GroupJoinRequestOutcome.banned(banMessage);
+      if (failure is AuthorizationFailure &&
+          isGroupJoinBanned(failure.message)) {
+        return GroupJoinRequestOutcome.banned(
+          groupJoinBanExpiresAt(failure.message),
+        );
       }
       return const GroupJoinRequestOutcome.failed();
     },
