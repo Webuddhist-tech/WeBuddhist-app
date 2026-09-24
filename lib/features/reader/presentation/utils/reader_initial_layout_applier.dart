@@ -211,8 +211,7 @@ class ReaderInitialLayoutApplier {
       return;
     }
 
-    final enabledGeneration = notifier.secondaryEnabledGeneration;
-    final filled = await fillSecondaryWithLanguages(
+    final outcome = await fillSecondaryWithLanguages(
       ref: ref,
       context: context,
       scope: scope,
@@ -224,7 +223,7 @@ class ReaderInitialLayoutApplier {
         fallback: ref.read(contentLanguageProvider),
       ),
     );
-    if (filled != null) {
+    if (outcome == SecondaryFillOutcome.filled) {
       // A stored "on" already shows through the mirror; only a seeded default
       // needs switching on, and only now that there is a version to show.
       if (prefs.translationOn == null) notifier.seedTranslationOn();
@@ -232,9 +231,10 @@ class ReaderInitialLayoutApplier {
     }
     // A stored "on" with nothing to show on this text would leave the sheet
     // claiming a translation the screen does not have. Hold it off for this
-    // visit, unless the person touched the switch meanwhile: that is theirs.
+    // visit, unless the person touched the switch or picked a translation in
+    // the sheet meanwhile (a superseded fill): that is theirs.
     if (prefs.translationOn == true &&
-        notifier.secondaryEnabledGeneration == enabledGeneration) {
+        outcome == SecondaryFillOutcome.unavailable) {
       notifier.markTranslationUnavailable();
     }
   }

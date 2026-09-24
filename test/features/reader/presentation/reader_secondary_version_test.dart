@@ -118,7 +118,7 @@ Future<Element> _pumpHost(
   return tester.element(find.byType(_Host));
 }
 
-Future<String?> _fill(Element host, List<String> candidates) =>
+Future<SecondaryFillOutcome> _fill(Element host, List<String> candidates) =>
     fillSecondaryWithLanguages(
       ref: host as WidgetRef,
       context: host,
@@ -142,7 +142,7 @@ void main() {
       );
       final host = await _pumpHost(tester, datasource);
 
-      expect(await _fill(host, ['hi', 'en']), 'en');
+      expect(await _fill(host, ['hi', 'en']), SecondaryFillOutcome.filled);
       expect(datasource.versionRequests, ['hi', 'en']);
       final secondary = _secondaryOf(host);
       expect(secondary.languageCode, 'en');
@@ -159,7 +159,7 @@ void main() {
       );
       final host = await _pumpHost(tester, datasource);
 
-      expect(await _fill(host, ['hi', 'en']), 'en');
+      expect(await _fill(host, ['hi', 'en']), SecondaryFillOutcome.filled);
       expect(_secondaryOf(host).versionId, 'v-en');
     });
 
@@ -170,7 +170,10 @@ void main() {
       );
       final host = await _pumpHost(tester, datasource);
 
-      expect(await _fill(host, ['hi', 'en']), isNull);
+      expect(
+        await _fill(host, ['hi', 'en']),
+        SecondaryFillOutcome.unavailable,
+      );
       expect(datasource.versionRequests, ['hi', 'en']);
       final secondary = _secondaryOf(host);
       expect(secondary.languageCode, 'en');
@@ -187,8 +190,23 @@ void main() {
       );
       final host = await _pumpHost(tester, datasource);
 
-      expect(await _fill(host, ['bo', 'zh', 'en']), 'en');
+      expect(await _fill(host, ['bo', 'zh', 'en']), SecondaryFillOutcome.filled);
       expect(datasource.versionRequests, ['en']);
+      expect(_secondaryOf(host).languageCode, 'en');
+    });
+
+    testWidgets('nothing offered is unavailable and leaves the slot alone', (
+      tester,
+    ) async {
+      final datasource = _FakeSettingsDatasource(
+        languages: [_hindi, _english],
+        versions: {'en': [_englishVersion]},
+      );
+      final host = await _pumpHost(tester, datasource);
+
+      expect(await _fill(host, ['bo', 'zh']), SecondaryFillOutcome.unavailable);
+      expect(datasource.versionRequests, isEmpty);
+      expect(_secondaryOf(host).isUnset, isTrue);
     });
 
     testWidgets('a pick made meanwhile is left alone', (tester) async {
@@ -215,9 +233,41 @@ void main() {
       datasource.gates['hi']!.complete();
       await tester.pump();
 
-      expect(await result, isNull);
+      expect(await result, SecondaryFillOutcome.superseded);
       expect(_secondaryOf(host), manual);
       expect(datasource.versionRequests, ['hi'], reason: 'English never tried');
     });
+
+    testWidgets(
+      'a pick made while the last lookup finds nothing is superseded, '
+      'not unavailable',
+      (tester) async {
+        final datasource = _FakeSettingsDatasource(
+          languages: [_hindi, _english],
+          versions: {'hi': []},
+        );
+        datasource.gates['hi'] = Completer<void>();
+        final host = await _pumpHost(tester, datasource);
+
+        final result = _fill(host, ['hi']);
+        await tester.pump();
+
+        // The reader picks English in the sheet and its version loads.
+        const manual = ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en',
+        );
+        (host as WidgetRef)
+            .read(readerDualSettingsProvider(_scope).notifier)
+            .replaceSecondary(manual);
+        datasource.gates['hi']!.complete();
+        await tester.pump();
+
+        // Unavailable would let a stored "on" be held off over this pick.
+        expect(await result, SecondaryFillOutcome.superseded);
+        expect(_secondaryOf(host), manual);
+      },
+    );
   });
 }

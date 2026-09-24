@@ -93,7 +93,8 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    has failed it only seeds the layers and script; the sheet's retry brings
    the list and the applier then runs for real. A stored "on" with nothing to
    fill is held off for the visit (`markTranslationUnavailable`) so the sheet
-   never claims a translation the screen lacks.
+   never claims a translation the screen lacks — but not when the fill was
+   `superseded` by a toggle or a pick made in the sheet meanwhile.
 3. Seeds live in memory for the visit. What the person changes goes to
    `readerContextLayoutProvider(context)` and wins on every later open in that
    context; untouched fields keep following the resolver.
