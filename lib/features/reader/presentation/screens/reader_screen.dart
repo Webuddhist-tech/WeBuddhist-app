@@ -737,11 +737,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       prayerRequestsButton: prayerRequestsButton,
       onSearchPressed: () => _handleSearch(context, state),
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
-      // The event page already offers share and offline recitations.
+      // The event page already offers share and offline recitations, so the
+      // menu goes and font size gets its own button.
       onMorePressed:
           eventId == null
               ? () => _openMoreBottomSheet(context, textDetail)
               : null,
+      onFontSizePressed:
+          eventId == null ? null : () => showFontSizeBottomSheet(context),
     );
   }
 
