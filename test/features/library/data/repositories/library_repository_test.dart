@@ -96,6 +96,40 @@ void main() {
       expect(segments.map((s) => s.id), ['s1', 's2']);
       expect(server.count('/v2/editions/e1/segmentation/segments'), 2);
     });
+
+    test('stops when a page repeats instead of advancing', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('s'), hasMore: true)),
+      });
+
+      final segments = await server.repository().getEditionSegments('e1');
+
+      expect(segments.map((s) => s.id), ['s1', 's2', 's3']);
+      expect(server.count('/v2/editions/e1/segmentation/segments'), 2);
+    });
+
+    test('stops after the page limit', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/segmentation/segments': (uri) {
+          final offset = uri.queryParameters['offset'];
+          return jsonBody(
+            pageJson([
+              segmentJson('s$offset', null, [
+                [0, 1],
+              ]),
+            ], hasMore: true),
+          );
+        },
+      });
+
+      final segments = await server
+          .repository(maxPages: 3)
+          .getEditionSegments('e1');
+
+      expect(segments, hasLength(3));
+      expect(server.count('/v2/editions/e1/segmentation/segments'), 3);
+    });
   });
 
   group('LibraryRepository.loadWindow', () {
