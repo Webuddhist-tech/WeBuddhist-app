@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/mala/data/datasources/mala_remote_datasou
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitations_remote_datasource.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitations_page_response.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_datasource_provider.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_remote_datasource.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,8 +35,7 @@ const int practiceExploreRecitationsPreviewLimit = 2;
 final practiceExploreRecitationsProvider =
     FutureProvider<Either<Failure, RecitationsPageResponse>>((ref) async {
   final language = ref.watch(contentLanguageProvider);
-  final dio = ref.watch(dioProvider);
-  final datasource = RecitationsRemoteDatasource(dio: dio);
+  final datasource = ref.watch(recitationsRemoteDatasourceProvider);
   try {
     final page = await datasource.fetchRecitationsPage(
       queryParams: RecitationsQueryParams(

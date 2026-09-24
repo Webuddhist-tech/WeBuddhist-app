@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dar
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart'
     show liveSegmentHighlightColor;
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/segment_type_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -99,6 +100,8 @@ class InterlinearSegmentItem extends ConsumerWidget {
       showOriginal: showPrimary,
       hasTranslation: !secondary.isPlaceholder,
     );
+    // The aligned line is the same kind of segment, so it shares the style.
+    final typeStyle = SegmentTypeStyle.of(segment.type);
 
     // Per Figma: the secondary (parallel) version uses a fixed muted tone that
     // differs per theme so it reads as supporting text beneath the primary.
@@ -140,7 +143,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SegmentNumber(
-                    segmentNumber: segment.segmentNumber,
+                    label: segment.displayNumber,
                     fontSize: fontSize,
                     language: primaryLanguage,
                   ),
@@ -155,6 +158,8 @@ class InterlinearSegmentItem extends ConsumerWidget {
                             fontSize: fontSize,
                             language: primary.fontLanguage,
                             isSelected: isSelected,
+                            fontStyle: typeStyle.fontStyle,
+                            fontWeight: typeStyle.fontWeight,
                           ),
                           // Original and its translation belong together; the
                           // larger gap goes between verses, below.
@@ -175,6 +180,8 @@ class InterlinearSegmentItem extends ConsumerWidget {
                             language: secondarySlot.languageCode,
                             isSelected: isSelected,
                             textColor: secondaryColor,
+                            fontStyle: typeStyle.fontStyle,
+                            fontWeight: typeStyle.fontWeight,
                           ),
                         const SizedBox(height: 16),
                       ],

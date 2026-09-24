@@ -330,13 +330,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get loading => 'ལེན་བཞིན་པ་་་';
 
   @override
-  String get choose_image => 'པར་རིས་འདེམས།';
-
-  @override
   String get choose_bg_image => 'རྒྱབས་ལྗོངས་ཀྱི་པར་རིས་ཤིག་འདེམས།';
-
-  @override
-  String get create_image => 'པར་རིས་བཟོས།';
 
   @override
   String get save => 'ཉར་ཚགས།';
@@ -1185,35 +1179,8 @@ class AppLocalizationsBo extends AppLocalizations {
   String get unknown_error => 'ཁ་གསལ་མེད་པའི་གནད་དོན་ཞིག';
 
   @override
-  String image_share_error(String error) {
-    return 'མཉམ་སྤྱོད་བྱེད་ཐུབ་མ་སོང་།: $error';
-  }
-
-  @override
-  String get create_image_capture_error =>
-      'འདྲ་པར་བཟོ་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།';
-
-  @override
   String get create_image_share_error =>
       'མཉམ་སྤྱོད་བྱེད་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།';
-
-  @override
-  String get create_image_save_success => 'འདྲ་པར་ཉར་ཚགས་བྱས་ཟིན།';
-
-  @override
-  String get create_image_save_error =>
-      'འདྲ་པར་ཉར་ཚགས་བྱེད་ཐུབ་མ་སོང་། མཉེན་ཆས་དེ་ལ་འདྲ་པར་ལེན་པའི་ཆོག་མཆན་ཡོད་མེད་བལྟས་ཏེ། བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།';
-
-  @override
-  String get create_image_download_error =>
-      'འདྲ་པར་ཕབ་ལེན་བྱེད་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་རོགས།';
-
-  @override
-  String get create_image_customize_tooltip => 'རང་མོས་སྒྲིགས།';
-
-  @override
-  String get create_image_text_too_long =>
-      'འགྲེལ་བཤད་རིང་དྲགས་པས་ཡིག་གཟུགས་ཆེ་རུ་གཏོང་མི་ཐུབ།';
 
   @override
   String version_search_no_results(String query) {
@@ -1268,82 +1235,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get plans_created => 'ཉམས་ལེན་ཐུན་འཆར་བཟོས་ཟིན།';
 
   @override
-  String get ai_chat_history => 'ཁ་བརྡའི་ལོ་རྒྱུས།';
-
-  @override
-  String get ai_buddhist_assistant =>
-      'ཉིན་རེའི་འགྲོ་སྟངས་ཀྱི་རིམ་པ་དང་དུས་ཚོད་རྣམས་གཏན་འབེབས་བྱོས་དང་། ང་ཚོས་ཁྱེད་ལ་ཉམས་ལེན་གྱི་དྲན་སྐུལ་ཅོང་བརྡ་གཏོང་ཆོག';
-
-  @override
-  String get ai_new_chat => 'ཁ་བརྡ་གསར་པ།';
-
-  @override
-  String get ai_retry => 'བསྐྱར་དུ་ཚོད་ལྟ་བྱེད།';
-
-  @override
-  String get ai_dismiss => 'ཕྱིར་འཐེན།';
-
-  @override
-  String get ai_sign_in_prompt =>
-      'ནང་པའི་རིག་ནུས་རམ་འདེགས་བེད་སྤྱོད་གཏོང་བར་ནང་འཛུལ་བྱེད་རོགས།';
-
-  @override
-  String get ai_explore_wisdom => 'ནང་ཆོས་ཀྱི་ཤེས་བྱ་འཚོལ་ཞིབ་བྱེད།';
-
-  @override
-  String get ai_ask_question => 'དྲི་བ་ཞིག་དྲིས་དང་། ...';
-
-  @override
-  String get ai_search_chats => 'ཁ་བརྡ་འཚོལ།';
-
-  @override
-  String get ai_chats => 'ཁ་བརྡ།';
-
-  @override
-  String get ai_chat_deleted => 'ཁ་བརྡ་བསུབ་ཟིན།';
-
-  @override
-  String get ai_no_conversations => 'ད་བར་ཁ་བརྡ་བྱུང་མེད།';
-
-  @override
-  String get ai_start_new_chat => 'འགོ་འཛུགས་བྱེད་པར་ཁ་བརྡ་གསར་པ་ཞིག་བཟོ་རོགས།';
-
-  @override
-  String get ai_delete_chat => 'ཁ་བརྡ་སུབས།';
-
-  @override
-  String get ai_delete_confirmation =>
-      'ཁྱེད་ཀྱིས་ཁ་བརྡ་འདི་བསུབ་རྒྱུ་གཏན་འཁེལ་ཡིན་ནམ།';
-
-  @override
-  String get ai_delete_warning => 'བྱ་བ་འདི་ཕྱིར་ལོག་བྱེད་མི་ཐུབ།';
-
-  @override
   String get ai_confirm => 'གཏན་འཁེལ།';
-
-  @override
-  String get ai_delete => 'སུབས།';
-
-  @override
-  String ai_greeting(String name) {
-    return 'བཀྲ་ཤིས་བདེ་ལེགས། $name';
-  }
-
-  @override
-  String get ai_text_not_found => 'ཡིག་ཆ་རྙེད་མ་སོང་།';
-
-  @override
-  String ai_text_not_found_message(String title) {
-    return 'ད་བར་དུ་ང་ཚོའི་དཔེ་མཛོད་ནང་མཚན་བྱང་ \"$title\" འདི་འདྲ་ཞིག་མི་འདུག མཚན་བྱང་གཞན་ཞིག་སྤྱད་དེ་འཚོལ་བ་འམ་ཡང་ན་ཐབས་ལམ་གཞན་ཞིག་སྤྱོད་རོགས།';
-  }
-
-  @override
-  String get ai_sources => 'ཁུངས།';
-
-  @override
-  String ai_sources_count(int count) {
-    return 'ཁུངས་ $count །';
-  }
 
   @override
   String search_no_results(String query) {
@@ -1351,48 +1243,7 @@ class AppLocalizationsBo extends AppLocalizations {
   }
 
   @override
-  String get search_show_more => 'མང་ཚམ་སྟོན།';
-
-  @override
-  String get search_contents => 'ནང་དོན།';
-
-  @override
-  String get search_titles => 'མཚན་བྱང་།';
-
-  @override
   String get search_all => 'ཆ་ཚང་།';
-
-  @override
-  String get search_author => 'རྩོམ་པ་པོ།';
-
-  @override
-  String get search_tab_ai_mode => 'AI རིག་ནུས་ཀྱི་རྣམ་པ།';
-
-  @override
-  String search_error(String message) {
-    return 'གནད་དོན་ $message';
-  }
-
-  @override
-  String get search_retrying => 'བསྐྱར་དུ་ཚོད་ལྟ་བྱེད་བཞིན་ཡོད།';
-
-  @override
-  String search_no_titles_found(String query) {
-    return 'མཚན་བྱང་ \"$query\" འདི་རྙེད་མ་སོང་།';
-  }
-
-  @override
-  String search_no_contents_found(String query) {
-    return 'ནང་དོན་ \"$query\" འདི་རྙེད་མ་སོང་།';
-  }
-
-  @override
-  String search_no_authors_found(String query) {
-    return 'རྩོམ་པ་པོ་ \"$query\" འདི་རྙེད་མ་སོང་།';
-  }
-
-  @override
-  String get search_buddhist_texts => 'ནང་པའི་གསུང་རབ་འཚོལ་...';
 
   @override
   String get common_ok => 'འགྲིག';
@@ -2577,12 +2428,6 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get timer_notification_complete => 'ཁྱེད་ཀྱི་ཐུན་ཚང་སོང་།';
-
-  @override
-  String get ai_use_search_instead => 'དེའི་ཚབ་ཏུ་འཚོལ་བཤེར་སྤྱོད།';
-
-  @override
-  String get ai_mode_label => 'རིག་ནུས།';
 
   @override
   String plan_day_of(int day, int total) {

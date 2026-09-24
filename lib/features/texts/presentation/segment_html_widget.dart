@@ -14,6 +14,11 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
   /// (parallel) version in a muted tone so it reads as supporting text. When
   /// null, the text inherits the default theme color.
   final Color? textColor;
+
+  /// Body style by segment type (italic front matter, bold titles).
+  final FontStyle? fontStyle;
+  final FontWeight? fontWeight;
+
   const SegmentHtmlWidget({
     super.key,
     required this.htmlContent,
@@ -22,6 +27,8 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
     required this.language,
     this.isSelected = false,
     this.textColor,
+    this.fontStyle,
+    this.fontWeight,
   });
 
   @override
@@ -56,6 +63,8 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
           margin: Margins.zero,
           color: widget.textColor,
           fontFamily: getFontFamily(widget.language),
+          fontStyle: widget.fontStyle,
+          fontWeight: widget.fontWeight,
           padding: HtmlPaddings.zero,
           textDecoration: widget.isSelected ? TextDecoration.underline : null,
           textDecorationStyle:

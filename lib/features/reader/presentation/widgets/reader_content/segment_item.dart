@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/segment_type_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -44,6 +45,7 @@ class SegmentItem extends ConsumerWidget {
       language: language,
       scope: scope,
     );
+    final typeStyle = SegmentTypeStyle.of(segment.type);
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -75,7 +77,7 @@ class SegmentItem extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SegmentNumber(
-                    segmentNumber: segment.segmentNumber,
+                    label: segment.displayNumber,
                     fontSize: fontSize,
                     language: language,
                   ),
@@ -87,6 +89,8 @@ class SegmentItem extends ConsumerWidget {
                       fontSize: fontSize,
                       language: primary.fontLanguage,
                       isSelected: isSelected,
+                      fontStyle: typeStyle.fontStyle,
+                      fontWeight: typeStyle.fontWeight,
                     ),
                   ),
                 ],

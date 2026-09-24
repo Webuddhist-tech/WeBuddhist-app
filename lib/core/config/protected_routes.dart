@@ -31,19 +31,9 @@ class ProtectedRoutes {
     '/users/me/plan/{planId}/days/{dayNumber}',
     '/users/me/plan/{planId}/days/{dayNumber}/content',
 
-    // Recitations
-    '/users/me/recitations',
-    '/users/me/recitations/{recitationId}',
-
-    // Community group chat (REST). Distinct from AI `/chats`.
+    // Community group chat (REST).
     '/chat/',
 
-    // AI chat
-    '/chats',
-    '/chats/', // Catch-all for chat sub-paths
-    '/threads',
-    '/threads/{threadId}',
-    '/threads/{threadId}/', // Catch-all for thread sub-paths
     // Timers
     '/timers',
     '/timers/', // Catch-all for timer sub-paths like /timers/user/timer_stop
@@ -120,9 +110,6 @@ class ProtectedRoutes {
     '/groups/author/posts/{postId}/comments',
     // Group feeds: sends auth when logged in for user-specific fields.
     '/author/groups/feeds',
-    // Chant catalogue is public; when logged in, Bearer is required for
-    // `should_include_collections` / group-collection enrichment to return.
-    '/recitations',
   ];
 
   /// Check if a given path is protected (requires authentication).

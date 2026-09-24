@@ -144,9 +144,7 @@
     }
   },
   "loading": "लोड हुँदैछ...",
-  "choose_image": "तस्बिर छान्नुहोस्",
   "choose_bg_image": "पृष्ठभूमि तस्बिर छान्नुहोस्",
-  "create_image": "तस्बिर सिर्जना गर्नुहोस्",
   "save": "सेभ गर्नुहोस्",
   "done": "भयो",
   "customise_message": "पाठको शैली मिलाउन कस्टमाइज आइकनमा ट्याप गर्नुहोस्",
@@ -354,21 +352,7 @@
   "text_search_press_button": "खोज्न खोज बटन थिच्नुहोस्",
   "text_search_error": "खोज गर्न सकिएन।\nकृपया फेरि प्रयास गर्नुहोस्",
   "unknown_error": "अज्ञात त्रुटि",
-  "image_share_error": "साझा गर्न सकिएन: {error}",
-  "@image_share_error": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "create_image_capture_error": "तस्बिर सिर्जना गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्",
   "create_image_share_error": "साझा गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्",
-  "create_image_save_success": "तस्बिर सेभ भयो",
-  "create_image_save_error": "तस्बिर सेभ गर्न सकिएन। एपसँग फोटो पहुँच छ कि छैन जाँच गर्नुहोस्, वा फेरि प्रयास गर्नुहोस्",
-  "create_image_download_error": "तपाईंको तस्बिर डाउनलोड गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्",
-  "create_image_customize_tooltip": "कस्टमाइज गर्नुहोस्",
-  "create_image_text_too_long": "फन्ट आकार बढाउन पाठ धेरै लामो छ",
   "version_search_no_results": "\"{query}\" का लागि कुनै संस्करण फेला परेन",
   "@version_search_no_results": {
     "placeholders": {
@@ -405,50 +389,7 @@
   "feedback": "प्रतिक्रिया",
   "author": "लेखक",
   "plans_created": "योजना सिर्जना भयो",
-  "ai_chat_history": "च्याट इतिहास",
-  "ai_buddhist_assistant": "आफ्नो दैनिक लय बनाउनुहोस्। समय तोक्नुहोस्, र हामी तपाईंलाई अभ्यास गर्न सम्झाउनेछौँ",
-  "ai_new_chat": "नयाँ च्याट",
-  "ai_retry": "पुनः प्रयास गर्नुहोस्",
-  "ai_dismiss": "खारेज गर्नुहोस्",
-  "ai_sign_in_prompt": "बौद्ध AI सहायक प्रयोग गर्न साइन इन गर्नुहोस्",
-  "ai_explore_wisdom": "बौद्ध ज्ञान अन्वेषण गर्नुहोस्",
-  "ai_ask_question": "प्रश्न सोध्नुहोस्...",
-  "ai_search_chats": "च्याटहरू खोज्नुहोस्",
-  "ai_chats": "च्याटहरू",
-  "ai_chat_deleted": "च्याट मेटियो",
-  "ai_no_conversations": "अहिलेसम्म कुनै कुराकानी छैन",
-  "ai_start_new_chat": "सुरु गर्न नयाँ च्याट सुरु गर्नुहोस्।",
-  "ai_delete_chat": "च्याट मेट्नुहोस्",
-  "ai_delete_confirmation": "के तपाईं यो च्याट मेट्न निश्चित हुनुहुन्छ?",
-  "ai_delete_warning": "यो कार्य पूर्ववत् गर्न सकिँदैन।",
   "ai_confirm": "पुष्टि गर्नुहोस्",
-  "ai_delete": "मेट्नुहोस्",
-  "ai_greeting": "नमस्ते {name}",
-  "@ai_greeting": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "ai_text_not_found": "पाठ फेला परेन।",
-  "ai_text_not_found_message": "हाम्रो पुस्तकालयमा अहिलेसम्म \"{title}\" छैन।\n\nफरक शीर्षक प्रयास गर्नुहोस्, वा अर्को तरिकाले सोध्नुहोस्",
-  "@ai_text_not_found_message": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "ai_sources": "स्रोतहरू",
-  "ai_sources_count": "{count} स्रोतहरू",
-  "@ai_sources_count": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "search_no_results": "\"{query}\" का लागि कुनै परिणाम फेला परेन",
   "@search_no_results": {
     "placeholders": {
@@ -457,46 +398,7 @@
       }
     }
   },
-  "search_show_more": "थप देखाउनुहोस्",
-  "search_contents": "सामग्रीहरू",
-  "search_titles": "शीर्षकहरू",
   "search_all": "सबै",
-  "search_author": "लेखक",
-  "search_tab_ai_mode": "AI मोड",
-  "search_error": "त्रुटि: {message}",
-  "@search_error": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
-  "search_retrying": "पुनः प्रयास गर्दै...",
-  "search_no_titles_found": "\"{query}\" का लागि कुनै शीर्षक फेला परेन",
-  "@search_no_titles_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_no_contents_found": "\"{query}\" का लागि कुनै सामग्री फेला परेन",
-  "@search_no_contents_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_no_authors_found": "\"{query}\" का लागि कुनै लेखक फेला परेन",
-  "@search_no_authors_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_buddhist_texts": "बौद्ध ग्रन्थहरू खोज्नुहोस्...",
   "common_ok": "ठीक छ",
   "comingSoonHeadline": "चाँडै आउँदैछ",
   "routine_title": "मेरा अभ्यासहरू",
@@ -877,7 +779,7 @@
   "share_chant_message": "म यो जप तपाईंसँग साझा गर्न चाहन्थें। तपाईंले यसको अभ्यास गर्न र WeBuddhist मा अन्य जप र ग्रन्थहरूको पूर्ण पुस्तकालय फेला पार्न सक्नुहुन्छ।",
   "share_quote_message": "मलाई WeBuddhist को यो उद्धरण मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें। WeBuddhist एपमा यस्ता थप ज्ञानवर्धक उद्धरणहरू पढ्नुहोस्।",
   "share_poem_message": "मलाई WeBuddhist को यो कविता मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें।",
-  "share_poem_title": "\u201c{title}\u201d",
+  "share_poem_title": "“{title}”",
   "share_mala_message": "म WeBuddhist मा यो डिजिटल माला प्रयोग गर्दैछु र तपाईंसँग साझा गर्न चाहन्थें। जहाँ जानुभए पनि अभ्यास गर्न सजिलो तरिका हो।",
   "share_passage_message": "मलाई यो अंश मन पर्यो र तपाईंसँग साझा गर्न चाहन्थें। तपाईं WeBuddhist मा पूरा सन्दर्भ पढ्न सक्नुहुन्छ।",
   "share_timer_message": "म WeBuddhist को यो ध्यान टाइमर तपाईंसँग साझा गर्न चाहन्थें। यसले ध्यान अभ्यास निर्माण गर्न सजिलो बनाउँछ।",
@@ -943,8 +845,6 @@
   "session_no_timers": "कुनै टाइमर फेला परेन",
   "days_count": "{count, plural, =1{1 दिन} other{{count} दिन}}",
   "timer_minute_session": "{minutes} मिनेटको सत्र",
-  "ai_use_search_instead": "बरु खोज प्रयोग गर्नुहोस्",
-  "ai_mode_label": "AI",
   "plan_day_of": "दिन {day} / {total}",
   "pagination_position": "{current} / {total}",
   "plan_shorts_title": "समुदायका शर्ट्स",

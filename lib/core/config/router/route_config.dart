@@ -13,7 +13,6 @@ class RouteConfig {
   static const String home = AppRoutes.home;
   static const String profile = AppRoutes.profile;
   static const String plans = '/plans';
-  static const String texts = AppRoutes.texts;
 
   // Public routes that don't require authentication
   static final Set<String> publicRoutes = AppRoutes.publicRoutes;
