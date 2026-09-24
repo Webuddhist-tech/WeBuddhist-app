@@ -2597,12 +2597,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_chat_delete_confirm_body(int count) {
-    return 'This message will be deleted for everyone in this chat.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'These messages will be removed from the chat for everyone.',
+      one: 'This message will be removed from the chat for everyone.',
+    );
+    return '$_temp0';
   }
 
   @override
   String group_chat_delete_failed(int count) {
-    return 'The message couldn\'t be deleted.';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages couldn\'t be deleted.',
+      one: 'The message couldn\'t be deleted.',
+    );
+    return '$_temp0';
   }
 
   @override

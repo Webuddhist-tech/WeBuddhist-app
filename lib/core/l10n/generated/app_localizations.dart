@@ -4649,13 +4649,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'This message will be deleted for everyone in this chat.'**
+  /// **'{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}'**
   String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'The message couldn\'t be deleted.'**
+  /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
   String group_chat_delete_failed(int count);
 
   /// No description provided for @group_chat_selection_limit.
