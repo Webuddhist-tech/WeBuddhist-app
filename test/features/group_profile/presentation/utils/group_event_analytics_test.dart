@@ -25,6 +25,7 @@ void main() {
     );
 
     expect(service.eventNames, [AnalyticsEvents.groupEventViewed]);
+    expect(service.groups, ['sangha:g1']);
     expect(service.events.single.properties, {
       'event_id': 'e1',
       'group_id': 'g1',

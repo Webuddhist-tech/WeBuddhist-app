@@ -96,6 +96,15 @@ class ClarityAnalyticsService implements AnalyticsService {
   }
 
   @override
+  Future<void> group({
+    required String groupType,
+    required String groupKey,
+    Map<String, Object?>? properties,
+  }) async {
+    Clarity.setCustomTag(groupType, groupKey);
+  }
+
+  @override
   List<NavigatorObserver> get routeObservers => [
     ClarityScreenObserver(_screenTracker),
   ];

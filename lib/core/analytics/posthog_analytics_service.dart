@@ -116,6 +116,21 @@ class PostHogAnalyticsService implements AnalyticsService {
   }
 
   @override
+  Future<void> group({
+    required String groupType,
+    required String groupKey,
+    Map<String, Object?>? properties,
+  }) async {
+    if (!_isInitialized) return;
+
+    await Posthog().group(
+      groupType: groupType,
+      groupKey: groupKey,
+      groupProperties: _sanitizeProperties(properties),
+    );
+  }
+
+  @override
   List<NavigatorObserver> get routeObservers => [PosthogObserver()];
 
   /// Session replay only records inside [PostHogWidget]; it must mount after

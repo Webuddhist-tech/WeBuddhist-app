@@ -16,6 +16,9 @@ class TrackedEvent {
 class RecordingAnalyticsService implements AnalyticsService {
   final List<TrackedEvent> events = [];
 
+  /// Every `group` call as `type:key`.
+  final List<String> groups = [];
+
   List<String> get eventNames => [for (final e in events) e.name];
 
   @override
@@ -37,6 +40,15 @@ class RecordingAnalyticsService implements AnalyticsService {
 
   @override
   Future<void> setSuperProperties(Map<String, Object?> properties) async {}
+
+  @override
+  Future<void> group({
+    required String groupType,
+    required String groupKey,
+    Map<String, Object?>? properties,
+  }) async {
+    groups.add('$groupType:$groupKey');
+  }
 
   @override
   List<NavigatorObserver> get routeObservers => [NavigatorObserver()];

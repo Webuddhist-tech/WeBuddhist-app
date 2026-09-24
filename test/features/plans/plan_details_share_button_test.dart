@@ -40,6 +40,13 @@ class _FakeAnalyticsService implements AnalyticsService {
   Future<void> setSuperProperties(Map<String, Object?> properties) async {}
 
   @override
+  Future<void> group({
+    required String groupType,
+    required String groupKey,
+    Map<String, Object?>? properties,
+  }) async {}
+
+  @override
   List<NavigatorObserver> get routeObservers => [NavigatorObserver()];
 }
 

@@ -13,6 +13,7 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_not_started_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,6 +69,7 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   static const _liveGrace = Duration(hours: 6);
 
   GroupEventLiveStream? _stream;
+  String _groupId = '';
   DateTime? _startsAt;
   DateTime? _endsAt;
   Timer? _retry;
@@ -130,6 +132,7 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     // fetch drops it so the old language's player does not linger.
     eventAsync.valueOrNull?.fold((_) => _stream = null, (event) {
       _stream = _resolve(event);
+      _groupId = event.groupId;
       _startsAt = event.startDate;
       _endsAt = _liveEndOf(event);
     });
@@ -145,6 +148,8 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     if (stream != null) {
       child = GroupEventLivePlayer(
         videoId: stream.videoId,
+        eventId: widget.eventId,
+        groupId: _groupId,
         isLive: stream.isLive,
         subtitle: stream.subtitle,
         audioOnly: widget.audioOnly,
@@ -178,9 +183,61 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   }
 }
 
+/// Live analytics for one player mount; the clock runs only while playing.
+class GroupEventLivePlaybackTracker {
+  GroupEventLivePlaybackTracker({
+    required this.analytics,
+    required this.eventId,
+    required this.groupId,
+    Stopwatch? clock,
+  }) : _clock = clock ?? Stopwatch();
+
+  final GroupEventAnalytics analytics;
+  final String eventId;
+  final String groupId;
+  final Stopwatch _clock;
+  bool _playing = false;
+  bool _opened = false;
+  bool _ended = false;
+
+  void onPlayerState(PlayerState state) {
+    _playing = state == PlayerState.playing;
+    if (_playing && !_opened) {
+      _opened = true;
+      analytics.eventLiveOpened(eventId: eventId, groupId: groupId);
+    }
+    _syncClock();
+    if (state == PlayerState.ended) end();
+  }
+
+  /// The stream ended or the player is going; nothing if it never played.
+  void end() {
+    _clock.stop();
+    if (!_opened || _ended) return;
+    _ended = true;
+    analytics.eventLiveEnded(
+      eventId: eventId,
+      groupId: groupId,
+      durationSeconds: _clock.elapsed.inSeconds,
+    );
+  }
+
+  // Paused and buffering time stay off the clock; the player keeps playing
+  // in the background for locked-screen listeners, so that time counts.
+  void _syncClock() {
+    if (_playing && !_ended) {
+      _clock.start();
+    } else {
+      _clock.stop();
+    }
+  }
+}
+
 /// Inline YouTube player that stays mounted in audio mode so sound continues.
 class GroupEventLivePlayer extends StatefulWidget {
   final String videoId;
+  final String eventId;
+  final String groupId;
   final bool audioOnly;
 
   /// Label-based guess; the player's own video data overrides it once known.
@@ -193,6 +250,8 @@ class GroupEventLivePlayer extends StatefulWidget {
   const GroupEventLivePlayer({
     super.key,
     required this.videoId,
+    required this.eventId,
+    required this.groupId,
     required this.audioOnly,
     required this.isLive,
     required this.subtitle,
@@ -239,6 +298,7 @@ JSON.stringify((function () {
   final _fullscreenTick = ValueNotifier<int>(0);
   bool _fullscreen = false;
   Route<void>? _fullscreenRoute;
+  late final GroupEventLivePlaybackTracker _tracker;
 
   bool get _isLiveStream => _probedIsLive ?? widget.isLive;
 
@@ -251,6 +311,14 @@ JSON.stringify((function () {
   @override
   void initState() {
     super.initState();
+    _tracker = GroupEventLivePlaybackTracker(
+      analytics: ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(groupEventAnalyticsProvider),
+      eventId: widget.eventId,
+      groupId: widget.groupId,
+    );
     _controller = _createController(widget.videoId);
     _switchTimeout = Timer(_switchTimeoutDuration, _endSwitch);
     unawaited(_setAudioSessionActive(true));
@@ -312,6 +380,7 @@ JSON.stringify((function () {
       _playerState = value.playerState;
     });
     _syncLivePolling();
+    _tracker.onPlayerState(value.playerState);
   }
 
   @override
@@ -372,6 +441,7 @@ JSON.stringify((function () {
 
   @override
   void dispose() {
+    _tracker.end();
     _livePoll?.cancel();
     _switchTimeout?.cancel();
     final route = _fullscreenRoute;

@@ -32,6 +32,48 @@ class GroupEventAnalytics {
       AnalyticsProperties.eventFormat: eventFormat,
       AnalyticsProperties.isRecurring: isRecurring,
     });
+    if (groupId.isNotEmpty) {
+      _analytics.groupInBackground(
+        groupType: AnalyticsGroupTypes.sangha,
+        groupKey: groupId,
+      );
+    }
+  }
+
+  /// The embedded live stream started playing for this viewer.
+  void eventLiveOpened({required String eventId, required String groupId}) {
+    _analytics.trackInBackground(AnalyticsEvents.groupEventLiveOpened, {
+      AnalyticsProperties.eventId: eventId,
+      AnalyticsProperties.groupId: groupId,
+    });
+  }
+
+  /// The live stream stopped or the screen left; [durationSeconds] is the
+  /// time it was actually playing.
+  void eventLiveEnded({
+    required String eventId,
+    required String groupId,
+    required int durationSeconds,
+  }) {
+    _analytics.trackInBackground(AnalyticsEvents.groupEventLiveEnded, {
+      AnalyticsProperties.eventId: eventId,
+      AnalyticsProperties.groupId: groupId,
+      AnalyticsProperties.durationSeconds: durationSeconds,
+    });
+  }
+
+  void accumulatorViewed({
+    required String groupId,
+    required String accumulatorId,
+  }) {
+    _analytics.trackInBackground(AnalyticsEvents.groupAccumulatorViewed, {
+      AnalyticsProperties.groupId: groupId,
+      AnalyticsProperties.accumulatorId: accumulatorId,
+    });
+    _analytics.groupInBackground(
+      groupType: AnalyticsGroupTypes.sangha,
+      groupKey: groupId,
+    );
   }
 
   /// [participation] is null when the event has a single format and the

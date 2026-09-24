@@ -18,4 +18,21 @@ extension AnalyticsTracking on AnalyticsService {
       }),
     );
   }
+
+  /// Fire and forget, like [trackInBackground], for a group association.
+  void groupInBackground({
+    required String groupType,
+    required String groupKey,
+    Map<String, Object?>? properties,
+  }) {
+    unawaited(
+      group(
+        groupType: groupType,
+        groupKey: groupKey,
+        properties: properties,
+      ).catchError((Object error, StackTrace stackTrace) {
+        _logger.warning('Failed to set group $groupType', error, stackTrace);
+      }),
+    );
+  }
 }

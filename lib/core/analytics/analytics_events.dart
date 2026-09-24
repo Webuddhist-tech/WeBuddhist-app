@@ -31,6 +31,21 @@ abstract final class AnalyticsEvents {
       'group_event_participation_changed';
   static const String groupEventLiveEntered = 'group_event_live_entered';
   static const String groupEventLinkOpened = 'group_event_link_opened';
+  static const String groupEventLiveOpened = 'group_event_live_opened';
+  static const String groupEventLiveEnded = 'group_event_live_ended';
+  static const String groupAccumulatorViewed = 'group_accumulator_viewed';
+
+  // Connect and groups (§5.11)
+  static const String connectTabViewed = 'connect_tab_viewed';
+  static const String groupViewed = 'group_viewed';
+  static const String groupFollowed = 'group_followed';
+  static const String groupUnfollowed = 'group_unfollowed';
+  static const String recitationCollectionOpened =
+      'recitation_collection_opened';
+  static const String recitationCollectionItemCompleted =
+      'recitation_collection_item_completed';
+  static const String recitationCollectionCompleted =
+      'recitation_collection_completed';
 
   // Entry points (plan §5.1)
   static const String deepLinkOpened = 'deep_link_opened';
@@ -251,4 +266,18 @@ abstract final class AnalyticsProperties {
   // Settings
   static const String setting = 'setting';
   static const String enabled = 'enabled';
+
+  // Connect and groups
+  static const String subTab = 'sub_tab';
+  static const String groupType = 'group_type';
+  static const String followedGroupCount = 'followed_group_count';
+  static const String isLive = 'is_live';
+  static const String collectionId = 'collection_id';
+  static const String completedCount = 'completed_count';
+  static const String accumulatorId = 'accumulator_id';
+}
+
+/// PostHog group types; a sangha is a WeBuddhist group.
+abstract final class AnalyticsGroupTypes {
+  static const String sangha = 'sangha';
 }
