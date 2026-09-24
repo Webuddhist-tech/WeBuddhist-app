@@ -4122,6 +4122,55 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_join_requests_title => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_title',
+    () => _fallback.group_join_requests_title,
+  );
+
+  @override
+  String get group_join_requests_admit => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_admit',
+    () => _fallback.group_join_requests_admit,
+  );
+
+  @override
+  String get group_join_requests_deny => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_deny',
+    () => _fallback.group_join_requests_deny,
+  );
+
+  @override
+  String get group_join_requests_empty => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_empty',
+    () => _fallback.group_join_requests_empty,
+  );
+
+  @override
+  String get group_join_requests_load_error => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_load_error',
+    () => _fallback.group_join_requests_load_error,
+  );
+
+  @override
+  String get group_join_requests_admit_error => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_admit_error',
+    () => _fallback.group_join_requests_admit_error,
+  );
+
+  @override
+  String get group_join_requests_deny_error => TolgeeBridge.get(
+    localeName,
+    'group_join_requests_deny_error',
+    () => _fallback.group_join_requests_deny_error,
+  );
+
+  @override
   String get group_members_only_title => TolgeeBridge.get(
     localeName,
     'group_members_only_title',

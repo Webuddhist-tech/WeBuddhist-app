@@ -3,6 +3,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_post_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_profile/data/repositories/group_post_repository_impl.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_post_permission.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_post_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,21 +21,26 @@ final groupPostRepositoryProvider = Provider<GroupPostRepositoryInterface>((
   );
 });
 
-/// Whether the signed-in user may publish posts in the group. Guests never
-/// can, so no request is made for them. autoDispose means every visit to the
-/// profile screen fetches this fresh.
-final groupPostPermissionProvider = FutureProvider.autoDispose
-    .family<bool, String>((ref, groupId) async {
+/// `GET /users/me/permission/{groupId}` for the signed-in user. Guests skip
+/// the request. autoDispose means every visit to the profile fetches fresh.
+final groupMyPermissionProvider = FutureProvider.autoDispose
+    .family<GroupPostPermission?, String>((ref, groupId) async {
       final authState = ref.watch(authProvider);
-      if (authState.isGuest || !authState.isLoggedIn) return false;
+      if (authState.isGuest || !authState.isLoggedIn) return null;
 
       final result = await ref
           .watch(groupPostRepositoryProvider)
           .getPostPermission(groupId);
-      return result.fold(
-        (_) => false,
-        (permission) => permission.canCreateContent,
+      return result.fold((_) => null, (permission) => permission);
+    });
+
+/// Whether the signed-in user may publish posts in the group.
+final groupPostPermissionProvider = FutureProvider.autoDispose
+    .family<bool, String>((ref, groupId) async {
+      final permission = await ref.watch(
+        groupMyPermissionProvider(groupId).future,
       );
+      return permission?.canCreateContent ?? false;
     });
 
 class GroupPostsState {
@@ -226,6 +232,7 @@ final groupPostsProvider = StateNotifierProvider.autoDispose
     });
 
 void refreshGroupPosts(WidgetRef ref, String groupId) {
+  ref.invalidate(groupMyPermissionProvider(groupId));
   ref.invalidate(groupPostPermissionProvider(groupId));
   if (!ref.exists(groupPostsProvider(groupId))) return;
   ref.read(groupPostsProvider(groupId).notifier).loadInitial();

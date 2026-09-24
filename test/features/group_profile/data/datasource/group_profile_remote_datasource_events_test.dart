@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_profile_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
@@ -79,6 +80,48 @@ void main() {
         ),
         throwsA(isA<ServerException>()),
       );
+    });
+  });
+
+  group('GroupProfileRemoteDatasource approveGroupJoinRequest', () {
+    test('posts to the approve path and parses APPROVED', () async {
+      final ds = _datasource((options) async {
+        expect(options.method, 'POST');
+        expect(options.path, '/cms/author/groups/g1/join-requests/r1/approve');
+        return ResponseBody.fromString(
+          '{"id":"r1","status":"APPROVED"}',
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      });
+
+      final decision = await ds.approveGroupJoinRequest('g1', requestId: 'r1');
+
+      expect(decision.id, 'r1');
+      expect(decision.status, GroupJoinRequestStatus.approved);
+    });
+  });
+
+  group('GroupProfileRemoteDatasource rejectGroupJoinRequest', () {
+    test('posts to the reject path and parses REJECTED', () async {
+      final ds = _datasource((options) async {
+        expect(options.method, 'POST');
+        expect(options.path, '/cms/author/groups/g1/join-requests/r1/reject');
+        return ResponseBody.fromString(
+          '{"id":"r1","status":"REJECTED"}',
+          200,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        );
+      });
+
+      final decision = await ds.rejectGroupJoinRequest('g1', requestId: 'r1');
+
+      expect(decision.id, 'r1');
+      expect(decision.status, GroupJoinRequestStatus.rejected);
     });
   });
 }

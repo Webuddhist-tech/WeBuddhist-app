@@ -3820,6 +3820,48 @@ abstract class AppLocalizations {
   /// **'Unable to send request. Please try again.'**
   String get group_join_request_error;
 
+  /// No description provided for @group_join_requests_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Join requests'**
+  String get group_join_requests_title;
+
+  /// No description provided for @group_join_requests_admit.
+  ///
+  /// In en, this message translates to:
+  /// **'Admit'**
+  String get group_join_requests_admit;
+
+  /// No description provided for @group_join_requests_deny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get group_join_requests_deny;
+
+  /// No description provided for @group_join_requests_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get group_join_requests_empty;
+
+  /// No description provided for @group_join_requests_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load join requests. Please try again.'**
+  String get group_join_requests_load_error;
+
+  /// No description provided for @group_join_requests_admit_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to admit this request. Please try again.'**
+  String get group_join_requests_admit_error;
+
+  /// No description provided for @group_join_requests_deny_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to deny this request. Please try again.'**
+  String get group_join_requests_deny_error;
+
   /// No description provided for @group_members_only_title.
   ///
   /// In en, this message translates to:

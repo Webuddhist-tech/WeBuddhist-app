@@ -16,4 +16,8 @@ class GroupPostPermission {
     this.isSuperAdmin = false,
     this.authorId,
   });
+
+  /// Group-admin from `GET /users/me/permission/{groupId}` when `role` is
+  /// `ADMIN` (case-insensitive). Platform super-admin is not used here.
+  bool get isGroupAdmin => role?.trim().toUpperCase() == 'ADMIN';
 }
