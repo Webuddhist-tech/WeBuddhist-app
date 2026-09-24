@@ -12,6 +12,4 @@ class GroupJoinRequestsPage {
     required this.limit,
     required this.total,
   });
-
-  bool get hasMore => skip + requests.length < total;
 }

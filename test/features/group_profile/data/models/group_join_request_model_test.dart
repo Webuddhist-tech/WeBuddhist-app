@@ -27,7 +27,6 @@ void main() {
       expect(page.skip, 0);
       expect(page.limit, 20);
       expect(page.total, 1);
-      expect(page.hasMore, isFalse);
       expect(page.requests, hasLength(1));
 
       final request = page.requests.single;
@@ -41,7 +40,7 @@ void main() {
       expect(request.createdAt, DateTime.utc(2026, 9, 22, 6, 57, 18, 652, 500));
     });
 
-    test('has more when the page is shorter than the total', () {
+    test('keeps the pagination window the server reported', () {
       final page =
           GroupJoinRequestsPageModel.fromJson({
             'requests': [
@@ -57,7 +56,10 @@ void main() {
             'total': 3,
           }).toEntity();
 
-      expect(page.hasMore, isTrue);
+      expect(page.skip, 0);
+      expect(page.limit, 1);
+      expect(page.total, 3);
+      expect(page.requests, hasLength(1));
     });
 
     test('drops a blank avatar and an unparseable date', () {

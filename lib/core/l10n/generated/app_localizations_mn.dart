@@ -2107,6 +2107,30 @@ class AppLocalizationsMn extends AppLocalizations {
       'Хүсэлт илгээж чадсангүй. Дахин оролдоно уу.';
 
   @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
+
+  @override
   String get group_members_only_title => 'Зөвхөн гишүүд';
 
   @override

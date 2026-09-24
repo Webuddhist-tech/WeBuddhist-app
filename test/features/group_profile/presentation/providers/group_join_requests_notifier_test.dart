@@ -119,4 +119,62 @@ void main() {
     );
     expect(notifier.state.skip, 39);
   });
+
+  test('stops paging when a page lands empty against a stale total', () async {
+    final repository = _FakeRepository();
+    final notifier = GroupJoinRequestsNotifier(
+      repository: repository,
+      groupId: 'group-1',
+    );
+
+    final initial = notifier.loadInitial();
+    repository.pageHolds.single.complete(
+      Right(_page(skip: 0, start: 0, count: 20, total: 40)),
+    );
+    await initial;
+    expect(notifier.state.hasMore, isTrue);
+
+    final more = notifier.loadMore();
+    repository.pageHolds[1].complete(
+      Right(
+        const GroupJoinRequestsPage(
+          requests: [],
+          skip: 20,
+          limit: 20,
+          total: 40,
+        ),
+      ),
+    );
+    await more;
+
+    expect(notifier.state.requests, hasLength(20));
+    expect(notifier.state.hasMore, isFalse);
+  });
+
+  test('pages past the first window when the server echoes skip 0', () async {
+    final repository = _FakeRepository();
+    final notifier = GroupJoinRequestsNotifier(
+      repository: repository,
+      groupId: 'group-1',
+    );
+
+    final initial = notifier.loadInitial();
+    repository.pageHolds.single.complete(
+      Right(_page(skip: 0, start: 0, count: 20, total: 30)),
+    );
+    await initial;
+
+    final more = notifier.loadMore();
+    expect(repository.pageSkips, [0, 20]);
+    // A server that always echoes `skip: 0` used to make `hasMore` true
+    // forever; the accumulated count settles it instead.
+    repository.pageHolds[1].complete(
+      Right(_page(skip: 0, start: 20, count: 10, total: 30)),
+    );
+    await more;
+
+    expect(notifier.state.requests, hasLength(30));
+    expect(notifier.state.skip, 30);
+    expect(notifier.state.hasMore, isFalse);
+  });
 }
