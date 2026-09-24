@@ -641,7 +641,9 @@ class _GroupEventDetailScreenState
       },
     );
     // Picking a format up front already says "take me in"; skip the Enter tap.
-    if (joined && participation != null && event.hasPuja) {
+    if (joined &&
+        participation == GroupEventParticipationType.online &&
+        event.hasPuja) {
       await _enterPuja(event);
     }
   }
