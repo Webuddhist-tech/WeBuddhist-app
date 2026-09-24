@@ -189,8 +189,6 @@ class _GroupEventDetailScreenState
     final selectedTab =
         tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
     final isPast = isGroupEventPast(event);
-    final canSwitchParticipation =
-        isGroupEventHybrid(event) && isAttending && !isPast;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 32),
@@ -210,17 +208,7 @@ class _GroupEventDetailScreenState
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
-          _EventInfoCard(
-            event: event,
-            isDark: isDark,
-            participation:
-                canSwitchParticipation ? _participationOf(event) : null,
-            onParticipationChanged:
-                canSwitchParticipation
-                    ? (type) => _changeParticipation(event, type)
-                    : null,
-            participationBusy: _isSubmitting,
-          ),
+          _EventInfoCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
           const SizedBox(height: 20),
@@ -278,14 +266,47 @@ class _GroupEventDetailScreenState
     final secondaryBorder = isDark ? AppColors.grey800 : AppColors.grey300;
     final isHybrid = isGroupEventHybrid(event);
 
-    // Hybrid events ask up front instead of via a dialog after tapping Attend.
-    if (isHybrid && !isAttending) {
+    final attendButton = ElevatedButton(
+      // Leaving mid-entry would still navigate into the left event.
+      onPressed:
+          _isSubmitting || _isOpeningPuja
+              ? null
+              : () => isAttending ? _leaveEvent(event) : _attendEvent(event),
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        minimumSize: const Size(0, 44),
+        backgroundColor:
+            isAttending
+                ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
+                : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary),
+        foregroundColor:
+            isAttending
+                ? (isDark ? AppColors.textTertiaryDark : AppColors.textPrimary)
+                : (isDark ? AppColors.textPrimary : AppColors.surfaceWhite),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      child:
+          _isSubmitting && _pendingJoin == null
+              ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+              : Text(
+                isAttending
+                    ? _attendingLabel(event)
+                    : context.l10n.connect_event_attend,
+              ),
+    );
+
+    // Hybrid events always ask for a format; each tap re-joins and enters.
+    if (isHybrid && !isPast) {
       Widget joinButton(GroupEventParticipationType type, String label) {
-        final isPending = _isSubmitting && _pendingJoin == type;
+        final isPending = _pendingJoin == type;
         return Expanded(
           child: OutlinedButton(
             onPressed:
-                _isSubmitting
+                _isSubmitting || _isOpeningPuja
                     ? null
                     : () => _attendEvent(event, participation: type),
             style: OutlinedButton.styleFrom(
@@ -310,7 +331,7 @@ class _GroupEventDetailScreenState
         );
       }
 
-      return Row(
+      final formats = Row(
         children: [
           joinButton(
             GroupEventParticipationType.offline,
@@ -323,39 +344,15 @@ class _GroupEventDetailScreenState
           ),
         ],
       );
+      if (!isAttending) return formats;
+      return Column(
+        children: [
+          formats,
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: attendButton),
+        ],
+      );
     }
-
-    final attendButton = ElevatedButton(
-      onPressed:
-          _isSubmitting
-              ? null
-              : () => isAttending ? _leaveEvent(event) : _attendEvent(event),
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        minimumSize: const Size(0, 44),
-        backgroundColor:
-            isAttending
-                ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
-                : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary),
-        foregroundColor:
-            isAttending
-                ? (isDark ? AppColors.textTertiaryDark : AppColors.textPrimary)
-                : (isDark ? AppColors.textPrimary : AppColors.surfaceWhite),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child:
-          _isSubmitting
-              ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-              : Text(
-                isAttending
-                    ? _attendingLabel(event)
-                    : context.l10n.connect_event_attend,
-              ),
-    );
 
     if (event.hasPuja && isAttending) {
       final pujaButton = ElevatedButton(
@@ -378,14 +375,9 @@ class _GroupEventDetailScreenState
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-                : Text(
-                  isHybrid
-                      ? context.l10n.connect_event_enter
-                      : context.l10n.start_reading,
-                ),
+                : Text(context.l10n.start_reading),
       );
-      // A hybrid attendee switches their choice in the info card below.
-      if (isPast || isHybrid) {
+      if (isPast) {
         return SizedBox(width: double.infinity, child: pujaButton);
       }
       return Row(
@@ -533,27 +525,6 @@ class _GroupEventDetailScreenState
     );
   }
 
-  Future<void> _changeParticipation(
-    GroupEvent event,
-    GroupEventParticipationType participation,
-  ) async {
-    if (_isSubmitting || participation == _participationOf(event)) return;
-    setState(() => _isSubmitting = true);
-    try {
-      if (await _saveParticipation(event, participation) && mounted) {
-        ref
-            .read(groupEventAnalyticsProvider)
-            .eventParticipationChanged(
-              eventId: event.id,
-              groupId: event.groupId,
-              participation: participation,
-            );
-      }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
-
   Future<bool> _openPlanPreview(
     String planId, {
     String? eventId,
@@ -655,6 +626,10 @@ class _GroupEventDetailScreenState
       return;
     }
 
+    // A hybrid attendee taps a format to switch and enter: that is a change,
+    // not another attend.
+    final wasAttending = _attendingOverride ?? event.isJoined;
+    final previousParticipation = _participationOf(event);
     setState(() {
       _isSubmitting = true;
       _pendingJoin = participation;
@@ -665,10 +640,7 @@ class _GroupEventDetailScreenState
       participationType: participation,
     );
     if (!mounted) return;
-    setState(() {
-      _isSubmitting = false;
-      _pendingJoin = null;
-    });
+    setState(() => _isSubmitting = false);
 
     final joined = result.fold(
       (failure) {
@@ -680,23 +652,30 @@ class _GroupEventDetailScreenState
           _attendingOverride = true;
           _participationOverride = participation;
         });
-        ref
-            .read(groupEventAnalyticsProvider)
-            .eventAttended(
-              eventId: event.id,
-              groupId: event.groupId,
-              participation: participation,
-            );
+        final analytics = ref.read(groupEventAnalyticsProvider);
+        if (!wasAttending) {
+          analytics.eventAttended(
+            eventId: event.id,
+            groupId: event.groupId,
+            participation: participation,
+          );
+        } else if (participation != null &&
+            participation != previousParticipation) {
+          analytics.eventParticipationChanged(
+            eventId: event.id,
+            groupId: event.groupId,
+            participation: participation,
+          );
+        }
         _refreshEvent(event);
         return true;
       },
     );
-    // Picking a format up front already says "take me in"; skip the Enter tap.
-    if (joined &&
-        participation == GroupEventParticipationType.online &&
-        event.hasPuja) {
+    // The format buttons replace Enter, so picking one also opens the puja.
+    if (joined && participation != null && event.hasPuja) {
       await _enterPuja(event);
     }
+    if (mounted) setState(() => _pendingJoin = null);
   }
 
   Future<void> _leaveEvent(GroupEvent event) async {
@@ -1014,19 +993,7 @@ class _EventInfoCard extends StatelessWidget {
   final GroupEvent event;
   final bool isDark;
 
-  /// The attendee's current hybrid choice; chips show when
-  /// [onParticipationChanged] is set.
-  final GroupEventParticipationType? participation;
-  final ValueChanged<GroupEventParticipationType>? onParticipationChanged;
-  final bool participationBusy;
-
-  const _EventInfoCard({
-    required this.event,
-    required this.isDark,
-    this.participation,
-    this.onParticipationChanged,
-    this.participationBusy = false,
-  });
+  const _EventInfoCard({required this.event, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -1117,38 +1084,6 @@ class _EventInfoCard extends StatelessWidget {
               isDark: isDark,
             ),
           ],
-          if (onParticipationChanged != null) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                _ParticipationChip(
-                  label: context.l10n.connect_event_joining_in_person,
-                  selected:
-                      participation == GroupEventParticipationType.offline,
-                  isDark: isDark,
-                  onTap:
-                      participationBusy
-                          ? null
-                          : () => onParticipationChanged!(
-                            GroupEventParticipationType.offline,
-                          ),
-                ),
-                const SizedBox(width: 8),
-                _ParticipationChip(
-                  label: context.l10n.connect_event_joining_online,
-                  selected:
-                      participation == GroupEventParticipationType.online,
-                  isDark: isDark,
-                  onTap:
-                      participationBusy
-                          ? null
-                          : () => onParticipationChanged!(
-                            GroupEventParticipationType.online,
-                          ),
-                ),
-              ],
-            ),
-          ],
           if (otherLinks.isNotEmpty) ...[
             const SizedBox(height: 16),
             _EventSectionLabel(text: context.l10n.connect_event_links_title),
@@ -1214,56 +1149,6 @@ class _EventInfoCard extends StatelessWidget {
       ),
       _ => null,
     };
-  }
-}
-
-/// Pill showing one way to attend a hybrid event; filled when chosen.
-class _ParticipationChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback? onTap;
-
-  const _ParticipationChip({
-    required this.label,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final background =
-        selected
-            ? (isDark ? AppColors.surfaceWhite : AppColors.textPrimary)
-            : (isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite);
-    final foreground =
-        selected
-            ? (isDark ? AppColors.textPrimary : AppColors.surfaceWhite)
-            : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary);
-    final border =
-        selected ? background : (isDark ? AppColors.grey800 : AppColors.grey300);
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: border),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: foreground,
-          ),
-        ),
-      ),
-    );
   }
 }
 

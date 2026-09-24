@@ -89,14 +89,25 @@ void main() {
       expect(layers.translation, isTrue);
     });
 
-    test('translation only falls back to the original while the translation '
-        'is loading, failed or missing for the verse', () {
+    test('translation only falls back to the original when the translation '
+        'failed or is missing for the verse', () {
       final layers = interlinearLayers(
         showOriginal: false,
         hasTranslation: false,
       );
       expect(layers.original, isTrue, reason: 'never an empty verse');
       expect(layers.translation, isFalse, reason: 'no placeholder instead');
+    });
+
+    test('translation only draws the loading line, not the original, while '
+        "the verse's translation is on its way", () {
+      final layers = interlinearLayers(
+        showOriginal: false,
+        hasTranslation: false,
+        translationPending: true,
+      );
+      expect(layers.original, isFalse, reason: 'the original must not flash');
+      expect(layers.translation, isTrue);
     });
   });
 
@@ -154,6 +165,46 @@ void main() {
       expect(container.read(provider).originalVisible, isFalse);
       expect(container.read(provider).secondaryEnabled, isTrue);
       expect(storage.values[StorageKeys.readerSecondaryEnabled], isTrue);
+    });
+
+    test('opening a translation shows it alone under its root without '
+        'touching the persisted flags', () async {
+      final provider = readerDualSettingsProvider('translation-edition');
+      final sub = container.listen(provider, (_, __) {});
+      addTearDown(sub.close);
+      final notifier = container.read(provider.notifier);
+      const root = ReaderSlotConfig(
+        languageCode: 'bo',
+        languageLabel: 'bo',
+        versionId: 'root-edition',
+        versionLabel: 'ཟབ་ཏིག',
+      );
+      const translation = ReaderSlotConfig(
+        languageCode: 'en',
+        languageLabel: 'en',
+        versionId: 'translation-edition',
+        versionLabel: 'Tara Essence',
+      );
+
+      notifier.openAsTranslation(original: root, translation: translation);
+
+      final settings = container.read(provider);
+      expect(settings.primary, root);
+      expect(settings.secondary, translation);
+      expect(settings.secondaryEnabled, isTrue);
+      expect(settings.originalVisible, isFalse);
+      expect(notifier.isPrimaryEdited, isTrue);
+      expect(container.read(readerSecondaryEnabledProvider), isFalse);
+      expect(container.read(readerOriginalVisibleProvider), isTrue);
+      expect(storage.values, isEmpty);
+
+      // The global already holds "visible", so only this text can flip it.
+      notifier.setOriginalVisible(true);
+      expect(container.read(provider).originalVisible, isTrue);
+
+      notifier.setSecondaryEnabled(false);
+      expect(container.read(provider).secondaryEnabled, isFalse);
+      expect(container.read(provider).primary, root);
     });
   });
 }

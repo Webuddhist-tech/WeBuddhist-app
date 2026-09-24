@@ -23,6 +23,14 @@ class ReaderState {
   final String textId;
   final String? contentId;
   final TextDetail? textDetail;
+
+  /// The opened edition when it is a translation shown as the Translation
+  /// layer; [textDetail] is then its root text.
+  final TextDetail? openedTranslation;
+
+  /// Navigation's verse ids of [openedTranslation] mapped to the loaded
+  /// text's matching verses, so plan ranges and targets still resolve.
+  final Map<String, String> segmentAliases;
   final FlattenedContent? content;
 
   // Navigation context
@@ -59,6 +67,8 @@ class ReaderState {
     required this.textId,
     this.contentId,
     this.textDetail,
+    this.openedTranslation,
+    this.segmentAliases = const {},
     this.content,
     this.navigationContext,
     this.selectedSegment,
@@ -81,6 +91,14 @@ class ReaderState {
   factory ReaderState.initial(String textId) {
     return ReaderState(textId: textId);
   }
+
+  /// What the user opened: the translation when one was opened, else the
+  /// loaded text. Names the chant and what "Add to practices" adds.
+  TextDetail? get openedText => openedTranslation ?? textDetail;
+
+  /// The loaded text's id for a verse id navigation handed in.
+  String loadedSegmentId(String segmentId) =>
+      segmentAliases[segmentId] ?? segmentId;
 
   /// Check if the reader is in a loading state
   bool get isLoading => status == ReaderStatus.loading;
@@ -110,6 +128,8 @@ class ReaderState {
     String? textId,
     String? contentId,
     TextDetail? textDetail,
+    TextDetail? openedTranslation,
+    Map<String, String>? segmentAliases,
     FlattenedContent? content,
     NavigationContext? navigationContext,
     Segment? selectedSegment,
@@ -137,6 +157,8 @@ class ReaderState {
       textId: textId ?? this.textId,
       contentId: contentId ?? this.contentId,
       textDetail: textDetail ?? this.textDetail,
+      openedTranslation: openedTranslation ?? this.openedTranslation,
+      segmentAliases: segmentAliases ?? this.segmentAliases,
       content: content ?? this.content,
       navigationContext: navigationContext ?? this.navigationContext,
       selectedSegment:

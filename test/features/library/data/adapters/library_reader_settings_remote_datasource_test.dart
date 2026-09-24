@@ -34,17 +34,17 @@ LibraryReaderSettingsRemoteDatasource _datasource(LibraryTestServer server) {
 }
 
 void main() {
-  test('languages list the text language first, counting editions', () async {
+  test('languages list the root language first, counting editions', () async {
     final response = await _datasource(_server()).fetchLanguages(textId: 'E1');
 
     expect(response.textId, 'E1');
     expect(response.title, 'Title T1');
     // T3 has no edition, so Nepali is not offered.
-    expect(response.availableLanguages.map((l) => l.code), ['en', 'bo']);
-    expect(response.availableLanguages.map((l) => l.versionCount), [2, 1]);
+    expect(response.availableLanguages.map((l) => l.code), ['bo', 'en']);
+    expect(response.availableLanguages.map((l) => l.versionCount), [1, 2]);
     expect(response.availableLanguages.map((l) => l.label), [
-      'English',
       'Tibetan',
+      'English',
     ]);
   });
 
@@ -61,6 +61,60 @@ void main() {
     final tibetan = await ds.fetchVersions(textId: 'E1', language: 'bo');
     expect(tibetan.availableVersions.map((v) => v.id), ['E2']);
     expect(tibetan.availableVersions.single.title, 'Title R');
+  });
+
+  test("a translation of a translation names the edition it was made from",
+      () async {
+    final server = LibraryTestServer({
+      '/v2/editions/E-sa': (_) => jsonBody({'id': 'E-sa', 'text_id': 'SA'}),
+      '/v2/editions/E-bo': (_) => jsonBody({'id': 'E-bo', 'text_id': 'BO'}),
+      '/v2/editions/E-en': (_) => jsonBody({'id': 'E-en', 'text_id': 'EN'}),
+      '/v2/texts/SA':
+          (_) => jsonBody(
+            textJson('SA', language: 'sa', editions: ['E-sa'], translations: ['BO']),
+          ),
+      '/v2/texts/BO':
+          (_) => jsonBody(
+            textJson('BO', translationOf: 'SA', editions: ['E-bo'], translations: ['EN']),
+          ),
+      '/v2/texts/EN':
+          (_) => jsonBody(
+            textJson('EN', language: 'en', translationOf: 'BO', editions: ['E-en']),
+          ),
+    });
+    final ds = _datasource(server);
+
+    expect((await ds.fetchVersionInfo(versionId: 'E-en')).parentId, 'E-bo');
+    expect((await ds.fetchVersionInfo(versionId: 'E-bo')).parentId, 'E-sa');
+
+    final english = await ds.fetchVersions(textId: 'E-en', language: 'en');
+    expect(english.availableVersions.single.parentId, 'E-bo');
+
+    final languages = await ds.fetchLanguages(textId: 'E-en');
+    expect(languages.availableLanguages.map((l) => l.code), ['bo', 'en', 'sa']);
+    // The Sanskrit root is only ever an original; the Tibetan is a translation.
+    expect(
+      languages.availableLanguages.map((l) => l.translationCount),
+      [1, 1, 0],
+    );
+    final sanskrit = await ds.fetchVersions(textId: 'E-en', language: 'sa');
+    expect(sanskrit.availableVersions.single.isRoot, isTrue);
+    final tibetan = await ds.fetchVersions(textId: 'E-en', language: 'bo');
+    expect(tibetan.availableVersions.single.isRoot, isFalse);
+  });
+
+  test('a translation names the root edition as its parent', () async {
+    final ds = _datasource(_server());
+
+    final translation = await ds.fetchVersionInfo(versionId: 'E1');
+    expect(translation.parentId, 'E2', reason: 'an edition id, not a text id');
+    expect(translation.title, 'Title T1');
+
+    final root = await ds.fetchVersionInfo(versionId: 'E2');
+    expect(root.parentId, isNull);
+
+    final versions = await ds.fetchVersions(textId: 'E2', language: 'en');
+    expect(versions.availableVersions.map((v) => v.parentId), ['E2', 'E2']);
   });
 
   test('scripts are empty and version info carries the source', () async {

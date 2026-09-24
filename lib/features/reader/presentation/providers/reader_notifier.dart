@@ -6,12 +6,15 @@ import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart'
-    show ReaderDualLayoutSettings;
+    show ReaderDualLayoutSettings, ReaderSlotConfig;
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
+import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_flattener_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_merger_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_analytics.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
@@ -122,6 +125,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       'Primary versionId changed: $_activeVersionId -> $newVersionId. '
       'Reloading reader content.',
     );
+    _activeVersionId = newVersionId;
     _reloadForVersionChange();
   }
 
@@ -149,7 +153,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     if (_isDisposed) return;
     _logger.debug('ReaderNotifier initializing with params: $_params');
 
-    final initialSegmentId = useNavParams ? _params.segmentId : null;
+    var initialSegmentId = useNavParams ? _params.segmentId : null;
     final initialSize =
         useNavParams ? _params.navigationContext?.initialPageSize : null;
 
@@ -159,6 +163,11 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
 
     try {
+      if (useNavParams) await _openAsTranslation();
+      if (_isDisposed) return;
+      if (initialSegmentId != null) {
+        initialSegmentId = state.loadedSegmentId(initialSegmentId);
+      }
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
@@ -167,6 +176,10 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         size: initialSize,
       );
       if (_isDisposed) return;
+      if (state.openedTranslation != null) {
+        await _prefetchTranslation(window.content);
+        if (_isDisposed) return;
+      }
       final response = window.response;
       _logger.debug('ReaderNotifier initialized with response: $response');
 
@@ -179,7 +192,8 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         hasNextPage: response.hasNextPage,
         hasPreviousPage: window.hasPreviousPage,
       );
-      _trackOpened(response.textDetail);
+      // The edition the user opened, not the original it is shown under.
+      _trackOpened(state.openedText ?? response.textDetail);
 
       // `version_id` in this API is just the loaded text's id. Capture it so
       // the dual-settings listener can treat a user pick of the same version
@@ -199,6 +213,158 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       );
     }
   }
+
+  /// A translation opens as the Translation layer of its root text: the root
+  /// loads as the primary and the opened edition as the secondary, shown
+  /// alone, so the page reads as before while the Languages sheet names the
+  /// real original. Anything failing, or a requested verse the root lacks,
+  /// keeps the opened edition as the primary.
+  ///
+  /// The layout lives per text, so a reader still on screen (a plan's
+  /// previous item during `pushReplacement`) may already have set it up for
+  /// this translation; this reader then adopts it instead of backing off as
+  /// it does from a layout the user picked.
+  Future<void> _openAsTranslation() async {
+    final dual = _ref.read(readerDualSettingsProvider(_params.textId).notifier);
+    bool userLayout() => dual.isPrimaryEdited || dual.isSecondaryEdited;
+    final ReaderVersionDetail opened;
+    final ReaderVersionDetail root;
+    final Map<String, String> aliases;
+    try {
+      final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
+      opened = await settings.fetchVersionInfo(versionId: _params.textId);
+      final rootId = opened.parentId;
+      if (rootId == null || rootId.isEmpty) return;
+      if (userLayout() && !_isOpenedUnder(rootId, opened.id)) return;
+      root = await settings.fetchVersionInfo(versionId: rootId);
+      aliases = await _alignNavigationSegments(root.id);
+      final requested = _params.segmentId;
+      // Already under the root, the root stays the primary regardless; the
+      // repository still places the verse through its own edition.
+      if (requested != null &&
+          !aliases.containsKey(requested) &&
+          !_isOpenedUnder(root.id, opened.id)) {
+        _logger.debug('$requested has no verse in ${root.id}; kept as opened');
+        return;
+      }
+      // The persisted flags load asynchronously and would otherwise land on
+      // top of the per-text layout set below.
+      await Future.wait([
+        _ref.read(readerSecondaryEnabledProvider.notifier).loaded,
+        _ref.read(readerOriginalVisibleProvider.notifier).loaded,
+      ]);
+    } catch (e) {
+      _logger.warning('Original of ${_params.textId} not resolved', e);
+      return;
+    }
+    if (_isDisposed) return;
+    final adopted = _isOpenedUnder(root.id, opened.id);
+    if (!adopted && userLayout()) return;
+    // Same id the primary is about to load with, so the settings listener
+    // does not reload it.
+    _activeVersionId = root.id;
+    // An adopted layout keeps whatever the user toggled on the other screen.
+    if (!adopted) {
+      dual.openAsTranslation(
+        original: _slot(root),
+        translation: _slot(opened),
+      );
+    }
+    state = state.copyWith(
+      openedTranslation: _textDetail(opened),
+      segmentAliases: aliases,
+    );
+  }
+
+  /// True when this text's layout already shows [translationId] as the
+  /// translation of [rootId].
+  bool _isOpenedUnder(String rootId, String translationId) {
+    final dual = _ref.read(readerDualSettingsProvider(_params.textId));
+    return dual.primary.versionId == rootId &&
+        dual.secondary.versionId == translationId;
+  }
+
+  /// The first page of the translation an opened translation is shown as,
+  /// fetched before the page is shown so the original never appears in the
+  /// meantime. It is the request the translation stream makes first, so the
+  /// stream finds it cached; a failure is left for that stream to report.
+  Future<void> _prefetchTranslation(FlattenedContent content) async {
+    final dual = _ref.read(readerDualSettingsProvider(_params.textId));
+    final primaryId = dual.primary.versionId;
+    final translationId = dual.secondary.versionId;
+    if (!dual.secondaryEnabled || primaryId == null || translationId == null) {
+      return;
+    }
+    final key = SecondaryReaderKey(
+      textId: primaryId,
+      versionId: translationId,
+      initialSegmentId: secondaryInitialAnchor(
+        navigationContext: _params.navigationContext,
+        segmentId: _params.segmentId,
+        content: content,
+      ),
+      initialSize: _params.navigationContext?.initialPageSize,
+    );
+    try {
+      await _ref.read(
+        textDetailsFutureProvider(secondaryInitialParams(key)).future,
+      );
+    } catch (e) {
+      _logger.debug('Translation page not fetched ahead: $e');
+    }
+  }
+
+  /// Navigation names verses of the opened translation (a plan's range, a
+  /// bookmark); these are the root's matching verses, by verse number. A
+  /// verse with no counterpart is left out and keeps its own id.
+  Future<Map<String, String>> _alignNavigationSegments(String rootId) async {
+    final ids = <String>{
+      if (_params.segmentId != null) _params.segmentId!,
+      ...?_params.navigationContext?.currentSegmentIds,
+    };
+    if (ids.isEmpty) return const {};
+    final texts = _ref.read(textsRepositoryProvider);
+    final aligned = await Future.wait(
+      ids.map(
+        (id) => texts.alignSegment(
+          segmentId: id,
+          sourceTextId: _params.textId,
+          targetTextId: rootId,
+        ),
+      ),
+    );
+    final aliases = <String, String>{};
+    var i = 0;
+    for (final id in ids) {
+      final target = aligned[i++];
+      if (target != null && target != id) aliases[id] = target;
+    }
+    return aliases;
+  }
+
+  // Labels are localized by the sheet from the code.
+  static ReaderSlotConfig _slot(ReaderVersionDetail version) => ReaderSlotConfig(
+    languageCode: version.language,
+    languageLabel: version.language,
+    versionId: version.id,
+    versionLabel: version.title,
+  );
+
+  static TextDetail _textDetail(ReaderVersionDetail version) => TextDetail(
+    id: version.id,
+    title: version.title,
+    language: version.language,
+    type: version.type ?? 'text',
+    groupId: version.groupId ?? '',
+    isPublished: version.isPublished,
+    createdDate: version.createdDate ?? '',
+    updatedDate: version.updatedDate ?? '',
+    publishedDate: version.publishedDate ?? '',
+    publishedBy: version.publishedBy ?? '',
+    sourceLink: version.sourceLink,
+    license: version.license,
+    parentId: version.parentId,
+  );
 
   /// The page at [segmentId] (the first page when null). When the target sits
   /// near the top, the previous page is merged in first so the widget gets

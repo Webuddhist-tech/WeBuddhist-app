@@ -29,13 +29,20 @@ class LibraryReaderSettingsRemoteDatasource
     }
 
     final counts = <String, int>{};
+    final translationCounts = <String, int>{};
     for (final member in family) {
       if (member.editions.isEmpty) continue;
       counts[member.language] =
           (counts[member.language] ?? 0) + member.editions.length;
+      if (!_isRoot(member)) {
+        translationCounts[member.language] =
+            (translationCounts[member.language] ?? 0) + member.editions.length;
+      }
     }
     final codes = counts.keys.toList()..sort();
-    if (codes.remove(text.language)) codes.insert(0, text.language);
+    // The original's language leads: the text a translation was made from.
+    final original = _byId(family)[text.translationOf] ?? text;
+    if (codes.remove(original.language)) codes.insert(0, original.language);
 
     return ReaderLanguagesResponse(
       textId: textId,
@@ -46,6 +53,7 @@ class LibraryReaderSettingsRemoteDatasource
             code: code,
             label: _label(names, code),
             versionCount: counts[code]!,
+            translationCount: translationCounts[code] ?? 0,
           ),
       ],
     );
@@ -72,11 +80,16 @@ class LibraryReaderSettingsRemoteDatasource
   }) async {
     final edition = await _library.resolveEdition(textId);
     final family = await _library.getTextFamily(edition.textId);
+    final byId = _byId(family);
     final versions = <ReaderVersionDetail>[];
     for (final member in family) {
       if (member.language != language) continue;
       for (final editionId in member.editions) {
-        final version = _version(member, editionId: editionId);
+        final version = _version(
+          member,
+          editionId: editionId,
+          parentId: byId[member.translationOf]?.primaryEditionId,
+        );
         if (editionId == edition.id) {
           versions.insert(0, version);
         } else {
@@ -97,21 +110,45 @@ class LibraryReaderSettingsRemoteDatasource
   }) async {
     final edition = await _library.resolveEdition(versionId);
     final text = await _library.getText(edition.textId);
-    return _version(text, editionId: edition.id, sourceLink: edition.source);
+    return _version(
+      text,
+      editionId: edition.id,
+      parentId: await _rootEditionId(text),
+      sourceLink: edition.source,
+    );
   }
 
+  static bool _isRoot(LibraryText text) =>
+      !text.isTranslation && !text.isCommentary;
+
+  static Map<String, LibraryText> _byId(List<LibraryText> texts) => {
+    for (final t in texts) t.id: t,
+  };
+
+  /// The edition of the text [text] translates, else null. Reader ids are
+  /// edition ids, so `translation_of` (a text id) is mapped across.
+  Future<String?> _rootEditionId(LibraryText text) async {
+    if (!text.isTranslation) return null;
+    final root = await _library.getText(text.translationOf!);
+    return root.primaryEditionId;
+  }
+
+  /// [parentId] is the edition of the text a translation was made from, so
+  /// the reader can open it as the Translation layer of its original.
   static ReaderVersionDetail _version(
     LibraryText text, {
     required String editionId,
+    String? parentId,
     String? sourceLink,
   }) {
     return ReaderVersionDetail(
       id: editionId,
       title: text.displayTitle,
       language: text.language,
-      parentId: text.translationOf,
+      parentId: parentId,
       license: text.license,
       sourceLink: sourceLink,
+      isRoot: _isRoot(text),
     );
   }
 
