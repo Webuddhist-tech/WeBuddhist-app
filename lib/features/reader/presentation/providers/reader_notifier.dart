@@ -5,8 +5,10 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart'
     show ReaderDualLayoutSettings;
+import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_flattener_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_merger_service.dart';
@@ -31,6 +33,13 @@ class ReaderParams {
 
   /// Language requested by navigation (e.g. the All chants picker).
   String? get language => navigationContext?.language;
+
+  /// Key of this reader's dual-layout settings: the text in the context it
+  /// was opened from (library, event, chant or plan).
+  ReaderSettingsScope get settingsScope => ReaderSettingsScope(
+    textId: textId,
+    context: readerLayoutContextOf(navigationContext),
+  );
 
   @override
   bool operator ==(Object other) {
@@ -78,7 +87,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
        _merger = merger ?? SectionMergerService(),
        super(ReaderState.initial(params.textId)) {
     _ref.listen<ReaderDualLayoutSettings>(
-      readerDualSettingsProvider(params.textId),
+      readerDualSettingsProvider(params.settingsScope),
       _onDualSettingsChanged,
       fireImmediately: false,
     );
@@ -315,7 +324,9 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// Dual-settings primary version wins. Otherwise, if navigation asked for a
   /// language and versions exist for it, use that version's `text_id`.
   Future<String> _resolveDetailsTextId() async {
-    final dualSettings = _ref.read(readerDualSettingsProvider(_params.textId));
+    final dualSettings = _ref.read(
+      readerDualSettingsProvider(_params.settingsScope),
+    );
     final primaryVersionId = dualSettings.primary.versionId;
     if (primaryVersionId != null && primaryVersionId.isNotEmpty) {
       return primaryVersionId;

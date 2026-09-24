@@ -31,6 +31,10 @@ export 'domain/transliteration/tibetan_phonetics.dart';
 export 'domain/transliteration/tibetan_script_converter.dart';
 export 'domain/transliteration/transliteration_service.dart';
 
+// Initial language layout per context (event / chant / plan / library)
+export 'domain/layout/reader_layout_context.dart';
+export 'domain/layout/reader_initial_layout.dart';
+
 // Data - Models
 export 'data/models/reader_state.dart';
 export 'data/models/flattened_item.dart';

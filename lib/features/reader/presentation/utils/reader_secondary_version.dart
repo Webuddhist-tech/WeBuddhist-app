@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
@@ -19,14 +20,14 @@ bool readerLanguagesMatch(String a, String b) =>
 /// - nothing usable → mark the slot [ReaderSlotConfig.versionUnavailable].
 Future<void> autoSelectSecondaryVersion({
   required WidgetRef ref,
-  required String textId,
+  required ReaderSettingsScope scope,
   required ReaderSlotConfig slot,
   required ReaderSlotConfig mainConfig,
   required int resolveGeneration,
 }) async {
-  final notifier = ref.read(readerDualSettingsProvider(textId).notifier);
+  final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
   final query = ReaderLanguageQuery(
-    textId: textId,
+    textId: scope.textId,
     language: slot.languageCode,
   );
 
@@ -68,25 +69,31 @@ Future<void> autoSelectSecondaryVersion({
   }
 }
 
-/// Fills the secondary slot from Settings language and turns it on.
+/// Fills the secondary slot with the first of [candidates] the text offers
+/// and resolves its version. Candidates equal to [sourceLanguage] are
+/// skipped: the on-screen text stays on top, and this never calls
+/// [ReaderDualSettingsNotifier.replacePrimary].
 ///
-/// Does not call [ReaderDualSettingsNotifier.replacePrimary] — the chant /
-/// on-screen text stays on top. Returns false when Settings language is the
-/// same as the source, missing for this text, or has no usable version.
-Future<bool> fillSettingsLanguageSecondary({
+/// Returns the language filled, or null when none is offered, the switch was
+/// toggled meanwhile, or no usable version exists. Leaves the translation
+/// switch alone; callers decide whether a filled slot turns it on.
+Future<String?> fillSecondaryWithLanguages({
   required WidgetRef ref,
   required BuildContext context,
-  required String textId,
+  required ReaderSettingsScope scope,
   required String sourceLanguage,
+  required List<String> candidates,
   String? sourceVersionId,
 }) async {
-  final settingsLang = normalizeReaderLanguageCode(
-    ref.read(contentLanguageProvider),
-  );
-  if (settingsLang.isEmpty) return false;
-  if (readerLanguagesMatch(settingsLang, sourceLanguage)) return false;
+  final wanted = [
+    for (final candidate in candidates)
+      if (normalizeReaderLanguageCode(candidate).isNotEmpty &&
+          !readerLanguagesMatch(candidate, sourceLanguage))
+        normalizeReaderLanguageCode(candidate),
+  ];
+  if (wanted.isEmpty) return null;
 
-  final notifier = ref.read(readerDualSettingsProvider(textId).notifier);
+  final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
   final enabledGeneration = notifier.secondaryEnabledGeneration;
   final startResolveGeneration = notifier.secondaryResolveGeneration;
   bool toggleUnchanged() =>
@@ -96,23 +103,27 @@ Future<bool> fillSettingsLanguageSecondary({
   bool slotUnchanged() =>
       notifier.secondaryResolveGeneration == startResolveGeneration;
 
-  final languages = await ref.read(readerLanguagesProvider(textId).future);
-  if (!toggleUnchanged() || !slotUnchanged()) return false;
+  final languages = await ref.read(
+    readerLanguagesProvider(scope.textId).future,
+  );
+  if (!toggleUnchanged() || !slotUnchanged()) return null;
   ReaderLanguageOption? option;
-  for (final language in languages) {
-    if (readerLanguagesMatch(language.code, settingsLang)) {
-      option = language;
-      break;
+  for (final code in wanted) {
+    for (final language in languages) {
+      if (readerLanguagesMatch(language.code, code)) {
+        option = language;
+        break;
+      }
     }
+    if (option != null) break;
   }
-  if (option == null) return false;
-  if (!context.mounted) return false;
+  if (option == null) return null;
+  if (!context.mounted) return null;
 
-  final current = ref.read(readerDualSettingsProvider(textId)).secondary;
+  final current = ref.read(readerDualSettingsProvider(scope)).secondary;
   if (current.versionId != null &&
-      readerLanguagesMatch(current.languageCode, settingsLang)) {
-    notifier.setSecondaryEnabled(true);
-    return true;
+      readerLanguagesMatch(current.languageCode, option.code)) {
+    return option.code;
   }
 
   final slot = ReaderSlotConfig(
@@ -124,7 +135,7 @@ Future<bool> fillSettingsLanguageSecondary({
 
   await autoSelectSecondaryVersion(
     ref: ref,
-    textId: textId,
+    scope: scope,
     slot: slot,
     mainConfig: ReaderSlotConfig(
       languageCode: sourceLanguage,
@@ -134,9 +145,36 @@ Future<bool> fillSettingsLanguageSecondary({
     resolveGeneration: resolveGeneration,
   );
 
-  if (!toggleUnchanged()) return false;
-  final filled = ref.read(readerDualSettingsProvider(textId)).secondary;
-  if (filled.versionId == null) return false;
-  notifier.setSecondaryEnabled(true);
+  if (!toggleUnchanged()) return null;
+  final filled = ref.read(readerDualSettingsProvider(scope)).secondary;
+  if (filled.versionId == null) return null;
+  return option.code;
+}
+
+/// Fills the secondary slot from Settings language and turns it on.
+///
+/// Returns false when Settings language is the same as the source, missing
+/// for this text, or has no usable version.
+Future<bool> fillSettingsLanguageSecondary({
+  required WidgetRef ref,
+  required BuildContext context,
+  required ReaderSettingsScope scope,
+  required String sourceLanguage,
+  String? sourceVersionId,
+}) async {
+  final settingsLang = normalizeReaderLanguageCode(
+    ref.read(contentLanguageProvider),
+  );
+  if (settingsLang.isEmpty) return false;
+  final filled = await fillSecondaryWithLanguages(
+    ref: ref,
+    context: context,
+    scope: scope,
+    sourceLanguage: sourceLanguage,
+    sourceVersionId: sourceVersionId,
+    candidates: [settingsLang],
+  );
+  if (filled == null) return false;
+  ref.read(readerDualSettingsProvider(scope).notifier).setSecondaryEnabled(true);
   return true;
 }

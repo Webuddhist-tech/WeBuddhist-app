@@ -1,12 +1,19 @@
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
+import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/fake_local_storage.dart';
+
+const _scope = ReaderSettingsScope(
+  textId: 'text-1',
+  context: ReaderLayoutContext.library,
+);
 
 void main() {
   late FakeLocalStorage storage;
@@ -120,7 +127,7 @@ void main() {
   group('ReaderDualSettingsNotifier', () {
     test('mirrors the global flag and restores the original when the '
         'translation is switched off', () async {
-      final provider = readerDualSettingsProvider('text-1');
+      final provider = readerDualSettingsProvider(_scope);
       // autoDispose: keep it alive for the test.
       final sub = container.listen(provider, (_, __) {});
       addTearDown(sub.close);
@@ -143,7 +150,12 @@ void main() {
 
     test('hiding the original while the translation is off switches the '
         'translation on', () {
-      final provider = readerDualSettingsProvider('text-2');
+      final provider = readerDualSettingsProvider(
+        const ReaderSettingsScope(
+          textId: 'text-2',
+          context: ReaderLayoutContext.library,
+        ),
+      );
       final sub = container.listen(provider, (_, __) {});
       addTearDown(sub.close);
       final notifier = container.read(provider.notifier);

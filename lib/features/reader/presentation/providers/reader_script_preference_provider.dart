@@ -100,8 +100,9 @@ final readerScriptPreferenceProvider = StateNotifierProvider<
   );
 });
 
-/// The script picked for one language, so segment widgets rebuild only when
-/// their own language's pick changes.
+/// The app-wide script pick for one language (what the library shows), so
+/// segment widgets rebuild only when their own language's pick changes.
+/// Readers outside the library go through `readerOriginalScriptProvider`.
 final readerScriptForLanguageProvider = Provider.family<String?, String>((
   ref,
   languageCode,

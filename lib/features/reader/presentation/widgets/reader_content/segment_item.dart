@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -12,6 +13,9 @@ class SegmentItem extends ConsumerWidget {
   final Segment segment;
   final int depth;
   final String language;
+
+  /// The reader this line is shown in; decides which script pick applies.
+  final ReaderSettingsScope scope;
   final bool isSelected;
   final bool isGreyedOut;
 
@@ -24,6 +28,7 @@ class SegmentItem extends ConsumerWidget {
     required this.segment,
     required this.depth,
     required this.language,
+    required this.scope,
     this.isSelected = false,
     this.isGreyedOut = false,
     this.isLive = false,
@@ -37,6 +42,7 @@ class SegmentItem extends ConsumerWidget {
       ref,
       content: segment.content,
       language: language,
+      scope: scope,
     );
 
     return AnimatedOpacity(

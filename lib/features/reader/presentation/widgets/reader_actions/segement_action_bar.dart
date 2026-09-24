@@ -86,7 +86,9 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
   /// The translation line when "translation only" draws it in place of this
   /// verse's original, else null — the verse then shows its original.
   String? _translationShownAlone() {
-    final dual = ref.read(readerDualSettingsProvider(widget.params.textId));
+    final dual = ref.read(
+      readerDualSettingsProvider(widget.params.settingsScope),
+    );
     final versionId = dual.secondary.versionId;
     if (dual.originalVisible || !dual.secondaryEnabled || versionId == null) {
       return null;
@@ -122,7 +124,14 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
               ref.read(transliterationServiceProvider),
               html: normalizeSegmentHtml(content),
               language: language,
-              scriptId: ref.read(readerScriptForLanguageProvider(language)),
+              scriptId: ref.read(
+                readerOriginalScriptProvider(
+                  ReaderScriptScope(
+                    scope: widget.params.settingsScope,
+                    language: language,
+                  ),
+                ),
+              ),
             );
     final textWithLineBreaks = html.replaceAll('<br>', '\n');
     final plainText = _htmlToPlainText(textWithLineBreaks);

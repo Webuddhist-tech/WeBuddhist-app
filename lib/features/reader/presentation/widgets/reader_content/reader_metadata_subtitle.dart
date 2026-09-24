@@ -15,13 +15,20 @@ class ReaderMetadataSubtitle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(readerNotifierProvider(params));
-    final settings = ref.watch(readerDualSettingsProvider(params.textId));
+    final settings = ref.watch(
+      readerDualSettingsProvider(params.settingsScope),
+    );
     final textDetail = state.textDetail;
     if (textDetail == null) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
     final scriptId = ref.watch(
-      readerScriptForLanguageProvider(textDetail.language),
+      readerOriginalScriptProvider(
+        ReaderScriptScope(
+          scope: params.settingsScope,
+          language: textDetail.language,
+        ),
+      ),
     );
     final transliteration = ref
         .watch(transliterationServiceProvider)

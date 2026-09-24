@@ -71,10 +71,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
             if (liveSyncToggle != null) liveSyncToggle!,
             if (prayerRequestsButton != null) prayerRequestsButton!,
             ReaderSearchButton(onPressed: onSearchPressed),
-            ReaderLanguagesButton(
-              params: params,
-              onPressed: onLanguagesPressed,
-            ),
+            ReaderLanguagesButton(onPressed: onLanguagesPressed),
             const SizedBox(width: 4),
             if (onMorePressed != null) ...[
               IconButton(
@@ -143,10 +140,7 @@ class ReaderAppBar extends ConsumerWidget {
         ReaderSearchButton(
           onPressed: onSearchPressed ?? () => _handleSearch(context, ref),
         ),
-        ReaderLanguagesButton(
-          params: params,
-          onPressed: onLanguagesPressed ?? () {},
-        ),
+        ReaderLanguagesButton(onPressed: onLanguagesPressed ?? () {}),
         const SizedBox(width: 4),
         IconButton(
           icon: const Icon(Icons.more_vert),
