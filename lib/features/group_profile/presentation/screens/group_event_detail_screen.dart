@@ -626,13 +626,24 @@ class _GroupEventDetailScreenState
       _pendingJoin = null;
     });
 
-    result.fold((failure) => _showError(failure.message), (_) {
-      setState(() {
-        _attendingOverride = true;
-        _participationOverride = participation;
-      });
-      _refreshEvent(event);
-    });
+    final joined = result.fold(
+      (failure) {
+        _showError(failure.message);
+        return false;
+      },
+      (_) {
+        setState(() {
+          _attendingOverride = true;
+          _participationOverride = participation;
+        });
+        _refreshEvent(event);
+        return true;
+      },
+    );
+    // Picking a format up front already says "take me in"; skip the Enter tap.
+    if (joined && participation != null && event.hasPuja) {
+      await _enterPuja(event);
+    }
   }
 
   Future<void> _leaveEvent(GroupEvent event) async {
