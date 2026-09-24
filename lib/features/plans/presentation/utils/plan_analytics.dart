@@ -56,10 +56,11 @@ class PlanAnalytics {
     });
   }
 
-  /// A debounced catalog search returned its first page.
-  void planSearched({required String query, required int resultCount}) {
+  /// A debounced catalog search returned its first page. Only the length of
+  /// the query is sent: the text itself could be personal.
+  void planSearched({required int queryLength, required int resultCount}) {
     _analytics.trackInBackground(AnalyticsEvents.planSearched, {
-      AnalyticsProperties.query: query,
+      AnalyticsProperties.queryLength: queryLength,
       AnalyticsProperties.resultCount: resultCount,
     });
   }

@@ -216,8 +216,11 @@ class SeriesDetailScreen extends ConsumerWidget {
     if (!context.mounted) return;
 
     final message = context.l10n.series_share_message(series.title, url);
+    final result = await SharePlus.instance.share(ShareParams(text: message));
+    if (!context.mounted || result.status == ShareResultStatus.dismissed) {
+      return;
+    }
     ref.read(seriesAnalyticsProvider).seriesShared(seriesId: series.id);
-    await SharePlus.instance.share(ShareParams(text: message));
   }
 
   /// Adds the series to the user's practice routine.

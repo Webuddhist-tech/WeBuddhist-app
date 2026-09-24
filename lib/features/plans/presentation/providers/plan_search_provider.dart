@@ -120,7 +120,7 @@ class PlanSearchNotifier extends StateNotifier<PlanSearchState> {
         if (mounted) {
           if (reset) {
             analytics?.planSearched(
-              query: query.trim(),
+              queryLength: query.trim().length,
               resultCount: results.length,
             );
           }

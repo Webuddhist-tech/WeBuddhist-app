@@ -49,10 +49,11 @@ class SeriesAnalytics {
     });
   }
 
-  /// A debounced series search returned.
-  void seriesSearched({required String query, required int resultCount}) {
+  /// A debounced series search returned. Only the length of the query is
+  /// sent: the text itself could be personal.
+  void seriesSearched({required int queryLength, required int resultCount}) {
     _analytics.trackInBackground(AnalyticsEvents.seriesSearched, {
-      AnalyticsProperties.query: query,
+      AnalyticsProperties.queryLength: queryLength,
       AnalyticsProperties.resultCount: resultCount,
     });
   }

@@ -43,7 +43,7 @@ void main() {
   test('share, routine intent and search fire their own events', () {
     analytics.seriesShared(seriesId: 's1');
     analytics.seriesAddedToPractices(seriesId: 's1');
-    analytics.seriesSearched(query: 'tipitaka', resultCount: 1);
+    analytics.seriesSearched(queryLength: 8, resultCount: 1);
 
     expect(service.eventNames, [
       AnalyticsEvents.seriesShared,
@@ -51,7 +51,7 @@ void main() {
       AnalyticsEvents.seriesSearched,
     ]);
     expect(service.events.last.properties, {
-      'query': 'tipitaka',
+      'query_length': 8,
       'result_count': 1,
     });
   });

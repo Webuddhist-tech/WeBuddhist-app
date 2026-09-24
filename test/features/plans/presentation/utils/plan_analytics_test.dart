@@ -43,11 +43,11 @@ void main() {
     expect(service.events.last.properties, {'plan_id': 'p1', 'day_number': 3});
   });
 
-  test('planSearched carries the query and the result count', () {
-    analytics.planSearched(query: 'tara', resultCount: 4);
+  test('planSearched carries the query length, never its text', () {
+    analytics.planSearched(queryLength: 4, resultCount: 4);
 
     expect(service.events.single.properties, {
-      'query': 'tara',
+      'query_length': 4,
       'result_count': 4,
     });
   });

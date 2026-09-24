@@ -1157,7 +1157,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     setState(() => _isSharing = true);
 
     try {
-      await sharePlanDayImage(
+      final shared = await sharePlanDayImage(
         context: context,
         shareableImageUrl: shareableImageUrl,
         dayNumber: dayNumber,
@@ -1165,7 +1165,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         planLanguage: widget.plan.language,
         shareButtonKey: _shareButtonKey,
       );
-      if (mounted) {
+      if (shared && mounted) {
         ref
             .read(planAnalyticsProvider)
             .planDayShared(planId: widget.plan.id, dayNumber: dayNumber);

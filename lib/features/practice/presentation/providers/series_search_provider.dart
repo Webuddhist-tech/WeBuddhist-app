@@ -84,7 +84,7 @@ class SeriesSearchNotifier extends StateNotifier<SeriesSearchState> {
         error: null,
       );
       analytics?.seriesSearched(
-        query: query.trim(),
+        queryLength: query.trim().length,
         resultCount: models.length,
       );
     } catch (e) {

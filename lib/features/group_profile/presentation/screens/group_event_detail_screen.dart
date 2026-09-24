@@ -479,25 +479,32 @@ class _GroupEventDetailScreenState
       }
       final showLiveStream =
           participation == GroupEventParticipationType.online;
-      ref
-          .read(groupEventAnalyticsProvider)
-          .eventLiveEntered(
-            eventId: event.id,
-            groupId: event.groupId,
-            participation: participation,
-            target:
-                seriesId != null
-                    ? GroupEventLiveTarget.series
-                    : GroupEventLiveTarget.plan,
-          );
-      if (seriesId != null) {
-        await _enterSeries(event, seriesId, showLiveStream: showLiveStream);
-      } else {
-        await _openPlanPreview(
-          planId!,
-          eventId: event.id,
-          showLiveStream: showLiveStream,
-        );
+      final bool entered =
+          seriesId != null
+              ? await _enterSeries(
+                event,
+                seriesId,
+                showLiveStream: showLiveStream,
+              )
+              : await _openPlanPreview(
+                planId!,
+                eventId: event.id,
+                showLiveStream: showLiveStream,
+              );
+      // Only an opened practice counts; a missing plan or a failed series
+      // enrollment leaves the user here.
+      if (entered && mounted) {
+        ref
+            .read(groupEventAnalyticsProvider)
+            .eventLiveEntered(
+              eventId: event.id,
+              groupId: event.groupId,
+              participation: participation,
+              target:
+                  seriesId != null
+                      ? GroupEventLiveTarget.series
+                      : GroupEventLiveTarget.plan,
+            );
       }
     } finally {
       if (mounted) setState(() => _isOpeningPuja = false);
@@ -546,17 +553,17 @@ class _GroupEventDetailScreenState
     }
   }
 
-  Future<void> _openPlanPreview(
+  Future<bool> _openPlanPreview(
     String planId, {
     String? eventId,
     bool showLiveStream = false,
   }) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
-    if (!mounted) return;
+    if (!mounted) return false;
     final plan = either.fold((_) => null, (plan) => plan);
     if (plan == null) {
       _showError(context.l10n.notFound);
-      return;
+      return false;
     }
     context.push(
       AppRoutes.practicePlanPreview,
@@ -566,28 +573,29 @@ class _GroupEventDetailScreenState
         'showLiveStream': showLiveStream,
       },
     );
+    return true;
   }
 
-  Future<void> _enterSeries(
+  Future<bool> _enterSeries(
     GroupEvent event,
     String seriesId, {
     required bool showLiveStream,
   }) async {
     final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
-    if (!mounted) return;
+    if (!mounted) return false;
     final series = seriesEither.fold((_) => null, (s) => s);
     final plan = series?.plans.firstOrNull;
     if (plan == null) {
       _showError(context.l10n.notFound);
-      return;
+      return false;
     }
 
     final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
-    if (!mounted) return;
+    if (!mounted) return false;
     if (!enrollments.contains(seriesId)) {
       final ok =
           await ref.read(seriesEnrollmentProvider(seriesId).notifier).enroll();
-      if (!mounted) return;
+      if (!mounted) return false;
       if (!ok) {
         final state = ref.read(seriesEnrollmentProvider(seriesId));
         _showError(
@@ -595,7 +603,7 @@ class _GroupEventDetailScreenState
               ? state.failure.message
               : context.l10n.series_enroll_error,
         );
-        return;
+        return false;
       }
     }
 
@@ -619,6 +627,7 @@ class _GroupEventDetailScreenState
         'showLiveStream': showLiveStream,
       },
     );
+    return true;
   }
 
   List<GroupEventLink> _videoLinks(GroupEvent event) {
@@ -718,13 +727,14 @@ class _GroupEventDetailScreenState
     final shareUrl = await resolveShareUrlRef(ref, longUrl);
     if (!mounted) return;
 
-    ref.read(groupEventAnalyticsProvider).eventShared(eventId: widget.eventId);
-    await SharePlus.instance.share(
+    final result = await SharePlus.instance.share(
       ShareParams(
         text: shareUrl,
         sharePositionOrigin: getSharePositionOrigin(context: context),
       ),
     );
+    if (!mounted || result.status == ShareResultStatus.dismissed) return;
+    ref.read(groupEventAnalyticsProvider).eventShared(eventId: widget.eventId);
   }
 
   void _showError(String message) {

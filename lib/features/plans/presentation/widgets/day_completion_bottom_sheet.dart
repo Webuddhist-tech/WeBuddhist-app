@@ -209,7 +209,7 @@ class _DayCompletionBottomSheetState
     setState(() => _isSharing = true);
 
     try {
-      await sharePlanDayImage(
+      final shared = await sharePlanDayImage(
         context: context,
         shareableImageUrl: url,
         dayNumber: widget.dayNumber,
@@ -217,7 +217,7 @@ class _DayCompletionBottomSheetState
         planLanguage: widget.planLanguage,
         shareButtonKey: _shareButtonKey,
       );
-      if (mounted) {
+      if (shared && mounted) {
         ref
             .read(planAnalyticsProvider)
             .planDayShared(

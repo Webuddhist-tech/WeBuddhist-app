@@ -97,6 +97,6 @@ abstract final class AnalyticsProperties {
   static const String linkType = 'link_type';
 
   // Search
-  static const String query = 'query';
+  static const String queryLength = 'query_length';
   static const String resultCount = 'result_count';
 }
