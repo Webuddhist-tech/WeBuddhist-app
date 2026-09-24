@@ -330,13 +330,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get loading => 'लोड हुँदैछ...';
 
   @override
-  String get choose_image => 'तस्बिर छान्नुहोस्';
-
-  @override
   String get choose_bg_image => 'पृष्ठभूमि तस्बिर छान्नुहोस्';
-
-  @override
-  String get create_image => 'तस्बिर सिर्जना गर्नुहोस्';
 
   @override
   String get save => 'सेभ गर्नुहोस्';
@@ -1192,34 +1186,8 @@ class AppLocalizationsNe extends AppLocalizations {
   String get unknown_error => 'अज्ञात त्रुटि';
 
   @override
-  String image_share_error(String error) {
-    return 'साझा गर्न सकिएन: $error';
-  }
-
-  @override
-  String get create_image_capture_error =>
-      'तस्बिर सिर्जना गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्';
-
-  @override
   String get create_image_share_error =>
       'साझा गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्';
-
-  @override
-  String get create_image_save_success => 'तस्बिर सेभ भयो';
-
-  @override
-  String get create_image_save_error =>
-      'तस्बिर सेभ गर्न सकिएन। एपसँग फोटो पहुँच छ कि छैन जाँच गर्नुहोस्, वा फेरि प्रयास गर्नुहोस्';
-
-  @override
-  String get create_image_download_error =>
-      'तपाईंको तस्बिर डाउनलोड गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्';
-
-  @override
-  String get create_image_customize_tooltip => 'कस्टमाइज गर्नुहोस्';
-
-  @override
-  String get create_image_text_too_long => 'फन्ट आकार बढाउन पाठ धेरै लामो छ';
 
   @override
   String version_search_no_results(String query) {
@@ -1274,82 +1242,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get plans_created => 'योजना सिर्जना भयो';
 
   @override
-  String get ai_chat_history => 'च्याट इतिहास';
-
-  @override
-  String get ai_buddhist_assistant =>
-      'आफ्नो दैनिक लय बनाउनुहोस्। समय तोक्नुहोस्, र हामी तपाईंलाई अभ्यास गर्न सम्झाउनेछौँ';
-
-  @override
-  String get ai_new_chat => 'नयाँ च्याट';
-
-  @override
-  String get ai_retry => 'पुनः प्रयास गर्नुहोस्';
-
-  @override
-  String get ai_dismiss => 'खारेज गर्नुहोस्';
-
-  @override
-  String get ai_sign_in_prompt =>
-      'बौद्ध AI सहायक प्रयोग गर्न साइन इन गर्नुहोस्';
-
-  @override
-  String get ai_explore_wisdom => 'बौद्ध ज्ञान अन्वेषण गर्नुहोस्';
-
-  @override
-  String get ai_ask_question => 'प्रश्न सोध्नुहोस्...';
-
-  @override
-  String get ai_search_chats => 'च्याटहरू खोज्नुहोस्';
-
-  @override
-  String get ai_chats => 'च्याटहरू';
-
-  @override
-  String get ai_chat_deleted => 'च्याट मेटियो';
-
-  @override
-  String get ai_no_conversations => 'अहिलेसम्म कुनै कुराकानी छैन';
-
-  @override
-  String get ai_start_new_chat => 'सुरु गर्न नयाँ च्याट सुरु गर्नुहोस्।';
-
-  @override
-  String get ai_delete_chat => 'च्याट मेट्नुहोस्';
-
-  @override
-  String get ai_delete_confirmation =>
-      'के तपाईं यो च्याट मेट्न निश्चित हुनुहुन्छ?';
-
-  @override
-  String get ai_delete_warning => 'यो कार्य पूर्ववत् गर्न सकिँदैन।';
-
-  @override
   String get ai_confirm => 'पुष्टि गर्नुहोस्';
-
-  @override
-  String get ai_delete => 'मेट्नुहोस्';
-
-  @override
-  String ai_greeting(String name) {
-    return 'नमस्ते $name';
-  }
-
-  @override
-  String get ai_text_not_found => 'पाठ फेला परेन।';
-
-  @override
-  String ai_text_not_found_message(String title) {
-    return 'हाम्रो पुस्तकालयमा अहिलेसम्म \"$title\" छैन।\n\nफरक शीर्षक प्रयास गर्नुहोस्, वा अर्को तरिकाले सोध्नुहोस्';
-  }
-
-  @override
-  String get ai_sources => 'स्रोतहरू';
-
-  @override
-  String ai_sources_count(int count) {
-    return '$count स्रोतहरू';
-  }
 
   @override
   String search_no_results(String query) {
@@ -1357,48 +1250,7 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
-  String get search_show_more => 'थप देखाउनुहोस्';
-
-  @override
-  String get search_contents => 'सामग्रीहरू';
-
-  @override
-  String get search_titles => 'शीर्षकहरू';
-
-  @override
   String get search_all => 'सबै';
-
-  @override
-  String get search_author => 'लेखक';
-
-  @override
-  String get search_tab_ai_mode => 'AI मोड';
-
-  @override
-  String search_error(String message) {
-    return 'त्रुटि: $message';
-  }
-
-  @override
-  String get search_retrying => 'पुनः प्रयास गर्दै...';
-
-  @override
-  String search_no_titles_found(String query) {
-    return '\"$query\" का लागि कुनै शीर्षक फेला परेन';
-  }
-
-  @override
-  String search_no_contents_found(String query) {
-    return '\"$query\" का लागि कुनै सामग्री फेला परेन';
-  }
-
-  @override
-  String search_no_authors_found(String query) {
-    return '\"$query\" का लागि कुनै लेखक फेला परेन';
-  }
-
-  @override
-  String get search_buddhist_texts => 'बौद्ध ग्रन्थहरू खोज्नुहोस्...';
 
   @override
   String get common_ok => 'ठीक छ';
@@ -2072,6 +1924,19 @@ class AppLocalizationsNe extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'च्याट सूचनाहरू म्युट गर्नुहोस्';
+
+  @override
+  String get group_chat_unmute_notifications =>
+      'च्याट सूचनाहरू अनम्युट गर्नुहोस्';
+
+  @override
+  String get group_chat_notifications_muted => 'च्याट सूचनाहरू म्युट गरियो';
+
+  @override
+  String get group_chat_notifications_unmuted => 'च्याट सूचनाहरू सक्रिय छन्';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2113,6 +1978,30 @@ class AppLocalizationsNe extends AppLocalizations {
   @override
   String get group_join_request_error =>
       'अनुरोध पठाउन सकिएन। कृपया पुनः प्रयास गर्नुहोस्।';
+
+  @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
 
   @override
   String get group_members_only_title => 'सदस्यहरू मात्र';
@@ -2549,12 +2438,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get timer_notification_complete => 'तपाईंको सत्र पूरा भयो';
 
   @override
-  String get ai_use_search_instead => 'बरु खोज प्रयोग गर्नुहोस्';
-
-  @override
-  String get ai_mode_label => 'AI';
-
-  @override
   String plan_day_of(int day, int total) {
     return 'दिन $day / $total';
   }
@@ -2764,17 +2647,6 @@ class AppLocalizationsNe extends AppLocalizations {
       locale: localeName,
       other: '$count सन्देशहरू मेटाउन सकिएनन्।',
       one: 'सन्देश मेटाउन सकिएन।',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'सन्देशहरू मेटाइए',
-      one: 'सन्देश मेटाइयो',
     );
     return '$_temp0';
   }

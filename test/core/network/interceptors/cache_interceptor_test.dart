@@ -88,6 +88,31 @@ void main() {
     verify(anonHandler.next(any)).called(1);
   });
 
+  test('keeps at most maxEntries, evicting the least recently used',
+      () async {
+    interceptor = CacheInterceptor(
+      AppLogger('CacheInterceptorTest'),
+      maxEntries: 2,
+    );
+    prime(request('/a'), 'a');
+    prime(request('/b'), 'b');
+    // Reading /a makes /b the least recently used.
+    interceptor.onRequest(request('/a'), MockRequestInterceptorHandler());
+    prime(request('/c'), 'c');
+
+    bool served(String path) {
+      final handler = MockRequestInterceptorHandler();
+      interceptor.onRequest(request(path), handler);
+      return verify(handler.resolve(any)).callCount == 1;
+    }
+
+    expect(served('/a'), isTrue);
+    expect(served('/c'), isTrue);
+    final missed = MockRequestInterceptorHandler();
+    interceptor.onRequest(request('/b'), missed);
+    verify(missed.next(any)).called(1);
+  });
+
   test('user-specific paths are never cached', () async {
     prime(request('/users/me/plans', authed: true), 'user-plans');
 

@@ -28,6 +28,7 @@ import 'package:flutter_pecha/core/network/interceptors/cache_interceptor.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
+import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
@@ -485,6 +486,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // Started before the state flips: the flip makes the push service delete
+    // the FCM token, and it must first let this unregister use the stored id
+    // while the JWT is still valid. Awaited below, before credentials go.
+    final pushUnregister = _unregisterPushDevice();
     _invalidateAuthSession();
     ref.read(cacheInterceptorProvider).clearUserScoped();
 
@@ -496,6 +501,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       _logger.warning('Mala flush on logout failed (ignored): $e');
     }
+    await pushUnregister;
 
     final logoutResult = await _localLogoutUseCase(const NoParams());
     logoutResult.fold(
@@ -610,6 +616,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   int _bumpAuthEpoch() => ++_authEpoch;
 
   bool _isAuthEpochCurrent(int epoch) => epoch == _authEpoch;
+
+  /// Stops server pushes for the account signing out. Never throws: the
+  /// service swallows backend failures, and building it can throw only where
+  /// Firebase is not set up.
+  Future<void> _unregisterPushDevice() {
+    try {
+      return ref.read(pushNotificationServiceProvider).unregisterForSignOut();
+    } catch (e) {
+      _logger.warning('Push unregister on logout skipped: $e');
+      return Future.value();
+    }
+  }
 
   void _invalidateAuthSession() {
     _bumpAuthEpoch();

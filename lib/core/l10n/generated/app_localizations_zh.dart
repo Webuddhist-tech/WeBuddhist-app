@@ -319,13 +319,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loading => '加載中...';
 
   @override
-  String get choose_image => '選擇圖片';
-
-  @override
   String get choose_bg_image => '選擇背景圖片';
-
-  @override
-  String get create_image => '建立圖片';
 
   @override
   String get save => '儲存';
@@ -1114,30 +1108,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unknown_error => '未知錯誤';
 
   @override
-  String image_share_error(String error) {
-    return '無法分享：$error';
-  }
-
-  @override
-  String get create_image_capture_error => '圖片生成失敗，請再試一次';
-
-  @override
   String get create_image_share_error => '無法分享，請再試一次';
-
-  @override
-  String get create_image_save_success => '圖片已儲存';
-
-  @override
-  String get create_image_save_error => '無法儲存圖片。請確認應用程式已獲得相片存取權限後再試一次';
-
-  @override
-  String get create_image_download_error => '無法下載您的圖片，請稍後再試';
-
-  @override
-  String get create_image_customize_tooltip => '自訂';
-
-  @override
-  String get create_image_text_too_long => '文字太長，無法放大字體';
 
   @override
   String version_search_no_results(String query) {
@@ -1191,79 +1162,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get plans_created => '參與設計的計畫';
 
   @override
-  String get ai_chat_history => '對話紀錄';
-
-  @override
-  String get ai_buddhist_assistant => '佛法AI助手';
-
-  @override
-  String get ai_new_chat => '新對話';
-
-  @override
-  String get ai_retry => '重試';
-
-  @override
-  String get ai_dismiss => '略過';
-
-  @override
-  String get ai_sign_in_prompt => '登入後即可向佛法 AI 助理提問';
-
-  @override
-  String get ai_explore_wisdom => '探索佛法的智慧';
-
-  @override
-  String get ai_ask_question => '請輸入問題．．．．．．';
-
-  @override
-  String get ai_search_chats => '搜尋對話紀錄';
-
-  @override
-  String get ai_chats => '對話紀錄';
-
-  @override
-  String get ai_chat_deleted => '對話已刪除';
-
-  @override
-  String get ai_no_conversations => '尚無任何對話';
-
-  @override
-  String get ai_start_new_chat => '開始新對話';
-
-  @override
-  String get ai_delete_chat => '刪除對話';
-
-  @override
-  String get ai_delete_confirmation => '確定要刪除此對話？';
-
-  @override
-  String get ai_delete_warning => '此操作執行後將無法復原';
-
-  @override
   String get ai_confirm => '確認';
-
-  @override
-  String get ai_delete => '刪除';
-
-  @override
-  String ai_greeting(String name) {
-    return '$name，您好！';
-  }
-
-  @override
-  String get ai_text_not_found => '搜尋不到該文本';
-
-  @override
-  String ai_text_not_found_message(String title) {
-    return '搜尋不到標題為《$title》的文本。\n\n請嘗試其他名稱或換一種方式搜尋。';
-  }
-
-  @override
-  String get ai_sources => '來源';
-
-  @override
-  String ai_sources_count(int count) {
-    return '$count 個來源';
-  }
 
   @override
   String search_no_results(String query) {
@@ -1271,48 +1170,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get search_show_more => '顯示更多';
-
-  @override
-  String get search_contents => '內容';
-
-  @override
-  String get search_titles => '標題';
-
-  @override
   String get search_all => '全部';
-
-  @override
-  String get search_author => '作者';
-
-  @override
-  String get search_tab_ai_mode => 'AI 模式';
-
-  @override
-  String search_error(String message) {
-    return '錯誤：$message';
-  }
-
-  @override
-  String get search_retrying => '重試中...';
-
-  @override
-  String search_no_titles_found(String query) {
-    return '找不到「$query」的標題';
-  }
-
-  @override
-  String search_no_contents_found(String query) {
-    return '找不到「$query」的內容';
-  }
-
-  @override
-  String search_no_authors_found(String query) {
-    return '找不到「$query」的作者';
-  }
-
-  @override
-  String get search_buddhist_texts => '搜尋佛教文本...';
 
   @override
   String get common_ok => '確定';
@@ -1955,6 +1813,18 @@ class AppLocalizationsZh extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => '將聊天通知設為靜音';
+
+  @override
+  String get group_chat_unmute_notifications => '取消聊天通知靜音';
+
+  @override
+  String get group_chat_notifications_muted => '已將聊天通知設為靜音';
+
+  @override
+  String get group_chat_notifications_unmuted => '聊天通知已開啟';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -1993,6 +1863,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_join_request_error => '無法送出申請，請再試一次。';
+
+  @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
 
   @override
   String get group_members_only_title => '僅限成員';
@@ -2397,12 +2291,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get timer_notification_complete => '你的課程已完成';
 
   @override
-  String get ai_use_search_instead => '改用搜尋';
-
-  @override
-  String get ai_mode_label => 'AI';
-
-  @override
   String plan_day_of(int day, int total) {
     return '第 $day 天，共 $total 天';
   }
@@ -2607,17 +2495,6 @@ class AppLocalizationsZh extends AppLocalizations {
       locale: localeName,
       other: '有 $count 則訊息無法刪除。',
       one: '無法刪除訊息。',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '訊息已刪除',
-      one: '訊息已刪除',
     );
     return '$_temp0';
   }

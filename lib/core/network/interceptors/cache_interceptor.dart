@@ -6,12 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Simple in-memory cache for GET requests.
 ///
 /// This interceptor caches GET requests in memory for a short duration
-/// to avoid redundant network calls. For more advanced caching,
-/// consider using dio_cache_interceptor.
+/// to avoid redundant network calls. At most [maxEntries] responses are kept,
+/// least recently used first out, since text content passes through it too.
+/// For more advanced caching, consider using dio_cache_interceptor.
 class CacheInterceptor extends Interceptor {
-  CacheInterceptor(this._logger);
+  CacheInterceptor(this._logger, {this.maxEntries = 200});
 
   final AppLogger _logger;
+  final int maxEntries;
+
+  /// Insertion-ordered: the first key is the least recently used.
   final Map<String, _CacheEntry> _cache = {};
 
   /// Default TTL for cache entries (5 minutes)
@@ -36,6 +40,9 @@ class CacheInterceptor extends Interceptor {
 
       if (cached != null && !cached.isExpired) {
         _logger.info('📦 Cache HIT: $cacheKey');
+        _cache
+          ..remove(cacheKey)
+          ..[cacheKey] = cached;
         // Return cached data as a successful response
         handler.resolve(
           Response(
@@ -82,10 +89,13 @@ class CacheInterceptor extends Interceptor {
       final cacheKey = _generateCacheKey(request);
       final ttl = request.extra['cache_ttl'] as Duration? ?? defaultTTL;
 
-      _cache[cacheKey] = _CacheEntry(
-        data: response.data,
-        expiry: DateTime.now().add(ttl),
-      );
+      _cache
+        ..remove(cacheKey)
+        ..[cacheKey] = _CacheEntry(
+          data: response.data,
+          expiry: DateTime.now().add(ttl),
+        );
+      _evict();
 
       _logger.debug('Cached response for: $cacheKey (TTL: $ttl)');
     }
@@ -161,11 +171,6 @@ class CacheInterceptor extends Interceptor {
       paths.add('/users/me/stats');
     }
 
-    // Personal recitation collections are merged into GET /recitations.
-    if (path.startsWith('/users/me/recitation-collections')) {
-      paths.add('/recitations');
-    }
-
     return paths;
   }
 
@@ -226,6 +231,15 @@ class CacheInterceptor extends Interceptor {
     return '$scope|$path?$queryString';
   }
 
+  /// Drops expired entries, then the least recently used beyond [maxEntries].
+  void _evict() {
+    if (_cache.length <= maxEntries) return;
+    _cache.removeWhere((_, entry) => entry.isExpired);
+    while (_cache.length > maxEntries) {
+      _cache.remove(_cache.keys.first);
+    }
+  }
+
   /// Clear all cached entries
   void clear() {
     _cache.clear();
@@ -255,7 +269,8 @@ class CacheInterceptor extends Interceptor {
   }
 }
 
-/// Shared [CacheInterceptor] instance wired into the main Dio client.
+/// Shared [CacheInterceptor] instance wired into the main and library Dio
+/// clients. Keys hold the path, not the host: library paths are all `/v2/`.
 final cacheInterceptorProvider = Provider<CacheInterceptor>((ref) {
   return CacheInterceptor(AppLogger('CacheInterceptor'));
 });

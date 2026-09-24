@@ -35,6 +35,9 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
   Future<String?> getToken() => _messaging.getToken();
 
   @override
+  Future<void> deleteToken() => _messaging.deleteToken();
+
+  @override
   Stream<String> get onTokenRefresh => _messaging.onTokenRefresh;
 
   @override

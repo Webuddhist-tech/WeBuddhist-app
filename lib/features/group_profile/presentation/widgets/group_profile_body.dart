@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
@@ -424,6 +425,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     final postsState = ref.watch(groupPostsProvider(profile.id));
     final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
+    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
     final canPost = permissionAsync.valueOrNull ?? false;
     // Keep the posts tab when loading failed so its retry action stays
     // reachable, and for anyone allowed to publish so the Post button shows.
@@ -469,6 +471,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   isDark,
                   lineHeight,
                   orderedLinks,
+                  showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
                 ),
               ),
             ];
@@ -514,6 +517,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
+    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
+
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
       child: NotificationListener<ScrollNotification>(
@@ -533,6 +538,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                 isDark,
                 lineHeight,
                 orderedLinks,
+                showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
                 bottomSpacing: 0,
               ),
             ),
@@ -559,6 +565,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
+    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
+
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
       child: NotificationListener<ScrollNotification>(
@@ -578,6 +586,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                 isDark,
                 lineHeight,
                 orderedLinks,
+                showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
                 bottomSpacing: 0,
               ),
             ),
@@ -596,6 +605,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     bool isDark,
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks, {
+    required bool showsAdminJoinRequestsRow,
     double bottomSpacing = 24,
   }) {
     return Column(
@@ -611,9 +621,27 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         _buildProfileHeader(profile, isDark, lineHeight, orderedLinks),
         const SizedBox(height: 20),
         _GroupFollowButton(profile: profile, isDark: isDark),
-        SizedBox(height: bottomSpacing),
+        SizedBox(height: showsAdminJoinRequestsRow ? 8 : bottomSpacing),
       ],
     );
+  }
+
+  /// Whether [GroupJoinRequestsRow] sits under the follow button.
+  ///
+  /// This watches a provider, so it must be called from `build` — resolve it
+  /// there and pass the result down. Called from a sliver builder instead,
+  /// the subscription is torn down and refetched on every rebuild, because
+  /// `ConsumerStatefulElement` closes whatever is left in `_oldDependencies`
+  /// as soon as `build` returns.
+  bool _showsAdminJoinRequestsRow(GroupProfile profile) {
+    if (!profile.isPrivateCommunity || _isContentRestricted(profile)) {
+      return false;
+    }
+    return ref
+            .watch(groupMyPermissionProvider(profile.id))
+            .valueOrNull
+            ?.isGroupAdmin ??
+        false;
   }
 
   Widget _buildRestrictedMessage(
@@ -1439,12 +1467,26 @@ class _GroupFollowButton extends ConsumerWidget {
     }
 
     if (isPrivateGroupMember(followState: followState)) {
-      return _buildJoinedActions(
-        context,
-        ref,
-        followKey,
-        isFollowing,
-        isLoading,
+      final isAdmin =
+          ref
+              .watch(groupMyPermissionProvider(profile.id))
+              .valueOrNull
+              ?.isGroupAdmin ??
+          false;
+      return Column(
+        children: [
+          _buildJoinedActions(
+            context,
+            ref,
+            followKey,
+            isFollowing,
+            isLoading,
+          ),
+          if (isAdmin) ...[
+            const SizedBox(height: 8),
+            GroupJoinRequestsRow(groupId: profile.id, isDark: isDark),
+          ],
+        ],
       );
     }
 

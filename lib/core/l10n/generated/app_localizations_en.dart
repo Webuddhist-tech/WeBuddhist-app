@@ -329,13 +329,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading...';
 
   @override
-  String get choose_image => 'Choose image';
-
-  @override
   String get choose_bg_image => 'Choose a background image';
-
-  @override
-  String get create_image => 'Create image';
 
   @override
   String get save => 'Save';
@@ -1173,34 +1167,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknown_error => 'Unknown error';
 
   @override
-  String image_share_error(String error) {
-    return 'Unable to share: $error';
-  }
-
-  @override
-  String get create_image_capture_error =>
-      'Failed to create image. Please try again';
-
-  @override
   String get create_image_share_error => 'Unable to share. Please try again';
-
-  @override
-  String get create_image_save_success => 'Image saved';
-
-  @override
-  String get create_image_save_error =>
-      'Unable to save image. Check that the app has photo access, or try again';
-
-  @override
-  String get create_image_download_error =>
-      'Unable to download your image. Please try again';
-
-  @override
-  String get create_image_customize_tooltip => 'Customize';
-
-  @override
-  String get create_image_text_too_long =>
-      'Text is too long to increase font size';
 
   @override
   String version_search_no_results(String query) {
@@ -1254,81 +1221,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get plans_created => 'Plan created';
 
   @override
-  String get ai_chat_history => 'Chat history';
-
-  @override
-  String get ai_buddhist_assistant =>
-      'Build your daily rhythm. Set times, and we\'ll remind you to practice';
-
-  @override
-  String get ai_new_chat => 'New chat';
-
-  @override
-  String get ai_retry => 'Retry';
-
-  @override
-  String get ai_dismiss => 'Dismiss';
-
-  @override
-  String get ai_sign_in_prompt => 'Sign in to use the Buddhist AI Assistant';
-
-  @override
-  String get ai_explore_wisdom => 'Explore Buddhist wisdom';
-
-  @override
-  String get ai_ask_question => 'Ask a question...';
-
-  @override
-  String get ai_search_chats => 'Search for chats';
-
-  @override
-  String get ai_chats => 'Chats';
-
-  @override
-  String get ai_chat_deleted => 'Chat deleted';
-
-  @override
-  String get ai_no_conversations => 'No conversations yet';
-
-  @override
-  String get ai_start_new_chat => 'Start a new chat to begin.';
-
-  @override
-  String get ai_delete_chat => 'Delete chat';
-
-  @override
-  String get ai_delete_confirmation =>
-      'Are you sure you want to delete this chat?';
-
-  @override
-  String get ai_delete_warning => 'This action cannot be undone.';
-
-  @override
   String get ai_confirm => 'Confirm';
-
-  @override
-  String get ai_delete => 'Delete';
-
-  @override
-  String ai_greeting(String name) {
-    return 'Hi $name';
-  }
-
-  @override
-  String get ai_text_not_found => 'Text not found.';
-
-  @override
-  String ai_text_not_found_message(String title) {
-    return 'We don\'t have \"$title\" in our library yet.\n\nTry a different title, or ask another way';
-  }
-
-  @override
-  String get ai_sources => 'Sources';
-
-  @override
-  String ai_sources_count(int count) {
-    return '$count sources';
-  }
 
   @override
   String search_no_results(String query) {
@@ -1336,48 +1229,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get search_show_more => 'Show more';
-
-  @override
-  String get search_contents => 'Contents';
-
-  @override
-  String get search_titles => 'Titles';
-
-  @override
   String get search_all => 'All';
-
-  @override
-  String get search_author => 'Author';
-
-  @override
-  String get search_tab_ai_mode => 'AI mode';
-
-  @override
-  String search_error(String message) {
-    return 'Error: $message';
-  }
-
-  @override
-  String get search_retrying => 'Retrying...';
-
-  @override
-  String search_no_titles_found(String query) {
-    return 'No titles found for \"$query\"';
-  }
-
-  @override
-  String search_no_contents_found(String query) {
-    return 'No contents found for \"$query\"';
-  }
-
-  @override
-  String search_no_authors_found(String query) {
-    return 'No authors found for \"$query\"';
-  }
-
-  @override
-  String get search_buddhist_texts => 'Search Buddhist texts...';
 
   @override
   String get common_ok => 'OK';
@@ -2046,6 +1898,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'Mute chat notifications';
+
+  @override
+  String get group_chat_unmute_notifications => 'Unmute chat notifications';
+
+  @override
+  String get group_chat_notifications_muted => 'Chat notifications muted';
+
+  @override
+  String get group_chat_notifications_unmuted => 'Chat notifications on';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2087,6 +1951,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get group_join_request_error =>
       'Unable to send request. Please try again.';
+
+  @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
 
   @override
   String get group_members_only_title => 'Members only';
@@ -2516,12 +2404,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timer_notification_complete => 'Your session is complete';
 
   @override
-  String get ai_use_search_instead => 'Use Search Instead';
-
-  @override
-  String get ai_mode_label => 'AI';
-
-  @override
   String plan_day_of(int day, int total) {
     return 'Day $day of $total';
   }
@@ -2728,17 +2610,6 @@ class AppLocalizationsEn extends AppLocalizations {
       locale: localeName,
       other: '$count messages couldn\'t be deleted.',
       one: 'The message couldn\'t be deleted.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Messages deleted',
-      one: 'Message deleted',
     );
     return '$_temp0';
   }

@@ -145,9 +145,7 @@
     }
   },
   "loading": "Loading...",
-  "choose_image": "Choose image",
   "choose_bg_image": "Choose a background image",
-  "create_image": "Create image",
   "save": "Save",
   "done": "Done",
   "customise_message": "Tap the customize icon to adjust text style",
@@ -481,21 +479,7 @@
   "text_search_press_button": "Press search button to search",
   "text_search_error": "Unable to perform search.\nPlease try again",
   "unknown_error": "Unknown error",
-  "image_share_error": "Unable to share: {error}",
-  "@image_share_error": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "create_image_capture_error": "Failed to create image. Please try again",
   "create_image_share_error": "Unable to share. Please try again",
-  "create_image_save_success": "Image saved",
-  "create_image_save_error": "Unable to save image. Check that the app has photo access, or try again",
-  "create_image_download_error": "Unable to download your image. Please try again",
-  "create_image_customize_tooltip": "Customize",
-  "create_image_text_too_long": "Text is too long to increase font size",
   "version_search_no_results": "No versions found for \"{query}\"",
   "@version_search_no_results": {
     "placeholders": {
@@ -532,50 +516,7 @@
   "feedback": "Feedback",
   "author": "Author",
   "plans_created": "Plan created",
-  "ai_chat_history": "Chat history",
-  "ai_buddhist_assistant": "Build your daily rhythm. Set times, and we'll remind you to practice",
-  "ai_new_chat": "New chat",
-  "ai_retry": "Retry",
-  "ai_dismiss": "Dismiss",
-  "ai_sign_in_prompt": "Sign in to use the Buddhist AI Assistant",
-  "ai_explore_wisdom": "Explore Buddhist wisdom",
-  "ai_ask_question": "Ask a question...",
-  "ai_search_chats": "Search for chats",
-  "ai_chats": "Chats",
-  "ai_chat_deleted": "Chat deleted",
-  "ai_no_conversations": "No conversations yet",
-  "ai_start_new_chat": "Start a new chat to begin.",
-  "ai_delete_chat": "Delete chat",
-  "ai_delete_confirmation": "Are you sure you want to delete this chat?",
-  "ai_delete_warning": "This action cannot be undone.",
   "ai_confirm": "Confirm",
-  "ai_delete": "Delete",
-  "ai_greeting": "Hi {name}",
-  "@ai_greeting": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "ai_text_not_found": "Text not found.",
-  "ai_text_not_found_message": "We don't have \"{title}\" in our library yet.\n\nTry a different title, or ask another way",
-  "@ai_text_not_found_message": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "ai_sources": "Sources",
-  "ai_sources_count": "{count} sources",
-  "@ai_sources_count": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "search_no_results": "No results found for \"{query}\"",
   "@search_no_results": {
     "placeholders": {
@@ -584,46 +525,7 @@
       }
     }
   },
-  "search_show_more": "Show more",
-  "search_contents": "Contents",
-  "search_titles": "Titles",
   "search_all": "All",
-  "search_author": "Author",
-  "search_tab_ai_mode": "AI mode",
-  "search_error": "Error: {message}",
-  "@search_error": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
-  "search_retrying": "Retrying...",
-  "search_no_titles_found": "No titles found for \"{query}\"",
-  "@search_no_titles_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_no_contents_found": "No contents found for \"{query}\"",
-  "@search_no_contents_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_no_authors_found": "No authors found for \"{query}\"",
-  "@search_no_authors_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_buddhist_texts": "Search Buddhist texts...",
   "common_ok": "OK",
   "comingSoonHeadline": "Coming soon",
   "routine_title": "My practices",
@@ -959,6 +861,10 @@
   "group_notifications_open_settings": "Turn on",
   "group_notifications_update_failed": "Couldn't update notification settings. Try again.",
   "group_notifications_load_failed": "Couldn't load notification settings.",
+  "group_chat_mute_notifications": "Mute chat notifications",
+  "group_chat_unmute_notifications": "Unmute chat notifications",
+  "group_chat_notifications_muted": "Chat notifications muted",
+  "group_chat_notifications_unmuted": "Chat notifications on",
   "group_leave": "Leave group",
   "group_leave_confirm_title": "Leave group?",
   "group_leave_confirm_message": "You'll stop getting messages and updates from this group.",
@@ -972,6 +878,13 @@
   "group_join_request_send": "Send request",
   "group_join_request_sent_snackbar": "Request sent — an admin will review it.",
   "group_join_request_error": "Unable to send request. Please try again.",
+  "group_join_requests_title": "Join requests",
+  "group_join_requests_admit": "Admit",
+  "group_join_requests_deny": "Deny",
+  "group_join_requests_empty": "No pending requests",
+  "group_join_requests_load_error": "Unable to load join requests. Please try again.",
+  "group_join_requests_admit_error": "Unable to admit this request. Please try again.",
+  "group_join_requests_deny_error": "Unable to deny this request. Please try again.",
   "group_members_only_title": "Members only",
   "group_members_only_message": "Join to see this group's chants, events and posts.",
   "group_join_request_waiting_title": "Waiting on an admin",
@@ -1098,7 +1011,7 @@
   "share_chant_message": "I wanted to share this chant with you. You can practice it and find a whole library of other chants and texts on WeBuddhist.",
   "share_quote_message": "I liked this quote from WeBuddhist and wanted to share it with you. Read more such insightful quotes on the WeBuddhist App",
   "share_poem_message": "I liked this poem from WeBuddhist and wanted to share it with you.",
-  "share_poem_title": "\u201c{title}\u201d",
+  "share_poem_title": "“{title}”",
   "@share_poem_title": {
     "placeholders": {
       "title": {
@@ -1206,8 +1119,6 @@
     }
   },
   "timer_notification_complete": "Your session is complete",
-  "ai_use_search_instead": "Use Search Instead",
-  "ai_mode_label": "AI",
   "plan_day_of": "Day {day} of {total}",
   "@plan_day_of": {
     "placeholders": {
@@ -1346,14 +1257,6 @@
   },
   "group_chat_delete_failed": "{count, plural, =1{The message couldn't be deleted.} other{{count} messages couldn't be deleted.}}",
   "@group_chat_delete_failed": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "group_chat_message_deleted_toast": "{count, plural, =1{Message deleted} other{Messages deleted}}",
-  "@group_chat_message_deleted_toast": {
     "placeholders": {
       "count": {
         "type": "int"

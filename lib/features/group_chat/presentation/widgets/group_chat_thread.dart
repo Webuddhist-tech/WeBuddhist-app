@@ -668,14 +668,8 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
       // an already-empty set as nothing to do and would not tell the screen,
       // leaving the selection header and the row tint in place over
       // freshly deleted rows.
+      // No success toast: the tombstone already shows the delete landed.
       _clearSelection();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.group_chat_message_deleted_toast(outcome.deleted.length),
-          ),
-        ),
-      );
       return;
     }
     // Partial success (the one-call-each fallback): the deleted rows leave

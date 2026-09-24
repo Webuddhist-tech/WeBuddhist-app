@@ -281,8 +281,6 @@ class DeepLinkRouter {
         return const _DeepLinkDestination(AppRoutes.home);
       case 'practice':
         return const _DeepLinkDestination(AppRoutes.practice);
-      case 'texts':
-        return const _DeepLinkDestination(AppRoutes.texts);
       case 'more':
         return const _DeepLinkDestination(AppRoutes.home, tabIndex: _meTabIndex);
       case 'profile':

@@ -38,7 +38,6 @@ class ApiConfig {
   static const String userMePath = '/users/me';
   static const String plansPath = '/plans';
   static const String tasksPath = '/tasks';
-  static const String recitationsPath = '/recitations';
 
   /// Full URL for a given path
   String urlFor(String path) => '$baseUrl$path';

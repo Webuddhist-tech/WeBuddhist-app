@@ -48,7 +48,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
         loadedSegments: segments,
         totalSegments: response.totalSegments,
         isLoading: false,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         hasPreviousPage: response.currentSegmentPosition > 1,
       );
       _logger.debug(
@@ -84,7 +84,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       if (dedupedNew.isEmpty) {
         state = state.copyWith(
           isLoadingNext: false,
-          hasNextPage: response.currentSegmentPosition < response.totalSegments,
+          hasNextPage: response.hasNextPage,
           totalSegments: response.totalSegments,
         );
         return;
@@ -100,7 +100,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
         loadedSegments: mergedSegments,
         contentBySegmentNumber: mergedMap,
         isLoadingNext: false,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         totalSegments: response.totalSegments,
       );
     } catch (e, st) {

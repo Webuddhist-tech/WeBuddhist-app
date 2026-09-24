@@ -3,6 +3,8 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_profile_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_request.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
@@ -426,6 +428,88 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
       return Left(NotFoundFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure('Failed to leave event: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupJoinRequestDecision>> approveGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  }) async {
+    try {
+      final model = await remote.approveGroupJoinRequest(
+        groupId,
+        requestId: requestId,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to approve join request: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupJoinRequestDecision>> rejectGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  }) async {
+    try {
+      final model = await remote.rejectGroupJoinRequest(
+        groupId,
+        requestId: requestId,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to reject join request: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupJoinRequestsPage>> getGroupJoinRequests(
+    String groupId, {
+    GroupJoinRequestStatus status = GroupJoinRequestStatus.pending,
+    required int skip,
+    required int limit,
+  }) async {
+    try {
+      final model = await remote.fetchGroupJoinRequests(
+        groupId,
+        status: status,
+        skip: skip,
+        limit: limit,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to load join requests: $e'));
     }
   }
 

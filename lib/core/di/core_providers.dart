@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_pecha/core/config/api_config.dart';
-import 'package:flutter_pecha/core/network/ai_dio_client.dart';
 import 'package:flutter_pecha/core/network/auth_service_token_provider.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/network/dio_client.dart';
@@ -15,7 +13,7 @@ import 'package:flutter_pecha/core/storage/preferences_service.dart';
 import 'package:flutter_pecha/core/storage/secure_storage_impl.dart';
 import 'package:flutter_pecha/core/storage/storage_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
-import 'package:flutter_pecha/features/ai/config/ai_config.dart';
+import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/auth/auth_service.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 
@@ -58,7 +56,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 // ============ Token Providers ============
 
-/// Provider for AuthService-based TokenProvider (main API and AI API)
+/// Provider for AuthService-based TokenProvider (main API)
 final authTokenProvider = Provider<TokenProvider>((ref) {
   return AuthServiceTokenProvider(
     ref.watch(authServiceProvider),
@@ -118,20 +116,6 @@ final retryInterceptorProvider = Provider<RetryInterceptor>((ref) {
   );
 });
 
-/// Provider for a dedicated RetryInterceptor for the AI Dio client.
-///
-/// A separate instance is required because [RetryInterceptor.configure] binds
-/// its internal retry-Dio to one parent's [BaseOptions]; the AI client has a
-/// different base URL. Both instances funnel renewal through the single
-/// in-flight future in [AuthService], so there is no double-refresh.
-final aiRetryInterceptorProvider = Provider<RetryInterceptor>((ref) {
-  return RetryInterceptor(
-    ref.watch(loggerProvider),
-    ref.watch(authServiceProvider),
-    _authExpiredHandler(ref),
-  );
-});
-
 // ============ Dio Client ============
 
 /// Provider for main DioClient BaseOptions
@@ -170,49 +154,25 @@ final dioProvider = Provider<Dio>((ref) {
   return ref.watch(dioClientProvider).dio;
 });
 
-// ============ AI Dio Client ============
+// ============ Library Dio Client ============
 
-/// Provider for AI DioClient BaseOptions
-final _aiDioBaseOptionsProvider = Provider<BaseOptions>((ref) {
-  final aiUrl = dotenv.env['AI_URL'];
-  if (aiUrl == null || aiUrl.isEmpty) {
-    throw Exception('AI_URL not configured');
-  }
-  return BaseOptions(
-    baseUrl: aiUrl,
-    connectTimeout: AiConfig.connectionTimeout,
-    receiveTimeout: AiConfig.connectionTimeout,
-    sendTimeout: AiConfig.connectionTimeout,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
+/// Public library (texts) API client: no auth, shared cache/error/logging.
+final libraryDioProvider = Provider<Dio>((ref) {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: Env.libraryApiUrl,
+      connectTimeout: Env.apiTimeout,
+      receiveTimeout: Env.apiTimeout,
+      sendTimeout: Env.apiTimeout,
+      headers: {'Accept': 'application/json'},
+    ),
   );
-});
-
-/// Provider for AiDioClient
-///
-/// This is a dedicated HTTP client for AI endpoints. It uses the AI_URL
-/// base URL and automatically adds auth tokens via AuthService TokenProvider.
-final aiDioClientProvider = Provider<AiDioClient>((ref) {
-  final aiRetryInterceptor = ref.watch(aiRetryInterceptorProvider);
-  return AiDioClient(
-    options: ref.watch(_aiDioBaseOptionsProvider),
-    // Order mirrors DioClient: auth → timezone → retry (401 refresh) → error → logging.
-    interceptors: [
-      ref.watch(authInterceptorProvider),
-      ref.watch(timezoneInterceptorProvider),
-      aiRetryInterceptor,
-      ref.watch(errorInterceptorProvider),
-      ref.watch(loggingInterceptorProvider),
-    ],
-    retryInterceptor: aiRetryInterceptor,
-  );
-});
-
-/// Provider for raw AI Dio instance (for AI datasources)
-final aiDioProvider = Provider<Dio>((ref) {
-  return ref.watch(aiDioClientProvider).dio;
+  dio.interceptors.addAll([
+    ref.watch(cacheInterceptorProvider),
+    ref.watch(errorInterceptorProvider),
+    ref.watch(loggingInterceptorProvider),
+  ]);
+  return dio;
 });
 
 // ============ Cache ============

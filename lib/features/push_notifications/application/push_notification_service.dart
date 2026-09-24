@@ -37,10 +37,14 @@ class PushNotificationService {
     required LocalStorageService storage,
     required ForegroundPushFilter foregroundFilter,
     Duration reconcileRetryBaseDelay = const Duration(seconds: 5),
+    Duration signOutTimeout = const Duration(seconds: 4),
+    Duration detachRetryBaseDelay = const Duration(seconds: 5),
   }) : _repository = repository,
        _storage = storage,
        _foregroundFilter = foregroundFilter,
-       _reconcileRetryBaseDelay = reconcileRetryBaseDelay;
+       _reconcileRetryBaseDelay = reconcileRetryBaseDelay,
+       _signOutTimeout = signOutTimeout,
+       _detachRetryBaseDelay = detachRetryBaseDelay;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
@@ -62,6 +66,12 @@ class PushNotificationService {
 
   String? _token;
   bool _loggedIn = false;
+
+  /// False until the first settled auth snapshot arrives. While the stored
+  /// session is still being restored, [_loggedIn] is not yet meaningful, so
+  /// foreground pushes wait in [_pendingForeground] instead of being dropped.
+  bool _authKnown = false;
+  final _pendingForeground = <PushMessage>[];
 
   /// Mirrors the app's master notification switch. While false the device is
   /// kept unregistered on the backend so no server push of any kind reaches
@@ -146,10 +156,149 @@ class PushNotificationService {
   /// needed). Guests are treated as signed out for push targeting. Signing in
   /// with master off removes the registration left from an earlier session
   /// now that the JWT is available.
+  ///
+  /// Any signed-out snapshot (logout, expired session, guest) also detaches
+  /// the install from the account it was registered under. See
+  /// [_detachFromAccount].
   void onAuthChanged({required bool loggedIn}) {
     final signedIn = loggedIn && !_loggedIn;
     _loggedIn = loggedIn;
+    if (!_authKnown) {
+      _authKnown = true;
+      _flushPendingForeground();
+    }
     if (signedIn) _requestReconcile();
+    // A fresh snapshot supersedes any pending detach retry.
+    _detachRetryTimer?.cancel();
+    _detachRetryTimer = null;
+    _detachRetryCount = 0;
+    if (!loggedIn) _startDetach();
+  }
+
+  void _startDetach() {
+    _detaching ??= _detachFromAccount().whenComplete(() => _detaching = null);
+  }
+
+  /// Upper bound on how long sign-out waits for the backend, across every
+  /// step. Logging out must never hang on a slow network;
+  /// [_detachFromAccount] still kills the token.
+  final Duration _signOutTimeout;
+
+  Future<void>? _signOutUnregister;
+  Future<void>? _detaching;
+  Timer? _detachRetryTimer;
+  int _detachRetryCount = 0;
+  final Duration _detachRetryBaseDelay;
+
+  /// Max automatic retries after a failed detach. Beyond this the next
+  /// signed-out auth snapshot (at the latest, the next launch) tries again.
+  static const maxDetachRetries = 3;
+
+  /// Removes this device's backend registration for the user who is signing
+  /// out. Call it before the local credentials are cleared, since the endpoint
+  /// needs that user's JWT, and before auth state flips, so the detach that
+  /// the flip triggers waits for it. Best effort: never throws, and gives up
+  /// after [_signOutTimeout].
+  Future<void> unregisterForSignOut() {
+    return _signOutUnregister ??= _runSignOutUnregister().whenComplete(
+      () => _signOutUnregister = null,
+    );
+  }
+
+  Future<void> _runSignOutUnregister() async {
+    try {
+      // One deadline for the whole sequence: separate ones on the quiesce and
+      // the request would add up past [_signOutTimeout].
+      await _unregisterStoredDevice().timeout(_signOutTimeout);
+    } catch (e, st) {
+      _logger.warning('Sign-out unregister failed: $e', e, st);
+    }
+  }
+
+  Future<void> _unregisterStoredDevice() async {
+    await _quiesceReconcile();
+    final serverId = await _storage.get<String>(StorageKeys.pushDeviceServerId);
+    if (serverId == null || serverId.isEmpty) return;
+    final result = await _repository.unregisterDeviceToken(serverId);
+    result.fold(
+      (failure) =>
+          _logger.warning('Sign-out unregister failed: ${failure.message}'),
+      (_) => _logger.info('Device unregistered for sign-out'),
+    );
+  }
+
+  /// Makes sure pushes for the last signed-in account stop reaching this
+  /// install once nobody is signed in.
+  ///
+  /// The backend keeps a registration until told otherwise, and the OS shows
+  /// background pushes before the app can filter them. So a device that
+  /// signed out, lost its session or switched to guest would keep receiving
+  /// that account's chat pushes. Deleting the FCM token fixes this without a
+  /// JWT: the backend row may linger, but its token no longer delivers.
+  ///
+  /// Only runs while a registration id is stored. That also covers installs
+  /// that signed out before this existed and are still receiving pushes. On
+  /// failure the id is kept and a backoff retry is scheduled, since until
+  /// the token is gone the OS keeps showing that account's pushes.
+  Future<void> _detachFromAccount() async {
+    try {
+      final pending = _signOutUnregister;
+      if (pending != null) await pending;
+      await _quiesceReconcile();
+      // Signed back in meanwhile: the registration belongs to them now.
+      if (_loggedIn) return;
+
+      final serverId = await _storage.get<String>(
+        StorageKeys.pushDeviceServerId,
+      );
+      if (serverId == null || serverId.isEmpty) return;
+      // Checked again after the read: a sign-in landing meanwhile has
+      // registered this token, and deleting it would stop their pushes.
+      if (_loggedIn) return;
+
+      await _repository.deleteToken();
+      _detachRetryCount = 0;
+      await _storage.remove(StorageKeys.pushDeviceServerId);
+      await _storage.remove(StorageKeys.fcmToken);
+      _token = null;
+      _logger.info('Push token deleted after sign-out');
+
+      // Mint the replacement now so the next sign-in has a token to register.
+      final fresh = await _repository.getToken();
+      if (fresh != null) await _onToken(fresh);
+    } catch (e, st) {
+      _logger.warning('Push detach after sign-out failed: $e', e, st);
+      _scheduleDetachRetry();
+    }
+  }
+
+  void _scheduleDetachRetry() {
+    if (_loggedIn || _detachRetryCount >= maxDetachRetries) return;
+    _detachRetryCount++;
+    _detachRetryTimer?.cancel();
+    _detachRetryTimer = Timer(_detachRetryBaseDelay * _detachRetryCount, () {
+      _detachRetryTimer = null;
+      if (_loggedIn) return;
+      _logger.info(
+        'Retrying push detach (attempt $_detachRetryCount/$maxDetachRetries)',
+      );
+      _startDetach();
+    });
+  }
+
+  /// Waits, within [_signOutTimeout], for a reconcile pass already in flight,
+  /// so a sign-out never races a register call.
+  ///
+  /// Queued work is deliberately left alone. A pass that runs while signed
+  /// out is already a no-op — both [_register] and [_unregister] bail out on
+  /// [_loggedIn] — whereas cancelling it would drop a request belonging to a
+  /// session that signed back in while the sign-out was still unwinding,
+  /// leaving that session unregistered until some unrelated event.
+  Future<void> _quiesceReconcile() async {
+    final running = _reconciling;
+    if (running != null) {
+      await running.timeout(_signOutTimeout, onTimeout: () {});
+    }
   }
 
   /// Re-sends the device registration so the backend picks up the latest
@@ -295,8 +444,21 @@ class PushNotificationService {
 
   /// Returns false when the backend call failed and a retry is worthwhile.
   Future<bool> _register() async {
-    final token = _token;
-    if (token == null || !_loggedIn) return true;
+    if (!_loggedIn) return true;
+    var token = _token;
+    if (token == null) {
+      // No token in hand while signed in is a failure, not a no-op: minting
+      // after the sign-out delete can come back empty (iOS, APNs token not
+      // ready yet). Reported as a failed pass so the backoff retries it,
+      // rather than leaving the install unregistered until the next launch.
+      token = await _repository.getToken();
+      if (token == null) {
+        _logger.warning('No FCM token yet; registration will be retried');
+        return false;
+      }
+      _token = token;
+      await _storage.set(StorageKeys.fcmToken, token);
+    }
     final deviceId = await _deviceId();
     final result = await _repository.registerDeviceToken(
       token,
@@ -350,6 +512,17 @@ class PushNotificationService {
 
   Future<void> _showNotification(PushMessage message) async {
     if (!message.hasNotification) return;
+    // The session is still being restored; judge it once auth settles.
+    if (!_authKnown) {
+      _pendingForeground.add(message);
+      return;
+    }
+    // Pushes only ever target signed-in accounts. One arriving now is left
+    // over from the last session, before its token was deleted.
+    if (!_loggedIn) {
+      _logger.info('Foreground push suppressed: signed out');
+      return;
+    }
     if (!_foregroundFilter.shouldShow(message.data)) {
       _logger.info('Foreground push suppressed: already on screen');
       return;
@@ -363,6 +536,14 @@ class PushNotificationService {
       NotificationChannels.pushDefaultDetails,
       payload: message.data.isEmpty ? null : jsonEncode(message.data),
     );
+  }
+
+  void _flushPendingForeground() {
+    final pending = List.of(_pendingForeground);
+    _pendingForeground.clear();
+    for (final message in pending) {
+      unawaited(_showNotification(message));
+    }
   }
 
   void _onNotificationTapped(PushMessage message) {
@@ -387,6 +568,9 @@ class PushNotificationService {
     _initRetryTimer = null;
     _reconcileRetryTimer?.cancel();
     _reconcileRetryTimer = null;
+    _detachRetryTimer?.cancel();
+    _detachRetryTimer = null;
+    _pendingForeground.clear();
     for (final sub in _subscriptions) {
       unawaited(sub.cancel());
     }

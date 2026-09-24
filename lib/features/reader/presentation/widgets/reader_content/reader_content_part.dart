@@ -17,7 +17,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_prov
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/read_full_text_footer.dart';
-// import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_skeleton.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
@@ -128,6 +128,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
   int _liveGeneration = 0;
+
+  /// Operator segment id to this version's id, for live positions read from
+  /// another edition or language (see [ReaderNotifier.jumpToSegment]).
+  final Map<String, String> _liveAliases = {};
   DateTime? _lastUserPointerAt;
 
   @override
@@ -486,21 +490,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final dualSettings = ref.read(
       readerDualSettingsProvider(widget.params.textId),
     );
+    final content = readerState.content;
     return LivePositionResolver.textMatches(
-      position,
-      loadedTextIds: [
-        widget.params.textId,
-        readerState.textDetail?.id,
-        dualSettings.primary.versionId,
-      ],
-      content: readerState.content,
-    );
+          position,
+          loadedTextIds: [
+            widget.params.textId,
+            readerState.textDetail?.id,
+            dualSettings.primary.versionId,
+          ],
+          content: content,
+        ) ||
+        (content != null &&
+            _localSegmentIdFor(content, position.segmentId) != null);
   }
 
-  /// This text's own id for the live segment: the id itself, or the line
-  /// whose `mappings` name it (the same line in another language).
+  /// This text's own id for the live segment: the id itself, the line whose
+  /// `mappings` name it, or the verse it was aligned to (the same line in
+  /// another edition or language).
   String? _localSegmentIdFor(FlattenedContent content, String segmentId) {
-    final index = content.resolveSegmentIndex(segmentId);
+    final alias = _liveAliases[segmentId];
+    final index =
+        content.resolveSegmentIndex(segmentId) ??
+        (alias == null ? null : content.resolveSegmentIndex(alias));
     return index == null ? null : content.items[index].segmentId;
   }
 
@@ -572,11 +583,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return;
       }
       _liveJumpInFlight = true;
-      var found = false;
+      String? jumpedTo;
       try {
-        found = await ref
+        jumpedTo = await ref
             .read(readerNotifierProvider(widget.params).notifier)
-            .jumpToSegment(position.segmentId);
+            .jumpToSegment(position.segmentId, sourceTextId: position.textId);
       } finally {
         _liveJumpInFlight = false;
       }
@@ -588,9 +599,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return;
       }
       if (generation != _liveGeneration) return;
-      if (!found) {
+      if (jumpedTo == null) {
         liveNotifier.setOutOfSync(true);
         return;
+      }
+      // Rebuild so the highlight, which reads the alias, lands on it too.
+      if (jumpedTo != position.segmentId) {
+        setState(() => _liveAliases[position.segmentId] = jumpedTo!);
       }
       // Let the list take the new window before scrolling into it.
       await WidgetsBinding.instance.endOfFrame;
@@ -866,6 +881,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
                 return _buildItem(
                   item: item,
+                  previousItem: content.getItemAt(index - 1),
                   state: state,
                   dualSecondaryEnabled: secondaryActive,
                   showOriginal: showOriginal,
@@ -909,20 +925,17 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     required ReaderSlotConfig secondarySlot,
     required SecondaryReaderState? secondaryState,
     required void Function(Segment) onSegmentTap,
+    FlattenedItem? previousItem,
     String? liveSegmentId,
   }) {
     return item.when(
-      header: (section, depth) => const SizedBox.shrink(),
-      // header: (section, depth) {
-      //   if (section.segments[0].segmentNumber == 1) {
-      //     return SectionHeader(
-      //       section: section,
-      //       depth: depth,
-      //       language: widget.language,
-      //     );
-      //   }
-      //   return const SizedBox.shrink();
-      // },
+      header:
+          (section, depth) => SectionHeader(
+            section: section,
+            depth: depth,
+            language: widget.language,
+            showDivider: depth > 0 && (previousItem?.isSegment ?? false),
+          ),
       segment: (segment, depth, sectionId) {
         final isSelected =
             state.selectedSegment?.segmentId == segment.segmentId;

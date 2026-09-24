@@ -112,6 +112,7 @@ class MyRecitationCollectionModel {
   final String id;
   final String name;
   final String? imgUrl;
+  final int itemCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -119,6 +120,7 @@ class MyRecitationCollectionModel {
     required this.id,
     required this.name,
     this.imgUrl,
+    this.itemCount = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -128,6 +130,7 @@ class MyRecitationCollectionModel {
       id: json['id'] as String? ?? json['collection_id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       imgUrl: json['img_url'] as String?,
+      itemCount: (json['item_count'] as num?)?.toInt() ?? 0,
       createdAt: _parseDate(json['created_at']),
       updatedAt: _parseDate(json['updated_at']),
     );
@@ -135,6 +138,39 @@ class MyRecitationCollectionModel {
 
   static DateTime? _parseDate(Object? value) =>
       value is String ? DateTime.tryParse(value) : null;
+}
+
+/// Response from `GET /users/me/recitation-collections` (200).
+class MyRecitationCollectionsPageResponse {
+  final List<MyRecitationCollectionModel> collections;
+  final int skip;
+  final int limit;
+  final int total;
+
+  const MyRecitationCollectionsPageResponse({
+    required this.collections,
+    required this.skip,
+    required this.limit,
+    required this.total,
+  });
+
+  factory MyRecitationCollectionsPageResponse.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    final rows = json['collections'] as List<dynamic>? ?? const [];
+    return MyRecitationCollectionsPageResponse(
+      collections:
+          rows
+              .whereType<Map<String, dynamic>>()
+              .map(MyRecitationCollectionModel.fromJson)
+              .toList(growable: false),
+      skip: (json['skip'] as num?)?.toInt() ?? 0,
+      limit: (json['limit'] as num?)?.toInt() ?? rows.length,
+      total: (json['total'] as num?)?.toInt() ?? rows.length,
+    );
+  }
+
+  bool get hasMore => skip + collections.length < total;
 }
 
 /// Response from `GET /users/me/recitation-collections/{id}` (200).

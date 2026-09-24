@@ -688,23 +688,11 @@ abstract class AppLocalizations {
   /// **'Loading...'**
   String get loading;
 
-  /// No description provided for @choose_image.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose image'**
-  String get choose_image;
-
   /// No description provided for @choose_bg_image.
   ///
   /// In en, this message translates to:
   /// **'Choose a background image'**
   String get choose_bg_image;
-
-  /// No description provided for @create_image.
-  ///
-  /// In en, this message translates to:
-  /// **'Create image'**
-  String get create_image;
 
   /// No description provided for @save.
   ///
@@ -2182,53 +2170,11 @@ abstract class AppLocalizations {
   /// **'Unknown error'**
   String get unknown_error;
 
-  /// No description provided for @image_share_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to share: {error}'**
-  String image_share_error(String error);
-
-  /// No description provided for @create_image_capture_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to create image. Please try again'**
-  String get create_image_capture_error;
-
   /// No description provided for @create_image_share_error.
   ///
   /// In en, this message translates to:
   /// **'Unable to share. Please try again'**
   String get create_image_share_error;
-
-  /// No description provided for @create_image_save_success.
-  ///
-  /// In en, this message translates to:
-  /// **'Image saved'**
-  String get create_image_save_success;
-
-  /// No description provided for @create_image_save_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to save image. Check that the app has photo access, or try again'**
-  String get create_image_save_error;
-
-  /// No description provided for @create_image_download_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Unable to download your image. Please try again'**
-  String get create_image_download_error;
-
-  /// No description provided for @create_image_customize_tooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Customize'**
-  String get create_image_customize_tooltip;
-
-  /// No description provided for @create_image_text_too_long.
-  ///
-  /// In en, this message translates to:
-  /// **'Text is too long to increase font size'**
-  String get create_image_text_too_long;
 
   /// No description provided for @version_search_no_results.
   ///
@@ -2320,143 +2266,11 @@ abstract class AppLocalizations {
   /// **'Plan created'**
   String get plans_created;
 
-  /// No description provided for @ai_chat_history.
-  ///
-  /// In en, this message translates to:
-  /// **'Chat history'**
-  String get ai_chat_history;
-
-  /// No description provided for @ai_buddhist_assistant.
-  ///
-  /// In en, this message translates to:
-  /// **'Build your daily rhythm. Set times, and we\'ll remind you to practice'**
-  String get ai_buddhist_assistant;
-
-  /// No description provided for @ai_new_chat.
-  ///
-  /// In en, this message translates to:
-  /// **'New chat'**
-  String get ai_new_chat;
-
-  /// No description provided for @ai_retry.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get ai_retry;
-
-  /// No description provided for @ai_dismiss.
-  ///
-  /// In en, this message translates to:
-  /// **'Dismiss'**
-  String get ai_dismiss;
-
-  /// No description provided for @ai_sign_in_prompt.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in to use the Buddhist AI Assistant'**
-  String get ai_sign_in_prompt;
-
-  /// No description provided for @ai_explore_wisdom.
-  ///
-  /// In en, this message translates to:
-  /// **'Explore Buddhist wisdom'**
-  String get ai_explore_wisdom;
-
-  /// No description provided for @ai_ask_question.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask a question...'**
-  String get ai_ask_question;
-
-  /// No description provided for @ai_search_chats.
-  ///
-  /// In en, this message translates to:
-  /// **'Search for chats'**
-  String get ai_search_chats;
-
-  /// No description provided for @ai_chats.
-  ///
-  /// In en, this message translates to:
-  /// **'Chats'**
-  String get ai_chats;
-
-  /// No description provided for @ai_chat_deleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Chat deleted'**
-  String get ai_chat_deleted;
-
-  /// No description provided for @ai_no_conversations.
-  ///
-  /// In en, this message translates to:
-  /// **'No conversations yet'**
-  String get ai_no_conversations;
-
-  /// No description provided for @ai_start_new_chat.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a new chat to begin.'**
-  String get ai_start_new_chat;
-
-  /// No description provided for @ai_delete_chat.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete chat'**
-  String get ai_delete_chat;
-
-  /// No description provided for @ai_delete_confirmation.
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure you want to delete this chat?'**
-  String get ai_delete_confirmation;
-
-  /// No description provided for @ai_delete_warning.
-  ///
-  /// In en, this message translates to:
-  /// **'This action cannot be undone.'**
-  String get ai_delete_warning;
-
   /// No description provided for @ai_confirm.
   ///
   /// In en, this message translates to:
   /// **'Confirm'**
   String get ai_confirm;
-
-  /// No description provided for @ai_delete.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete'**
-  String get ai_delete;
-
-  /// No description provided for @ai_greeting.
-  ///
-  /// In en, this message translates to:
-  /// **'Hi {name}'**
-  String ai_greeting(String name);
-
-  /// No description provided for @ai_text_not_found.
-  ///
-  /// In en, this message translates to:
-  /// **'Text not found.'**
-  String get ai_text_not_found;
-
-  /// No description provided for @ai_text_not_found_message.
-  ///
-  /// In en, this message translates to:
-  /// **'We don\'t have \"{title}\" in our library yet.\n\nTry a different title, or ask another way'**
-  String ai_text_not_found_message(String title);
-
-  /// No description provided for @ai_sources.
-  ///
-  /// In en, this message translates to:
-  /// **'Sources'**
-  String get ai_sources;
-
-  /// No description provided for @ai_sources_count.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} sources'**
-  String ai_sources_count(int count);
 
   /// No description provided for @search_no_results.
   ///
@@ -2464,77 +2278,11 @@ abstract class AppLocalizations {
   /// **'No results found for \"{query}\"'**
   String search_no_results(String query);
 
-  /// No description provided for @search_show_more.
-  ///
-  /// In en, this message translates to:
-  /// **'Show more'**
-  String get search_show_more;
-
-  /// No description provided for @search_contents.
-  ///
-  /// In en, this message translates to:
-  /// **'Contents'**
-  String get search_contents;
-
-  /// No description provided for @search_titles.
-  ///
-  /// In en, this message translates to:
-  /// **'Titles'**
-  String get search_titles;
-
   /// No description provided for @search_all.
   ///
   /// In en, this message translates to:
   /// **'All'**
   String get search_all;
-
-  /// No description provided for @search_author.
-  ///
-  /// In en, this message translates to:
-  /// **'Author'**
-  String get search_author;
-
-  /// No description provided for @search_tab_ai_mode.
-  ///
-  /// In en, this message translates to:
-  /// **'AI mode'**
-  String get search_tab_ai_mode;
-
-  /// No description provided for @search_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Error: {message}'**
-  String search_error(String message);
-
-  /// No description provided for @search_retrying.
-  ///
-  /// In en, this message translates to:
-  /// **'Retrying...'**
-  String get search_retrying;
-
-  /// No description provided for @search_no_titles_found.
-  ///
-  /// In en, this message translates to:
-  /// **'No titles found for \"{query}\"'**
-  String search_no_titles_found(String query);
-
-  /// No description provided for @search_no_contents_found.
-  ///
-  /// In en, this message translates to:
-  /// **'No contents found for \"{query}\"'**
-  String search_no_contents_found(String query);
-
-  /// No description provided for @search_no_authors_found.
-  ///
-  /// In en, this message translates to:
-  /// **'No authors found for \"{query}\"'**
-  String search_no_authors_found(String query);
-
-  /// No description provided for @search_buddhist_texts.
-  ///
-  /// In en, this message translates to:
-  /// **'Search Buddhist texts...'**
-  String get search_buddhist_texts;
 
   /// No description provided for @common_ok.
   ///
@@ -3718,6 +3466,30 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load notification settings.'**
   String get group_notifications_load_failed;
 
+  /// No description provided for @group_chat_mute_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute chat notifications'**
+  String get group_chat_mute_notifications;
+
+  /// No description provided for @group_chat_unmute_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute chat notifications'**
+  String get group_chat_unmute_notifications;
+
+  /// No description provided for @group_chat_notifications_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat notifications muted'**
+  String get group_chat_notifications_muted;
+
+  /// No description provided for @group_chat_notifications_unmuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat notifications on'**
+  String get group_chat_notifications_unmuted;
+
   /// No description provided for @group_leave.
   ///
   /// In en, this message translates to:
@@ -3795,6 +3567,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to send request. Please try again.'**
   String get group_join_request_error;
+
+  /// No description provided for @group_join_requests_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Join requests'**
+  String get group_join_requests_title;
+
+  /// No description provided for @group_join_requests_admit.
+  ///
+  /// In en, this message translates to:
+  /// **'Admit'**
+  String get group_join_requests_admit;
+
+  /// No description provided for @group_join_requests_deny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get group_join_requests_deny;
+
+  /// No description provided for @group_join_requests_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get group_join_requests_empty;
+
+  /// No description provided for @group_join_requests_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load join requests. Please try again.'**
+  String get group_join_requests_load_error;
+
+  /// No description provided for @group_join_requests_admit_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to admit this request. Please try again.'**
+  String get group_join_requests_admit_error;
+
+  /// No description provided for @group_join_requests_deny_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to deny this request. Please try again.'**
+  String get group_join_requests_deny_error;
 
   /// No description provided for @group_members_only_title.
   ///
@@ -4490,18 +4304,6 @@ abstract class AppLocalizations {
   /// **'Your session is complete'**
   String get timer_notification_complete;
 
-  /// No description provided for @ai_use_search_instead.
-  ///
-  /// In en, this message translates to:
-  /// **'Use Search Instead'**
-  String get ai_use_search_instead;
-
-  /// No description provided for @ai_mode_label.
-  ///
-  /// In en, this message translates to:
-  /// **'AI'**
-  String get ai_mode_label;
-
   /// No description provided for @plan_day_of.
   ///
   /// In en, this message translates to:
@@ -4849,12 +4651,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
   String group_chat_delete_failed(int count);
-
-  /// No description provided for @group_chat_message_deleted_toast.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Message deleted} other{Messages deleted}}'**
-  String group_chat_message_deleted_toast(int count);
 
   /// No description provided for @group_chat_selection_limit.
   ///

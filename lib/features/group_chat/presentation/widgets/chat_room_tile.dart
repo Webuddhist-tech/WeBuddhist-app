@@ -240,7 +240,9 @@ class _UnreadBadge extends StatelessWidget {
       // A stadium, not a circle: BoxShape.circle ignores the width a
       // three-character count needs and clips it.
       decoration: BoxDecoration(
-        color: AppColors.success,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.unreadBadgeDark
+            : AppColors.unreadBadge,
         borderRadius: BorderRadius.circular(10),
       ),
       alignment: Alignment.center,
