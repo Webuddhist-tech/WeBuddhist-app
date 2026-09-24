@@ -220,4 +220,23 @@ class TextsRepository {
       return Left(ExceptionMapper.map(e, context: 'Failed to perform multilingual search'));
     }
   }
+
+  /// See [TextRemoteDatasource.alignSegment]. A failed lookup counts as no
+  /// counterpart, so callers treat it like a missing verse.
+  Future<String?> alignSegment({
+    required String segmentId,
+    required String sourceTextId,
+    required String targetTextId,
+  }) async {
+    try {
+      return await remoteDatasource.alignSegment(
+        segmentId: segmentId,
+        sourceTextId: sourceTextId,
+        targetTextId: targetTextId,
+      );
+    } catch (e) {
+      _logger.warning('Aligning segment $segmentId failed', e);
+      return null;
+    }
+  }
 }

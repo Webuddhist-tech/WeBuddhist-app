@@ -4,9 +4,13 @@ import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
 class ReaderResponse {
   final TextDetail textDetail;
   final Toc content;
-   final int size;
+  final int size;
   final String paginationDirection;
   final int currentSegmentPosition;
+
+  /// Position of the page's last segment. Null in responses cached before it
+  /// existed; [hasNextPage] then falls back to the page's first position.
+  final int? lastSegmentPosition;
   final int totalSegments;
 
   ReaderResponse({
@@ -15,8 +19,14 @@ class ReaderResponse {
     required this.size,
     required this.paginationDirection,
     required this.currentSegmentPosition,
+    this.lastSegmentPosition,
     required this.totalSegments,
   });
+
+  /// Whether segments exist after this page. Measured from its last segment,
+  /// so the page that reaches the end does not ask for one more.
+  bool get hasNextPage =>
+      (lastSegmentPosition ?? currentSegmentPosition) < totalSegments;
 
   factory ReaderResponse.fromJson(Map<String, dynamic> json) {
     return ReaderResponse(
@@ -25,6 +35,7 @@ class ReaderResponse {
       size: json['size'],
       paginationDirection: json['pagination_direction'],
       currentSegmentPosition: json['current_segment_position'],
+      lastSegmentPosition: json['last_segment_position'] as int?,
       totalSegments: json['total_segments'],
     );
   }
@@ -36,6 +47,8 @@ class ReaderResponse {
       'size': size,
       'pagination_direction': paginationDirection,
       'current_segment_position': currentSegmentPosition,
+      if (lastSegmentPosition != null)
+        'last_segment_position': lastSegmentPosition,
       'total_segments': totalSegments,
     };
   }

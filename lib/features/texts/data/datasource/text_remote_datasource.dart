@@ -18,4 +18,13 @@ abstract class TextRemoteDatasource {
     String? language,
     String? textId,
   });
+
+  /// This reader's id for [segmentId] of [sourceTextId]: the same verse in
+  /// [targetTextId], another edition or language of the same text. Null when
+  /// the texts are unrelated or the verse has no counterpart.
+  Future<String?> alignSegment({
+    required String segmentId,
+    required String sourceTextId,
+    required String targetTextId,
+  });
 }
