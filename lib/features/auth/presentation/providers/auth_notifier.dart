@@ -62,9 +62,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// onboarding prefetch from re-applying `isLoggedIn: true` after logout.
   int _authEpoch = 0;
 
-  /// Bumped as each analytics identify starts; see
-  /// [_resetAnalyticsUnlessReidentified].
-  int _identifications = 0;
+  /// Epoch of the auth attempt analytics is identified as, or null once
+  /// reset. See [_resetAnalyticsIdentity].
+  int? _identityEpoch;
 
   /// Prevents overlapping background onboarding refetches.
   bool _onboardingFetchInFlight = false;
@@ -238,7 +238,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
             .set(StorageKeys.currentUserId, userId);
         if (!_isAuthEpochCurrent(epoch)) return;
         _logger.debug('Restored currentUserId');
-        await _identifyAuthenticatedUser(userId: userId, isGuest: false);
+        await _identifyAuthenticatedUser(
+          userId: userId,
+          isGuest: false,
+          epoch: epoch,
+        );
         if (!_isAuthEpochCurrent(epoch)) return;
       }
 
@@ -294,7 +298,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     if (storedUserId != null && storedUserId.isNotEmpty) {
       unawaited(
-        _identifyAuthenticatedUser(userId: storedUserId, isGuest: false),
+        _identifyAuthenticatedUser(
+          userId: storedUserId,
+          isGuest: false,
+          epoch: epoch,
+        ),
       );
     }
     try {
@@ -348,10 +356,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> handleSessionExpired() async {
     _logger.info('Session permanently expired — routing to login');
     _invalidateAuthSession();
-    final identifications = _identifications;
     await _localLogoutUseCase(const NoParams());
     // As on logout: the next session must not carry this user's identity.
-    await _resetAnalyticsUnlessReidentified(identifications);
+    await _resetAnalyticsIdentity();
   }
 
   Future<void> _handleAuthFailure() async {
@@ -388,6 +395,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           errorMessage: 'Login failed: ${failure.message}',
         );
+        // A login this one superseded may have identified its user already.
+        unawaited(_resetAnalyticsIdentity(onlyIfStale: true));
       },
       (credentials) {
         unawaited(
@@ -421,7 +430,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
           .set(StorageKeys.currentUserId, userId);
       if (!_isAuthEpochCurrent(epoch)) return;
       _logger.debug('Stored currentUserId');
-      await _identifyAuthenticatedUser(userId: userId, isGuest: false);
+      await _identifyAuthenticatedUser(
+        userId: userId,
+        isGuest: false,
+        epoch: epoch,
+      );
       if (!_isAuthEpochCurrent(epoch)) return;
     }
 
@@ -504,7 +517,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // while the JWT is still valid. Awaited below, before credentials go.
     final pushUnregister = _unregisterPushDevice();
     _invalidateAuthSession();
-    final identifications = _identifications;
     ref.read(cacheInterceptorProvider).clearUserScoped();
 
     // Best-effort flush of any unsynced mala counts while the token is still
@@ -549,7 +561,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _logger.warning('Failed to cancel notifications on logout: $e');
     }
 
-    await _resetAnalyticsUnlessReidentified(identifications);
+    await _resetAnalyticsIdentity();
 
     _logger.info('User logged out, auth and user state cleared');
   }
@@ -733,22 +745,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _identifyAuthenticatedUser({
     required String userId,
     required bool isGuest,
+    required int epoch,
   }) async {
-    _identifications++;
+    _identityEpoch = epoch;
     await _analytics.identify(
       userId: userId,
       properties: {AnalyticsProperties.isGuest: isGuest},
     );
   }
 
-  /// Resets analytics unless a login identified its user since
-  /// [identifications] was read: the login screen shows as soon as the
-  /// session is invalidated, and that user must not be reset to anonymous.
-  /// Keyed on identification, not the auth epoch, because a login that is
-  /// started and then cancelled bumps the epoch without replacing the old
-  /// identity.
-  Future<void> _resetAnalyticsUnlessReidentified(int identifications) async {
-    if (_identifications != identifications) return;
+  /// Resets analytics unless the current auth attempt owns its identity.
+  ///
+  /// Logout and expiry show the login screen before their cleanup finishes,
+  /// so a login can identify its user meanwhile; that identity is kept. Any
+  /// other identity belongs to a signed-out user or to a login a newer auth
+  /// attempt superseded, and is reset. [onlyIfStale] skips the reset when
+  /// nothing is identified, for flows that are not a sign-out.
+  Future<void> _resetAnalyticsIdentity({bool onlyIfStale = false}) async {
+    final owner = _identityEpoch;
+    if (owner != null && owner == _authEpoch) return;
+    if (onlyIfStale && owner == null) return;
+    _identityEpoch = null;
     await _analytics.reset();
   }
 
