@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_languages_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_search_button.dart';
 import 'package:flutter_pecha/features/texts/constants/text_screen_constants.dart';
@@ -22,6 +23,9 @@ class ReaderAppBarOverlay extends ConsumerWidget {
   /// The menu button is hidden when null.
   final VoidCallback? onMorePressed;
 
+  /// Direct font size button, for when the "more" menu is hidden.
+  final VoidCallback? onFontSizePressed;
+
   /// Live recitation sync button, shown before search.
   final Widget? liveSyncToggle;
 
@@ -35,6 +39,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
     required this.onSearchPressed,
     required this.onLanguagesPressed,
     this.onMorePressed,
+    this.onFontSizePressed,
     this.liveSyncToggle,
     this.prayerRequestsButton,
   });
@@ -71,6 +76,8 @@ class ReaderAppBarOverlay extends ConsumerWidget {
             if (liveSyncToggle != null) liveSyncToggle!,
             if (prayerRequestsButton != null) prayerRequestsButton!,
             ReaderSearchButton(onPressed: onSearchPressed),
+            if (onFontSizePressed != null)
+              ReaderFontSizeButton(onPressed: onFontSizePressed!),
             ReaderLanguagesButton(
               params: params,
               onPressed: onLanguagesPressed,
