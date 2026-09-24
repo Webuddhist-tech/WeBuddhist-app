@@ -54,44 +54,60 @@ class ReaderAppBarOverlay extends ConsumerWidget {
             ? TextScreenConstants.collectionCyclingColors[colorIndex! % 9]
             : TextScreenConstants.primaryBorderColor;
 
+    // The event layout (live pill + extra buttons) overflows a 320px toolbar
+    // at the default 48px per icon button, so tighten it to 40px.
+    final theme = Theme.of(context);
+    final isCrowded =
+        liveSyncToggle != null ||
+        prayerRequestsButton != null ||
+        onFontSizePressed != null;
+    final appBar = AppBar(
+      elevation: ReaderConstants.appBarElevation,
+      scrolledUnderElevation: ReaderConstants.appBarElevation,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      leading: IconButton(
+        icon: const Icon(AppAssets.arrowLeft),
+        onPressed: () {
+          // Clear selection states before navigating back
+          notifier.selectSegment(null);
+          notifier.closeCommentary();
+          notifier.closeTranslation();
+          _navigateBack(context);
+        },
+      ),
+      toolbarHeight: ReaderConstants.appBarToolbarHeight,
+      actions: [
+        if (liveSyncToggle != null) liveSyncToggle!,
+        if (prayerRequestsButton != null) prayerRequestsButton!,
+        ReaderSearchButton(onPressed: onSearchPressed),
+        if (onFontSizePressed != null)
+          ReaderFontSizeButton(onPressed: onFontSizePressed!),
+        ReaderLanguagesButton(params: params, onPressed: onLanguagesPressed),
+        const SizedBox(width: 4),
+        if (onMorePressed != null) ...[
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: onMorePressed,
+          ),
+          const SizedBox(width: 4),
+        ],
+      ],
+    );
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AppBar(
-          elevation: ReaderConstants.appBarElevation,
-          scrolledUnderElevation: ReaderConstants.appBarElevation,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          leading: IconButton(
-            icon: const Icon(AppAssets.arrowLeft),
-            onPressed: () {
-              // Clear selection states before navigating back
-              notifier.selectSegment(null);
-              notifier.closeCommentary();
-              notifier.closeTranslation();
-              _navigateBack(context);
-            },
-          ),
-          toolbarHeight: ReaderConstants.appBarToolbarHeight,
-          actions: [
-            if (liveSyncToggle != null) liveSyncToggle!,
-            if (prayerRequestsButton != null) prayerRequestsButton!,
-            ReaderSearchButton(onPressed: onSearchPressed),
-            if (onFontSizePressed != null)
-              ReaderFontSizeButton(onPressed: onFontSizePressed!),
-            ReaderLanguagesButton(
-              params: params,
-              onPressed: onLanguagesPressed,
+        if (isCrowded)
+          IconButtonTheme(
+            data: IconButtonThemeData(
+              style: IconButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ).merge(theme.iconButtonTheme.style),
             ),
-            const SizedBox(width: 4),
-            if (onMorePressed != null) ...[
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: onMorePressed,
-              ),
-              const SizedBox(width: 4),
-            ],
-          ],
-        ),
+            child: appBar,
+          )
+        else
+          appBar,
         // Bottom border
         Container(
           height: ReaderConstants.appBarBottomHeight,
