@@ -17,6 +17,10 @@ class ReaderVersionDetail {
   final String? license;
   final bool isSelected;
 
+  /// A root text (neither a translation nor a commentary): an original, never
+  /// offered as a translation.
+  final bool isRoot;
+
   const ReaderVersionDetail({
     required this.id,
     required this.title,
@@ -35,6 +39,7 @@ class ReaderVersionDetail {
     this.ranking,
     this.license,
     this.isSelected = false,
+    this.isRoot = false,
   });
 
   factory ReaderVersionDetail.fromJson(Map<String, dynamic> json) {

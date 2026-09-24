@@ -29,10 +29,15 @@ class LibraryReaderSettingsRemoteDatasource
     }
 
     final counts = <String, int>{};
+    final translationCounts = <String, int>{};
     for (final member in family) {
       if (member.editions.isEmpty) continue;
       counts[member.language] =
           (counts[member.language] ?? 0) + member.editions.length;
+      if (!_isRoot(member)) {
+        translationCounts[member.language] =
+            (translationCounts[member.language] ?? 0) + member.editions.length;
+      }
     }
     final codes = counts.keys.toList()..sort();
     // The original's language leads: the text a translation was made from.
@@ -48,6 +53,7 @@ class LibraryReaderSettingsRemoteDatasource
             code: code,
             label: _label(names, code),
             versionCount: counts[code]!,
+            translationCount: translationCounts[code] ?? 0,
           ),
       ],
     );
@@ -112,6 +118,9 @@ class LibraryReaderSettingsRemoteDatasource
     );
   }
 
+  static bool _isRoot(LibraryText text) =>
+      !text.isTranslation && !text.isCommentary;
+
   static Map<String, LibraryText> _byId(List<LibraryText> texts) => {
     for (final t in texts) t.id: t,
   };
@@ -139,6 +148,7 @@ class LibraryReaderSettingsRemoteDatasource
       parentId: parentId,
       license: text.license,
       sourceLink: sourceLink,
+      isRoot: _isRoot(text),
     );
   }
 

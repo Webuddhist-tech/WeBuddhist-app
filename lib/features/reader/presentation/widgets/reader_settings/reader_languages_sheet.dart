@@ -452,7 +452,8 @@ class _LanguageTree extends ConsumerWidget {
             message: l10n.reader_languages_load_error,
             onRetry: () => ref.invalidate(readerLanguagesProvider(textId)),
           ),
-      data: (langs) {
+      data: (all) {
+        final langs = translationLanguages(all);
         if (langs.isEmpty) {
           return PickerEmpty(message: l10n.reader_no_languages);
         }
@@ -563,7 +564,8 @@ class _VersionList extends ConsumerWidget {
               message: l10n.reader_versions_load_error,
               onRetry: () => ref.invalidate(readerVersionsProvider(query)),
             ),
-        data: (versions) {
+        data: (all) {
+          final versions = translationVersions(all);
           if (versions.isEmpty) {
             return PickerEmpty(
               message: l10n.reader_no_versions_in_language(

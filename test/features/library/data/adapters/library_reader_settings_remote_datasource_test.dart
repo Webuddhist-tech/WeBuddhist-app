@@ -92,6 +92,15 @@ void main() {
 
     final languages = await ds.fetchLanguages(textId: 'E-en');
     expect(languages.availableLanguages.map((l) => l.code), ['bo', 'en', 'sa']);
+    // The Sanskrit root is only ever an original; the Tibetan is a translation.
+    expect(
+      languages.availableLanguages.map((l) => l.translationCount),
+      [1, 1, 0],
+    );
+    final sanskrit = await ds.fetchVersions(textId: 'E-en', language: 'sa');
+    expect(sanskrit.availableVersions.single.isRoot, isTrue);
+    final tibetan = await ds.fetchVersions(textId: 'E-en', language: 'bo');
+    expect(tibetan.availableVersions.single.isRoot, isFalse);
   });
 
   test('a translation names the root edition as its parent', () async {
