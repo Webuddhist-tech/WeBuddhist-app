@@ -57,11 +57,13 @@ class LibraryTestServer {
   LibraryRepository repository({
     int segmentPageSize = 500,
     int relatedPageSize = 20,
+    int maxPages = 1000,
   }) {
     return LibraryRepository(
       datasource: LibraryRemoteDatasource(dio: dio()),
       segmentPageSize: segmentPageSize,
       relatedPageSize: relatedPageSize,
+      maxPages: maxPages,
     );
   }
 }

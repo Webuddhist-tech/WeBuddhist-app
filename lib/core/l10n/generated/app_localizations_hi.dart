@@ -1913,6 +1913,18 @@ class AppLocalizationsHi extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'चैट सूचनाएँ म्यूट करें';
+
+  @override
+  String get group_chat_unmute_notifications => 'चैट सूचनाएँ अनम्यूट करें';
+
+  @override
+  String get group_chat_notifications_muted => 'चैट सूचनाएँ म्यूट की गईं';
+
+  @override
+  String get group_chat_notifications_unmuted => 'चैट सूचनाएँ चालू हैं';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -1954,6 +1966,30 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get group_join_request_error =>
       'अनुरोध भेजने में असमर्थ। कृपया पुनः प्रयास करें।';
+
+  @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
 
   @override
   String get group_members_only_title => 'केवल सदस्य';
@@ -2597,17 +2633,6 @@ class AppLocalizationsHi extends AppLocalizations {
       locale: localeName,
       other: '$count संदेश हटाए नहीं जा सके।',
       one: 'संदेश हटाया नहीं जा सका।',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'संदेश हटा दिए गए',
-      one: 'संदेश हटा दिया गया',
     );
     return '$_temp0';
   }

@@ -995,8 +995,11 @@
       }
     }
   },
-  "group_chat_message_deleted_toast": "{count, plural, =1{འཕྲིན་ཐུང་བསུབས་ཟིན།} other{འཕྲིན་ཐུང་རྣམས་བསུབས་ཟིན།}}",
   "group_chat_selection_limit": "འཕྲིན་ཐུང་མང་ཤོས་ {count} འདེམས་ཆོག",
+  "group_chat_mute_notifications": "ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོ།",
+  "group_chat_unmute_notifications": "ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་ཡོད་བཟོ།",
+  "group_chat_notifications_muted": "ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོས་ཟིན།",
+  "group_chat_notifications_unmuted": "ཁ་བརྡའི་བརྡ་ཐོ་ཁ་ཕྱེ་ཟིན།",
   "group_chat_message_deleted_by_sender": "འཕྲིན་ཐུང་འདི་བསུབས་ཟིན།",
   "group_chat_reaction_failed": "ཁྱེད་ཀྱི་དྲན་བརྡ་ཉར་མ་ཐུབ།",
   "group_chat_reactions_count": "{count, plural, =1{དྲན་བརྡ་ ༡} other{དྲན་བརྡ་ {count}}}",

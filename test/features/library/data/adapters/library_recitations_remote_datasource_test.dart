@@ -147,4 +147,69 @@ void main() {
     expect(seen, hasLength(1));
     expect(short.recitations, isEmpty);
   });
+
+  test('chants still list when the collections request fails', () async {
+    final server = LibraryTestServer({
+      ..._server().routes,
+      '/users/me/recitation-collections':
+          (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
+    });
+
+    final page = await _datasource(server).fetchRecitationsPage(
+      queryParams: RecitationsQueryParams(
+        language: 'en',
+        skip: 0,
+        limit: 20,
+        shouldIncludeCollections: true,
+      ),
+    );
+
+    expect(page.recitations.map((r) => r.textId), ['E1', 'E2']);
+    expect(page.collections, isEmpty);
+  });
+
+  test('a chant failure surfaces alone, collections errors handled', () async {
+    final server = LibraryTestServer({
+      '/v2/texts': (_) => jsonBody({'detail': 'down'}, statusCode: 503),
+      '/users/me/recitation-collections':
+          (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
+    });
+
+    await expectLater(
+      _datasource(server).fetchRecitationsPage(
+        queryParams: RecitationsQueryParams(
+          language: 'en',
+          shouldIncludeCollections: true,
+        ),
+      ),
+      throwsA(anything),
+    );
+    // Let the collections request settle: an unhandled error would fail here.
+    await Future<void>.delayed(Duration.zero);
+  });
+
+  test('collections stop when the server ignores skip', () async {
+    final server = LibraryTestServer({
+      ..._server().routes,
+      '/users/me/recitation-collections':
+          (_) => jsonBody({
+            'collections': [_collection('c0', 'only', 1)],
+            'skip': 0,
+            'limit': 20,
+            'total': 99,
+          }),
+    });
+
+    final page = await _datasource(server).fetchRecitationsPage(
+      queryParams: RecitationsQueryParams(
+        language: 'en',
+        skip: 0,
+        limit: 20,
+        shouldIncludeCollections: true,
+      ),
+    );
+
+    expect(page.collections.map((c) => c.collectionId), ['c0']);
+    expect(server.count('/users/me/recitation-collections'), 2);
+  });
 }

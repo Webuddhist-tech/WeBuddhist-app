@@ -20,6 +20,11 @@ abstract class PushMessagingRepository {
   /// could not be resolved yet (e.g. APNs token not ready on iOS).
   Future<String?> getToken();
 
+  /// Invalidates this install's FCM token on Firebase's side, so any backend
+  /// row still holding it can no longer reach the device. The next
+  /// [getToken] mints a fresh one. Needs no backend or user session.
+  Future<void> deleteToken();
+
   /// Emits whenever FCM rotates the token (reinstall, restore, expiry).
   Stream<String> get onTokenRefresh;
 

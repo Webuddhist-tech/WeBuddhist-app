@@ -1,6 +1,8 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_request.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
@@ -111,5 +113,25 @@ abstract class GroupProfileRepositoryInterface {
   Future<Either<Failure, void>> submitJoinRequest(
     String groupId, {
     required String message,
+  });
+
+  /// Admin approval of a pending join request.
+  Future<Either<Failure, GroupJoinRequestDecision>> approveGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  });
+
+  /// Admin rejection of a pending join request.
+  Future<Either<Failure, GroupJoinRequestDecision>> rejectGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  });
+
+  /// Admin list of join requests. Defaults to pending.
+  Future<Either<Failure, GroupJoinRequestsPage>> getGroupJoinRequests(
+    String groupId, {
+    GroupJoinRequestStatus status = GroupJoinRequestStatus.pending,
+    required int skip,
+    required int limit,
   });
 }

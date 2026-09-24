@@ -861,6 +861,10 @@
   "group_notifications_open_settings": "Turn on",
   "group_notifications_update_failed": "Couldn't update notification settings. Try again.",
   "group_notifications_load_failed": "Couldn't load notification settings.",
+  "group_chat_mute_notifications": "Mute chat notifications",
+  "group_chat_unmute_notifications": "Unmute chat notifications",
+  "group_chat_notifications_muted": "Chat notifications muted",
+  "group_chat_notifications_unmuted": "Chat notifications on",
   "group_leave": "Leave group",
   "group_leave_confirm_title": "Leave group?",
   "group_leave_confirm_message": "You'll stop getting messages and updates from this group.",
@@ -874,6 +878,13 @@
   "group_join_request_send": "Send request",
   "group_join_request_sent_snackbar": "Request sent — an admin will review it.",
   "group_join_request_error": "Unable to send request. Please try again.",
+  "group_join_requests_title": "Join requests",
+  "group_join_requests_admit": "Admit",
+  "group_join_requests_deny": "Deny",
+  "group_join_requests_empty": "No pending requests",
+  "group_join_requests_load_error": "Unable to load join requests. Please try again.",
+  "group_join_requests_admit_error": "Unable to admit this request. Please try again.",
+  "group_join_requests_deny_error": "Unable to deny this request. Please try again.",
   "group_members_only_title": "Members only",
   "group_members_only_message": "Join to see this group's chants, events and posts.",
   "group_join_request_waiting_title": "Waiting on an admin",
@@ -1246,14 +1257,6 @@
   },
   "group_chat_delete_failed": "{count, plural, =1{The message couldn't be deleted.} other{{count} messages couldn't be deleted.}}",
   "@group_chat_delete_failed": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "group_chat_message_deleted_toast": "{count, plural, =1{Message deleted} other{Messages deleted}}",
-  "@group_chat_message_deleted_toast": {
     "placeholders": {
       "count": {
         "type": "int"

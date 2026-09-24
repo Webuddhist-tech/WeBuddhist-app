@@ -27,6 +27,12 @@ enum GroupJoinRequestStatus {
       _ => null,
     };
   }
+
+  String get apiValue => switch (this) {
+    GroupJoinRequestStatus.pending => 'PENDING',
+    GroupJoinRequestStatus.approved => 'APPROVED',
+    GroupJoinRequestStatus.rejected => 'REJECTED',
+  };
 }
 
 class GroupProfileSocialLink {

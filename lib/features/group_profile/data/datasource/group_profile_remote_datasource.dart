@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_join_request_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_member_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_notification_preferences_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
@@ -547,6 +548,129 @@ class GroupProfileRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in leaveGroupEvent', e);
       throw _dioToException(e, 'Failed to leave event');
+    }
+  }
+
+  /// `GET /cms/author/groups/{groupId}/join-requests`.
+  ///
+  /// Admin-only. [status] defaults to pending.
+  Future<GroupJoinRequestsPageModel> fetchGroupJoinRequests(
+    String groupId, {
+    GroupJoinRequestStatus status = GroupJoinRequestStatus.pending,
+    required int skip,
+    required int limit,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/cms/author/groups/$groupId/join-requests',
+        queryParameters: {
+          'status': status.apiValue,
+          'skip': skip,
+          'limit': limit,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode == 200) {
+        return GroupJoinRequestsPageModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error(
+        'Failed to load join requests $groupId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to load join requests',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchGroupJoinRequests', e);
+      throw _dioToException(e, 'Failed to load join requests');
+    }
+  }
+
+  /// `POST /cms/author/groups/{groupId}/join-requests/{requestId}/approve`.
+  Future<GroupJoinRequestDecisionModel> approveGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  }) {
+    return _decideGroupJoinRequest(
+      groupId,
+      requestId: requestId,
+      decision: 'approve',
+      appliedStatus: GroupJoinRequestStatus.approved,
+    );
+  }
+
+  /// `POST /cms/author/groups/{groupId}/join-requests/{requestId}/reject`.
+  Future<GroupJoinRequestDecisionModel> rejectGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+  }) {
+    return _decideGroupJoinRequest(
+      groupId,
+      requestId: requestId,
+      decision: 'reject',
+      appliedStatus: GroupJoinRequestStatus.rejected,
+    );
+  }
+
+  /// Shared body for the approve/reject endpoints.
+  ///
+  /// The contract documents `200` with a `{id, status}` body, but any 2xx
+  /// means the server already applied the decision. Failing the call on an
+  /// unexpected body would tell the admin the decision did not go through
+  /// while the member was in fact admitted or denied, and leave the row in
+  /// the pending list — so a 2xx we cannot parse resolves to [appliedStatus]
+  /// and is logged instead of thrown.
+  Future<GroupJoinRequestDecisionModel> _decideGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+    required String decision,
+    required GroupJoinRequestStatus appliedStatus,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/cms/author/groups/$groupId/join-requests/$requestId/$decision',
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode >= 200 && statusCode < 300) {
+        final data = response.data;
+        if (data is Map) {
+          try {
+            return GroupJoinRequestDecisionModel.fromJson(
+              Map<String, dynamic>.from(data),
+            );
+          } on FormatException catch (e) {
+            _logger.error(
+              'Unreadable $decision response for join request $requestId',
+              e,
+            );
+          }
+        }
+
+        _logger.error(
+          'Assuming $decision applied for join request $requestId: '
+          '$statusCode carried no usable body',
+        );
+        return GroupJoinRequestDecisionModel(
+          id: requestId,
+          status: appliedStatus,
+        );
+      }
+
+      _logger.error(
+        'Failed to $decision join request $requestId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to $decision join request',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in ${decision}GroupJoinRequest', e);
+      throw _dioToException(e, 'Failed to $decision join request');
     }
   }
 

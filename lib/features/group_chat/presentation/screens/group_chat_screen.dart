@@ -28,6 +28,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_empty_state.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_error_state.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_header.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_notification_bell.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reply_preview.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_selection_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_thread.dart';
@@ -756,6 +757,8 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       // A confirmed member may always write: a lookup that found no room, or
       // failed outright, still sends — the POST creates the room by group id.
       showComposer: _roomState != _RoomState.resolving,
+      // Members only: the preferences endpoint 404s for anyone else.
+      showBell: true,
     );
   }
 
@@ -764,6 +767,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     required Widget body,
     GroupProfile? profile,
     bool showComposer = false,
+    bool showBell = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final user = ref.watch(userProvider).user;
@@ -791,6 +795,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
                   isDark: isDark,
                   onBack: _goBack,
                   profile: profile,
+                  trailing:
+                      showBell && profile != null
+                          ? GroupChatNotificationBell(groupId: profile.id)
+                          : null,
                 )
                 : GroupChatSelectionHeader(
                   isDark: isDark,

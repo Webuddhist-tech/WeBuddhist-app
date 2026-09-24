@@ -1012,8 +1012,11 @@
       }
     }
   },
-  "group_chat_message_deleted_toast": "{count, plural, =1{सन्देश मेटाइयो} other{सन्देशहरू मेटाइए}}",
   "group_chat_selection_limit": "तपाईं बढीमा {count} सन्देश छान्न सक्नुहुन्छ",
+  "group_chat_mute_notifications": "च्याट सूचनाहरू म्युट गर्नुहोस्",
+  "group_chat_unmute_notifications": "च्याट सूचनाहरू अनम्युट गर्नुहोस्",
+  "group_chat_notifications_muted": "च्याट सूचनाहरू म्युट गरियो",
+  "group_chat_notifications_unmuted": "च्याट सूचनाहरू सक्रिय छन्",
   "group_chat_message_deleted_by_sender": "यो सन्देश मेटाइयो",
   "group_chat_reaction_failed": "तपाईंको प्रतिक्रिया सुरक्षित गर्न सकिएन।",
   "group_chat_reactions_count": "{count, plural, =1{1 प्रतिक्रिया} other{{count} प्रतिक्रियाहरू}}",

@@ -16,14 +16,24 @@ class LibraryRepository {
     required LibraryRemoteDatasource datasource,
     this.segmentPageSize = 500,
     this.relatedPageSize = 20,
+    this.maxPages = 1000,
+    this.segmentCacheSize = 6,
   }) : _datasource = datasource;
 
   final LibraryRemoteDatasource _datasource;
   final int segmentPageSize;
   final int relatedPageSize;
+
+  /// Upper bound on pages walked for one list (500,000 segments at 500).
+  final int maxPages;
+
+  /// Editions whose full segment list stays in memory; the parallel reader
+  /// needs two at once.
+  final int segmentCacheSize;
   final _logger = AppLogger('LibraryRepository');
 
   // Library metadata never changes, so each id is fetched once per session.
+  // The large per-edition and per-segment results are capped (see [_memo]).
   final Map<String, Future<LibraryText>> _texts = {};
   final Map<String, Future<LibraryEdition>> _editions = {};
   final Map<String, Future<List<LibrarySegment>>> _segments = {};
@@ -111,7 +121,7 @@ class LibraryRepository {
 
   /// Every segment of [editionId] that has lines, in reading order.
   Future<List<LibrarySegment>> getEditionSegments(String editionId) {
-    return _memo(_segments, editionId, () async {
+    return _memo(_segments, editionId, capacity: segmentCacheSize, () async {
       final all = await _fetchAllPages(
         (offset) => _datasource.fetchEditionSegments(
           editionId,
@@ -125,7 +135,7 @@ class LibraryRepository {
 
   /// Headings of [editionId]'s table of contents; empty when it has none.
   Future<List<LibraryTocSection>> getTableOfContents(String editionId) {
-    return _memo(_tocs, editionId, () async {
+    return _memo(_tocs, editionId, capacity: segmentCacheSize, () async {
       final List<LibraryTableOfContents> tocs;
       try {
         tocs = await _datasource.fetchTableOfContents(editionId);
@@ -257,7 +267,7 @@ class LibraryRepository {
 
   /// Related segments of [segmentId], split by their text's `commentary_of`.
   Future<LibrarySegmentResources> loadSegmentResources(String segmentId) {
-    return _memo(_resources, segmentId, () async {
+    return _memo(_resources, segmentId, capacity: 200, () async {
       final related = await _fetchAllPages(
         (offset) => _datasource.fetchRelatedSegments(
           segmentId,
@@ -321,32 +331,49 @@ class LibraryRepository {
       error is NotFoundException ||
       (error is DioException && error.response?.statusCode == 404);
 
+  /// Caches [load] under [key]; failures are dropped so they retry. With
+  /// [capacity] the least recently used entries are evicted beyond it.
   Future<T> _memo<T>(
     Map<String, Future<T>> cache,
     String key,
-    Future<T> Function() load,
-  ) {
-    return cache.putIfAbsent(key, () async {
+    Future<T> Function() load, {
+    int? capacity,
+  }) {
+    final hit = cache.remove(key);
+    if (hit != null) return cache[key] = hit;
+    final future = () async {
       try {
         return await load();
       } catch (_) {
         cache.remove(key);
         rethrow;
       }
-    });
+    }();
+    cache[key] = future;
+    if (capacity != null) {
+      while (cache.length > capacity) {
+        cache.remove(cache.keys.first);
+      }
+    }
+    return future;
   }
 
+  /// Stops on a page with nothing new, and after [maxPages], so a server
+  /// that keeps saying `has_more` without advancing cannot loop it.
   Future<List<LibrarySegment>> _fetchAllPages(
     Future<LibrarySegmentPage> Function(int offset) fetchPage,
   ) async {
     final items = <LibrarySegment>[];
+    final seen = <String>{};
     var offset = 0;
-    while (true) {
+    for (var i = 0; i < maxPages; i++) {
       final page = await fetchPage(offset);
-      items.addAll(page.items);
-      if (!page.hasMore || page.items.isEmpty) break;
+      final fresh = page.items.where((s) => seen.add(s.id)).toList();
+      items.addAll(fresh);
+      if (!page.hasMore || fresh.isEmpty) return items;
       offset += page.items.length;
     }
+    _logger.warning('Stopped paging after $maxPages pages');
     return items;
   }
 }

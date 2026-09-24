@@ -1012,8 +1012,11 @@
       }
     }
   },
-  "group_chat_message_deleted_toast": "{count, plural, =1{संदेश हटा दिया गया} other{संदेश हटा दिए गए}}",
   "group_chat_selection_limit": "आप अधिकतम {count} संदेश चुन सकते हैं",
+  "group_chat_mute_notifications": "चैट सूचनाएँ म्यूट करें",
+  "group_chat_unmute_notifications": "चैट सूचनाएँ अनम्यूट करें",
+  "group_chat_notifications_muted": "चैट सूचनाएँ म्यूट की गईं",
+  "group_chat_notifications_unmuted": "चैट सूचनाएँ चालू हैं",
   "group_chat_message_deleted_by_sender": "यह संदेश हटा दिया गया",
   "group_chat_reaction_failed": "आपकी प्रतिक्रिया सहेजी नहीं जा सकी।",
   "group_chat_reactions_count": "{count, plural, =1{1 प्रतिक्रिया} other{{count} प्रतिक्रियाएँ}}",

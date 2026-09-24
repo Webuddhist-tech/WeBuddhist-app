@@ -3466,6 +3466,30 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load notification settings.'**
   String get group_notifications_load_failed;
 
+  /// No description provided for @group_chat_mute_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute chat notifications'**
+  String get group_chat_mute_notifications;
+
+  /// No description provided for @group_chat_unmute_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute chat notifications'**
+  String get group_chat_unmute_notifications;
+
+  /// No description provided for @group_chat_notifications_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat notifications muted'**
+  String get group_chat_notifications_muted;
+
+  /// No description provided for @group_chat_notifications_unmuted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat notifications on'**
+  String get group_chat_notifications_unmuted;
+
   /// No description provided for @group_leave.
   ///
   /// In en, this message translates to:
@@ -3543,6 +3567,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to send request. Please try again.'**
   String get group_join_request_error;
+
+  /// No description provided for @group_join_requests_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Join requests'**
+  String get group_join_requests_title;
+
+  /// No description provided for @group_join_requests_admit.
+  ///
+  /// In en, this message translates to:
+  /// **'Admit'**
+  String get group_join_requests_admit;
+
+  /// No description provided for @group_join_requests_deny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny'**
+  String get group_join_requests_deny;
+
+  /// No description provided for @group_join_requests_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get group_join_requests_empty;
+
+  /// No description provided for @group_join_requests_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load join requests. Please try again.'**
+  String get group_join_requests_load_error;
+
+  /// No description provided for @group_join_requests_admit_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to admit this request. Please try again.'**
+  String get group_join_requests_admit_error;
+
+  /// No description provided for @group_join_requests_deny_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to deny this request. Please try again.'**
+  String get group_join_requests_deny_error;
 
   /// No description provided for @group_members_only_title.
   ///
@@ -4585,12 +4651,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
   String group_chat_delete_failed(int count);
-
-  /// No description provided for @group_chat_message_deleted_toast.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{Message deleted} other{Messages deleted}}'**
-  String group_chat_message_deleted_toast(int count);
 
   /// No description provided for @group_chat_selection_limit.
   ///

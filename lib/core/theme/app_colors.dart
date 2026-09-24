@@ -14,6 +14,10 @@ class AppColors {
   static const Color primaryContainer = Color(0xFFFFEBEE); // Red 50
   static const Color primarySurface = Color(0xFFFFF5F5);
 
+  /// Unread count pill and unread dot for chats. Logo red in both themes.
+  static const Color unreadBadge = primary;
+  static const Color unreadBadgeDark = primary;
+
   // ============ Legacy gold (AI + onboarding only) ============
   /// Previous gold primary — kept so AI / onboarding stay visually unchanged
   /// while the rest of the app moves to logo red.

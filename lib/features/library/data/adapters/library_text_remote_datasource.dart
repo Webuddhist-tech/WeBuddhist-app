@@ -122,14 +122,20 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       editionId: textId,
       limit: _searchLimit,
     );
+    // A hit missing its ids cannot be opened; skip it, not the whole search.
     final byEdition = <String, List<LibrarySearchResult>>{};
     for (final result in results) {
+      if (result.editionId.isEmpty || result.textId.isEmpty) continue;
       byEdition.putIfAbsent(result.editionId, () => []).add(result);
     }
+    final texts = await Future.wait(
+      byEdition.values.map((hits) => _library.getText(hits.first.textId)),
+    );
 
     final sources = <MultilingualSourceResult>[];
+    var index = 0;
     for (final entry in byEdition.entries) {
-      final text = await _library.getText(entry.value.first.textId);
+      final text = texts[index++];
       final seen = <String>{};
       final matches = <MultilingualSegmentMatch>[];
       for (final result in entry.value) {

@@ -1918,6 +1918,19 @@ class AppLocalizationsBo extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོ།';
+
+  @override
+  String get group_chat_unmute_notifications => 'ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་ཡོད་བཟོ།';
+
+  @override
+  String get group_chat_notifications_muted =>
+      'ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོས་ཟིན།';
+
+  @override
+  String get group_chat_notifications_unmuted => 'ཁ་བརྡའི་བརྡ་ཐོ་ཁ་ཕྱེ་ཟིན།';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -1959,6 +1972,30 @@ class AppLocalizationsBo extends AppLocalizations {
   @override
   String get group_join_request_error =>
       'རེ་ཞུ་བཏང་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
+
+  @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
 
   @override
   String get group_members_only_title => 'ཚོགས་མི་ཁོ་ན།';
@@ -2605,17 +2642,6 @@ class AppLocalizationsBo extends AppLocalizations {
       locale: localeName,
       other: 'འཕྲིན་ཐུང་ $count སུབ་མ་ཐུབ།',
       one: 'འཕྲིན་ཐུང་སུབ་མ་ཐུབ།',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'འཕྲིན་ཐུང་རྣམས་བསུབས་ཟིན།',
-      one: 'འཕྲིན་ཐུང་བསུབས་ཟིན།',
     );
     return '$_temp0';
   }

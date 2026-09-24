@@ -51,6 +51,13 @@ LibraryTestServer _server() => LibraryTestServer({
         'context': 'defghi',
         'score': 3,
       },
+      // Missing ids: skipped rather than failing the search.
+      {
+        'edition_id': 'E1',
+        'segment_ids': ['s1'],
+        'context': 'abc',
+        'score': 1,
+      },
     ]);
   },
 });

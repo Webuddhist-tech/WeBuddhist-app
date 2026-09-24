@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/repositories/library_repository.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/my_recitation_collections_remote_datasource.dart';
@@ -21,11 +22,13 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
   final LibraryRepository _library;
   final MyRecitationCollectionsRemoteDatasource _collections;
   final String _tagId;
+  final _logger = AppLogger('LibraryRecitationsRemoteDatasource');
 
   static const int _defaultLimit = 20;
   static const int _maxLimit = 100;
   static const int _minTitleQueryLength = 2;
   static const int _collectionsPageSize = 20;
+  static const int _maxCollectionPages = 50;
 
   /// `search` becomes the library title filter; `total` is synthesized from
   /// `has_more` so [RecitationsPageResponse.hasMore] keeps working, and
@@ -39,9 +42,15 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
     final skip = params.skip ?? 0;
     final limit = (params.limit ?? _defaultLimit).clamp(1, _maxLimit);
     final search = params.search?.trim();
+    // Collections come from another API: when they fail the chants still
+    // list. Handling the error here also keeps it from going unobserved if
+    // the chant request below throws first.
     final collectionsFuture =
         params.shouldIncludeCollections
-            ? _loadAllCollections()
+            ? _loadAllCollections().catchError((Object error) {
+              _logger.warning('Recitation collections failed', error);
+              return const <MyRecitationListCollectionModel>[];
+            })
             : Future.value(const <MyRecitationListCollectionModel>[]);
 
     List<LibraryText> texts = const [];
@@ -85,18 +94,25 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
     );
   }
 
+  /// Pages by the offset it asked for, not the one echoed back, and stops on
+  /// a page with nothing new so a server ignoring `skip` cannot loop it.
   Future<List<MyRecitationListCollectionModel>> _loadAllCollections() async {
     final rows = <MyRecitationListCollectionModel>[];
+    final seen = <String>{};
     var skip = 0;
-    while (true) {
+    for (var i = 0; i < _maxCollectionPages; i++) {
       final page = await _collections.fetchCollections(
         skip: skip,
         limit: _collectionsPageSize,
       );
-      rows.addAll(page.collections.map(_toListModel));
+      final fresh = page.collections.where((c) => seen.add(c.id)).toList();
+      rows.addAll(fresh.map(_toListModel));
       skip += page.collections.length;
-      if (page.collections.isEmpty || !page.hasMore) break;
+      if (fresh.isEmpty || skip >= page.total) return rows;
     }
+    _logger.warning(
+      'Stopped listing collections after $_maxCollectionPages pages',
+    );
     return rows;
   }
 
