@@ -62,6 +62,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// onboarding prefetch from re-applying `isLoggedIn: true` after logout.
   int _authEpoch = 0;
 
+  /// Bumped as each analytics identify starts; see
+  /// [_resetAnalyticsUnlessReidentified].
+  int _identifications = 0;
+
   /// Prevents overlapping background onboarding refetches.
   bool _onboardingFetchInFlight = false;
 
@@ -344,9 +348,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> handleSessionExpired() async {
     _logger.info('Session permanently expired — routing to login');
     _invalidateAuthSession();
+    final identifications = _identifications;
     await _localLogoutUseCase(const NoParams());
     // As on logout: the next session must not carry this user's identity.
-    await _analytics.reset();
+    await _resetAnalyticsUnlessReidentified(identifications);
   }
 
   Future<void> _handleAuthFailure() async {
@@ -499,6 +504,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // while the JWT is still valid. Awaited below, before credentials go.
     final pushUnregister = _unregisterPushDevice();
     _invalidateAuthSession();
+    final identifications = _identifications;
     ref.read(cacheInterceptorProvider).clearUserScoped();
 
     // Best-effort flush of any unsynced mala counts while the token is still
@@ -543,7 +549,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _logger.warning('Failed to cancel notifications on logout: $e');
     }
 
-    await _analytics.reset();
+    await _resetAnalyticsUnlessReidentified(identifications);
 
     _logger.info('User logged out, auth and user state cleared');
   }
@@ -728,10 +734,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String userId,
     required bool isGuest,
   }) async {
+    _identifications++;
     await _analytics.identify(
       userId: userId,
       properties: {AnalyticsProperties.isGuest: isGuest},
     );
+  }
+
+  /// Resets analytics unless a login identified its user since
+  /// [identifications] was read: the login screen shows as soon as the
+  /// session is invalidated, and that user must not be reset to anonymous.
+  /// Keyed on identification, not the auth epoch, because a login that is
+  /// started and then cancelled bumps the epoch without replacing the old
+  /// identity.
+  Future<void> _resetAnalyticsUnlessReidentified(int identifications) async {
+    if (_identifications != identifications) return;
+    await _analytics.reset();
   }
 
   Future<void> _markGuestSession() async {
