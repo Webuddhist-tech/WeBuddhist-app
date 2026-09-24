@@ -57,6 +57,7 @@ void main() {
   test('item and collection completion carry progress and ids', () {
     analytics.recitationCollectionItemCompleted(
       collectionId: 'c1',
+      groupId: 'g1',
       textId: 't9',
       completedCount: 4,
       itemCount: 4,
@@ -69,6 +70,7 @@ void main() {
     ]);
     expect(service.events.first.properties, {
       'collection_id': 'c1',
+      'group_id': 'g1',
       'text_id': 't9',
       'completed_count': 4,
       'item_count': 4,

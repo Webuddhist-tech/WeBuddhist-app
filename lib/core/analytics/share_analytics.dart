@@ -44,12 +44,14 @@ class ShareAnalytics {
     String? targetId,
     String? format,
     String? method,
+    String? groupId,
   }) {
     _analytics.trackInBackground(AnalyticsEvents.contentShared, {
       AnalyticsProperties.surface: surface.key,
       AnalyticsProperties.targetId: targetId,
       AnalyticsProperties.format: format,
       AnalyticsProperties.method: method,
+      AnalyticsProperties.groupId: groupId,
     });
   }
 }

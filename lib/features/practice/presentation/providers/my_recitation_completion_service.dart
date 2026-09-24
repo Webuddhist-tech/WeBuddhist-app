@@ -92,6 +92,7 @@ class MyRecitationCompletionService {
     final analytics = _ref.read(groupAnalyticsProvider);
     analytics.recitationCollectionItemCompleted(
       collectionId: collectionId,
+      groupId: null,
       textId: currentItem.textId,
       completedCount: completedCount,
       itemCount: items.length,

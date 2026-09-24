@@ -121,10 +121,12 @@ class GroupEventAnalytics {
   /// A meeting, video or web link on the event was opened.
   void eventLinkOpened({
     required String eventId,
+    required String groupId,
     required GroupEventLinkKind kind,
   }) {
     _analytics.trackInBackground(AnalyticsEvents.groupEventLinkOpened, {
       AnalyticsProperties.eventId: eventId,
+      AnalyticsProperties.groupId: groupId,
       AnalyticsProperties.linkType: kind.name,
     });
   }

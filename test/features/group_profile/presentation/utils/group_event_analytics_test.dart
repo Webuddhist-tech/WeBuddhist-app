@@ -72,7 +72,11 @@ void main() {
 
   test('leave and link open fire their own events', () {
     analytics.eventLeft(eventId: 'e1', groupId: 'g1');
-    analytics.eventLinkOpened(eventId: 'e1', kind: GroupEventLinkKind.meeting);
+    analytics.eventLinkOpened(
+      eventId: 'e1',
+      groupId: 'g1',
+      kind: GroupEventLinkKind.meeting,
+    );
 
     expect(service.eventNames, [
       AnalyticsEvents.groupEventLeft,
@@ -80,6 +84,7 @@ void main() {
     ]);
     expect(service.events.last.properties, {
       'event_id': 'e1',
+      'group_id': 'g1',
       'link_type': 'meeting',
     });
   });

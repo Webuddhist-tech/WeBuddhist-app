@@ -65,6 +65,8 @@ class _GroupEventDetailScreenState
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
+  // The loaded event's group, for actions that only know the event id.
+  String? _groupId;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +149,7 @@ class _GroupEventDetailScreenState
     );
     final participants = participantsState.participants;
 
+    _groupId = event.groupId;
     if (!_viewTracked) {
       _viewTracked = true;
       ref
@@ -737,7 +740,11 @@ class _GroupEventDetailScreenState
     if (!mounted || !ShareAnalytics.wasUsed(result)) return;
     ref
         .read(shareAnalyticsProvider)
-        .contentShared(surface: ShareSurface.event, targetId: widget.eventId);
+        .contentShared(
+          surface: ShareSurface.event,
+          targetId: widget.eventId,
+          groupId: _groupId,
+        );
   }
 
   void _showError(String message) {
@@ -1087,7 +1094,12 @@ class _EventInfoCard extends StatelessWidget {
           ],
           for (final link in meetingLinks) ...[
             const SizedBox(height: 10),
-            _EventLinkText(link: link, eventId: event.id, isDark: isDark),
+            _EventLinkText(
+              link: link,
+              eventId: event.id,
+              groupId: event.groupId,
+              isDark: isDark,
+            ),
           ],
           if (onParticipationChanged != null) ...[
             const SizedBox(height: 14),
@@ -1126,7 +1138,12 @@ class _EventInfoCard extends StatelessWidget {
             _EventSectionLabel(text: context.l10n.connect_event_links_title),
             for (final link in otherLinks) ...[
               const SizedBox(height: 10),
-              _EventLinkText(link: link, eventId: event.id, isDark: isDark),
+              _EventLinkText(
+              link: link,
+              eventId: event.id,
+              groupId: event.groupId,
+              isDark: isDark,
+            ),
             ],
           ],
         ],
@@ -1311,11 +1328,13 @@ class _EventInfoRow extends StatelessWidget {
 class _EventLinkText extends ConsumerWidget {
   final GroupEventLink link;
   final String eventId;
+  final String groupId;
   final bool isDark;
 
   const _EventLinkText({
     required this.link,
     required this.eventId,
+    required this.groupId,
     required this.isDark,
   });
 
@@ -1334,6 +1353,7 @@ class _EventLinkText extends ConsumerWidget {
             .read(groupEventAnalyticsProvider)
             .eventLinkOpened(
               eventId: eventId,
+              groupId: groupId,
               kind: GroupEventLinkUtils.kindOf(link),
             );
         _openLink(link.url);
@@ -1913,7 +1933,11 @@ class _VideoLinkCard extends ConsumerWidget {
   void _play(BuildContext context, WidgetRef ref, String? videoId) {
     ref
         .read(groupEventAnalyticsProvider)
-        .eventLinkOpened(eventId: event.id, kind: GroupEventLinkKind.video);
+        .eventLinkOpened(
+          eventId: event.id,
+          groupId: event.groupId,
+          kind: GroupEventLinkKind.video,
+        );
     if (videoId == null) {
       _openLink(link.url);
       return;

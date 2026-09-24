@@ -20,6 +20,7 @@ void main() {
       'target_id': 'p1',
       'format': 'image',
       'method': null,
+      'group_id': null,
     });
   });
 

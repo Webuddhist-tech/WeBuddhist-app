@@ -63,6 +63,7 @@ class GroupAnalytics {
   /// One item of a collection was confirmed complete for today.
   void recitationCollectionItemCompleted({
     required String collectionId,
+    required String? groupId,
     required String textId,
     required int completedCount,
     required int itemCount,
@@ -70,6 +71,7 @@ class GroupAnalytics {
     _analytics
         .trackInBackground(AnalyticsEvents.recitationCollectionItemCompleted, {
           AnalyticsProperties.collectionId: collectionId,
+          AnalyticsProperties.groupId: groupId,
           AnalyticsProperties.textId: textId,
           AnalyticsProperties.completedCount: completedCount,
           AnalyticsProperties.itemCount: itemCount,
