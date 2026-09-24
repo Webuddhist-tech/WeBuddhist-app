@@ -251,8 +251,9 @@ class _GroupEventDetailScreenState
     final isHybrid = isGroupEventHybrid(event);
 
     final attendButton = ElevatedButton(
+      // Leaving mid-entry would still navigate into the left event.
       onPressed:
-          _isSubmitting
+          _isSubmitting || _isOpeningPuja
               ? null
               : () => isAttending ? _leaveEvent(event) : _attendEvent(event),
       style: ElevatedButton.styleFrom(
