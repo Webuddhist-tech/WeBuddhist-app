@@ -10,6 +10,9 @@
 # The library (texts) API has production values only for now, so dev and
 # staging fall back to them unless DEV_/STAGING_LIBRARY_* are set.
 #
+# Tolgee over-the-air UI strings are enabled whenever TOLGEE_CDN_URL is set,
+# and nothing else provides it in CI, so every flavor writes it here.
+#
 # Mirrors the Codemagic "Create environment files" pre-build step.
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -20,6 +23,13 @@ if [[ -z "${LIBRARY_CHANTS_TAG_ID:-}" ]]; then
   echo "::error::LIBRARY_CHANTS_TAG_ID secret is not set"
   exit 1
 fi
+
+# Tolgee Content Delivery is public and shared by every flavor. The workflows
+# pass the TOLGEE_CDN_URL / TOLGEE_ENABLED repository secrets; an unset secret
+# arrives as an empty string, so a blank URL falls back to the shared project
+# rather than silently disabling Tolgee. Set TOLGEE_ENABLED=false to build
+# without over-the-air strings; the app then shows the bundled ARB only.
+TOLGEE_CDN_URL="${TOLGEE_CDN_URL:-https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist}"
 
 # --- Development -----------------------------------------------------------
 {
@@ -33,6 +43,8 @@ fi
   echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${DEV_CLARITY_ENABLED-}"
+  echo "TOLGEE_CDN_URL=${TOLGEE_CDN_URL}"
+  echo "TOLGEE_ENABLED=${TOLGEE_ENABLED-}"
 } > .env.dev
 
 # --- Staging ---------------------------------------------------------------
@@ -47,6 +59,8 @@ fi
   echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${STAGING_CLARITY_ENABLED-}"
+  echo "TOLGEE_CDN_URL=${TOLGEE_CDN_URL}"
+  echo "TOLGEE_ENABLED=${TOLGEE_ENABLED-}"
 } > .env.staging
 
 # --- Production ------------------------------------------------------------
@@ -65,6 +79,8 @@ fi
   # without Clarity.
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${CLARITY_ENABLED-}"
+  echo "TOLGEE_CDN_URL=${TOLGEE_CDN_URL}"
+  echo "TOLGEE_ENABLED=${TOLGEE_ENABLED-}"
 } > .env.prod
 
 echo "Created .env.dev, .env.staging, .env.prod"
