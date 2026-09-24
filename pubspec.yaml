@@ -152,7 +152,7 @@ dependencies:
   firebase_crashlytics: ^5.2.4
   # Required by Airbridge SDK for uninstall tracking (RemoteMessage at R8 minify time)
   firebase_messaging: ^16.4.1
-  posthog_flutter: ^5.24.0
+  posthog_flutter: ^5.44.3
   package_info_plus: ^9.0.0
   flutter_image_compress: ^2.4.0
   pali_script_convertor: ^1.0.1
