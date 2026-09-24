@@ -88,7 +88,12 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
 2. `ReaderInitialLayoutApplier` (owned by `ReaderScreen`) runs once when the
    text language and `/texts/{id}/languages` are known: seeds the layout into
    `ReaderDualSettingsNotifier` and fills the translation (remembered pick →
-   default → content language) through `fillSecondaryWithLanguages`.
+   default → content language) through `fillSecondaryWithLanguages`, which
+   tries each candidate until one has a version. While the languages request
+   has failed it only seeds the layers and script; the sheet's retry brings
+   the list and the applier then runs for real. A stored "on" with nothing to
+   fill is held off for the visit (`markTranslationUnavailable`) so the sheet
+   never claims a translation the screen lacks.
 3. Seeds live in memory for the visit. What the person changes goes to
    `readerContextLayoutProvider(context)` and wins on every later open in that
    context; untouched fields keep following the resolver.

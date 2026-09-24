@@ -154,6 +154,10 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// switch never reads "on" with nothing underneath.
   bool _seededTranslationOn = false;
 
+  /// True while a stored "on" has nothing to show on this text, so the switch
+  /// reads off (and the original on) until the person turns it on here.
+  bool _translationUnavailable = false;
+
   // "User has edited this slot" flags. Needed because the slot config alone
   // can't tell "untouched defaults" apart from "user picked something that
   // happens to match the defaults" (e.g. picking English when defaults are
@@ -192,8 +196,12 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
             ? prefs.scriptFor(language)
             : _seed?.originalScriptId;
     final next = state.copyWith(
-      secondaryEnabled: prefs.translationOn ?? _seededTranslationOn,
-      originalVisible: prefs.originalVisible ?? _seed?.originalVisible ?? true,
+      secondaryEnabled:
+          !_translationUnavailable &&
+          (prefs.translationOn ?? _seededTranslationOn),
+      originalVisible:
+          _translationUnavailable ||
+          (prefs.originalVisible ?? _seed?.originalVisible ?? true),
       originalScriptId: script,
       clearOriginalScriptId: script == null,
     );
@@ -217,13 +225,26 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     _recompute();
   }
 
+  /// Reads a stored "on" as off for this visit because the text has nothing
+  /// to show under it (outside the library). The store keeps the pick for
+  /// the next text; the next [setSecondaryEnabled] here lifts the hold.
+  void markTranslationUnavailable() {
+    if (isLibrary || _translationUnavailable) return;
+    _translationUnavailable = true;
+    _recompute();
+  }
+
   void setSecondaryEnabled(bool enabled) {
     if (state.secondaryEnabled == enabled) return;
     _secondaryEnabledGeneration++;
+    _translationUnavailable = false;
     if (isLibrary) {
       _ref.read(readerSecondaryEnabledProvider.notifier).setEnabled(enabled);
     } else {
+      // The store may already hold this value (a held-off "on"), in which
+      // case it does not notify; recompute either way.
       _store.setTranslationOn(enabled);
+      _recompute();
     }
     // Turning the translation off must not leave nothing on screen.
     if (!enabled) setOriginalVisible(true);

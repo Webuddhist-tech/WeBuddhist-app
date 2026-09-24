@@ -29,6 +29,35 @@ List<String> translationCandidates({
   ];
 }
 
+/// What [ReaderInitialLayoutApplier.maybeApply] does with what it has.
+enum ReaderInitialLayoutStep {
+  /// The text or its list of translations is still loading, or the layout
+  /// has already been applied.
+  wait,
+
+  /// The list of translations failed to load: seed the layers and the script
+  /// so the sheet reads right, and leave the translation to the sheet's
+  /// retry, which brings the list and runs the applier again.
+  seedOnly,
+
+  /// Both are known: seed and fill the translation, once.
+  apply,
+}
+
+/// Picks the step for one call: [ReaderInitialLayoutStep.apply] finishes the
+/// job; a failed languages request is [ReaderInitialLayoutStep.seedOnly] and
+/// never counts as applied, or a retry could no longer fill the translation.
+ReaderInitialLayoutStep readerInitialLayoutStep({
+  required bool applied,
+  required bool hasText,
+  required AsyncValue<Object?> languages,
+}) {
+  if (applied || !hasText) return ReaderInitialLayoutStep.wait;
+  if (languages.hasValue) return ReaderInitialLayoutStep.apply;
+  if (languages.hasError) return ReaderInitialLayoutStep.seedOnly;
+  return ReaderInitialLayoutStep.wait;
+}
+
 /// Sets a reader up the first time its text is on screen, once per reader.
 ///
 /// In the library it does what the globe button used to do: fill the
@@ -38,7 +67,9 @@ List<String> translationCandidates({
 /// person's last pick in that context, asks for.
 ///
 /// [maybeApply] is safe to call repeatedly; it waits until both the text's
-/// language and its list of translations are known and then runs once.
+/// language and its list of translations are known and then runs once. While
+/// that list has failed to load it only seeds the layers and the script, and
+/// runs for real once the sheet's retry brings the list.
 class ReaderInitialLayoutApplier {
   final AppLogger _logger = AppLogger('ReaderInitialLayout');
   bool _applied = false;
@@ -48,14 +79,29 @@ class ReaderInitialLayoutApplier {
     required BuildContext context,
     required ReaderParams params,
   }) async {
-    if (_applied) return;
     final textDetail = ref.read(readerNotifierProvider(params)).textDetail;
-    if (textDetail == null) return;
     final languagesAsync = ref.read(readerLanguagesProvider(params.textId));
-    if (!languagesAsync.hasValue && !languagesAsync.hasError) return;
-    _applied = true;
+    final step = readerInitialLayoutStep(
+      applied: _applied,
+      hasText: textDetail != null,
+      languages: languagesAsync,
+    );
+    if (step == ReaderInitialLayoutStep.wait || textDetail == null) return;
 
     final scope = params.settingsScope;
+    if (step == ReaderInitialLayoutStep.seedOnly) {
+      if (scope.context != ReaderLayoutContext.library) {
+        _seed(
+          ref: ref,
+          params: params,
+          textLanguage: textDetail.language,
+          translationLanguages: const [],
+        );
+      }
+      return;
+    }
+    _applied = true;
+
     final languages = languagesAsync.valueOrNull ?? const [];
     try {
       if (scope.context == ReaderLayoutContext.library) {
@@ -107,14 +153,15 @@ class ReaderInitialLayoutApplier {
     );
   }
 
-  Future<void> _applyContext({
+  /// Seeds this visit's defaults for a text in [textLanguage] into the
+  /// context's dual settings. Null in the library, whose settings are left
+  /// alone.
+  ReaderInitialLayout? _seed({
     required WidgetRef ref,
-    required BuildContext context,
     required ReaderParams params,
     required String textLanguage,
-    required String textVersionId,
     required List<String> translationLanguages,
-  }) async {
+  }) {
     final scope = params.settingsScope;
     final layout = resolveInitialLayout(
       context: scope.context,
@@ -129,10 +176,30 @@ class ReaderInitialLayoutApplier {
           const [],
       listLanguage: params.language,
     );
-    if (layout == null) return;
+    if (layout == null) return null;
+    ref
+        .read(readerDualSettingsProvider(scope).notifier)
+        .seed(layout, language: textLanguage);
+    return layout;
+  }
 
+  Future<void> _applyContext({
+    required WidgetRef ref,
+    required BuildContext context,
+    required ReaderParams params,
+    required String textLanguage,
+    required String textVersionId,
+    required List<String> translationLanguages,
+  }) async {
+    final scope = params.settingsScope;
+    final layout = _seed(
+      ref: ref,
+      params: params,
+      textLanguage: textLanguage,
+      translationLanguages: translationLanguages,
+    );
+    if (layout == null) return;
     final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
-    notifier.seed(layout, language: textLanguage);
 
     // The person's own picks in this context win; they may still be loading.
     await ref.read(readerContextLayoutProvider(scope.context).notifier).loaded;
@@ -144,6 +211,7 @@ class ReaderInitialLayoutApplier {
       return;
     }
 
+    final enabledGeneration = notifier.secondaryEnabledGeneration;
     final filled = await fillSecondaryWithLanguages(
       ref: ref,
       context: context,
@@ -156,10 +224,18 @@ class ReaderInitialLayoutApplier {
         fallback: ref.read(contentLanguageProvider),
       ),
     );
-    // A stored "on" already shows through the mirror; only a seeded default
-    // needs switching on, and only now that there is a version to show.
-    if (filled != null && prefs.translationOn == null) {
-      notifier.seedTranslationOn();
+    if (filled != null) {
+      // A stored "on" already shows through the mirror; only a seeded default
+      // needs switching on, and only now that there is a version to show.
+      if (prefs.translationOn == null) notifier.seedTranslationOn();
+      return;
+    }
+    // A stored "on" with nothing to show on this text would leave the sheet
+    // claiming a translation the screen does not have. Hold it off for this
+    // visit, unless the person touched the switch meanwhile: that is theirs.
+    if (prefs.translationOn == true &&
+        notifier.secondaryEnabledGeneration == enabledGeneration) {
+      notifier.markTranslationUnavailable();
     }
   }
 }

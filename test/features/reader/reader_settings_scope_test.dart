@@ -217,6 +217,46 @@ void main() {
       expect(settingsOf(_event).secondaryEnabled, isFalse);
     });
 
+    test('a stored "on" with nothing to show is held off until switched on', () {
+      final store = container.read(
+        readerContextLayoutProvider(ReaderLayoutContext.event).notifier,
+      );
+      store.setTranslationOn(true);
+      store.setOriginalVisible(false);
+
+      final notifier = keep(_event);
+      notifier.seed(const ReaderInitialLayout.asWritten(), language: 'en');
+      expect(settingsOf(_event).secondaryEnabled, isTrue);
+
+      notifier.markTranslationUnavailable();
+      expect(settingsOf(_event).secondaryEnabled, isFalse);
+      expect(settingsOf(_event).originalVisible, isTrue);
+      expect(
+        container
+            .read(readerContextLayoutProvider(ReaderLayoutContext.event))
+            .translationOn,
+        isTrue,
+        reason: 'the pick is kept for the next text in this context',
+      );
+
+      notifier.setSecondaryEnabled(true);
+      expect(settingsOf(_event).secondaryEnabled, isTrue);
+      expect(settingsOf(_event).originalVisible, isFalse);
+    });
+
+    test('hiding the original lifts a held-off translation', () {
+      container
+          .read(readerContextLayoutProvider(ReaderLayoutContext.event).notifier)
+          .setTranslationOn(true);
+      final notifier = keep(_event);
+      notifier.seed(const ReaderInitialLayout.asWritten(), language: 'en');
+      notifier.markTranslationUnavailable();
+
+      notifier.setOriginalVisible(false);
+      expect(settingsOf(_event).secondaryEnabled, isTrue);
+      expect(settingsOf(_event).originalVisible, isFalse);
+    });
+
     test('a stored pick for another language leaves the seed in place', () {
       container
           .read(readerContextLayoutProvider(ReaderLayoutContext.event).notifier)
