@@ -348,6 +348,70 @@ void main() {
       expect(state.needsToCover(1, 9), isFalse);
       expect(state.isPending(1), isFalse, reason: 'the original shows');
     });
+
+    test('a primary that jumped clear of the loaded verses restarts the '
+        'stream there instead of paging through the gap', () async {
+      final fetches = <TextDetailsParams>[];
+      final container = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith((ref, params) async {
+            fetches.add(params);
+            // The primary's verse p7 aligns to the translation's 7..9.
+            final from = params.segmentId == 'p7' ? 7 : 1;
+            return Right<Failure, ReaderResponse>(window(from));
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      const key = SecondaryReaderKey(textId: 'E2', versionId: 'E1');
+      final sub = container.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final notifier = container.read(secondaryReaderProvider(key).notifier);
+      expect(container.read(secondaryReaderProvider(key)).isDetachedFrom(7, 9),
+          isTrue);
+
+      await notifier.cover(7, 9, anchorSegmentId: 'p7');
+
+      final state = container.read(secondaryReaderProvider(key));
+      expect(state.contentBySegmentNumber.keys.toList()..sort(), [7, 8, 9]);
+      expect(fetches.map((f) => (f.segmentId, f.direction)), [
+        (null, 'next'),
+        ('p7', 'next'),
+      ], reason: 'one request at the jump, none for verses 4..6');
+      expect(state.isPending(8), isFalse);
+    });
+
+    test('a jump the translation has nothing near is fetched once', () async {
+      var calls = 0;
+      final container = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith((ref, params) async {
+            calls++;
+            // The anchor has no counterpart: the first page comes back.
+            return Right<Failure, ReaderResponse>(window(1));
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      const key = SecondaryReaderKey(textId: 'E2', versionId: 'E1');
+      final sub = container.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final notifier = container.read(secondaryReaderProvider(key).notifier);
+
+      await notifier.cover(7, 9, anchorSegmentId: 'p7');
+      await notifier.cover(7, 9, anchorSegmentId: 'p7');
+
+      final state = container.read(secondaryReaderProvider(key));
+      expect(calls, 2, reason: 'the first page, then the jump once');
+      expect(state.pagingFailed, isTrue);
+      expect(state.isPending(8), isFalse, reason: 'the original shows');
+    });
   });
 
   group('SecondaryReaderNotifier', () {

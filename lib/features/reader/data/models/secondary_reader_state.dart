@@ -129,6 +129,15 @@ class SecondaryReaderState {
         (hasNextPage && loadedSegments.last.segmentNumber < last);
   }
 
+  /// True when the primary's verses [first]..[last] lie wholly outside the
+  /// loaded ones (the primary jumped), and nothing is in flight. Paging
+  /// would then have to walk the whole gap.
+  bool isDetachedFrom(int first, int last) {
+    if (isAnyLoading || loadedSegments.isEmpty) return false;
+    return last < loadedSegments.first.segmentNumber ||
+        first > loadedSegments.last.segmentNumber;
+  }
+
   String? get firstLoadedSegmentId =>
       loadedSegments.isEmpty ? null : loadedSegments.first.segmentId;
 

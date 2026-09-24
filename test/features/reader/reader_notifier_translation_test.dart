@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/reader/data/datasource/reader_settings_re
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_script_option.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
@@ -291,5 +292,89 @@ void main() {
     expect(state.status, ReaderStatus.loaded);
     expect(fetches.map((f) => f.textId), ['E9']);
     expect(state.openedTranslation, isNull);
+  });
+
+  group('a plan item after another of the same translation', () {
+    ReaderParams item(String segmentId) => ReaderParams(
+      textId: 'E1',
+      segmentId: segmentId,
+      navigationContext: NavigationContext(
+        source: NavigationSource.plan,
+        planTextItems: [
+          PlanTextItem.sourceReference(
+            textId: 'E1',
+            title: "Today's Verses",
+            segmentIds: [segmentId],
+          ),
+        ],
+        currentTextIndex: 0,
+      ),
+    );
+
+    test(
+      'adopts the layout the previous reader, still on screen, set up',
+      () async {
+        final first = item('en-1');
+        final sub1 = container.listen(
+          readerNotifierProvider(first),
+          (_, __) {},
+        );
+        addTearDown(sub1.close);
+        await _loaded(container, first);
+        // The user shows the original on the first item; that carries over.
+        container
+            .read(readerDualSettingsProvider('E1').notifier)
+            .setOriginalVisible(true);
+
+        // pushReplacement: the new reader builds before the old one goes.
+        final second = item('en-2');
+        final sub2 = container.listen(
+          readerNotifierProvider(second),
+          (_, __) {},
+        );
+        addTearDown(sub2.close);
+        final state = await _loaded(container, second);
+
+        expect(state.textDetail?.id, 'E2');
+        expect(state.openedTranslation?.id, 'E1');
+        expect(state.segmentAliases, {'en-2': 'E2-2'});
+        expect(state.loadedSegmentId('en-2'), 'E2-2');
+        expect(
+          fetches.where((f) => f.versionId == null).last.segmentId,
+          'E2-2',
+        );
+        final dual = container.read(readerDualSettingsProvider('E1'));
+        expect(dual.primary.versionId, 'E2');
+        expect(dual.secondary.versionId, 'E1');
+        expect(dual.originalVisible, isTrue);
+      },
+    );
+
+    test('still backs off from a translation the user picked', () async {
+      final first = item('en-1');
+      final sub1 = container.listen(readerNotifierProvider(first), (_, __) {});
+      addTearDown(sub1.close);
+      await _loaded(container, first);
+      container
+          .read(readerDualSettingsProvider('E1').notifier)
+          .replaceSecondary(
+            const ReaderSlotConfig(
+              languageCode: 'zh',
+              languageLabel: 'zh',
+              versionId: 'Z1',
+            ),
+          );
+
+      final second = item('en-2');
+      final sub2 = container.listen(readerNotifierProvider(second), (_, __) {});
+      addTearDown(sub2.close);
+      final state = await _loaded(container, second);
+
+      expect(state.openedTranslation, isNull);
+      expect(
+        container.read(readerDualSettingsProvider('E1')).secondary.versionId,
+        'Z1',
+      );
+    });
   });
 }

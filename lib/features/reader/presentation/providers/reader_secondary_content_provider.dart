@@ -76,13 +76,31 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
 
   bool _covering = false;
 
+  /// The primary segment the stream last started over at, so a jump the
+  /// translation has nothing near is not fetched again on every build.
+  String? _reanchoredAt;
+
   /// Pages until the loaded verses span the primary's [first]..[last], so a
   /// primary that loaded more at once (a pre-merged previous page) is not
   /// left a page ahead. Stops on a failure or a page that adds nothing.
-  Future<void> cover(int first, int last) async {
+  ///
+  /// A primary that jumped clear of the loaded verses (live follow, a jump to
+  /// a far verse) is not walked to page by page: the stream starts over at
+  /// [anchorSegmentId], the primary's first loaded segment.
+  Future<void> cover(int first, int last, {String? anchorSegmentId}) async {
     if (_covering) return;
     _covering = true;
     try {
+      if (anchorSegmentId != null && state.isDetachedFrom(first, last)) {
+        if (_reanchoredAt == anchorSegmentId) return;
+        await _reanchor(anchorSegmentId);
+        if (_disposed) return;
+        if (state.isDetachedFrom(first, last)) {
+          // The translation has nothing near: those verses show the original.
+          state = state.copyWith(pagingFailed: true);
+          return;
+        }
+      }
       for (var i = 0; i < _maxCoverPages; i++) {
         if (_disposed || !state.needsToCover(first, last)) return;
         final before = state.loadedSegments.length;
@@ -105,6 +123,26 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   }
 
   static const _maxCoverPages = 20;
+
+  /// Replaces the loaded verses with the page aligned to the primary's
+  /// [anchorSegmentId]. Headings seen so far are kept: they are keyed by
+  /// section, so a section met again only widens its range.
+  Future<void> _reanchor(String anchorSegmentId) async {
+    _reanchoredAt = anchorSegmentId;
+    state = state.copyWith(isLoading: true, pagingFailed: false);
+    try {
+      final response = await _fetch(
+        segmentId: anchorSegmentId,
+        direction: 'next',
+      );
+      if (_disposed) return;
+      _applyInitial(response);
+    } catch (e, st) {
+      _logger.error('Secondary re-anchor failed for ${key.versionId}', e, st);
+      if (_disposed) return;
+      state = state.copyWith(isLoading: false, pagingFailed: true);
+    }
+  }
 
   /// Extend the secondary forward by one page.
   Future<void> loadNext() async {

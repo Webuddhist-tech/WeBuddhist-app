@@ -301,14 +301,19 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool _secondarySyncScheduled = false;
 
   /// Has the secondary stream page until it spans the primary's loaded
-  /// verses. Scheduled from build whenever it falls short, so it follows
-  /// every primary change: first load, pages either way, a jump.
+  /// verses, or start over there when the primary jumped clear of them.
+  /// Scheduled from build whenever it falls short, so it follows every
+  /// primary change: first load, pages either way, a jump.
   void _scheduleSecondarySync(SecondaryReaderState? secondary) {
     if (_secondarySyncScheduled || secondary == null) return;
     final range =
         ref.read(readerNotifierProvider(widget.params)).content
             ?.segmentNumberRange;
-    if (range == null || !secondary.needsToCover(range.$1, range.$2)) return;
+    if (range == null ||
+        !(secondary.needsToCover(range.$1, range.$2) ||
+            secondary.isDetachedFrom(range.$1, range.$2))) {
+      return;
+    }
     _secondarySyncScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _secondarySyncScheduled = false;
@@ -318,9 +323,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   void _syncSecondary() {
     if (!mounted) return;
-    final range =
-        ref.read(readerNotifierProvider(widget.params)).content
-            ?.segmentNumberRange;
+    final content = ref.read(readerNotifierProvider(widget.params)).content;
+    final range = content?.segmentNumberRange;
     if (range == null) return;
     final dualSettings = ref.read(
       readerDualSettingsProvider(widget.params.textId),
@@ -344,7 +348,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         ),
       ).notifier,
     );
-    notifier.cover(range.$1, range.$2);
+    notifier.cover(
+      range.$1,
+      range.$2,
+      anchorSegmentId: content?.firstSegmentId,
+    );
   }
 
   void _adjustScrollAfterPreviousLoad() {

@@ -204,9 +204,14 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// alone, so the page reads as before while the Languages sheet names the
   /// real original. Anything failing, or a requested verse the root lacks,
   /// keeps the opened edition as the primary.
+  ///
+  /// The layout lives per text, so a reader still on screen (a plan's
+  /// previous item during `pushReplacement`) may already have set it up for
+  /// this translation; this reader then adopts it instead of backing off as
+  /// it does from a layout the user picked.
   Future<void> _openAsTranslation() async {
     final dual = _ref.read(readerDualSettingsProvider(_params.textId).notifier);
-    if (dual.isPrimaryEdited || dual.isSecondaryEdited) return;
+    bool userLayout() => dual.isPrimaryEdited || dual.isSecondaryEdited;
     final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
     final ReaderVersionDetail opened;
     final ReaderVersionDetail root;
@@ -215,10 +220,15 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       opened = await settings.fetchVersionInfo(versionId: _params.textId);
       final rootId = opened.parentId;
       if (rootId == null || rootId.isEmpty) return;
+      if (userLayout() && !_isOpenedUnder(rootId, opened.id)) return;
       root = await settings.fetchVersionInfo(versionId: rootId);
       aliases = await _alignNavigationSegments(root.id);
       final requested = _params.segmentId;
-      if (requested != null && !aliases.containsKey(requested)) {
+      // Already under the root, the root stays the primary regardless; the
+      // repository still places the verse through its own edition.
+      if (requested != null &&
+          !aliases.containsKey(requested) &&
+          !_isOpenedUnder(root.id, opened.id)) {
         _logger.debug('$requested has no verse in ${root.id}; kept as opened');
         return;
       }
@@ -232,18 +242,31 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       _logger.warning('Original of ${_params.textId} not resolved', e);
       return;
     }
-    if (_isDisposed || dual.isPrimaryEdited || dual.isSecondaryEdited) return;
+    if (_isDisposed) return;
+    final adopted = _isOpenedUnder(root.id, opened.id);
+    if (!adopted && userLayout()) return;
     // Same id the primary is about to load with, so the settings listener
     // does not reload it.
     _activeVersionId = root.id;
-    dual.openAsTranslation(
-      original: _slot(root),
-      translation: _slot(opened),
-    );
+    // An adopted layout keeps whatever the user toggled on the other screen.
+    if (!adopted) {
+      dual.openAsTranslation(
+        original: _slot(root),
+        translation: _slot(opened),
+      );
+    }
     state = state.copyWith(
       openedTranslation: _textDetail(opened),
       segmentAliases: aliases,
     );
+  }
+
+  /// True when this text's layout already shows [translationId] as the
+  /// translation of [rootId].
+  bool _isOpenedUnder(String rootId, String translationId) {
+    final dual = _ref.read(readerDualSettingsProvider(_params.textId));
+    return dual.primary.versionId == rootId &&
+        dual.secondary.versionId == translationId;
   }
 
   /// The first page of the translation an opened translation is shown as,
@@ -254,7 +277,9 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     final dual = _ref.read(readerDualSettingsProvider(_params.textId));
     final primaryId = dual.primary.versionId;
     final translationId = dual.secondary.versionId;
-    if (primaryId == null || translationId == null) return;
+    if (!dual.secondaryEnabled || primaryId == null || translationId == null) {
+      return;
+    }
     final key = SecondaryReaderKey(
       textId: primaryId,
       versionId: translationId,
