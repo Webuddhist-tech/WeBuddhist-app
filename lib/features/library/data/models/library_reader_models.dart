@@ -105,6 +105,12 @@ class LibrarySegmentResources {
     required this.hasRootWork,
   });
 
+  /// Commentary editions including those nested under their original.
+  int get commentaryEditionCount => _count(commentaries);
+
+  static int _count(List<LibraryRelatedEdition> cards) =>
+      cards.fold(0, (n, c) => n + 1 + _count(c.translations));
+
   List<LibraryRelatedEdition> of(LibraryResourceKind kind) => switch (kind) {
     LibraryResourceKind.translation => translations,
     LibraryResourceKind.commentary => commentaries,

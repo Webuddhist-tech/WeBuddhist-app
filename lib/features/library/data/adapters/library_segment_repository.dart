@@ -42,7 +42,7 @@ class LibrarySegmentRepository implements SegmentRepositoryInterface {
       textId: '',
       translations: resources.translations.length,
       relatedText: SegmentRelatedTextInfo(
-        commentaries: resources.commentaries.length,
+        commentaries: resources.commentaryEditionCount,
         rootText: resources.rootTexts.length,
         hasRootText: resources.hasRootWork,
       ),

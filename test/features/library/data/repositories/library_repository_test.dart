@@ -683,6 +683,7 @@ void main() {
         final comm = resources.commentaries.first;
         expect(comm.segments.map((s) => s.id), ['c1', 'c2']);
         expect(comm.translations.map((e) => e.editionId), ['e-comm-en']);
+      expect(resources.commentaryEditionCount, 3);
         expect(server.count('/v2/segments/s1/related'), 1);
         expect(server.count('/v2/texts/root'), 1);
         expect(server.count('/v2/texts/comm'), 1);
