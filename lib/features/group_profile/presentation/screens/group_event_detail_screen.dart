@@ -65,8 +65,6 @@ class _GroupEventDetailScreenState
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
-  // The loaded event's group, for actions that only know the event id.
-  String? _groupId;
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +147,6 @@ class _GroupEventDetailScreenState
     );
     final participants = participantsState.participants;
 
-    _groupId = event.groupId;
     if (!_viewTracked) {
       _viewTracked = true;
       ref
@@ -751,12 +748,18 @@ class _GroupEventDetailScreenState
       ),
     );
     if (!mounted || !ShareAnalytics.wasUsed(result)) return;
+    // Read at share time: the AppBar share works before the event loads, and
+    // the load usually lands while the share sheet is open.
+    final groupId = ref
+        .read(groupEventDetailProvider(widget.eventId))
+        .valueOrNull
+        ?.fold((_) => null, (event) => event.groupId);
     ref
         .read(shareAnalyticsProvider)
         .contentShared(
           surface: ShareSurface.event,
           targetId: widget.eventId,
-          groupId: _groupId,
+          groupId: groupId,
         );
   }
 
