@@ -80,6 +80,11 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   /// translation has nothing near is not fetched again on every build.
   String? _reanchoredAt;
 
+  /// The primary's verses when starting over at [_reanchoredAt] failed. The
+  /// retry waits for the primary to move (another page, another jump) so a
+  /// failure is not refetched on every build.
+  (int, int)? _reanchorFailedFor;
+
   /// Pages until the loaded verses span the primary's [first]..[last], so a
   /// primary that loaded more at once (a pre-merged previous page) is not
   /// left a page ahead. Stops on a failure or a page that adds nothing.
@@ -92,8 +97,11 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
     _covering = true;
     try {
       if (anchorSegmentId != null && state.isDetachedFrom(first, last)) {
-        if (_reanchoredAt == anchorSegmentId) return;
-        await _reanchor(anchorSegmentId);
+        if (_reanchoredAt == anchorSegmentId) {
+          final failedFor = _reanchorFailedFor;
+          if (failedFor == null || failedFor == (first, last)) return;
+        }
+        await _reanchor(anchorSegmentId, (first, last));
         if (_disposed) return;
         if (state.isDetachedFrom(first, last)) {
           // The translation has nothing near: those verses show the original.
@@ -127,19 +135,26 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   /// Replaces the loaded verses with the page aligned to the primary's
   /// [anchorSegmentId]. Headings seen so far are kept: they are keyed by
   /// section, so a section met again only widens its range.
-  Future<void> _reanchor(String anchorSegmentId) async {
+  Future<void> _reanchor(String anchorSegmentId, (int, int) primary) async {
     _reanchoredAt = anchorSegmentId;
+    _reanchorFailedFor = null;
+    final params = TextDetailsParams(
+      textId: key.textId,
+      versionId: key.versionId,
+      segmentId: anchorSegmentId,
+      direction: 'next',
+    );
     state = state.copyWith(isLoading: true, pagingFailed: false);
     try {
-      final response = await _fetch(
-        segmentId: anchorSegmentId,
-        direction: 'next',
-      );
+      final response = await _fetchParams(params);
       if (_disposed) return;
       _applyInitial(response);
     } catch (e, st) {
       _logger.error('Secondary re-anchor failed for ${key.versionId}', e, st);
       if (_disposed) return;
+      // The failed result stays cached; drop it so the retry refetches.
+      _ref.invalidate(textDetailsFutureProvider(params));
+      _reanchorFailedFor = primary;
       state = state.copyWith(isLoading: false, pagingFailed: true);
     }
   }

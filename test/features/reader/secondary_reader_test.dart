@@ -384,6 +384,50 @@ void main() {
       expect(state.isPending(8), isFalse);
     });
 
+    test('a failed restart is retried once the primary moves, not on every '
+        'build', () async {
+      final jumps = <TextDetailsParams>[];
+      final container = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith((ref, params) async {
+            if (params.segmentId != 'p7') {
+              return Right<Failure, ReaderResponse>(window(1));
+            }
+            jumps.add(params);
+            // Offline for the first try only.
+            if (jumps.length == 1) {
+              return const Left<Failure, ReaderResponse>(
+                NetworkFailure('offline'),
+              );
+            }
+            return Right<Failure, ReaderResponse>(window(7));
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      const key = SecondaryReaderKey(textId: 'E2', versionId: 'E1');
+      final sub = container.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final notifier = container.read(secondaryReaderProvider(key).notifier);
+
+      await notifier.cover(7, 9, anchorSegmentId: 'p7');
+      expect(container.read(secondaryReaderProvider(key)).pagingFailed, isTrue);
+      // Rebuilds with the primary where it was ask nothing more.
+      await notifier.cover(7, 9, anchorSegmentId: 'p7');
+      expect(jumps, hasLength(1));
+
+      // The primary loads its next page: the jump is fetched afresh.
+      await notifier.cover(7, 12, anchorSegmentId: 'p7');
+
+      final state = container.read(secondaryReaderProvider(key));
+      expect(jumps, hasLength(2));
+      expect(state.contentBySegmentNumber.keys.toList()..sort(), [7, 8, 9]);
+      expect(state.pagingFailed, isFalse);
+    });
+
     test('a jump the translation has nothing near is fetched once', () async {
       var calls = 0;
       final container = ProviderContainer(
