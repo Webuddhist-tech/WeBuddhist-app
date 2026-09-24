@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_member.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
@@ -11,6 +13,10 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   int removeCalls = 0;
   int? lastBanDays;
   String? lastReason;
+  final List<int> requestedSkips = [];
+  GroupMembersPage? firstPage;
+  Completer<GroupMembersPage>? pendingPage;
+  GroupMembersPage? pageAfterRemoval;
 
   @override
   Future<Either<Failure, GroupMembersPage>> getGroupMembers(
@@ -18,16 +24,25 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
+    requestedSkips.add(skip);
+    if (firstPage != null && requestedSkips.length == 1) {
+      return Right(firstPage!);
+    }
+    if (pendingPage != null && requestedSkips.length == 2) {
+      final page = await pendingPage!.future;
+      return Right(page);
+    }
     return Right(
-      GroupMembersPage(
-        members: const [
-          GroupMember(userId: 'u1', username: 'a', fullname: 'A'),
-          GroupMember(userId: 'u2', username: 'b', fullname: 'B'),
-        ],
-        skip: 0,
-        limit: limit,
-        totalMembers: 2,
-      ),
+      pageAfterRemoval ??
+          GroupMembersPage(
+            members: const [
+              GroupMember(userId: 'u1', username: 'a', fullname: 'A'),
+              GroupMember(userId: 'u2', username: 'b', fullname: 'B'),
+            ],
+            skip: skip,
+            limit: limit,
+            totalMembers: 2,
+          ),
     );
   }
 
@@ -86,6 +101,77 @@ void main() {
     expect(removed, isFalse);
     expect(notifier.state.members, hasLength(2));
     expect(notifier.state.totalMembers, 2);
+    notifier.dispose();
+  });
+
+  test('removal discards an in-flight page and reloads from the new offset', () async {
+    final first = List<GroupMember>.generate(
+      20,
+      (index) => GroupMember(
+        userId: 'u$index',
+        username: 'user$index',
+        fullname: 'User $index',
+      ),
+    );
+    final shiftedPage = List<GroupMember>.generate(
+      20,
+      (index) => GroupMember(
+        userId: 'u${index + 21}',
+        username: 'user${index + 21}',
+        fullname: 'User ${index + 21}',
+      ),
+    );
+    final correctedPage = [
+      GroupMember(userId: 'u20', username: 'user20', fullname: 'User 20'),
+      ...shiftedPage.take(19),
+    ];
+    final repository = _FakeRepository()
+      ..firstPage = GroupMembersPage(
+        members: first,
+        skip: 0,
+        limit: 20,
+        totalMembers: 40,
+      )
+      ..pendingPage = Completer<GroupMembersPage>()
+      ..pageAfterRemoval = GroupMembersPage(
+        members: correctedPage,
+        skip: 19,
+        limit: 20,
+        totalMembers: 50,
+      );
+    var profileRefreshCount = 0;
+    final notifier = GroupMembersNotifier(
+      repository: repository,
+      groupId: 'g1',
+      onMemberRemoved: () => profileRefreshCount++,
+    );
+    await notifier.loadInitial();
+
+    final loading = notifier.loadMore();
+    final removed = await notifier.removeMember(userId: 'u0', banDurationDays: 7);
+    repository.pendingPage!.complete(
+      GroupMembersPage(
+        members: shiftedPage,
+        skip: 20,
+        limit: 20,
+        totalMembers: 39,
+      ),
+    );
+    await loading;
+    await Future<void>.delayed(Duration.zero);
+
+    expect(removed, isTrue);
+    expect(profileRefreshCount, 1);
+    expect(repository.requestedSkips, [0, 20, 19]);
+    expect(
+      notifier.state.members.map((member) => member.userId),
+      contains('u20'),
+    );
+    expect(
+      notifier.state.members.map((member) => member.userId),
+      isNot(contains('u40')),
+    );
+    expect(notifier.state.hasMore, isTrue);
     notifier.dispose();
   });
 }

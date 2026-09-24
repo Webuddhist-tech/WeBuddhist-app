@@ -869,12 +869,14 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
   GroupMembersNotifier({
     required GroupProfileRepositoryInterface repository,
     required String groupId,
+    this.onMemberRemoved,
   }) : _repository = repository,
        _groupId = groupId,
        super(const GroupMembersState());
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
+  final VoidCallback? onMemberRemoved;
   static const int _limit = 20;
   int _requestGeneration = 0;
   final Set<String> _removedUserIds = {};
@@ -969,7 +971,22 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
 
     return result.fold((_) => false, (_) {
       _removedUserIds.add(id);
+      // A page requested with the pre-removal offset shifts by one on the
+      // server. Drop that response and load again from the corrected offset
+      // so the member who slid into the gap is not skipped.
+      final reloadInitial = state.isLoading;
+      final reloadMore = state.isLoadingMore;
+      if (reloadInitial || reloadMore) {
+        _requestGeneration++;
+        state = state.copyWith(isLoading: false, isLoadingMore: false);
+      }
       _dropMember(id);
+      if (reloadInitial) {
+        loadInitial();
+      } else if (reloadMore && state.hasMore) {
+        loadMore();
+      }
+      onMemberRemoved?.call();
       return true;
     });
   }
@@ -1028,6 +1045,7 @@ final groupMembersProvider = StateNotifierProvider.autoDispose
       return GroupMembersNotifier(
         repository: ref.watch(groupProfileRepositoryProvider),
         groupId: groupId,
+        onMemberRemoved: () => ref.invalidate(groupProfileProvider(groupId)),
       );
     });
 
