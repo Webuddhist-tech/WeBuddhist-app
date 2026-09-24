@@ -1541,6 +1541,9 @@ class AppLocalizationsNe extends AppLocalizations {
       'दोस्रो संस्करण मुख्य पाठको हरेक श्लोकमुनि देखिनेछ';
 
   @override
+  String get root_text => 'मूल पाठ';
+
+  @override
   String get version => 'संस्करणहरू';
 
   @override

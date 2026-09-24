@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/track_first_value.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_body.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,8 +25,12 @@ class GroupProfileScreen extends ConsumerWidget {
       data: (either) => either.fold((_) => null, (profile) => profile.title),
       orElse: () => null,
     );
+    final loadedProfile = profileAsync.valueOrNull?.fold(
+      (_) => null,
+      (profile) => profile,
+    );
 
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
@@ -59,6 +66,15 @@ class GroupProfileScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+
+    return TrackFirstValue<GroupProfile>(
+      value: loadedProfile,
+      onFirstValue:
+          (profile) => ref
+              .read(groupAnalyticsProvider)
+              .groupViewed(groupId: groupId, groupType: profile.groupType),
+      child: scaffold,
     );
   }
 

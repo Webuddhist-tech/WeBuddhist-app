@@ -67,9 +67,12 @@ class ChatOpenTracker {
 /// or turn a success into a failure, so a rejected capture is only logged.
 /// Callers fire these after the server confirms, never optimistically.
 class GroupChatAnalytics {
-  const GroupChatAnalytics(this._analytics);
+  GroupChatAnalytics(this._analytics);
 
   final AnalyticsService _analytics;
+
+  /// Rooms opened this session, so message actions can name their group.
+  final Map<String, String> _groupByRoom = {};
 
   /// The screen has a room to talk in. Fired once per screen open by the
   /// screen itself, so it counts visits, not new members; [source] says how
@@ -79,6 +82,7 @@ class GroupChatAnalytics {
     required String roomId,
     required ChatOpenSource source,
   }) {
+    _groupByRoom[roomId] = groupId;
     _track(AnalyticsEvents.groupChatOpened, {
       AnalyticsProperties.groupId: groupId,
       AnalyticsProperties.roomId: roomId,
@@ -114,6 +118,7 @@ class GroupChatAnalytics {
   /// one-call-each fallback.
   void messageDeleted({required String roomId, required String messageId}) {
     _track(AnalyticsEvents.groupMessageDeleted, {
+      AnalyticsProperties.groupId: _groupByRoom[roomId],
       AnalyticsProperties.roomId: roomId,
       AnalyticsProperties.messageId: messageId,
     });
@@ -126,6 +131,7 @@ class GroupChatAnalytics {
     required ChatReactionAction action,
   }) {
     _track(AnalyticsEvents.groupMessageReacted, {
+      AnalyticsProperties.groupId: _groupByRoom[roomId],
       AnalyticsProperties.roomId: roomId,
       AnalyticsProperties.messageId: messageId,
       AnalyticsProperties.emoji: emoji,
@@ -140,6 +146,7 @@ class GroupChatAnalytics {
     required String reason,
   }) {
     _track(AnalyticsEvents.groupMessageReported, {
+      AnalyticsProperties.groupId: _groupByRoom[roomId],
       AnalyticsProperties.roomId: roomId,
       AnalyticsProperties.messageId: messageId,
       AnalyticsProperties.reason: reason,

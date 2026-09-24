@@ -130,10 +130,21 @@ class _CommentaryList extends ConsumerWidget {
     }
   }
 
+  /// Each commentary followed by the editions that translate it, so every
+  /// language lands in its own section.
+  static Iterable<SegmentCommentary> _flatten(
+    Iterable<SegmentCommentary> items,
+  ) sync* {
+    for (final c in items) {
+      yield c;
+      yield* _flatten(c.translations);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final byLanguage = <String, List<SegmentCommentary>>{};
-    for (final c in commentaries) {
+    for (final c in _flatten(commentaries)) {
       byLanguage.putIfAbsent(c.language, () => []).add(c);
     }
     final orderedLanguages = _orderedLanguageCodes(byLanguage);

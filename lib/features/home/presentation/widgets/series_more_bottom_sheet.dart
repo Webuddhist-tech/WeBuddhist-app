@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/series_analytics.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
@@ -46,11 +47,24 @@ class _SeriesMoreBottomSheetState extends ConsumerState<SeriesMoreBottomSheet> {
     setState(() => _isBookmarking = true);
     try {
       final nav = Navigator.of(context);
-      final didToggle = await BookmarkController(
+      final outcome = await BookmarkController(
         ref: ref,
         context: context,
-      ).toggleSeries(widget.seriesId, name: widget.seriesName);
-      if (mounted && didToggle) nav.pop();
+      ).toggleOutcome(
+        type: BookmarkType.series,
+        sourceId: widget.seriesId,
+        name: widget.seriesName,
+      );
+      if (!mounted || outcome == BookmarkToggleOutcome.blocked) return;
+      if (outcome != BookmarkToggleOutcome.failed) {
+        ref
+            .read(seriesAnalyticsProvider)
+            .seriesBookmarked(
+              seriesId: widget.seriesId,
+              bookmarked: outcome == BookmarkToggleOutcome.added,
+            );
+      }
+      nav.pop();
     } finally {
       if (mounted) setState(() => _isBookmarking = false);
     }

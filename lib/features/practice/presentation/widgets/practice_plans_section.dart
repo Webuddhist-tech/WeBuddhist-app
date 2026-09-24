@@ -72,6 +72,7 @@ class PracticePlansSection extends ConsumerWidget {
   void _showAllPlans(BuildContext context, List<Series> seriesList) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'all-plans'),
         builder:
             (_) => AllPlansScreen(
               seriesList: seriesList,

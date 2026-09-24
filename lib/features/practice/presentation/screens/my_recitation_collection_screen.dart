@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/widgets/collection_completion_sheet.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/models/my_recitation_collection_models.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
@@ -40,6 +41,7 @@ class MyRecitationCollectionScreen extends ConsumerStatefulWidget {
 class _MyRecitationCollectionScreenState
     extends ConsumerState<MyRecitationCollectionScreen> {
   bool _hasShownCompletionSheetThisVisit = false;
+  bool _viewTracked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +55,16 @@ class _MyRecitationCollectionScreenState
     final detail = detailAsync.valueOrNull?.fold((_) => null, (value) => value);
 
     _maybeShowCompletionSheet(detail, completionState);
+    if (detail != null && !_viewTracked) {
+      _viewTracked = true;
+      ref
+          .read(groupAnalyticsProvider)
+          .recitationCollectionOpened(
+            collectionId: widget.collectionId,
+            groupId: null,
+            itemCount: detail.items.length,
+          );
+    }
 
     return Scaffold(
       backgroundColor:

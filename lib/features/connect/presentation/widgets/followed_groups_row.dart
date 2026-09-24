@@ -212,7 +212,10 @@ class _AllGroupsTile extends StatelessWidget {
       child: GestureDetector(
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const MyGroupsScreen()),
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: 'my-groups'),
+              builder: (_) => const MyGroupsScreen(),
+            ),
           );
         },
         child: Column(

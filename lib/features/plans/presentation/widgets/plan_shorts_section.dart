@@ -115,6 +115,7 @@ class _ShortVideoCardState extends State<_ShortVideoCard> {
 
     await Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'video-player'),
         builder:
             (_) => YoutubeVideoPlayer(
               videoUrl: widget.video.url,

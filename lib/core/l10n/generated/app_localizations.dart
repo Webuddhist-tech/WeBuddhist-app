@@ -2776,6 +2776,12 @@ abstract class AppLocalizations {
   /// **'The second version will appear below each verse of the main text'**
   String get second_version_msg;
 
+  /// No description provided for @root_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Root text'**
+  String get root_text;
+
   /// No description provided for @version.
   ///
   /// In en, this message translates to:

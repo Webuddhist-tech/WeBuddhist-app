@@ -53,6 +53,9 @@ jobs:
           LIBRARY_API_URL:        ${{ secrets.LIBRARY_API_URL }}
           LIBRARY_CHANTS_TAG_ID:  ${{ secrets.LIBRARY_CHANTS_TAG_ID }}
           AUTH0_AUDIENCE:         ${{ secrets.AUTH0_AUDIENCE }}
+          DEV_POSTHOG_API_KEY:     ${{ secrets.DEV_POSTHOG_API_KEY }}
+          STAGING_POSTHOG_API_KEY: ${{ secrets.STAGING_POSTHOG_API_KEY }}
+          POSTHOG_API_KEY:         ${{ secrets.POSTHOG_API_KEY }}
         run: bash ci/scripts/create_env_files.sh
 
       - name: 🔥 Inject google-services.json (only if provided)

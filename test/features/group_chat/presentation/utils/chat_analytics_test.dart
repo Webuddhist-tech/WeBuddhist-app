@@ -106,6 +106,7 @@ void main() {
 
       expect(service.eventNames, [AnalyticsEvents.groupMessageDeleted]);
       expect(service.events.single.properties, {
+        'group_id': null,
         'room_id': 'room-1',
         'message_id': 'm1',
       });
@@ -121,6 +122,7 @@ void main() {
 
       expect(service.eventNames, [AnalyticsEvents.groupMessageReacted]);
       expect(service.events.single.properties, {
+        'group_id': null,
         'room_id': 'room-1',
         'message_id': 'm1',
         'emoji': '\u{1F44D}',
@@ -137,10 +139,22 @@ void main() {
 
       expect(service.eventNames, [AnalyticsEvents.groupMessageReported]);
       expect(service.events.single.properties, {
+        'group_id': null,
         'room_id': 'room-1',
         'message_id': 'm1',
         'reason': 'SPAM',
       });
+    });
+
+    test('message actions inherit the group of the opened room', () {
+      analytics.chatOpened(
+        groupId: 'group-1',
+        roomId: 'room-1',
+        source: ChatOpenSource.resolved,
+      );
+      analytics.messageDeleted(roomId: 'room-1', messageId: 'm1');
+
+      expect(service.events.last.properties['group_id'], 'group-1');
     });
 
     test('a capture that throws is swallowed, not surfaced', () async {

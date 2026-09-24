@@ -34,6 +34,9 @@ class _FakeRepository extends Fake implements PushMessagingRepository {
   Future<bool> requestPermission() async => true;
 
   @override
+  Future<bool> willPromptForPermission() async => false;
+
+  @override
   Future<String?> getToken() async => token;
 
   /// Thrown by the next [deleteToken] call, then cleared.

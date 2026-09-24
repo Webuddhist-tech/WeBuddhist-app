@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
@@ -167,15 +168,17 @@ class PushMessageNavigator {
   final Ref _ref;
 
   /// Routes a domain [PushMessage] — used for background / terminated taps.
-  void handle(PushMessage message) => _schedule(message.data);
+  void handle(PushMessage message, PushAppState appState) =>
+      _schedule(message.data, appState);
 
   /// Routes a raw FCM data map — used for foreground taps, which reach us via
   /// the shared local-notifications callback as a decoded JSON payload.
-  void handleData(Map<String, dynamic> data) => _schedule(data);
+  void handleData(Map<String, dynamic> data) =>
+      _schedule(data, PushAppState.foreground);
 
-  void _schedule(Map<String, dynamic> data) {
+  void _schedule(Map<String, dynamic> data, PushAppState appState) {
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _routeWhenSettled(data),
+      (_) => _routeWhenSettled(data, appState),
     );
   }
 
@@ -189,7 +192,7 @@ class PushMessageNavigator {
   /// redirected away and lost, landing the user on Home once auth settles.
   /// Mirrors `AppLinksDeepLinkService._dispatchWhenRouterSettled`, which
   /// solves the identical race for app-link cold starts.
-  void _routeWhenSettled(Map<String, dynamic> data) {
+  void _routeWhenSettled(Map<String, dynamic> data, PushAppState appState) {
     final router = _ref.read(appRouterProvider);
     final delegate = router.routerDelegate;
 
@@ -197,20 +200,20 @@ class PushMessageNavigator {
         delegate.currentConfiguration.uri.path != AppRoutes.splash;
 
     if (isSettled()) {
-      _route(data);
+      _route(data, appState);
       return;
     }
 
     void onRouterChanged() {
       if (!isSettled()) return;
       delegate.removeListener(onRouterChanged);
-      _route(data);
+      _route(data, appState);
     }
 
     delegate.addListener(onRouterChanged);
   }
 
-  void _route(Map<String, dynamic> data) {
+  void _route(Map<String, dynamic> data, PushAppState appState) {
     final resolution = resolvePushTap(data);
     final router = _ref.read(appRouterProvider);
     final sourceId = resolution.sourceId ?? '';
@@ -266,6 +269,14 @@ class PushMessageNavigator {
       case PushTapTarget.home:
         _openHomeTab(router);
     }
+
+    final sessionType = _sessionTypeOf(data);
+    final payloadSourceId = (data['source_id'] as String?)?.trim() ?? '';
+    _ref.read(entryAnalyticsProvider).pushNotificationOpened(
+      appState: appState,
+      sessionType: sessionType.isEmpty ? null : sessionType,
+      sourceId: payloadSourceId.isEmpty ? null : payloadSourceId,
+    );
   }
 
   void _openPracticeTab(GoRouter router) {

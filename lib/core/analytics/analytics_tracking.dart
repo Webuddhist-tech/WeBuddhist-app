@@ -1,0 +1,21 @@
+import 'dart:async';
+
+import 'package:flutter_pecha/core/analytics/analytics_service.dart';
+import 'package:flutter_pecha/core/utils/app_logger.dart';
+
+final _logger = AppLogger('Analytics');
+
+extension AnalyticsTracking on AnalyticsService {
+  /// Fire and forget: analytics never delays a user action or turns a
+  /// success into a failure, so a rejected capture is only logged.
+  void trackInBackground(String event, Map<String, Object?> properties) {
+    unawaited(
+      track(event, properties: properties).catchError((
+        Object error,
+        StackTrace stackTrace,
+      ) {
+        _logger.warning('Failed to track $event', error, stackTrace);
+      }),
+    );
+  }
+}

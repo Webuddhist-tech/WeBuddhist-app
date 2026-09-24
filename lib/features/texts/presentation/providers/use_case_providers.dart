@@ -22,8 +22,9 @@ final textsRepositoryProvider = Provider<TextsRepository>((ref) {
 });
 
 /// Provider for the SegmentRepository implementation (domain interface).
-final segmentDomainRepositoryProvider =
-    Provider<SegmentRepositoryInterface>((ref) {
+final segmentDomainRepositoryProvider = Provider<SegmentRepositoryInterface>((
+  ref,
+) {
   return LibrarySegmentRepository(
     library: ref.watch(libraryRepositoryProvider),
   );
@@ -40,7 +41,9 @@ final getTextDetailsUseCaseProvider = Provider<GetTextDetailsUseCase>((ref) {
 // ========== Search Use Case Providers ==========
 
 /// Provider for MultilingualSearchUseCase.
-final multilingualSearchUseCaseProvider = Provider<MultilingualSearchUseCase>((ref) {
+final multilingualSearchUseCaseProvider = Provider<MultilingualSearchUseCase>((
+  ref,
+) {
   final repository = ref.watch(textsRepositoryProvider);
   return MultilingualSearchUseCase(repository);
 });
@@ -55,23 +58,32 @@ final getSegmentInfoUseCaseProvider = Provider<GetSegmentInfoUseCase>((ref) {
 /// Provider for GetSegmentCommentariesUseCase.
 final getSegmentCommentariesUseCaseProvider =
     Provider<GetSegmentCommentariesUseCase>((ref) {
-  return GetSegmentCommentariesUseCase(
-    ref.watch(segmentDomainRepositoryProvider),
-  );
-});
+      return GetSegmentCommentariesUseCase(
+        ref.watch(segmentDomainRepositoryProvider),
+      );
+    });
 
 /// Provider for GetSegmentTranslationsUseCase.
 final getSegmentTranslationsUseCaseProvider =
     Provider<GetSegmentTranslationsUseCase>((ref) {
-  return GetSegmentTranslationsUseCase(
-    ref.watch(segmentDomainRepositoryProvider),
-  );
-});
+      return GetSegmentTranslationsUseCase(
+        ref.watch(segmentDomainRepositoryProvider),
+      );
+    });
+
+/// Provider for GetSegmentRootTextsUseCase.
+final getSegmentRootTextsUseCaseProvider = Provider<GetSegmentRootTextsUseCase>(
+  (ref) {
+    return GetSegmentRootTextsUseCase(
+      ref.watch(segmentDomainRepositoryProvider),
+    );
+  },
+);
 
 // ========== Segment Detail Provider ==========
 
 final segmentDetailProvider = FutureProvider.autoDispose
     .family<SegmentDetailWithText, String>((ref, segmentId) async {
-  final repo = ref.watch(segmentDomainRepositoryProvider);
-  return repo.getSegmentWithTextDetails(segmentId);
-});
+      final repo = ref.watch(segmentDomainRepositoryProvider);
+      return repo.getSegmentWithTextDetails(segmentId);
+    });

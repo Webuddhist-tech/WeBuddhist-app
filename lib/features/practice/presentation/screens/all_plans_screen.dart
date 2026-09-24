@@ -16,9 +16,12 @@ class AllPlansScreen extends StatelessWidget {
   final ValueChanged<Series> onTap;
 
   void _openSearch(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => PlansSearchScreen(onTap: onTap)));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'plans-search'),
+        builder: (_) => PlansSearchScreen(onTap: onTap),
+      ),
+    );
   }
 
   @override

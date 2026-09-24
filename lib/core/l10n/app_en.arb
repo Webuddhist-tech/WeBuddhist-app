@@ -674,6 +674,7 @@
   "main_version": "Main version",
   "second_version": "Second version",
   "second_version_msg": "The second version will appear below each verse of the main text",
+  "root_text": "Root text",
   "version": "Versions",
   "parallel_version": "Parallel version",
   "reader_languages_title": "Languages",

@@ -1527,6 +1527,9 @@ class AppLocalizationsMn extends AppLocalizations {
       'Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ';
 
   @override
+  String get root_text => 'Эх бичвэр';
+
+  @override
   String get version => 'Хувилбарууд';
 
   @override

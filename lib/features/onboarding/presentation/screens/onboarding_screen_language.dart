@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_config.dart';
+import 'package:flutter_pecha/core/config/locale/content_language_analytics.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/onboarding/application/onboarding_provider.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/utils/onboarding_analytics.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_question_title.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_radio_option.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -60,8 +62,15 @@ class _OnboardingScreenLanguageState
         .setPreferredLanguage(_selectedLanguageCode);
     // Applies the choice to both the UI locale and the backend content
     // language so they stay in sync from the first screen.
-    await selectAppLanguage(ref, _selectedLanguageCode);
+    await selectAppLanguage(
+      ref,
+      _selectedLanguageCode,
+      source: ContentLanguageSource.onboarding,
+    );
     if (!mounted) return;
+    ref
+        .read(onboardingAnalyticsProvider)
+        .languageSelected(uiLanguage: _selectedLanguageCode);
     widget.onNext();
   }
 

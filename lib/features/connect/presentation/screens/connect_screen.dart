@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/screens/group_search_screen.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_analytics.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_events_tab.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_tab.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_groups_tab.dart';
@@ -26,13 +27,16 @@ class ConnectScreen extends ConsumerStatefulWidget {
 
 class _ConnectScreenState extends ConsumerState<ConnectScreen>
     with SingleTickerProviderStateMixin {
+  static const _tabNames = ['feed', 'events', 'posts', 'practices', 'groups'];
   late TabController _tabController;
+  int? _trackedTabIndex;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_onTabChanged);
+    _trackTabViewed();
   }
 
   @override
@@ -45,7 +49,21 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
       setState(() {});
+      _trackTabViewed();
     }
+  }
+
+  /// Once per settled sub-tab, with the followed count when already loaded.
+  void _trackTabViewed() {
+    final index = _tabController.index;
+    if (index == _trackedTabIndex) return;
+    _trackedTabIndex = index;
+    ref
+        .read(connectAnalyticsProvider)
+        .tabViewed(
+          subTab: _tabNames[index],
+          followedGroupCount: ref.read(myGroupsProvider).valueOrNull?.total,
+        );
   }
 
   Future<void> _onGroupsRefresh() async {
@@ -82,6 +100,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
+                  settings: const RouteSettings(name: 'group-search'),
                   builder: (_) => const GroupSearchScreen(),
                 ),
               );

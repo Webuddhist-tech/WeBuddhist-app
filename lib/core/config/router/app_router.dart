@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/config/router/page_transitions.dart';
@@ -92,7 +93,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // deep link can be inserted twice and leave a stale page under Back.
     overridePlatformDefaultLocation: true,
     debugLogDiagnostics: true,
-    observers: [ref.read(analyticsServiceProvider).routeObserver],
+    observers: ref.read(analyticsServiceProvider).routeObservers,
 
     // Re-evaluate redirect whenever auth state changes.
     refreshListenable: GoRouterRefreshStream(
@@ -188,21 +189,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: "onboarding",
         builder: (context, state) => const OnboardingWrapper(),
       ),
+      // Chat content is private: masked from Clarity recordings regardless of
+      // the project's masking mode. Taps still count toward heatmaps.
       GoRoute(
         path: AppRoutes.chats,
         name: 'chats',
-        builder: (context, state) => const ChatsScreen(),
+        builder: (context, state) => const ClarityMask(child: ChatsScreen()),
       ),
       GoRoute(
         path: AppRoutes.groupChat,
         name: 'group-chat',
         builder: (context, state) {
           final groupId = state.pathParameters['groupId'] ?? '';
-          return GroupChatScreen(groupId: groupId);
+          return ClarityMask(child: GroupChatScreen(groupId: groupId));
         },
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
+        // The shell has its own navigator; without observers here every
+        // tab-shell screen would go untracked.
+        observers: ref.read(analyticsServiceProvider).routeObservers,
         builder: (context, state, child) {
           return HomeShellScaffold(child: child);
         },
@@ -648,11 +654,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             _logger.warning(
               'plan-text route called without NavigationContext extra',
             );
-            return const MaterialPage(child: MainNavigationScreen());
+            return MaterialPage(
+              name: state.name,
+              child: const MainNavigationScreen(),
+            );
           }
 
           return CustomTransitionPage(
             key: state.pageKey,
+            name: state.name,
             child: PlanTextScreen(navigationContext: extra),
             transitionsBuilder: (
               context,
@@ -753,6 +763,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             final direction = navigationContext.navigationDirection;
             return CustomTransitionPage(
               key: state.pageKey,
+              name: state.name,
               child: screen,
               transitionsBuilder: (
                 context,
@@ -772,7 +783,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
 
           // Default MaterialPage for non-plan navigation
-          return MaterialPage(key: state.pageKey, child: screen);
+          return MaterialPage(
+            key: state.pageKey,
+            name: state.name,
+            child: screen,
+          );
         },
       ),
     ],

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -17,6 +16,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/accumulation_
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_counter_notifier.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/mala/presentation/services/mala_sound_player.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -113,7 +113,7 @@ final malaSyncManagerProvider = Provider<MalaSyncManager>((ref) {
     currentUserId: () => resolveMalaUserId(ref),
     connectivityStream:
         ref.watch(connectivityServiceProvider).onConnectivityChanged,
-    analytics: ref.watch(analyticsServiceProvider),
+    analytics: ref.watch(malaAnalyticsProvider),
   )..start();
   ref.onDispose(manager.dispose);
   return manager;
@@ -169,7 +169,6 @@ final malaCounterProvider = StateNotifierProvider.autoDispose
             ref.watch(malaRemoteDataSourceProvider).fetchImageBytes,
         sync: sync,
         currentUserId: () => resolveMalaUserId(ref),
-        analytics: ref.watch(analyticsServiceProvider),
         sound: ref.watch(malaSoundPlayerProvider),
       );
       void onPersonalCountSynced(String presetId) {

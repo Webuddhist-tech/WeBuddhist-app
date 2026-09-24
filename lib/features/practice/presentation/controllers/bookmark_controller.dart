@@ -13,6 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Uses the pre-warmed exists cache for a single API call per tap, with
 /// optimistic UI that reverts on failure.
+/// What a toggle did; `blocked` means the guest login gate showed instead.
+enum BookmarkToggleOutcome { added, removed, failed, blocked }
+
 class BookmarkController {
   final _logger = AppLogger('BookmarkController');
   final WidgetRef ref;
@@ -78,10 +81,24 @@ class BookmarkController {
     required String sourceId,
     String? name,
   }) async {
+    final outcome = await toggleOutcome(
+      type: type,
+      sourceId: sourceId,
+      name: name,
+    );
+    return outcome != BookmarkToggleOutcome.blocked;
+  }
+
+  /// Like [toggle], but reports what actually happened on the server.
+  Future<BookmarkToggleOutcome> toggleOutcome({
+    required BookmarkType type,
+    required String sourceId,
+    String? name,
+  }) async {
     final authState = ref.read(authProvider);
     if (authState.isGuest) {
       LoginDrawer.show(context, ref);
-      return false;
+      return BookmarkToggleOutcome.blocked;
     }
 
     final target = BookmarkTarget(type: type, sourceId: sourceId);
@@ -131,9 +148,12 @@ class BookmarkController {
       _logger.error('Error toggling bookmark', e, st);
       cache.set(target, previous);
       _showErrorSnackBar(wasBookmarked);
+      return BookmarkToggleOutcome.failed;
     }
 
-    return true;
+    return wasBookmarked
+        ? BookmarkToggleOutcome.removed
+        : BookmarkToggleOutcome.added;
   }
 
   /// Uses cached id when available; falls back to exists check only if needed.

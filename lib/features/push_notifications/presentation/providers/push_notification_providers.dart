@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -31,6 +32,7 @@ final pushNotificationServiceProvider =
     repository: ref.watch(pushMessagingRepositoryProvider),
     storage: ref.watch(localStorageServiceProvider),
     foregroundFilter: ref.watch(foregroundPushFilterProvider),
+    analytics: ref.watch(entryAnalyticsProvider),
   );
   ref.onDispose(service.dispose);
   return service;

@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/timer/presentation/providers/timers_provi
 import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_player.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_keep_alive.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
+import 'package:flutter_pecha/features/timer/presentation/utils/timer_analytics.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_progress_ring.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -81,6 +82,10 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   /// not post the same session twice.
   int? _lastReportedMs;
 
+  /// Carried on `timer_completed`.
+  bool _wasBackgrounded = false;
+  int _pauseCount = 0;
+
   Timer? _timer;
   late final TimerBellPlayer _soundPlayer;
   late final AmbientSoundPlayer _ambientPlayer;
@@ -101,6 +106,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   Future<void> _bellOperations = Future<void>.value();
 
   int get _totalMs => widget.presetTimer.durationMs;
+
+  String get _presetId => widget.presetTimer.id;
 
   String? get _ambientSoundId {
     final id = widget.presetTimer.ambientSoundId;
@@ -168,8 +175,11 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
         _onResumed();
         break;
       case AppLifecycleState.inactive:
+        _onBackgrounded();
+        break;
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
+        _wasBackgrounded = true;
         _onBackgrounded();
         break;
       case AppLifecycleState.detached:
@@ -333,6 +343,10 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     );
     _showRunningNotification(endsAt);
     _armCompletionBellIfBackgrounded(endsAt);
+    ref.read(timerAnalyticsProvider).timerStarted(
+      presetId: _presetId,
+      durationSeconds: _totalMs ~/ 1000,
+    );
   }
 
   /// Fetches the sound catalogue for this session.
@@ -464,6 +478,12 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     _reportTimerStop();
+    ref.read(timerAnalyticsProvider).timerCompleted(
+      presetId: _presetId,
+      durationSeconds: _totalMs ~/ 1000,
+      wasBackgrounded: _wasBackgrounded,
+      pauseCount: _pauseCount,
+    );
   }
 
   /// Rings the completion bell, holding the app awake until it has finished.
@@ -502,6 +522,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     });
 
     if (enteringPause) {
+      _pauseCount++;
       unawaited(_ambientPlayer.pause());
       // Nothing left to ring while paused, so let the app be suspended again.
       unawaited(_keepAlive.stop());
@@ -530,6 +551,7 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     unawaited(_ambientPlayer.stop());
     if (_phase == _TimerPhase.running) {
       _reportTimerStop();
+      _trackDiscarded();
     }
     _clearBackgroundSurfaces();
     context.pop();
@@ -539,8 +561,20 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     _timer?.cancel();
     unawaited(_keepAlive.stop());
     unawaited(_ambientPlayer.stop());
+    if (_phase == _TimerPhase.running) _trackDiscarded();
     _clearBackgroundSurfaces();
     context.pop();
+  }
+
+  /// The session ended before the bell, by Finish or Discard.
+  void _trackDiscarded() {
+    final elapsedMs = _elapsedMs;
+    ref.read(timerAnalyticsProvider).timerDiscarded(
+      presetId: _presetId,
+      elapsedSeconds: elapsedMs ~/ 1000,
+      pctComplete:
+          _totalMs <= 0 ? 100 : (elapsedMs * 100 ~/ _totalMs).clamp(0, 100),
+    );
   }
 
   void _reportTimerStop() {

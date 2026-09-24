@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/onboarding/presentation/providers/event_e
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/data/utils/plan_date_format.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/plans/presentation/author_detail_screen.dart';
 import 'package:flutter_pecha/shared/extensions/typography_extensions.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -155,6 +156,7 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
         Navigator.push(
           context,
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'author-detail'),
             builder: (context) => AuthorDetailScreen(authorId: authorId),
           ),
         );
@@ -265,7 +267,7 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
     setState(() => _isEnrolling = true);
     try {
       final service = ref.read(eventEnrollmentServiceProvider);
-      await service.enrollInEvents([widget.plan.id]);
+      await service.enrollInEvents([widget.plan.id], source: PlanSource.browse);
       ref.invalidate(userPlansFutureProvider);
 
       if (!context.mounted) return;

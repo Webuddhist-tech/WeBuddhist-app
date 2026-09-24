@@ -16,6 +16,7 @@ Future<void> showNewCollectionDialog(BuildContext context) async {
   // covers the tab shell.
   await Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute(
+      settings: const RouteSettings(name: 'create-collection'),
       builder: (_) => CreateEditCollectionScreen(initialName: name),
     ),
   );
