@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
@@ -69,6 +70,20 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     selectedDay =
         widget.initialDay?.clamp(1, widget.plan.totalDays) ??
         _defaultSelectedDay();
+    ref
+        .read(planAnalyticsProvider)
+        .planPreviewed(
+          planId: widget.plan.id,
+          planName: widget.plan.title,
+          totalDays: widget.plan.totalDays,
+          source: _previewSource,
+        );
+  }
+
+  PlanPreviewSource get _previewSource {
+    if (widget.eventId != null) return PlanPreviewSource.event;
+    if (widget.seriesId != null) return PlanPreviewSource.series;
+    return PlanPreviewSource.catalog;
   }
 
   /// For fixed-date plans that have already started, default the carousel
@@ -120,6 +135,12 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
       LoginDrawer.show(context, ref);
       return;
     }
+    ref
+        .read(planAnalyticsProvider)
+        .planAddedToPractices(
+          planId: widget.plan.id,
+          planName: widget.plan.title,
+        );
     context.pushNamed('edit-routine', extra: {'initialPlan': widget.plan});
   }
 

@@ -19,6 +19,8 @@ set -euo pipefail
   echo "AUTH0_AUDIENCE=${DEV_AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${DEV_PHONE_LOGIN_ENABLED:-false}"
   echo "ENVIRONMENT=development"
+  echo "POSTHOG_API_KEY=${DEV_POSTHOG_API_KEY-}"
+  echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${DEV_CLARITY_ENABLED-}"
 } > .env.dev
@@ -31,6 +33,8 @@ set -euo pipefail
   echo "AUTH0_AUDIENCE=${STAGING_AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${STAGING_PHONE_LOGIN_ENABLED:-false}"
   echo "ENVIRONMENT=staging"
+  echo "POSTHOG_API_KEY=${STAGING_POSTHOG_API_KEY-}"
+  echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${STAGING_CLARITY_ENABLED-}"
 } > .env.staging
@@ -43,6 +47,9 @@ set -euo pipefail
   echo "AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${PHONE_LOGIN_ENABLED:-false}"
   echo "ENVIRONMENT=production"
+  # PostHog stays off while the key is empty.
+  echo "POSTHOG_API_KEY=${POSTHOG_API_KEY-}"
+  echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   # Clarity project id is a public identifier, not a secret. Unset falls back
   # to the shared project; export it empty (or CLARITY_ENABLED=false) to build
   # without Clarity.

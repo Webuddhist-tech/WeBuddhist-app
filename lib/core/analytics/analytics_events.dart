@@ -12,6 +12,28 @@ abstract final class AnalyticsEvents {
   static const String planEnrolled = 'plan_enrolled';
   static const String planViewed = 'plan_viewed';
   static const String planDayCompleted = 'plan_day_completed';
+  static const String planPreviewed = 'plan_previewed';
+  static const String planAddedToPractices = 'plan_added_to_practices';
+  static const String planUnenrolled = 'plan_unenrolled';
+  static const String planDayShared = 'plan_day_shared';
+  static const String planSearched = 'plan_searched';
+
+  // Series
+  static const String seriesViewed = 'series_viewed';
+  static const String seriesShared = 'series_shared';
+  static const String seriesBookmarked = 'series_bookmarked';
+  static const String seriesAddedToPractices = 'series_added_to_practices';
+  static const String seriesSearched = 'series_searched';
+
+  // Group events
+  static const String groupEventViewed = 'group_event_viewed';
+  static const String groupEventAttended = 'group_event_attended';
+  static const String groupEventLeft = 'group_event_left';
+  static const String groupEventParticipationChanged =
+      'group_event_participation_changed';
+  static const String groupEventLiveEntered = 'group_event_live_entered';
+  static const String groupEventShared = 'group_event_shared';
+  static const String groupEventLinkOpened = 'group_event_link_opened';
 
   // Practice / Routine
   static const String routineSaved = 'routine_saved';
@@ -58,4 +80,23 @@ abstract final class AnalyticsProperties {
   static const String emoji = 'emoji';
   static const String action = 'action';
   static const String source = 'source';
+
+  // Series
+  static const String seriesId = 'series_id';
+  static const String seriesTitle = 'series_title';
+  static const String planCount = 'plan_count';
+  static const String bookmarked = 'bookmarked';
+
+  // Group events
+  static const String eventId = 'event_id';
+  static const String eventTitle = 'event_title';
+  static const String eventFormat = 'event_format';
+  static const String isRecurring = 'is_recurring';
+  static const String participation = 'participation';
+  static const String target = 'target';
+  static const String linkType = 'link_type';
+
+  // Search
+  static const String query = 'query';
+  static const String resultCount = 'result_count';
 }

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DayCompletionBottomSheet extends StatefulWidget {
+class DayCompletionBottomSheet extends ConsumerStatefulWidget {
   final int dayNumber;
   final int totalDays;
   final int completedDays;
@@ -29,11 +31,12 @@ class DayCompletionBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<DayCompletionBottomSheet> createState() =>
+  ConsumerState<DayCompletionBottomSheet> createState() =>
       _DayCompletionBottomSheetState();
 }
 
-class _DayCompletionBottomSheetState extends State<DayCompletionBottomSheet> {
+class _DayCompletionBottomSheetState
+    extends ConsumerState<DayCompletionBottomSheet> {
   final GlobalKey _shareButtonKey = GlobalKey();
   bool _isSharing = false;
 
@@ -214,6 +217,14 @@ class _DayCompletionBottomSheetState extends State<DayCompletionBottomSheet> {
         planLanguage: widget.planLanguage,
         shareButtonKey: _shareButtonKey,
       );
+      if (mounted) {
+        ref
+            .read(planAnalyticsProvider)
+            .planDayShared(
+              planId: widget.planId,
+              dayNumber: widget.dayNumber,
+            );
+      }
     } finally {
       if (mounted) {
         setState(() => _isSharing = false);

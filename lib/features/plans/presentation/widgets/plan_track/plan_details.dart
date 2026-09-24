@@ -5,6 +5,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -929,6 +930,12 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         },
         (success) {
           if (success) {
+            ref
+                .read(planAnalyticsProvider)
+                .planUnenrolled(
+                  planId: widget.plan.id,
+                  planName: widget.plan.title,
+                );
             // Invalidate plans to refresh the list and home stats
             ref.invalidate(myPlansPaginatedProvider);
             ref.invalidate(findPlansPaginatedProvider);
@@ -1158,6 +1165,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         planLanguage: widget.plan.language,
         shareButtonKey: _shareButtonKey,
       );
+      if (mounted) {
+        ref
+            .read(planAnalyticsProvider)
+            .planDayShared(planId: widget.plan.id, dayNumber: dayNumber);
+      }
     } finally {
       if (mounted) {
         setState(() => _isSharing = false);

@@ -40,6 +40,13 @@ Each flavor should use its own PostHog project token:
 | `POSTHOG_HOST` | PostHog ingest host (default `https://us.i.posthog.com`) |
 | `POSTHOG_ENABLED` | Set to `false` to disable analytics locally |
 
+Screen views (`$screen`) come from the route observers on both the root and
+the tab-shell navigator, so every named route is tracked. Product events are
+declared once in `lib/core/analytics/analytics_events.dart`; each feature
+fires them through a small analytics class (`PlanAnalytics`,
+`SeriesAnalytics`, `GroupEventAnalytics`, `GroupChatAnalytics`) so screens
+never spell out event names or property keys themselves.
+
 Microsoft Clarity adds session recordings and per-screen heatmaps on top of
 PostHog. One Clarity project can serve every flavor: each session is tagged
 with `environment` and `app_flavor`, so dev traffic can be filtered out on the

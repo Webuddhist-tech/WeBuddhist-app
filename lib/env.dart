@@ -62,7 +62,7 @@ class Env {
   /// Whether PostHog analytics is enabled for this build
   static bool get posthogEnabled {
     final String? enabledFlag = dotenv.env['POSTHOG_ENABLED'];
-    if (enabledFlag != null) {
+    if (enabledFlag != null && enabledFlag.isNotEmpty) {
       return enabledFlag.toLowerCase() == 'true';
     }
     final String? apiKey = posthogApiKey;
