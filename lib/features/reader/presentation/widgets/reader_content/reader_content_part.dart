@@ -128,6 +128,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
   int _liveGeneration = 0;
+
+  /// Operator segment id to this version's id, for live positions read from
+  /// another edition or language (see [ReaderNotifier.jumpToSegment]).
+  final Map<String, String> _liveAliases = {};
   DateTime? _lastUserPointerAt;
 
   @override
@@ -506,21 +510,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final dualSettings = ref.read(
       readerDualSettingsProvider(widget.params.textId),
     );
+    final content = readerState.content;
     return LivePositionResolver.textMatches(
-      position,
-      loadedTextIds: [
-        widget.params.textId,
-        readerState.textDetail?.id,
-        dualSettings.primary.versionId,
-      ],
-      content: readerState.content,
-    );
+          position,
+          loadedTextIds: [
+            widget.params.textId,
+            readerState.textDetail?.id,
+            dualSettings.primary.versionId,
+          ],
+          content: content,
+        ) ||
+        (content != null &&
+            _localSegmentIdFor(content, position.segmentId) != null);
   }
 
-  /// This text's own id for the live segment: the id itself, or the line
-  /// whose `mappings` name it (the same line in another language).
+  /// This text's own id for the live segment: the id itself, the line whose
+  /// `mappings` name it, or the verse it was aligned to (the same line in
+  /// another edition or language).
   String? _localSegmentIdFor(FlattenedContent content, String segmentId) {
-    final index = content.resolveSegmentIndex(segmentId);
+    final alias = _liveAliases[segmentId];
+    final index =
+        content.resolveSegmentIndex(segmentId) ??
+        (alias == null ? null : content.resolveSegmentIndex(alias));
     return index == null ? null : content.items[index].segmentId;
   }
 
@@ -592,11 +603,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return;
       }
       _liveJumpInFlight = true;
-      var found = false;
+      String? jumpedTo;
       try {
-        found = await ref
+        jumpedTo = await ref
             .read(readerNotifierProvider(widget.params).notifier)
-            .jumpToSegment(position.segmentId);
+            .jumpToSegment(position.segmentId, sourceTextId: position.textId);
       } finally {
         _liveJumpInFlight = false;
       }
@@ -608,9 +619,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return;
       }
       if (generation != _liveGeneration) return;
-      if (!found) {
+      if (jumpedTo == null) {
         liveNotifier.setOutOfSync(true);
         return;
+      }
+      // Rebuild so the highlight, which reads the alias, lands on it too.
+      if (jumpedTo != position.segmentId) {
+        setState(() => _liveAliases[position.segmentId] = jumpedTo!);
       }
       // Let the list take the new window before scrolling into it.
       await WidgetsBinding.instance.endOfFrame;

@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_scri
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_analytics.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
+import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
@@ -175,7 +176,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         content: window.content,
         currentSegmentPosition: response.currentSegmentPosition,
         totalSegments: response.totalSegments,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         hasPreviousPage: window.hasPreviousPage,
       );
       _trackOpened(response.textDetail);
@@ -245,36 +246,62 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   }
 
   /// Replaces the loaded window with the page around [segmentId], for a live
-  /// position outside what pagination has fetched. False when the text does
-  /// not have that segment (or the fetch failed), so the caller can report
-  /// being out of sync instead of jumping.
+  /// position outside what pagination has fetched, and returns this
+  /// version's id for it. Null when the text does not have that segment (or
+  /// the fetch failed), so the caller can report being out of sync instead of
+  /// jumping.
   ///
-  /// [segmentId] is the operator's, so in another language it never matches
-  /// this version's ids literally — both checks resolve through the
-  /// segments' `mappings` so a viewer reading English keeps following an
-  /// operator clicking through Tibetan past the loaded page.
-  Future<bool> jumpToSegment(String segmentId) async {
-    if (_isDisposed) return false;
-    if (state.content?.resolveSegmentIndex(segmentId) != null) return true;
+  /// [segmentId] is the operator's. When they read another edition or
+  /// language of this text ([sourceTextId]), it never matches this version's
+  /// ids literally, so it is first aligned to the same verse here. Segments'
+  /// `mappings` still resolve it too.
+  Future<String?> jumpToSegment(
+    String segmentId, {
+    String? sourceTextId,
+  }) async {
+    if (_isDisposed) return null;
+    final loaded = _localSegmentId(state.content, segmentId);
+    if (loaded != null) return loaded;
     try {
-      final window = await _fetchWindow(segmentId: segmentId);
-      if (_isDisposed) return false;
-      if (window.content.resolveSegmentIndex(segmentId) == null) return false;
+      var target = segmentId;
+      if (sourceTextId != null && sourceTextId.isNotEmpty) {
+        final aligned = await _ref
+            .read(textsRepositoryProvider)
+            .alignSegment(
+              segmentId: segmentId,
+              sourceTextId: sourceTextId,
+              targetTextId: await _resolveDetailsTextId(),
+            );
+        if (_isDisposed) return null;
+        if (aligned != null) target = aligned;
+        final alreadyLoaded = _localSegmentId(state.content, target);
+        if (alreadyLoaded != null) return alreadyLoaded;
+      }
+      final window = await _fetchWindow(segmentId: target);
+      if (_isDisposed) return null;
+      final local = _localSegmentId(window.content, target);
+      if (local == null) return null;
       final response = window.response;
       state = state.copyWith(
         content: window.content,
         currentSegmentPosition: response.currentSegmentPosition,
         totalSegments: response.totalSegments,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         hasPreviousPage: window.hasPreviousPage,
         isLoadingNext: false,
         isLoadingPrevious: false,
       );
-      return true;
+      return local;
     } catch (e) {
       _logger.debug('Jump to segment $segmentId failed: $e');
-      return false;
+      return null;
     }
+  }
+
+  /// [content]'s own id for [segmentId], directly or through `mappings`.
+  static String? _localSegmentId(FlattenedContent? content, String segmentId) {
+    final index = content?.resolveSegmentIndex(segmentId);
+    return index == null ? null : content!.items[index].segmentId;
   }
 
   /// Fetch content from the repository.
@@ -507,7 +534,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       state = state.copyWith(
         content: mergedContent,
         isLoadingNext: false,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         totalSegments: response.totalSegments,
       );
     } catch (e, stackTrace) {

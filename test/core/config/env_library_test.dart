@@ -17,7 +17,7 @@ void main() {
     test('a blank value counts as missing', () {
       dotenv.testLoad(fileInput: 'LIBRARY_API_URL=\nLIBRARY_CHANTS_TAG_ID=\n');
       expect(Env.libraryApiUrl, 'https://library.webuddhist.com');
-      expect(() => Env.libraryChantsTagId, throwsException);
+      expect(Env.libraryChantsTagId, isNull);
     });
   });
 }

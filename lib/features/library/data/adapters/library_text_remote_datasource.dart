@@ -106,6 +106,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       size: pageSize,
       paginationDirection: pageDirection,
       currentSegmentPosition: window.currentPosition,
+      lastSegmentPosition: window.lastPosition,
       totalSegments: window.totalSegments,
     );
   }
@@ -171,6 +172,19 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       skip: 0,
       limit: _searchLimit,
       total: sources.length,
+    );
+  }
+
+  @override
+  Future<String?> alignSegment({
+    required String segmentId,
+    required String sourceTextId,
+    required String targetTextId,
+  }) {
+    return _library.alignSegment(
+      segmentId: segmentId,
+      sourceId: sourceTextId,
+      targetId: targetTextId,
     );
   }
 

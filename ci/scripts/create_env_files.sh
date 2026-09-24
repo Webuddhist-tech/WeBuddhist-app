@@ -14,6 +14,13 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
+# Every flavor falls back to this one, and the chant list cannot load without
+# it, so a build without it would ship broken. Fail here instead.
+if [[ -z "${LIBRARY_CHANTS_TAG_ID:-}" ]]; then
+  echo "::error::LIBRARY_CHANTS_TAG_ID secret is not set"
+  exit 1
+fi
+
 # --- Development -----------------------------------------------------------
 {
   echo "BASE_API_URL=${DEV_BASE_API_URL:-}"

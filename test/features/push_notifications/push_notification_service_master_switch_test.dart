@@ -107,8 +107,18 @@ class _FakeRepository extends Fake implements PushMessagingRepository {
 class _FakeStorage extends Fake implements LocalStorageService {
   final Map<String, Object?> values = {};
 
+  /// When set, the next read of the stored backend device id waits on it.
+  Completer<void>? holdServerIdRead;
+
   @override
-  Future<T?> get<T>(String key) async => values[key] as T?;
+  Future<T?> get<T>(String key) async {
+    final hold = holdServerIdRead;
+    if (key == StorageKeys.pushDeviceServerId && hold != null) {
+      holdServerIdRead = null;
+      await hold.future;
+    }
+    return values[key] as T?;
+  }
 
   @override
   Future<bool> set<T>(String key, T value) async {
@@ -517,6 +527,72 @@ void main() {
         storage.values.containsKey(StorageKeys.pushDeviceServerId),
         isFalse,
       );
+    });
+
+    test('a failed token delete is retried without another auth event', () async {
+      service.dispose();
+      service = PushNotificationService(
+        repository: repo,
+        storage: storage,
+        foregroundFilter: ForegroundPushFilter(),
+        reconcileRetryBaseDelay: _retryDelay,
+        detachRetryBaseDelay: _retryDelay,
+      );
+      await signIn();
+      repo.deleteTokenError = Exception('offline');
+
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+      expect(repo.deleteTokenCalls, 1);
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-1');
+
+      await _afterRetry(1);
+      await _settle();
+
+      expect(repo.deleteTokenCalls, 2);
+      expect(
+        storage.values.containsKey(StorageKeys.pushDeviceServerId),
+        isFalse,
+      );
+    });
+
+    test('signing in cancels a pending detach retry', () async {
+      service.dispose();
+      service = PushNotificationService(
+        repository: repo,
+        storage: storage,
+        foregroundFilter: ForegroundPushFilter(),
+        reconcileRetryBaseDelay: _retryDelay,
+        detachRetryBaseDelay: _retryDelay,
+      );
+      await signIn();
+      repo.deleteTokenError = Exception('offline');
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+
+      service.onAuthChanged(loggedIn: true);
+      await service.registrationSettled;
+      await _afterRetry(1);
+      await _settle();
+
+      expect(repo.deleteTokenCalls, 1);
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-1');
+    });
+
+    test('a sign-in while the detach reads the stored id keeps the token', () async {
+      await signIn();
+      final read = storage.holdServerIdRead = Completer<void>();
+
+      service.onAuthChanged(loggedIn: false);
+      await _settle();
+      // Signed back in while the detach is waiting on storage.
+      service.onAuthChanged(loggedIn: true);
+      read.complete();
+      await _settle();
+      await service.registrationSettled;
+
+      expect(repo.deleteTokenCalls, 0);
+      expect(storage.values[StorageKeys.pushDeviceServerId], 'dev-1');
     });
 
     test('a guest install left registered by an old session is detached', () async {

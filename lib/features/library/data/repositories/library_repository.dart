@@ -204,6 +204,7 @@ class LibraryRepository {
         editionId: editionId,
         segments: const [],
         currentPosition: start + 1,
+        lastPosition: end,
         totalSegments: total,
       );
     }
@@ -234,8 +235,31 @@ class LibraryRepository {
           ),
       ],
       currentPosition: start + 1,
+      lastPosition: end,
       totalSegments: total,
     );
+  }
+
+  /// The id in [targetId]'s edition of the verse numbered like [segmentId] in
+  /// [sourceId]'s, the same alignment [loadWindow] gives the parallel reader.
+  /// Both ids may be text or edition ids. Null when they are editions of
+  /// unrelated texts (verse numbers would match by accident) or the verse is
+  /// missing.
+  Future<String?> alignSegment({
+    required String segmentId,
+    required String sourceId,
+    required String targetId,
+  }) async {
+    final source = await resolveEdition(sourceId);
+    final target = await resolveEdition(targetId);
+    if (source.id == target.id) return segmentId;
+    if (source.textId != target.textId) {
+      final family = await getTextFamily(target.textId);
+      if (!family.any((t) => t.id == source.textId)) return null;
+    }
+    final segments = await getEditionSegments(target.id);
+    final index = await _alignedIndex(source.id, segmentId, segments);
+    return index < 0 ? null : segments[index].id;
   }
 
   /// Index in [target] of the verse numbered like [segmentId] in [editionId].

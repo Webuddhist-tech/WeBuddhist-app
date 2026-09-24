@@ -42,12 +42,17 @@ class LibraryContentWindow {
   final String editionId;
   final List<LibraryReaderSegment> segments;
   final int currentPosition;
+
+  /// Position of the window's last segment; equals [totalSegments] once the
+  /// window reaches the end, which [currentPosition] alone cannot show.
+  final int lastPosition;
   final int totalSegments;
 
   const LibraryContentWindow({
     required this.editionId,
     required this.segments,
     required this.currentPosition,
+    required this.lastPosition,
     required this.totalSegments,
   });
 }

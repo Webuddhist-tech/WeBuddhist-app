@@ -64,15 +64,31 @@ LibraryTestServer _server({List<Uri>? seen}) => LibraryTestServer({
   },
 });
 
-LibraryRecitationsRemoteDatasource _datasource(LibraryTestServer server) {
+LibraryRecitationsRemoteDatasource _datasource(
+  LibraryTestServer server, {
+  String? tagId = 'TAG',
+}) {
   return LibraryRecitationsRemoteDatasource(
     library: server.repository(),
     collections: MyRecitationCollectionsRemoteDatasource(dio: server.dio()),
-    tagId: 'TAG',
+    tagId: tagId,
   );
 }
 
 void main() {
+  test('without a chants tag the list fails to load, not to build', () async {
+    final server = _server();
+    final ds = _datasource(server, tagId: null);
+
+    await expectLater(
+      ds.fetchRecitationsPage(
+        queryParams: RecitationsQueryParams(language: 'en'),
+      ),
+      throwsStateError,
+    );
+    expect(server.count('/v2/texts'), 0);
+  });
+
   test('maps library texts to recitations keyed by edition id', () async {
     final seen = <Uri>[];
     final server = _server(seen: seen);

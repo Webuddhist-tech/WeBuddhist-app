@@ -233,6 +233,86 @@ void main() {
       expect(window.segments.map((x) => x.id), ['b2', 'b3']);
       expect(window.currentPosition, 2);
     });
+
+    test('the page that reaches the end reports it', () async {
+      final repository = server().repository();
+      final first = await repository.loadWindow(
+        editionId: 'e1',
+        direction: 'next',
+        size: 2,
+      );
+      final last = await repository.loadWindow(
+        editionId: 'e1',
+        anchorSegmentId: 's2',
+        direction: 'next',
+        size: 2,
+      );
+
+      expect(first.lastPosition, 2);
+      expect(last.segments.map((x) => x.id), ['s2', 's3']);
+      expect(last.currentPosition, 2);
+      expect(last.lastPosition, last.totalSegments);
+    });
+  });
+
+  group('LibraryRepository.alignSegment', () {
+    LibraryTestServer server() => LibraryTestServer({
+      '/v2/editions/bo1': (_) => jsonBody({'id': 'bo1', 'text_id': 'tbo'}),
+      '/v2/editions/en1': (_) => jsonBody({'id': 'en1', 'text_id': 'ten'}),
+      '/v2/editions/x1': (_) => jsonBody({'id': 'x1', 'text_id': 'tx'}),
+      '/v2/texts/tbo':
+          (_) => jsonBody(
+            textJson('tbo', editions: ['bo1'], translations: ['ten']),
+          ),
+      '/v2/texts/ten':
+          (_) => jsonBody(
+            textJson(
+              'ten',
+              language: 'en',
+              translationOf: 'tbo',
+              editions: ['en1'],
+            ),
+          ),
+      '/v2/texts/tx': (_) => jsonBody(textJson('tx', editions: ['x1'])),
+      '/v2/editions/bo1/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('bo'))),
+      '/v2/editions/en1/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('en'))),
+      '/v2/editions/x1/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('x'))),
+    });
+
+    test('maps a verse to another language of the same text', () async {
+      final aligned = await server().repository().alignSegment(
+        segmentId: 'bo2',
+        sourceId: 'bo1',
+        targetId: 'en1',
+      );
+
+      expect(aligned, 'en2');
+    });
+
+    test('an unrelated text never matches by verse number', () async {
+      final aligned = await server().repository().alignSegment(
+        segmentId: 'x2',
+        sourceId: 'x1',
+        targetId: 'en1',
+      );
+
+      expect(aligned, isNull);
+    });
+
+    test('the same edition keeps the id without fetching segments', () async {
+      final s = server();
+      final aligned = await s.repository().alignSegment(
+        segmentId: 'bo2',
+        sourceId: 'bo1',
+        targetId: 'bo1',
+      );
+
+      expect(aligned, 'bo2');
+      expect(s.count('/v2/editions/bo1/segmentation/segments'), 0);
+    });
   });
 
   group('LibraryRepository.segmentNumbers', () {

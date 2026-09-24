@@ -23,10 +23,10 @@ class Env {
   static String get libraryApiUrl =>
       _nonEmpty('LIBRARY_API_URL') ?? 'https://library.webuddhist.com';
 
-  /// Library tag that marks the texts listed as chants
-  static String get libraryChantsTagId =>
-      _nonEmpty('LIBRARY_CHANTS_TAG_ID') ??
-      (throw Exception('LIBRARY_CHANTS_TAG_ID not found in environment'));
+  /// Library tag that marks the texts listed as chants. Null when unset; the
+  /// chant list then reports a load error rather than failing to build (the
+  /// same datasource also serves the user's collections).
+  static String? get libraryChantsTagId => _nonEmpty('LIBRARY_CHANTS_TAG_ID');
 
   static String? _nonEmpty(String key) {
     final value = dotenv.env[key]?.trim();
