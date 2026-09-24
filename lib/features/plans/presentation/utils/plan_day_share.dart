@@ -8,6 +8,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 
 /// Downloads the plan day's shareable image and shares it together with the
 /// day completion message and the plan day deep link. Returns false when the
@@ -65,7 +66,7 @@ Future<bool> sharePlanDayImage({
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
-    return result.status != ShareResultStatus.dismissed;
+    return ShareAnalytics.wasUsed(result);
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

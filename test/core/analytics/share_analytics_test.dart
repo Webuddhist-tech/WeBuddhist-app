@@ -23,7 +23,7 @@ void main() {
     });
   });
 
-  test('only a dismissed sheet is not a share', () {
+  test('only a confirmed share counts', () {
     expect(
       ShareAnalytics.wasUsed(const ShareResult('', ShareResultStatus.success)),
       isTrue,
@@ -32,7 +32,7 @@ void main() {
       ShareAnalytics.wasUsed(
         const ShareResult('', ShareResultStatus.unavailable),
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       ShareAnalytics.wasUsed(

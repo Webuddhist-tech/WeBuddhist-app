@@ -33,10 +33,11 @@ class ShareAnalytics {
 
   final AnalyticsService _analytics;
 
-  /// A dismissed sheet is not a share. `unavailable` still counts because
-  /// Android often cannot tell what happened after the sheet opened.
+  /// Only a confirmed share counts. Android 23+ and iOS 15+ (the app's
+  /// floors) always report a result, so `unavailable` never happens here and
+  /// is treated as not shared rather than guessed at.
   static bool wasUsed(ShareResult result) =>
-      result.status != ShareResultStatus.dismissed;
+      result.status == ShareResultStatus.success;
 
   void contentShared({
     required ShareSurface surface,

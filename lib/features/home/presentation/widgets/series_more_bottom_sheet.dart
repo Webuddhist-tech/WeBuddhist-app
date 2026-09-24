@@ -47,21 +47,21 @@ class _SeriesMoreBottomSheetState extends ConsumerState<SeriesMoreBottomSheet> {
     setState(() => _isBookmarking = true);
     try {
       final nav = Navigator.of(context);
-      final wasBookmarked = ref.read(isBookmarkedProvider(_bookmarkTarget));
-      final didToggle = await BookmarkController(
+      final outcome = await BookmarkController(
         ref: ref,
         context: context,
-      ).toggleSeries(widget.seriesId, name: widget.seriesName);
-      if (!mounted || !didToggle) return;
-      // A failed request puts the cached state back, so only a state that
-      // actually changed is a bookmark event.
-      final isBookmarked = ref.read(isBookmarkedProvider(_bookmarkTarget));
-      if (isBookmarked != wasBookmarked) {
+      ).toggleOutcome(
+        type: BookmarkType.series,
+        sourceId: widget.seriesId,
+        name: widget.seriesName,
+      );
+      if (!mounted || outcome == BookmarkToggleOutcome.blocked) return;
+      if (outcome != BookmarkToggleOutcome.failed) {
         ref
             .read(seriesAnalyticsProvider)
             .seriesBookmarked(
               seriesId: widget.seriesId,
-              bookmarked: isBookmarked,
+              bookmarked: outcome == BookmarkToggleOutcome.added,
             );
       }
       nav.pop();
