@@ -100,22 +100,22 @@ void applyBookmarkListCache(
   }
 }
 
-void warmBookmarkExistsCacheFromList(Ref ref, BookmarkTarget target) {
-  if (ref.read(bookmarkExistsCacheProvider).containsKey(target)) return;
-
+/// [target]'s status from the bookmarks list when it is already loaded and
+/// holds it. Read-only: providers call this while building, when writing to
+/// [bookmarkExistsCacheProvider] is not allowed.
+BookmarkExistsResult? bookmarkStatusFromLoadedList(
+  Ref ref,
+  BookmarkTarget target,
+) {
   // Only reuse the list when it is already loaded — never read [bookmarksProvider]
   // to spawn a full paginated fetch just for a exists warm-up.
-  if (!ref.exists(bookmarksProvider)) return;
+  if (!ref.exists(bookmarksProvider)) return null;
 
   final listState = ref.read(bookmarksProvider);
-  if (listState.isLoading) return;
+  if (listState.isLoading) return null;
 
-  applyBookmarkListCache(
-    ref.read(bookmarkExistsCacheProvider.notifier),
-    listState.bookmarks,
-    target,
-    alreadyCached: false,
-  );
+  final hit = findBookmarkInList(listState.bookmarks, target);
+  return hit == null ? null : BookmarkExistsResult(exists: true, id: hit.id);
 }
 
 /// Whether [target] is bookmarked for the signed-in user.
@@ -132,8 +132,7 @@ final bookmarkExistsProvider = FutureProvider.autoDispose
       final cached = ref.read(bookmarkExistsCacheProvider)[target];
       if (cached != null) return cached;
 
-      warmBookmarkExistsCacheFromList(ref, target);
-      final fromList = ref.read(bookmarkExistsCacheProvider)[target];
+      final fromList = bookmarkStatusFromLoadedList(ref, target);
       if (fromList != null) return fromList;
 
       final result = await ref
@@ -161,9 +160,8 @@ final prefetchBookmarkExistsProvider =
       final auth = ref.watch(authProvider);
       if (auth.isGuest || !auth.isLoggedIn) return;
 
-      warmBookmarkExistsCacheFromList(ref, target);
-
-      // If the bookmarks list is already in memory, re-warm when it finishes loading.
+      // If the bookmarks list is already in memory, re-warm when it finishes
+      // loading. Not fireImmediately: that would write the cache mid-build.
       if (ref.exists(bookmarksProvider)) {
         ref.listen(bookmarksProvider, (_, next) {
           if (next.isLoading) return;
@@ -173,7 +171,7 @@ final prefetchBookmarkExistsProvider =
             target,
             alreadyCached: ref.read(bookmarkExistsCacheProvider).containsKey(target),
           );
-        }, fireImmediately: true);
+        });
       }
 
       ref.watch(bookmarkExistsProvider(target));
@@ -189,7 +187,8 @@ final isBookmarkedProvider = Provider.autoDispose.family<bool, BookmarkTarget>(
 
     return ref.watch(bookmarkExistsProvider(target)).maybeWhen(
           data: (result) => result.exists,
-          orElse: () => false,
+          // Filled on the first frame when the loaded list already has it.
+          orElse: () => bookmarkStatusFromLoadedList(ref, target)?.exists ?? false,
         );
   },
 );
