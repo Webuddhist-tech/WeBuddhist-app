@@ -475,7 +475,7 @@ abstract class AppLocalizations {
   /// No description provided for @mala_group_accumulations.
   ///
   /// In en, this message translates to:
-  /// **'Group accumulations'**
+  /// **'Add recitation to'**
   String get mala_group_accumulations;
 
   /// No description provided for @mala_groups_section.
@@ -1705,7 +1705,7 @@ abstract class AppLocalizations {
   /// No description provided for @home_group_events.
   ///
   /// In en, this message translates to:
-  /// **'Group Events'**
+  /// **'Featured Events'**
   String get home_group_events;
 
   /// No description provided for @home_poems.
@@ -4649,13 +4649,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{This message will be removed from the chat for everyone.} other{These messages will be removed from the chat for everyone.}}'**
+  /// **'This message will be deleted for everyone in this chat.'**
   String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{The message couldn\'t be deleted.} other{{count} messages couldn\'t be deleted.}}'**
+  /// **'The message couldn\'t be deleted.'**
   String group_chat_delete_failed(int count);
 
   /// No description provided for @group_chat_selection_limit.
@@ -5003,7 +5003,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:
-  /// **'Prayer'**
+  /// **'Pray'**
   String get event_prayer_pray;
 
   /// No description provided for @event_prayer_praying.

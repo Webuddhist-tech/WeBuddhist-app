@@ -217,7 +217,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'Add recitation to';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -906,7 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_online => 'Online';
 
   @override
-  String get home_group_events => 'Group Events';
+  String get home_group_events => 'Featured Events';
 
   @override
   String get home_poems => 'Poems';
@@ -2597,24 +2597,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_chat_delete_confirm_body(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'These messages will be removed from the chat for everyone.',
-      one: 'This message will be removed from the chat for everyone.',
-    );
-    return '$_temp0';
+    return 'This message will be deleted for everyone in this chat.';
   }
 
   @override
   String group_chat_delete_failed(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count messages couldn\'t be deleted.',
-      one: 'The message couldn\'t be deleted.',
-    );
-    return '$_temp0';
+    return 'The message couldn\'t be deleted.';
   }
 
   @override
@@ -2816,7 +2804,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prayer requests are closed for this event.';
 
   @override
-  String get event_prayer_pray => 'Prayer';
+  String get event_prayer_pray => 'Pray';
 
   @override
   String get event_prayer_praying => 'Praying';

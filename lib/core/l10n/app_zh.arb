@@ -94,7 +94,7 @@
       }
     }
   },
-  "mala_group_accumulations": "Group accumulations",
+  "mala_group_accumulations": "加入朗誦",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled group",
   "home_timer": "計時",
@@ -897,7 +897,7 @@
   "connect_post_comments_empty": "還沒有留言。開始討論吧。",
   "connect_caption_more": "更多",
   "connect_online": "線上",
-  "home_group_events": "社群活動",
+  "home_group_events": "精選活動",
   "home_poems": "詩歌",
   "poems_load_error": "無法載入詩歌。\n請檢查您的連線並再試一次",
   "poems_empty": "尚無詩歌，請稍後再來。",
