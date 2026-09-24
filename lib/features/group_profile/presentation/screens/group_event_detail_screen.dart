@@ -1846,6 +1846,7 @@ class _VideoLinkCard extends StatelessWidget {
     }
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'video-player'),
         builder:
             (_) => YoutubeVideoPlayer(
               videoUrl: link.url,

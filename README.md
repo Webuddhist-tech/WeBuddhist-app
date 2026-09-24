@@ -40,6 +40,19 @@ Each flavor should use its own PostHog project token:
 | `POSTHOG_HOST` | PostHog ingest host (default `https://us.i.posthog.com`) |
 | `POSTHOG_ENABLED` | Set to `false` to disable analytics locally |
 
+Microsoft Clarity adds session recordings and per-screen heatmaps on top of
+PostHog. One Clarity project can serve every flavor: each session is tagged
+with `environment` and `app_flavor`, so dev traffic can be filtered out on the
+dashboard. Screens are named after the go_router route name (`reader`,
+`home-settings`, …), imperatively pushed screens after their `RouteSettings`
+name, and the four bottom tabs as `tab-home` / `tab-practice` / `tab-connect` /
+`tab-me`.
+
+| Variable | Description |
+|----------|-------------|
+| `CLARITY_PROJECT_ID` | Clarity project ID (Clarity dashboard → Settings → Overview). Empty disables Clarity |
+| `CLARITY_ENABLED` | Set to `false` to disable Clarity locally |
+
 ### 4. Run the App
 
 **Android**

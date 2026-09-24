@@ -105,7 +105,7 @@ class PostHogAnalyticsService implements AnalyticsService {
   }
 
   @override
-  NavigatorObserver get routeObserver => PosthogObserver();
+  List<NavigatorObserver> get routeObservers => [PosthogObserver()];
 
   Future<void> _registerDefaultSuperProperties() async {
     PackageInfo? packageInfo;

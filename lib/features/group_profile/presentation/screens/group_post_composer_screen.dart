@@ -50,6 +50,7 @@ class GroupPostComposerScreen extends ConsumerStatefulWidget {
     return Navigator.of(context).push<GroupPostComposerResult>(
       MaterialPageRoute(
         fullscreenDialog: true,
+        settings: const RouteSettings(name: 'group-post-composer'),
         builder: (_) => GroupPostComposerScreen(profile: profile, post: post),
       ),
     );

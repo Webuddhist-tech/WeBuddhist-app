@@ -27,7 +27,5 @@ class NoOpAnalyticsService implements AnalyticsService {
   Future<void> setSuperProperties(Map<String, Object?> properties) async {}
 
   @override
-  NavigatorObserver get routeObserver => _NoOpNavigatorObserver();
+  List<NavigatorObserver> get routeObservers => const [];
 }
-
-class _NoOpNavigatorObserver extends NavigatorObserver {}

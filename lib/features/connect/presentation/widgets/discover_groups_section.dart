@@ -59,6 +59,7 @@ class DiscoverGroupsSection extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute<void>(
+                        settings: const RouteSettings(name: 'discover-groups'),
                         builder: (_) => const DiscoverGroupsScreen(),
                       ),
                     );

@@ -92,7 +92,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // deep link can be inserted twice and leave a stale page under Back.
     overridePlatformDefaultLocation: true,
     debugLogDiagnostics: true,
-    observers: [ref.read(analyticsServiceProvider).routeObserver],
+    observers: ref.read(analyticsServiceProvider).routeObservers,
 
     // Re-evaluate redirect whenever auth state changes.
     refreshListenable: GoRouterRefreshStream(
@@ -203,6 +203,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
+        // The shell has its own navigator; without observers here every
+        // tab-shell screen would go untracked.
+        observers: ref.read(analyticsServiceProvider).routeObservers,
         builder: (context, state, child) {
           return HomeShellScaffold(child: child);
         },
@@ -648,11 +651,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             _logger.warning(
               'plan-text route called without NavigationContext extra',
             );
-            return const MaterialPage(child: MainNavigationScreen());
+            return MaterialPage(
+              name: state.name,
+              child: const MainNavigationScreen(),
+            );
           }
 
           return CustomTransitionPage(
             key: state.pageKey,
+            name: state.name,
             child: PlanTextScreen(navigationContext: extra),
             transitionsBuilder: (
               context,
@@ -753,6 +760,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             final direction = navigationContext.navigationDirection;
             return CustomTransitionPage(
               key: state.pageKey,
+              name: state.name,
               child: screen,
               transitionsBuilder: (
                 context,
@@ -772,7 +780,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
 
           // Default MaterialPage for non-plan navigation
-          return MaterialPage(key: state.pageKey, child: screen);
+          return MaterialPage(
+            key: state.pageKey,
+            name: state.name,
+            child: screen,
+          );
         },
       ),
     ],

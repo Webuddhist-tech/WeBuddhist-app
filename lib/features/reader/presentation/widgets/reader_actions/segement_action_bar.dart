@@ -289,6 +289,7 @@ class _ResourcesPanelState extends State<_ResourcesPanel> {
     HapticFeedback.lightImpact();
     await Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'video-player'),
         builder:
             (_) => YoutubeVideoPlayer(videoUrl: video.url, title: video.title),
       ),

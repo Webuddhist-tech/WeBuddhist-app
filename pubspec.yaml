@@ -156,6 +156,7 @@ dependencies:
   package_info_plus: ^9.0.0
   flutter_image_compress: ^2.4.0
   pali_script_convertor: ^1.0.1
+  clarity_flutter: ^1.10.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

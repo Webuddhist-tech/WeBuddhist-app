@@ -1300,7 +1300,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     try {
       final result = await Navigator.of(context).push<SessionSelection>(
-        MaterialPageRoute(builder: (_) => const SelectSessionScreen()),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'select-session'),
+          builder: (_) => const SelectSessionScreen(),
+        ),
       );
 
       if (result == null || !mounted) return;

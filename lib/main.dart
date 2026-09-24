@@ -5,6 +5,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/analytics/clarity_analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
@@ -197,7 +198,12 @@ void main() async {
     _logger.warning('Error initializing app links handler: $e');
   }
 
-  runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: ClarityAnalyticsService.wrap(const MyApp()),
+    ),
+  );
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -282,6 +288,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.listen<Locale>(localeProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTolgeeLocale(next));
+    });
+
+    // Bottom tabs are not routes, so Clarity's screen name for the home
+    // shell has to follow the selected tab from here.
+    ref.listen<int>(mainNavigationIndexProvider, (previous, next) {
+      if (previous == next) return;
+      ClarityAnalyticsService.instance.setTab(MainTab.values[next].name);
     });
 
     // Get the singleton router instance - same instance is reused across rebuilds

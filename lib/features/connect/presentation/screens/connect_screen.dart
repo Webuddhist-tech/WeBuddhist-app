@@ -82,6 +82,7 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
+                  settings: const RouteSettings(name: 'group-search'),
                   builder: (_) => const GroupSearchScreen(),
                 ),
               );

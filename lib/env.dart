@@ -69,6 +69,19 @@ class Env {
     return apiKey != null && apiKey.isNotEmpty;
   }
 
+  /// Microsoft Clarity project ID (optional — Clarity disabled when absent)
+  static String? get clarityProjectId => dotenv.env['CLARITY_PROJECT_ID'];
+
+  /// Whether Clarity session recording and heatmaps are enabled for this build
+  static bool get clarityEnabled {
+    final String? enabledFlag = dotenv.env['CLARITY_ENABLED'];
+    if (enabledFlag != null && enabledFlag.isNotEmpty) {
+      return enabledFlag.toLowerCase() == 'true';
+    }
+    final String? projectId = clarityProjectId;
+    return projectId != null && projectId.isNotEmpty;
+  }
+
   /// Whether phone (SMS OTP) login is offered on this build.
   ///
   /// Defaults to false: the button must stay hidden until the Auth0 tenant for

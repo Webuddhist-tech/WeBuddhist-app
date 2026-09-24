@@ -155,6 +155,7 @@ class _PlanInfoState extends ConsumerState<PlanInfo> {
         Navigator.push(
           context,
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'author-detail'),
             builder: (context) => AuthorDetailScreen(authorId: authorId),
           ),
         );
