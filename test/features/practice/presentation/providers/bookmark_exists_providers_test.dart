@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -17,11 +19,15 @@ class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// The bookmarks list as the Bookmarks page leaves it: already loaded.
-class _LoadedBookmarks extends StateNotifier<BookmarksState>
+/// The bookmarks list, loaded or still loading.
+class _FakeBookmarks extends StateNotifier<BookmarksState>
     implements BookmarksNotifier {
-  _LoadedBookmarks(List<BookmarkDTO> bookmarks)
-    : super(BookmarksState(bookmarks: bookmarks));
+  _FakeBookmarks(List<BookmarkDTO> bookmarks, {bool isLoading = false})
+    : super(BookmarksState(bookmarks: bookmarks, isLoading: isLoading));
+
+  void finishLoading(List<BookmarkDTO> bookmarks) {
+    state = BookmarksState(bookmarks: bookmarks);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -30,12 +36,16 @@ class _LoadedBookmarks extends StateNotifier<BookmarksState>
 class _Repository implements BookmarkRepository {
   int existsCalls = 0;
 
+  /// When set, exists lookups wait on it instead of answering at once.
+  Completer<Either<Failure, BookmarkExistsResult>>? pending;
+
   @override
   Future<Either<Failure, BookmarkExistsResult>> checkBookmarkExists({
     required String sourceId,
     BookmarkType? type,
   }) async {
     existsCalls++;
+    if (pending != null) return pending!.future;
     return const Right(BookmarkExistsResult(exists: false));
   }
 
@@ -58,12 +68,17 @@ void main() {
 
   late _Repository repository;
 
-  ProviderContainer container(List<BookmarkDTO> bookmarks) {
+  ProviderContainer container(
+    List<BookmarkDTO> bookmarks, {
+    bool isLoading = false,
+  }) {
     repository = _Repository();
     final c = ProviderContainer(
       overrides: [
         authProvider.overrideWith((ref) => _SignedInAuth()),
-        bookmarksProvider.overrideWith((ref) => _LoadedBookmarks(bookmarks)),
+        bookmarksProvider.overrideWith(
+          (ref) => _FakeBookmarks(bookmarks, isLoading: isLoading),
+        ),
         bookmarkRepositoryProvider.overrideWithValue(repository),
       ],
     );
@@ -95,5 +110,24 @@ void main() {
 
     expect(isBookmarked.read(), isFalse);
     expect(repository.existsCalls, 1);
+  });
+
+  // The list is still loading when the item opens; its listener fills the
+  // cache once the list arrives, after the providers have built.
+  test('a list that finishes loading fills the cache', () async {
+    final c = container(const [], isLoading: true);
+    repository.pending = Completer();
+
+    final isBookmarked = c.listen(isBookmarkedProvider(target), (_, __) {});
+    expect(isBookmarked.read(), isFalse);
+    expect(c.read(bookmarkExistsCacheProvider), isNot(contains(target)));
+
+    (c.read(bookmarksProvider.notifier) as _FakeBookmarks).finishLoading([
+      bookmark,
+    ]);
+
+    expect(c.read(bookmarkExistsCacheProvider)[target]?.exists, isTrue);
+    expect(c.read(bookmarkExistsCacheProvider)[target]?.id, 'bookmark-1');
+    expect(isBookmarked.read(), isTrue);
   });
 }
