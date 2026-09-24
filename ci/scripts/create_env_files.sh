@@ -19,7 +19,8 @@ set -euo pipefail
   echo "AUTH0_AUDIENCE=${DEV_AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${DEV_PHONE_LOGIN_ENABLED:-false}"
   echo "ENVIRONMENT=development"
-  echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID:-yn5na4zbuc}"
+  echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
+  echo "CLARITY_ENABLED=${DEV_CLARITY_ENABLED-}"
 } > .env.dev
 
 # --- Staging ---------------------------------------------------------------
@@ -30,7 +31,8 @@ set -euo pipefail
   echo "AUTH0_AUDIENCE=${STAGING_AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${STAGING_PHONE_LOGIN_ENABLED:-false}"
   echo "ENVIRONMENT=staging"
-  echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID:-yn5na4zbuc}"
+  echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
+  echo "CLARITY_ENABLED=${STAGING_CLARITY_ENABLED-}"
 } > .env.staging
 
 # --- Production ------------------------------------------------------------
@@ -41,8 +43,11 @@ set -euo pipefail
   echo "AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${PHONE_LOGIN_ENABLED:-false}"
   echo "ENVIRONMENT=production"
-  # Clarity project id is a public identifier, not a secret.
-  echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID:-yn5na4zbuc}"
+  # Clarity project id is a public identifier, not a secret. Unset falls back
+  # to the shared project; export it empty (or CLARITY_ENABLED=false) to build
+  # without Clarity.
+  echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
+  echo "CLARITY_ENABLED=${CLARITY_ENABLED-}"
 } > .env.prod
 
 echo "Created .env.dev, .env.staging, .env.prod"

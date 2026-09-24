@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -51,7 +52,11 @@ class GroupPostComposerScreen extends ConsumerStatefulWidget {
       MaterialPageRoute(
         fullscreenDialog: true,
         settings: const RouteSettings(name: 'group-post-composer'),
-        builder: (_) => GroupPostComposerScreen(profile: profile, post: post),
+        // Drafts, photos and link previews never appear in Clarity recordings.
+        builder:
+            (_) => ClarityMask(
+              child: GroupPostComposerScreen(profile: profile, post: post),
+            ),
       ),
     );
   }

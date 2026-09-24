@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/config/router/page_transitions.dart';
@@ -188,17 +189,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: "onboarding",
         builder: (context, state) => const OnboardingWrapper(),
       ),
+      // Chat content is private: masked from Clarity recordings regardless of
+      // the project's masking mode. Taps still count toward heatmaps.
       GoRoute(
         path: AppRoutes.chats,
         name: 'chats',
-        builder: (context, state) => const ChatsScreen(),
+        builder: (context, state) => const ClarityMask(child: ChatsScreen()),
       ),
       GoRoute(
         path: AppRoutes.groupChat,
         name: 'group-chat',
         builder: (context, state) {
           final groupId = state.pathParameters['groupId'] ?? '';
-          return GroupChatScreen(groupId: groupId);
+          return ClarityMask(child: GroupChatScreen(groupId: groupId));
         },
       ),
       ShellRoute(
