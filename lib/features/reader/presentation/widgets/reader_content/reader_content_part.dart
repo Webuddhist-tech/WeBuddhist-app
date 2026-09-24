@@ -566,32 +566,34 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (content == null || content.isEmpty) return;
     final liveNotifier = ref.read(recitationLiveProvider(eventId).notifier);
 
+    if (!live.isFollowing) return;
     if (!_livePositionIsInThisText(position, readerState)) {
-      if (!live.isFollowing) return;
       final items = widget.params.navigationContext?.planTextItems;
       final inSequence =
           items?.any(
             (item) => item.isSourceReference && item.textId == position.textId,
           ) ??
           false;
-      if (!inSequence) {
-        liveNotifier.setOutOfSync(true);
-      } else if (initial) {
-        // Another text of the sequence, already live before this screen had
-        // rendered: the user navigated here themselves, so stop following
-        // rather than bounce them away.
-        liveNotifier.pauseFollowing();
+      if (inSequence) {
+        if (initial) {
+          // Another text of the sequence, already live before this screen had
+          // rendered: the user navigated here themselves, so stop following
+          // rather than bounce them away.
+          liveNotifier.pauseFollowing();
+        }
+        // A snapshot on another text falls through: the screen leaves the
+        // user where they are (reader_screen skips the switch for it) but
+        // keeps following, so the operator's next move carries them along.
+        // Nothing marks a frame as the connect snapshot, so it is inferred
+        // from arriving before the grace window closes — an operator's first
+        // move into that window looks identical. Pausing here would strand
+        // such a user off the recitation until they re-armed Sync by hand.
+        return;
       }
-      // A snapshot on another text falls through: the screen leaves the user
-      // where they are (reader_screen skips the switch for it) but keeps
-      // following, so the operator's next move carries them along. Nothing
-      // marks a frame as the connect snapshot, so it is inferred from
-      // arriving before the grace window closes — an operator's first move
-      // into that window looks identical. Pausing here would strand such a
-      // user off the recitation until they re-armed Sync by hand.
-      return;
+      // Possibly another edition or language of this text, whose ids match
+      // nothing loaded here: the jump below aligns it by verse, and reports
+      // out of sync when the texts are unrelated.
     }
-    if (!live.isFollowing) return;
 
     final generation = ++_liveGeneration;
     var localId = _localSegmentIdFor(content, position.segmentId);
