@@ -164,6 +164,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(ReaderConstants.scrollDebounce, () {
       _checkPaginationThresholds();
+      _reportFurthestSegment();
     });
 
     // Track scroll direction for app bar visibility
@@ -262,6 +263,25 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         _hasTriggeredNext = false;
       });
     }
+  }
+
+  /// The deepest line on screen, for the session's reading depth.
+  void _reportFurthestSegment() {
+    if (!mounted) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    final content = ref.read(readerNotifierProvider(widget.params)).content;
+    if (positions.isEmpty || content == null) return;
+    final items = _isCollapsed ? _buildCollapsedItems(content) : content.items;
+    var furthest = 0;
+    for (final position in positions) {
+      if (position.index >= items.length) continue;
+      final number = items[position.index].segment?.segmentNumber ?? 0;
+      if (number > furthest) furthest = number;
+    }
+    if (furthest == 0) return;
+    ref
+        .read(readerNotifierProvider(widget.params).notifier)
+        .markSegmentReached(furthest);
   }
 
   /// The primary segment the secondary stream first aligns to
@@ -555,32 +575,34 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (content == null || content.isEmpty) return;
     final liveNotifier = ref.read(recitationLiveProvider(eventId).notifier);
 
+    if (!live.isFollowing) return;
     if (!_livePositionIsInThisText(position, readerState)) {
-      if (!live.isFollowing) return;
       final items = widget.params.navigationContext?.planTextItems;
       final inSequence =
           items?.any(
             (item) => item.isSourceReference && item.textId == position.textId,
           ) ??
           false;
-      if (!inSequence) {
-        liveNotifier.setOutOfSync(true);
-      } else if (initial) {
-        // Another text of the sequence, already live before this screen had
-        // rendered: the user navigated here themselves, so stop following
-        // rather than bounce them away.
-        liveNotifier.pauseFollowing();
+      if (inSequence) {
+        if (initial) {
+          // Another text of the sequence, already live before this screen had
+          // rendered: the user navigated here themselves, so stop following
+          // rather than bounce them away.
+          liveNotifier.pauseFollowing();
+        }
+        // A snapshot on another text falls through: the screen leaves the
+        // user where they are (reader_screen skips the switch for it) but
+        // keeps following, so the operator's next move carries them along.
+        // Nothing marks a frame as the connect snapshot, so it is inferred
+        // from arriving before the grace window closes — an operator's first
+        // move into that window looks identical. Pausing here would strand
+        // such a user off the recitation until they re-armed Sync by hand.
+        return;
       }
-      // A snapshot on another text falls through: the screen leaves the user
-      // where they are (reader_screen skips the switch for it) but keeps
-      // following, so the operator's next move carries them along. Nothing
-      // marks a frame as the connect snapshot, so it is inferred from
-      // arriving before the grace window closes — an operator's first move
-      // into that window looks identical. Pausing here would strand such a
-      // user off the recitation until they re-armed Sync by hand.
-      return;
+      // Possibly another edition or language of this text, whose ids match
+      // nothing loaded here: the jump below aligns it by verse, and reports
+      // out of sync when the texts are unrelated.
     }
-    if (!live.isFollowing) return;
 
     final generation = ++_liveGeneration;
     var localId = _localSegmentIdFor(content, position.segmentId);

@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:ui' show VoidCallback;
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
@@ -13,10 +13,13 @@ import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state
 import 'package:flutter_pecha/features/reader/domain/services/section_flattener_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_merger_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_analytics.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
@@ -51,15 +54,21 @@ class ReaderParams {
 }
 
 /// Notifier for managing reader state
-class ReaderNotifier extends StateNotifier<ReaderState> {
+class ReaderNotifier extends StateNotifier<ReaderState>
+    with WidgetsBindingObserver {
   final Ref _ref;
   final ReaderParams _params;
   final SectionFlattenerService _flattener;
   final SectionMergerService _merger;
+  final ReaderAnalytics _analytics;
+  final _session = ReaderSessionTracker();
   final _logger = AppLogger('ReaderNotifier');
 
   Timer? _highlightTimer;
+  Timer? _backgroundTimer;
   bool _isDisposed = false;
+  bool _openTracked = false;
+  int _pagesFetched = 0;
 
   /// Tracks the `versionId` used for the current/last fetch so we can decide
   /// when a settings change actually warrants a reload. Starts `null` —
@@ -77,16 +86,20 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     required ReaderParams params,
     SectionFlattenerService? flattener,
     SectionMergerService? merger,
+    ReaderAnalytics? analytics,
   }) : _ref = ref,
        _params = params,
        _flattener = flattener ?? const SectionFlattenerService(),
        _merger = merger ?? SectionMergerService(),
+       _analytics = analytics ?? ref.read(readerAnalyticsProvider),
        super(ReaderState.initial(params.textId)) {
     _ref.listen<ReaderDualLayoutSettings>(
       readerDualSettingsProvider(params.textId),
       _onDualSettingsChanged,
       fireImmediately: false,
     );
+    WidgetsBinding.instance.addObserver(this);
+    _session.start();
     Future<void>(_initialize);
   }
 
@@ -179,6 +192,8 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
         hasNextPage: response.hasNextPage,
         hasPreviousPage: window.hasPreviousPage,
       );
+      // The edition the user opened, not the original it is shown under.
+      _trackOpened(state.openedText ?? response.textDetail);
 
       // `version_id` in this API is just the loaded text's id. Capture it so
       // the dual-settings listener can treat a user pick of the same version
@@ -212,11 +227,11 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   Future<void> _openAsTranslation() async {
     final dual = _ref.read(readerDualSettingsProvider(_params.textId).notifier);
     bool userLayout() => dual.isPrimaryEdited || dual.isSecondaryEdited;
-    final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
     final ReaderVersionDetail opened;
     final ReaderVersionDetail root;
     final Map<String, String> aliases;
     try {
+      final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
       opened = await settings.fetchVersionInfo(versionId: _params.textId);
       final rootId = opened.parentId;
       if (rootId == null || rootId.isEmpty) return;
@@ -497,11 +512,106 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       size: size,
     );
 
+    final stopwatch = Stopwatch()..start();
     final result = await _ref.read(textDetailsFutureProvider(params).future);
+    stopwatch.stop();
     return result.fold(
       (failure) =>
           throw Exception('Failed to fetch content: ${failure.message}'),
-      (response) => response,
+      (response) {
+        _trackPageLoaded(response, stopwatch.elapsedMilliseconds);
+        return response;
+      },
+    );
+  }
+
+  /// Fired once, when the first page is on screen, so the loaded text's
+  /// title, language and version are known.
+  void _trackOpened(TextDetail textDetail) {
+    if (_openTracked) return;
+    _openTracked = true;
+    final layout = readerLayoutFor(
+      _ref.read(readerDualSettingsProvider(_params.textId)),
+    );
+    _analytics.readerOpened(
+      textId: _params.textId,
+      textTitle: textDetail.title,
+      source: readerOpenSourceFor(_params.navigationContext?.source),
+      language: textDetail.language,
+      versionId: textDetail.id,
+      script: _ref.read(readerScriptForLanguageProvider(textDetail.language)),
+      layout: layout,
+      entrySegment: _params.segmentId,
+    );
+  }
+
+  void _trackPageLoaded(ReaderResponse response, int loadMs) {
+    if (_isDisposed) return;
+    _session.pageLoaded();
+    _analytics.readerPageLoaded(
+      textId: _params.textId,
+      pageNumber: ++_pagesFetched,
+      segmentCount: _countSegments(response.content.sections),
+      loadMs: loadMs,
+    );
+  }
+
+  int _countSegments(List<Section> sections) {
+    var count = 0;
+    for (final section in sections) {
+      count += section.segments.length;
+      count += _countSegments(section.sections ?? const []);
+    }
+    return count;
+  }
+
+  /// The deepest segment scrolled into view, for the session summary.
+  void markSegmentReached(int segmentNumber) {
+    if (_isDisposed) return;
+    _session.segmentReached(segmentNumber);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _onForeground();
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        _onBackground();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
+  /// Out of sight: the session ends unless the app is back within the grace.
+  void _onBackground() {
+    _session.background();
+    _backgroundTimer?.cancel();
+    _backgroundTimer = Timer(ReaderSessionTracker.backgroundGrace, _endSession);
+  }
+
+  /// A suspended app fires the timer late, so the grace is checked here too.
+  void _onForeground() {
+    _backgroundTimer?.cancel();
+    if (_session.backgroundedFor >= ReaderSessionTracker.backgroundGrace) {
+      _endSession();
+    }
+    if (_session.isActive) {
+      _session.foreground();
+    } else {
+      _session.start();
+    }
+  }
+
+  void _endSession() {
+    final summary = _session.end();
+    if (summary == null) return;
+    _analytics.readerSessionEnded(
+      textId: _params.textId,
+      session: summary,
+      segmentsTotal: state.totalSegments,
     );
   }
 
@@ -836,6 +946,9 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   void dispose() {
     _isDisposed = true;
     _highlightTimer?.cancel();
+    _backgroundTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _endSession();
     super.dispose();
   }
 }

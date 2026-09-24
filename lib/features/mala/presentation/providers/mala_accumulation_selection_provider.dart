@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_accumulation_selection.dart';
@@ -14,6 +16,10 @@ class MalaAccumulationSelectionNotifier
   final String _presetId;
   String? _navigationGroupAccumulatorId;
   bool _loadedFromStorage = false;
+  final _loaded = Completer<void>();
+
+  /// Resolves once the persisted selection has been applied.
+  Future<void> get loaded => _loaded.future;
 
   /// Applies a one-shot group selection from navigation (e.g. group accumulator
   /// "Recite now"). Takes precedence over persisted selection when [_load] has
@@ -41,6 +47,7 @@ class MalaAccumulationSelectionNotifier
       state = MalaAccumulationSelection.fromStorage(raw);
     }
     _loadedFromStorage = true;
+    _loaded.complete();
   }
 
   Future<void> selectPersonal() async {

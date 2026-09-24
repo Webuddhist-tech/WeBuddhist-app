@@ -133,6 +133,8 @@ Future<ReaderState> _loaded(ProviderContainer container, ReaderParams params) as
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late FakeLocalStorage storage;
   late List<TextDetailsParams> fetches;
   late _FakeTexts texts;

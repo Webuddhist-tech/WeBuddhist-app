@@ -22,6 +22,7 @@ class MalaBeads extends StatefulWidget {
     required this.beadInRound,
     required this.beadsPerRound,
     required this.onTap,
+    this.onSwipe,
     required this.beadColor,
     required this.threadColor,
     this.enabled = true,
@@ -33,6 +34,9 @@ class MalaBeads extends StatefulWidget {
   final int beadInRound;
   final int beadsPerRound;
   final VoidCallback onTap;
+
+  /// Called instead of [onTap] for a leftward swipe or fling, when set.
+  final VoidCallback? onSwipe;
   final Color beadColor;
   final Color threadColor;
   final bool enabled;
@@ -150,7 +154,8 @@ class _MalaBeadsState extends State<MalaBeads>
     // Right → left only (monotonic: a left → right swipe never decrements).
     final leftward =
         _dragDx <= -_kSwipeDistance || velocity <= -_kFlingVelocity;
-    if (leftward) _handleTap(); // one +1 per swipe, same as a tap
+    // One +1 per swipe, same as a tap.
+    if (leftward && widget.enabled) (widget.onSwipe ?? widget.onTap)();
   }
 
   @override

@@ -973,6 +973,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         void openAboutScreen() {
           Navigator.of(context).push(
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'group-about'),
               builder:
                   (_) => GroupAboutScreen(
                     title: profile.title,
@@ -1979,6 +1980,7 @@ class _GroupFollowButton extends ConsumerWidget {
       // context.pop(), which go_router resolves to this route.
       await Navigator.of(context, rootNavigator: true).push<void>(
         MaterialPageRoute<void>(
+          settings: const RouteSettings(name: 'notifications'),
           builder: (_) => const NotificationSettingsScreen(),
         ),
       );

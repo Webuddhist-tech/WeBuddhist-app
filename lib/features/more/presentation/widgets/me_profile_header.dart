@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -38,26 +39,31 @@ class MeProfileHeader extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (email.isNotEmpty) ...[
-                        const SizedBox(height: 4),
+                  // Personal details stay hidden in Clarity recordings.
+                  child: ClarityMask(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          email,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color:
-                                isDark ? AppColors.grey600 : AppColors.grey900,
+                          displayName,
+                          style: textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
+                        if (email.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            email,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color:
+                                  isDark
+                                      ? AppColors.grey600
+                                      : AppColors.grey900,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),

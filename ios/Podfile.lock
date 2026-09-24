@@ -19,6 +19,8 @@ PODS:
     - FlutterMacOS
     - JWTDecode (= 3.2.0)
     - SimpleKeychain (= 1.2.0)
+  - clarity_flutter (1.0.0):
+    - Flutter
   - connectivity_plus (0.0.1):
     - Flutter
   - emoji_picker_flutter (0.0.1):
@@ -253,6 +255,7 @@ DEPENDENCIES:
   - audio_service (from `.symlinks/plugins/audio_service/darwin`)
   - audio_session (from `.symlinks/plugins/audio_session/ios`)
   - auth0_flutter (from `.symlinks/plugins/auth0_flutter/darwin`)
+  - clarity_flutter (from `.symlinks/plugins/clarity_flutter/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - emoji_picker_flutter (from `.symlinks/plugins/emoji_picker_flutter/ios`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
@@ -319,6 +322,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/audio_session/ios"
   auth0_flutter:
     :path: ".symlinks/plugins/auth0_flutter/darwin"
+  clarity_flutter:
+    :path: ".symlinks/plugins/clarity_flutter/ios"
   connectivity_plus:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   emoji_picker_flutter:
@@ -376,6 +381,7 @@ SPEC CHECKSUMS:
   audio_session: 9bb7f6c970f21241b19f5a3658097ae459681ba0
   Auth0: 2876d0c36857422eda9cb580a6cc896c7d14cb36
   auth0_flutter: 031042ca6cf84f1b21611062b33ea7ec4bf3bc52
+  clarity_flutter: 4fd069e9b8220d234b301553406f24d63be8a2d1
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   emoji_picker_flutter: ece213fc274bdddefb77d502d33080dc54e616cc
   Firebase: a8539b633d474fbeb654c7043f9c1649e274045b

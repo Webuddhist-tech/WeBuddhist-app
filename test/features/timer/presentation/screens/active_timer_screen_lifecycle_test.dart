@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/timer/data/services/timer_live_activity.dart';
@@ -12,9 +13,13 @@ import 'package:flutter_pecha/features/timer/presentation/providers/timers_provi
 import 'package:flutter_pecha/features/timer/presentation/screens/active_timer_screen.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_keep_alive.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/timer_sound_player.dart';
+import 'package:flutter_pecha/features/timer/presentation/utils/timer_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/analytics/recording_analytics_service.dart';
 
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -508,6 +513,111 @@ void main() {
       expect(soundPlayer.playCount, 1);
     });
   });
+
+  group('analytics', () {
+    testWidgets('timer_started fires when the countdown hands off', (
+      tester,
+    ) async {
+      final clock = _FakeClock();
+      final analytics = RecordingAnalyticsService();
+
+      await _pumpScreen(
+        tester,
+        clock: clock,
+        notifier: _FakeTimerSessionNotifications(),
+        soundPlayer: _FakeTimerBellPlayer(),
+        analytics: analytics,
+      );
+      expect(analytics.events, isEmpty);
+
+      await _advanceThroughCountdown(tester, clock);
+
+      expect(analytics.eventNames, [AnalyticsEvents.timerStarted]);
+      expect(analytics.events.single.properties, {
+        'preset_id': 'timer-1',
+        'duration_s': 10,
+      });
+    });
+
+    testWidgets('timer_completed carries pauses and backgrounding', (
+      tester,
+    ) async {
+      final clock = _FakeClock();
+      final analytics = RecordingAnalyticsService();
+
+      await _pumpScreen(
+        tester,
+        clock: clock,
+        notifier: _FakeTimerSessionNotifications(),
+        soundPlayer: _FakeTimerBellPlayer(),
+        analytics: analytics,
+      );
+      await _advanceThroughCountdown(tester, clock);
+
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      await _lockScreen(tester);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await _advanceBy(tester, clock, _timerDuration);
+
+      expect(analytics.eventNames, [
+        AnalyticsEvents.timerStarted,
+        AnalyticsEvents.timerCompleted,
+      ]);
+      expect(analytics.events.last.properties, {
+        'preset_id': 'timer-1',
+        'duration_s': 10,
+        'was_backgrounded': true,
+        'pause_count': 1,
+      });
+    });
+
+    testWidgets('finishing early reports timer_discarded with progress', (
+      tester,
+    ) async {
+      final clock = _FakeClock();
+      final analytics = RecordingAnalyticsService();
+
+      await _pumpRoutedScreen(tester, clock: clock, analytics: analytics);
+      await _advanceThroughCountdown(tester, clock);
+      await _advanceBy(tester, clock, const Duration(seconds: 4));
+
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pump();
+
+      expect(analytics.eventNames, [
+        AnalyticsEvents.timerStarted,
+        AnalyticsEvents.timerDiscarded,
+      ]);
+      expect(analytics.events.last.properties, {
+        'preset_id': 'timer-1',
+        'elapsed_s': 4,
+        'pct_complete': 40,
+      });
+    });
+
+    testWidgets('finishing after the bell is not a discard', (tester) async {
+      final clock = _FakeClock();
+      final analytics = RecordingAnalyticsService();
+
+      await _pumpRoutedScreen(tester, clock: clock, analytics: analytics);
+      await _advanceThroughCountdown(tester, clock);
+      await _advanceBy(tester, clock, _timerDuration);
+
+      await tester.tap(find.byType(OutlinedButton));
+      await tester.pump();
+
+      expect(analytics.eventNames, [
+        AnalyticsEvents.timerStarted,
+        AnalyticsEvents.timerCompleted,
+      ]);
+    });
+  });
 }
 
 Future<void> _lockScreen(WidgetTester tester) async {
@@ -538,36 +648,96 @@ Future<void> _pumpScreen(
   required _FakeTimerSessionNotifications notifier,
   required _FakeTimerBellPlayer soundPlayer,
   _FakeTimerKeepAlive? keepAlive,
+  RecordingAnalyticsService? analytics,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        stopUserTimerUseCaseProvider.overrideWithValue(
-          StopUserTimerUseCase(
-            ({required durationMs, required timerId}) async =>
-                Right<Failure, void>(null),
-          ),
-        ),
-      ],
+      overrides: _overrides(analytics),
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: ActiveTimerScreen(
-          presetTimer: PresetTimer(
-            id: 'timer-1',
-            name: 'Meditation',
-            durationMs: _timerDuration.inMilliseconds,
-          ),
-          clock: clock.now,
+        home: _buildScreen(
+          clock: clock,
+          notifier: notifier,
           soundPlayer: soundPlayer,
-          sessionNotifier: notifier,
-          keepAlive: keepAlive ?? _FakeTimerKeepAlive(),
-          liveActivity: _FakeTimerLockScreenActivity(),
+          keepAlive: keepAlive,
         ),
       ),
     ),
   );
   await tester.pump();
+}
+
+/// Like [_pumpScreen], but under a router with a page below, so Finish and
+/// Discard have somewhere to pop to.
+Future<void> _pumpRoutedScreen(
+  WidgetTester tester, {
+  required _FakeClock clock,
+  required RecordingAnalyticsService analytics,
+}) async {
+  final router = GoRouter(
+    initialLocation: '/timer',
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, __) => const Scaffold(),
+        routes: [
+          GoRoute(
+            path: 'timer',
+            builder:
+                (_, __) => _buildScreen(
+                  clock: clock,
+                  notifier: _FakeTimerSessionNotifications(),
+                  soundPlayer: _FakeTimerBellPlayer(),
+                ),
+          ),
+        ],
+      ),
+    ],
+  );
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: _overrides(analytics),
+      child: MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
+List<Override> _overrides(RecordingAnalyticsService? analytics) => [
+  stopUserTimerUseCaseProvider.overrideWithValue(
+    StopUserTimerUseCase(
+      ({required durationMs, required timerId}) async =>
+          Right<Failure, void>(null),
+    ),
+  ),
+  timerAnalyticsProvider.overrideWithValue(
+    TimerAnalytics(analytics ?? RecordingAnalyticsService()),
+  ),
+];
+
+ActiveTimerScreen _buildScreen({
+  required _FakeClock clock,
+  required _FakeTimerSessionNotifications notifier,
+  required _FakeTimerBellPlayer soundPlayer,
+  _FakeTimerKeepAlive? keepAlive,
+}) {
+  return ActiveTimerScreen(
+    presetTimer: PresetTimer(
+      id: 'timer-1',
+      name: 'Meditation',
+      durationMs: _timerDuration.inMilliseconds,
+    ),
+    clock: clock.now,
+    soundPlayer: soundPlayer,
+    sessionNotifier: notifier,
+    keepAlive: keepAlive ?? _FakeTimerKeepAlive(),
+    liveActivity: _FakeTimerLockScreenActivity(),
+  );
 }
 
 Future<void> _advanceThroughCountdown(

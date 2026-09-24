@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -74,13 +75,23 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
       if (!mounted) return;
 
       final sharePositionOrigin = getSharePositionOrigin(context: context);
-      await SharePlus.instance.share(
+      final result = await SharePlus.instance.share(
         ShareParams(
           text: '$shareMessage\n\n$shareUrl',
           sharePositionOrigin: sharePositionOrigin,
         ),
       );
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      if (ShareAnalytics.wasUsed(result)) {
+        ref
+            .read(shareAnalyticsProvider)
+            .contentShared(
+              surface: ShareSurface.text,
+              targetId: widget.textId,
+              format: 'text',
+            );
+      }
+      Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }

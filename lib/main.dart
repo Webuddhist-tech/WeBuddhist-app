@@ -5,6 +5,8 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/analytics/clarity_analytics_service.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
@@ -197,7 +199,12 @@ void main() async {
     _logger.warning('Error initializing app links handler: $e');
   }
 
-  runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: ClarityAnalyticsService.wrap(const MyApp()),
+    ),
+  );
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -284,6 +291,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       unawaited(_applyTolgeeLocale(next));
     });
 
+    // Bottom tabs are not routes, so Clarity's screen name for the home
+    // shell has to follow the selected tab from here.
+    ref.listen<int>(mainNavigationIndexProvider, (previous, next) {
+      if (previous == next) return;
+      ClarityAnalyticsService.instance.setTab(MainTab.values[next].name);
+    });
+
     // Get the singleton router instance - same instance is reused across rebuilds
     // final router = AppRouter().router;
     final router = ref.watch(appRouterProvider);
@@ -292,6 +306,11 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // arrived during cold start and dispatch warm links immediately afterward.
     if (!_hasRegisteredDeepLinkRouters) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Analytics first: setRouter dispatches a link stored during cold
+        // start right away, and it is only tracked if analytics is set.
+        final entryAnalytics = ref.read(entryAnalyticsProvider);
+        AirbridgeDeepLinkService.setAnalytics(entryAnalytics);
+        AppLinksDeepLinkService.instance.setAnalytics(entryAnalytics);
         AirbridgeDeepLinkService.setRouter(router);
         AppLinksDeepLinkService.instance.setRouter(router);
         AppLinksDeepLinkService.instance.setTabSetter((int tabIndex) {
@@ -382,29 +401,31 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
           retryCount: 3, // Retry failed queries 3 times
         ),
       ),
-      child: MaterialApp.router(
-        title: 'WeBuddhist',
-        theme: AppTheme.lightTheme(locale),
-        darkTheme: AppTheme.darkTheme(locale),
-        themeMode: themeMode,
-        locale: locale,
-        localizationsDelegates: [
-          MaterialLocalizationsBo.delegate,
-          CupertinoLocalizationsBo.delegate,
-          // Replaces AppLocalizations.delegate so every `context.l10n` lookup
-          // can be overridden from Tolgee at runtime.
-          TolgeeAppLocalizationsDelegate(revision: tolgeeRevision),
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: L10n.all,
-        debugShowCheckedModeBanner: false,
-        // routerConfig: router,
-        routerConfig: router,
-        builder:
-            (context, child) =>
-                ForceUpdateGate(child: child ?? const SizedBox.shrink()),
+      child: PostHogAnalyticsService.wrap(
+        MaterialApp.router(
+          title: 'WeBuddhist',
+          theme: AppTheme.lightTheme(locale),
+          darkTheme: AppTheme.darkTheme(locale),
+          themeMode: themeMode,
+          locale: locale,
+          localizationsDelegates: [
+            MaterialLocalizationsBo.delegate,
+            CupertinoLocalizationsBo.delegate,
+            // Replaces AppLocalizations.delegate so every `context.l10n` lookup
+            // can be overridden from Tolgee at runtime.
+            TolgeeAppLocalizationsDelegate(revision: tolgeeRevision),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: L10n.all,
+          debugShowCheckedModeBanner: false,
+          // routerConfig: router,
+          routerConfig: router,
+          builder:
+              (context, child) =>
+                  ForceUpdateGate(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }

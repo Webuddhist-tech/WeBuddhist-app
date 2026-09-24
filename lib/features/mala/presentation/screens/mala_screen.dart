@@ -1,6 +1,6 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
-import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/core.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -12,6 +12,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/group_accumul
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_settings_provider.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/add_mala_rounds_button.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/group_accumulations_bar.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/mala_beads.dart';
@@ -28,6 +29,7 @@ class MalaScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialPresetId,
     this.initialGroupAccumulatorId,
+    this.source,
   });
 
   /// Optionally open directly on a specific mantra.
@@ -37,6 +39,9 @@ class MalaScreen extends ConsumerStatefulWidget {
   /// accumulation instead of the last-used personal/group choice.
   final String? initialGroupAccumulatorId;
 
+  /// Where the screen was opened from, carried on `mala_screen_opened`.
+  final String? source;
+
   @override
   ConsumerState<MalaScreen> createState() => _MalaScreenState();
 }
@@ -45,30 +50,58 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
   int _index = 0;
   bool _initialisedIndex = false;
   bool _appliedInitialGroupSelection = false;
-  String? _trackedOpenedId;
+  bool _trackedOpened = false;
+  late final MalaSessionTracker _session;
 
+  @override
+  void initState() {
+    super.initState();
+    _session = MalaSessionTracker(ref.read(malaAnalyticsProvider))..start();
+  }
+
+  @override
+  void dispose() {
+    _session.dispose();
+    super.dispose();
+  }
+
+  /// Once per screen, after the persisted selection has loaded so `mode` is
+  /// the one the user will count into.
   void _trackOpened(Mantra mantra) {
-    if (_trackedOpenedId == mantra.presetId) return;
-    _trackedOpenedId = mantra.presetId;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(analyticsServiceProvider)
-          .track(
-            AnalyticsEvents.malaScreenOpened,
-            properties: {'accumulatorId': mantra.presetId},
-          );
-    });
+    if (_trackedOpened) return;
+    _trackedOpened = true;
+    final presetId = mantra.presetId;
+    final selectionProvider = malaAccumulationSelectionProvider(presetId);
+    unawaited(
+      ref.read(selectionProvider.notifier).loaded.then((_) {
+        if (!mounted) return;
+        final selection = ref.read(selectionProvider);
+        final groups =
+            ref.read(joinedAccumulatorGroupsProvider(presetId)).valueOrNull;
+        ref
+            .read(malaAnalyticsProvider)
+            .screenOpened(
+              presetId: presetId,
+              mantraName: mantra.localizedName('en'),
+              mode: selection.analyticsMode,
+              groupId: malaGroupIdFor(
+                groups ?? const [],
+                selection.groupAccumulatorId,
+              ),
+              source: widget.source,
+            );
+      }),
+    );
   }
 
   void _switch(List<Mantra> mantras, int next) {
     if (next < 0 || next >= mantras.length || next == _index) return;
-    final from = mantras[_index].presetId;
-    final to = mantras[next].presetId;
     ref
-        .read(analyticsServiceProvider)
-        .track(
-          AnalyticsEvents.malaMantraSwitched,
-          properties: {'from': from, 'to': to},
+        .read(malaAnalyticsProvider)
+        .mantraSwitched(
+          fromPresetId: mantras[_index].presetId,
+          toPresetId: mantras[next].presetId,
+          via: MalaSwitchVia.carousel,
         );
     setState(() => _index = next);
   }
@@ -132,7 +165,6 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     }
     _index = _index.clamp(0, mantras.length - 1);
     final mantra = mantras[_index];
-    _trackOpened(mantra);
 
     ref.watch(
       prefetchBookmarkExistsProvider(
@@ -159,6 +191,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     );
 
     _applyInitialGroupSelectionIfNeeded(mantra.presetId);
+    _trackOpened(mantra);
 
     ref.listen(joinedAccumulatorGroupsProvider(mantra.presetId), (_, next) {
       next.whenData((loadedGroups) {
@@ -189,23 +222,35 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
         !counter.isSeeding &&
         (selection.isPersonal || selection.groupAccumulatorId != null);
 
-    void onBeadTap() {
+    void onBead(MalaInput input) {
       if (counter.isSeeding) return;
+      final int? total;
       if (selection.isPersonal) {
-        notifier.incrementBead(
+        total = notifier.incrementBead(
           soundEnabled: settings.soundEnabled,
           vibrationEnabled: settings.vibrationEnabled,
         );
-        return;
+      } else {
+        final selectedGroupId = selection.groupAccumulatorId;
+        if (selectedGroupId == null || groups.isEmpty) return;
+        total = groupCountsNotifier.increment(
+          groupAccumulatorId: selectedGroupId,
+          groups: groups,
+          soundEnabled: settings.soundEnabled,
+          vibrationEnabled: settings.vibrationEnabled,
+          beadsPerRound: beadsPerRound,
+        );
       }
-      final selectedGroupId = selection.groupAccumulatorId;
-      if (selectedGroupId == null || groups.isEmpty) return;
-      groupCountsNotifier.increment(
-        groupAccumulatorId: selectedGroupId,
-        groups: groups,
-        soundEnabled: settings.soundEnabled,
-        vibrationEnabled: settings.vibrationEnabled,
-        beadsPerRound: beadsPerRound,
+      // Null means the tap was ignored, so no bead was counted.
+      if (total == null) return;
+      _session.onBead(
+        presetId: mantra.presetId,
+        mantraName: mantra.localizedName('en'),
+        mode: selection.analyticsMode,
+        groupId: malaGroupIdFor(groups, selection.groupAccumulatorId),
+        total: total,
+        roundComplete: total % beadsPerRound == 0,
+        input: input,
       );
     }
 
@@ -280,7 +325,8 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                                     beadImageBytes: counter.beadImageBytes,
                                     beadColor: const Color(0xFF8D6E63),
                                     threadColor: const Color(0xFFC62828),
-                                    onTap: onBeadTap,
+                                    onTap: () => onBead(MalaInput.tap),
+                                    onSwipe: () => onBead(MalaInput.swipe),
                                   ),
                         ),
                       );

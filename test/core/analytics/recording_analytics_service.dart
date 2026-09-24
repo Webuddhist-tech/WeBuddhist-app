@@ -39,5 +39,5 @@ class RecordingAnalyticsService implements AnalyticsService {
   Future<void> setSuperProperties(Map<String, Object?> properties) async {}
 
   @override
-  NavigatorObserver get routeObserver => NavigatorObserver();
+  List<NavigatorObserver> get routeObservers => [NavigatorObserver()];
 }
