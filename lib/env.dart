@@ -13,14 +13,20 @@ class Env {
       dotenv.env['BASE_API_URL'] ??
       (throw Exception('BASE_API_URL not found in environment'));
 
-  /// Library (texts) API base URL
+  /// Library (texts) API base URL. A blank value (an unset CI secret writes
+  /// `LIBRARY_API_URL=`) falls back to the default instead of an empty base.
   static String get libraryApiUrl =>
-      dotenv.env['LIBRARY_API_URL'] ?? 'https://library.webuddhist.com';
+      _nonEmpty('LIBRARY_API_URL') ?? 'https://library.webuddhist.com';
 
   /// Library tag that marks the texts listed as chants
   static String get libraryChantsTagId =>
-      dotenv.env['LIBRARY_CHANTS_TAG_ID'] ??
+      _nonEmpty('LIBRARY_CHANTS_TAG_ID') ??
       (throw Exception('LIBRARY_CHANTS_TAG_ID not found in environment'));
+
+  static String? _nonEmpty(String key) {
+    final value = dotenv.env[key]?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
 
   /// Auth0 domain (fetched from backend /props endpoint)
   static String? get auth0Domain => dotenv.env['AUTH0_DOMAIN'];
