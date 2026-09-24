@@ -141,6 +141,93 @@ void main() {
     });
   });
 
+  group('SecondaryReaderNotifier headings', () {
+    // Verses 1-2 under "Prayer" > "Homage", verse 3 under "Praise".
+    ReaderResponse page() => ReaderResponse(
+      textDetail: _translationPage().textDetail,
+      content: Toc(
+        id: 'E1',
+        textId: 'T1',
+        sections: [
+          Section(
+            id: 'prayer',
+            title: 'Prayer',
+            sectionNumber: 1,
+            segments: const [],
+            sections: [
+              Section(
+                id: 'homage',
+                title: 'Homage',
+                sectionNumber: 1,
+                segments: [
+                  _verse(1, translation: 'a'),
+                  _verse(2, translation: 'b'),
+                ],
+                sections: const [],
+              ),
+            ],
+          ),
+          Section(
+            id: 'E1/gap/1',
+            sectionNumber: 0,
+            segments: [_verse(3, translation: 'c')],
+            sections: const [],
+          ),
+        ],
+      ),
+      size: 20,
+      paginationDirection: 'next',
+      currentSegmentPosition: 1,
+      lastSegmentPosition: 3,
+      totalSegments: 3,
+    );
+
+    test('are placed at the verse they open at, outer first', () async {
+      final container = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith(
+            (ref, params) async => Right<Failure, ReaderResponse>(page()),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      const key = SecondaryReaderKey(textId: 'E2', versionId: 'E1');
+      final sub = container.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      expect(
+        container.read(secondaryReaderProvider(key)).headsTranslationOnly,
+        isTrue,
+        reason: "no original headings while the first page loads",
+      );
+
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final state = container.read(secondaryReaderProvider(key));
+      final headings = state.headingsBySegmentNumber;
+      expect(headings.keys, [1], reason: 'untitled runs are not headings');
+      expect(headings[1]!.map((h) => (h.section.title, h.depth)), [
+        ('Prayer', 0),
+        ('Homage', 1),
+      ]);
+      expect(headings[1]!.map((h) => h.endSegmentNumber), [2, 2]);
+      expect(state.headingsEnclosing(2).map((h) => h.section.title), [
+        'Prayer',
+        'Homage',
+      ]);
+      expect(state.headingsEnclosing(3), isEmpty);
+      expect(state.headsTranslationOnly, isTrue);
+    });
+
+    test('a translation without a table of contents keeps the original '
+        'headings', () {
+      const state = SecondaryReaderState(
+        contentBySegmentNumber: {1: 'a'},
+      );
+      expect(state.headsTranslationOnly, isFalse);
+    });
+  });
+
   group('SecondaryReaderNotifier', () {
     late List<TextDetailsParams> fetches;
     late ProviderContainer container;

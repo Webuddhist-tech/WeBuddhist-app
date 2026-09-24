@@ -1,4 +1,24 @@
+import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
+
+/// A titled heading of the translation's table of contents, placed at the
+/// first verse it holds; [endSegmentNumber] is the last one loaded so far.
+class SecondaryHeading {
+  final Section section;
+  final int depth;
+  final int segmentNumber;
+  final int endSegmentNumber;
+
+  const SecondaryHeading({
+    required this.section,
+    required this.depth,
+    required this.segmentNumber,
+    required this.endSegmentNumber,
+  });
+
+  bool holds(int number) =>
+      segmentNumber <= number && number <= endSegmentNumber;
+}
 
 /// Identifies a secondary reader fetch by the (textId, versionId) pair.
 ///
@@ -51,6 +71,9 @@ class SecondaryReaderKey {
 /// pagination can use the secondary's own `segment_id` boundaries.
 class SecondaryReaderState {
   final Map<int, String> contentBySegmentNumber;
+
+  /// The translation's headings by the verse they open at, outer first.
+  final Map<int, List<SecondaryHeading>> headingsBySegmentNumber;
   final List<Segment> loadedSegments;
   final int totalSegments;
   final bool isLoading;
@@ -62,6 +85,7 @@ class SecondaryReaderState {
 
   const SecondaryReaderState({
     this.contentBySegmentNumber = const {},
+    this.headingsBySegmentNumber = const {},
     this.loadedSegments = const [],
     this.totalSegments = 0,
     this.isLoading = false,
@@ -98,8 +122,23 @@ class SecondaryReaderState {
   String? contentFor(int segmentNumber) =>
       contentBySegmentNumber[segmentNumber];
 
+  /// Whose headings a page showing only this translation uses: its own when
+  /// it has a table of contents, and none while its first page loads, so the
+  /// original's never flash in. A translation without one keeps the
+  /// original's rather than losing the structure.
+  bool get headsTranslationOnly =>
+      isLoading || headingsBySegmentNumber.isNotEmpty;
+
+  /// The headings whose verses include [segmentNumber], outer first.
+  List<SecondaryHeading> headingsEnclosing(int segmentNumber) => [
+    for (final list in headingsBySegmentNumber.values)
+      for (final heading in list)
+        if (heading.holds(segmentNumber)) heading,
+  ]..sort((a, b) => a.depth.compareTo(b.depth));
+
   SecondaryReaderState copyWith({
     Map<int, String>? contentBySegmentNumber,
+    Map<int, List<SecondaryHeading>>? headingsBySegmentNumber,
     List<Segment>? loadedSegments,
     int? totalSegments,
     bool? isLoading,
@@ -113,6 +152,8 @@ class SecondaryReaderState {
     return SecondaryReaderState(
       contentBySegmentNumber:
           contentBySegmentNumber ?? this.contentBySegmentNumber,
+      headingsBySegmentNumber:
+          headingsBySegmentNumber ?? this.headingsBySegmentNumber,
       loadedSegments: loadedSegments ?? this.loadedSegments,
       totalSegments: totalSegments ?? this.totalSegments,
       isLoading: isLoading ?? this.isLoading,

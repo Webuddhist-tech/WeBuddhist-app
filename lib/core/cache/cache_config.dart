@@ -57,7 +57,8 @@ class CacheKeys {
 
   /// Generate key for text details (reader view with navigation).
   /// Versioned so entries cached before the library API (v2), table-of-contents
-  /// headings (v3) or segment types (v4) are never served.
+  /// headings (v3), segment types (v4) or translations opened under their
+  /// original (v6) are never served.
   static String textDetails({
     required String textId,
     String? contentId,
@@ -68,7 +69,7 @@ class CacheKeys {
     int? size,
   }) {
     final parts = [
-      'text_details_v4',
+      'text_details_v6',
       textId,
       contentId ?? 'default',
       versionId ?? 'default',

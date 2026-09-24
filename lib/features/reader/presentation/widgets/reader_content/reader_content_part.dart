@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/read_full_text_footer.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
@@ -86,11 +87,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   /// Ordered list of segment ids considered "active" for this navigation: the
   /// plan subtask's segment range, or the single target segment.
+  /// Ids are the loaded text's: a translation opened under its original has
+  /// navigation's ids mapped across ([ReaderState.segmentAliases]).
   List<String> get _activeSegmentIds {
+    final state = ref.read(readerNotifierProvider(widget.params));
     final visible = widget.visibleSegmentIds;
-    if (visible != null && visible.isNotEmpty) return visible;
+    if (visible != null && visible.isNotEmpty) {
+      return visible.map(state.loadedSegmentId).toList(growable: false);
+    }
     final initial = widget.initialSegmentId;
-    if (initial != null) return [initial];
+    if (initial != null) return [state.loadedSegmentId(initial)];
     return const [];
   }
 
@@ -733,7 +739,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_itemScrollController.isAttached) {
           final index = state.content!.getSegmentIndex(
-            widget.initialSegmentId!,
+            state.loadedSegmentId(widget.initialSegmentId!),
           );
           if (index != null) {
             _isProgrammaticScroll = true;
@@ -794,6 +800,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final bool isCollapsed = _isCollapsed;
     final List<FlattenedItem> collapsedItems =
         isCollapsed ? _buildCollapsedItems(content) : const [];
+    final collapsedHeadings =
+        isCollapsed && secondaryState != null
+            ? collapsedTranslationHeadings(collapsedItems, secondaryState)
+            : null;
     final bool showChantFooter =
         !isCollapsed && widget.chantSessionFooter != null;
     final int listItemCount =
@@ -837,12 +847,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   // Trailing item is the "Read Full Text" footer.
                   if (index >= collapsedItems.length) {
                     return ReadFullTextFooter(
-                      textDetail: state.textDetail,
+                      // Credits the edition the user opened.
+                      textDetail: state.openedText,
                       onReadFullText: _expandFullText,
                     );
                   }
                   return _buildItem(
                     item: collapsedItems[index],
+                    previousItem:
+                        index > 0 ? collapsedItems[index - 1] : null,
+                    collapsedHeadings: collapsedHeadings ?? const {},
                     state: state,
                     dualSecondaryEnabled: secondaryActive,
                     showOriginal: showOriginal,
@@ -885,19 +899,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     );
   }
 
-  /// The subset of loaded items that are active segments, in reading order.
-  /// Used to render the collapsed view before "Read Full Text" is tapped.
-  List<FlattenedItem> _buildCollapsedItems(FlattenedContent content) {
-    final activeSet = _activeSegmentIds.toSet();
-    return content.items
-        .where(
-          (item) =>
-              item.isSegment &&
-              item.segmentId != null &&
-              activeSet.contains(item.segmentId),
-        )
-        .toList();
-  }
+  /// The active segments in reading order under their headings, for the
+  /// collapsed view before "Read Full Text" is tapped.
+  List<FlattenedItem> _buildCollapsedItems(FlattenedContent content) =>
+      collapsedReaderItems(content, _activeSegmentIds.toSet());
 
   Widget _buildItem({
     required FlattenedItem item,
@@ -909,15 +914,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     required void Function(Segment) onSegmentTap,
     FlattenedItem? previousItem,
     String? liveSegmentId,
+    // Set in the collapsed view: the translation's headings per verse id.
+    Map<String, List<SecondaryHeading>>? collapsedHeadings,
   }) {
+    // Headings follow the top layer: with only the translation on screen they
+    // are the translation's, drawn above the verse they open at. The
+    // original's stay in the list as empty items so indices do not move.
+    final translationHeadings =
+        dualSecondaryEnabled &&
+        !showOriginal &&
+        (secondaryState?.headsTranslationOnly ?? false);
     return item.when(
       header:
-          (section, depth) => SectionHeader(
-            section: section,
-            depth: depth,
-            language: widget.language,
-            showDivider: depth > 0 && (previousItem?.isSegment ?? false),
-          ),
+          (section, depth) =>
+              translationHeadings
+                  ? const SizedBox.shrink()
+                  : SectionHeader(
+                    section: section,
+                    depth: depth,
+                    language: widget.language,
+                    showDivider:
+                        depth > 0 && (previousItem?.isSegment ?? false),
+                  ),
       segment: (segment, depth, sectionId) {
         final isSelected =
             state.selectedSegment?.segmentId == segment.segmentId;
@@ -926,7 +944,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             liveSegmentId != null && liveSegmentId == segment.segmentId;
 
         if (dualSecondaryEnabled) {
-          return InterlinearSegmentItem(
+          final headings =
+              !translationHeadings
+                  ? const <SecondaryHeading>[]
+                  : collapsedHeadings != null
+                  ? collapsedHeadings[segment.segmentId] ??
+                      const <SecondaryHeading>[]
+                  : secondaryState!.headingsBySegmentNumber[segment
+                          .segmentNumber] ??
+                      const <SecondaryHeading>[];
+          final verse = InterlinearSegmentItem(
             segment: segment,
             depth: depth,
             primaryLanguage: widget.language,
@@ -941,6 +968,24 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             highlightSource: state.highlightSource,
             isLive: isLive,
             onTap: () => onSegmentTap(segment),
+          );
+          if (headings.isEmpty) return verse;
+          final firstVerse =
+              previousItem == null ||
+              segment.segmentId == state.content?.firstSegmentId;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < headings.length; i++)
+                SectionHeader(
+                  section: headings[i].section,
+                  depth: headings[i].depth,
+                  language: secondarySlot.languageCode,
+                  // Like the original's: a nested heading after lines.
+                  showDivider: i == 0 && headings[i].depth > 0 && !firstVerse,
+                ),
+              verse,
+            ],
           );
         }
 

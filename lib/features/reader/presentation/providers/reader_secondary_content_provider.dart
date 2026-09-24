@@ -63,7 +63,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   }
 
   void _applyInitial(ReaderResponse response) {
-    final segments = _extractSegments(response.content.sections);
+    final segments = _readPage(response);
     state = state.copyWith(
       contentBySegmentNumber: _buildSegmentNumberMap(segments),
       loadedSegments: segments,
@@ -85,7 +85,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       final response = await _fetch(segmentId: lastId, direction: 'next');
       if (_disposed) return;
 
-      final newSegments = _extractSegments(response.content.sections);
+      final newSegments = _readPage(response);
       final existingIds =
           state.loadedSegments.map((s) => s.segmentId).toSet();
       final dedupedNew = newSegments
@@ -132,7 +132,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       final response = await _fetch(segmentId: firstId, direction: 'previous');
       if (_disposed) return;
 
-      final newSegments = _extractSegments(response.content.sections);
+      final newSegments = _readPage(response);
       final existingIds =
           state.loadedSegments.map((s) => s.segmentId).toSet();
       final dedupedNew = newSegments
@@ -195,6 +195,85 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       ),
       (response) => response,
     );
+  }
+
+  /// Headings seen so far by section id; a section spanning pages keeps the
+  /// earliest and latest verses it was seen at.
+  final Map<String, SecondaryHeading> _headings = {};
+
+  /// A page's segments, recording its headings on the way.
+  List<Segment> _readPage(ReaderResponse response) {
+    final sections = response.content.sections;
+    if (_collectHeadings(sections, 0)) {
+      state = state.copyWith(headingsBySegmentNumber: _headingMap());
+    }
+    return _extractSegments(sections);
+  }
+
+  /// True when a heading was added or moved earlier.
+  bool _collectHeadings(List<Section> sections, int depth) {
+    var changed = false;
+    for (final section in sections) {
+      final first = _firstSegmentNumber(section);
+      final last = _lastSegmentNumber(section);
+      final title = section.title;
+      if (first != null && last != null && title != null && title.isNotEmpty) {
+        final known = _headings[section.id];
+        final start =
+            known == null || first < known.segmentNumber
+                ? first
+                : known.segmentNumber;
+        final end =
+            known == null || last > known.endSegmentNumber
+                ? last
+                : known.endSegmentNumber;
+        if (known == null ||
+            start != known.segmentNumber ||
+            end != known.endSegmentNumber) {
+          _headings[section.id] = SecondaryHeading(
+            section: section,
+            depth: depth,
+            segmentNumber: start,
+            endSegmentNumber: end,
+          );
+          changed = true;
+        }
+      }
+      final nested = section.sections;
+      if (nested != null && _collectHeadings(nested, depth + 1)) {
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  static int? _firstSegmentNumber(Section section) {
+    if (section.segments.isNotEmpty) return section.segments.first.segmentNumber;
+    for (final nested in section.sections ?? const <Section>[]) {
+      final first = _firstSegmentNumber(nested);
+      if (first != null) return first;
+    }
+    return null;
+  }
+
+  static int? _lastSegmentNumber(Section section) {
+    final nested = section.sections ?? const <Section>[];
+    for (final child in nested.reversed) {
+      final last = _lastSegmentNumber(child);
+      if (last != null) return last;
+    }
+    return section.segments.isEmpty ? null : section.segments.last.segmentNumber;
+  }
+
+  Map<int, List<SecondaryHeading>> _headingMap() {
+    final map = <int, List<SecondaryHeading>>{};
+    for (final heading in _headings.values) {
+      map.putIfAbsent(heading.segmentNumber, () => []).add(heading);
+    }
+    for (final list in map.values) {
+      list.sort((a, b) => a.depth.compareTo(b.depth));
+    }
+    return map;
   }
 
   List<Segment> _extractSegments(List<Section> sections) {

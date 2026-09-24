@@ -140,7 +140,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     if (_isDisposed) return;
     _logger.debug('ReaderNotifier initializing with params: $_params');
 
-    final initialSegmentId = useNavParams ? _params.segmentId : null;
+    var initialSegmentId = useNavParams ? _params.segmentId : null;
     final initialSize =
         useNavParams ? _params.navigationContext?.initialPageSize : null;
 
@@ -152,6 +152,15 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     try {
       if (useNavParams) await _openAsTranslation();
       if (_isDisposed) return;
+      if (useNavParams && state.openedTranslation != null) {
+        final aliases = await _alignNavigationSegments();
+        if (_isDisposed) return;
+        if (aliases.isNotEmpty) {
+          state = state.copyWith(segmentAliases: aliases);
+          initialSegmentId = state.loadedSegmentId(initialSegmentId ?? '');
+          if (initialSegmentId.isEmpty) initialSegmentId = null;
+        }
+      }
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
@@ -258,6 +267,37 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     } catch (e) {
       _logger.debug('Translation page not fetched ahead: $e');
     }
+  }
+
+  /// Navigation names verses of the opened translation (a plan's range, a
+  /// bookmark); these are the root's matching verses, by verse number. A
+  /// verse with no counterpart is left out and keeps its own id.
+  Future<Map<String, String>> _alignNavigationSegments() async {
+    final rootId =
+        _ref.read(readerDualSettingsProvider(_params.textId)).primary.versionId;
+    if (rootId == null) return const {};
+    final ids = <String>{
+      if (_params.segmentId != null) _params.segmentId!,
+      ...?_params.navigationContext?.currentSegmentIds,
+    };
+    if (ids.isEmpty) return const {};
+    final texts = _ref.read(textsRepositoryProvider);
+    final aligned = await Future.wait(
+      ids.map(
+        (id) => texts.alignSegment(
+          segmentId: id,
+          sourceTextId: _params.textId,
+          targetTextId: rootId,
+        ),
+      ),
+    );
+    final aliases = <String, String>{};
+    var i = 0;
+    for (final id in ids) {
+      final target = aligned[i++];
+      if (target != null && target != id) aliases[id] = target;
+    }
+    return aliases;
   }
 
   // Labels are localized by the sheet from the code.

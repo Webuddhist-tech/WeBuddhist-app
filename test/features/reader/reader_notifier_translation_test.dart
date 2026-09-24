@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/reader/data/datasource/reader_settings_remote_datasource.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_script_option.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
@@ -15,7 +16,9 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
+import 'package:flutter_pecha/features/texts/data/repositories/texts_repository.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
+import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -61,6 +64,25 @@ class _FakeSettings implements ReaderSettingsRemoteDatasource {
     required String textId,
     required String language,
   }) => throw UnimplementedError();
+}
+
+/// Aligns the translation's verses en-N to the root's E2-N.
+class _FakeTexts implements TextsRepository {
+  final aligned = <(String, String, String)>[];
+
+  @override
+  Future<String?> alignSegment({
+    required String segmentId,
+    required String sourceTextId,
+    required String targetTextId,
+  }) async {
+    aligned.add((segmentId, sourceTextId, targetTextId));
+    if (!segmentId.startsWith('en-')) return null;
+    return 'E2-${segmentId.substring(3)}';
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 ReaderResponse _page(String editionId) {
@@ -112,14 +134,17 @@ Future<ReaderState> _loaded(ProviderContainer container, ReaderParams params) as
 void main() {
   late FakeLocalStorage storage;
   late List<TextDetailsParams> fetches;
+  late _FakeTexts texts;
   late ProviderContainer container;
 
   setUp(() {
     storage = FakeLocalStorage();
     fetches = [];
+    texts = _FakeTexts();
     container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
+        textsRepositoryProvider.overrideWithValue(texts),
         readerSettingsRemoteDatasourceProvider.overrideWithValue(
           _FakeSettings(),
         ),
@@ -172,6 +197,38 @@ void main() {
     expect(storage.values, isEmpty, reason: 'per-text layout only');
   });
 
+  test("a plan's verses of the translation map to the root's", () async {
+    final params = ReaderParams(
+      textId: 'E1',
+      segmentId: 'en-1',
+      navigationContext: NavigationContext(
+        source: NavigationSource.plan,
+        planTextItems: [
+          PlanTextItem.sourceReference(
+            textId: 'E1',
+            title: "Today's Verses",
+            segmentIds: const ['en-1', 'en-2', 'loose'],
+          ),
+        ],
+        currentTextIndex: 0,
+      ),
+    );
+    final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+    addTearDown(sub.close);
+
+    final state = await _loaded(container, params);
+
+    expect(state.segmentAliases, {'en-1': 'E2-1', 'en-2': 'E2-2'});
+    expect(texts.aligned.map((a) => (a.$2, a.$3)).toSet(), {('E1', 'E2')});
+    expect(state.loadedSegmentId('loose'), 'loose');
+    // The root page is fetched at the mapped verse.
+    expect(fetches.first.textId, 'E2');
+    expect(fetches.first.segmentId, 'E2-1');
+    // The translation stream still anchors on its own verse.
+    expect(fetches.last.versionId, 'E1');
+    expect(fetches.last.segmentId, 'en-1');
+  });
+
   test('a root edition keeps the loaded text as the original', () async {
     const params = ReaderParams(textId: 'E2');
     final sub = container.listen(readerNotifierProvider(params), (_, __) {});
@@ -182,6 +239,8 @@ void main() {
     expect(fetches.map((f) => f.textId), ['E2']);
     expect(state.openedTranslation, isNull);
     expect(state.openedText?.id, 'E2');
+    expect(state.segmentAliases, isEmpty);
+    expect(texts.aligned, isEmpty);
     final dual = container.read(readerDualSettingsProvider('E2'));
     expect(dual.primary.versionId, isNull);
     expect(dual.secondaryEnabled, isFalse);
