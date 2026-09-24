@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -36,14 +37,17 @@ class PushNotificationService {
     required PushMessagingRepository repository,
     required LocalStorageService storage,
     required ForegroundPushFilter foregroundFilter,
+    EntryAnalytics? analytics,
     Duration reconcileRetryBaseDelay = const Duration(seconds: 5),
   }) : _repository = repository,
        _storage = storage,
        _foregroundFilter = foregroundFilter,
+       _analytics = analytics,
        _reconcileRetryBaseDelay = reconcileRetryBaseDelay;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
+  final EntryAnalytics? _analytics;
 
   /// Screens claim the pushes they already show, so the banner is skipped
   /// for a message the member is looking at. Only the foreground path asks:
@@ -58,7 +62,7 @@ class PushNotificationService {
   /// state. Set by the bootstrap layer to route via [PushMessageNavigator].
   /// Foreground taps reach the navigator separately (through the shared
   /// flutter_local_notifications callback), so they don't pass through here.
-  void Function(PushMessage message)? onOpenMessage;
+  void Function(PushMessage message, PushAppState appState)? onOpenMessage;
 
   String? _token;
   bool _loggedIn = false;
@@ -90,17 +94,29 @@ class PushNotificationService {
   Future<void> _runInitialize() async {
     try {
       await _createAndroidChannel();
+      // Only a request the OS actually shows counts as a prompt.
+      final prompting = await _repository.willPromptForPermission();
+      if (prompting) _analytics?.notificationPermissionPrompted();
       final granted = await _repository.requestPermission();
+      if (prompting) {
+        _analytics?.notificationPermissionAnswered(granted: granted);
+      }
       _logger.info('Notification permission granted: $granted');
 
       _subscriptions
         ..add(_repository.onForegroundMessage.listen(_showNotification))
-        ..add(_repository.onMessageOpenedApp.listen(_onNotificationTapped))
+        ..add(
+          _repository.onMessageOpenedApp.listen(
+            (m) => _onNotificationTapped(m, PushAppState.background),
+          ),
+        )
         ..add(_repository.onTokenRefresh.listen(_onToken));
 
       // Terminated-state launch via a notification tap.
       final launchMessage = await _repository.getInitialMessage();
-      if (launchMessage != null) _onNotificationTapped(launchMessage);
+      if (launchMessage != null) {
+        _onNotificationTapped(launchMessage, PushAppState.terminated);
+      }
 
       // Token for this install.
       final token = await _repository.getToken();
@@ -365,9 +381,9 @@ class PushNotificationService {
     );
   }
 
-  void _onNotificationTapped(PushMessage message) {
+  void _onNotificationTapped(PushMessage message, PushAppState appState) {
     _logger.info('Notification opened: ${message.title} data=${message.data}');
-    onOpenMessage?.call(message);
+    onOpenMessage?.call(message, appState);
   }
 
   Future<void> _createAndroidChannel() async {

@@ -61,11 +61,28 @@ class _MyPlansTabState extends ConsumerState<MyPlansTab> {
         (failure) => false,
         (success) => success,
       );
+      if (!mounted) return;
 
       if (success) {
+        // The card's status badge keeps the completion status loaded.
+        final completion =
+            ref.exists(userPlanDaysCompletionStatusProvider(plan.id))
+                ? ref
+                    .read(userPlanDaysCompletionStatusProvider(plan.id))
+                    .valueOrNull
+                    ?.fold((_) => null, (status) => status)
+                : null;
         ref
             .read(planAnalyticsProvider)
-            .planUnenrolled(planId: plan.id, planName: plan.title);
+            .planUnenrolled(
+              planId: plan.id,
+              planName: plan.title,
+              daysCompleted: completion?.values.where((v) => v).length,
+              daysSinceEnrolled: PlanUtils.daysBetween(
+                plan.startedAt,
+                DateTime.now(),
+              ),
+            );
         // Refresh the plans list and home stats
         ref.invalidate(myPlansPaginatedProvider);
         ref.invalidate(findPlansPaginatedProvider);

@@ -11,6 +11,16 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 
 final _logger = AppLogger('PostHogAnalytics');
 
+/// Property keys blanked before an event leaves the device.
+const List<String> _redactedKeys = [
+  'email',
+  'id_token',
+  'access_token',
+  'phone',
+  'name',
+  'username',
+];
+
 /// PostHog-backed analytics. Initialized manually after dotenv is loaded.
 class PostHogAnalyticsService implements AnalyticsService {
   PostHogAnalyticsService._();
@@ -48,7 +58,8 @@ class PostHogAnalyticsService implements AnalyticsService {
     if (kReleaseMode) {
       config.sessionReplay = true;
       config.sessionReplayConfig.maskAllTexts = true;
-      config.sessionReplayConfig.maskAllImages = false;
+      // Avatars, banners and user uploads must not reach replay.
+      config.sessionReplayConfig.maskAllImages = true;
     }
 
     await Posthog().setup(config);
@@ -107,6 +118,14 @@ class PostHogAnalyticsService implements AnalyticsService {
   @override
   List<NavigatorObserver> get routeObservers => [PosthogObserver()];
 
+  /// Session replay only records inside [PostHogWidget]; it must mount after
+  /// [initialize], which main() guarantees. Returns [child] untouched when
+  /// PostHog is off.
+  static Widget wrap(Widget child) {
+    if (!Env.posthogEnabled) return child;
+    return PostHogWidget(child: child);
+  }
+
   Future<void> _registerDefaultSuperProperties() async {
     PackageInfo? packageInfo;
     try {
@@ -147,7 +166,7 @@ class PostHogAnalyticsService implements AnalyticsService {
       return event;
     }
 
-    for (final String key in <String>['email', 'id_token', 'access_token']) {
+    for (final String key in _redactedKeys) {
       if (properties.containsKey(key)) {
         properties[key] = '***';
       }

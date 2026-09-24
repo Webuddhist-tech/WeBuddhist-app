@@ -1,13 +1,10 @@
-import 'dart:async';
-
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
-import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_list_response_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/domain/usecases/user_plans_usecases.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
 import 'package:flutter_pecha/features/practice/domain/usecases/routine_api_usecases.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
@@ -56,11 +53,14 @@ class EventEnrollmentService {
   ///
   /// Throws a descriptive [Exception] if a critical step fails and the UI
   /// should surface an error to the user.
-  Future<List<UserPlansModel>> enrollInEvents(List<String> planIds) async {
+  Future<List<UserPlansModel>> enrollInEvents(
+    List<String> planIds, {
+    PlanSource source = PlanSource.onboarding,
+  }) async {
     _logger.info('[SP-ENROLL] enrollInEvents START planIds=$planIds');
     for (final planId in planIds) {
       _logger.info('[SP-ENROLL] subscribing $planId');
-      await _subscribeToPlan(planId);
+      await _subscribeToPlan(planId, source);
       _logger.info('[SP-ENROLL] adding routine block for $planId');
       await _addToRoutine(planId);
     }
@@ -90,7 +90,7 @@ class EventEnrollmentService {
 
   // ─── Step 1: Subscribe ───
 
-  Future<void> _subscribeToPlan(String planId) async {
+  Future<void> _subscribeToPlan(String planId, PlanSource source) async {
     final result = await _subscribeToPlanUseCase(
       SubscribeToPlanParams(planId: planId),
     );
@@ -103,12 +103,9 @@ class EventEnrollmentService {
       (success) {
         _logger.info('Subscribed to plan $planId');
         if (success) {
-          unawaited(
-            _ref.read(analyticsServiceProvider).track(
-              AnalyticsEvents.planEnrolled,
-              properties: {AnalyticsProperties.planId: planId},
-            ),
-          );
+          _ref
+              .read(planAnalyticsProvider)
+              .planEnrolled(planId: planId, source: source);
         }
       },
     );

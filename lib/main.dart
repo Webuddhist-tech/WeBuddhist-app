@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/analytics/clarity_analytics_service.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
@@ -307,6 +308,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         AirbridgeDeepLinkService.setRouter(router);
         AppLinksDeepLinkService.instance.setRouter(router);
+        final entryAnalytics = ref.read(entryAnalyticsProvider);
+        AirbridgeDeepLinkService.setAnalytics(entryAnalytics);
+        AppLinksDeepLinkService.instance.setAnalytics(entryAnalytics);
         AppLinksDeepLinkService.instance.setTabSetter((int tabIndex) {
           ref.read(mainNavigationIndexProvider.notifier).state = tabIndex;
         });
@@ -395,29 +399,31 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
           retryCount: 3, // Retry failed queries 3 times
         ),
       ),
-      child: MaterialApp.router(
-        title: 'WeBuddhist',
-        theme: AppTheme.lightTheme(locale),
-        darkTheme: AppTheme.darkTheme(locale),
-        themeMode: themeMode,
-        locale: locale,
-        localizationsDelegates: [
-          MaterialLocalizationsBo.delegate,
-          CupertinoLocalizationsBo.delegate,
-          // Replaces AppLocalizations.delegate so every `context.l10n` lookup
-          // can be overridden from Tolgee at runtime.
-          TolgeeAppLocalizationsDelegate(revision: tolgeeRevision),
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: L10n.all,
-        debugShowCheckedModeBanner: false,
-        // routerConfig: router,
-        routerConfig: router,
-        builder:
-            (context, child) =>
-                ForceUpdateGate(child: child ?? const SizedBox.shrink()),
+      child: PostHogAnalyticsService.wrap(
+        MaterialApp.router(
+          title: 'WeBuddhist',
+          theme: AppTheme.lightTheme(locale),
+          darkTheme: AppTheme.darkTheme(locale),
+          themeMode: themeMode,
+          locale: locale,
+          localizationsDelegates: [
+            MaterialLocalizationsBo.delegate,
+            CupertinoLocalizationsBo.delegate,
+            // Replaces AppLocalizations.delegate so every `context.l10n` lookup
+            // can be overridden from Tolgee at runtime.
+            TolgeeAppLocalizationsDelegate(revision: tolgeeRevision),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: L10n.all,
+          debugShowCheckedModeBanner: false,
+          // routerConfig: router,
+          routerConfig: router,
+          builder:
+              (context, child) =>
+                  ForceUpdateGate(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }

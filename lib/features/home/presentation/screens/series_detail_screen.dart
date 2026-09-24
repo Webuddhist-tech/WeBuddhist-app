@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/analytics/track_first_value.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -217,10 +218,10 @@ class SeriesDetailScreen extends ConsumerWidget {
 
     final message = context.l10n.series_share_message(series.title, url);
     final result = await SharePlus.instance.share(ShareParams(text: message));
-    if (!context.mounted || result.status == ShareResultStatus.dismissed) {
-      return;
-    }
-    ref.read(seriesAnalyticsProvider).seriesShared(seriesId: series.id);
+    if (!context.mounted || !ShareAnalytics.wasUsed(result)) return;
+    ref
+        .read(shareAnalyticsProvider)
+        .contentShared(surface: ShareSurface.series, targetId: series.id);
   }
 
   /// Adds the series to the user's practice routine.

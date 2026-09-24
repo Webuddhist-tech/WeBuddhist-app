@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/services.dart';
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
-import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/network_image_utils.dart';
@@ -88,7 +86,6 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
     Future<List<int>> Function(String url)? downloadImageBytes,
     required MalaSyncManager sync,
     required Future<String?> Function() currentUserId,
-    AnalyticsService? analytics,
     MalaSoundPlayer? sound,
     Duration? seedNetworkTimeout,
   }) : _mantra = mantra,
@@ -98,7 +95,6 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
        _downloadImageBytes = downloadImageBytes ?? _emptyImageDownload,
        _sync = sync,
        _currentUserId = currentUserId,
-       _analytics = analytics,
        _sound = sound,
        _seedNetworkTimeout =
            seedNetworkTimeout ?? _defaultSeedNetworkTimeout,
@@ -115,7 +111,6 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
   final Future<List<int>> Function(String url) _downloadImageBytes;
   final MalaSyncManager _sync;
   final Future<String?> Function() _currentUserId;
-  final AnalyticsService? _analytics;
   final MalaSoundPlayer? _sound;
   final Duration _seedNetworkTimeout;
 
@@ -418,15 +413,16 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
     );
   }
 
-  /// +1 recitation. No-op while seeding or resetting. Monotonic — never decrements.
-  void incrementBead({
+  /// +1 recitation. Monotonic — never decrements. Returns the new total, or
+  /// null while seeding or resetting, when the tap is ignored.
+  int? incrementBead({
     required bool soundEnabled,
     required bool vibrationEnabled,
   }) {
-    if (state.isSeeding || state.isResetting) return;
+    if (state.isSeeding || state.isResetting) return null;
 
     final userId = _userId;
-    if (userId == null || userId.isEmpty) return;
+    if (userId == null || userId.isEmpty) return null;
 
     final newTotal = state.total + 1;
     final roundComplete = newTotal % state.beadsPerRound == 0;
@@ -439,28 +435,24 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
       HapticFeedback.lightImpact();
       if (roundComplete) HapticFeedback.mediumImpact();
     }
-    if (roundComplete) {
-      _analytics?.track(
-        AnalyticsEvents.malaRoundCompleted,
-        properties: {'accumulatorId': _presetId, 'rounds': state.rounds},
-      );
-    }
-
     _sync.onTap(roundComplete: roundComplete);
+    return newTotal;
   }
 
-  /// Adds completed mala rounds counted outside the app (monotonic).
-  void addRounds(int rounds) {
-    if (rounds <= 0 || state.isSeeding || state.isResetting) return;
+  /// Adds completed mala rounds counted outside the app (monotonic). Returns
+  /// false when the add was ignored.
+  bool addRounds(int rounds) {
+    if (rounds <= 0 || state.isSeeding || state.isResetting) return false;
 
     final userId = _userId;
-    if (userId == null || userId.isEmpty) return;
+    if (userId == null || userId.isEmpty) return false;
 
     final delta = rounds * state.beadsPerRound;
     final newTotal = state.total + delta;
     state = state.copyWith(total: newTotal);
     unawaited(_local.addToTotal(userId, _presetId, delta));
     _sync.onTap(roundComplete: true);
+    return true;
   }
 
   /// Resets the on-screen session to zero by soft-deleting the active server

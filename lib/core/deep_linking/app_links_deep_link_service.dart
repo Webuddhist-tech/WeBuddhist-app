@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_router.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -16,6 +17,7 @@ class AppLinksDeepLinkService {
 
   StreamSubscription<Uri>? _subscription;
   GoRouter? _router;
+  EntryAnalytics? _analytics;
   Uri? _pendingUri;
   Uri? _lastDispatchedUri;
   DateTime? _lastDispatchedAt;
@@ -55,6 +57,10 @@ class AppLinksDeepLinkService {
 
   void setRouter(GoRouter router) {
     _router = router;
+  }
+
+  void setAnalytics(EntryAnalytics analytics) {
+    _analytics = analytics;
   }
 
   void setTabSetter(void Function(int tabIndex) setter) {
@@ -159,6 +165,7 @@ class AppLinksDeepLinkService {
       uri,
       router,
       source: 'app_links',
+      analytics: _analytics,
       baseLocation: baseLocation,
       tabSetter: _tabSetter,
       planNavigator: _planNavigator,

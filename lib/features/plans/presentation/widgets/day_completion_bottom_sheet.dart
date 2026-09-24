@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
-import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -219,10 +219,11 @@ class _DayCompletionBottomSheetState
       );
       if (shared && mounted) {
         ref
-            .read(planAnalyticsProvider)
-            .planDayShared(
-              planId: widget.planId,
-              dayNumber: widget.dayNumber,
+            .read(shareAnalyticsProvider)
+            .contentShared(
+              surface: ShareSurface.planDay,
+              targetId: widget.planId,
+              format: 'image',
             );
       }
     } finally {

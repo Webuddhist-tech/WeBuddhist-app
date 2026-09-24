@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
@@ -13,6 +14,7 @@ class DeepLinkRouter {
     Uri uri,
     GoRouter router, {
     required String source,
+    EntryAnalytics? analytics,
     String? baseLocation,
     void Function(int tabIndex)? tabSetter,
     void Function(String planId, int? dayNumber, String? planLanguage)?
@@ -36,6 +38,7 @@ class DeepLinkRouter {
           'Deep link from $source -> plan $planId day ${destination.dayNumber} lang ${destination.planLanguage} ($uri)',
         );
         planNavigator(planId, destination.dayNumber, destination.planLanguage);
+        _trackOpened(analytics, source, destination);
         return true;
       }
 
@@ -58,6 +61,7 @@ class DeepLinkRouter {
         });
       }
 
+      _trackOpened(analytics, source, destination);
       return true;
     } catch (e, stackTrace) {
       _logger.error(
@@ -67,6 +71,18 @@ class DeepLinkRouter {
       );
       return false;
     }
+  }
+
+  static void _trackOpened(
+    EntryAnalytics? analytics,
+    String source,
+    _DeepLinkDestination destination,
+  ) {
+    analytics?.deepLinkOpened(
+      source: source,
+      routeKind: destination.routeKind,
+      targetId: destination.targetId,
+    );
   }
 
   /// Pushes [destination.location], first pushing [destination.parentLocation]
@@ -123,6 +139,8 @@ class DeepLinkRouter {
       final seriesId = segments[2];
       return _DeepLinkDestination(
         '/home/series/${Uri.encodeComponent(seriesId)}',
+        routeKind: 'series',
+        targetId: seriesId,
         opensOnTop: true,
       );
     }
@@ -140,6 +158,8 @@ class DeepLinkRouter {
           source: NavigationSource.deepLink,
           targetSegmentId: segmentId,
         ),
+        routeKind: 'reader',
+        targetId: textId,
         opensOnTop: true,
       );
     }
@@ -158,6 +178,8 @@ class DeepLinkRouter {
             source: NavigationSource.deepLink,
             targetSegmentId: segmentId,
           ),
+          routeKind: 'reader',
+          targetId: textId,
           opensOnTop: true,
         );
       }
@@ -166,7 +188,11 @@ class DeepLinkRouter {
     if (segments.length >= 2 &&
         segments[0] == 'open' &&
         segments[1] == 'more') {
-      return const _DeepLinkDestination(AppRoutes.home, tabIndex: _meTabIndex);
+      return const _DeepLinkDestination(
+        AppRoutes.home,
+        routeKind: 'more',
+        tabIndex: _meTabIndex,
+      );
     }
 
     if (segments.length >= 3 &&
@@ -185,6 +211,8 @@ class DeepLinkRouter {
       // wired; otherwise the navigator resolves and opens the specific plan.
       return _DeepLinkDestination(
         AppRoutes.practiceMyPractices,
+        routeKind: 'plan',
+        targetId: planId,
         planId: planId,
         dayNumber: dayNumber,
         planLanguage: planLanguage,
@@ -201,6 +229,8 @@ class DeepLinkRouter {
       return _DeepLinkDestination(
         '/home/group/${Uri.encodeComponent(groupId)}/recitation-collections/${Uri.encodeComponent(collectionId)}',
         parentLocation: '/home/group/${Uri.encodeComponent(groupId)}',
+        routeKind: 'group_collection',
+        targetId: collectionId,
         opensOnTop: true,
       );
     }
@@ -211,6 +241,8 @@ class DeepLinkRouter {
       final groupId = segments[2];
       return _DeepLinkDestination(
         '/home/group/$groupId',
+        routeKind: 'group',
+        targetId: groupId,
         opensOnTop: true,
       );
     }
@@ -221,6 +253,8 @@ class DeepLinkRouter {
       final eventId = segments[2];
       return _DeepLinkDestination(
         '/home/events/${Uri.encodeComponent(eventId)}',
+        routeKind: 'event',
+        targetId: eventId,
         opensOnTop: true,
       );
     }
@@ -235,6 +269,8 @@ class DeepLinkRouter {
         parentLocation: groupId != null && groupId.isNotEmpty
             ? '/home/group/${Uri.encodeComponent(groupId)}'
             : null,
+        routeKind: 'group_accumulator',
+        targetId: accumulatorId,
         opensOnTop: true,
         tabIndex: _connectTabIndex,
       );
@@ -247,6 +283,8 @@ class DeepLinkRouter {
       return _DeepLinkDestination(
         AppRoutes.mala,
         extra: {'presetId': presetId},
+        routeKind: 'mala',
+        targetId: presetId,
         opensOnTop: true,
       );
     }
@@ -256,6 +294,7 @@ class DeepLinkRouter {
         segments[1] == 'timer') {
       return const _DeepLinkDestination(
         '/home/timers',
+        routeKind: 'timer',
         opensOnTop: true,
       );
     }
@@ -267,6 +306,8 @@ class DeepLinkRouter {
       return _DeepLinkDestination(
         '/home/poems',
         extra: {'initialPoemId': poemId},
+        routeKind: 'poem',
+        targetId: poemId,
         opensOnTop: true,
       );
     }
@@ -280,13 +321,26 @@ class DeepLinkRouter {
       case 'home':
         return const _DeepLinkDestination(AppRoutes.home);
       case 'practice':
-        return const _DeepLinkDestination(AppRoutes.practice);
+        return const _DeepLinkDestination(
+          AppRoutes.practice,
+          routeKind: 'practice',
+        );
       case 'more':
-        return const _DeepLinkDestination(AppRoutes.home, tabIndex: _meTabIndex);
+        return const _DeepLinkDestination(
+          AppRoutes.home,
+          routeKind: 'more',
+          tabIndex: _meTabIndex,
+        );
       case 'profile':
-        return const _DeepLinkDestination(AppRoutes.profile);
+        return const _DeepLinkDestination(
+          AppRoutes.profile,
+          routeKind: 'profile',
+        );
       case 'notifications':
-        return const _DeepLinkDestination(AppRoutes.notifications);
+        return const _DeepLinkDestination(
+          AppRoutes.notifications,
+          routeKind: 'notifications',
+        );
       default:
         _logger.warning('Unknown webuddhist deep link host: $host');
         return const _DeepLinkDestination(AppRoutes.home);
@@ -328,6 +382,10 @@ class _DeepLinkDestination {
   /// plan navigator so it can find the enrollment across locale differences.
   final String? planLanguage;
 
+  /// `route_kind` and `target_id` carried on `deep_link_opened`.
+  final String routeKind;
+  final String? targetId;
+
   const _DeepLinkDestination(
     this.location, {
     this.extra,
@@ -337,5 +395,7 @@ class _DeepLinkDestination {
     this.planId,
     this.dayNumber,
     this.planLanguage,
+    this.routeKind = 'home',
+    this.targetId,
   });
 }

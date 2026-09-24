@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_router.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ class AirbridgeDeepLinkService {
   static final _logger = AppLogger('AirbridgeDeepLinkService');
   static GoRouter? _router;
   static Uri? _pendingUri;
+  static EntryAnalytics? _analytics;
 
   static void setRouter(GoRouter router) {
     _router = router;
@@ -16,6 +18,10 @@ class AirbridgeDeepLinkService {
 
     _pendingUri = null;
     _dispatch(pending);
+  }
+
+  static void setAnalytics(EntryAnalytics analytics) {
+    _analytics = analytics;
   }
 
   static void storePendingDeepLink(String url) {
@@ -43,6 +49,11 @@ class AirbridgeDeepLinkService {
       return;
     }
 
-    DeepLinkRouter.route(uri, router, source: 'airbridge');
+    DeepLinkRouter.route(
+      uri,
+      router,
+      source: 'airbridge',
+      analytics: _analytics,
+    );
   }
 }

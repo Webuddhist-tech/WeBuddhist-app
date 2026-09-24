@@ -155,6 +155,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(ReaderConstants.scrollDebounce, () {
       _checkPaginationThresholds();
+      _reportFurthestSegment();
     });
 
     // Track scroll direction for app bar visibility
@@ -255,6 +256,25 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         _maybeExtendSecondary(direction: PaginationDirection.next);
       });
     }
+  }
+
+  /// The deepest line on screen, for the session's reading depth.
+  void _reportFurthestSegment() {
+    if (!mounted) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    final content = ref.read(readerNotifierProvider(widget.params)).content;
+    if (positions.isEmpty || content == null) return;
+    final items = _isCollapsed ? _buildCollapsedItems(content) : content.items;
+    var furthest = 0;
+    for (final position in positions) {
+      if (position.index >= items.length) continue;
+      final number = items[position.index].segment?.segmentNumber ?? 0;
+      if (number > furthest) furthest = number;
+    }
+    if (furthest == 0) return;
+    ref
+        .read(readerNotifierProvider(widget.params).notifier)
+        .markSegmentReached(furthest);
   }
 
   /// Resolve (and cache) the initial segment_id used to align the secondary

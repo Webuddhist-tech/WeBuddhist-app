@@ -8,6 +8,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class Env {
   Env._();
 
+  /// Analytics keys are optional, so they read an unloaded dotenv (unit
+  /// tests, tooling) as "not configured" instead of throwing.
+  static Map<String, String> get _optional =>
+      dotenv.isInitialized ? dotenv.env : const {};
+
   /// API base URL for the backend
   static String get apiBaseUrl =>
       dotenv.env['BASE_API_URL'] ??
@@ -53,15 +58,15 @@ class Env {
   static bool get enableVerboseLogging => isDebug;
 
   /// PostHog project API key (optional — analytics disabled when absent)
-  static String? get posthogApiKey => dotenv.env['POSTHOG_API_KEY'];
+  static String? get posthogApiKey => _optional['POSTHOG_API_KEY'];
 
   /// PostHog ingest host
   static String get posthogHost =>
-      dotenv.env['POSTHOG_HOST'] ?? 'https://us.i.posthog.com';
+      _optional['POSTHOG_HOST'] ?? 'https://us.i.posthog.com';
 
   /// Whether PostHog analytics is enabled for this build
   static bool get posthogEnabled {
-    final String? enabledFlag = dotenv.env['POSTHOG_ENABLED'];
+    final String? enabledFlag = _optional['POSTHOG_ENABLED'];
     if (enabledFlag != null && enabledFlag.isNotEmpty) {
       return enabledFlag.toLowerCase() == 'true';
     }
@@ -70,11 +75,11 @@ class Env {
   }
 
   /// Microsoft Clarity project ID (optional — Clarity disabled when absent)
-  static String? get clarityProjectId => dotenv.env['CLARITY_PROJECT_ID'];
+  static String? get clarityProjectId => _optional['CLARITY_PROJECT_ID'];
 
   /// Whether Clarity session recording and heatmaps are enabled for this build
   static bool get clarityEnabled {
-    final String? enabledFlag = dotenv.env['CLARITY_ENABLED'];
+    final String? enabledFlag = _optional['CLARITY_ENABLED'];
     if (enabledFlag != null && enabledFlag.isNotEmpty) {
       return enabledFlag.toLowerCase() == 'true';
     }

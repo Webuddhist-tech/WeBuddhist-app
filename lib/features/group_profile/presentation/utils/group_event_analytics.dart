@@ -85,11 +85,6 @@ class GroupEventAnalytics {
     });
   }
 
-  void eventShared({required String eventId}) {
-    _analytics.trackInBackground(AnalyticsEvents.groupEventShared, {
-      AnalyticsProperties.eventId: eventId,
-    });
-  }
 
   /// A meeting, video or web link on the event was opened.
   void eventLinkOpened({

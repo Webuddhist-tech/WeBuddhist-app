@@ -27,8 +27,16 @@ class SeriesAnalytics {
     });
   }
 
-  void seriesShared({required String seriesId}) {
-    _analytics.trackInBackground(AnalyticsEvents.seriesShared, {
+  /// Fired after the server confirmed; [groupId] when enrolled via a group.
+  void seriesEnrolled({required String seriesId, String? groupId}) {
+    _analytics.trackInBackground(AnalyticsEvents.seriesEnrolled, {
+      AnalyticsProperties.seriesId: seriesId,
+      AnalyticsProperties.groupId: groupId,
+    });
+  }
+
+  void seriesUnenrolled({required String seriesId}) {
+    _analytics.trackInBackground(AnalyticsEvents.seriesUnenrolled, {
       AnalyticsProperties.seriesId: seriesId,
     });
   }

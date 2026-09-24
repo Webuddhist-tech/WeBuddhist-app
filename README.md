@@ -42,10 +42,14 @@ Each flavor should use its own PostHog project token:
 
 Screen views (`$screen`) come from the route observers on both the root and
 the tab-shell navigator, so every named route is tracked. Product events are
-declared once in `lib/core/analytics/analytics_events.dart`; each feature
-fires them through a small analytics class (`PlanAnalytics`,
-`SeriesAnalytics`, `GroupEventAnalytics`, `GroupChatAnalytics`) so screens
-never spell out event names or property keys themselves.
+declared once in `lib/core/analytics/analytics_events.dart` and follow the
+team tracking plan (forum post "Current state of analytics in the WeBuddhist
+app", section 5): `object_verb` names, snake_case properties, never text a
+user typed. Each feature fires them through a small analytics class
+(`PlanAnalytics`, `ReaderAnalytics`, `MalaAnalytics`, ...) in its
+`presentation/utils` folder, so screens never spell out event names or
+property keys themselves. Every share sheet reports one `content_shared`
+event with a `surface`, only after the sheet was actually used.
 
 Microsoft Clarity adds session recordings and per-screen heatmaps on top of
 PostHog. One Clarity project can serve every flavor: each session is tagged

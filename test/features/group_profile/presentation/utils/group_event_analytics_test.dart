@@ -70,14 +70,12 @@ void main() {
     });
   });
 
-  test('leave, share and link open fire their own events', () {
+  test('leave and link open fire their own events', () {
     analytics.eventLeft(eventId: 'e1', groupId: 'g1');
-    analytics.eventShared(eventId: 'e1');
     analytics.eventLinkOpened(eventId: 'e1', kind: GroupEventLinkKind.meeting);
 
     expect(service.eventNames, [
       AnalyticsEvents.groupEventLeft,
-      AnalyticsEvents.groupEventShared,
       AnalyticsEvents.groupEventLinkOpened,
     ]);
     expect(service.events.last.properties, {

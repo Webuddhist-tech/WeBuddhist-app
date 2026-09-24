@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/utils/auth_analytics.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/social_login_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,6 +29,7 @@ class AuthButtons extends ConsumerWidget {
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
             iconWidget: const Icon(Icons.apple, color: Colors.white, size: 24),
+            source: AuthSource.loginPage,
           ),
           const SizedBox(height: 12),
         ],
@@ -44,6 +46,7 @@ class AuthButtons extends ConsumerWidget {
             height: 20,
           ),
           isBorder: true,
+          source: AuthSource.loginPage,
         ),
         if (Env.phoneLoginEnabled) ...[
           const SizedBox(height: 12),
@@ -60,11 +63,13 @@ class AuthButtons extends ConsumerWidget {
               size: 20,
             ),
             isBorder: true,
+            source: AuthSource.loginPage,
           ),
         ],
         const SizedBox(height: 24),
         TextButton(
-          onPressed: authNotifier.continueAsGuest,
+          onPressed:
+              () => authNotifier.continueAsGuest(source: AuthSource.loginPage),
           child: Text(
             l10n.exploreAsGuest,
             style: TextStyle(

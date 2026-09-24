@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_co
 import 'package:flutter_pecha/features/more/domain/entities/user_stats.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/streak_share_content.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
@@ -102,13 +104,23 @@ Future<void> shareStreakQuote(
     final moreLink = await resolveShareUrl(context, longUrl);
     if (!context.mounted) return;
 
-    await SharePlus.instance.share(
+    final shareAnalytics = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(
       ShareParams(
         files: [XFile(tempFile.path)],
         text: '$shareMessage\n\n$moreLink',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.streak,
+        format: 'image',
+      );
+    }
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

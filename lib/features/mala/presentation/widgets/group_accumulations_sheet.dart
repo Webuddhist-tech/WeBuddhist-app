@@ -8,9 +8,11 @@ import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
+import 'package:flutter_pecha/features/mala/domain/entities/mala_accumulation_selection.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -135,14 +137,10 @@ class _GroupAccumulationsSheetState
                   isSelected: selection.isPersonal,
                   accentColor: accentColor,
                   onTap:
-                      () =>
-                          ref
-                              .read(
-                                malaAccumulationSelectionProvider(
-                                  widget.presetId,
-                                ).notifier,
-                              )
-                              .selectPersonal(),
+                      () => _select(
+                        const MalaAccumulationSelection.personal(),
+                        groups,
+                      ),
                   leading: _UserAvatar(avatarUrl: user?.avatarUrl),
                   title: user != null ? _userDisplayName(user) : '—',
                   formattedCount: NumberFormat.decimalPattern(
@@ -184,13 +182,12 @@ class _GroupAccumulationsSheetState
                       isSelected: isSelected,
                       accentColor: accentColor,
                       onTap:
-                          () => ref
-                              .read(
-                                malaAccumulationSelectionProvider(
-                                  widget.presetId,
-                                ).notifier,
-                              )
-                              .selectGroup(group.groupAccumulatorId),
+                          () => _select(
+                            MalaAccumulationSelection.group(
+                              group.groupAccumulatorId,
+                            ),
+                            groups,
+                          ),
                       leading: _GroupAvatar(group: group),
                       title:
                           group.title?.trim().isNotEmpty == true
@@ -213,6 +210,29 @@ class _GroupAccumulationsSheetState
         ),
       ),
     );
+  }
+
+  /// Applies [next] and reports the change once it is the live selection.
+  void _select(MalaAccumulationSelection next, List<AccumulatorGroup> groups) {
+    final provider = malaAccumulationSelectionProvider(widget.presetId);
+    final previous = ref.read(provider);
+    final groupAccumulatorId = next.groupAccumulatorId;
+    if (groupAccumulatorId == null) {
+      ref.read(provider.notifier).selectPersonal();
+    } else {
+      ref.read(provider.notifier).selectGroup(groupAccumulatorId);
+    }
+    if (next == previous) return;
+    ref
+        .read(malaAnalyticsProvider)
+        .modeChanged(
+          from: previous.analyticsMode,
+          to: next.analyticsMode,
+          groupId: malaGroupIdFor(
+            groups,
+            groupAccumulatorId ?? previous.groupAccumulatorId,
+          ),
+        );
   }
 
   String _userDisplayName(User user) {

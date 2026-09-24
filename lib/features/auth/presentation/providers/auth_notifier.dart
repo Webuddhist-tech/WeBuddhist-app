@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_and
 import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/continue_as_guest_usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/utils/auth_analytics.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/get_credentials_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/has_valid_credentials_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/initialize_auth_usecase.dart';
@@ -360,7 +361,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> login({String? connection}) async {
+  Future<void> login({String? connection, AuthSource? source}) async {
     _bumpAuthEpoch();
     state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -370,11 +371,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     loginResult.fold(
       (failure) {
         _logger.error('Login failed: ${failure.message}');
-        unawaited(
-          _trackAuthLoginFailed(
-            connection: connection,
-            reason: failure.message,
-          ),
+        _authAnalytics.loginFailed(
+          method: connection,
+          source: source,
+          reason: failure.message,
         );
         state = state.copyWith(
           isLoading: false,
@@ -382,7 +382,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       },
       (credentials) {
-        unawaited(_handleSuccessfulLogin(credentials, connection: connection));
+        unawaited(
+          _handleSuccessfulLogin(
+            credentials,
+            connection: connection,
+            source: source,
+          ),
+        );
       },
     );
   }
@@ -390,6 +396,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _handleSuccessfulLogin(
     AuthCredentials credentials, {
     String? connection,
+    AuthSource? source,
   }) async {
     final epoch = _authEpoch;
 
@@ -410,8 +417,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (!_isAuthEpochCurrent(epoch)) return;
     }
 
-    await _trackAuthLoginSucceeded(connection: connection);
-    if (!_isAuthEpochCurrent(epoch)) return;
+    _authAnalytics.loginSucceeded(method: connection, source: source);
 
     // 3. Prefetch onboarding status and full user profile so the route guard
     //    can decide instantly.
@@ -460,7 +466,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // continue as guest
-  Future<void> continueAsGuest() async {
+  Future<void> continueAsGuest({required AuthSource source}) async {
     // Persist guest mode preference
     final guestResult = await _continueAsGuestUseCase(const NoParams());
     guestResult.fold(
@@ -478,7 +484,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isGuest: true,
         );
         _logger.info('Guest mode activated and persisted');
-        unawaited(_analytics.track(AnalyticsEvents.authGuestStarted));
+        _authAnalytics.guestStarted(source: source);
         unawaited(_markGuestSession());
       },
     );
@@ -696,6 +702,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
+  AuthAnalytics get _authAnalytics => ref.read(authAnalyticsProvider);
 
   Future<void> _identifyAuthenticatedUser({
     required String userId,
@@ -709,25 +716,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _markGuestSession() async {
     await _analytics.setSuperProperties({AnalyticsProperties.isGuest: true});
-  }
-
-  Future<void> _trackAuthLoginSucceeded({String? connection}) async {
-    await _analytics.track(
-      AnalyticsEvents.authLoginSucceeded,
-      properties: {AnalyticsProperties.method: connection ?? 'default'},
-    );
-  }
-
-  Future<void> _trackAuthLoginFailed({
-    String? connection,
-    required String reason,
-  }) async {
-    await _analytics.track(
-      AnalyticsEvents.authLoginFailed,
-      properties: {
-        AnalyticsProperties.method: connection ?? 'default',
-        AnalyticsProperties.reason: reason,
-      },
-    );
   }
 }
