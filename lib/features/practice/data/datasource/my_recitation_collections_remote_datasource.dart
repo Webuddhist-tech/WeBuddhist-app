@@ -58,6 +58,24 @@ class MyRecitationCollectionsRemoteDatasource {
     return MyRecitationCollectionModel.fromJson(data);
   }
 
+  /// GET /users/me/recitation-collections
+  Future<MyRecitationCollectionsPageResponse> fetchCollections({
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    final response = await dio.get(
+      '/users/me/recitation-collections',
+      queryParameters: {'skip': skip, 'limit': limit},
+    );
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException(
+        'Unexpected /users/me/recitation-collections list payload type',
+      );
+    }
+    return MyRecitationCollectionsPageResponse.fromJson(data);
+  }
+
   /// GET /users/me/recitation-collections/{collectionId}
   Future<MyRecitationCollectionDetailModel> getCollectionDetail(
     String collectionId,

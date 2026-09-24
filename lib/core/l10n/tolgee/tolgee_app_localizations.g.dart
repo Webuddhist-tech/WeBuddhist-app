@@ -630,24 +630,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
       TolgeeBridge.get(localeName, 'loading', () => _fallback.loading);
 
   @override
-  String get choose_image => TolgeeBridge.get(
-    localeName,
-    'choose_image',
-    () => _fallback.choose_image,
-  );
-
-  @override
   String get choose_bg_image => TolgeeBridge.get(
     localeName,
     'choose_bg_image',
     () => _fallback.choose_bg_image,
-  );
-
-  @override
-  String get create_image => TolgeeBridge.get(
-    localeName,
-    'create_image',
-    () => _fallback.create_image,
   );
 
   @override
@@ -2327,60 +2313,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String image_share_error(String error) => TolgeeBridge.format(
-    localeName,
-    'image_share_error',
-    <String, Object>{'error': error},
-    () => _fallback.image_share_error(error),
-  );
-
-  @override
-  String get create_image_capture_error => TolgeeBridge.get(
-    localeName,
-    'create_image_capture_error',
-    () => _fallback.create_image_capture_error,
-  );
-
-  @override
   String get create_image_share_error => TolgeeBridge.get(
     localeName,
     'create_image_share_error',
     () => _fallback.create_image_share_error,
-  );
-
-  @override
-  String get create_image_save_success => TolgeeBridge.get(
-    localeName,
-    'create_image_save_success',
-    () => _fallback.create_image_save_success,
-  );
-
-  @override
-  String get create_image_save_error => TolgeeBridge.get(
-    localeName,
-    'create_image_save_error',
-    () => _fallback.create_image_save_error,
-  );
-
-  @override
-  String get create_image_download_error => TolgeeBridge.get(
-    localeName,
-    'create_image_download_error',
-    () => _fallback.create_image_download_error,
-  );
-
-  @override
-  String get create_image_customize_tooltip => TolgeeBridge.get(
-    localeName,
-    'create_image_customize_tooltip',
-    () => _fallback.create_image_customize_tooltip,
-  );
-
-  @override
-  String get create_image_text_too_long => TolgeeBridge.get(
-    localeName,
-    'create_image_text_too_long',
-    () => _fallback.create_image_text_too_long,
   );
 
   @override
@@ -2467,147 +2403,8 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get ai_chat_history => TolgeeBridge.get(
-    localeName,
-    'ai_chat_history',
-    () => _fallback.ai_chat_history,
-  );
-
-  @override
-  String get ai_buddhist_assistant => TolgeeBridge.get(
-    localeName,
-    'ai_buddhist_assistant',
-    () => _fallback.ai_buddhist_assistant,
-  );
-
-  @override
-  String get ai_new_chat =>
-      TolgeeBridge.get(localeName, 'ai_new_chat', () => _fallback.ai_new_chat);
-
-  @override
-  String get ai_retry =>
-      TolgeeBridge.get(localeName, 'ai_retry', () => _fallback.ai_retry);
-
-  @override
-  String get ai_dismiss =>
-      TolgeeBridge.get(localeName, 'ai_dismiss', () => _fallback.ai_dismiss);
-
-  @override
-  String get ai_sign_in_prompt => TolgeeBridge.get(
-    localeName,
-    'ai_sign_in_prompt',
-    () => _fallback.ai_sign_in_prompt,
-  );
-
-  @override
-  String get ai_explore_wisdom => TolgeeBridge.get(
-    localeName,
-    'ai_explore_wisdom',
-    () => _fallback.ai_explore_wisdom,
-  );
-
-  @override
-  String get ai_ask_question => TolgeeBridge.get(
-    localeName,
-    'ai_ask_question',
-    () => _fallback.ai_ask_question,
-  );
-
-  @override
-  String get ai_search_chats => TolgeeBridge.get(
-    localeName,
-    'ai_search_chats',
-    () => _fallback.ai_search_chats,
-  );
-
-  @override
-  String get ai_chats =>
-      TolgeeBridge.get(localeName, 'ai_chats', () => _fallback.ai_chats);
-
-  @override
-  String get ai_chat_deleted => TolgeeBridge.get(
-    localeName,
-    'ai_chat_deleted',
-    () => _fallback.ai_chat_deleted,
-  );
-
-  @override
-  String get ai_no_conversations => TolgeeBridge.get(
-    localeName,
-    'ai_no_conversations',
-    () => _fallback.ai_no_conversations,
-  );
-
-  @override
-  String get ai_start_new_chat => TolgeeBridge.get(
-    localeName,
-    'ai_start_new_chat',
-    () => _fallback.ai_start_new_chat,
-  );
-
-  @override
-  String get ai_delete_chat => TolgeeBridge.get(
-    localeName,
-    'ai_delete_chat',
-    () => _fallback.ai_delete_chat,
-  );
-
-  @override
-  String get ai_delete_confirmation => TolgeeBridge.get(
-    localeName,
-    'ai_delete_confirmation',
-    () => _fallback.ai_delete_confirmation,
-  );
-
-  @override
-  String get ai_delete_warning => TolgeeBridge.get(
-    localeName,
-    'ai_delete_warning',
-    () => _fallback.ai_delete_warning,
-  );
-
-  @override
   String get ai_confirm =>
       TolgeeBridge.get(localeName, 'ai_confirm', () => _fallback.ai_confirm);
-
-  @override
-  String get ai_delete =>
-      TolgeeBridge.get(localeName, 'ai_delete', () => _fallback.ai_delete);
-
-  @override
-  String ai_greeting(String name) => TolgeeBridge.format(
-    localeName,
-    'ai_greeting',
-    <String, Object>{'name': name},
-    () => _fallback.ai_greeting(name),
-  );
-
-  @override
-  String get ai_text_not_found => TolgeeBridge.get(
-    localeName,
-    'ai_text_not_found',
-    () => _fallback.ai_text_not_found,
-  );
-
-  @override
-  String ai_text_not_found_message(String title) => TolgeeBridge.format(
-    localeName,
-    'ai_text_not_found_message',
-    <String, Object>{'title': title},
-    () => _fallback.ai_text_not_found_message(title),
-  );
-
-  @override
-  String get ai_sources =>
-      TolgeeBridge.get(localeName, 'ai_sources', () => _fallback.ai_sources);
-
-  @override
-  String ai_sources_count(int count) => TolgeeBridge.format(
-    localeName,
-    'ai_sources_count',
-    <String, Object>{'count': count},
-    () => _fallback.ai_sources_count(count),
-  );
 
   @override
   String search_no_results(String query) => TolgeeBridge.format(
@@ -2618,89 +2415,8 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get search_show_more => TolgeeBridge.get(
-    localeName,
-    'search_show_more',
-    () => _fallback.search_show_more,
-  );
-
-  @override
-  String get search_contents => TolgeeBridge.get(
-    localeName,
-    'search_contents',
-    () => _fallback.search_contents,
-  );
-
-  @override
-  String get search_titles => TolgeeBridge.get(
-    localeName,
-    'search_titles',
-    () => _fallback.search_titles,
-  );
-
-  @override
   String get search_all =>
       TolgeeBridge.get(localeName, 'search_all', () => _fallback.search_all);
-
-  @override
-  String get search_author => TolgeeBridge.get(
-    localeName,
-    'search_author',
-    () => _fallback.search_author,
-  );
-
-  @override
-  String get search_tab_ai_mode => TolgeeBridge.get(
-    localeName,
-    'search_tab_ai_mode',
-    () => _fallback.search_tab_ai_mode,
-  );
-
-  @override
-  String search_error(String message) => TolgeeBridge.format(
-    localeName,
-    'search_error',
-    <String, Object>{'message': message},
-    () => _fallback.search_error(message),
-  );
-
-  @override
-  String get search_retrying => TolgeeBridge.get(
-    localeName,
-    'search_retrying',
-    () => _fallback.search_retrying,
-  );
-
-  @override
-  String search_no_titles_found(String query) => TolgeeBridge.format(
-    localeName,
-    'search_no_titles_found',
-    <String, Object>{'query': query},
-    () => _fallback.search_no_titles_found(query),
-  );
-
-  @override
-  String search_no_contents_found(String query) => TolgeeBridge.format(
-    localeName,
-    'search_no_contents_found',
-    <String, Object>{'query': query},
-    () => _fallback.search_no_contents_found(query),
-  );
-
-  @override
-  String search_no_authors_found(String query) => TolgeeBridge.format(
-    localeName,
-    'search_no_authors_found',
-    <String, Object>{'query': query},
-    () => _fallback.search_no_authors_found(query),
-  );
-
-  @override
-  String get search_buddhist_texts => TolgeeBridge.get(
-    localeName,
-    'search_buddhist_texts',
-    () => _fallback.search_buddhist_texts,
-  );
 
   @override
   String get common_ok =>
@@ -5003,20 +4719,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'timer_notification_complete',
     () => _fallback.timer_notification_complete,
-  );
-
-  @override
-  String get ai_use_search_instead => TolgeeBridge.get(
-    localeName,
-    'ai_use_search_instead',
-    () => _fallback.ai_use_search_instead,
-  );
-
-  @override
-  String get ai_mode_label => TolgeeBridge.get(
-    localeName,
-    'ai_mode_label',
-    () => _fallback.ai_mode_label,
   );
 
   @override

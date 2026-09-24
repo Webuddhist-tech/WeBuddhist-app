@@ -2,6 +2,19 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('displayNumber prefers the reference and survives JSON', () {
+    const numbered = Segment(segmentId: 'a', segmentNumber: 4);
+    const referenced = Segment(
+      segmentId: 'b',
+      segmentNumber: 4,
+      reference: '1-12',
+    );
+    expect(numbered.displayNumber, '4');
+    expect(referenced.displayNumber, '1-12');
+    expect(Segment.fromJson(referenced.toJson()).reference, '1-12');
+    expect(Segment.fromJson(numbered.toJson()).reference, isNull);
+  });
+
   group('Segment.parseMappedSegmentIds', () {
     test('absent mappings give an empty list', () {
       final segment = Segment.fromJson({'segment_id': 's', 'segment_number': 1});

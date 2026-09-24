@@ -7,6 +7,9 @@
 # loaded at runtime (main_<flavor>.dart -> dotenv.load('.env.<flavor>')), but
 # the asset bundler fails if any of the three are missing.
 #
+# The library (texts) API has production values only for now, so dev and
+# staging fall back to them unless DEV_/STAGING_LIBRARY_* are set.
+#
 # Mirrors the Codemagic "Create environment files" pre-build step.
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -14,7 +17,8 @@ set -euo pipefail
 # --- Development -----------------------------------------------------------
 {
   echo "BASE_API_URL=${DEV_BASE_API_URL:-}"
-  echo "AI_URL=${DEV_AI_URL:-}"
+  echo "LIBRARY_API_URL=${DEV_LIBRARY_API_URL:-${LIBRARY_API_URL:-}}"
+  echo "LIBRARY_CHANTS_TAG_ID=${DEV_LIBRARY_CHANTS_TAG_ID:-${LIBRARY_CHANTS_TAG_ID:-}}"
   echo "AUTH0_SCHEME=org.pecha.app.dev"
   echo "AUTH0_AUDIENCE=${DEV_AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${DEV_PHONE_LOGIN_ENABLED:-false}"
@@ -24,7 +28,8 @@ set -euo pipefail
 # --- Staging ---------------------------------------------------------------
 {
   echo "BASE_API_URL=${STAGING_BASE_API_URL:-}"
-  echo "AI_URL=${STAGING_AI_URL:-}"
+  echo "LIBRARY_API_URL=${STAGING_LIBRARY_API_URL:-${LIBRARY_API_URL:-}}"
+  echo "LIBRARY_CHANTS_TAG_ID=${STAGING_LIBRARY_CHANTS_TAG_ID:-${LIBRARY_CHANTS_TAG_ID:-}}"
   echo "AUTH0_SCHEME=org.pecha.app.staging"
   echo "AUTH0_AUDIENCE=${STAGING_AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${STAGING_PHONE_LOGIN_ENABLED:-false}"
@@ -34,7 +39,8 @@ set -euo pipefail
 # --- Production ------------------------------------------------------------
 {
   echo "BASE_API_URL=${BASE_API_URL:-}"
-  echo "AI_URL=${AI_URL:-}"
+  echo "LIBRARY_API_URL=${LIBRARY_API_URL:-}"
+  echo "LIBRARY_CHANTS_TAG_ID=${LIBRARY_CHANTS_TAG_ID:-}"
   echo "AUTH0_SCHEME=org.pecha.app"
   echo "AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}"
   echo "PHONE_LOGIN_ENABLED=${PHONE_LOGIN_ENABLED:-false}"
