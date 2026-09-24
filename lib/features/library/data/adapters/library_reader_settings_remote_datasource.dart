@@ -35,9 +35,9 @@ class LibraryReaderSettingsRemoteDatasource
           (counts[member.language] ?? 0) + member.editions.length;
     }
     final codes = counts.keys.toList()..sort();
-    // The root's language leads, whichever member was opened.
-    final rootLanguage = family.first.language;
-    if (codes.remove(rootLanguage)) codes.insert(0, rootLanguage);
+    // The original's language leads: the text a translation was made from.
+    final original = _byId(family)[text.translationOf] ?? text;
+    if (codes.remove(original.language)) codes.insert(0, original.language);
 
     return ReaderLanguagesResponse(
       textId: textId,
@@ -74,7 +74,7 @@ class LibraryReaderSettingsRemoteDatasource
   }) async {
     final edition = await _library.resolveEdition(textId);
     final family = await _library.getTextFamily(edition.textId);
-    final rootEditionId = family.first.primaryEditionId;
+    final byId = _byId(family);
     final versions = <ReaderVersionDetail>[];
     for (final member in family) {
       if (member.language != language) continue;
@@ -82,7 +82,7 @@ class LibraryReaderSettingsRemoteDatasource
         final version = _version(
           member,
           editionId: editionId,
-          parentId: member.isTranslation ? rootEditionId : null,
+          parentId: byId[member.translationOf]?.primaryEditionId,
         );
         if (editionId == edition.id) {
           versions.insert(0, version);
@@ -112,16 +112,20 @@ class LibraryReaderSettingsRemoteDatasource
     );
   }
 
-  /// The root text's edition when [text] is a translation, else null. Reader
-  /// ids are edition ids, so `translation_of` (a text id) is mapped across.
+  static Map<String, LibraryText> _byId(List<LibraryText> texts) => {
+    for (final t in texts) t.id: t,
+  };
+
+  /// The edition of the text [text] translates, else null. Reader ids are
+  /// edition ids, so `translation_of` (a text id) is mapped across.
   Future<String?> _rootEditionId(LibraryText text) async {
     if (!text.isTranslation) return null;
     final root = await _library.getText(text.translationOf!);
     return root.primaryEditionId;
   }
 
-  /// [parentId] is the root edition for a translation, so the reader can
-  /// open it as the Translation layer of its original.
+  /// [parentId] is the edition of the text a translation was made from, so
+  /// the reader can open it as the Translation layer of its original.
   static ReaderVersionDetail _version(
     LibraryText text, {
     required String editionId,

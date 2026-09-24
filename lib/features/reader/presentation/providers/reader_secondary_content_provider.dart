@@ -74,6 +74,38 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
     );
   }
 
+  bool _covering = false;
+
+  /// Pages until the loaded verses span the primary's [first]..[last], so a
+  /// primary that loaded more at once (a pre-merged previous page) is not
+  /// left a page ahead. Stops on a failure or a page that adds nothing.
+  Future<void> cover(int first, int last) async {
+    if (_covering) return;
+    _covering = true;
+    try {
+      for (var i = 0; i < _maxCoverPages; i++) {
+        if (_disposed || !state.needsToCover(first, last)) return;
+        final before = state.loadedSegments.length;
+        if (state.hasPreviousPage &&
+            state.loadedSegments.first.segmentNumber > first) {
+          await loadPrevious();
+        } else {
+          await loadNext();
+        }
+        if (_disposed) return;
+        if (state.loadedSegments.length == before) {
+          // Nothing new: stop asking, and let those verses show the original.
+          state = state.copyWith(pagingFailed: true);
+          return;
+        }
+      }
+    } finally {
+      _covering = false;
+    }
+  }
+
+  static const _maxCoverPages = 20;
+
   /// Extend the secondary forward by one page.
   Future<void> loadNext() async {
     if (_disposed || state.isLoadingNext || !state.hasNextPage) return;
@@ -111,13 +143,14 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
         loadedSegments: mergedSegments,
         contentBySegmentNumber: mergedMap,
         isLoadingNext: false,
+        pagingFailed: false,
         hasNextPage: response.hasNextPage,
         totalSegments: response.totalSegments,
       );
     } catch (e, st) {
       _logger.error('Secondary loadNext failed for ${key.versionId}', e, st);
       if (_disposed) return;
-      state = state.copyWith(isLoadingNext: false);
+      state = state.copyWith(isLoadingNext: false, pagingFailed: true);
     }
   }
 
@@ -157,12 +190,13 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
         loadedSegments: mergedSegments,
         contentBySegmentNumber: mergedMap,
         isLoadingPrevious: false,
+        pagingFailed: false,
         hasPreviousPage: response.currentSegmentPosition > 1,
       );
     } catch (e, st) {
       _logger.error('Secondary loadPrevious failed for ${key.versionId}', e, st);
       if (_disposed) return;
-      state = state.copyWith(isLoadingPrevious: false);
+      state = state.copyWith(isLoadingPrevious: false, pagingFailed: true);
     }
   }
 

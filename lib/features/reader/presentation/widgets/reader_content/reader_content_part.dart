@@ -246,7 +246,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       notifier.loadPreviousPage().then((_) {
         _hasTriggeredPrevious = false;
         _adjustScrollAfterPreviousLoad();
-        _maybeExtendSecondary(direction: PaginationDirection.previous);
       });
     }
 
@@ -261,7 +260,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       );
       notifier.loadNextPage().then((_) {
         _hasTriggeredNext = false;
-        _maybeExtendSecondary(direction: PaginationDirection.next);
       });
     }
   }
@@ -300,11 +298,30 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return item.isSegment ? item.segmentId : null;
   }
 
-  /// Mirror primary pagination on the secondary stream (when enabled).
-  /// We read the dual settings lazily so toggling the secondary mid-session
-  /// is respected on the next page boundary.
-  void _maybeExtendSecondary({required PaginationDirection direction}) {
+  bool _secondarySyncScheduled = false;
+
+  /// Has the secondary stream page until it spans the primary's loaded
+  /// verses. Scheduled from build whenever it falls short, so it follows
+  /// every primary change: first load, pages either way, a jump.
+  void _scheduleSecondarySync(SecondaryReaderState? secondary) {
+    if (_secondarySyncScheduled || secondary == null) return;
+    final range =
+        ref.read(readerNotifierProvider(widget.params)).content
+            ?.segmentNumberRange;
+    if (range == null || !secondary.needsToCover(range.$1, range.$2)) return;
+    _secondarySyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _secondarySyncScheduled = false;
+      _syncSecondary();
+    });
+  }
+
+  void _syncSecondary() {
     if (!mounted) return;
+    final range =
+        ref.read(readerNotifierProvider(widget.params)).content
+            ?.segmentNumberRange;
+    if (range == null) return;
     final dualSettings = ref.read(
       readerDualSettingsProvider(widget.params.textId),
     );
@@ -327,11 +344,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         ),
       ).notifier,
     );
-    if (direction == PaginationDirection.next) {
-      notifier.loadNext();
-    } else {
-      notifier.loadPrevious();
-    }
+    notifier.cover(range.$1, range.$2);
   }
 
   void _adjustScrollAfterPreviousLoad() {
@@ -726,6 +739,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
               ),
             )
             : null;
+    _scheduleSecondarySync(secondaryState);
 
     // Handle initial scroll to segment. Skipped while collapsed — the active
     // segments already sit at the top of the collapsed list, and the content

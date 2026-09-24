@@ -82,6 +82,32 @@ void main() {
       }
     });
 
+    test('verses past the loaded ones wait while pages remain that way, '
+        'unless paging failed', () {
+      final more = loaded.copyWith(hasPreviousPage: true, hasNextPage: true);
+      expect(more.isPending(1), isTrue);
+      expect(more.isPending(5), isTrue);
+      expect(more.isPending(3), isFalse);
+
+      final failed = more.copyWith(pagingFailed: true);
+      expect(failed.isPending(1), isFalse, reason: 'shows the original');
+      expect(failed.isPending(5), isFalse);
+    });
+
+    test('needsToCover asks for pages only toward verses it lacks', () {
+      final more = loaded.copyWith(hasPreviousPage: true, hasNextPage: true);
+      expect(more.needsToCover(2, 4), isFalse);
+      expect(more.needsToCover(1, 4), isTrue);
+      expect(more.needsToCover(2, 6), isTrue);
+      expect(loaded.needsToCover(1, 6), isFalse, reason: 'no pages left');
+      expect(
+        more.copyWith(isLoadingPrevious: true).needsToCover(1, 4),
+        isFalse,
+        reason: 'one load at a time',
+      );
+      expect(more.copyWith(pagingFailed: true).needsToCover(1, 4), isFalse);
+    });
+
     test('only the verses past the loaded ones in the loading direction', () {
       final next = loaded.copyWith(isLoadingNext: true);
       expect(next.isPending(5), isTrue);
@@ -225,6 +251,102 @@ void main() {
         contentBySegmentNumber: {1: 'a'},
       );
       expect(state.headsTranslationOnly, isFalse);
+    });
+  });
+
+  group('SecondaryReaderNotifier.cover', () {
+    /// Verses 1..9 in pages of three; the stream starts on verses 7..9.
+    ReaderResponse window(int from) => ReaderResponse(
+      textDetail: _translationPage().textDetail,
+      content: Toc(
+        id: 'E1',
+        textId: 'T1',
+        sections: [
+          Section(
+            id: 'E1',
+            sectionNumber: 1,
+            segments: [
+              for (var n = from; n < from + 3; n++)
+                _verse(n, translation: 't$n'),
+            ],
+            sections: const [],
+          ),
+        ],
+      ),
+      size: 3,
+      paginationDirection: 'next',
+      currentSegmentPosition: from,
+      lastSegmentPosition: from + 2,
+      totalSegments: 9,
+    );
+
+    test('pages back until it reaches the primary\'s first verse', () async {
+      final fetches = <TextDetailsParams>[];
+      final container = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith((ref, params) async {
+            fetches.add(params);
+            final from = switch ((params.direction, params.segmentId)) {
+              ('previous', 's7') => 4,
+              ('previous', 's4') => 1,
+              _ => 7,
+            };
+            return Right<Failure, ReaderResponse>(window(from));
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      const key = SecondaryReaderKey(
+        textId: 'E2',
+        versionId: 'E1',
+        initialSegmentId: 's7',
+      );
+      final sub = container.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(
+        container.read(secondaryReaderProvider(key)).isPending(2),
+        isTrue,
+        reason: 'the primary shows verse 2 before the stream has it',
+      );
+
+      await container.read(secondaryReaderProvider(key).notifier).cover(2, 9);
+
+      final state = container.read(secondaryReaderProvider(key));
+      expect(state.contentBySegmentNumber.keys.toList()..sort(), [
+        for (var n = 1; n <= 9; n++) n,
+      ]);
+      expect(fetches.where((f) => f.direction == 'previous'), hasLength(2));
+      expect(state.needsToCover(2, 9), isFalse);
+    });
+
+    test('a page that adds nothing stops the catch-up', () async {
+      var calls = 0;
+      final container = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith((ref, params) async {
+            calls++;
+            return Right<Failure, ReaderResponse>(window(7));
+          }),
+        ],
+      );
+      addTearDown(container.dispose);
+      const key = SecondaryReaderKey(textId: 'E2', versionId: 'E1');
+      final sub = container.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await container.read(secondaryReaderProvider(key).notifier).cover(1, 9);
+
+      final state = container.read(secondaryReaderProvider(key));
+      expect(calls, 2, reason: 'the first page, then one page back');
+      expect(state.pagingFailed, isTrue);
+      expect(state.needsToCover(1, 9), isFalse);
+      expect(state.isPending(1), isFalse, reason: 'the original shows');
     });
   });
 

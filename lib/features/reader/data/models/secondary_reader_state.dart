@@ -83,6 +83,10 @@ class SecondaryReaderState {
   final bool hasPreviousPage;
   final String? errorMessage;
 
+  /// The last next/previous page failed; verses past the loaded ones then
+  /// show their original instead of waiting.
+  final bool pagingFailed;
+
   const SecondaryReaderState({
     this.contentBySegmentNumber = const {},
     this.headingsBySegmentNumber = const {},
@@ -94,6 +98,7 @@ class SecondaryReaderState {
     this.hasNextPage = false,
     this.hasPreviousPage = false,
     this.errorMessage,
+    this.pagingFailed = false,
   });
 
   factory SecondaryReaderState.initial() => const SecondaryReaderState();
@@ -101,16 +106,27 @@ class SecondaryReaderState {
   bool get isAnyLoading => isLoading || isLoadingNext || isLoadingPrevious;
 
   /// True while the page holding [segmentNumber] is still on its way: the
-  /// first page, or the next/previous one for a verse past what has loaded
-  /// in that direction. A verse the loaded pages skip is not pending.
+  /// first page, or a verse past what has loaded in a direction the stream
+  /// is loading or still has pages in (it catches up, see [needsToCover]).
+  /// A verse the loaded pages skip is not pending.
   bool isPending(int segmentNumber) {
     if (isLoading) return true;
     if (loadedSegments.isEmpty) return isLoadingNext || isLoadingPrevious;
-    if (isLoadingNext && segmentNumber > loadedSegments.last.segmentNumber) {
-      return true;
+    if (segmentNumber > loadedSegments.last.segmentNumber) {
+      return isLoadingNext || (hasNextPage && !pagingFailed);
     }
-    return isLoadingPrevious &&
-        segmentNumber < loadedSegments.first.segmentNumber;
+    if (segmentNumber < loadedSegments.first.segmentNumber) {
+      return isLoadingPrevious || (hasPreviousPage && !pagingFailed);
+    }
+    return false;
+  }
+
+  /// True when the primary's verses [first]..[last] reach past what has
+  /// loaded in a direction that still has pages, and nothing is in flight.
+  bool needsToCover(int first, int last) {
+    if (isAnyLoading || pagingFailed || loadedSegments.isEmpty) return false;
+    return (hasPreviousPage && loadedSegments.first.segmentNumber > first) ||
+        (hasNextPage && loadedSegments.last.segmentNumber < last);
   }
 
   String? get firstLoadedSegmentId =>
@@ -148,6 +164,7 @@ class SecondaryReaderState {
     bool? hasPreviousPage,
     String? errorMessage,
     bool clearError = false,
+    bool? pagingFailed,
   }) {
     return SecondaryReaderState(
       contentBySegmentNumber:
@@ -162,6 +179,7 @@ class SecondaryReaderState {
       hasNextPage: hasNextPage ?? this.hasNextPage,
       hasPreviousPage: hasPreviousPage ?? this.hasPreviousPage,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      pagingFailed: pagingFailed ?? this.pagingFailed,
     );
   }
 }

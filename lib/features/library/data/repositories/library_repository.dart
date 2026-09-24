@@ -150,15 +150,53 @@ class LibraryRepository {
     });
   }
 
-  /// The root text first, then its translations; [textId] may be any member.
+  /// Every version of [textId]'s work: the root first, then translations
+  /// level by level. Translations chain (English of a Tibetan that is itself
+  /// a translation of a Sanskrit root), so the walk goes up to the top and
+  /// back down through each text's translations.
   Future<List<LibraryText>> getTextFamily(String textId) async {
-    final text = await getText(textId);
-    final rootId = text.isTranslation ? text.translationOf! : text.id;
-    return _memo(_families, rootId, () async {
-      final root = rootId == text.id ? text : await getText(rootId);
-      final ids = <String>{root.id, ...root.translations, text.id};
-      return Future.wait(ids.map(getText));
+    final chain = await _translationChain(await getText(textId));
+    final family = await _memo(_families, chain.last.id, () async {
+      final members = <LibraryText>[chain.last];
+      final seen = <String>{chain.last.id};
+      var level = [chain.last];
+      while (level.isNotEmpty && seen.length < _maxFamilySize) {
+        final ids = [
+          for (final text in level)
+            for (final id in text.translations)
+              if (seen.add(id)) id,
+        ];
+        level = await Future.wait(ids.map(getText));
+        members.addAll(level);
+      }
+      return members;
     });
+    // A text its parent does not list still belongs with its chain.
+    final missing = chain.where((t) => !family.contains(t));
+    return missing.isEmpty ? family : [...family, ...missing.toList().reversed];
+  }
+
+  static const _maxFamilySize = 500;
+  static const _maxChainLength = 10;
+
+  /// [text], the text it translates, and so on up to the root, which is last.
+  /// A missing or cyclic parent ends the chain.
+  Future<List<LibraryText>> _translationChain(LibraryText text) async {
+    final chain = [text];
+    final seen = {text.id};
+    var current = text;
+    while (current.isTranslation && chain.length < _maxChainLength) {
+      final parentId = current.translationOf!;
+      if (!seen.add(parentId)) break;
+      try {
+        current = await getText(parentId);
+      } catch (e) {
+        if (_isNotFound(e)) break;
+        rethrow;
+      }
+      chain.add(current);
+    }
+    return chain;
   }
 
   /// One page of [editionId]. `next` starts at the anchor (first page when

@@ -386,6 +386,79 @@ void main() {
       expect(server.count('/v2/texts/t1'), 1);
       expect(server.count('/v2/texts/t2'), 1);
     });
+
+    test('follows translations of translations, from any member', () async {
+      // Sanskrit root > Tibetan translation > English translation of it.
+      final server = LibraryTestServer({
+        '/v2/texts/sa':
+            (_) => jsonBody(textJson('sa', language: 'sa', translations: ['bo', 'en1'])),
+        '/v2/texts/bo':
+            (_) => jsonBody(
+              textJson('bo', translationOf: 'sa', translations: ['en2']),
+            ),
+        '/v2/texts/en1':
+            (_) => jsonBody(textJson('en1', language: 'en', translationOf: 'sa')),
+        '/v2/texts/en2':
+            (_) => jsonBody(textJson('en2', language: 'en', translationOf: 'bo')),
+      });
+      final repository = server.repository();
+
+      for (final id in ['en2', 'bo', 'sa']) {
+        final family = await repository.getTextFamily(id);
+        expect(family.map((t) => t.id), ['sa', 'bo', 'en1', 'en2'], reason: id);
+      }
+    });
+
+    test('a parent that does not list the text, or a cycle, still ends', () async {
+      final server = LibraryTestServer({
+        '/v2/texts/root': (_) => jsonBody(textJson('root')),
+        '/v2/texts/orphan':
+            (_) => jsonBody(textJson('orphan', translationOf: 'root')),
+        '/v2/texts/a': (_) => jsonBody(textJson('a', translationOf: 'b')),
+        '/v2/texts/b': (_) => jsonBody(textJson('b', translationOf: 'a')),
+      });
+      final repository = server.repository();
+
+      expect(
+        (await repository.getTextFamily('orphan')).map((t) => t.id),
+        ['root', 'orphan'],
+      );
+      expect((await repository.getTextFamily('a')).map((t) => t.id), [
+        'b',
+        'a',
+      ]);
+    });
+  });
+
+  group('LibraryRepository.alignSegment across a translation chain', () {
+    test("maps a translation's verse to the text it was made from", () async {
+      final server = LibraryTestServer({
+        '/v2/texts/sa':
+            (_) => jsonBody(textJson('sa', language: 'sa', translations: ['bo'])),
+        '/v2/texts/bo':
+            (_) => jsonBody(
+              textJson('bo', translationOf: 'sa', translations: ['en'], editions: ['e-bo']),
+            ),
+        '/v2/texts/en':
+            (_) => jsonBody(
+              textJson('en', language: 'en', translationOf: 'bo', editions: ['e-en']),
+            ),
+        '/v2/editions/e-bo': (_) => jsonBody({'id': 'e-bo', 'text_id': 'bo'}),
+        '/v2/editions/e-en': (_) => jsonBody({'id': 'e-en', 'text_id': 'en'}),
+        '/v2/editions/e-bo/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('b'))),
+        '/v2/editions/e-en/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('n'))),
+      });
+
+      final aligned = await server.repository().alignSegment(
+        segmentId: 'n2',
+        sourceId: 'e-en',
+        targetId: 'e-bo',
+      );
+
+      expect(aligned, 'b2');
+    });
   });
 
   group('LibraryRepository.resolveEdition', () {
