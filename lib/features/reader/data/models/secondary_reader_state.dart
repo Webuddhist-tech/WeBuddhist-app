@@ -76,6 +76,19 @@ class SecondaryReaderState {
 
   bool get isAnyLoading => isLoading || isLoadingNext || isLoadingPrevious;
 
+  /// True while the page holding [segmentNumber] is still on its way: the
+  /// first page, or the next/previous one for a verse past what has loaded
+  /// in that direction. A verse the loaded pages skip is not pending.
+  bool isPending(int segmentNumber) {
+    if (isLoading) return true;
+    if (loadedSegments.isEmpty) return isLoadingNext || isLoadingPrevious;
+    if (isLoadingNext && segmentNumber > loadedSegments.last.segmentNumber) {
+      return true;
+    }
+    return isLoadingPrevious &&
+        segmentNumber < loadedSegments.first.segmentNumber;
+  }
+
   String? get firstLoadedSegmentId =>
       loadedSegments.isEmpty ? null : loadedSegments.first.segmentId;
 

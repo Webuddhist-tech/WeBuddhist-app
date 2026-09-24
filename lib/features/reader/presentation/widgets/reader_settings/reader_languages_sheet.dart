@@ -153,15 +153,18 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     );
   }
 
+  // The language is named here from its code: slots seeded by the reader
+  // carry no localized label.
   String _translationLabel(ReaderSlotConfig slot) {
     final l10n = context.l10n;
     if (slot.isUnset) return l10n.select_language;
+    final language = getLanguageName(slot.languageCode, context);
     if (slot.versionUnavailable) {
-      return '${slot.languageLabel} (${l10n.version_not_available})';
+      return '$language (${l10n.version_not_available})';
     }
     final version = slot.versionLabel;
-    if (version == null || version.isEmpty) return slot.languageLabel;
-    return '${slot.languageLabel} ($version)';
+    if (version == null || version.isEmpty) return language;
+    return '$language ($version)';
   }
 
   /// The Original field names the script on screen: the picked one, else

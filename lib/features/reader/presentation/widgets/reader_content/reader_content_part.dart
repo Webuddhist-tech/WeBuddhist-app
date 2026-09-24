@@ -6,7 +6,6 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_item.dart';
-import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
@@ -261,55 +260,38 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
   }
 
-  /// Resolve (and cache) the initial segment_id used to align the secondary
-  /// stream when its notifier first loads:
-  /// - From plan navigation: use widget.params.segmentId
-  /// - Mid-session enable / version switch: use first visible segment from viewport
-  /// - Otherwise: null (start from beginning)
-  ///
-  /// The value is computed once and frozen for the lifetime of this widget
-  /// state — the secondary notifier only consumes it during its initial
-  /// fetch, and Riverpod's family identity for `SecondaryReaderKey` ignores
-  /// it, so recomputing on every build would be pointless work.
+  /// The primary segment the secondary stream first aligns to
+  /// ([secondaryInitialAnchor]), computed once: the notifier only consumes it
+  /// during its initial fetch, and `SecondaryReaderKey` identity ignores it,
+  /// so recomputing on every build would be pointless work.
   String? _resolveSecondaryInitialSegmentId() {
     if (_hasComputedSecondaryInitial) return _secondaryInitialSegmentId;
     _hasComputedSecondaryInitial = true;
-
-    final navContext = widget.params.navigationContext;
-    if (navContext?.source == NavigationSource.plan &&
-        widget.params.segmentId != null) {
-      _secondaryInitialSegmentId = widget.params.segmentId;
-      return _secondaryInitialSegmentId;
-    }
-
-    final state = ref.read(readerNotifierProvider(widget.params));
-    final content = state.content;
-    if (content == null || content.isEmpty) {
-      _secondaryInitialSegmentId = null;
-      return null;
-    }
-
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      final topIndex = positions
-          .where((pos) => pos.itemLeadingEdge >= 0 && pos.itemLeadingEdge < 1.0)
-          .map((pos) => pos.index)
-          .fold<int?>(
-            null,
-            (min, index) => min == null || index < min ? index : min,
-          );
-
-      if (topIndex != null && topIndex < content.itemCount) {
-        final item = content.items[topIndex];
-        if (item.isSegment && item.segmentId != null) {
-          _secondaryInitialSegmentId = item.segmentId;
-          return _secondaryInitialSegmentId;
-        }
-      }
-    }
-
-    _secondaryInitialSegmentId = content.firstSegmentId;
+    final content = ref.read(readerNotifierProvider(widget.params)).content;
+    _secondaryInitialSegmentId = secondaryInitialAnchor(
+      navigationContext: widget.params.navigationContext,
+      segmentId: widget.params.segmentId,
+      content: content,
+      visibleSegmentId: _topVisibleSegmentId(content),
+    );
     return _secondaryInitialSegmentId;
+  }
+
+  /// The verse at the top of the viewport, for a stream enabled mid-session.
+  String? _topVisibleSegmentId(FlattenedContent? content) {
+    if (content == null || content.isEmpty) return null;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return null;
+    final topIndex = positions
+        .where((pos) => pos.itemLeadingEdge >= 0 && pos.itemLeadingEdge < 1.0)
+        .map((pos) => pos.index)
+        .fold<int?>(
+          null,
+          (min, index) => min == null || index < min ? index : min,
+        );
+    if (topIndex == null || topIndex >= content.itemCount) return null;
+    final item = content.items[topIndex];
+    return item.isSegment ? item.segmentId : null;
   }
 
   /// Mirror primary pagination on the secondary stream (when enabled).
@@ -952,7 +934,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             secondarySlot: secondarySlot,
             secondaryContentBySegmentNumber:
                 secondaryState?.contentBySegmentNumber,
-            secondaryIsLoading: secondaryState?.isAnyLoading ?? false,
+            secondaryIsLoading:
+                secondaryState?.isPending(segment.segmentNumber) ?? false,
             isSelected: isSelected,
             isHighlighted: isHighlighted,
             highlightSource: state.highlightSource,

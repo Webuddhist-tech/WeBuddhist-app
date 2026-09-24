@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -19,7 +21,14 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
     required this.key,
   })  : _ref = ref,
         super(SecondaryReaderState.initial()) {
-    _loadInitial();
+    // A page the reader fetched ahead (a translation opened as itself) goes
+    // in before the first frame, so the original never shows in between.
+    final fetched = _fetchedPage(secondaryInitialParams(key));
+    if (fetched != null) {
+      _applyInitial(fetched);
+    } else {
+      _loadInitial();
+    }
   }
 
   final Ref _ref;
@@ -27,33 +36,23 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   final _logger = AppLogger('SecondaryReader');
   bool _disposed = false;
 
+  ReaderResponse? _fetchedPage(TextDetailsParams params) {
+    final cached = _ref.read(textDetailsFutureProvider(params)).valueOrNull;
+    return cached?.fold((_) => null, (response) => response);
+  }
+
   Future<void> _loadInitial() async {
     if (_disposed) return;
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      // Use initialSegmentId from key if provided (e.g., from plan navigation)
-      final response = await _fetch(
-        segmentId: key.initialSegmentId,
-        direction: 'next',
-        size: key.initialSize,
-      );
+      final response = await _fetchParams(secondaryInitialParams(key));
       if (_disposed) return;
-
-      final segments = _extractSegments(response.content.sections);
-      final map = _buildSegmentNumberMap(segments);
-
-      state = state.copyWith(
-        contentBySegmentNumber: map,
-        loadedSegments: segments,
-        totalSegments: response.totalSegments,
-        isLoading: false,
-        hasNextPage: response.hasNextPage,
-        hasPreviousPage: response.currentSegmentPosition > 1,
-      );
+      _applyInitial(response);
       _logger.debug(
         'Secondary initial load (${key.versionId}): '
-        '${segments.length} segments, total=${response.totalSegments}, '
+        '${state.loadedSegments.length} segments, '
+        'total=${response.totalSegments}, '
         'startSegmentId=${key.initialSegmentId}',
       );
     } catch (e, st) {
@@ -61,6 +60,18 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       if (_disposed) return;
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
+  }
+
+  void _applyInitial(ReaderResponse response) {
+    final segments = _extractSegments(response.content.sections);
+    state = state.copyWith(
+      contentBySegmentNumber: _buildSegmentNumberMap(segments),
+      loadedSegments: segments,
+      totalSegments: response.totalSegments,
+      isLoading: false,
+      hasNextPage: response.hasNextPage,
+      hasPreviousPage: response.currentSegmentPosition > 1,
+    );
   }
 
   /// Extend the secondary forward by one page.
@@ -164,14 +175,19 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
     required String? segmentId,
     required String direction,
     int? size,
-  }) async {
-    final params = TextDetailsParams(
-      textId: key.textId,
-      versionId: key.versionId,
-      segmentId: segmentId,
-      direction: direction,
-      size: size,
+  }) {
+    return _fetchParams(
+      TextDetailsParams(
+        textId: key.textId,
+        versionId: key.versionId,
+        segmentId: segmentId,
+        direction: direction,
+        size: size,
+      ),
     );
+  }
+
+  Future<ReaderResponse> _fetchParams(TextDetailsParams params) async {
     final result = await _ref.read(textDetailsFutureProvider(params).future);
     return result.fold(
       (failure) => throw Exception(
@@ -238,3 +254,30 @@ final secondaryReaderProvider = StateNotifierProvider.autoDispose
     .family<SecondaryReaderNotifier, SecondaryReaderState, SecondaryReaderKey>(
   (ref, key) => SecondaryReaderNotifier(ref: ref, key: key),
 );
+
+/// The request a secondary stream makes first. Shared with the reader, which
+/// fetches it ahead for a translation opened as itself.
+TextDetailsParams secondaryInitialParams(SecondaryReaderKey key) =>
+    TextDetailsParams(
+      textId: key.textId,
+      versionId: key.versionId,
+      segmentId: key.initialSegmentId,
+      direction: 'next',
+      size: key.initialSize,
+    );
+
+/// The primary segment the secondary stream first aligns to: the plan's
+/// target, else the verse at the top of the viewport (a stream enabled
+/// mid-session), else the first loaded one. Null with nothing loaded.
+String? secondaryInitialAnchor({
+  required NavigationContext? navigationContext,
+  required String? segmentId,
+  required FlattenedContent? content,
+  String? visibleSegmentId,
+}) {
+  if (navigationContext?.source == NavigationSource.plan && segmentId != null) {
+    return segmentId;
+  }
+  if (content == null || content.isEmpty) return null;
+  return visibleSegmentId ?? content.firstSegmentId;
+}

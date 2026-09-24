@@ -234,6 +234,32 @@ void main() {
       expect(window.currentPosition, 2);
     });
 
+    test('an anchor of unknown origin is placed from its own edition', () async {
+      final s = LibraryTestServer({
+        '/v2/editions/e1/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('s'))),
+        '/v2/editions/e2/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('b'))),
+        '/v2/editions/e2/content': (_) => jsonBody('ABCDEFGHI'),
+        '/v2/segments/s3':
+            (_) => jsonBody(
+              segmentJson('s3', '3', [[6, 9]], textId: 't1', editionId: 'e1'),
+            ),
+      });
+
+      // A bookmark on a translation whose root is now the primary.
+      final window = await s.repository().loadWindow(
+        editionId: 'e2',
+        anchorSegmentId: 's3',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.id), ['b3']);
+      expect(window.currentPosition, 3);
+      expect(s.count('/v2/segments/s3'), 1);
+    });
+
     test('the page that reaches the end reports it', () async {
       final repository = server().repository();
       final first = await repository.loadWindow(

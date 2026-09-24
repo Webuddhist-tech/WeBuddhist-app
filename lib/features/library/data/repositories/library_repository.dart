@@ -178,14 +178,12 @@ class LibraryRepository {
         anchorSegmentId == null
             ? -1
             : segments.indexWhere((s) => s.id == anchorSegmentId);
-    if (anchorIndex < 0 &&
-        anchorSegmentId != null &&
-        anchorEditionId != null &&
-        anchorEditionId != editionId) {
-      anchorIndex = await _alignedIndex(
-        anchorEditionId,
+    if (anchorIndex < 0 && anchorSegmentId != null) {
+      anchorIndex = await _foreignAnchorIndex(
         anchorSegmentId,
-        segments,
+        anchorEditionId: anchorEditionId,
+        target: segments,
+        targetEditionId: editionId,
       );
     }
 
@@ -260,6 +258,35 @@ class LibraryRepository {
     final segments = await getEditionSegments(target.id);
     final index = await _alignedIndex(source.id, segmentId, segments);
     return index < 0 ? null : segments[index].id;
+  }
+
+  /// Places an anchor that is not in [target]: by verse number from
+  /// [anchorEditionId], else from the segment's own edition (a bookmark or
+  /// search hit of a translation whose root is now the primary). -1 when it
+  /// cannot be placed.
+  Future<int> _foreignAnchorIndex(
+    String segmentId, {
+    required String? anchorEditionId,
+    required List<LibrarySegment> target,
+    required String targetEditionId,
+  }) async {
+    if (anchorEditionId != null && anchorEditionId != targetEditionId) {
+      final index = await _alignedIndex(anchorEditionId, segmentId, target);
+      if (index >= 0) return index;
+    }
+    final String? sourceEditionId;
+    try {
+      sourceEditionId = (await getSegment(segmentId)).editionId;
+    } catch (e) {
+      _logger.debug('Anchor $segmentId could not be looked up: $e');
+      return -1;
+    }
+    if (sourceEditionId == null ||
+        sourceEditionId == targetEditionId ||
+        sourceEditionId == anchorEditionId) {
+      return -1;
+    }
+    return _alignedIndex(sourceEditionId, segmentId, target);
   }
 
   /// Index in [target] of the verse numbered like [segmentId] in [editionId].

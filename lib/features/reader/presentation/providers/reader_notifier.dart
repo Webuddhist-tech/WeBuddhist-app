@@ -6,16 +6,20 @@ import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart'
-    show ReaderDualLayoutSettings;
+    show ReaderDualLayoutSettings, ReaderSlotConfig;
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
+import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_flattener_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_merger_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Parameters for initializing the reader
@@ -108,6 +112,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       'Primary versionId changed: $_activeVersionId -> $newVersionId. '
       'Reloading reader content.',
     );
+    _activeVersionId = newVersionId;
     _reloadForVersionChange();
   }
 
@@ -145,6 +150,8 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     );
 
     try {
+      if (useNavParams) await _openAsTranslation();
+      if (_isDisposed) return;
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
@@ -153,6 +160,10 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
         size: initialSize,
       );
       if (_isDisposed) return;
+      if (state.openedTranslation != null) {
+        await _prefetchTranslation(window.content);
+        if (_isDisposed) return;
+      }
       final response = window.response;
       _logger.debug('ReaderNotifier initialized with response: $response');
 
@@ -184,6 +195,94 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       );
     }
   }
+
+  /// A translation opens as the Translation layer of its root text: the root
+  /// loads as the primary and the opened edition as the secondary, shown
+  /// alone, so the page reads as before while the Languages sheet names the
+  /// real original. Anything failing keeps the opened edition as the primary.
+  Future<void> _openAsTranslation() async {
+    final dual = _ref.read(readerDualSettingsProvider(_params.textId).notifier);
+    if (dual.isPrimaryEdited || dual.isSecondaryEdited) return;
+    final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
+    final ReaderVersionDetail opened;
+    final ReaderVersionDetail root;
+    try {
+      opened = await settings.fetchVersionInfo(versionId: _params.textId);
+      final rootId = opened.parentId;
+      if (rootId == null || rootId.isEmpty) return;
+      root = await settings.fetchVersionInfo(versionId: rootId);
+      // The persisted flags load asynchronously and would otherwise land on
+      // top of the per-text layout set below.
+      await Future.wait([
+        _ref.read(readerSecondaryEnabledProvider.notifier).loaded,
+        _ref.read(readerOriginalVisibleProvider.notifier).loaded,
+      ]);
+    } catch (e) {
+      _logger.warning('Original of ${_params.textId} not resolved', e);
+      return;
+    }
+    if (_isDisposed || dual.isPrimaryEdited || dual.isSecondaryEdited) return;
+    // Same id the primary is about to load with, so the settings listener
+    // does not reload it.
+    _activeVersionId = root.id;
+    dual.openAsTranslation(
+      original: _slot(root),
+      translation: _slot(opened),
+    );
+    state = state.copyWith(openedTranslation: _textDetail(opened));
+  }
+
+  /// The first page of the translation an opened translation is shown as,
+  /// fetched before the page is shown so the original never appears in the
+  /// meantime. It is the request the translation stream makes first, so the
+  /// stream finds it cached; a failure is left for that stream to report.
+  Future<void> _prefetchTranslation(FlattenedContent content) async {
+    final dual = _ref.read(readerDualSettingsProvider(_params.textId));
+    final primaryId = dual.primary.versionId;
+    final translationId = dual.secondary.versionId;
+    if (primaryId == null || translationId == null) return;
+    final key = SecondaryReaderKey(
+      textId: primaryId,
+      versionId: translationId,
+      initialSegmentId: secondaryInitialAnchor(
+        navigationContext: _params.navigationContext,
+        segmentId: _params.segmentId,
+        content: content,
+      ),
+      initialSize: _params.navigationContext?.initialPageSize,
+    );
+    try {
+      await _ref.read(
+        textDetailsFutureProvider(secondaryInitialParams(key)).future,
+      );
+    } catch (e) {
+      _logger.debug('Translation page not fetched ahead: $e');
+    }
+  }
+
+  // Labels are localized by the sheet from the code.
+  static ReaderSlotConfig _slot(ReaderVersionDetail version) => ReaderSlotConfig(
+    languageCode: version.language,
+    languageLabel: version.language,
+    versionId: version.id,
+    versionLabel: version.title,
+  );
+
+  static TextDetail _textDetail(ReaderVersionDetail version) => TextDetail(
+    id: version.id,
+    title: version.title,
+    language: version.language,
+    type: version.type ?? 'text',
+    groupId: version.groupId ?? '',
+    isPublished: version.isPublished,
+    createdDate: version.createdDate ?? '',
+    updatedDate: version.updatedDate ?? '',
+    publishedDate: version.publishedDate ?? '',
+    publishedBy: version.publishedBy ?? '',
+    sourceLink: version.sourceLink,
+    license: version.license,
+    parentId: version.parentId,
+  );
 
   /// The page at [segmentId] (the first page when null). When the target sits
   /// near the top, the previous page is merged in first so the widget gets
