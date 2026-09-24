@@ -152,14 +152,8 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     try {
       if (useNavParams) await _openAsTranslation();
       if (_isDisposed) return;
-      if (useNavParams && state.openedTranslation != null) {
-        final aliases = await _alignNavigationSegments();
-        if (_isDisposed) return;
-        if (aliases.isNotEmpty) {
-          state = state.copyWith(segmentAliases: aliases);
-          initialSegmentId = state.loadedSegmentId(initialSegmentId ?? '');
-          if (initialSegmentId.isEmpty) initialSegmentId = null;
-        }
+      if (initialSegmentId != null) {
+        initialSegmentId = state.loadedSegmentId(initialSegmentId);
       }
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
@@ -208,18 +202,26 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// A translation opens as the Translation layer of its root text: the root
   /// loads as the primary and the opened edition as the secondary, shown
   /// alone, so the page reads as before while the Languages sheet names the
-  /// real original. Anything failing keeps the opened edition as the primary.
+  /// real original. Anything failing, or a requested verse the root lacks,
+  /// keeps the opened edition as the primary.
   Future<void> _openAsTranslation() async {
     final dual = _ref.read(readerDualSettingsProvider(_params.textId).notifier);
     if (dual.isPrimaryEdited || dual.isSecondaryEdited) return;
     final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
     final ReaderVersionDetail opened;
     final ReaderVersionDetail root;
+    final Map<String, String> aliases;
     try {
       opened = await settings.fetchVersionInfo(versionId: _params.textId);
       final rootId = opened.parentId;
       if (rootId == null || rootId.isEmpty) return;
       root = await settings.fetchVersionInfo(versionId: rootId);
+      aliases = await _alignNavigationSegments(root.id);
+      final requested = _params.segmentId;
+      if (requested != null && !aliases.containsKey(requested)) {
+        _logger.debug('$requested has no verse in ${root.id}; kept as opened');
+        return;
+      }
       // The persisted flags load asynchronously and would otherwise land on
       // top of the per-text layout set below.
       await Future.wait([
@@ -238,7 +240,10 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       original: _slot(root),
       translation: _slot(opened),
     );
-    state = state.copyWith(openedTranslation: _textDetail(opened));
+    state = state.copyWith(
+      openedTranslation: _textDetail(opened),
+      segmentAliases: aliases,
+    );
   }
 
   /// The first page of the translation an opened translation is shown as,
@@ -272,10 +277,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   /// Navigation names verses of the opened translation (a plan's range, a
   /// bookmark); these are the root's matching verses, by verse number. A
   /// verse with no counterpart is left out and keeps its own id.
-  Future<Map<String, String>> _alignNavigationSegments() async {
-    final rootId =
-        _ref.read(readerDualSettingsProvider(_params.textId)).primary.versionId;
-    if (rootId == null) return const {};
+  Future<Map<String, String>> _alignNavigationSegments(String rootId) async {
     final ids = <String>{
       if (_params.segmentId != null) _params.segmentId!,
       ...?_params.navigationContext?.currentSegmentIds,

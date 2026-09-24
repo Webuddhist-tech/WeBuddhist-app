@@ -229,6 +229,21 @@ void main() {
     expect(fetches.last.segmentId, 'en-1');
   });
 
+  test('a requested verse the root lacks opens the translation as itself',
+      () async {
+    const params = ReaderParams(textId: 'E1', segmentId: 'loose');
+    final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+    addTearDown(sub.close);
+
+    final state = await _loaded(container, params);
+
+    expect(state.openedTranslation, isNull);
+    expect(state.segmentAliases, isEmpty);
+    expect(fetches.map((f) => (f.textId, f.segmentId)), [('E1', 'loose')]);
+    final dual = container.read(readerDualSettingsProvider('E1'));
+    expect(dual.primary.versionId, isNull);
+  });
+
   test('a root edition keeps the loaded text as the original', () async {
     const params = ReaderParams(textId: 'E2');
     final sub = container.listen(readerNotifierProvider(params), (_, __) {});

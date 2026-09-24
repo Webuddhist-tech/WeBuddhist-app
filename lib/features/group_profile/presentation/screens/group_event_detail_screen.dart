@@ -250,6 +250,38 @@ class _GroupEventDetailScreenState
     final secondaryBorder = isDark ? AppColors.grey800 : AppColors.grey300;
     final isHybrid = isGroupEventHybrid(event);
 
+    final attendButton = ElevatedButton(
+      onPressed:
+          _isSubmitting
+              ? null
+              : () => isAttending ? _leaveEvent(event) : _attendEvent(event),
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        minimumSize: const Size(0, 44),
+        backgroundColor:
+            isAttending
+                ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
+                : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary),
+        foregroundColor:
+            isAttending
+                ? (isDark ? AppColors.textTertiaryDark : AppColors.textPrimary)
+                : (isDark ? AppColors.textPrimary : AppColors.surfaceWhite),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      child:
+          _isSubmitting && _pendingJoin == null
+              ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+              : Text(
+                isAttending
+                    ? _attendingLabel(event)
+                    : context.l10n.connect_event_attend,
+              ),
+    );
+
     // Hybrid events always ask for a format; each tap re-joins and enters.
     if (isHybrid && !isPast) {
       Widget joinButton(GroupEventParticipationType type, String label) {
@@ -282,7 +314,7 @@ class _GroupEventDetailScreenState
         );
       }
 
-      return Row(
+      final formats = Row(
         children: [
           joinButton(
             GroupEventParticipationType.offline,
@@ -295,39 +327,15 @@ class _GroupEventDetailScreenState
           ),
         ],
       );
+      if (!isAttending) return formats;
+      return Column(
+        children: [
+          formats,
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity, child: attendButton),
+        ],
+      );
     }
-
-    final attendButton = ElevatedButton(
-      onPressed:
-          _isSubmitting
-              ? null
-              : () => isAttending ? _leaveEvent(event) : _attendEvent(event),
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        minimumSize: const Size(0, 44),
-        backgroundColor:
-            isAttending
-                ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
-                : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary),
-        foregroundColor:
-            isAttending
-                ? (isDark ? AppColors.textTertiaryDark : AppColors.textPrimary)
-                : (isDark ? AppColors.textPrimary : AppColors.surfaceWhite),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child:
-          _isSubmitting
-              ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-              : Text(
-                isAttending
-                    ? _attendingLabel(event)
-                    : context.l10n.connect_event_attend,
-              ),
-    );
 
     if (event.hasPuja && isAttending) {
       final pujaButton = ElevatedButton(
