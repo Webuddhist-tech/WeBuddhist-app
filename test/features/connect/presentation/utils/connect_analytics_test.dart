@@ -30,6 +30,5 @@ void main() {
       'sub_tab': 'feed',
       'followed_group_count': null,
     });
-    expect(service.groups, isEmpty);
   });
 }

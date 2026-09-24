@@ -27,13 +27,6 @@ class _SpyAnalyticsService implements AnalyticsService {
       calls.add('super:${properties.keys.join(',')}');
 
   @override
-  Future<void> group({
-    required String groupType,
-    required String groupKey,
-    Map<String, Object?>? properties,
-  }) async => calls.add('group:$groupType:$groupKey');
-
-  @override
   List<NavigatorObserver> get routeObservers => [NavigatorObserver()];
 }
 
@@ -60,7 +53,6 @@ void main() {
     await composite.identify(userId: 'u1');
     await composite.track('plan_viewed');
     await composite.setSuperProperties({'is_guest': true});
-    await composite.group(groupType: 'sangha', groupKey: 'g1');
     await composite.reset();
 
     const List<String> expected = [
@@ -68,7 +60,6 @@ void main() {
       'identify:u1',
       'track:plan_viewed',
       'super:is_guest',
-      'group:sangha:g1',
       'reset',
     ];
     expect(first.calls, expected);

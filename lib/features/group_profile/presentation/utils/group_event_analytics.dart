@@ -32,12 +32,6 @@ class GroupEventAnalytics {
       AnalyticsProperties.eventFormat: eventFormat,
       AnalyticsProperties.isRecurring: isRecurring,
     });
-    if (groupId.isNotEmpty) {
-      _analytics.groupInBackground(
-        groupType: AnalyticsGroupTypes.sangha,
-        groupKey: groupId,
-      );
-    }
   }
 
   /// The embedded live stream started playing for this viewer.
@@ -70,10 +64,6 @@ class GroupEventAnalytics {
       AnalyticsProperties.groupId: groupId,
       AnalyticsProperties.accumulatorId: accumulatorId,
     });
-    _analytics.groupInBackground(
-      groupType: AnalyticsGroupTypes.sangha,
-      groupKey: groupId,
-    );
   }
 
   /// [participation] is null when the event has a single format and the

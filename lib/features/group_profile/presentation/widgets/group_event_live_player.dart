@@ -207,7 +207,13 @@ class GroupEventLivePlaybackTracker {
       analytics.eventLiveOpened(eventId: eventId, groupId: groupId);
     }
     _syncClock();
-    if (state == PlayerState.ended) end();
+    if (state == PlayerState.ended) {
+      end();
+      // The mounted player can resume or load another stream: count anew.
+      _opened = false;
+      _ended = false;
+      _clock.reset();
+    }
   }
 
   /// The stream ended or the player is going; nothing if it never played.

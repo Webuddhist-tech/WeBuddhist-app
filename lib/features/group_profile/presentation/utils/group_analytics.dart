@@ -26,7 +26,6 @@ class GroupAnalytics {
       AnalyticsProperties.groupType: groupType.name,
       AnalyticsProperties.source: source,
     });
-    _associateSangha(groupId);
   }
 
   /// The server confirmed the user now follows the group.
@@ -35,7 +34,6 @@ class GroupAnalytics {
       AnalyticsProperties.groupId: groupId,
       AnalyticsProperties.groupType: groupType.name,
     });
-    _associateSangha(groupId);
   }
 
   void groupUnfollowed({
@@ -89,15 +87,6 @@ class GroupAnalytics {
           AnalyticsProperties.collectionId: collectionId,
           AnalyticsProperties.groupId: groupId,
         });
-  }
-
-  /// Ties later events in the session to the sangha for per-group dashboards.
-  void _associateSangha(String groupId) {
-    if (groupId.isEmpty) return;
-    _analytics.groupInBackground(
-      groupType: AnalyticsGroupTypes.sangha,
-      groupKey: groupId,
-    );
   }
 }
 

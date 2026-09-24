@@ -147,6 +147,7 @@ abstract final class AnalyticsProperties {
   static const String itemCount = 'item_count';
 
   // Group chat
+  /// The sangha; PostHog attaches `$groups` per event from it.
   static const String groupId = 'group_id';
   static const String roomId = 'room_id';
   static const String messageId = 'message_id';
@@ -275,6 +276,9 @@ abstract final class AnalyticsProperties {
   static const String collectionId = 'collection_id';
   static const String completedCount = 'completed_count';
   static const String accumulatorId = 'accumulator_id';
+
+  /// PostHog's per-event group map, e.g. `{sangha: <group id>}`.
+  static const String groups = r'$groups';
 }
 
 /// PostHog group types; a sangha is a WeBuddhist group.

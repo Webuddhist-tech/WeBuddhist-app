@@ -34,19 +34,6 @@ class CompositeAnalyticsService implements AnalyticsService {
       _each((service) => service.setSuperProperties(properties));
 
   @override
-  Future<void> group({
-    required String groupType,
-    required String groupKey,
-    Map<String, Object?>? properties,
-  }) => _each(
-    (service) => service.group(
-      groupType: groupType,
-      groupKey: groupKey,
-      properties: properties,
-    ),
-  );
-
-  @override
   List<NavigatorObserver> get routeObservers => [
     for (final service in _services) ...service.routeObservers,
   ];

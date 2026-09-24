@@ -107,7 +107,6 @@ void main() {
     tracker.onPlayerState(PlayerState.playing);
     clock.advance(const Duration(seconds: 4));
     tracker.onPlayerState(PlayerState.ended);
-    tracker.onPlayerState(PlayerState.playing);
     clock.advance(const Duration(seconds: 4));
     tracker.end();
 
@@ -116,6 +115,23 @@ void main() {
       AnalyticsEvents.groupEventLiveEnded,
     ]);
     expect(service.events.last.properties['duration_s'], 4);
+  });
+
+  test('playback after the stream ended is a new session', () {
+    tracker.onPlayerState(PlayerState.playing);
+    clock.advance(const Duration(seconds: 4));
+    tracker.onPlayerState(PlayerState.ended);
+    tracker.onPlayerState(PlayerState.playing);
+    clock.advance(const Duration(seconds: 6));
+    tracker.end();
+
+    expect(service.eventNames, [
+      AnalyticsEvents.groupEventLiveOpened,
+      AnalyticsEvents.groupEventLiveEnded,
+      AnalyticsEvents.groupEventLiveOpened,
+      AnalyticsEvents.groupEventLiveEnded,
+    ]);
+    expect(service.events.last.properties['duration_s'], 6);
   });
 
   test('a player that never played reports nothing', () {

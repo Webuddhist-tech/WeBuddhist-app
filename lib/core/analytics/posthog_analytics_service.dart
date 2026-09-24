@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -99,7 +100,7 @@ class PostHogAnalyticsService implements AnalyticsService {
 
     await Posthog().capture(
       eventName: event,
-      properties: _sanitizeProperties(properties),
+      properties: _sanitizeProperties(withSanghaGroup(properties)),
     );
   }
 
@@ -113,21 +114,6 @@ class PostHogAnalyticsService implements AnalyticsService {
         await Posthog().register(entry.key, value);
       }
     }
-  }
-
-  @override
-  Future<void> group({
-    required String groupType,
-    required String groupKey,
-    Map<String, Object?>? properties,
-  }) async {
-    if (!_isInitialized) return;
-
-    await Posthog().group(
-      groupType: groupType,
-      groupKey: groupKey,
-      groupProperties: _sanitizeProperties(properties),
-    );
   }
 
   @override
@@ -156,6 +142,19 @@ class PostHogAnalyticsService implements AnalyticsService {
       if (packageInfo != null) 'app_version': packageInfo.version,
       if (packageInfo != null) 'build_number': packageInfo.buildNumber,
     });
+  }
+
+  /// An event with a `group_id` belongs to that sangha. PostHog reads
+  /// `$groups` per event, so nothing lingers once the user leaves the group.
+  static Map<String, Object?>? withSanghaGroup(
+    Map<String, Object?>? properties,
+  ) {
+    final Object? groupId = properties?[AnalyticsProperties.groupId];
+    if (groupId is! String || groupId.isEmpty) return properties;
+    return {
+      ...properties!,
+      AnalyticsProperties.groups: {AnalyticsGroupTypes.sangha: groupId},
+    };
   }
 
   static Map<String, Object>? _sanitizeProperties(

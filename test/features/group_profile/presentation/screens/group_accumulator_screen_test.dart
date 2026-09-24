@@ -110,7 +110,6 @@ void main() {
       'group_id': 'group-1',
       'accumulator_id': 'acc-1',
     });
-    expect(service.groups, ['sangha:group-1']);
 
     // Rebuilds do not report again.
     await tester.tap(find.text('My Contributions'));

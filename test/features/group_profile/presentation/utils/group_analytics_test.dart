@@ -14,11 +14,10 @@ void main() {
     analytics = GroupAnalytics(service);
   });
 
-  test('groupViewed carries the group, its type and joins the sangha', () {
+  test('groupViewed carries the group and its type', () {
     analytics.groupViewed(groupId: 'g1', groupType: GroupType.page);
 
     expect(service.eventNames, [AnalyticsEvents.groupViewed]);
-    expect(service.groups, ['sangha:g1']);
     expect(service.events.single.properties, {
       'group_id': 'g1',
       'group_type': 'page',
@@ -26,7 +25,7 @@ void main() {
     });
   });
 
-  test('follow joins the sangha, unfollow does not', () {
+  test('follow and unfollow carry the group and its type', () {
     analytics.groupFollowed(groupId: 'g1', groupType: GroupType.community);
     analytics.groupUnfollowed(groupId: 'g1', groupType: GroupType.community);
 
@@ -34,7 +33,6 @@ void main() {
       AnalyticsEvents.groupFollowed,
       AnalyticsEvents.groupUnfollowed,
     ]);
-    expect(service.groups, ['sangha:g1']);
     expect(service.events.last.properties, {
       'group_id': 'g1',
       'group_type': 'community',
@@ -49,7 +47,6 @@ void main() {
     );
 
     expect(service.eventNames, [AnalyticsEvents.recitationCollectionOpened]);
-    expect(service.groups, isEmpty);
     expect(service.events.single.properties, {
       'collection_id': 'c1',
       'group_id': null,

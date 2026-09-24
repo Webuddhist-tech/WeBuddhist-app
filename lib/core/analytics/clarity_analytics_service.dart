@@ -1,5 +1,6 @@
 import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/clarity_screen_observer.dart';
 import 'package:flutter_pecha/core/analytics/clarity_screen_tracker.dart';
@@ -32,6 +33,10 @@ class ClarityAnalyticsService implements AnalyticsService {
   final ClarityScreenTracker _screenTracker = ClarityScreenTracker(
     onScreenChanged: Clarity.setCurrentScreenName,
   );
+
+  /// Sanghas seen this session, kept as one multi-value tag so recordings
+  /// can be filtered by group.
+  final Set<String> _sanghas = {};
 
   /// Wraps the app so Clarity records from the first frame. Returns [app]
   /// untouched when the project ID is missing or invalid.
@@ -71,10 +76,15 @@ class ClarityAnalyticsService implements AnalyticsService {
   }
 
   /// Clarity cannot unset the custom user ID and carries tags into new
-  /// sessions, so logout swaps in a fresh anonymous ID and cuts a new session.
-  /// Nothing recorded from here on is attributed to the previous user.
+  /// sessions, so logout swaps in a fresh anonymous ID, blanks the sangha tag
+  /// and cuts a new session. Nothing recorded from here on is attributed to
+  /// the previous user or their groups.
   @override
   Future<void> reset() async {
+    if (_sanghas.isNotEmpty) {
+      _sanghas.clear();
+      Clarity.setCustomTag(AnalyticsGroupTypes.sangha, 'none');
+    }
     Clarity.setCustomUserId('anon-${const Uuid().v4()}');
     Clarity.startNewSession((_) {});
   }
@@ -86,6 +96,15 @@ class ClarityAnalyticsService implements AnalyticsService {
     Clarity.sendCustomEvent(event);
     final String? details = formatEventDetails(event, properties);
     if (details != null) Clarity.sendCustomEvent(details);
+    _tagSangha(properties);
+  }
+
+  void _tagSangha(Map<String, Object?>? properties) {
+    final Object? groupId = properties?[AnalyticsProperties.groupId];
+    if (groupId is! String || groupId.isEmpty || !_sanghas.add(groupId)) {
+      return;
+    }
+    Clarity.setCustomTags(AnalyticsGroupTypes.sangha, _sanghas);
   }
 
   @override
@@ -93,15 +112,6 @@ class ClarityAnalyticsService implements AnalyticsService {
     for (final MapEntry<String, String> entry in tagEntries(properties)) {
       Clarity.setCustomTag(entry.key, entry.value);
     }
-  }
-
-  @override
-  Future<void> group({
-    required String groupType,
-    required String groupKey,
-    Map<String, Object?>? properties,
-  }) async {
-    Clarity.setCustomTag(groupType, groupKey);
   }
 
   @override
