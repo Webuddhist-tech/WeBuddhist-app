@@ -93,30 +93,6 @@ class Env {
     return projectId != null && projectId.isNotEmpty;
   }
 
-  /// Tolgee Content Delivery base URL. Translations are read from
-  /// `$tolgeeCdnUrl/<languageTag>.json`. Null when unset or blank.
-  static String? get tolgeeCdnUrl {
-    final String? value = _optional['TOLGEE_CDN_URL']?.trim();
-    return value == null || value.isEmpty ? null : value;
-  }
-
-  /// Whether over-the-air translations are enabled for this build.
-  ///
-  /// Content Delivery is public, so the CDN URL alone switches it on and
-  /// `TOLGEE_ENABLED=false` switches it off. Without a URL there is nothing to
-  /// fetch, so the flag cannot switch it on by itself; such a build uses the
-  /// bundled ARB translations.
-  static bool get tolgeeEnabled {
-    if (tolgeeCdnUrl == null) {
-      return false;
-    }
-    final String? enabledFlag = _optional['TOLGEE_ENABLED'];
-    if (enabledFlag != null && enabledFlag.isNotEmpty) {
-      return enabledFlag.toLowerCase() == 'true';
-    }
-    return true;
-  }
-
   /// Normalized flavor label for analytics super properties
   static String get appFlavor {
     final String env = environment.toLowerCase();

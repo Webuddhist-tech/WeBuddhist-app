@@ -48,7 +48,7 @@ Public Content Delivery prefix (namespace included; **no** trailing file name):
 https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
 ```
 
-The app requests `{TOLGEE_CDN_URL}/{tag}.json` itself — see
+The app requests `{TolgeeCdn.baseUrl}/{tag}.json` itself — see
 [`tolgee_cdn.dart`](../lib/core/l10n/tolgee/tolgee_cdn.dart) and the note under
 "Why the SDK is not used" below. Published files:
 
@@ -68,26 +68,14 @@ Requirements in Tolgee Content Delivery:
 - ICU placeholders enabled
 - Publish after edits (or auto-publish)
 
-Env (per flavor `.env.dev` / `.env.staging` / `.env.prod`):
+The prefix is hardcoded as `TolgeeCdn.baseUrl`. There is no env setting, and
+Tolgee is on in every flavor. Content Delivery is public, so the app needs no
+Tolgee key. [`tool/tolgee_sync.dart`](../tool/tolgee_sync.dart) keeps a copy as
+`tolgeeCdnBase`, and `test/core/l10n/tolgee_sync_tags_test.dart` fails if the
+two drift, so moving to another project or namespace means editing both.
 
-```env
-TOLGEE_CDN_URL=https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
-TOLGEE_ENABLED=              # optional; false switches Tolgee off
-```
-
-The CDN URL alone turns Tolgee on (`Env.tolgeeEnabled`); without it the app
-uses the bundled ARB only. `TOLGEE_API_KEY` and `TOLGEE_API_URL` are **no
-longer read** — Content Delivery is public and the app fetches it directly —
-so they can be dropped from local `.env` files.
-
-**CI builds.** The store and TestFlight / Play internal builds get their `.env`
-files from [`ci/scripts/create_env_files.sh`](../ci/scripts/create_env_files.sh),
-fed by the `TOLGEE_CDN_URL` / `TOLGEE_ENABLED` repository secrets in
-`build-android.yml` / `build-ios.yml`. An empty or missing URL secret falls
-back to the shared project above. Until 2026-09 the script wrote no Tolgee
-lines at all, so every CI build — production included — ran on bundled ARB
-only while local `flutter run` builds (which read the developer's own `.env`)
-showed Tolgee edits.
+Until 2026-09 the prefix came from `TOLGEE_CDN_URL` in `.env`, which CI never
+wrote, so every store build ran on the bundled ARB only.
 
 ## Why the SDK is not used
 
@@ -182,8 +170,8 @@ Network sync commands need a write-capable project API key. Never put it in
    long-lived copy only as the GitHub Actions secret; export a key into the
    shell for one-off manual runs.
 
-`TOLGEE_PROJECT_ID` is optional; the tool normally resolves the project from
-the API key.
+The tool reads the project from the key itself, so it must be a project API
+key (`tgpak_...`), not a personal access token.
 
 | Key | Where | Purpose | Scopes |
 | --- | --- | --- | --- |
@@ -400,7 +388,16 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 4. Change `sign_in` in Tolgee → Publish → restart the app, or background it and
    return after 5 minutes → UI shows the new text.
 5. For a CI build (TestFlight / Play internal), repeat step 4 on the installed
-   app: it proves the generated `.env` carries `TOLGEE_CDN_URL`.
+   app.
+
+## A bad translation shipped
+
+There is no switch to turn Tolgee off. Fix the text in Tolgee and publish
+Content Delivery: apps pick it up on the next launch, or within 5 minutes of
+returning to the foreground.
+
+Unpublishing the CDN files makes cold starts fall back to the bundled ARB, but
+an app already running keeps the strings it loaded until it restarts.
 
 ## Known limits
 
@@ -408,4 +405,4 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
   (at most one fetch every 5 minutes); there is no live push.
 - Empty/404 CDN responses, malformed bodies and transport failures all parse
   to an empty payload, which the bridge treats as “use ARB”.
-- Do not put the filename in `TOLGEE_CDN_URL` — only the prefix through `/webuddhist`.
+- `TolgeeCdn.baseUrl` is the prefix through `/webuddhist`, without a file name.
