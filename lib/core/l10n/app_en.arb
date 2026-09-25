@@ -893,6 +893,98 @@
   "group_members_load_error": "Unable to load members. Please try again.",
   "group_followers_load_error": "Unable to load followers. Please try again.",
   "group_members_empty": "No members yet",
+  "group_member_admin": "Admin",
+  "group_remove_member": "Remove {name}",
+  "@group_remove_member": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "group_remove_member_title": "Remove from group?",
+  "group_remove_member_message": "{name} will be removed from group and blocked from joining until the ban ends",
+  "@group_remove_member_message": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "group_remove_member_blocked_for": "Blocked for :",
+  "group_remove_member_duration_day": "1 day",
+  "group_remove_member_duration_days": "{count} days",
+  "@group_remove_member_duration_days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_remove_member_duration_year": "1 year",
+  "group_remove_member_reason_label": "Reason (optional)",
+  "group_remove_member_reason_hint": "Something else...",
+  "group_remove_member_action": "Remove",
+  "group_remove_member_success": "{name} was removed from the group.",
+  "@group_remove_member_success": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "group_remove_member_error": "Couldn't remove this member. Try again.",
+  "group_join_banned_until": "You were removed from this group and cannot rejoin until {date}",
+  "@group_join_banned_until": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "group_join_banned": "You were removed from this group and cannot rejoin until the ban ends.",
+  "group_removed_title": "You've been removed from this group",
+  "group_removed_message": "An admin from {group} removed you from this group. You won't be able to view this group's posts, events and practices, or request to rejoin for {duration}.",
+  "@group_removed_message": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "group_removed_message_no_date": "An admin from {group} removed you from this group. You won't be able to view this group's posts, events and practices, or request to rejoin.",
+  "@group_removed_message_no_date": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "group_removed_rejoin_label": "You can request to rejoin this group on",
+  "group_removed_rejoin_value": "{date} · {remaining}",
+  "@group_removed_rejoin_value": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "group_removed_day_left": "1 day left",
+  "group_removed_days_left": "{count} days left",
+  "@group_removed_days_left": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_removed_last_day": "Less than a day left",
   "group_followers_empty": "No followers yet",
   "group_follower": "follower",
   "group_followers": "followers",

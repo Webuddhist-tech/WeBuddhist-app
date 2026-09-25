@@ -1913,6 +1913,93 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_members_empty => '尚無成員';
 
   @override
+  String get group_member_admin => 'Admin';
+
+  @override
+  String group_remove_member(String name) {
+    return '移除 $name';
+  }
+
+  @override
+  String get group_remove_member_title => '從群組移除？';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name 將被移出群組，並在封鎖結束前無法再次加入';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => '封鎖時間：';
+
+  @override
+  String get group_remove_member_duration_day => '1 天';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count 天';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 年';
+
+  @override
+  String get group_remove_member_reason_label => '原因（選填）';
+
+  @override
+  String get group_remove_member_reason_hint => '其他原因...';
+
+  @override
+  String get group_remove_member_action => '移除';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '已將 $name 移出群組。';
+  }
+
+  @override
+  String get group_remove_member_error => '無法移除此成員，請再試一次。';
+
+  @override
+  String group_join_banned_until(String date) {
+    return '您已被移出此群組，在 $date 之前無法重新加入';
+  }
+
+  @override
+  String get group_join_banned => '您已被移出此群組，在封鎖結束前無法重新加入。';
+
+  @override
+  String get group_removed_title => '您已被移出此群組';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group 的管理員已將您移出此群組。在 $duration 內，您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group 的管理員已將您移出此群組。您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。';
+  }
+
+  @override
+  String get group_removed_rejoin_label => '您可以在此日期申請重新加入此群組';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '剩餘 1 天';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '剩餘 $count 天';
+  }
+
+  @override
+  String get group_removed_last_day => '剩餘不到一天';
+
+  @override
   String get group_followers_empty => '尚無追蹤者';
 
   @override

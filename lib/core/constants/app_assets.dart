@@ -143,6 +143,7 @@ class AppAssets {
   // ========== STATUS ICONS ==========
   static const IconData checkCircle = PhosphorIconsRegular.checkCircle;
   static const IconData warningCircle = PhosphorIconsRegular.warningCircle;
+  static const IconData warningCircleFill = PhosphorIconsFill.warningCircle;
   static const IconData warning = PhosphorIconsRegular.warning;
   static const IconData check = PhosphorIconsBold.check;
 

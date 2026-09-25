@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,8 +14,14 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
 
   static const int maxMessageLength = 200;
 
-  static Future<bool?> show(BuildContext context, GroupProfile profile) {
-    return showModalBottomSheet<bool>(
+  /// [showRemovalDialog] is off for callers that render the removal notice
+  /// themselves, such as the group profile.
+  static Future<bool?> show(
+    BuildContext context,
+    GroupProfile profile, {
+    bool showRemovalDialog = true,
+  }) async {
+    final result = await showModalBottomSheet<Object?>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -22,6 +30,13 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (_) => GroupJoinRequestDrawer(profile: profile),
     );
+    if (result is _GroupJoinBanNotice) {
+      if (showRemovalDialog && context.mounted) {
+        await _showBanDialog(context, result.expiresAt);
+      }
+      return false;
+    }
+    return result == true;
   }
 
   @override
@@ -45,7 +60,7 @@ class _GroupJoinRequestDrawerState
 
     setState(() => _isSubmitting = true);
 
-    final ok = await submitGroupJoinRequest(
+    final outcome = await submitGroupJoinRequest(
       ref: ref,
       groupId: widget.profile.id,
       message: _messageController.text.trim(),
@@ -53,8 +68,13 @@ class _GroupJoinRequestDrawerState
 
     if (!mounted) return;
 
-    if (ok) {
+    if (outcome.sent) {
       Navigator.of(context).pop(true);
+      return;
+    }
+
+    if (outcome.banned) {
+      Navigator.of(context).pop(_GroupJoinBanNotice(outcome.banExpiresAt));
       return;
     }
 
@@ -133,7 +153,9 @@ class _GroupJoinRequestDrawerState
                         '${_messageController.text.length}/${GroupJoinRequestDrawer.maxMessageLength}',
                     filled: true,
                     fillColor:
-                        isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+                        isDark
+                            ? AppColors.surfaceVariantDark
+                            : AppColors.grey100,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -183,4 +205,61 @@ class _GroupJoinRequestDrawerState
       ),
     );
   }
+}
+
+class _GroupJoinBanNotice {
+  final DateTime? expiresAt;
+
+  const _GroupJoinBanNotice(this.expiresAt);
+}
+
+String _groupJoinBanDialogMessage(BuildContext context, DateTime? expiresAt) {
+  final l10n = context.l10n;
+  if (expiresAt == null) return l10n.group_join_banned;
+  final date = DateFormat.yMMMd(
+    intlFormatLocaleOf(context),
+  ).format(expiresAt.toLocal());
+  return l10n.group_join_banned_until(date);
+}
+
+Future<void> _showBanDialog(BuildContext context, DateTime? expiresAt) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final message = _groupJoinBanDialogMessage(context, expiresAt);
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return Dialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.4,
+                  color:
+                      isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(dialogContext.l10n.got_it),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }

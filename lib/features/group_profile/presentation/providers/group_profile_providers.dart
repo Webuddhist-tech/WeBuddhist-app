@@ -876,14 +876,18 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
   GroupMembersNotifier({
     required GroupProfileRepositoryInterface repository,
     required String groupId,
+    this.onMemberRemoved,
   }) : _repository = repository,
        _groupId = groupId,
        super(const GroupMembersState());
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
+  final VoidCallback? onMemberRemoved;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  final Set<String> _removedUserIds = {};
+  final Set<String> _removingUserIds = {};
 
   Future<void> loadInitial() async {
     if (state.isLoading || state.isLoadingMore) return;
@@ -904,9 +908,11 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
         state = state.copyWith(isLoading: false, error: failure.message);
       },
       (page) {
+        final members = _withoutRemoved(page.members);
+        final dropped = page.members.length - members.length;
         state = state.copyWith(
-          members: page.members,
-          totalMembers: page.totalMembers,
+          members: members,
+          totalMembers: _totalAfterDrop(page.totalMembers, dropped),
           isLoading: false,
           hasMore: page.hasMore,
           skip: page.members.length,
@@ -935,15 +941,88 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
+        final members = _withoutRemoved(page.members);
+        final dropped = page.members.length - members.length;
         state = state.copyWith(
-          members: [...state.members, ...page.members],
-          totalMembers: page.totalMembers,
+          members: [...state.members, ...members],
+          totalMembers: _totalAfterDrop(page.totalMembers, dropped),
           isLoadingMore: false,
           hasMore: page.hasMore,
           skip: state.skip + page.members.length,
           clearError: true,
         );
       },
+    );
+  }
+
+  /// Removes [userId] on the server, then drops them from the loaded list.
+  /// A failed request leaves the list unchanged.
+  Future<bool> removeMember({
+    required String userId,
+    required int banDurationDays,
+    String? reason,
+  }) async {
+    final id = userId.trim();
+    if (id.isEmpty || _removingUserIds.contains(id)) return false;
+    if (banDurationDays < 1 || banDurationDays > 365) return false;
+
+    _removingUserIds.add(id);
+    final result = await _repository.removeJoinedUser(
+      _groupId,
+      userId: id,
+      banDurationDays: banDurationDays,
+      reason: reason,
+    );
+    _removingUserIds.remove(id);
+    if (!mounted) return result.isRight();
+
+    return result.fold((_) => false, (_) {
+      _removedUserIds.add(id);
+      // A page requested with the pre-removal offset shifts by one on the
+      // server. Drop that response and load again from the corrected offset
+      // so the member who slid into the gap is not skipped.
+      final reloadInitial = state.isLoading;
+      final reloadMore = state.isLoadingMore;
+      if (reloadInitial || reloadMore) {
+        _requestGeneration++;
+        state = state.copyWith(isLoading: false, isLoadingMore: false);
+      }
+      _dropMember(id);
+      if (reloadInitial) {
+        loadInitial();
+      } else if (reloadMore && state.hasMore) {
+        loadMore();
+      }
+      onMemberRemoved?.call();
+      return true;
+    });
+  }
+
+  List<GroupMember> _withoutRemoved(List<GroupMember> members) {
+    if (_removedUserIds.isEmpty) return members;
+    return [
+      for (final member in members)
+        if (!_removedUserIds.contains(member.userId)) member,
+    ];
+  }
+
+  int _totalAfterDrop(int total, int dropped) {
+    final next = total - dropped;
+    return next < 0 ? 0 : next;
+  }
+
+  void _dropMember(String userId) {
+    final next = [
+      for (final member in state.members)
+        if (member.userId != userId) member,
+    ];
+    final removed = state.members.length - next.length;
+    if (removed == 0) return;
+    final skip = state.skip - removed;
+    state = state.copyWith(
+      members: next,
+      totalMembers: _totalAfterDrop(state.totalMembers, removed),
+      skip: skip < 0 ? 0 : skip,
     );
   }
 
@@ -973,6 +1052,7 @@ final groupMembersProvider = StateNotifierProvider.autoDispose
       return GroupMembersNotifier(
         repository: ref.watch(groupProfileRepositoryProvider),
         groupId: groupId,
+        onMemberRemoved: () => ref.invalidate(groupProfileProvider(groupId)),
       );
     });
 
@@ -1436,7 +1516,86 @@ final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
   return notifier;
 });
 
-Future<bool> submitGroupJoinRequest({
+/// Removal reported by the join-request endpoint for the signed-in user.
+/// The group profile response carries no ban field, so the notice is kept here
+/// once a join attempt is refused and drives the profile's removal card.
+/// A null [expiresAt] means the server sent no end date.
+class GroupRemovalNotice {
+  final DateTime? expiresAt;
+
+  const GroupRemovalNotice(this.expiresAt);
+
+  /// Still blocks rejoining. A missing end date stays in effect; a past
+  /// [expiresAt] does not, so the request-to-join action can be used again.
+  bool get isActive {
+    final expiry = expiresAt;
+    if (expiry == null) return true;
+    return !expiry.isBefore(DateTime.now());
+  }
+}
+
+typedef GroupRemovalNoticeKey = ({String userId, String groupId});
+
+final groupRemovalNoticeProvider =
+    StateProvider.family<GroupRemovalNotice?, GroupRemovalNoticeKey>(
+      (ref, key) => null,
+    );
+
+/// Active removal for [groupId] belonging to the signed-in user.
+///
+/// Returns null when nobody is signed in, the notice belongs to another
+/// account, or the ban's end date has passed.
+GroupRemovalNotice? watchActiveGroupRemovalNotice(
+  WidgetRef ref,
+  String groupId,
+) {
+  final userId = ref.watch(userProvider.select((state) => state.user?.id));
+  if (userId == null || userId.isEmpty) return null;
+  final notice = ref.watch(
+    groupRemovalNoticeProvider((userId: userId, groupId: groupId)),
+  );
+  if (notice == null || !notice.isActive) return null;
+  return notice;
+}
+
+/// Forgets the signed-in user's removal notice for [groupId].
+///
+/// The notice is a client-side cache of the last refused join attempt. The
+/// server may lift the ban early, so a page refresh drops the cache and lets
+/// the next join request re-ask the server, which re-sets the notice if the
+/// ban is still in place.
+void clearGroupRemovalNotice(WidgetRef ref, String groupId) {
+  final userId = ref.read(userProvider).user?.id;
+  if (userId == null || userId.isEmpty) return;
+  ref.invalidate(
+    groupRemovalNoticeProvider((userId: userId, groupId: groupId)),
+  );
+}
+
+/// Outcome of asking to join. [banned] is set for `GROUP_BANNED`.
+/// [banExpiresAt] is the server `expires_at`, used to fill the localized notice.
+class GroupJoinRequestOutcome {
+  final bool sent;
+  final bool banned;
+  final DateTime? banExpiresAt;
+
+  const GroupJoinRequestOutcome.sent()
+    : sent = true,
+      banned = false,
+      banExpiresAt = null;
+
+  const GroupJoinRequestOutcome.failed()
+    : sent = false,
+      banned = false,
+      banExpiresAt = null;
+
+  const GroupJoinRequestOutcome.banned(DateTime? expiresAt)
+    : sent = false,
+      banned = true,
+      banExpiresAt = expiresAt;
+}
+
+Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
   required WidgetRef ref,
   required String groupId,
   String message = '',
@@ -1444,10 +1603,31 @@ Future<bool> submitGroupJoinRequest({
   final result = await ref
       .read(groupProfileRepositoryProvider)
       .submitJoinRequest(groupId, message: message);
-  return result.fold((_) => false, (_) {
-    ref.invalidate(groupProfileProvider(groupId));
-    return true;
-  });
+  return result.fold(
+    (failure) {
+      if (failure is AuthorizationFailure &&
+          isGroupJoinBanned(failure.message)) {
+        final expiresAt = groupJoinBanExpiresAt(failure.message);
+        final userId = ref.read(userProvider).user?.id;
+        if (userId != null && userId.isNotEmpty) {
+          ref
+              .read(
+                groupRemovalNoticeProvider((
+                  userId: userId,
+                  groupId: groupId,
+                )).notifier,
+              )
+              .state = GroupRemovalNotice(expiresAt);
+        }
+        return GroupJoinRequestOutcome.banned(expiresAt);
+      }
+      return const GroupJoinRequestOutcome.failed();
+    },
+    (_) {
+      ref.invalidate(groupProfileProvider(groupId));
+      return const GroupJoinRequestOutcome.sent();
+    },
+  );
 }
 
 Future<void> refreshGroupProfilePage({
@@ -1457,6 +1637,7 @@ Future<void> refreshGroupProfilePage({
 }) async {
   final followKey = GroupFollowKey(groupId: groupId, groupType: groupType);
   ref.invalidate(groupFollowProvider(followKey));
+  clearGroupRemovalNotice(ref, groupId);
 
   final refreshTasks = <Future<void>>[
     ref.refresh(groupProfileProvider(groupId).future).then((_) {}),

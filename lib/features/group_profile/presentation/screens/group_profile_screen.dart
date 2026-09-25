@@ -39,6 +39,7 @@ class GroupProfileScreen extends ConsumerWidget {
             _buildAppBar(context, ref, groupId, profileTitle, isDark),
             Expanded(
               child: profileAsync.when(
+                skipLoadingOnReload: true,
                 data: (either) {
                   return either.fold(
                     (failure) => Center(

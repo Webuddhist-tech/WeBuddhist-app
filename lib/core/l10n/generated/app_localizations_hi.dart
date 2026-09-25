@@ -2020,6 +2020,96 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_members_empty => 'अभी कोई सदस्य नहीं';
 
   @override
+  String get group_member_admin => 'Admin';
+
+  @override
+  String group_remove_member(String name) {
+    return '$name को हटाएँ';
+  }
+
+  @override
+  String get group_remove_member_title => 'समूह से हटाएँ?';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name को समूह से हटा दिया जाएगा और प्रतिबंध समाप्त होने तक शामिल होने से रोका जाएगा';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'प्रतिबंध अवधि :';
+
+  @override
+  String get group_remove_member_duration_day => '1 दिन';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count दिन';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 वर्ष';
+
+  @override
+  String get group_remove_member_reason_label => 'कारण (वैकल्पिक)';
+
+  @override
+  String get group_remove_member_reason_hint => 'कुछ और...';
+
+  @override
+  String get group_remove_member_action => 'हटाएँ';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name को समूह से हटा दिया गया।';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'इस सदस्य को हटाया नहीं जा सका। फिर से प्रयास करें।';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'आपको इस समूह से हटा दिया गया था और आप $date तक फिर से शामिल नहीं हो सकते';
+  }
+
+  @override
+  String get group_join_banned =>
+      'आपको इस समूह से हटा दिया गया था और प्रतिबंध समाप्त होने तक आप फिर से शामिल नहीं हो सकते।';
+
+  @override
+  String get group_removed_title => 'आपको इस समूह से हटा दिया गया है';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group के एक व्यवस्थापक ने आपको इस समूह से हटा दिया है। आप $duration तक इस समूह की पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और न ही फिर से शामिल होने का अनुरोध कर पाएँगे।';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group के एक व्यवस्थापक ने आपको इस समूह से हटा दिया है। आप इस समूह की पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और न ही फिर से शामिल होने का अनुरोध कर पाएँगे।';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'आप इस दिन इस समूह में फिर से शामिल होने का अनुरोध कर सकते हैं';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 दिन शेष';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count दिन शेष';
+  }
+
+  @override
+  String get group_removed_last_day => 'एक दिन से कम शेष';
+
+  @override
   String get group_followers_empty => 'अभी कोई अनुयायी नहीं';
 
   @override

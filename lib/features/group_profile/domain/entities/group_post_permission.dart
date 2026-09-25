@@ -1,3 +1,5 @@
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_member_role.dart';
+
 class GroupPostPermission {
   final String groupId;
   final bool hasPermission;
@@ -18,6 +20,7 @@ class GroupPostPermission {
   });
 
   /// Group-admin from `GET /users/me/permission/{groupId}` when `role` is
-  /// `ADMIN` (case-insensitive). Platform super-admin is not used here.
-  bool get isGroupAdmin => role?.trim().toUpperCase() == 'ADMIN';
+  /// `OWNER` or `ADMIN` (case-insensitive). Platform super-admin is not used
+  /// here.
+  bool get isGroupAdmin => GroupMemberRole.isAdminTier(role);
 }

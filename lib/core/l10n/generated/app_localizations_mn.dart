@@ -2022,6 +2022,96 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_members_empty => 'Одоогоор гишүүн байхгүй';
 
   @override
+  String get group_member_admin => 'Admin';
+
+  @override
+  String group_remove_member(String name) {
+    return '$name-г хасах';
+  }
+
+  @override
+  String get group_remove_member_title => 'Бүлгээс хасах уу?';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name-г бүлгээс хасаж, хориг дуустал дахин нэгдэхийг хориглоно';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'Хориглох хугацаа:';
+
+  @override
+  String get group_remove_member_duration_day => '1 өдөр';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count өдөр';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 жил';
+
+  @override
+  String get group_remove_member_reason_label => 'Шалтгаан (заавал биш)';
+
+  @override
+  String get group_remove_member_reason_hint => 'Өөр зүйл...';
+
+  @override
+  String get group_remove_member_action => 'Хасах';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name-г бүлгээс хаслаа.';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'Энэ гишүүнийг хасаж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'Та энэ бүлгээс хасагдсан тул $date хүртэл дахин нэгдэх боломжгүй';
+  }
+
+  @override
+  String get group_join_banned =>
+      'Та энэ бүлгээс хасагдсан тул хориг дуустал дахин нэгдэх боломжгүй.';
+
+  @override
+  String get group_removed_title => 'Таныг энэ бүлгээс хассан';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group бүлгийн админ таныг энэ бүлгээс хассан. Та $duration-ийн турш энэ бүлгийн нийтлэл, арга хэмжээ, дадлагыг харах болон дахин нэгдэх хүсэлт илгээх боломжгүй.';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group бүлгийн админ таныг энэ бүлгээс хассан. Та энэ бүлгийн нийтлэл, арга хэмжээ, дадлагыг харах болон дахин нэгдэх хүсэлт илгээх боломжгүй.';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'Та энэ өдөр энэ бүлэгт дахин нэгдэх хүсэлт илгээж болно';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 өдөр үлдсэн';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count өдөр үлдсэн';
+  }
+
+  @override
+  String get group_removed_last_day => 'Нэг өдрөөс бага үлдсэн';
+
+  @override
   String get group_followers_empty => 'Одоогоор дагагч байхгүй';
 
   @override

@@ -374,6 +374,41 @@ class GroupProfileRemoteDatasource {
     }
   }
 
+  /// `POST /cms/author/groups/{groupId}/joined-users/{userId}/remove`.
+  Future<void> removeJoinedUser(
+    String groupId, {
+    required String userId,
+    required int banDurationDays,
+    String? reason,
+  }) async {
+    final note = reason?.trim();
+    try {
+      final response = await dio.post(
+        '/cms/author/groups/$groupId/joined-users/$userId/remove',
+        data: {
+          'ban_duration_days': banDurationDays,
+          'reason': note == null || note.isEmpty ? null : note,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return;
+      }
+
+      _logger.error(
+        'Failed to remove joined user $userId: ${response.statusCode}',
+      );
+      throw _statusToException(
+        response.statusCode,
+        'Failed to remove group member',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in removeJoinedUser', e);
+      throw _dioToException(e, 'Failed to remove group member');
+    }
+  }
+
   Future<GroupEventsPageModel> fetchConnectEvents({
     required bool includeUnfollowed,
     required String language,
@@ -683,6 +718,10 @@ class GroupProfileRemoteDatasource {
         '/author/groups/$groupId/join-requests',
         data: {'message': message},
       );
+      final ban = groupJoinBan(response.data);
+      if (ban != null) {
+        throw AuthorizationException(ban.payload);
+      }
       if (response.statusCode != 200 &&
           response.statusCode != 201 &&
           response.statusCode != 204) {
@@ -692,6 +731,10 @@ class GroupProfileRemoteDatasource {
         );
       }
     } on DioException catch (e) {
+      final ban = groupJoinBan(e.response?.data);
+      if (ban != null) {
+        throw AuthorizationException(ban.payload);
+      }
       _logger.error('Dio error in submitJoinRequest', e);
       throw _dioToException(e, 'Failed to submit join request');
     }
@@ -749,4 +792,55 @@ class GroupProfileRemoteDatasource {
     final detail = data['detail'];
     return detail is String && detail.contains('You have not joined event');
   }
+}
+
+/// Marker stored on [AuthorizationException] when a join request is `GROUP_BANNED`.
+/// The date, when present, is appended as `GROUP_BANNED|<iso8601>`.
+const String groupJoinBannedCode = 'GROUP_BANNED';
+
+/// A `GROUP_BANNED` join-request body. The UI localizes the sentence and
+/// formats [expiresAt]; the English `message` from the server is not shown.
+class GroupJoinBan {
+  final DateTime? expiresAt;
+
+  const GroupJoinBan({this.expiresAt});
+
+  String get payload {
+    final expires = expiresAt;
+    if (expires == null) return groupJoinBannedCode;
+    return '$groupJoinBannedCode|${expires.toUtc().toIso8601String()}';
+  }
+}
+
+/// Returns a ban when `detail.error` is `GROUP_BANNED`.
+/// Returns null for every other shape so the caller keeps the generic error.
+GroupJoinBan? groupJoinBan(Object? data) {
+  if (data is! Map) return null;
+  final detail = data['detail'];
+  if (detail is! Map) return null;
+  final error = detail['error'];
+  if (error is! String || error.trim().toUpperCase() != groupJoinBannedCode) {
+    return null;
+  }
+  return GroupJoinBan(expiresAt: _parseExpiresAt(detail['expires_at']));
+}
+
+bool isGroupJoinBanned(String message) {
+  final trimmed = message.trim();
+  return trimmed == groupJoinBannedCode ||
+      trimmed.startsWith('$groupJoinBannedCode|');
+}
+
+DateTime? groupJoinBanExpiresAt(String message) {
+  final trimmed = message.trim();
+  final prefix = '$groupJoinBannedCode|';
+  if (!trimmed.startsWith(prefix)) return null;
+  return DateTime.tryParse(trimmed.substring(prefix.length));
+}
+
+DateTime? _parseExpiresAt(Object? value) {
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return null;
+  return DateTime.tryParse(trimmed);
 }
