@@ -485,6 +485,16 @@ bool isPrivateGroupMember({required GroupFollowState followState}) {
   };
 }
 
+/// Create, edit, and delete stay off until the user has joined this group.
+/// A pending join request does not count, and an in-flight join check does not
+/// either, so those controls never flash before membership is known.
+bool canPublishGroupPosts({
+  required bool canCreateContent,
+  required GroupFollowState followState,
+}) {
+  return canCreateContent && isPrivateGroupMember(followState: followState);
+}
+
 class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
   final GroupProfileRepositoryInterface _repository;
   final Ref _ref;

@@ -426,7 +426,12 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final postsState = ref.watch(groupPostsProvider(profile.id));
     final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
     final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
-    final canPost = permissionAsync.valueOrNull ?? false;
+    final followState = _privateGroupFollowState(profile);
+    final hasCreatePermission = permissionAsync.valueOrNull ?? false;
+    final canPost = canPublishGroupPosts(
+      canCreateContent: hasCreatePermission,
+      followState: followState,
+    );
     // Keep the posts tab when loading failed so its retry action stays
     // reachable, and for anyone allowed to publish so the Post button shows.
     final hasPosts =
@@ -436,7 +441,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         !postsState.hasLoaded ||
         (permissionAsync.isLoading &&
             !permissionAsync.hasValue &&
-            !permissionAsync.hasError);
+            !permissionAsync.hasError) ||
+        (hasCreatePermission && isPrivateGroupMembershipLoading(followState));
 
     // Wait for every section before laying out the tabs, otherwise tabs would
     // pop in and out as each request settles.
@@ -503,7 +509,13 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                     controller: controller,
                     children: [
                       for (final tab in _visibleTabs)
-                        _buildTabContent(tab, profile, isDark, lineHeight),
+                        _buildTabContent(
+                          tab,
+                          profile,
+                          isDark,
+                          lineHeight,
+                          canPost: canPost,
+                        ),
                     ],
                   ),
         ),
@@ -698,8 +710,9 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     _GroupProfileTab tab,
     GroupProfile profile,
     bool isDark,
-    double? lineHeight,
-  ) {
+    double? lineHeight, {
+    required bool canPost,
+  }) {
     final pageStorageKey = '${profile.id}-${tab.name}';
 
     return switch (tab) {
@@ -708,11 +721,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         isDark: isDark,
         lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
-        canPost: ref.watch(
-          groupPostPermissionProvider(
-            profile.id,
-          ).select((async) => async.valueOrNull ?? false),
-        ),
+        canPost: canPost,
         onCreatePost: () => _onCreatePost(profile),
         onEditPost: (post) => _onEditPost(profile, post),
       ),
@@ -737,12 +746,26 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     };
   }
 
+  bool _canPublishPosts(GroupProfile profile) {
+    final canCreateContent =
+        ref.read(groupPostPermissionProvider(profile.id)).valueOrNull ?? false;
+    return canPublishGroupPosts(
+      canCreateContent: canCreateContent,
+      followState: ref.read(
+        groupFollowProvider(
+          GroupFollowKey(groupId: profile.id, groupType: profile.groupType),
+        ),
+      ),
+    );
+  }
+
   Future<void> _onCreatePost(GroupProfile profile) async {
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
       LoginDrawer.show(context, ref);
       return;
     }
+    if (!_canPublishPosts(profile)) return;
 
     final result = await GroupPostComposerScreen.show(context, profile);
     if (result == null || !mounted) return;
@@ -754,6 +777,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
   }
 
   Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {
+    if (!_canPublishPosts(profile)) return;
+
     final result = await GroupPostComposerScreen.show(
       context,
       profile,
