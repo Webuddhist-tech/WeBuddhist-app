@@ -68,8 +68,8 @@ final _logger = AppLogger('AppRouter');
 
 /// Root navigator key for the GoRouter instance.
 ///
-/// Exposed so widgets above the navigator tree (e.g. ForceUpdateGate)
-/// can call showDialog on a context that is actually inside the navigator.
+/// Exposed so code outside the navigator tree can reach a context that is
+/// actually inside the navigator.
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 /// Shell navigator key for routes that share the persistent bottom nav bar.
