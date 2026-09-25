@@ -49,6 +49,52 @@ void main() {
       expect(decoded.translationOn, isNull);
     });
 
+    test('a translation edition is kept per text, the latest pick winning', () {
+      final prefs = ReaderContextLayoutPrefs.empty
+          .withTranslationVersion('text-1', 'v-en')
+          .withTranslationVersion('text-2', 'v-hi')
+          .withTranslationVersion('text-1', 'v-en-2');
+      expect(prefs.translationVersionFor('text-1'), 'v-en-2');
+      expect(prefs.translationVersionFor('text-2'), 'v-hi');
+      expect(prefs.translationVersionFor('text-3'), isNull);
+      expect(
+        prefs.translationVersions.keys,
+        ['text-2', 'text-1'],
+        reason: 'the newest pick is last',
+      );
+    });
+
+    test('forgets the oldest text past the cap', () {
+      var prefs = ReaderContextLayoutPrefs.empty;
+      const cap = ReaderContextLayoutPrefs.maxTranslationVersions;
+      for (var i = 0; i <= cap; i++) {
+        prefs = prefs.withTranslationVersion('text-$i', 'v-$i');
+      }
+      expect(prefs.translationVersions, hasLength(cap));
+      expect(prefs.translationVersionFor('text-0'), isNull);
+      expect(prefs.translationVersionFor('text-1'), 'v-1');
+      expect(prefs.translationVersionFor('text-$cap'), 'v-$cap');
+    });
+
+    test('translation editions round-trip in order, bad entries dropped', () {
+      final prefs = ReaderContextLayoutPrefs.empty
+          .withTranslationVersion('text-2', 'v-hi')
+          .withTranslationVersion('text-1', 'v-en');
+      final decoded = ReaderContextLayoutPrefs.decode(prefs.encode());
+      expect(decoded, prefs);
+      expect(decoded.translationVersions.keys, ['text-2', 'text-1']);
+
+      final odd = ReaderContextLayoutPrefs.fromJson({
+        'translationVersions': {'text-1': 3, 'text-2': null, 'text-3': 'v'},
+      });
+      expect(odd.translationVersions, {'text-3': 'v'});
+      expect(
+        ReaderContextLayoutPrefs.fromJson({'translationVersions': 'v'})
+            .translationVersions,
+        isEmpty,
+      );
+    });
+
     test('a corrupt or foreign value reads as no picks', () {
       expect(ReaderContextLayoutPrefs.decode('not json'), ReaderContextLayoutPrefs.empty);
       expect(ReaderContextLayoutPrefs.decode('[]'), ReaderContextLayoutPrefs.empty);
@@ -99,12 +145,14 @@ void main() {
 
       notifier.setScript(' BO ', 'phonetic');
       notifier.setTranslationLanguage('HI');
+      notifier.setTranslationVersion('text-1', 'v-hi');
       final stored = ReaderContextLayoutPrefs.decode(
         storage.values[key] as String,
       );
       expect(stored.translationOn, isFalse);
       expect(stored.scriptFor('bo'), 'phonetic');
       expect(stored.translationLanguage, 'hi');
+      expect(stored.translationVersionFor('text-1'), 'v-hi');
     });
 
     test('a change made before the load is replayed over the stored picks', () async {

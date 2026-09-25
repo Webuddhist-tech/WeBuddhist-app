@@ -89,7 +89,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     final primary = _primary();
     bool filled = false;
     try {
-      filled = await fillSettingsLanguageSecondary(
+      filled = await fillPreferredSecondary(
         ref: ref,
         context: context,
         scope: _scope,
@@ -148,6 +148,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   void _onVersionTap(ReaderLanguageOption language, ReaderVersionDetail v) {
     HapticFeedback.selectionClick();
     _notifier.rememberTranslationLanguage(language.code);
+    _notifier.rememberTranslationVersion(v.id);
     _notifier.replaceSecondary(
       ReaderSlotConfig(
         languageCode: language.code,

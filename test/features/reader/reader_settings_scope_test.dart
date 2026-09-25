@@ -293,6 +293,53 @@ void main() {
         isNull,
       );
     });
+
+    test('remembers the translation edition for this text only', () {
+      const otherText = ReaderSettingsScope(
+        textId: 'text-2',
+        context: ReaderLayoutContext.event,
+      );
+      keep(_event).rememberTranslationVersion('v-en-2');
+      expect(keep(_event).rememberedTranslationVersionId, 'v-en-2');
+      expect(keep(otherText).rememberedTranslationVersionId, isNull);
+
+      keep(_library).rememberTranslationVersion('v-en-2');
+      expect(keep(_library).rememberedTranslationVersionId, isNull);
+    });
+
+    test('tries the last pick, then the default, then the app language', () {
+      final notifier = keep(_event);
+      expect(
+        notifier.preferredTranslationLanguages(contentLanguage: 'zh'),
+        ['zh'],
+        reason: 'nothing picked or seeded yet',
+      );
+
+      notifier.seed(_romanAndEnglish, language: 'bo');
+      expect(
+        notifier.preferredTranslationLanguages(contentLanguage: 'zh'),
+        ['en', 'zh'],
+        reason: "Chinese UI on an English-only text keeps the event's English",
+      );
+
+      notifier.rememberTranslationLanguage('hi');
+      expect(
+        notifier.preferredTranslationLanguages(contentLanguage: 'zh'),
+        ['hi', 'en', 'zh'],
+      );
+    });
+
+    test('the library tries only the app language', () {
+      container
+          .read(readerContextLayoutProvider(ReaderLayoutContext.event).notifier)
+          .setTranslationLanguage('hi');
+      final notifier = keep(_library);
+      notifier.seed(_romanAndEnglish, language: 'bo');
+      expect(
+        notifier.preferredTranslationLanguages(contentLanguage: 'zh'),
+        ['zh'],
+      );
+    });
   });
 
   group('readerOriginalScriptProvider', () {

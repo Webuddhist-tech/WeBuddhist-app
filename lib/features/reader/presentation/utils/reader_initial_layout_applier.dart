@@ -11,24 +11,6 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_sett
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Translation languages to try for a seeded reader, most wanted first: what
-/// the person picked last time in this context, then this visit's default,
-/// then the app content language. Blank and repeated codes are dropped.
-List<String> translationCandidates({
-  String? remembered,
-  String? seeded,
-  required String fallback,
-}) {
-  final seen = <String>{};
-  return [
-    for (final code in [remembered, seeded, fallback])
-      if (code != null)
-        if (normalizeReaderLanguageCode(code).isNotEmpty &&
-            seen.add(normalizeReaderLanguageCode(code)))
-          normalizeReaderLanguageCode(code),
-  ];
-}
-
 /// What [ReaderInitialLayoutApplier.maybeApply] does with what it has.
 enum ReaderInitialLayoutStep {
   /// The text or its list of translations is still loading, or the layout
@@ -141,7 +123,7 @@ class ReaderInitialLayoutApplier {
     final dual = ref.read(readerDualSettingsProvider(scope));
     if (!dual.secondaryEnabled || dual.secondary.versionId != null) return;
     final navLanguage = params.language?.trim();
-    await fillSettingsLanguageSecondary(
+    await fillPreferredSecondary(
       ref: ref,
       context: context,
       scope: scope,
@@ -217,10 +199,8 @@ class ReaderInitialLayoutApplier {
       scope: scope,
       sourceLanguage: textLanguage,
       sourceVersionId: textVersionId,
-      candidates: translationCandidates(
-        remembered: prefs.translationLanguage,
-        seeded: layout.translationLanguage,
-        fallback: ref.read(contentLanguageProvider),
+      candidates: notifier.preferredTranslationLanguages(
+        contentLanguage: ref.read(contentLanguageProvider),
       ),
     );
     if (outcome == SecondaryFillOutcome.filled) {

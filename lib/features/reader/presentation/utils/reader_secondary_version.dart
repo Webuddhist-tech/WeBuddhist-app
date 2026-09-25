@@ -15,7 +15,10 @@ bool readerLanguagesMatch(String a, String b) =>
     normalizeReaderLanguageCode(a) == normalizeReaderLanguageCode(b);
 
 /// Resolves the version for a just-picked secondary language:
-/// - different language than Main → first available version,
+/// - the edition picked for this text last time in this context, when the
+///   language offers it
+///   ([ReaderDualSettingsNotifier.rememberedTranslationVersionId]),
+/// - else, different language than Main → first available version,
 /// - same language as Main → first version whose id differs from Main's,
 /// - nothing usable → mark the slot [ReaderSlotConfig.versionUnavailable].
 Future<void> autoSelectSecondaryVersion({
@@ -43,11 +46,15 @@ Future<void> autoSelectSecondaryVersion({
       mainConfig.languageCode,
     );
 
+    final remembered = notifier.rememberedTranslationVersionId;
     ReaderVersionDetail? chosen;
     for (final version in versions) {
       if (sameLanguageAsMain && version.id == mainConfig.versionId) continue;
-      chosen = version;
-      break;
+      if (version.id == remembered) {
+        chosen = version;
+        break;
+      }
+      chosen ??= version;
     }
 
     if (!isCurrentResolve()) return;
@@ -185,30 +192,32 @@ Future<SecondaryFillOutcome> fillSecondaryWithLanguages({
   return SecondaryFillOutcome.unavailable;
 }
 
-/// Fills the secondary slot from Settings language and turns it on.
+/// Fills the secondary slot with the translation this reader prefers
+/// ([ReaderDualSettingsNotifier.preferredTranslationLanguages]: Settings
+/// language in the library; the last pick, this visit's default, then
+/// Settings language elsewhere) and turns it on.
 ///
-/// Returns false when Settings language is the same as the source, missing
-/// for this text, or has no usable version.
-Future<bool> fillSettingsLanguageSecondary({
+/// Returns false when none of those is offered for this text apart from the
+/// source language, or none has a usable version.
+Future<bool> fillPreferredSecondary({
   required WidgetRef ref,
   required BuildContext context,
   required ReaderSettingsScope scope,
   required String sourceLanguage,
   String? sourceVersionId,
 }) async {
-  final settingsLang = normalizeReaderLanguageCode(
-    ref.read(contentLanguageProvider),
-  );
-  if (settingsLang.isEmpty) return false;
+  final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
   final outcome = await fillSecondaryWithLanguages(
     ref: ref,
     context: context,
     scope: scope,
     sourceLanguage: sourceLanguage,
     sourceVersionId: sourceVersionId,
-    candidates: [settingsLang],
+    candidates: notifier.preferredTranslationLanguages(
+      contentLanguage: ref.read(contentLanguageProvider),
+    ),
   );
   if (outcome != SecondaryFillOutcome.filled) return false;
-  ref.read(readerDualSettingsProvider(scope).notifier).setSecondaryEnabled(true);
+  notifier.setSecondaryEnabled(true);
   return true;
 }

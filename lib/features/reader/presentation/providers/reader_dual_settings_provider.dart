@@ -282,6 +282,32 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     _store.setTranslationLanguage(languageCode);
   }
 
+  /// Remembers the translation edition the person picked for this text, so
+  /// reopening it in this context shows the same one. Not in the library.
+  void rememberTranslationVersion(String versionId) {
+    if (isLibrary) return;
+    _store.setTranslationVersion(scope.textId, versionId);
+  }
+
+  /// The translation edition picked for this text last time, if any.
+  String? get rememberedTranslationVersionId =>
+      isLibrary ? null : _prefs.translationVersionFor(scope.textId);
+
+  /// Translation languages to try whenever the translation fills in, most
+  /// wanted first. Outside the library: the person's last pick in this
+  /// context, then this visit's default, then [contentLanguage]; the library
+  /// tries only [contentLanguage].
+  List<String> preferredTranslationLanguages({
+    required String contentLanguage,
+  }) {
+    if (isLibrary) return translationCandidates(fallback: contentLanguage);
+    return translationCandidates(
+      remembered: _prefs.translationLanguage,
+      seeded: _seed?.translationLanguage,
+      fallback: contentLanguage,
+    );
+  }
+
   void replacePrimary(ReaderSlotConfig config) {
     _primaryEdited = true;
     state = state.copyWith(primary: config);

@@ -146,6 +146,24 @@ ReaderInitialLayout? resolveInitialLayout({
   }
 }
 
+/// Translation languages to try, most wanted first: what the person picked
+/// last time in this context, then this visit's default, then the app
+/// content language. Blank and repeated codes are dropped.
+List<String> translationCandidates({
+  String? remembered,
+  String? seeded,
+  required String fallback,
+}) {
+  final seen = <String>{};
+  return [
+    for (final code in [remembered, seeded, fallback])
+      if (code != null)
+        if (normalizeReaderLayoutLanguage(code).isNotEmpty &&
+            seen.add(normalizeReaderLayoutLanguage(code)))
+          normalizeReaderLayoutLanguage(code),
+  ];
+}
+
 ReaderInitialLayout _translationOnly({
   required String text,
   required String ui,

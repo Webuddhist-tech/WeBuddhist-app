@@ -97,7 +97,17 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    `superseded` by a toggle or a pick made in the sheet meanwhile.
 3. Seeds live in memory for the visit. What the person changes goes to
    `readerContextLayoutProvider(context)` and wins on every later open in that
-   context; untouched fields keep following the resolver.
+   context; untouched fields keep following the resolver. That covers the
+   Original and Translation switches, the translation language, the script per
+   source language and the translation edition per text
+   (`translationVersions`, the 50 most recent texts), which
+   `autoSelectSecondaryVersion` prefers whenever the language offers it.
+4. Every fill uses the same order,
+   `ReaderDualSettingsNotifier.preferredTranslationLanguages`: remembered pick
+   → this visit's default → content language (library: content language
+   only). So switching the translation back on, or hiding the original,
+   through `fillPreferredSecondary` brings back what the first open showed
+   (Chinese UI on an English-only event text gets English again).
 
 Known gap: a chant tapped in the Hindi list arrives as the Hindi edition and
 the API never lists its Tibetan original, so the sheet reads "Original: Hindi"

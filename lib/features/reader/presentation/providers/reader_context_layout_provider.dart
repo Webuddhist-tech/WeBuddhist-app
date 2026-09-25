@@ -65,6 +65,11 @@ class ReaderContextLayoutNotifier extends StateNotifier<ReaderContextLayoutPrefs
     ),
   );
 
+  /// Records [versionId] as the translation edition picked for [textId].
+  void setTranslationVersion(String textId, String versionId) => _update(
+    (prefs) => prefs.withTranslationVersion(textId, versionId),
+  );
+
   /// Records [scriptId] for [language]; null is a deliberate "as written".
   void setScript(String language, String? scriptId) => _update(
     (prefs) => prefs.withScript(
