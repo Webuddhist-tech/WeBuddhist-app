@@ -13,6 +13,13 @@ import 'package:http/http.dart' as http;
 class TolgeeCdn {
   TolgeeCdn._();
 
+  /// Content Delivery prefix through the `webuddhist` namespace; [fetch]
+  /// appends `/<tag>.json`. Public, and the same for every flavor.
+  ///
+  /// `tool/tolgee_sync.dart` keeps a copy; a parity test keeps them in step.
+  static const String baseUrl =
+      'https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist';
+
   /// Fetches `$cdnUrl/$tag.json`.
   ///
   /// Returns an empty map for anything that is not a usable payload — a 404, a

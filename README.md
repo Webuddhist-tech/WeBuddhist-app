@@ -189,8 +189,8 @@ context.l10n.my_key
 ```
 
 Because the bundled ARB is always the fallback, the app behaves exactly as it
-did before Tolgee whenever the integration is disabled, offline, still
-fetching, or missing a key.
+did before Tolgee whenever the CDN is unreachable, still fetching, or missing
+a key.
 
 The payload is fetched and parsed by the app rather than by the Tolgee SDK,
 which cannot serve a multi-part language tag such as `bo-IN`. See
@@ -198,26 +198,17 @@ which cannot serve a multi-part language tag such as `bo-IN`. See
 
 ### Configuration
 
-Set these in `.env.dev` / `.env.staging` / `.env.prod`:
+None. The Content Delivery URL is public and the same for every flavor, so it
+lives in code as `TolgeeCdn.baseUrl`
+([`tolgee_cdn.dart`](lib/core/l10n/tolgee/tolgee_cdn.dart)) and Tolgee is on in
+every build. There are no `.env` lines or GitHub secrets for it.
 
-| Variable | Purpose |
-| --- | --- |
-| `TOLGEE_CDN_URL` | Content Delivery base URL. Setting it turns Tolgee on — the CDN is public, no key needed |
-| `TOLGEE_ENABLED` | Optional; `false` turns Tolgee off even with a URL |
-| `TOLGEE_API_URL`, `TOLGEE_API_KEY` | No longer read by the app; safe to drop from `.env` |
+To fix a bad translation, correct it in Tolgee and publish — see
+[docs/tolgee.md](docs/tolgee.md#a-bad-translation-shipped).
 
-Without a CDN URL (or with `TOLGEE_ENABLED=false`) the app uses the bundled
-ARB only. `TOLGEE_ENABLED=false` is also the kill switch if a bad translation
-ships — but it only reaches users through a new build.
-
-CI builds write both lines through `ci/scripts/create_env_files.sh`, from the
-`TOLGEE_CDN_URL` / `TOLGEE_ENABLED` repository secrets. An empty or missing
-URL secret falls back to the shared project, so store builds always have
-Tolgee unless `TOLGEE_ENABLED` is `false`.
-
-> **Never put a write-capable key in `.env`.** The files are bundled as assets
-> and can be extracted from a release build. The app needs no key at all; the
-> sync key below stays in your shell or GitHub secrets.
+> **Never put a Tolgee key in `.env`.** The files are bundled as assets and can
+> be extracted from a release build. The app needs no key at all; the sync key
+> below stays in your shell or GitHub secrets.
 
 ### Tolgee project requirements
 
@@ -227,7 +218,7 @@ Tolgee unless `TOLGEE_ENABLED` is `false`.
   via `TolgeeLocaleMap`. Publishing `bo.json` or `zh.json` will 404.
 - Enable ICU placeholder support so plural strings are served as ICU source.
 - Content Delivery must export **flat** JSON (nesting and arrays disabled),
-  one file per language at `<TOLGEE_CDN_URL>/<tag>.json`. The SDK's CDN parser
+  one file per language at `<TolgeeCdn.baseUrl>/<tag>.json`. The SDK's CDN parser
   expects `{"key": "value"}` and cannot read nested objects.
 
 ### When updates apply
