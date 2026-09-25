@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:ui' show Locale;
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_pecha/core/l10n/tolgee/tolgee_bridge.dart';
 import 'package:flutter_pecha/core/l10n/tolgee/tolgee_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,7 +39,6 @@ void main() {
   late DateTime now;
 
   setUp(() {
-    dotenv.testLoad(fileInput: 'TOLGEE_CDN_URL=https://cdn.test/webuddhist\n');
     TolgeeService.resetForTesting();
     cdn = _FakeCdn();
     now = DateTime(2026, 9, 25, 9);
@@ -147,20 +145,6 @@ void main() {
     expect(await refreshing, isFalse);
     expect(await switching, isTrue);
     expect(_signIn('zh'), '登入');
-    expect(_signIn('en'), 'bundled');
-  });
-
-  test('a build with Tolgee switched off never fetches', () async {
-    dotenv.testLoad(
-      fileInput:
-          'TOLGEE_CDN_URL=https://cdn.test/webuddhist\nTOLGEE_ENABLED=false\n',
-    );
-    cdn.payloads['en'] = {'sign_in': 'v1'};
-
-    expect(await TolgeeService.initialize(locale: const Locale('en')), isFalse);
-    now = now.add(const Duration(minutes: 6));
-    expect(await TolgeeService.refresh(), isFalse);
-    expect(cdn.requests, isEmpty);
     expect(_signIn('en'), 'bundled');
   });
 }

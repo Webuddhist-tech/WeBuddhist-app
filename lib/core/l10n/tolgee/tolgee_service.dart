@@ -3,7 +3,6 @@ import 'dart:ui' show Locale;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../env.dart';
 import '../../utils/app_logger.dart';
 import 'tolgee_bridge.dart';
 import 'tolgee_cdn.dart';
@@ -17,7 +16,7 @@ final StateProvider<int> tolgeeRevisionProvider = StateProvider<int>(
   (ref) => 0,
 );
 
-/// Owns the Tolgee SDK lifecycle.
+/// Loads over-the-air translations from Tolgee Content Delivery.
 ///
 /// Every entry point is failure-tolerant: if anything goes wrong the bridge
 /// stays inactive and the app keeps using its bundled ARB translations.
@@ -43,10 +42,6 @@ class TolgeeService {
   /// would race over shared state.
   static Future<void> _chain = Future<void>.value();
 
-  /// Keeps a misconfigured build from repeating the same warning on every
-  /// language change.
-  static bool _configIssueLogged = false;
-
   /// Minimum gap between two [refresh] fetches. Resume fires often (every
   /// share sheet, permission dialog, app switch) and edits are rare.
   static const Duration _refreshInterval = Duration(minutes: 5);
@@ -65,7 +60,7 @@ class TolgeeService {
 
   static Future<Map<String, String>> _fetchFromCdn(String tag) {
     return TolgeeCdn.fetch(
-      cdnUrl: Env.tolgeeCdnUrl!,
+      cdnUrl: TolgeeCdn.baseUrl,
       tag: tag,
       timeout: _networkTimeout,
     );
@@ -77,7 +72,6 @@ class TolgeeService {
     _desiredLocale = null;
     _loadedLocale = null;
     _chain = Future<void>.value();
-    _configIssueLogged = false;
     _lastFetchAt = null;
     fetchPayload = _fetchFromCdn;
     clock = DateTime.now;
@@ -86,8 +80,8 @@ class TolgeeService {
 
   /// Fetches translations for [locale] and activates the bridge.
   ///
-  /// Returns whether over-the-air translations are now live. Safe to call when
-  /// Tolgee is unconfigured, in which case it is a no-op.
+  /// Returns whether over-the-air translations are now live; on false the app
+  /// keeps its bundled ARB translations.
   static Future<bool> initialize({required Locale locale}) => _sync(locale);
 
   /// Loads translations for a newly selected [locale].
@@ -104,18 +98,10 @@ class TolgeeService {
   /// Unlike a language change it keeps the current strings on screen while
   /// fetching, and keeps them if the fetch fails. Returns whether the strings
   /// changed, i.e. whether the caller should refresh the UI.
-  static Future<bool> refresh() {
-    if (!_isConfigured()) {
-      return Future<bool>.value(false);
-    }
-    return _enqueue(_refresh);
-  }
+  static Future<bool> refresh() => _enqueue(_refresh);
 
   static Future<bool> _sync(Locale locale) {
     _desiredLocale = locale;
-    if (!_isConfigured()) {
-      return Future<bool>.value(false);
-    }
     return _enqueue(_load);
   }
 
@@ -133,24 +119,7 @@ class TolgeeService {
     return run;
   }
 
-  static bool _isConfigured() {
-    if (Env.tolgeeEnabled) {
-      return true;
-    }
-    if (!_configIssueLogged) {
-      _configIssueLogged = true;
-      // A missing URL is how every CI build shipped without Tolgee, so it is
-      // worth a warning; an explicit TOLGEE_ENABLED=false is a choice.
-      if (Env.tolgeeCdnUrl == null) {
-        _logger.warning('TOLGEE_CDN_URL is not set; using bundled ARB');
-      } else {
-        _logger.info('Tolgee disabled for this build; using bundled ARB');
-      }
-    }
-    return false;
-  }
-
-  /// Brings the SDK onto [_desiredLocale], re-reading it after every await so a
+  /// Brings the bridge onto [_desiredLocale], re-reading it after every await so a
   /// language change that arrives mid-fetch wins instead of being discarded.
   static Future<bool> _load() async {
     while (true) {
