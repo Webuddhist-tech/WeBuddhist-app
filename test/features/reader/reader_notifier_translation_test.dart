@@ -140,10 +140,14 @@ void main() {
   late _FakeTexts texts;
   late ProviderContainer container;
 
+  /// Editions whose pages fail to load.
+  late Set<String> failingPages;
+
   setUp(() {
     storage = FakeLocalStorage();
     fetches = [];
     texts = _FakeTexts();
+    failingPages = {};
     container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
@@ -153,6 +157,11 @@ void main() {
         ),
         textDetailsFutureProvider.overrideWith((ref, params) async {
           fetches.add(params);
+          if (failingPages.contains(params.textId)) {
+            return const Left<Failure, ReaderResponse>(
+              ServerFailure('page unavailable'),
+            );
+          }
           return Right<Failure, ReaderResponse>(_page(params.textId));
         }),
       ],
@@ -290,6 +299,85 @@ void main() {
     );
     expect(dual.secondaryEnabled, isTrue);
     expect(dual.originalVisible, isFalse);
+  });
+
+  group('a root whose page fails to load', () {
+    test('opens the translation as itself, layout undone', () async {
+      failingPages.add('E2');
+      const params = ReaderParams(textId: 'E1');
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.status, ReaderStatus.loaded);
+      expect(state.textDetail?.id, 'E1');
+      expect(state.openedTranslation, isNull);
+      expect(state.segmentAliases, isEmpty);
+      expect(fetches.map((f) => (f.textId, f.versionId)), [
+        ('E2', null),
+        ('E1', null),
+      ]);
+      final notifier = container.read(
+        readerDualSettingsProvider(params.settingsScope).notifier,
+      );
+      final dual = container.read(
+        readerDualSettingsProvider(params.settingsScope),
+      );
+      expect(dual.primary.versionId, isNull);
+      expect(dual.secondary.isUnset, isTrue);
+      expect(dual.secondaryEnabled, isFalse, reason: 'the persisted default');
+      expect(dual.originalVisible, isTrue);
+      expect(notifier.isPrimaryEdited, isFalse);
+      expect(storage.values, isEmpty, reason: 'nothing persisted');
+    });
+
+    test('keeps the requested verse of the translation', () async {
+      failingPages.add('E2');
+      final params = ReaderParams(
+        textId: 'E1',
+        segmentId: 'en-1',
+        navigationContext: NavigationContext(
+          source: NavigationSource.plan,
+          planTextItems: [
+            PlanTextItem.sourceReference(
+              textId: 'E1',
+              title: "Today's Verses",
+              segmentIds: const ['en-1'],
+            ),
+          ],
+          currentTextIndex: 0,
+        ),
+      );
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.status, ReaderStatus.loaded);
+      expect(state.textDetail?.id, 'E1');
+      expect(fetches.map((f) => (f.textId, f.segmentId)), [
+        ('E2', 'E2-1'),
+        ('E1', 'en-1'),
+      ]);
+      final dual = container.read(
+        readerDualSettingsProvider(params.settingsScope),
+      );
+      expect(dual.primary.versionId, isNull);
+      expect(dual.secondary.isUnset, isTrue);
+    });
+
+    test('still errors when the opened edition fails too', () async {
+      failingPages.addAll({'E1', 'E2'});
+      const params = ReaderParams(textId: 'E1');
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.isError, isTrue);
+      expect(fetches.map((f) => f.textId), ['E2', 'E1']);
+    });
   });
 
   test('an unknown edition still opens as itself', () async {

@@ -161,7 +161,8 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     if (_isDisposed) return;
     _logger.debug('ReaderNotifier initializing with params: $_params');
 
-    var initialSegmentId = useNavParams ? _params.segmentId : null;
+    final requestedSegmentId = useNavParams ? _params.segmentId : null;
+    var initialSegmentId = requestedSegmentId;
     final initialSize =
         useNavParams ? _params.navigationContext?.initialPageSize : null;
 
@@ -171,6 +172,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
 
     try {
+      final versionBeforeRoot = _activeVersionId;
       if (useNavParams) await _openAsTranslation();
       if (_isDisposed) return;
       if (initialSegmentId != null) {
@@ -179,10 +181,25 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
-      final window = await _fetchWindow(
-        segmentId: initialSegmentId,
-        size: initialSize,
-      );
+      _ContentWindow window;
+      try {
+        window = await _fetchWindow(
+          segmentId: initialSegmentId,
+          size: initialSize,
+        );
+      } catch (e) {
+        // The root was found but its page failed: open the edition the user
+        // asked for as itself, as when the root cannot be resolved at all.
+        if (_isDisposed || !_closeOpenedTranslation(versionBeforeRoot)) {
+          rethrow;
+        }
+        _logger.warning('Root of ${_params.textId} failed to load', e);
+        initialSegmentId = requestedSegmentId;
+        window = await _fetchWindow(
+          segmentId: initialSegmentId,
+          size: initialSize,
+        );
+      }
       if (_isDisposed) return;
       if (state.openedTranslation != null) {
         await _prefetchTranslation(window.content);
@@ -281,6 +298,28 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       openedTranslation: _textDetail(opened),
       segmentAliases: aliases,
     );
+  }
+
+  /// Undoes [_openAsTranslation] after the root's page failed to load, so the
+  /// opened edition loads as the primary. False (nothing undone) when no
+  /// translation was opened under a root, or the layout has changed since.
+  bool _closeOpenedTranslation(String? versionBeforeRoot) {
+    final opened = state.openedTranslation;
+    final rootId = _activeVersionId;
+    if (opened == null ||
+        rootId == null ||
+        !_isOpenedUnder(rootId, opened.id)) {
+      return false;
+    }
+    _activeVersionId = versionBeforeRoot;
+    _ref
+        .read(readerDualSettingsProvider(_params.settingsScope).notifier)
+        .closeOpenedTranslation();
+    state = ReaderState.initial(_params.textId).copyWith(
+      status: ReaderStatus.loading,
+      navigationContext: _params.navigationContext,
+    );
+    return true;
   }
 
   /// True when this text's layout already shows [translationId] as the

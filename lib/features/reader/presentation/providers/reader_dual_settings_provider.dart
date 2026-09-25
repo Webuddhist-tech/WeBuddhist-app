@@ -310,6 +310,29 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     _recompute();
   }
 
+  /// Undoes [openAsTranslation] when the root cannot be loaded: the opened
+  /// edition goes back to being the text, no translation is picked, and the
+  /// switches read what they would have without it.
+  void closeOpenedTranslation() {
+    _primaryEdited = false;
+    _secondaryEdited = false;
+    _secondaryResolveGeneration++;
+    _secondaryEnabledGeneration++;
+    _openedTranslationLanguage = null;
+    state = state.copyWith(
+      primary: ReaderDualLayoutSettings.initial().primary,
+      secondary: const ReaderSlotConfig.empty(),
+    );
+    if (!isLibrary) {
+      _recompute();
+      return;
+    }
+    state = state.copyWith(
+      secondaryEnabled: _ref.read(readerSecondaryEnabledProvider),
+      originalVisible: _ref.read(readerOriginalVisibleProvider),
+    );
+  }
+
   /// Picks the script the original of a [language] text is shown in; null is
   /// "as written". App-wide in the library, per context elsewhere.
   void setOriginalScript(String language, String? scriptId) {
