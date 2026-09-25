@@ -2192,6 +2192,39 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་བཀག་སྡོམ་མ་ཚར་བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
 
   @override
+  String get group_removed_title => 'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན།';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། $duration རིང་ལ་ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'ཁྱེད་རང་གིས་ཚེས་འདི་ལ་ཚོགས་པ་འདིར་ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུ་བྱེད་ཆོག';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => 'ཉིན་ 1 ལྷག་ཡོད།';
+
+  @override
+  String group_removed_days_left(int count) {
+    return 'ཉིན་ $count ལྷག་ཡོད།';
+  }
+
+  @override
+  String get group_removed_last_day => 'ཉིན་གཅིག་ལས་ཉུང་བ་ལྷག་ཡོད།';
+
+  @override
   String get group_followers_empty => 'རྗེས་འབྲང་པ་མེད།';
 
   @override

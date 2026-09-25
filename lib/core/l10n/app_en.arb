@@ -1029,6 +1029,48 @@
     }
   },
   "group_join_banned": "You were removed from this group and cannot rejoin until the ban ends.",
+  "group_removed_title": "You've been removed from this group",
+  "group_removed_message": "An admin from {group} removed you from this group. You won't be able to view this group's posts, events and practices, or request to rejoin for {duration}.",
+  "@group_removed_message": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "group_removed_message_no_date": "An admin from {group} removed you from this group. You won't be able to view this group's posts, events and practices, or request to rejoin.",
+  "@group_removed_message_no_date": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "group_removed_rejoin_label": "You can request to rejoin this group on",
+  "group_removed_rejoin_value": "{date} · {remaining}",
+  "@group_removed_rejoin_value": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "group_removed_day_left": "1 day left",
+  "group_removed_days_left": "{count} days left",
+  "@group_removed_days_left": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_removed_last_day": "Less than a day left",
   "group_followers_empty": "No followers yet",
   "group_follower": "follower",
   "group_followers": "followers",

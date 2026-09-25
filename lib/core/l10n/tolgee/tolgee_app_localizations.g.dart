@@ -4253,6 +4253,68 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_removed_title => TolgeeBridge.get(
+    localeName,
+    'group_removed_title',
+    () => _fallback.group_removed_title,
+  );
+
+  @override
+  String group_removed_message(String group, String duration) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_message',
+        <String, Object>{'group': group, 'duration': duration},
+        () => _fallback.group_removed_message(group, duration),
+      );
+
+  @override
+  String group_removed_message_no_date(String group) => TolgeeBridge.format(
+    localeName,
+    'group_removed_message_no_date',
+    <String, Object>{'group': group},
+    () => _fallback.group_removed_message_no_date(group),
+  );
+
+  @override
+  String get group_removed_rejoin_label => TolgeeBridge.get(
+    localeName,
+    'group_removed_rejoin_label',
+    () => _fallback.group_removed_rejoin_label,
+  );
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_rejoin_value',
+        <String, Object>{'date': date, 'remaining': remaining},
+        () => _fallback.group_removed_rejoin_value(date, remaining),
+      );
+
+  @override
+  String get group_removed_day_left => TolgeeBridge.get(
+    localeName,
+    'group_removed_day_left',
+    () => _fallback.group_removed_day_left,
+  );
+
+  @override
+  String group_removed_days_left(int count) => TolgeeBridge.format(
+    localeName,
+    'group_removed_days_left',
+    <String, Object>{'count': count},
+    () => _fallback.group_removed_days_left(count),
+  );
+
+  @override
+  String get group_removed_last_day => TolgeeBridge.get(
+    localeName,
+    'group_removed_last_day',
+    () => _fallback.group_removed_last_day,
+  );
+
+  @override
   String get group_followers_empty => TolgeeBridge.get(
     localeName,
     'group_followers_empty',

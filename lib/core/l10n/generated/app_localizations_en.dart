@@ -2171,6 +2171,39 @@ class AppLocalizationsEn extends AppLocalizations {
       'You were removed from this group and cannot rejoin until the ban ends.';
 
   @override
+  String get group_removed_title => 'You\'ve been removed from this group';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for $duration.';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'You can request to rejoin this group on';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 day left';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count days left';
+  }
+
+  @override
+  String get group_removed_last_day => 'Less than a day left';
+
+  @override
   String get group_followers_empty => 'No followers yet';
 
   @override

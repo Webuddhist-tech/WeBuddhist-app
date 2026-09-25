@@ -2197,6 +2197,39 @@ class AppLocalizationsNe extends AppLocalizations {
       'तपाईंलाई यो समूहबाट हटाइएको थियो र प्रतिबन्ध सकिएसम्म तपाईं फेरि सामेल हुन सक्नुहुन्न।';
 
   @override
+  String get group_removed_title => 'तपाईंलाई यो समूहबाट हटाइएको छ';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group का एक प्रशासकले तपाईंलाई यो समूहबाट हटाउनुभएको छ। तपाईं $duration सम्म यो समूहका पोस्ट, कार्यक्रम र अभ्यास हेर्न वा फेरि सामेल हुन अनुरोध गर्न सक्नुहुन्न।';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group का एक प्रशासकले तपाईंलाई यो समूहबाट हटाउनुभएको छ। तपाईं यो समूहका पोस्ट, कार्यक्रम र अभ्यास हेर्न वा फेरि सामेल हुन अनुरोध गर्न सक्नुहुन्न।';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'तपाईं यस दिन यो समूहमा फेरि सामेल हुन अनुरोध गर्न सक्नुहुन्छ';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 दिन बाँकी';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count दिन बाँकी';
+  }
+
+  @override
+  String get group_removed_last_day => 'एक दिनभन्दा कम बाँकी';
+
+  @override
   String get group_followers_empty => 'अहिलेसम्म कुनै अनुयायी छैन';
 
   @override

@@ -2071,6 +2071,38 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_join_banned => '您已被移出此群組，在封鎖結束前無法重新加入。';
 
   @override
+  String get group_removed_title => '您已被移出此群組';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group 的管理員已將您移出此群組。在 $duration 內，您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group 的管理員已將您移出此群組。您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。';
+  }
+
+  @override
+  String get group_removed_rejoin_label => '您可以在此日期申請重新加入此群組';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '剩餘 1 天';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '剩餘 $count 天';
+  }
+
+  @override
+  String get group_removed_last_day => '剩餘不到一天';
+
+  @override
   String get group_followers_empty => '尚無追蹤者';
 
   @override

@@ -14,7 +14,13 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
 
   static const int maxMessageLength = 200;
 
-  static Future<bool?> show(BuildContext context, GroupProfile profile) async {
+  /// [showRemovalDialog] is off for callers that render the removal notice
+  /// themselves, such as the group profile.
+  static Future<bool?> show(
+    BuildContext context,
+    GroupProfile profile, {
+    bool showRemovalDialog = true,
+  }) async {
     final result = await showModalBottomSheet<Object?>(
       context: context,
       isScrollControlled: true,
@@ -24,8 +30,10 @@ class GroupJoinRequestDrawer extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (_) => GroupJoinRequestDrawer(profile: profile),
     );
-    if (result is _GroupJoinBanNotice && context.mounted) {
-      await _showBanDialog(context, result.expiresAt);
+    if (result is _GroupJoinBanNotice) {
+      if (showRemovalDialog && context.mounted) {
+        await _showBanDialog(context, result.expiresAt);
+      }
       return false;
     }
     return result == true;

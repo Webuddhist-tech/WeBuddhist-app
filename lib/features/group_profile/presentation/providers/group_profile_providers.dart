@@ -1493,6 +1493,19 @@ final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
   return notifier;
 });
 
+/// Removal reported by the join-request endpoint for the signed-in user.
+/// The group profile response carries no ban field, so the notice is kept here
+/// once a join attempt is refused and drives the profile's removal card.
+/// A null [expiresAt] means the server sent no end date.
+class GroupRemovalNotice {
+  final DateTime? expiresAt;
+
+  const GroupRemovalNotice(this.expiresAt);
+}
+
+final groupRemovalNoticeProvider =
+    StateProvider.family<GroupRemovalNotice?, String>((ref, groupId) => null);
+
 /// Outcome of asking to join. [banned] is set for `GROUP_BANNED`.
 /// [banExpiresAt] is the server `expires_at`, used to fill the localized notice.
 class GroupJoinRequestOutcome {
@@ -1528,9 +1541,10 @@ Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
     (failure) {
       if (failure is AuthorizationFailure &&
           isGroupJoinBanned(failure.message)) {
-        return GroupJoinRequestOutcome.banned(
-          groupJoinBanExpiresAt(failure.message),
-        );
+        final expiresAt = groupJoinBanExpiresAt(failure.message);
+        ref.read(groupRemovalNoticeProvider(groupId).notifier).state =
+            GroupRemovalNotice(expiresAt);
+        return GroupJoinRequestOutcome.banned(expiresAt);
       }
       return const GroupJoinRequestOutcome.failed();
     },

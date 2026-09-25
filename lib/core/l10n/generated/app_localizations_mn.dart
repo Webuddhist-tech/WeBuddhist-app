@@ -2189,6 +2189,39 @@ class AppLocalizationsMn extends AppLocalizations {
       'Та энэ бүлгээс хасагдсан тул хориг дуустал дахин нэгдэх боломжгүй.';
 
   @override
+  String get group_removed_title => 'Таныг энэ бүлгээс хассан';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group бүлгийн админ таныг энэ бүлгээс хассан. Та $duration-ийн турш энэ бүлгийн нийтлэл, арга хэмжээ, дадлагыг харах болон дахин нэгдэх хүсэлт илгээх боломжгүй.';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group бүлгийн админ таныг энэ бүлгээс хассан. Та энэ бүлгийн нийтлэл, арга хэмжээ, дадлагыг харах болон дахин нэгдэх хүсэлт илгээх боломжгүй.';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'Та энэ өдөр энэ бүлэгт дахин нэгдэх хүсэлт илгээж болно';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 өдөр үлдсэн';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count өдөр үлдсэн';
+  }
+
+  @override
+  String get group_removed_last_day => 'Нэг өдрөөс бага үлдсэн';
+
+  @override
   String get group_followers_empty => 'Одоогоор дагагч байхгүй';
 
   @override

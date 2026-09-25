@@ -3928,6 +3928,54 @@ abstract class AppLocalizations {
   /// **'You were removed from this group and cannot rejoin until the ban ends.'**
   String get group_join_banned;
 
+  /// No description provided for @group_removed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been removed from this group'**
+  String get group_removed_title;
+
+  /// No description provided for @group_removed_message.
+  ///
+  /// In en, this message translates to:
+  /// **'An admin from {group} removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for {duration}.'**
+  String group_removed_message(String group, String duration);
+
+  /// No description provided for @group_removed_message_no_date.
+  ///
+  /// In en, this message translates to:
+  /// **'An admin from {group} removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.'**
+  String group_removed_message_no_date(String group);
+
+  /// No description provided for @group_removed_rejoin_label.
+  ///
+  /// In en, this message translates to:
+  /// **'You can request to rejoin this group on'**
+  String get group_removed_rejoin_label;
+
+  /// No description provided for @group_removed_rejoin_value.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {remaining}'**
+  String group_removed_rejoin_value(String date, String remaining);
+
+  /// No description provided for @group_removed_day_left.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day left'**
+  String get group_removed_day_left;
+
+  /// No description provided for @group_removed_days_left.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days left'**
+  String group_removed_days_left(int count);
+
+  /// No description provided for @group_removed_last_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than a day left'**
+  String get group_removed_last_day;
+
   /// No description provided for @group_followers_empty.
   ///
   /// In en, this message translates to:
