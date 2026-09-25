@@ -190,12 +190,12 @@ Both paths call the same Dart tool. **Keep both.**
 
 **When automatic sync runs**
 
-- **Schedule:** every Monday at **10:00 AM IST** (`cron: "30 4 * * 1"` = 04:30 UTC in [`.github/workflows/tolgee-sync.yml`](../.github/workflows/tolgee-sync.yml)). GitHub can start scheduled jobs a few minutes late.
+- **Schedule:** every Friday at **1:15 PM IST** (`cron: "45 7 * * 5"` = 07:45 UTC in [`.github/workflows/tolgee-sync.yml`](../.github/workflows/tolgee-sync.yml)). GitHub can start scheduled jobs late, sometimes by hours. The schedule is read from `main`, so a change to it applies only once it is released.
 - **Manual:** Actions → **Tolgee Sync** → **Run workflow** (`workflow_dispatch`).
 - Sync does **not** run on every PR. PR CI only runs offline `dart run tool/tolgee_sync.dart doctor` (no push/pull, no write key).
 
 Practical split: store the long-lived write key as the GitHub secret; export a
-key into the shell when you need a manual run; rely on the Monday IST schedule
+key into the shell when you need a manual run; rely on the Friday IST schedule
 day-to-day; use local dry-run/pull for the first large sync or urgent `push`.
 
 ### Expected command order
@@ -349,7 +349,7 @@ dart run tool/tolgee_sync.dart doctor --remote
 
 ### What happens when CI auto-updates
 
-The Tolgee Sync workflow runs on the Monday **10:00 AM IST** schedule (or via
+The Tolgee Sync workflow runs on the Friday **1:15 PM IST** schedule (or via
 **Run workflow**). It does **not** silently rewrite `develop` or ship
 translations to production by itself. It runs push → pull → `flutter gen-l10n`
 → bridge generate → `doctor --remote` → open a PR via
@@ -369,11 +369,12 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 1. **Large / noisy first PR** — the first pull can rewrite hundreds of strings (especially Tibetan) and reformat some ICU plurals. Review carefully; later PRs should be small.
 2. **Push talks to Tolgee during the job** — a bad new English key already on `develop` can be created in Tolgee before the sync PR merges. ARB file changes still only land via PR.
 3. **Missing or wrong secret** — without `TOLGEE_SYNC_API_KEY` the job fails; a read-only key fails `push`; an overly broad key increases leak risk. Keep scopes tight and rotate if exposed.
-4. **Merge conflicts** — feature branches that also edit ARBs can conflict with the Monday sync PR. Coordinate ownership of sync merges.
+4. **Merge conflicts** — feature branches that also edit ARBs can conflict with the Friday sync PR. Coordinate ownership of sync merges.
 5. **CDN lag** — creating keys or updating Tolgee does not instantly refresh Content Delivery. Runtime OTA still needs publish; bundled ARBs in the sync PR are separate from OTA.
 6. **Bad translator copy** — pull trusts Tolgee wording. After merge, that wording becomes the offline ARB fallback. Skim meaningful diffs, especially `en` and high-traffic keys.
 7. **Untranslated warnings** — keys with no Tolgee text for a locale stay missing in that ARB (`gen-l10n` “N untranslated” warnings). Expected until filled; not a CI crash unless doctor finds structural issues.
 8. **`develop` tip only** — sync checks out `develop`. Unmerged ARB work that exists only on another branch is not pushed or pulled until it lands on `develop`.
+9. **Editing existing `en` text in the ARB** — push only creates missing keys, so the change never reaches Tolgee. The next pull writes Tolgee's old `en` back; if the new text added or removed a placeholder (e.g. turned into an ICU plural), `doctor --remote` fails and no PR opens. Update the `en` value in Tolgee in the same change. This is what failed the 2026-09-21 run.
 
 **Bottom line:** auto-sync → PR → review → merge. The main operational risks are a large first PR, push creating Tolgee keys before ARB merge, CDN publish lag, and occasional conflicts with parallel ARB edits.
 ## Verify OTA
