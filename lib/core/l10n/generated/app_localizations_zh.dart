@@ -207,7 +207,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => '加入朗誦';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -859,7 +859,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_online => '線上';
 
   @override
-  String get home_group_events => '社群活動';
+  String get home_group_events => '精選活動';
 
   @override
   String get home_poems => '詩歌';

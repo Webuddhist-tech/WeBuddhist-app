@@ -189,8 +189,8 @@ context.l10n.my_key
 ```
 
 Because the bundled ARB is always the fallback, the app behaves exactly as it
-did before Tolgee whenever the integration is disabled, offline, still
-fetching, or missing a key.
+did before Tolgee whenever the CDN is unreachable, still fetching, or missing
+a key.
 
 The payload is fetched and parsed by the app rather than by the Tolgee SDK,
 which cannot serve a multi-part language tag such as `bo-IN`. See
@@ -198,22 +198,17 @@ which cannot serve a multi-part language tag such as `bo-IN`. See
 
 ### Configuration
 
-Set these in `.env.dev` / `.env.staging` / `.env.prod`:
+None. The Content Delivery URL is public and the same for every flavor, so it
+lives in code as `TolgeeCdn.baseUrl`
+([`tolgee_cdn.dart`](lib/core/l10n/tolgee/tolgee_cdn.dart)) and Tolgee is on in
+every build. There are no `.env` lines or GitHub secrets for it.
 
-| Variable | Purpose |
-| --- | --- |
-| `TOLGEE_API_URL` | No longer read by the app; safe to drop from `.env` |
-| `TOLGEE_API_KEY` | Read-only scoped project key. Acts as a feature flag — Content Delivery itself is public |
-| `TOLGEE_CDN_URL` | Content Delivery base URL |
-| `TOLGEE_ENABLED` | Optional override; defaults to on when key and CDN URL are set |
+To fix a bad translation, correct it in Tolgee and publish — see
+[docs/tolgee.md](docs/tolgee.md#a-bad-translation-shipped).
 
-Leaving `TOLGEE_API_KEY` empty disables the integration and the app uses the
-bundled ARB only. This is also the kill switch if a bad translation ships.
-
-> **The API key ships inside the app.** `.env` files are bundled as assets, so
-> anything in them can be extracted from a release build. Use a project key
-> scoped to `translations.view` and `languages.view` only — a leaked
-> write-capable key would let anyone rewrite the app's copy.
+> **Never put a Tolgee key in `.env`.** The files are bundled as assets and can
+> be extracted from a release build. The app needs no key at all; the sync key
+> below stays in your shell or GitHub secrets.
 
 ### Tolgee project requirements
 
@@ -223,23 +218,24 @@ bundled ARB only. This is also the kill switch if a bad translation ships.
   via `TolgeeLocaleMap`. Publishing `bo.json` or `zh.json` will 404.
 - Enable ICU placeholder support so plural strings are served as ICU source.
 - Content Delivery must export **flat** JSON (nesting and arrays disabled),
-  one file per language at `<TOLGEE_CDN_URL>/<tag>.json`. The SDK's CDN parser
+  one file per language at `<TolgeeCdn.baseUrl>/<tag>.json`. The SDK's CDN parser
   expects `{"key": "value"}` and cannot read nested objects.
 
 ### When updates apply
 
-Translations are fetched on app start and on language change. An edit in
-Tolgee reaches users on their next app launch; there is no live push. A cold
-start with no network shows the bundled ARB text.
+Translations are fetched on app start, on language change, and when the app
+returns to the foreground (at most every 5 minutes). An edit published in
+Tolgee reaches users within minutes of their next launch or return to the app;
+there is no live push. A cold start with no network shows the bundled ARB text
+until a later return to the app fetches again.
 
 ### ARB sync (manual and CI)
 
 Bundled ARB files stay the offline fallback; the Tolgee CDN is the OTA
-override. Sync uses a **second** key that must never live in `.env.*`:
+override. Sync uses a write key that must never live in `.env.*`:
 
 | Key | Where | Role |
 | --- | --- | --- |
-| `TOLGEE_API_KEY` | `.env.*` (ships in app) | Read-only runtime OTA |
 | `TOLGEE_SYNC_API_KEY` | shell env or GitHub Actions secret only | Local / CI ARB ↔ Tolgee sync (write) |
 
 You can sync manually with `dart run tool/tolgee_sync.dart ...`, or let the

@@ -35,6 +35,11 @@ On cold start, the first frame may still show ARB text. After the CDN fetch
 succeeds, `tolgeeRevisionProvider` bumps and `Localizations` reloads remote
 strings. Offline or failed CDN → ARB only (no crash).
 
+Each return to the foreground calls `TolgeeService.refresh()`, throttled to one
+fetch every 5 minutes. It keeps the loaded strings on screen while fetching and
+if the fetch fails, and bumps the revision only when the payload changed. If
+the first load failed (offline at launch), the refresh retries it.
+
 ## CDN / project
 
 Public Content Delivery prefix (namespace included; **no** trailing file name):
@@ -43,7 +48,7 @@ Public Content Delivery prefix (namespace included; **no** trailing file name):
 https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
 ```
 
-The app requests `{TOLGEE_CDN_URL}/{tag}.json` itself — see
+The app requests `{TolgeeCdn.baseUrl}/{tag}.json` itself — see
 [`tolgee_cdn.dart`](../lib/core/l10n/tolgee/tolgee_cdn.dart) and the note under
 "Why the SDK is not used" below. Published files:
 
@@ -63,21 +68,14 @@ Requirements in Tolgee Content Delivery:
 - ICU placeholders enabled
 - Publish after edits (or auto-publish)
 
-Env (per flavor `.env.dev` / `.env.staging` / `.env.prod`):
+The prefix is hardcoded as `TolgeeCdn.baseUrl`. There is no env setting, and
+Tolgee is on in every flavor. Content Delivery is public, so the app needs no
+Tolgee key. [`tool/tolgee_sync.dart`](../tool/tolgee_sync.dart) keeps a copy as
+`tolgeeCdnBase`, and `test/core/l10n/tolgee_sync_tags_test.dart` fails if the
+two drift, so moving to another project or namespace means editing both.
 
-```env
-TOLGEE_API_URL=https://app.tolgee.io/v2
-TOLGEE_API_KEY=tgpak_...          # read-only project key
-TOLGEE_CDN_URL=https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
-TOLGEE_ENABLED=true
-```
-
-`TOLGEE_API_KEY` and `TOLGEE_API_URL` are **no longer used to read
-translations** — Content Delivery is public and the app fetches it directly.
-They are still read by `Env.tolgeeEnabled`, so a build without them keeps
-Tolgee switched off exactly as before; treat the key as a feature flag rather
-than a credential. It ships inside the bundled `.env` asset — never grant write
-scopes.
+Until 2026-09 the prefix came from `TOLGEE_CDN_URL` in `.env`, which CI never
+wrote, so every store build ran on the bundled ARB only.
 
 ## Why the SDK is not used
 
@@ -153,9 +151,8 @@ release build — the sync workflow opens a reviewable PR instead.
 
 ### Create the write-access sync key
 
-Network sync commands need a **separate** write-capable project API key. Do not
-reuse or widen the read-only `TOLGEE_API_KEY` stored in `.env.*` (those files
-ship inside the app).
+Network sync commands need a write-capable project API key. Never put it in
+`.env.*` — those files ship inside the app, which itself needs no key.
 
 1. Open Tolgee → select the WeBuddhist project → **Project API Keys** (Account /
    project settings → API keys).
@@ -173,12 +170,11 @@ ship inside the app).
    long-lived copy only as the GitHub Actions secret; export a key into the
    shell for one-off manual runs.
 
-`TOLGEE_PROJECT_ID` is optional; the tool normally resolves the project from
-the API key.
+The tool reads the project from the key itself, so it must be a project API
+key (`tgpak_...`), not a personal access token.
 
 | Key | Where | Purpose | Scopes |
 | --- | --- | --- | --- |
-| `TOLGEE_API_KEY` | `.env.*` (ships in app) | Runtime OTA / CDN init | read-only (`translations.view`, `languages.view`) |
 | `TOLGEE_SYNC_API_KEY` | shell env / GitHub secret only | Local or CI ARB ↔ Tolgee sync | write sync (`keys.create` + view scopes) |
 
 ### Manual vs automatic sync
@@ -194,12 +190,12 @@ Both paths call the same Dart tool. **Keep both.**
 
 **When automatic sync runs**
 
-- **Schedule:** every Monday at **10:00 AM IST** (`cron: "30 4 * * 1"` = 04:30 UTC in [`.github/workflows/tolgee-sync.yml`](../.github/workflows/tolgee-sync.yml)). GitHub can start scheduled jobs a few minutes late.
+- **Schedule:** every Friday at **1:15 PM IST** (`cron: "45 7 * * 5"` = 07:45 UTC in [`.github/workflows/tolgee-sync.yml`](../.github/workflows/tolgee-sync.yml)). GitHub can start scheduled jobs late, sometimes by hours. The schedule is read from `main`, so a change to it applies only once it is released.
 - **Manual:** Actions → **Tolgee Sync** → **Run workflow** (`workflow_dispatch`).
 - Sync does **not** run on every PR. PR CI only runs offline `dart run tool/tolgee_sync.dart doctor` (no push/pull, no write key).
 
 Practical split: store the long-lived write key as the GitHub secret; export a
-key into the shell when you need a manual run; rely on the Monday IST schedule
+key into the shell when you need a manual run; rely on the Friday IST schedule
 day-to-day; use local dry-run/pull for the first large sync or urgent `push`.
 
 ### Expected command order
@@ -252,8 +248,8 @@ dart run tool/tolgee_sync.dart doctor
 
 Network commands (`push`, `pull`, `doctor --remote`) read
 `TOLGEE_SYNC_API_KEY` from the process environment — not from `.env.*`. The
-value must be a project API key with write scopes, separate from the read-only
-runtime key that ships inside the app. Setting it in PowerShell only affects
+value must be a project API key with write scopes, kept out of the `.env`
+files that ship inside the app. Setting it in PowerShell only affects
 the current terminal session; closing the window clears it. Never commit the
 value, paste it into `.env` files, or check it into git. For recurring
 automation, store the same name as a GitHub Actions secret instead of keeping
@@ -353,7 +349,7 @@ dart run tool/tolgee_sync.dart doctor --remote
 
 ### What happens when CI auto-updates
 
-The Tolgee Sync workflow runs on the Monday **10:00 AM IST** schedule (or via
+The Tolgee Sync workflow runs on the Friday **1:15 PM IST** schedule (or via
 **Run workflow**). It does **not** silently rewrite `develop` or ship
 translations to production by itself. It runs push → pull → `flutter gen-l10n`
 → bridge generate → `doctor --remote` → open a PR via
@@ -373,11 +369,12 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 1. **Large / noisy first PR** — the first pull can rewrite hundreds of strings (especially Tibetan) and reformat some ICU plurals. Review carefully; later PRs should be small.
 2. **Push talks to Tolgee during the job** — a bad new English key already on `develop` can be created in Tolgee before the sync PR merges. ARB file changes still only land via PR.
 3. **Missing or wrong secret** — without `TOLGEE_SYNC_API_KEY` the job fails; a read-only key fails `push`; an overly broad key increases leak risk. Keep scopes tight and rotate if exposed.
-4. **Merge conflicts** — feature branches that also edit ARBs can conflict with the Monday sync PR. Coordinate ownership of sync merges.
+4. **Merge conflicts** — feature branches that also edit ARBs can conflict with the Friday sync PR. Coordinate ownership of sync merges.
 5. **CDN lag** — creating keys or updating Tolgee does not instantly refresh Content Delivery. Runtime OTA still needs publish; bundled ARBs in the sync PR are separate from OTA.
 6. **Bad translator copy** — pull trusts Tolgee wording. After merge, that wording becomes the offline ARB fallback. Skim meaningful diffs, especially `en` and high-traffic keys.
 7. **Untranslated warnings** — keys with no Tolgee text for a locale stay missing in that ARB (`gen-l10n` “N untranslated” warnings). Expected until filled; not a CI crash unless doctor finds structural issues.
 8. **`develop` tip only** — sync checks out `develop`. Unmerged ARB work that exists only on another branch is not pushed or pulled until it lands on `develop`.
+9. **Editing existing `en` text in the ARB** — push only creates missing keys, so the change never reaches Tolgee. The next pull writes Tolgee's old `en` back before `doctor --remote` runs. The edit may be silently reverted rather than causing doctor to fail. Update the `en` value in Tolgee in the same change.
 
 **Bottom line:** auto-sync → PR → review → merge. The main operational risks are a large first PR, push creating Tolgee keys before ARB merge, CDN publish lag, and occasional conflicts with parallel ARB edits.
 ## Verify OTA
@@ -389,11 +386,24 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 3. Logs should include:  
    `Tolgee: Tolgee ready for en (CDN tag en)`  
    not a “no usable strings” warning.
-4. Change `sign_in` in Tolgee → Publish → fully restart the app → UI shows the new text.
+4. Change `sign_in` in Tolgee → Publish → restart the app, or background it and
+   return after 5 minutes → UI shows the new text.
+5. For a CI build (TestFlight / Play internal), repeat step 4 on the installed
+   app.
+
+## A bad translation shipped
+
+There is no switch to turn Tolgee off. Fix the text in Tolgee and publish
+Content Delivery: apps pick it up on the next launch, or within 5 minutes of
+returning to the foreground.
+
+Unpublishing the CDN files makes cold starts fall back to the bundled ARB, but
+an app already running keeps the strings it loaded until it restarts.
 
 ## Known limits
 
-- Updates apply on next launch or language switch (no live push).
+- Updates apply on next launch, language switch, or return to the foreground
+  (at most one fetch every 5 minutes); there is no live push.
 - Empty/404 CDN responses, malformed bodies and transport failures all parse
   to an empty payload, which the bridge treats as “use ARB”.
-- Do not put the filename in `TOLGEE_CDN_URL` — only the prefix through `/webuddhist`.
+- `TolgeeCdn.baseUrl` is the prefix through `/webuddhist`, without a file name.

@@ -249,6 +249,12 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.read(tolgeeRevisionProvider.notifier).state++;
   }
 
+  Future<void> _refreshTolgee() async {
+    final bool changed = await TolgeeService.refresh();
+    if (!changed || !mounted) return;
+    ref.read(tolgeeRevisionProvider.notifier).state++;
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -274,6 +280,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       // Retry FCM initialization if a previous attempt failed (e.g. transient
       // Firebase error on cold start). No-op once _initialized is true.
       unawaited(ref.read(pushNotificationServiceProvider).initialize());
+      // Picks up strings published in Tolgee since the app was opened, which
+      // on iOS can be days without a cold start. Throttled inside the service.
+      unawaited(_refreshTolgee());
     }
   }
 

@@ -6,8 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Non-dismissible dialog that blocks app usage until the user updates.
 ///
-/// Shown via [ForceUpdateGate] — never call [showDialog] with this directly.
-/// The [PopScope] with [canPop] false prevents back-button / swipe dismissal.
+/// Rendered by [ForceUpdateGate] above the navigator — never call
+/// [showDialog] with this directly, since router navigation would remove it.
 class ForceUpdateDialog extends ConsumerWidget {
   const ForceUpdateDialog({super.key});
 
@@ -15,45 +15,39 @@ class ForceUpdateDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
 
-    return PopScope(
-      canPop: false,
-      child: AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          l10n.force_update_title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          l10n.force_update_message,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () => ref.read(openAppStoreProvider)(),
-              child: Text(
-                l10n.force_update_button,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        l10n.force_update_title,
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+      ),
+      content: Text(
+        l10n.force_update_message,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primaryDark,
+              foregroundColor: AppColors.onPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
+            onPressed: () => ref.read(openAppStoreProvider)(),
+            child: Text(
+              l10n.force_update_button,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      ),
+        ),
+      ],
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     );
   }
 }

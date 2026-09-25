@@ -4,8 +4,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 const String tolgeeNamespace = 'webuddhist';
-const String defaultTolgeeApiBase = 'https://app.tolgee.io';
-const String defaultTolgeeCdnBase =
+const String tolgeeApiBase = 'https://app.tolgee.io';
+
+/// Kept public so a Flutter test can verify parity with [TolgeeCdn.baseUrl].
+const String tolgeeCdnBase =
     'https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist';
 
 /// Kept public so a Flutter test can verify parity with [TolgeeLocaleMap].
@@ -76,9 +78,6 @@ Usage:
 
 Environment:
   TOLGEE_SYNC_API_KEY  Required for pull, push, and doctor --remote.
-  TOLGEE_PROJECT_ID    Optional; otherwise resolved from the API key.
-  TOLGEE_SYNC_API_URL  Optional; defaults to https://app.tolgee.io.
-  TOLGEE_CDN_URL       Optional CDN prefix used by doctor --remote.
 ''');
 }
 
@@ -507,14 +506,8 @@ class ArbDocument {
 }
 
 class TolgeeApi {
-  TolgeeApi({
-    required this.apiKey,
-    required this.apiBase,
-    required this.cdnBase,
-    String? projectIdOverride,
-    HttpClient? client,
-  }) : _projectIdOverride = projectIdOverride,
-       _client = client ?? HttpClient() {
+  TolgeeApi({required this.apiKey, HttpClient? client})
+    : _client = client ?? HttpClient() {
     _client.connectionTimeout = const Duration(seconds: 30);
   }
 
@@ -527,34 +520,13 @@ class TolgeeApi {
         'never put a write-scoped key in .env.*.',
       );
     }
-    String apiBase = environment['TOLGEE_SYNC_API_URL'] ?? defaultTolgeeApiBase;
-    apiBase = apiBase.replaceFirst(RegExp(r'/+$'), '');
-    if (apiBase.endsWith('/v2')) {
-      apiBase = apiBase.substring(0, apiBase.length - 3);
-    }
-    return TolgeeApi(
-      apiKey: apiKey,
-      apiBase: apiBase,
-      cdnBase: (environment['TOLGEE_CDN_URL'] ?? defaultTolgeeCdnBase)
-          .replaceFirst(RegExp(r'/+$'), ''),
-      projectIdOverride: environment['TOLGEE_PROJECT_ID'],
-    );
+    return TolgeeApi(apiKey: apiKey);
   }
 
   final String apiKey;
-  final String apiBase;
-  final String cdnBase;
-  final String? _projectIdOverride;
   final HttpClient _client;
 
   Future<int> resolveProjectId() async {
-    if (_projectIdOverride != null && _projectIdOverride.trim().isNotEmpty) {
-      final int? parsed = int.tryParse(_projectIdOverride);
-      if (parsed == null) {
-        throw const SyncException('TOLGEE_PROJECT_ID must be numeric.');
-      }
-      return parsed;
-    }
     final Object? decoded = await _requestJson(
       'GET',
       _apiUri('/v2/api-keys/current'),
@@ -568,7 +540,7 @@ class TolgeeApi {
     if (projectId == null) {
       throw const SyncException(
         'The API key response did not contain a projectId. '
-        'Set TOLGEE_PROJECT_ID explicitly.',
+        'Use a Tolgee project API key (tgpak_...).',
       );
     }
     return projectId;
@@ -676,7 +648,7 @@ class TolgeeApi {
   }
 
   Future<void> checkCdn(String tag) async {
-    final Uri uri = Uri.parse('$cdnBase/$tag.json');
+    final Uri uri = Uri.parse('$tolgeeCdnBase/$tag.json');
     final _HttpResult result = await _send('GET', uri, includeApiKey: false);
     if (result.statusCode < 200 || result.statusCode >= 300) {
       throw SyncException('CDN $tag returned HTTP ${result.statusCode}.');
@@ -692,7 +664,7 @@ class TolgeeApi {
   }
 
   Uri _apiUri(String path, [Map<String, Object>? query]) {
-    return Uri.parse('$apiBase$path').replace(
+    return Uri.parse('$tolgeeApiBase$path').replace(
       queryParameters:
           query == null
               ? null

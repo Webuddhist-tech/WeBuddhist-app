@@ -2,8 +2,9 @@ name: 🌍 Tolgee Sync
 
 on:
   schedule:
-    # Monday 10:00 AM IST (04:30 UTC)
-    - cron: "30 4 * * 1"
+    # Friday 1:15 PM IST (07:45 UTC). Off the hour: GitHub's busiest time for
+    # scheduled runs is the start of each hour.
+    - cron: "45 7 * * 5"
   workflow_dispatch:
 
 permissions:
