@@ -516,7 +516,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
-    final removal = ref.watch(groupRemovalNoticeProvider(profile.id));
+    final removal = watchActiveGroupRemovalNotice(ref, profile.id);
 
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
@@ -1505,7 +1505,7 @@ class _GroupFollowButton extends ConsumerWidget {
     }
 
     final isRemoved =
-        ref.watch(groupRemovalNoticeProvider(profile.id)) != null;
+        watchActiveGroupRemovalNotice(ref, profile.id) != null;
 
     return _buildRequestToJoinButton(context, ref, isLoading, isRemoved);
   }

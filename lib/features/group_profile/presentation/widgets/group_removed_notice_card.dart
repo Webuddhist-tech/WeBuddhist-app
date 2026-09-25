@@ -106,7 +106,7 @@ class GroupRemovedNoticeCard extends StatelessWidget {
     Color titleColor,
     Color bodyColor,
   ) {
-    final date = DateFormat.MMMEd(intlFormatLocaleOf(context)).format(expiry);
+    final date = DateFormat.yMMMEd(intlFormatLocaleOf(context)).format(expiry);
 
     return Container(
       width: double.infinity,

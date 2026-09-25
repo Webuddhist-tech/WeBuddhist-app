@@ -1501,10 +1501,39 @@ class GroupRemovalNotice {
   final DateTime? expiresAt;
 
   const GroupRemovalNotice(this.expiresAt);
+
+  /// Still blocks rejoining. A missing end date stays in effect; a past
+  /// [expiresAt] does not, so the request-to-join action can be used again.
+  bool get isActive {
+    final expiry = expiresAt;
+    if (expiry == null) return true;
+    return !expiry.isBefore(DateTime.now());
+  }
 }
 
+typedef GroupRemovalNoticeKey = ({String userId, String groupId});
+
 final groupRemovalNoticeProvider =
-    StateProvider.family<GroupRemovalNotice?, String>((ref, groupId) => null);
+    StateProvider.family<GroupRemovalNotice?, GroupRemovalNoticeKey>(
+      (ref, key) => null,
+    );
+
+/// Active removal for [groupId] belonging to the signed-in user.
+///
+/// Returns null when nobody is signed in, the notice belongs to another
+/// account, or the ban's end date has passed.
+GroupRemovalNotice? watchActiveGroupRemovalNotice(
+  WidgetRef ref,
+  String groupId,
+) {
+  final userId = ref.watch(userProvider.select((state) => state.user?.id));
+  if (userId == null || userId.isEmpty) return null;
+  final notice = ref.watch(
+    groupRemovalNoticeProvider((userId: userId, groupId: groupId)),
+  );
+  if (notice == null || !notice.isActive) return null;
+  return notice;
+}
 
 /// Outcome of asking to join. [banned] is set for `GROUP_BANNED`.
 /// [banExpiresAt] is the server `expires_at`, used to fill the localized notice.
@@ -1542,8 +1571,17 @@ Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
       if (failure is AuthorizationFailure &&
           isGroupJoinBanned(failure.message)) {
         final expiresAt = groupJoinBanExpiresAt(failure.message);
-        ref.read(groupRemovalNoticeProvider(groupId).notifier).state =
-            GroupRemovalNotice(expiresAt);
+        final userId = ref.read(userProvider).user?.id;
+        if (userId != null && userId.isNotEmpty) {
+          ref
+              .read(
+                groupRemovalNoticeProvider((
+                  userId: userId,
+                  groupId: groupId,
+                )).notifier,
+              )
+              .state = GroupRemovalNotice(expiresAt);
+        }
         return GroupJoinRequestOutcome.banned(expiresAt);
       }
       return const GroupJoinRequestOutcome.failed();
