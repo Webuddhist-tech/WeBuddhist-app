@@ -28,6 +28,9 @@ import 'fakes/fake_local_storage.dart';
 
 /// E1 is the English translation of the Tibetan root edition E2.
 class _FakeSettings implements ReaderSettingsRemoteDatasource {
+  /// Editions listed per language, first one first.
+  final versions = <String, List<ReaderVersionDetail>>{};
+
   @override
   Future<ReaderVersionDetail> fetchVersionInfo({
     required String versionId,
@@ -64,7 +67,11 @@ class _FakeSettings implements ReaderSettingsRemoteDatasource {
   Future<ReaderVersionsResponse> fetchVersions({
     required String textId,
     required String language,
-  }) => throw UnimplementedError();
+  }) async => ReaderVersionsResponse(
+    textId: textId,
+    language: language,
+    availableVersions: versions[language] ?? const [],
+  );
 }
 
 /// Aligns the translation's verses en-N to the root's E2-N.
@@ -138,6 +145,7 @@ void main() {
   late FakeLocalStorage storage;
   late List<TextDetailsParams> fetches;
   late _FakeTexts texts;
+  late _FakeSettings settings;
   late ProviderContainer container;
 
   /// Editions whose pages fail to load.
@@ -147,14 +155,13 @@ void main() {
     storage = FakeLocalStorage();
     fetches = [];
     texts = _FakeTexts();
+    settings = _FakeSettings();
     failingPages = {};
     container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
         textsRepositoryProvider.overrideWithValue(texts),
-        readerSettingsRemoteDatasourceProvider.overrideWithValue(
-          _FakeSettings(),
-        ),
+        readerSettingsRemoteDatasourceProvider.overrideWithValue(settings),
         textDetailsFutureProvider.overrideWith((ref, params) async {
           fetches.add(params);
           if (failingPages.contains(params.textId)) {
@@ -365,6 +372,30 @@ void main() {
       );
       expect(dual.primary.versionId, isNull);
       expect(dual.secondary.isUnset, isTrue);
+    });
+
+    test("keeps the opened edition over the list language's first", () async {
+      // The chant list's language has an edition of its own; the reader
+      // still opens the one tapped.
+      settings.versions['zh'] = const [
+        ReaderVersionDetail(id: 'E3', title: 'Tara Essence', language: 'zh'),
+      ];
+      failingPages.add('E2');
+      const params = ReaderParams(
+        textId: 'E1',
+        navigationContext: NavigationContext(
+          source: NavigationSource.recitationList,
+          language: 'zh',
+        ),
+      );
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.status, ReaderStatus.loaded);
+      expect(state.textDetail?.id, 'E1');
+      expect(fetches.map((f) => f.textId), ['E2', 'E1']);
     });
 
     test('still errors when the opened edition fails too', () async {

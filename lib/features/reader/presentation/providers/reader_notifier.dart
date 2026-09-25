@@ -84,7 +84,8 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   String? _activeVersionId;
 
   /// Path id for `/texts/{id}/details` when opening from the chant list.
-  /// Resolved once from [readerVersionsProvider] if that language has versions.
+  /// Resolved once from [readerVersionsProvider] if that language has versions,
+  /// or pinned to the opened edition when its root's page fails to load.
   /// Not written into dual-settings primary — chant text stays on top.
   String? _resolvedLanguageTextId;
   bool _didResolveLanguageTextId = false;
@@ -312,6 +313,8 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       return false;
     }
     _activeVersionId = versionBeforeRoot;
+    // The edition the user opened, never another one in the list's language.
+    _resolvedLanguageTextId = _params.textId;
     _ref
         .read(readerDualSettingsProvider(_params.settingsScope).notifier)
         .closeOpenedTranslation();
