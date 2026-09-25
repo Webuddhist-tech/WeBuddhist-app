@@ -28,6 +28,9 @@ import 'fakes/fake_local_storage.dart';
 
 /// E1 is the English translation of the Tibetan root edition E2.
 class _FakeSettings implements ReaderSettingsRemoteDatasource {
+  /// Editions listed per language, first one first.
+  final versions = <String, List<ReaderVersionDetail>>{};
+
   @override
   Future<ReaderVersionDetail> fetchVersionInfo({
     required String versionId,
@@ -64,7 +67,11 @@ class _FakeSettings implements ReaderSettingsRemoteDatasource {
   Future<ReaderVersionsResponse> fetchVersions({
     required String textId,
     required String language,
-  }) => throw UnimplementedError();
+  }) async => ReaderVersionsResponse(
+    textId: textId,
+    language: language,
+    availableVersions: versions[language] ?? const [],
+  );
 }
 
 /// Aligns the translation's verses en-N to the root's E2-N.
@@ -138,21 +145,30 @@ void main() {
   late FakeLocalStorage storage;
   late List<TextDetailsParams> fetches;
   late _FakeTexts texts;
+  late _FakeSettings settings;
   late ProviderContainer container;
+
+  /// Editions whose pages fail to load.
+  late Set<String> failingPages;
 
   setUp(() {
     storage = FakeLocalStorage();
     fetches = [];
     texts = _FakeTexts();
+    settings = _FakeSettings();
+    failingPages = {};
     container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
         textsRepositoryProvider.overrideWithValue(texts),
-        readerSettingsRemoteDatasourceProvider.overrideWithValue(
-          _FakeSettings(),
-        ),
+        readerSettingsRemoteDatasourceProvider.overrideWithValue(settings),
         textDetailsFutureProvider.overrideWith((ref, params) async {
           fetches.add(params);
+          if (failingPages.contains(params.textId)) {
+            return const Left<Failure, ReaderResponse>(
+              ServerFailure('page unavailable'),
+            );
+          }
           return Right<Failure, ReaderResponse>(_page(params.textId));
         }),
       ],
@@ -190,7 +206,9 @@ void main() {
     expect(state.openedText?.title, 'Tara Essence');
     expect(state.openedText?.language, 'en');
 
-    final dual = container.read(readerDualSettingsProvider('E1'));
+    final dual = container.read(
+      readerDualSettingsProvider(params.settingsScope),
+    );
     expect(dual.primary.versionId, 'E2');
     expect(dual.primary.languageCode, 'bo');
     expect(dual.secondary.versionId, 'E1');
@@ -243,7 +261,9 @@ void main() {
     expect(state.openedTranslation, isNull);
     expect(state.segmentAliases, isEmpty);
     expect(fetches.map((f) => (f.textId, f.segmentId)), [('E1', 'loose')]);
-    final dual = container.read(readerDualSettingsProvider('E1'));
+    final dual = container.read(
+      readerDualSettingsProvider(params.settingsScope),
+    );
     expect(dual.primary.versionId, isNull);
   });
 
@@ -259,7 +279,9 @@ void main() {
     expect(state.openedText?.id, 'E2');
     expect(state.segmentAliases, isEmpty);
     expect(texts.aligned, isEmpty);
-    final dual = container.read(readerDualSettingsProvider('E2'));
+    final dual = container.read(
+      readerDualSettingsProvider(params.settingsScope),
+    );
     expect(dual.primary.versionId, isNull);
     expect(dual.secondaryEnabled, isFalse);
   });
@@ -279,9 +301,114 @@ void main() {
     ]);
     await Future<void>.delayed(Duration.zero);
 
-    final dual = container.read(readerDualSettingsProvider('E1'));
+    final dual = container.read(
+      readerDualSettingsProvider(params.settingsScope),
+    );
     expect(dual.secondaryEnabled, isTrue);
     expect(dual.originalVisible, isFalse);
+  });
+
+  group('a root whose page fails to load', () {
+    test('opens the translation as itself, layout undone', () async {
+      failingPages.add('E2');
+      const params = ReaderParams(textId: 'E1');
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.status, ReaderStatus.loaded);
+      expect(state.textDetail?.id, 'E1');
+      expect(state.openedTranslation, isNull);
+      expect(state.segmentAliases, isEmpty);
+      expect(fetches.map((f) => (f.textId, f.versionId)), [
+        ('E2', null),
+        ('E1', null),
+      ]);
+      final notifier = container.read(
+        readerDualSettingsProvider(params.settingsScope).notifier,
+      );
+      final dual = container.read(
+        readerDualSettingsProvider(params.settingsScope),
+      );
+      expect(dual.primary.versionId, isNull);
+      expect(dual.secondary.isUnset, isTrue);
+      expect(dual.secondaryEnabled, isFalse, reason: 'the persisted default');
+      expect(dual.originalVisible, isTrue);
+      expect(notifier.isPrimaryEdited, isFalse);
+      expect(storage.values, isEmpty, reason: 'nothing persisted');
+    });
+
+    test('keeps the requested verse of the translation', () async {
+      failingPages.add('E2');
+      final params = ReaderParams(
+        textId: 'E1',
+        segmentId: 'en-1',
+        navigationContext: NavigationContext(
+          source: NavigationSource.plan,
+          planTextItems: [
+            PlanTextItem.sourceReference(
+              textId: 'E1',
+              title: "Today's Verses",
+              segmentIds: const ['en-1'],
+            ),
+          ],
+          currentTextIndex: 0,
+        ),
+      );
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.status, ReaderStatus.loaded);
+      expect(state.textDetail?.id, 'E1');
+      expect(fetches.map((f) => (f.textId, f.segmentId)), [
+        ('E2', 'E2-1'),
+        ('E1', 'en-1'),
+      ]);
+      final dual = container.read(
+        readerDualSettingsProvider(params.settingsScope),
+      );
+      expect(dual.primary.versionId, isNull);
+      expect(dual.secondary.isUnset, isTrue);
+    });
+
+    test("keeps the opened edition over the list language's first", () async {
+      // The chant list's language has an edition of its own; the reader
+      // still opens the one tapped.
+      settings.versions['zh'] = const [
+        ReaderVersionDetail(id: 'E3', title: 'Tara Essence', language: 'zh'),
+      ];
+      failingPages.add('E2');
+      const params = ReaderParams(
+        textId: 'E1',
+        navigationContext: NavigationContext(
+          source: NavigationSource.recitationList,
+          language: 'zh',
+        ),
+      );
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.status, ReaderStatus.loaded);
+      expect(state.textDetail?.id, 'E1');
+      expect(fetches.map((f) => f.textId), ['E2', 'E1']);
+    });
+
+    test('still errors when the opened edition fails too', () async {
+      failingPages.addAll({'E1', 'E2'});
+      const params = ReaderParams(textId: 'E1');
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+
+      final state = await _loaded(container, params);
+
+      expect(state.isError, isTrue);
+      expect(fetches.map((f) => f.textId), ['E2', 'E1']);
+    });
   });
 
   test('an unknown edition still opens as itself', () async {
@@ -325,7 +452,7 @@ void main() {
         await _loaded(container, first);
         // The user shows the original on the first item; that carries over.
         container
-            .read(readerDualSettingsProvider('E1').notifier)
+            .read(readerDualSettingsProvider(first.settingsScope).notifier)
             .setOriginalVisible(true);
 
         // pushReplacement: the new reader builds before the old one goes.
@@ -345,7 +472,9 @@ void main() {
           fetches.where((f) => f.versionId == null).last.segmentId,
           'E2-2',
         );
-        final dual = container.read(readerDualSettingsProvider('E1'));
+        final dual = container.read(
+          readerDualSettingsProvider(second.settingsScope),
+        );
         expect(dual.primary.versionId, 'E2');
         expect(dual.secondary.versionId, 'E1');
         expect(dual.originalVisible, isTrue);
@@ -358,7 +487,7 @@ void main() {
       addTearDown(sub1.close);
       await _loaded(container, first);
       container
-          .read(readerDualSettingsProvider('E1').notifier)
+          .read(readerDualSettingsProvider(first.settingsScope).notifier)
           .replaceSecondary(
             const ReaderSlotConfig(
               languageCode: 'zh',
@@ -374,7 +503,10 @@ void main() {
 
       expect(state.openedTranslation, isNull);
       expect(
-        container.read(readerDualSettingsProvider('E1')).secondary.versionId,
+        container
+            .read(readerDualSettingsProvider(second.settingsScope))
+            .secondary
+            .versionId,
         'Z1',
       );
     });

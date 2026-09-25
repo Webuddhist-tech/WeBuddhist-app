@@ -102,12 +102,18 @@ class ReaderDualLayoutSettings {
   /// Whether the original text shows while a translation is on. Only
   /// meaningful together with an active secondary; readers never hide both.
   final bool originalVisible;
+
+  /// Script the original is transliterated into for this visit, when the
+  /// reader is outside the library (whose pick is the app-wide script map).
+  /// Null shows the text as written.
+  final String? originalScriptId;
   final ReaderSlotConfig primary;
   final ReaderSlotConfig secondary;
 
   const ReaderDualLayoutSettings({
     required this.secondaryEnabled,
     this.originalVisible = true,
+    this.originalScriptId,
     required this.primary,
     required this.secondary,
   });
@@ -126,12 +132,18 @@ class ReaderDualLayoutSettings {
   ReaderDualLayoutSettings copyWith({
     bool? secondaryEnabled,
     bool? originalVisible,
+    String? originalScriptId,
+    bool clearOriginalScriptId = false,
     ReaderSlotConfig? primary,
     ReaderSlotConfig? secondary,
   }) {
     return ReaderDualLayoutSettings(
       secondaryEnabled: secondaryEnabled ?? this.secondaryEnabled,
       originalVisible: originalVisible ?? this.originalVisible,
+      originalScriptId:
+          clearOriginalScriptId
+              ? null
+              : originalScriptId ?? this.originalScriptId,
       primary: primary ?? this.primary,
       secondary: secondary ?? this.secondary,
     );
@@ -140,6 +152,7 @@ class ReaderDualLayoutSettings {
   Map<String, dynamic> toJson() => {
         'secondaryEnabled': secondaryEnabled,
         'originalVisible': originalVisible,
+        'originalScriptId': originalScriptId,
         'primary': primary.toJson(),
         'secondary': secondary.toJson(),
       };
@@ -148,6 +161,7 @@ class ReaderDualLayoutSettings {
     return ReaderDualLayoutSettings(
       secondaryEnabled: json['secondaryEnabled'] as bool? ?? false,
       originalVisible: json['originalVisible'] as bool? ?? true,
+      originalScriptId: json['originalScriptId'] as String?,
       primary: ReaderSlotConfig.fromJson(
         (json['primary'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
@@ -174,11 +188,17 @@ class ReaderDualLayoutSettings {
     return other is ReaderDualLayoutSettings &&
         other.secondaryEnabled == secondaryEnabled &&
         other.originalVisible == originalVisible &&
+        other.originalScriptId == originalScriptId &&
         other.primary == primary &&
         other.secondary == secondary;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(secondaryEnabled, originalVisible, primary, secondary);
+  int get hashCode => Object.hash(
+        secondaryEnabled,
+        originalVisible,
+        originalScriptId,
+        primary,
+        secondary,
+      );
 }

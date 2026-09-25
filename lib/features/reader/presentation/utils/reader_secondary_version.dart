@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
@@ -30,19 +31,22 @@ List<ReaderVersionDetail> translationVersions(
 ];
 
 /// Resolves the version for a just-picked secondary language:
-/// - different language than Main → first available version,
+/// - the edition picked for this text last time in this context, when the
+///   language offers it
+///   ([ReaderDualSettingsNotifier.rememberedTranslationVersionId]),
+/// - else, different language than Main → first available version,
 /// - same language as Main → first version whose id differs from Main's,
 /// - nothing usable → mark the slot [ReaderSlotConfig.versionUnavailable].
 Future<void> autoSelectSecondaryVersion({
   required WidgetRef ref,
-  required String textId,
+  required ReaderSettingsScope scope,
   required ReaderSlotConfig slot,
   required ReaderSlotConfig mainConfig,
   required int resolveGeneration,
 }) async {
-  final notifier = ref.read(readerDualSettingsProvider(textId).notifier);
+  final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
   final query = ReaderLanguageQuery(
-    textId: textId,
+    textId: scope.textId,
     language: slot.languageCode,
   );
 
@@ -60,11 +64,15 @@ Future<void> autoSelectSecondaryVersion({
       mainConfig.languageCode,
     );
 
+    final remembered = notifier.rememberedTranslationVersionId;
     ReaderVersionDetail? chosen;
     for (final version in versions) {
       if (sameLanguageAsMain && version.id == mainConfig.versionId) continue;
-      chosen = version;
-      break;
+      if (version.id == remembered) {
+        chosen = version;
+        break;
+      }
+      chosen ??= version;
     }
 
     if (!isCurrentResolve()) return;
@@ -86,25 +94,47 @@ Future<void> autoSelectSecondaryVersion({
   }
 }
 
-/// Fills the secondary slot from Settings language and turns it on.
+/// How [fillSecondaryWithLanguages] left the secondary slot.
+enum SecondaryFillOutcome {
+  /// A version of one of the candidates is in the slot.
+  filled,
+
+  /// No candidate is offered or has a usable version: the slot holds the
+  /// last one's "not available" mark, or is untouched when none was tried.
+  unavailable,
+
+  /// The switch was toggled, the slot picked by hand or the screen closed
+  /// meanwhile; the slot is left to whoever did that.
+  superseded,
+}
+
+/// Fills the secondary slot with the first of [candidates] the text offers a
+/// usable version for, trying them in order, and resolves that version.
+/// Candidates equal to [sourceLanguage] are skipped: the on-screen text stays
+/// on top, and this never calls [ReaderDualSettingsNotifier.replacePrimary].
+/// A candidate the text lists but has no version for is passed over; only
+/// when it is the last one does the slot stay marked unavailable.
 ///
-/// Does not call [ReaderDualSettingsNotifier.replacePrimary] — the chant /
-/// on-screen text stays on top. Returns false when Settings language is the
-/// same as the source, missing for this text, or has no usable version.
-Future<bool> fillSettingsLanguageSecondary({
+/// Leaves the translation switch alone; callers decide from the outcome
+/// whether a filled slot turns it on, and must not read a
+/// [SecondaryFillOutcome.superseded] slot as empty.
+Future<SecondaryFillOutcome> fillSecondaryWithLanguages({
   required WidgetRef ref,
   required BuildContext context,
-  required String textId,
+  required ReaderSettingsScope scope,
   required String sourceLanguage,
+  required List<String> candidates,
   String? sourceVersionId,
 }) async {
-  final settingsLang = normalizeReaderLanguageCode(
-    ref.read(contentLanguageProvider),
-  );
-  if (settingsLang.isEmpty) return false;
-  if (readerLanguagesMatch(settingsLang, sourceLanguage)) return false;
+  final wanted = [
+    for (final candidate in candidates)
+      if (normalizeReaderLanguageCode(candidate).isNotEmpty &&
+          !readerLanguagesMatch(candidate, sourceLanguage))
+        normalizeReaderLanguageCode(candidate),
+  ];
+  if (wanted.isEmpty) return SecondaryFillOutcome.unavailable;
 
-  final notifier = ref.read(readerDualSettingsProvider(textId).notifier);
+  final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
   final enabledGeneration = notifier.secondaryEnabledGeneration;
   final startResolveGeneration = notifier.secondaryResolveGeneration;
   bool toggleUnchanged() =>
@@ -115,48 +145,97 @@ Future<bool> fillSettingsLanguageSecondary({
       notifier.secondaryResolveGeneration == startResolveGeneration;
 
   final languages = translationLanguages(
-    await ref.read(readerLanguagesProvider(textId).future),
+    await ref.read(readerLanguagesProvider(scope.textId).future),
   );
-  if (!toggleUnchanged() || !slotUnchanged()) return false;
-  ReaderLanguageOption? option;
-  for (final language in languages) {
-    if (readerLanguagesMatch(language.code, settingsLang)) {
-      option = language;
-      break;
+  if (!toggleUnchanged() || !slotUnchanged()) {
+    return SecondaryFillOutcome.superseded;
+  }
+
+  ReaderLanguageOption? offered(String code) {
+    for (final language in languages) {
+      if (readerLanguagesMatch(language.code, code)) return language;
+    }
+    return null;
+  }
+
+  final options = <ReaderLanguageOption>[];
+  for (final code in wanted) {
+    final option = offered(code);
+    if (option != null) options.add(option);
+  }
+  if (!context.mounted) return SecondaryFillOutcome.superseded;
+  if (options.isEmpty) return SecondaryFillOutcome.unavailable;
+
+  final mainConfig = ReaderSlotConfig(
+    languageCode: sourceLanguage,
+    languageLabel: getLanguageName(sourceLanguage, context),
+    versionId: sourceVersionId,
+  );
+
+  for (final option in options) {
+    if (!context.mounted) return SecondaryFillOutcome.superseded;
+    final current = ref.read(readerDualSettingsProvider(scope)).secondary;
+    if (current.versionId != null &&
+        readerLanguagesMatch(current.languageCode, option.code)) {
+      return SecondaryFillOutcome.filled;
+    }
+
+    final slot = ReaderSlotConfig(
+      languageCode: option.code,
+      languageLabel: getLanguageName(option.code, context),
+    );
+    notifier.replaceSecondary(slot);
+    await autoSelectSecondaryVersion(
+      ref: ref,
+      scope: scope,
+      slot: slot,
+      mainConfig: mainConfig,
+      resolveGeneration: notifier.secondaryResolveGeneration,
+    );
+
+    if (!toggleUnchanged() || !context.mounted) {
+      return SecondaryFillOutcome.superseded;
+    }
+    final filled = ref.read(readerDualSettingsProvider(scope)).secondary;
+    if (filled.versionId != null &&
+        readerLanguagesMatch(filled.languageCode, option.code)) {
+      return SecondaryFillOutcome.filled;
+    }
+    // Try the next candidate only while the slot still holds this fill's
+    // "not available" mark; anything else in it is a pick made meanwhile.
+    if (filled != slot.copyWith(versionUnavailable: true)) {
+      return SecondaryFillOutcome.superseded;
     }
   }
-  if (option == null) return false;
-  if (!context.mounted) return false;
+  return SecondaryFillOutcome.unavailable;
+}
 
-  final current = ref.read(readerDualSettingsProvider(textId)).secondary;
-  if (current.versionId != null &&
-      readerLanguagesMatch(current.languageCode, settingsLang)) {
-    notifier.setSecondaryEnabled(true);
-    return true;
-  }
-
-  final slot = ReaderSlotConfig(
-    languageCode: option.code,
-    languageLabel: getLanguageName(option.code, context),
-  );
-  notifier.replaceSecondary(slot);
-  final resolveGeneration = notifier.secondaryResolveGeneration;
-
-  await autoSelectSecondaryVersion(
+/// Fills the secondary slot with the translation this reader prefers
+/// ([ReaderDualSettingsNotifier.preferredTranslationLanguages]: Settings
+/// language in the library; the last pick, this visit's default, then
+/// Settings language elsewhere) and turns it on.
+///
+/// Returns false when none of those is offered for this text apart from the
+/// source language, or none has a usable version.
+Future<bool> fillPreferredSecondary({
+  required WidgetRef ref,
+  required BuildContext context,
+  required ReaderSettingsScope scope,
+  required String sourceLanguage,
+  String? sourceVersionId,
+}) async {
+  final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
+  final outcome = await fillSecondaryWithLanguages(
     ref: ref,
-    textId: textId,
-    slot: slot,
-    mainConfig: ReaderSlotConfig(
-      languageCode: sourceLanguage,
-      languageLabel: getLanguageName(sourceLanguage, context),
-      versionId: sourceVersionId,
+    context: context,
+    scope: scope,
+    sourceLanguage: sourceLanguage,
+    sourceVersionId: sourceVersionId,
+    candidates: notifier.preferredTranslationLanguages(
+      contentLanguage: ref.read(contentLanguageProvider),
     ),
-    resolveGeneration: resolveGeneration,
   );
-
-  if (!toggleUnchanged()) return false;
-  final filled = ref.read(readerDualSettingsProvider(textId)).secondary;
-  if (filled.versionId == null) return false;
+  if (outcome != SecondaryFillOutcome.filled) return false;
   notifier.setSecondaryEnabled(true);
   return true;
 }

@@ -42,7 +42,10 @@ reader/
 ## State management
 
 - `readerNotifierProvider` — family by `ReaderParams`
-- `secondaryReaderNotifierProvider`, dual settings providers
+- `secondaryReaderNotifierProvider`, dual settings providers — keyed by
+  `ReaderSettingsScope(textId, ReaderLayoutContext)`, see *Language defaults*
+- `readerContextLayoutProvider(context)` — what the person changed inside an
+  event / chant / plan (persisted per context, never for the library)
 - Scroll: `readerScrollControllerProvider`, `pendingScrollTargetProvider`
 - Domain use cases exist but **presentation loads via texts providers**
 
@@ -50,7 +53,8 @@ reader/
 
 - **texts API** via `textDetailsFutureProvider` — paginated `ReaderResponse`
 - **Reader settings API** — languages, scripts, versions
-- **Local storage** — global secondary-layout toggle
+- **Local storage** — global secondary-layout toggles and script map (library);
+  `reader_layout_<context>` JSON for event / chant / plan picks
 - Segment commentary/translation via **texts** segment providers
 
 ## Cross-feature dependencies
@@ -67,7 +71,47 @@ reader/
 - **Thin screen, fat notifier** — `ReaderNotifier` owns pagination/selection
 - **Flattened scroll model** for `scrollable_positioned_list`
 - **NavigationContext** carries entry metadata (plan swipe, group chant, language override)
-- Dual-slot: global toggle persisted; per-text slot picks in-memory (`autoDispose`)
+- Dual-slot: toggles persisted (globally in the library, per context elsewhere);
+  per-text slot picks in-memory (`autoDispose`)
+
+## Language defaults (event / chant / plan)
+
+`readerLayoutContextOf(navigationContext)` sorts every reader into `library`,
+`event` (any event id), `chant` (chant list, routine, collections, group chant)
+or `plan`. The library keeps the app-wide settings untouched. The others:
+
+1. `resolveInitialLayout` (`domain/layout/`) is a pure table: event → original
+   on in the UI language's script (Roman, Devanagari for hi/ne, Cyrillic for
+   mn, as written for bo) + translation in the UI language, else English;
+   chant / plan → translation only in the UI language when offered, else as
+   written; a chant opened in the list's own language → as written.
+2. `ReaderInitialLayoutApplier` (owned by `ReaderScreen`) runs once when the
+   text language and `/texts/{id}/languages` are known: seeds the layout into
+   `ReaderDualSettingsNotifier` and fills the translation (remembered pick →
+   default → content language) through `fillSecondaryWithLanguages`, which
+   tries each candidate until one has a version. While the languages request
+   has failed it only seeds the layers and script; the sheet's retry brings
+   the list and the applier then runs for real. A stored "on" with nothing to
+   fill is held off for the visit (`markTranslationUnavailable`) so the sheet
+   never claims a translation the screen lacks — but not when the fill was
+   `superseded` by a toggle or a pick made in the sheet meanwhile.
+3. Seeds live in memory for the visit. What the person changes goes to
+   `readerContextLayoutProvider(context)` and wins on every later open in that
+   context; untouched fields keep following the resolver. That covers the
+   Original and Translation switches, the translation language, the script per
+   source language and the translation edition per text
+   (`translationVersions`, the 50 most recent texts), which
+   `autoSelectSecondaryVersion` prefers whenever the language offers it.
+4. Every fill uses the same order,
+   `ReaderDualSettingsNotifier.preferredTranslationLanguages`: remembered pick
+   → this visit's default → content language (library: content language
+   only). So switching the translation back on, or hiding the original,
+   through `fillPreferredSecondary` brings back what the first open showed
+   (Chinese UI on an English-only event text gets English again).
+
+Known gap: a chant tapped in the Hindi list arrives as the Hindi edition and
+the API never lists its Tibetan original, so the sheet reads "Original: Hindi"
+rather than "Original off + Translation Hindi".
 - `ReaderRepository` domain interface exists but **not wired in presentation**
 
 ---

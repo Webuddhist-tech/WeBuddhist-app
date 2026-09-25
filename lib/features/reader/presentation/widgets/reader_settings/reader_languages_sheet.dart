@@ -4,11 +4,13 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
 import 'package:flutter_pecha/features/reader/domain/transliteration/script_converter.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
-import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart'
+    show transliterationServiceProvider;
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
@@ -22,12 +24,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ReaderLanguagesSheet extends ConsumerStatefulWidget {
   const ReaderLanguagesSheet({
     super.key,
-    required this.textId,
+    required this.scope,
     required this.primaryDisplay,
     this.sourceSample,
   });
 
-  final String textId;
+  /// The text and context whose settings this sheet edits.
+  final ReaderSettingsScope scope;
   final ReaderSlotConfig primaryDisplay;
 
   /// Plain text lifted from the loaded segments, used to tell which script
@@ -47,18 +50,18 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   String? _expandedLanguage;
   bool _filling = false;
 
-  String get _textId => widget.textId;
+  ReaderSettingsScope get _scope => widget.scope;
 
   ReaderDualSettingsNotifier get _notifier =>
-      ref.read(readerDualSettingsProvider(_textId).notifier);
+      ref.read(readerDualSettingsProvider(_scope).notifier);
 
   ReaderSlotConfig get _secondary =>
-      ref.read(readerDualSettingsProvider(_textId)).secondary;
+      ref.read(readerDualSettingsProvider(_scope)).secondary;
 
   @override
   void initState() {
     super.initState();
-    final settings = ref.read(readerDualSettingsProvider(_textId));
+    final settings = ref.read(readerDualSettingsProvider(_scope));
     // Open the dropdown right away when nothing is picked yet.
     _expanded = settings.secondaryEnabled && settings.secondary.versionId == null;
     if (!settings.secondary.isUnset) {
@@ -68,7 +71,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
 
   ReaderSlotConfig _primary() {
     if (_notifier.isPrimaryEdited) {
-      return ref.read(readerDualSettingsProvider(_textId)).primary;
+      return ref.read(readerDualSettingsProvider(_scope)).primary;
     }
     return widget.primaryDisplay;
   }
@@ -86,10 +89,10 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     final primary = _primary();
     bool filled = false;
     try {
-      filled = await fillSettingsLanguageSecondary(
+      filled = await fillPreferredSecondary(
         ref: ref,
         context: context,
-        textId: _textId,
+        scope: _scope,
         sourceLanguage: primary.languageCode,
         sourceVersionId: primary.versionId,
       );
@@ -123,15 +126,16 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
       languageLabel: getLanguageName(option.code, context),
     );
     _notifier.replaceSecondary(slot);
+    _notifier.rememberTranslationLanguage(option.code);
     final resolveGeneration = _notifier.secondaryResolveGeneration;
     final resolving = ref.read(
-      readerSecondaryResolvingProvider(_textId).notifier,
+      readerSecondaryResolvingProvider(_scope).notifier,
     );
     resolving.state = true;
     try {
       await autoSelectSecondaryVersion(
         ref: ref,
-        textId: _textId,
+        scope: _scope,
         slot: slot,
         mainConfig: _primary(),
         resolveGeneration: resolveGeneration,
@@ -143,6 +147,8 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
 
   void _onVersionTap(ReaderLanguageOption language, ReaderVersionDetail v) {
     HapticFeedback.selectionClick();
+    _notifier.rememberTranslationLanguage(language.code);
+    _notifier.rememberTranslationVersion(v.id);
     _notifier.replaceSecondary(
       ReaderSlotConfig(
         languageCode: language.code,
@@ -186,9 +192,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
 
   void _onScriptTap(String languageCode, String? scriptId) {
     HapticFeedback.selectionClick();
-    ref
-        .read(readerScriptPreferenceProvider.notifier)
-        .setScript(languageCode, scriptId);
+    _notifier.setOriginalScript(languageCode, scriptId);
   }
 
   /// Hiding the original needs a translation on screen, so it switches the
@@ -204,8 +208,8 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
-    final settings = ref.watch(readerDualSettingsProvider(_textId));
-    final resolving = ref.watch(readerSecondaryResolvingProvider(_textId));
+    final settings = ref.watch(readerDualSettingsProvider(_scope));
+    final resolving = ref.watch(readerSecondaryResolvingProvider(_scope));
     final primary = _primary();
     final converter = ref
         .watch(transliterationServiceProvider)
@@ -213,7 +217,14 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     final selectedScript =
         converter == null
             ? null
-            : ref.watch(readerScriptForLanguageProvider(primary.languageCode));
+            : ref.watch(
+              readerOriginalScriptProvider(
+                ReaderScriptScope(
+                  scope: _scope,
+                  language: primary.languageCode,
+                ),
+              ),
+            );
     final sourceScript = converter?.detectScript(widget.sourceSample ?? '');
     final enabled = settings.secondaryEnabled;
     final busy = resolving || _filling;
@@ -318,7 +329,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
                     ),
                     if (enabled && _expanded)
                       _LanguageTree(
-                        textId: _textId,
+                        textId: _scope.textId,
                         secondary: settings.secondary,
                         expandedLanguage: _expandedLanguage,
                         onLanguageTap: busy ? null : _onLanguageTap,
@@ -720,7 +731,7 @@ class _ScriptRow extends StatelessWidget {
 
 Future<void> showReaderLanguagesSheet(
   BuildContext context, {
-  required String textId,
+  required ReaderSettingsScope scope,
   required ReaderSlotConfig primaryDisplay,
   String? sourceSample,
 }) {
@@ -735,7 +746,7 @@ Future<void> showReaderLanguagesSheet(
     isScrollControlled: true,
     builder:
         (_) => ReaderLanguagesSheet(
-          textId: textId,
+          scope: scope,
           primaryDisplay: primaryDisplay,
           sourceSample: sourceSample,
         ),

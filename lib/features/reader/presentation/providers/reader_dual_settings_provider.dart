@@ -1,6 +1,13 @@
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_context_layout_prefs.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
+import 'package:flutter_pecha/features/reader/domain/layout/reader_initial_layout.dart';
+import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_context_layout_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Global on/off for the dual-slot reader layout. Persisted because it's a
@@ -84,41 +91,77 @@ final readerOriginalVisibleProvider =
   );
 });
 
-/// Per-text dual-slot settings (the toggle + both slot configs).
+/// Dual-slot settings of one text in one context (the toggles, the script of
+/// the original and both slot configs), keyed by [ReaderSettingsScope].
 ///
-/// `secondaryEnabled` is mirrored from the global
-/// [readerSecondaryEnabledProvider] so toggling it persists once and is
-/// observed by every text consistently.
+/// In the library the toggles mirror the app-wide
+/// [readerSecondaryEnabledProvider] / [readerOriginalVisibleProvider] and the
+/// script comes from the app-wide script map, exactly as before contexts
+/// existed. In an event, a chant or a plan they come from that context's
+/// [readerContextLayoutProvider] (what the person changed there), and where
+/// that store has no pick, from this visit's [seed].
 ///
 /// `primary` and `secondary` slot picks live in memory only because their
 /// `versionId` / `scriptId` are scoped to a specific text and cannot
 /// meaningfully transfer to another text. autoDispose ensures they reset
 /// the next time this text is opened.
 class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings> {
-  ReaderDualSettingsNotifier({required Ref ref})
+  ReaderDualSettingsNotifier({required Ref ref, required this.scope})
       : _ref = ref,
         super(ReaderDualLayoutSettings.initial()) {
-    _ref.listen<bool>(
-      readerSecondaryEnabledProvider,
-      (_, enabled) {
-        if (!mounted) return;
-        if (state.secondaryEnabled == enabled) return;
-        state = state.copyWith(secondaryEnabled: enabled);
-      },
-      fireImmediately: true,
-    );
-    _ref.listen<bool>(
-      readerOriginalVisibleProvider,
-      (_, visible) {
-        if (!mounted) return;
-        if (state.originalVisible == visible) return;
-        state = state.copyWith(originalVisible: visible);
-      },
-      fireImmediately: true,
-    );
+    if (isLibrary) {
+      _ref.listen<bool>(
+        readerSecondaryEnabledProvider,
+        (_, enabled) {
+          if (!mounted) return;
+          if (state.secondaryEnabled == enabled) return;
+          state = state.copyWith(secondaryEnabled: enabled);
+        },
+        fireImmediately: true,
+      );
+      _ref.listen<bool>(
+        readerOriginalVisibleProvider,
+        (_, visible) {
+          if (!mounted) return;
+          if (state.originalVisible == visible) return;
+          state = state.copyWith(originalVisible: visible);
+        },
+        fireImmediately: true,
+      );
+    } else {
+      _ref.listen<ReaderContextLayoutPrefs>(
+        readerContextLayoutProvider(scope.context),
+        (_, __) => _recompute(),
+        fireImmediately: true,
+      );
+    }
   }
 
   final Ref _ref;
+
+  /// The text and context these settings belong to.
+  final ReaderSettingsScope scope;
+
+  bool get isLibrary => scope.context == ReaderLayoutContext.library;
+
+  /// This visit's defaults (outside the library), applied where the context
+  /// store has no pick. Never persisted: the next text in this context gets
+  /// its own.
+  ReaderInitialLayout? _seed;
+  String? _language;
+
+  /// True once the seeded translation actually has a version to show, so the
+  /// switch never reads "on" with nothing underneath.
+  bool _seededTranslationOn = false;
+
+  /// True while a stored "on" has nothing to show on this text, so the switch
+  /// reads off (and the original on) until the person turns it on here.
+  bool _translationUnavailable = false;
+
+  /// The language of the edition the reader was opened with, once
+  /// [openAsTranslation] has put it under its root (outside the library).
+  /// Cleared when the person touches the Translation switch here.
+  String? _openedTranslationLanguage;
 
   // "User has edited this slot" flags. Needed because the slot config alone
   // can't tell "untouched defaults" apart from "user picked something that
@@ -142,14 +185,83 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// disables it.
   int get secondaryEnabledGeneration => _secondaryEnabledGeneration;
 
-  // The flags are written here as well as globally: after
-  // [openAsTranslation] this text can differ from the persisted value, which
-  // then has nothing to mirror back.
+  ReaderContextLayoutNotifier get _store =>
+      _ref.read(readerContextLayoutProvider(scope.context).notifier);
+
+  ReaderContextLayoutPrefs get _prefs =>
+      _ref.read(readerContextLayoutProvider(scope.context));
+
+  /// Outside the library: the context store's picks over this visit's seed,
+  /// or over the opened translation ([openAsTranslation]), which keeps the
+  /// translation on whatever the store says.
+  void _recompute() {
+    if (!mounted || isLibrary) return;
+    final prefs = _prefs;
+    final language = _language;
+    final opened = _openedTranslationLanguage != null;
+    final String? script =
+        language != null && prefs.hasScriptFor(language)
+            ? prefs.scriptFor(language)
+            : _seed?.originalScriptId;
+    final bool? defaultOriginalVisible =
+        opened ? false : _seed?.originalVisible;
+    final next = state.copyWith(
+      secondaryEnabled:
+          opened ||
+          (!_translationUnavailable &&
+              (prefs.translationOn ?? _seededTranslationOn)),
+      originalVisible:
+          _translationUnavailable ||
+          (prefs.originalVisible ?? defaultOriginalVisible ?? true),
+      originalScriptId: script,
+      clearOriginalScriptId: script == null,
+    );
+    if (next != state) state = next;
+  }
+
+  /// Applies this visit's defaults for a text in [language] (outside the
+  /// library). Stored picks for this context win over the seed; the seed's
+  /// translation only switches on through [seedTranslationOn].
+  void seed(ReaderInitialLayout layout, {required String language}) {
+    if (isLibrary) return;
+    _seed = layout;
+    _language = TransliterationService.normalizeLanguage(language);
+    _recompute();
+  }
+
+  /// Turns the seeded translation on once a version for it has been found.
+  void seedTranslationOn() {
+    if (isLibrary || _seededTranslationOn) return;
+    _seededTranslationOn = true;
+    _recompute();
+  }
+
+  /// Reads a stored "on" as off for this visit because the text has nothing
+  /// to show under it (outside the library). The store keeps the pick for
+  /// the next text; the next [setSecondaryEnabled] here lifts the hold.
+  void markTranslationUnavailable() {
+    if (isLibrary || _translationUnavailable) return;
+    _translationUnavailable = true;
+    _recompute();
+  }
+
   void setSecondaryEnabled(bool enabled) {
     if (state.secondaryEnabled == enabled) return;
     _secondaryEnabledGeneration++;
-    state = state.copyWith(secondaryEnabled: enabled);
-    _ref.read(readerSecondaryEnabledProvider.notifier).setEnabled(enabled);
+    _translationUnavailable = false;
+    if (isLibrary) {
+      // Written here as well as globally: after [openAsTranslation] this
+      // text can differ from the persisted value, which then has nothing to
+      // mirror back.
+      state = state.copyWith(secondaryEnabled: enabled);
+      _ref.read(readerSecondaryEnabledProvider.notifier).setEnabled(enabled);
+    } else {
+      _openedTranslationLanguage = null;
+      // The store may already hold this value (a held-off "on"), in which
+      // case it does not notify; recompute either way.
+      _store.setTranslationOn(enabled);
+      _recompute();
+    }
     // Turning the translation off must not leave nothing on screen.
     if (!enabled) setOriginalVisible(true);
   }
@@ -159,8 +271,12 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// and the widgets keep showing the original until that version exists.
   void setOriginalVisible(bool visible) {
     if (state.originalVisible == visible) return;
-    state = state.copyWith(originalVisible: visible);
-    _ref.read(readerOriginalVisibleProvider.notifier).setVisible(visible);
+    if (isLibrary) {
+      state = state.copyWith(originalVisible: visible);
+      _ref.read(readerOriginalVisibleProvider.notifier).setVisible(visible);
+    } else {
+      _store.setOriginalVisible(visible);
+    }
     if (!visible && !state.secondaryEnabled) setSecondaryEnabled(true);
   }
 
@@ -168,6 +284,11 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// is the primary, the opened edition the secondary, and only the
   /// translation shows, so the page reads as before. This text only; the
   /// persisted preferences are left alone.
+  ///
+  /// Outside the library this layout is the visit's default in place of the
+  /// seed's: the translation stays on until the person touches the switch
+  /// here, and the original stays hidden unless they chose to show it in
+  /// this context.
   void openAsTranslation({
     required ReaderSlotConfig original,
     required ReaderSlotConfig translation,
@@ -181,6 +302,80 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
       secondary: translation,
       secondaryEnabled: true,
       originalVisible: false,
+    );
+    if (isLibrary) return;
+    _openedTranslationLanguage = TransliterationService.normalizeLanguage(
+      translation.languageCode,
+    );
+    _recompute();
+  }
+
+  /// Undoes [openAsTranslation] when the root cannot be loaded: the opened
+  /// edition goes back to being the text, no translation is picked, and the
+  /// switches read what they would have without it.
+  void closeOpenedTranslation() {
+    _primaryEdited = false;
+    _secondaryEdited = false;
+    _secondaryResolveGeneration++;
+    _secondaryEnabledGeneration++;
+    _openedTranslationLanguage = null;
+    state = state.copyWith(
+      primary: ReaderDualLayoutSettings.initial().primary,
+      secondary: const ReaderSlotConfig.empty(),
+    );
+    if (!isLibrary) {
+      _recompute();
+      return;
+    }
+    state = state.copyWith(
+      secondaryEnabled: _ref.read(readerSecondaryEnabledProvider),
+      originalVisible: _ref.read(readerOriginalVisibleProvider),
+    );
+  }
+
+  /// Picks the script the original of a [language] text is shown in; null is
+  /// "as written". App-wide in the library, per context elsewhere.
+  void setOriginalScript(String language, String? scriptId) {
+    if (isLibrary) {
+      _ref
+          .read(readerScriptPreferenceProvider.notifier)
+          .setScript(language, scriptId);
+      return;
+    }
+    _store.setScript(language, scriptId);
+  }
+
+  /// Remembers the translation language the person picked, for the next
+  /// text opened in this context. The library does not remember one.
+  void rememberTranslationLanguage(String languageCode) {
+    if (isLibrary) return;
+    _store.setTranslationLanguage(languageCode);
+  }
+
+  /// Remembers the translation edition the person picked for this text, so
+  /// reopening it in this context shows the same one. Not in the library.
+  void rememberTranslationVersion(String versionId) {
+    if (isLibrary) return;
+    _store.setTranslationVersion(scope.textId, versionId);
+  }
+
+  /// The translation edition picked for this text last time, if any.
+  String? get rememberedTranslationVersionId =>
+      isLibrary ? null : _prefs.translationVersionFor(scope.textId);
+
+  /// Translation languages to try whenever the translation fills in, most
+  /// wanted first. Outside the library: the person's last pick in this
+  /// context, then this visit's default (the opened translation's language,
+  /// else the seed's), then [contentLanguage]; the library tries only
+  /// [contentLanguage].
+  List<String> preferredTranslationLanguages({
+    required String contentLanguage,
+  }) {
+    if (isLibrary) return translationCandidates(fallback: contentLanguage);
+    return translationCandidates(
+      remembered: _prefs.translationLanguage,
+      seeded: _openedTranslationLanguage ?? _seed?.translationLanguage,
+      fallback: contentLanguage,
     );
   }
 
@@ -211,13 +406,52 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   }
 }
 
-final readerDualSettingsProvider = StateNotifierProvider.autoDispose
-    .family<ReaderDualSettingsNotifier, ReaderDualLayoutSettings, String>(
-  (ref, _) => ReaderDualSettingsNotifier(ref: ref),
-);
+final readerDualSettingsProvider = StateNotifierProvider.autoDispose.family<
+  ReaderDualSettingsNotifier,
+  ReaderDualLayoutSettings,
+  ReaderSettingsScope
+>((ref, scope) => ReaderDualSettingsNotifier(ref: ref, scope: scope));
 
 /// Transient (not persisted): true while the secondary slot's version is being
 /// auto-resolved after a language change. Drives the version row's loading
 /// state and blocks language edits until resolution completes.
-final readerSecondaryResolvingProvider =
-    StateProvider.autoDispose.family<bool, String>((ref, _) => false);
+final readerSecondaryResolvingProvider = StateProvider.autoDispose
+    .family<bool, ReaderSettingsScope>((ref, _) => false);
+
+/// One language's script pick as seen from one reader (text + context).
+class ReaderScriptScope {
+  ReaderScriptScope({required this.scope, required String language})
+    : language = TransliterationService.normalizeLanguage(language);
+
+  final ReaderSettingsScope scope;
+
+  /// Normalised language code.
+  final String language;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ReaderScriptScope &&
+      other.scope == scope &&
+      other.language == language;
+
+  @override
+  int get hashCode => Object.hash(scope, language);
+}
+
+/// The script the original is shown in for [ReaderScriptScope.language] in
+/// the reader [ReaderScriptScope.scope]; null shows the text as written.
+///
+/// The library reads the app-wide script map straight away, so a stored pick
+/// applies from the first frame; every other context reads the settings the
+/// context store and this visit's seed produce.
+final readerOriginalScriptProvider = Provider.autoDispose
+    .family<String?, ReaderScriptScope>((ref, scriptScope) {
+      if (scriptScope.scope.context == ReaderLayoutContext.library) {
+        return ref.watch(readerScriptForLanguageProvider(scriptScope.language));
+      }
+      return ref.watch(
+        readerDualSettingsProvider(
+          scriptScope.scope,
+        ).select((settings) => settings.originalScriptId),
+      );
+    });
