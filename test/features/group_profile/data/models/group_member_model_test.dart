@@ -18,6 +18,19 @@ void main() {
     expect(member.canBeRemovedByAdmin, isFalse);
   });
 
+  test('the group owner is admin-tier and cannot be removed', () {
+    final member =
+        GroupMemberModel.fromJson({
+          'user_id': 'owner-1',
+          'username': 'rinpoche',
+          'fullname': 'Rinpoche',
+          'role': 'OWNER',
+        }).toEntity();
+
+    expect(member.isAdmin, isTrue);
+    expect(member.canBeRemovedByAdmin, isFalse);
+  });
+
   test('a member without id or role cannot be removed yet', () {
     final member =
         GroupMemberModel.fromJson({

@@ -26,15 +26,18 @@ class GroupRemoveMemberSheet extends ConsumerStatefulWidget {
     required String groupId,
     required GroupMember member,
   }) {
+    // Drag-to-close pops the route directly and skips [PopScope], so a drag
+    // mid-request would close the sheet while the removal still completes and
+    // the caller would never learn the outcome. Barrier taps and the close
+    // button go through `maybePop` and honour the submit lock.
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       isDismissible: true,
-      enableDrag: true,
+      enableDrag: false,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder:
-          (_) => GroupRemoveMemberSheet(groupId: groupId, member: member),
+      builder: (_) => GroupRemoveMemberSheet(groupId: groupId, member: member),
     );
   }
 
@@ -43,7 +46,8 @@ class GroupRemoveMemberSheet extends ConsumerStatefulWidget {
       _GroupRemoveMemberSheetState();
 }
 
-class _GroupRemoveMemberSheetState extends ConsumerState<GroupRemoveMemberSheet> {
+class _GroupRemoveMemberSheetState
+    extends ConsumerState<GroupRemoveMemberSheet> {
   final TextEditingController _reasonController = TextEditingController();
   int _banDays = GroupRemoveMemberSheet.defaultBanDays;
   bool _durationOpen = false;
@@ -129,19 +133,6 @@ class _GroupRemoveMemberSheetState extends ConsumerState<GroupRemoveMemberSheet>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -166,7 +157,11 @@ class _GroupRemoveMemberSheetState extends ConsumerState<GroupRemoveMemberSheet>
                     ),
                     Text(
                       l10n.group_remove_member_message(name),
-                      style: TextStyle(fontSize: 15, height: 1.35, color: labelColor),
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.35,
+                        color: labelColor,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -215,7 +210,9 @@ class _GroupRemoveMemberSheetState extends ConsumerState<GroupRemoveMemberSheet>
                       minLines: 4,
                       maxLines: 4,
                       onTap: () {
-                        if (_durationOpen) setState(() => _durationOpen = false);
+                        if (_durationOpen) {
+                          setState(() => _durationOpen = false);
+                        }
                       },
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
@@ -231,7 +228,9 @@ class _GroupRemoveMemberSheetState extends ConsumerState<GroupRemoveMemberSheet>
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
                             color:
-                                isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                                isDark
+                                    ? AppColors.cardBorderDark
+                                    : AppColors.grey300,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -321,7 +320,9 @@ class _DurationField extends StatelessWidget {
       color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: isDark ? AppColors.cardBorderDark : AppColors.grey300),
+        side: BorderSide(
+          color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
+        ),
       ),
       child: InkWell(
         onTap: enabled ? onTap : null,
@@ -335,7 +336,10 @@ class _DurationField extends StatelessWidget {
               ),
               Icon(
                 isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+                color:
+                    isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textSecondary,
               ),
             ],
           ),
@@ -366,7 +370,9 @@ class _DurationMenu extends StatelessWidget {
       shadowColor: Colors.black.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: isDark ? AppColors.cardBorderDark : AppColors.grey100),
+        side: BorderSide(
+          color: isDark ? AppColors.cardBorderDark : AppColors.grey100,
+        ),
       ),
       child: Column(
         children: [
@@ -374,7 +380,10 @@ class _DurationMenu extends StatelessWidget {
             InkWell(
               onTap: () => onSelected(days),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -396,7 +405,11 @@ class _DurationMenu extends StatelessWidget {
                       ),
                     ),
                     if (days == selectedDays)
-                      const Icon(Icons.check, color: AppColors.primary, size: 20),
+                      const Icon(
+                        Icons.check,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
                   ],
                 ),
               ),

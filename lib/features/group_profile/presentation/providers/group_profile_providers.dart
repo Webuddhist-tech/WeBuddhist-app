@@ -1535,6 +1535,20 @@ GroupRemovalNotice? watchActiveGroupRemovalNotice(
   return notice;
 }
 
+/// Forgets the signed-in user's removal notice for [groupId].
+///
+/// The notice is a client-side cache of the last refused join attempt. The
+/// server may lift the ban early, so a page refresh drops the cache and lets
+/// the next join request re-ask the server, which re-sets the notice if the
+/// ban is still in place.
+void clearGroupRemovalNotice(WidgetRef ref, String groupId) {
+  final userId = ref.read(userProvider).user?.id;
+  if (userId == null || userId.isEmpty) return;
+  ref.invalidate(
+    groupRemovalNoticeProvider((userId: userId, groupId: groupId)),
+  );
+}
+
 /// Outcome of asking to join. [banned] is set for `GROUP_BANNED`.
 /// [banExpiresAt] is the server `expires_at`, used to fill the localized notice.
 class GroupJoinRequestOutcome {
@@ -1600,6 +1614,7 @@ Future<void> refreshGroupProfilePage({
 }) async {
   final followKey = GroupFollowKey(groupId: groupId, groupType: groupType);
   ref.invalidate(groupFollowProvider(followKey));
+  clearGroupRemovalNotice(ref, groupId);
 
   final refreshTasks = <Future<void>>[
     ref.refresh(groupProfileProvider(groupId).future).then((_) {}),
