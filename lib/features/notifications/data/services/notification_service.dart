@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
@@ -309,6 +310,7 @@ class NotificationService {
 
   // Request permission for notifications
   Future<bool> requestPermission() async {
+    final analytics = _container?.read(entryAnalyticsProvider);
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
           notificationsPlugin
@@ -317,8 +319,13 @@ class NotificationService {
               >();
 
       // Request notification permission
+      analytics?.notificationPermissionPrompted(os: NotificationOs.android);
       final bool? granted =
           await androidImplementation?.requestNotificationsPermission();
+      analytics?.notificationPermissionAnswered(
+        granted: granted ?? false,
+        os: NotificationOs.android,
+      );
 
       // For Android 12+, also request exact alarm permission
       if (granted == true) {
@@ -332,11 +339,23 @@ class NotificationService {
               .resolvePlatformSpecificImplementation<
                 IOSFlutterLocalNotificationsPlugin
               >();
+      // iOS asks once; a request after a refusal returns with no dialog.
+      final prompting =
+          !Platform.isIOS || !await Permission.notification.isPermanentlyDenied;
+      if (prompting) {
+        analytics?.notificationPermissionPrompted(os: NotificationOs.ios);
+      }
       final bool? granted = await iosImplementation?.requestPermissions(
         alert: true,
         badge: true,
         sound: true,
       );
+      if (prompting) {
+        analytics?.notificationPermissionAnswered(
+          granted: granted ?? false,
+          os: NotificationOs.ios,
+        );
+      }
       return granted ?? false;
     }
     return false;
@@ -393,6 +412,9 @@ class NotificationService {
         // branch below and yanks the user to My Practices mid-session.
         if (data['type'] == NotificationChannels.timerSessionId) {
           _logger.info('Timer session notification tapped — no navigation');
+          _container!.read(entryAnalyticsProvider).localNotificationOpened(
+            type: NotificationChannels.timerSessionId,
+          );
           return;
         }
 
@@ -429,6 +451,14 @@ class NotificationService {
               durationMs: durationMs,
             );
         _openMyPractices();
+        // `scheduledMinute` is the block time the sync engine stamped on it.
+        final scheduledMinute = (data['scheduledMinute'] as num?)?.toInt();
+        _container!.read(entryAnalyticsProvider).localNotificationOpened(
+          type: itemTypeStr,
+          minutesAfterScheduled: scheduledMinute == null
+              ? null
+              : minutesSinceScheduled(scheduledMinute, DateTime.now()),
+        );
         return;
       } catch (e) {
         _logger.warning('Failed to parse notification payload: $e');

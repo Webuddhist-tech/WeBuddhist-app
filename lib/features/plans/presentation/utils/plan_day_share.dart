@@ -8,10 +8,12 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 
 /// Downloads the plan day's shareable image and shares it together with the
-/// day completion message and the plan day deep link.
-Future<void> sharePlanDayImage({
+/// day completion message and the plan day deep link. Returns false when the
+/// share sheet never opened or was dismissed.
+Future<bool> sharePlanDayImage({
   required BuildContext context,
   required String shareableImageUrl,
   required int dayNumber,
@@ -20,7 +22,7 @@ Future<void> sharePlanDayImage({
   GlobalKey? shareButtonKey,
 }) async {
   final url = shareableImageUrl.trim();
-  if (url.isEmpty) return;
+  if (url.isEmpty) return false;
 
   File? tempFile;
   try {
@@ -40,7 +42,7 @@ Future<void> sharePlanDayImage({
     );
     await tempFile.writeAsBytes(response.bodyBytes);
 
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
 
     final sharePositionOrigin = getSharePositionOrigin(
       context: context,
@@ -55,15 +57,16 @@ Future<void> sharePlanDayImage({
           language: planLanguage,
         ).toString();
     final planLink = await resolveShareUrl(context, longUrl);
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
 
-    await SharePlus.instance.share(
+    final result = await SharePlus.instance.share(
       ShareParams(
         files: [XFile(tempFile.path)],
         text: '$shareMessage\n\n$planLink',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
+    return ShareAnalytics.wasUsed(result);
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,6 +76,7 @@ Future<void> sharePlanDayImage({
         ),
       );
     }
+    return false;
   } finally {
     if (tempFile != null && await tempFile.exists()) {
       try {

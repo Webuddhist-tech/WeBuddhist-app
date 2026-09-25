@@ -153,15 +153,18 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     );
   }
 
+  // The language is named here from its code: slots seeded by the reader
+  // carry no localized label.
   String _translationLabel(ReaderSlotConfig slot) {
     final l10n = context.l10n;
     if (slot.isUnset) return l10n.select_language;
+    final language = getLanguageName(slot.languageCode, context);
     if (slot.versionUnavailable) {
-      return '${slot.languageLabel} (${l10n.version_not_available})';
+      return '$language (${l10n.version_not_available})';
     }
     final version = slot.versionLabel;
-    if (version == null || version.isEmpty) return slot.languageLabel;
-    return '${slot.languageLabel} ($version)';
+    if (version == null || version.isEmpty) return language;
+    return '$language ($version)';
   }
 
   /// The Original field names the script on screen: the picked one, else
@@ -449,7 +452,8 @@ class _LanguageTree extends ConsumerWidget {
             message: l10n.reader_languages_load_error,
             onRetry: () => ref.invalidate(readerLanguagesProvider(textId)),
           ),
-      data: (langs) {
+      data: (all) {
+        final langs = translationLanguages(all);
         if (langs.isEmpty) {
           return PickerEmpty(message: l10n.reader_no_languages);
         }
@@ -560,7 +564,8 @@ class _VersionList extends ConsumerWidget {
               message: l10n.reader_versions_load_error,
               onRetry: () => ref.invalidate(readerVersionsProvider(query)),
             ),
-        data: (versions) {
+        data: (all) {
+          final versions = translationVersions(all);
           if (versions.isEmpty) {
             return PickerEmpty(
               message: l10n.reader_no_versions_in_language(

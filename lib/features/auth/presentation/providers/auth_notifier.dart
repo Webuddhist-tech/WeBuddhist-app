@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_and
 import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/continue_as_guest_usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/utils/auth_analytics.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/get_credentials_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/has_valid_credentials_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/initialize_auth_usecase.dart';
@@ -28,6 +29,7 @@ import 'package:flutter_pecha/core/network/interceptors/cache_interceptor.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
+import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
@@ -59,6 +61,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// await and discard their result if the epoch changed — prevents a stale
   /// onboarding prefetch from re-applying `isLoggedIn: true` after logout.
   int _authEpoch = 0;
+
+  /// Epoch of the auth attempt analytics is identified as, or null once
+  /// reset. See [_resetAnalyticsIdentity].
+  int? _identityEpoch;
 
   /// Prevents overlapping background onboarding refetches.
   bool _onboardingFetchInFlight = false;
@@ -232,7 +238,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
             .set(StorageKeys.currentUserId, userId);
         if (!_isAuthEpochCurrent(epoch)) return;
         _logger.debug('Restored currentUserId');
-        await _identifyAuthenticatedUser(userId: userId, isGuest: false);
+        await _identifyAuthenticatedUser(
+          userId: userId,
+          isGuest: false,
+          epoch: epoch,
+        );
         if (!_isAuthEpochCurrent(epoch)) return;
       }
 
@@ -288,7 +298,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     if (storedUserId != null && storedUserId.isNotEmpty) {
       unawaited(
-        _identifyAuthenticatedUser(userId: storedUserId, isGuest: false),
+        _identifyAuthenticatedUser(
+          userId: storedUserId,
+          isGuest: false,
+          epoch: epoch,
+        ),
       );
     }
     try {
@@ -343,6 +357,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _logger.info('Session permanently expired — routing to login');
     _invalidateAuthSession();
     await _localLogoutUseCase(const NoParams());
+    // As on logout: the next session must not carry this user's identity.
+    await _resetAnalyticsIdentity();
   }
 
   Future<void> _handleAuthFailure() async {
@@ -360,7 +376,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> login({String? connection}) async {
+  Future<void> login({String? connection, AuthSource? source}) async {
     _bumpAuthEpoch();
     state = state.copyWith(isLoading: true, errorMessage: null);
 
@@ -370,19 +386,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     loginResult.fold(
       (failure) {
         _logger.error('Login failed: ${failure.message}');
-        unawaited(
-          _trackAuthLoginFailed(
-            connection: connection,
-            reason: failure.message,
-          ),
+        _authAnalytics.loginFailed(
+          method: connection,
+          source: source,
+          reason: failure.message,
         );
         state = state.copyWith(
           isLoading: false,
           errorMessage: 'Login failed: ${failure.message}',
         );
+        // A login this one superseded may have identified its user already.
+        unawaited(_resetAnalyticsIdentity(onlyIfStale: true));
       },
       (credentials) {
-        unawaited(_handleSuccessfulLogin(credentials, connection: connection));
+        unawaited(
+          _handleSuccessfulLogin(
+            credentials,
+            connection: connection,
+            source: source,
+          ),
+        );
       },
     );
   }
@@ -390,6 +413,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _handleSuccessfulLogin(
     AuthCredentials credentials, {
     String? connection,
+    AuthSource? source,
   }) async {
     final epoch = _authEpoch;
 
@@ -406,12 +430,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
           .set(StorageKeys.currentUserId, userId);
       if (!_isAuthEpochCurrent(epoch)) return;
       _logger.debug('Stored currentUserId');
-      await _identifyAuthenticatedUser(userId: userId, isGuest: false);
+      await _identifyAuthenticatedUser(
+        userId: userId,
+        isGuest: false,
+        epoch: epoch,
+      );
       if (!_isAuthEpochCurrent(epoch)) return;
     }
 
-    await _trackAuthLoginSucceeded(connection: connection);
-    if (!_isAuthEpochCurrent(epoch)) return;
+    _authAnalytics.loginSucceeded(method: connection, source: source);
 
     // 3. Prefetch onboarding status and full user profile so the route guard
     //    can decide instantly.
@@ -460,7 +487,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // continue as guest
-  Future<void> continueAsGuest() async {
+  Future<void> continueAsGuest({required AuthSource source}) async {
     // Persist guest mode preference
     final guestResult = await _continueAsGuestUseCase(const NoParams());
     guestResult.fold(
@@ -478,13 +505,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isGuest: true,
         );
         _logger.info('Guest mode activated and persisted');
-        unawaited(_analytics.track(AnalyticsEvents.authGuestStarted));
+        _authAnalytics.guestStarted(source: source);
         unawaited(_markGuestSession());
       },
     );
   }
 
   Future<void> logout() async {
+    // Started before the state flips: the flip makes the push service delete
+    // the FCM token, and it must first let this unregister use the stored id
+    // while the JWT is still valid. Awaited below, before credentials go.
+    final pushUnregister = _unregisterPushDevice();
     _invalidateAuthSession();
     ref.read(cacheInterceptorProvider).clearUserScoped();
 
@@ -496,6 +527,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       _logger.warning('Mala flush on logout failed (ignored): $e');
     }
+    await pushUnregister;
 
     final logoutResult = await _localLogoutUseCase(const NoParams());
     logoutResult.fold(
@@ -529,7 +561,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _logger.warning('Failed to cancel notifications on logout: $e');
     }
 
-    await _analytics.reset();
+    await _resetAnalyticsIdentity();
 
     _logger.info('User logged out, auth and user state cleared');
   }
@@ -610,6 +642,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   int _bumpAuthEpoch() => ++_authEpoch;
 
   bool _isAuthEpochCurrent(int epoch) => epoch == _authEpoch;
+
+  /// Stops server pushes for the account signing out. Never throws: the
+  /// service swallows backend failures, and building it can throw only where
+  /// Firebase is not set up.
+  Future<void> _unregisterPushDevice() {
+    try {
+      return ref.read(pushNotificationServiceProvider).unregisterForSignOut();
+    } catch (e) {
+      _logger.warning('Push unregister on logout skipped: $e');
+      return Future.value();
+    }
+  }
 
   void _invalidateAuthSession() {
     _bumpAuthEpoch();
@@ -696,38 +740,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   AnalyticsService get _analytics => ref.read(analyticsServiceProvider);
+  AuthAnalytics get _authAnalytics => ref.read(authAnalyticsProvider);
 
   Future<void> _identifyAuthenticatedUser({
     required String userId,
     required bool isGuest,
+    required int epoch,
   }) async {
+    _identityEpoch = epoch;
     await _analytics.identify(
       userId: userId,
       properties: {AnalyticsProperties.isGuest: isGuest},
     );
   }
 
+  /// Resets analytics unless the current auth attempt owns its identity.
+  ///
+  /// Logout and expiry show the login screen before their cleanup finishes,
+  /// so a login can identify its user meanwhile; that identity is kept. Any
+  /// other identity belongs to a signed-out user or to a login a newer auth
+  /// attempt superseded, and is reset. [onlyIfStale] skips the reset when
+  /// nothing is identified, for flows that are not a sign-out.
+  Future<void> _resetAnalyticsIdentity({bool onlyIfStale = false}) async {
+    final owner = _identityEpoch;
+    if (owner != null && owner == _authEpoch) return;
+    if (onlyIfStale && owner == null) return;
+    _identityEpoch = null;
+    await _analytics.reset();
+  }
+
   Future<void> _markGuestSession() async {
     await _analytics.setSuperProperties({AnalyticsProperties.isGuest: true});
-  }
-
-  Future<void> _trackAuthLoginSucceeded({String? connection}) async {
-    await _analytics.track(
-      AnalyticsEvents.authLoginSucceeded,
-      properties: {AnalyticsProperties.method: connection ?? 'default'},
-    );
-  }
-
-  Future<void> _trackAuthLoginFailed({
-    String? connection,
-    required String reason,
-  }) async {
-    await _analytics.track(
-      AnalyticsEvents.authLoginFailed,
-      properties: {
-        AnalyticsProperties.method: connection ?? 'default',
-        AnalyticsProperties.reason: reason,
-      },
-    );
   }
 }

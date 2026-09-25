@@ -16,6 +16,7 @@ Future<List<RecitationModel>?> openAddChantsToCollectionScreen(
 }) {
   return Navigator.of(context).push<List<RecitationModel>>(
     MaterialPageRoute(
+      settings: const RouteSettings(name: 'add-chants-to-collection'),
       builder:
           (_) => AddChantsToCollectionScreen(
             initiallySelected: initiallySelected,

@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/onboarding/application/tradition_selection_provider.dart';
 import 'package:flutter_pecha/features/onboarding/application/tradition_selection_state.dart';
 import 'package:flutter_pecha/features/onboarding/data/models/tradition_models.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/utils/onboarding_analytics.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_back_button.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -29,6 +30,11 @@ class OnboardingScreenTradition extends ConsumerWidget {
       }
       return;
     }
+    // Only a count reaches analytics: one tradition, or none for "show all".
+    final isShowAll = ref.read(traditionSelectionProvider).isShowAllSelected;
+    ref.read(onboardingAnalyticsProvider).traditionsChosen(
+      count: isShowAll ? 0 : 1,
+    );
     onNext();
   }
 

@@ -8,13 +8,18 @@ class RecitationsPageResponse {
   final int limit;
   final int total;
 
+  /// Where the next page starts. Can exceed `skip + recitations.length` when
+  /// the source dropped items it cannot list.
+  final int nextSkip;
+
   const RecitationsPageResponse({
     required this.recitations,
     this.collections = const [],
     required this.skip,
     required this.limit,
     required this.total,
-  });
+    int? nextSkip,
+  }) : nextSkip = nextSkip ?? skip + recitations.length;
 
   factory RecitationsPageResponse.fromJson(Map<String, dynamic> json) {
     final recitationsData = json['recitations'] as List<dynamic>? ?? [];
@@ -38,5 +43,5 @@ class RecitationsPageResponse {
     );
   }
 
-  bool get hasMore => skip + recitations.length < total;
+  bool get hasMore => nextSkip < total;
 }

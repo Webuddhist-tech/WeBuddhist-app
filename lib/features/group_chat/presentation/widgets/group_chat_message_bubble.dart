@@ -95,6 +95,9 @@ class GroupChatMessageBubble extends StatelessWidget {
   /// How far the chip is inset from the bubble's inner corner.
   static const double _chipInset = 8;
   static const double _rowPadding = 12;
+
+  /// A deleted message's bubble, background and label alike.
+  static const double _tombstoneOpacity = 0.5;
   static const double _avatarGap = 8;
 
   /// Distance from the row's edge to the bubble's near edge: row padding, the
@@ -167,7 +170,15 @@ class GroupChatMessageBubble extends StatelessWidget {
                               ? 0
                               : _chipReserve,
                     ),
-                    child: _bubble(context, isDark, displayName),
+                    child:
+                        isDeleted
+                            // Faded as a whole, so the placeholder reads as
+                            // something that is no longer there.
+                            ? Opacity(
+                              opacity: _tombstoneOpacity,
+                              child: _bubble(context, isDark, displayName),
+                            )
+                            : _bubble(context, isDark, displayName),
                   ),
                   if (message.reactions.isNotEmpty && !isDeleted)
                     Positioned(
@@ -307,8 +318,8 @@ class GroupChatMessageBubble extends StatelessWidget {
   ///
   /// The quote, link preview and reaction badges all go with the body: none of
   /// them describes anything that still exists. One label for everyone, in the
-  /// ordinary text colour, per the mocks — the bubble's side already says
-  /// whose message it was.
+  /// ordinary text colour — the bubble's side already says whose message it
+  /// was. The caller fades the whole bubble (see [_tombstoneOpacity]).
   ///
   /// One line: the time sits after the label rather than under it, its
   /// baseline a touch lower, so a deleted message is shorter than a live one.

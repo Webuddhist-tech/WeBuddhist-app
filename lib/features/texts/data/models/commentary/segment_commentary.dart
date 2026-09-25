@@ -7,6 +7,9 @@ class SegmentCommentary {
   final String? source;
   final String? license;
 
+  /// Editions that translate this commentary, shown under its card.
+  final List<SegmentCommentary> translations;
+
   SegmentCommentary({
     required this.textId,
     required this.title,
@@ -15,6 +18,7 @@ class SegmentCommentary {
     required this.count,
     this.source,
     this.license,
+    this.translations = const [],
   });
 
   factory SegmentCommentary.fromJson(Map<String, dynamic> json) {

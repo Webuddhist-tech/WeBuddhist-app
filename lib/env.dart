@@ -8,14 +8,30 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class Env {
   Env._();
 
+  /// Analytics keys are optional, so they read an unloaded dotenv (unit
+  /// tests, tooling) as "not configured" instead of throwing.
+  static Map<String, String> get _optional =>
+      dotenv.isInitialized ? dotenv.env : const {};
+
   /// API base URL for the backend
   static String get apiBaseUrl =>
       dotenv.env['BASE_API_URL'] ??
       (throw Exception('BASE_API_URL not found in environment'));
 
-  /// AI service URL
-  static String get aiUrl =>
-      dotenv.env['AI_URL'] ?? 'https://aichat.webuddhist.com';
+  /// Library (texts) API base URL. A blank value (an unset CI secret writes
+  /// `LIBRARY_API_URL=`) falls back to the default instead of an empty base.
+  static String get libraryApiUrl =>
+      _nonEmpty('LIBRARY_API_URL') ?? 'https://library.webuddhist.com';
+
+  /// Library tag that marks the texts listed as chants. Null when unset; the
+  /// chant list then reports a load error rather than failing to build (the
+  /// same datasource also serves the user's collections).
+  static String? get libraryChantsTagId => _nonEmpty('LIBRARY_CHANTS_TAG_ID');
+
+  static String? _nonEmpty(String key) {
+    final value = dotenv.env[key]?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
 
   /// Auth0 domain (fetched from backend /props endpoint)
   static String? get auth0Domain => dotenv.env['AUTH0_DOMAIN'];
@@ -48,55 +64,33 @@ class Env {
   static bool get enableVerboseLogging => isDebug;
 
   /// PostHog project API key (optional — analytics disabled when absent)
-  static String? get posthogApiKey => dotenv.env['POSTHOG_API_KEY'];
+  static String? get posthogApiKey => _optional['POSTHOG_API_KEY'];
 
   /// PostHog ingest host
   static String get posthogHost =>
-      dotenv.env['POSTHOG_HOST'] ?? 'https://us.i.posthog.com';
+      _optional['POSTHOG_HOST'] ?? 'https://us.i.posthog.com';
 
   /// Whether PostHog analytics is enabled for this build
   static bool get posthogEnabled {
-    final String? enabledFlag = dotenv.env['POSTHOG_ENABLED'];
-    if (enabledFlag != null) {
+    final String? enabledFlag = _optional['POSTHOG_ENABLED'];
+    if (enabledFlag != null && enabledFlag.isNotEmpty) {
       return enabledFlag.toLowerCase() == 'true';
     }
     final String? apiKey = posthogApiKey;
     return apiKey != null && apiKey.isNotEmpty;
   }
 
-  /// Whether phone (SMS OTP) login is offered on this build.
-  ///
-  /// Defaults to false: the button must stay hidden until the Auth0 tenant for
-  /// this flavor has the passwordless SMS connection enabled, otherwise tapping
-  /// it fails with an Auth0 configuration error.
-  static bool get phoneLoginEnabled =>
-      dotenv.env['PHONE_LOGIN_ENABLED']?.toLowerCase() == 'true';
+  /// Microsoft Clarity project ID (optional — Clarity disabled when absent)
+  static String? get clarityProjectId => _optional['CLARITY_PROJECT_ID'];
 
-  /// Tolgee project API key.
-  ///
-  /// This ships inside the bundled `.env` asset and can be extracted from a
-  /// released build, so it must be a read-only scoped key.
-  static String? get tolgeeApiKey => dotenv.env['TOLGEE_API_KEY'];
-
-  /// Tolgee Content Delivery base URL. Translations are read from
-  /// `$tolgeeCdnUrl/<languageTag>.json`.
-  static String? get tolgeeCdnUrl => dotenv.env['TOLGEE_CDN_URL'];
-
-  /// Whether over-the-air translations are enabled for this build.
-  ///
-  /// Defaults to enabled when both a key and a CDN URL are present, so a build
-  /// without Tolgee credentials silently uses the bundled ARB translations.
-  static bool get tolgeeEnabled {
-    final String? enabledFlag = dotenv.env['TOLGEE_ENABLED'];
+  /// Whether Clarity session recording and heatmaps are enabled for this build
+  static bool get clarityEnabled {
+    final String? enabledFlag = _optional['CLARITY_ENABLED'];
     if (enabledFlag != null && enabledFlag.isNotEmpty) {
       return enabledFlag.toLowerCase() == 'true';
     }
-    final String? apiKey = tolgeeApiKey;
-    final String? cdnUrl = tolgeeCdnUrl;
-    return apiKey != null &&
-        apiKey.isNotEmpty &&
-        cdnUrl != null &&
-        cdnUrl.isNotEmpty;
+    final String? projectId = clarityProjectId;
+    return projectId != null && projectId.isNotEmpty;
   }
 
   /// Normalized flavor label for analytics super properties

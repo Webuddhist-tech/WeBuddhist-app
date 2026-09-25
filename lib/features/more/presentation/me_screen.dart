@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/utils/auth_analytics.dart';
 import 'package:flutter_pecha/features/more/domain/entities/user_stats.dart';
 import 'package:flutter_pecha/shared/widgets/main_tab_app_bar.dart';
 import 'package:flutter_pecha/features/more/presentation/providers/use_case_providers.dart';
@@ -136,94 +136,110 @@ class _GuestView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
+    void startLogin(String connection) {
+      ref
+          .read(authAnalyticsProvider)
+          .loginStarted(method: connection, source: AuthSource.meScreen);
+      authNotifier.login(connection: connection, source: AuthSource.meScreen);
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIOS = Platform.isIOS;
 
     final localizations = AppLocalizations.of(context)!;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircleAvatar(
-              radius: 52,
-              backgroundColor: AppColors.grey300,
-              child: Icon(
-                AppAssets.profile,
-                size: 44,
-                color: AppColors.grey600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              localizations.me_guest_headline,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 34,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              localizations.me_guest_subtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.grey600),
-            ),
-            const SizedBox(height: 40),
-            if (authState.isLoading)
-              const SizedBox(
-                height: 52,
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else ...[
-              _SocialButton(
-                onTap: () => authNotifier.login(connection: 'google'),
-                backgroundColor: isDark ? AppColors.cardDark : Colors.white,
-                foregroundColor: isDark ? Colors.white : Colors.black87,
-                borderColor:
-                    isDark ? AppColors.cardBorderDark : AppColors.grey300,
-                label: localizations.continueWithGoogle,
-                icon: Image.asset(AppAssets.googleIcon, width: 23, height: 23),
-              ),
-              if (isIOS) ...[
-                const SizedBox(height: 14),
-                _SocialButton(
-                  onTap: () => authNotifier.login(connection: 'apple'),
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  borderColor: Colors.transparent,
-                  label: localizations.continueWithApple,
-                  icon: const Icon(
-                    AppAssets.apple,
-                    color: Colors.white,
-                    size: 30,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: ConstrainedBox(
+            // Keeps the column vertically centred when it fits, and lets it
+            // scroll instead of overflowing on short screens or at large text
+            // scales, where three sign-in buttons no longer fit.
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 52,
+                  backgroundColor: AppColors.grey300,
+                  child: Icon(
+                    AppAssets.profile,
+                    size: 44,
+                    color: AppColors.grey600,
                   ),
                 ),
-              ],
-              if (Env.phoneLoginEnabled) ...[
-                const SizedBox(height: 14),
-                _SocialButton(
-                  onTap: () => authNotifier.login(connection: 'sms'),
-                  backgroundColor: isDark ? AppColors.cardDark : Colors.white,
-                  foregroundColor: isDark ? Colors.white : Colors.black87,
-                  borderColor:
-                      isDark ? AppColors.cardBorderDark : AppColors.grey300,
-                  label: localizations.continueWithPhone,
-                  icon: Icon(
-                    Icons.phone_android,
-                    color: isDark ? Colors.white : Colors.black87,
-                    size: 23,
+                const SizedBox(height: 20),
+                Text(
+                  localizations.me_guest_headline,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 34,
                   ),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  localizations.me_guest_subtitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: AppColors.grey600),
+                ),
+                const SizedBox(height: 40),
+                if (authState.isLoading)
+                  const SizedBox(
+                    height: 52,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else ...[
+                  _SocialButton(
+                    onTap: () => startLogin('google'),
+                    backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+                    foregroundColor: isDark ? Colors.white : Colors.black87,
+                    borderColor:
+                        isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                    label: localizations.continueWithGoogle,
+                    icon: Image.asset(
+                      AppAssets.googleIcon,
+                      width: 23,
+                      height: 23,
+                    ),
+                  ),
+                  if (isIOS) ...[
+                    const SizedBox(height: 14),
+                    _SocialButton(
+                      onTap: () => startLogin('apple'),
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      borderColor: Colors.transparent,
+                      label: localizations.continueWithApple,
+                      icon: const Icon(
+                        AppAssets.apple,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 14),
+                  _SocialButton(
+                    onTap: () => startLogin('sms'),
+                    backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+                    foregroundColor: isDark ? Colors.white : Colors.black87,
+                    borderColor:
+                        isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                    label: localizations.continueWithPhone,
+                    icon: Icon(
+                      Icons.phone_android,
+                      color: isDark ? Colors.white : Colors.black87,
+                      size: 23,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

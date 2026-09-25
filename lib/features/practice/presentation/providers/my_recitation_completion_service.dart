@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/my_recitation_collections_providers.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +48,9 @@ class MyRecitationCompletionService {
     _completedChantIds.add(chantId);
 
     try {
+      final wasCompleted = _ref
+          .read(myRecitationCollectionCompletionProvider(collectionId))
+          .isCompleted(chantId);
       final result = await _ref
           .read(myRecitationCollectionCompletionProvider(collectionId).notifier)
           .completeChant(chantId);
@@ -54,6 +58,9 @@ class MyRecitationCompletionService {
       switch (result) {
         case MyChantCompletionResult.completed:
           _logger.info('Marked chant $chantId as complete');
+          if (!wasCompleted) {
+            _trackCompleted(collectionId, navContext, currentItem);
+          }
           break;
         case MyChantCompletionResult.failed:
           _logger.error('Failed to complete chant $chantId');
@@ -63,6 +70,38 @@ class MyRecitationCompletionService {
     } catch (e) {
       _logger.error('Failed to complete chant $chantId', e);
       _completedChantIds.remove(chantId);
+    }
+  }
+
+  /// Reports the confirmed item, and the collection once every item is done.
+  void _trackCompleted(
+    String collectionId,
+    NavigationContext navContext,
+    PlanTextItem currentItem,
+  ) {
+    final items = navContext.planTextItems ?? const <PlanTextItem>[];
+    final state = _ref.read(
+      myRecitationCollectionCompletionProvider(collectionId),
+    );
+    // Completions are keyed by chant id but have been seen carrying text ids.
+    final completedCount =
+        items.where((item) {
+          return state.isCompleted(item.subtaskId ?? '') ||
+              state.isCompleted(item.textId);
+        }).length;
+    final analytics = _ref.read(groupAnalyticsProvider);
+    analytics.recitationCollectionItemCompleted(
+      collectionId: collectionId,
+      groupId: null,
+      textId: currentItem.textId,
+      completedCount: completedCount,
+      itemCount: items.length,
+    );
+    if (completedCount == items.length) {
+      analytics.recitationCollectionCompleted(
+        collectionId: collectionId,
+        groupId: null,
+      );
     }
   }
 

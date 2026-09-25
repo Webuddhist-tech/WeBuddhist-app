@@ -94,7 +94,7 @@
       }
     }
   },
-  "mala_group_accumulations": "Group accumulations",
+  "mala_group_accumulations": "Уншлага нэмэх",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled group",
   "home_timer": "Цаг хэмжигч",
@@ -144,9 +144,7 @@
     }
   },
   "loading": "Ачааллаж байна...",
-  "choose_image": "Зураг сонгох",
   "choose_bg_image": "Дэвсгэр зураг сонгох",
-  "create_image": "Зураг үүсгэх",
   "save": "Хадгалах",
   "done": "Болсон",
   "customise_message": "Бичвэрийн загварыг тохируулахын тулд тохируулах дүрс дээр дарна уу",
@@ -354,21 +352,7 @@
   "text_search_press_button": "Хайхын тулд хайх товчийг дарна уу",
   "text_search_error": "Хайлт хийх боломжгүй.\nДахин оролдоно уу",
   "unknown_error": "Тодорхойгүй алдаа",
-  "image_share_error": "Хуваалцах боломжгүй: {error}",
-  "@image_share_error": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
-  "create_image_capture_error": "Зураг үүсгэж чадсангүй. Дахин оролдоно уу",
   "create_image_share_error": "Хуваалцах боломжгүй. Дахин оролдоно уу",
-  "create_image_save_success": "Зураг хадгалагдлаа",
-  "create_image_save_error": "Зургийг хадгалах боломжгүй. Аппд зургийн хандалт байгаа эсэхийг шалгах эсвэл дахин оролдоно уу",
-  "create_image_download_error": "Зургаа татах боломжгүй. Дахин оролдоно уу",
-  "create_image_customize_tooltip": "Тохируулах",
-  "create_image_text_too_long": "Үсгийн хэмжээг томруулахад бичвэр хэт урт байна",
   "version_search_no_results": "\"{query}\"-д тохирох хувилбар олдсонгүй",
   "@version_search_no_results": {
     "placeholders": {
@@ -405,50 +389,7 @@
   "feedback": "Санал хүсэлт",
   "author": "Зохиогч",
   "plans_created": "Төлөвлөгөө үүсгэсэн",
-  "ai_chat_history": "Чатын түүх",
-  "ai_buddhist_assistant": "Өдөр тутмын хэмнэлээ бий болго. Цагаа тохируул, бид танд дадлага хийхийг сануулна",
-  "ai_new_chat": "Шинэ чат",
-  "ai_retry": "Дахин оролдох",
-  "ai_dismiss": "Хаах",
-  "ai_sign_in_prompt": "Бурханы шашны AI туслахыг ашиглахын тулд нэвтэрнэ үү",
-  "ai_explore_wisdom": "Бурханы шашны ухааныг судлах",
-  "ai_ask_question": "Асуулт асуух...",
-  "ai_search_chats": "Чат хайх",
-  "ai_chats": "Чатууд",
-  "ai_chat_deleted": "Чат устгагдлаа",
-  "ai_no_conversations": "Одоогоор яриа байхгүй",
-  "ai_start_new_chat": "Эхлэхийн тулд шинэ чат эхлүүлнэ үү.",
-  "ai_delete_chat": "Чат устгах",
-  "ai_delete_confirmation": "Та энэ чатыг устгахдаа итгэлтэй байна уу?",
-  "ai_delete_warning": "Энэ үйлдлийг буцаах боломжгүй.",
   "ai_confirm": "Баталгаажуулах",
-  "ai_delete": "Устгах",
-  "ai_greeting": "Сайн уу {name}",
-  "@ai_greeting": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "ai_text_not_found": "Бичвэр олдсонгүй.",
-  "ai_text_not_found_message": "Манай санд \"{title}\" одоогоор байхгүй байна.\n\nӨөр гарчиг туршиж үзэх, эсвэл өөрөөр асууна уу",
-  "@ai_text_not_found_message": {
-    "placeholders": {
-      "title": {
-        "type": "String"
-      }
-    }
-  },
-  "ai_sources": "Эх сурвалжууд",
-  "ai_sources_count": "{count} эх сурвалж",
-  "@ai_sources_count": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "search_no_results": "\"{query}\"-д тохирох үр дүн олдсонгүй",
   "@search_no_results": {
     "placeholders": {
@@ -457,46 +398,7 @@
       }
     }
   },
-  "search_show_more": "Илүү ихийг харах",
-  "search_contents": "Агуулга",
-  "search_titles": "Гарчиг",
   "search_all": "Бүгд",
-  "search_author": "Зохиогч",
-  "search_tab_ai_mode": "AI горим",
-  "search_error": "Алдаа: {message}",
-  "@search_error": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
-  "search_retrying": "Дахин оролдож байна...",
-  "search_no_titles_found": "\"{query}\"-д тохирох гарчиг олдсонгүй",
-  "@search_no_titles_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_no_contents_found": "\"{query}\"-д тохирох агуулга олдсонгүй",
-  "@search_no_contents_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_no_authors_found": "\"{query}\"-д тохирох зохиогч олдсонгүй",
-  "@search_no_authors_found": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
-  "search_buddhist_texts": "Бурханы шашны бичвэр хайх...",
   "common_ok": "За",
   "comingSoonHeadline": "Удахгүй",
   "routine_title": "Миний дадлагууд",
@@ -642,6 +544,7 @@
   "main_version": "Үндсэн хувилбар",
   "second_version": "Хоёр дахь хувилбар",
   "second_version_msg": "Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ",
+  "root_text": "Эх бичвэр",
   "version": "Хувилбарууд",
   "parallel_version": "Зэрэгцээ хувилбар",
   "reader_languages_title": "Хэл",
@@ -899,7 +802,7 @@
   "share_chant_message": "Би энэ дуулалыг тантай хуваалцахыг хүссэн. Та үүнийг дадлагажуулж, WeBuddhist дээр бусад дуулал болон судруудын бүтэн номын санг олж болно.",
   "share_quote_message": "Надад WeBuddhist дээрх энэ ишлэл таалагдсан тул тантай хуваалцахыг хүссэн. WeBuddhist аппликейшн дээр ийм мэдлэгтэй ишлэлүүдийг уншаарай.",
   "share_poem_message": "Надад WeBuddhist дээрх энэ шүлэг таалагдсан тул тантай хуваалцахыг хүссэн.",
-  "share_poem_title": "\u201c{title}\u201d",
+  "share_poem_title": "“{title}”",
   "share_mala_message": "Би WeBuddhist дээрх энэ тоолуурыг ашиглаж байгаа бөгөөд тантай хуваалцахыг хүссэн. Хаана ч байсан дадлагажуулахад хялбар арга юм.",
   "share_passage_message": "Надад энэ хэсэг таалагдсан тул тантай хуваалцахыг хүссэн. WeBuddhist дээр бүтэн ишлэлийг уншиж болно.",
   "share_timer_message": "Би WeBuddhist дээрх энэ бясалгалын таймерыг тантай хуваалцахыг хүссэн. Бясалгалын дадлага хийхэд хялбар болгодог.",
@@ -965,8 +868,6 @@
   "session_no_timers": "Цаг хэмжигч олдсонгүй",
   "days_count": "{count, plural, =1{1 өдөр} other{{count} өдөр}}",
   "timer_minute_session": "{minutes} минутын дасгал",
-  "ai_use_search_instead": "Оронд нь хайлт ашиглах",
-  "ai_mode_label": "AI",
   "plan_day_of": "{total} өдрийн {day}-р өдөр",
   "pagination_position": "{total}-аас {current}",
   "plan_shorts_title": "Хамт олны богино бичлэгүүд",
@@ -1035,7 +936,7 @@
   "connect_post_comments_empty": "Одоогоор сэтгэгдэл алга. Яриаг эхлүүлээрэй.",
   "connect_caption_more": "Илүү",
   "connect_online": "Онлайн",
-  "home_group_events": "Бүлгийн арга хэмжээ",
+  "home_group_events": "Онцлох арга хэмжээ",
   "home_poems": "Шүлгүүд",
   "poems_load_error": "Шүлгүүдийг ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу",
   "poems_empty": "Одоогоор шүлэг байхгүй. Удахгүй дахин шалгаарай.",
@@ -1134,8 +1035,11 @@
       }
     }
   },
-  "group_chat_message_deleted_toast": "{count, plural, =1{Мессеж устгагдлаа} other{Мессежүүд устгагдлаа}}",
   "group_chat_selection_limit": "Та хамгийн ихдээ {count} мессеж сонгох боломжтой",
+  "group_chat_mute_notifications": "Чатын мэдэгдлийг хаах",
+  "group_chat_unmute_notifications": "Чатын мэдэгдлийг нээх",
+  "group_chat_notifications_muted": "Чатын мэдэгдэл хаагдлаа",
+  "group_chat_notifications_unmuted": "Чатын мэдэгдэл асаалттай",
   "group_chat_message_deleted_by_sender": "Энэ мессежийг устгасан",
   "group_chat_reaction_failed": "Таны хариу үйлдлийг хадгалж чадсангүй.",
   "group_chat_reactions_count": "{count, plural, =1{1 хариу үйлдэл} other{{count} хариу үйлдэл}}",

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -10,6 +11,16 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 
 final _logger = AppLogger('PostHogAnalytics');
+
+/// Property keys blanked before an event leaves the device.
+const List<String> _redactedKeys = [
+  'email',
+  'id_token',
+  'access_token',
+  'phone',
+  'name',
+  'username',
+];
 
 /// PostHog-backed analytics. Initialized manually after dotenv is loaded.
 class PostHogAnalyticsService implements AnalyticsService {
@@ -48,7 +59,8 @@ class PostHogAnalyticsService implements AnalyticsService {
     if (kReleaseMode) {
       config.sessionReplay = true;
       config.sessionReplayConfig.maskAllTexts = true;
-      config.sessionReplayConfig.maskAllImages = false;
+      // Avatars, banners and user uploads must not reach replay.
+      config.sessionReplayConfig.maskAllImages = true;
     }
 
     await Posthog().setup(config);
@@ -88,7 +100,7 @@ class PostHogAnalyticsService implements AnalyticsService {
 
     await Posthog().capture(
       eventName: event,
-      properties: _sanitizeProperties(properties),
+      properties: _sanitizeProperties(withSanghaGroup(properties)),
     );
   }
 
@@ -105,7 +117,15 @@ class PostHogAnalyticsService implements AnalyticsService {
   }
 
   @override
-  NavigatorObserver get routeObserver => PosthogObserver();
+  List<NavigatorObserver> get routeObservers => [PosthogObserver()];
+
+  /// Session replay only records inside [PostHogWidget]; it must mount after
+  /// [initialize], which main() guarantees. Returns [child] untouched when
+  /// PostHog is off.
+  static Widget wrap(Widget child) {
+    if (!Env.posthogEnabled) return child;
+    return PostHogWidget(child: child);
+  }
 
   Future<void> _registerDefaultSuperProperties() async {
     PackageInfo? packageInfo;
@@ -122,6 +142,19 @@ class PostHogAnalyticsService implements AnalyticsService {
       if (packageInfo != null) 'app_version': packageInfo.version,
       if (packageInfo != null) 'build_number': packageInfo.buildNumber,
     });
+  }
+
+  /// An event with a `group_id` belongs to that sangha. PostHog reads
+  /// `$groups` per event, so nothing lingers once the user leaves the group.
+  static Map<String, Object?>? withSanghaGroup(
+    Map<String, Object?>? properties,
+  ) {
+    final Object? groupId = properties?[AnalyticsProperties.groupId];
+    if (groupId is! String || groupId.isEmpty) return properties;
+    return {
+      ...properties!,
+      AnalyticsProperties.groups: {AnalyticsGroupTypes.sangha: groupId},
+    };
   }
 
   static Map<String, Object>? _sanitizeProperties(
@@ -147,7 +180,7 @@ class PostHogAnalyticsService implements AnalyticsService {
       return event;
     }
 
-    for (final String key in <String>['email', 'id_token', 'access_token']) {
+    for (final String key in _redactedKeys) {
       if (properties.containsKey(key)) {
         properties[key] = '***';
       }

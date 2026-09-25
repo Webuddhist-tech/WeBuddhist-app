@@ -9,17 +9,6 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Copy is English-only until join-request strings are localized.
-abstract final class _GroupJoinRequestsCopy {
-  static const title = 'Join requests';
-  static const admit = 'Admit';
-  static const deny = 'Deny';
-  static const empty = 'No pending requests';
-  static const loadError = 'Unable to load join requests. Please try again.';
-  static const admitError = 'Unable to admit this request. Please try again.';
-  static const denyError = 'Unable to deny this request. Please try again.';
-}
-
 class GroupJoinRequestsScreen extends ConsumerStatefulWidget {
   final String groupId;
 
@@ -53,8 +42,8 @@ class _GroupJoinRequestsScreenState
     if (!mounted) return;
     if (!admitted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(_GroupJoinRequestsCopy.admitError),
+        SnackBar(
+          content: Text(context.l10n.group_join_requests_admit_error),
           backgroundColor: Colors.red,
         ),
       );
@@ -77,8 +66,8 @@ class _GroupJoinRequestsScreenState
     if (!mounted) return;
     if (!denied) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(_GroupJoinRequestsCopy.denyError),
+        SnackBar(
+          content: Text(context.l10n.group_join_requests_deny_error),
           backgroundColor: Colors.red,
         ),
       );
@@ -116,7 +105,7 @@ class _GroupJoinRequestsScreenState
                   ),
                   Expanded(
                     child: Text(
-                      _GroupJoinRequestsCopy.title,
+                      context.l10n.group_join_requests_title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       strutStyle: context.tibetanStrutStyle(20),
@@ -152,7 +141,7 @@ class _GroupJoinRequestsScreenState
     if (state.error != null && state.requests.isEmpty) {
       return ErrorStateWidget(
         error: state.error!,
-        customMessage: _GroupJoinRequestsCopy.loadError,
+        customMessage: context.l10n.group_join_requests_load_error,
         onRetry:
             () =>
                 ref
@@ -166,7 +155,7 @@ class _GroupJoinRequestsScreenState
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
-            _GroupJoinRequestsCopy.empty,
+            context.l10n.group_join_requests_empty,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -181,7 +170,11 @@ class _GroupJoinRequestsScreenState
       );
     }
 
-    final itemCount = state.requests.length + (state.isLoadingMore ? 1 : 0);
+    // A later page that failed keeps the rows it has; the footer says so and
+    // offers a retry, since a list too short to scroll never asks again.
+    final loadMoreFailed = state.error != null && !state.isLoadingMore;
+    final hasFooter = state.isLoadingMore || loadMoreFailed;
+    final itemCount = state.requests.length + (hasFooter ? 1 : 0);
 
     return NotificationListener<ScrollNotification>(
       onNotification: _onScrollLoadMore,
@@ -190,6 +183,7 @@ class _GroupJoinRequestsScreenState
         itemCount: itemCount,
         itemBuilder: (context, index) {
           if (index >= state.requests.length) {
+            if (loadMoreFailed) return _buildLoadMoreError(context, isDark);
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(child: CircularProgressIndicator()),
@@ -207,6 +201,43 @@ class _GroupJoinRequestsScreenState
             onDeny: canDecide ? () => _reject(request.id) : null,
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreError(BuildContext context, bool isDark) {
+    final fontFamily = getSystemFontFamily(
+      Localizations.localeOf(context).languageCode,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Text(
+            context.l10n.group_join_requests_load_error,
+            textAlign: TextAlign.center,
+            strutStyle: context.tibetanStrutStyle(14),
+            style: TextStyle(
+              fontSize: 14,
+              color:
+                  isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+              fontFamily: fontFamily,
+            ),
+          ),
+          TextButton(
+            onPressed:
+                () =>
+                    ref
+                        .read(
+                          groupJoinRequestsProvider(widget.groupId).notifier,
+                        )
+                        .retry(),
+            child: Text(
+              context.l10n.retry,
+              style: TextStyle(fontFamily: fontFamily),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -300,7 +331,7 @@ class _GroupJoinRequestTile extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _DecisionButton(
-            label: _GroupJoinRequestsCopy.admit,
+            label: context.l10n.group_join_requests_admit,
             backgroundColor:
                 isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
             foregroundColor:
@@ -311,7 +342,7 @@ class _GroupJoinRequestTile extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _DecisionButton(
-            label: _GroupJoinRequestsCopy.deny,
+            label: context.l10n.group_join_requests_deny,
             backgroundColor:
                 isDark ? AppColors.chipBackgroundDark : AppColors.grey100,
             foregroundColor: nameColor,

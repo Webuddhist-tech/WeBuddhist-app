@@ -24,18 +24,10 @@ class CacheConfig {
   static const String routineDataBox = 'routine_data';
 
   // TTL durations for lists (in hours)
-  static const Duration collectionListTtl = Duration(hours: 24);
-  static const Duration workListTtl = Duration(hours: 24);
-  static const Duration textVersionListTtl = Duration(hours: 24);
-  static const Duration textCommentListTtl = Duration(hours: 24);
   static const Duration recitationListTtl = Duration(hours: 24);
 
-  /// TTL for text and recitation content - 48 hours (content rarely changes)
+  /// TTL for text content - 48 hours (content rarely changes)
   static const Duration textContentTtl = Duration(hours: 48);
-  static const Duration recitationContentTtl = Duration(hours: 48);
-
-  /// TTL for saved recitations - 4 hours (user-specific, changes on save/unsave)
-  static const Duration savedRecitationsTtl = Duration(hours: 4);
 
   // Cache size limits
   /// Maximum number of text contents to cache (LRU eviction after this)
@@ -63,38 +55,10 @@ class CacheConfig {
 class CacheKeys {
   CacheKeys._();
 
-  /// Generate key for collection list
-  static String collectionList(String language) => 'collection_list_$language';
-
-  /// Generate key for work list (texts within a collection/term)
-  static String workList({
-    required String termId,
-    String? language,
-    int skip = 0,
-    int limit = 20,
-  }) => 'work_list_${termId}_${language ?? 'en'}_${skip}_$limit';
-
-  /// Generate key for text version list
-  static String textVersionList({required String textId, String? language}) =>
-      'text_version_${textId}_${language ?? 'en'}';
-
-  /// Generate key for text comment list (commentary)
-  static String textCommentList({required String textId, String? language}) =>
-      'text_comment_${textId}_${language ?? 'en'}';
-
-  /// Generate key for text content: text_content_{textId}_{language}
-  static String textContent(String textId, String language) =>
-      'text_content_${textId}_$language';
-
-  /// Generate key for text reader content with pagination parameters
-  static String textReader(
-    String textId,
-    String language,
-    int page,
-    int pageSize,
-  ) => 'text_reader_${textId}_${language}_${page}_$pageSize';
-
-  /// Generate key for text details (reader view with navigation)
+  /// Generate key for text details (reader view with navigation).
+  /// Versioned so entries cached before the library API (v2), table-of-contents
+  /// headings (v3), segment types (v4) or translations opened under their
+  /// original (v6) are never served.
   static String textDetails({
     required String textId,
     String? contentId,
@@ -105,7 +69,7 @@ class CacheKeys {
     int? size,
   }) {
     final parts = [
-      'text_details',
+      'text_details_v6',
       textId,
       contentId ?? 'default',
       versionId ?? 'default',
@@ -117,16 +81,7 @@ class CacheKeys {
     return parts.join('_');
   }
 
-  /// Generate key for recitation content: recitation_content_{textId}_{languages}
-  static String recitationContent(String textId, List<String> languages) =>
-      'recitation_content_${textId}_${languages.join('_')}';
-
   /// Generate key for recitation list: recitation_list_{language}_{searchQuery}
   static String recitationList(String language, String? searchQuery) =>
       'recitation_list_${language}_${searchQuery ?? 'all'}';
-
-  /// Generate key for saved recitations (user-specific, stored in separate box)
-  /// Since saved recitations are user-specific and we only have one logged-in user,
-  /// we use a simple constant key. The box itself is user-scoped.
-  static const String savedRecitations = 'user_saved_recitations';
 }

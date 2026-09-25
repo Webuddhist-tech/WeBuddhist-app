@@ -26,12 +26,16 @@ class ReaderTranslationPanel extends ConsumerWidget {
   final ReaderParams params;
   final double availableHeight;
 
+  /// Shows the root work of a commentary instead of the versions.
+  final bool rootText;
+
   const ReaderTranslationPanel({
     super.key,
     required this.segmentId,
     required this.textLanguage,
     required this.params,
     required this.availableHeight,
+    this.rootText = false,
   });
 
   void _resetExpansion(WidgetRef ref) {
@@ -43,12 +47,14 @@ class ReaderTranslationPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final localizations = context.l10n;
     final notifier = ref.read(readerNotifierProvider(params).notifier);
-    final segmentTranslations = ref.watch(
-      segmentTranslationsFutureProvider(segmentId),
-    );
+    final provider =
+        rootText
+            ? segmentRootTextsFutureProvider(segmentId)
+            : segmentTranslationsFutureProvider(segmentId);
+    final segmentTranslations = ref.watch(provider);
 
     return ReaderBottomPanelShell(
-      title: localizations.version,
+      title: rootText ? localizations.root_text : localizations.version,
       params: params,
       availableHeight: availableHeight,
       onDismiss: () {
@@ -56,16 +62,17 @@ class ReaderTranslationPanel extends ConsumerWidget {
         _resetExpansion(ref);
       },
       child: segmentTranslations.when(
-        data: (data) => _TranslationList(
-          translations: data.translations,
-          segmentId: segmentId,
-          textLanguage: textLanguage,
-        ),
-        error: (error, _) => _ErrorState(
-          error: error,
-          onRetry: () =>
-              ref.invalidate(segmentTranslationsFutureProvider(segmentId)),
-        ),
+        data:
+            (data) => _TranslationList(
+              translations: data.translations,
+              segmentId: segmentId,
+              textLanguage: textLanguage,
+            ),
+        error:
+            (error, _) => _ErrorState(
+              error: error,
+              onRetry: () => ref.invalidate(provider),
+            ),
         loading: () => const CommentarySkeleton(),
       ),
     );

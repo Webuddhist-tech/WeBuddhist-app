@@ -11,9 +11,19 @@ abstract class PushMessagingRepository {
   /// Returns `true` when the user has authorised notifications.
   Future<bool> requestPermission();
 
+  /// Whether [requestPermission] will put the OS dialog in front of the user.
+  /// iOS reports "not determined" until the first answer; Android asks
+  /// whenever notifications are off (or auto-denies once refused twice).
+  Future<bool> willPromptForPermission();
+
   /// Current FCM registration token for this device/install, or `null` if it
   /// could not be resolved yet (e.g. APNs token not ready on iOS).
   Future<String?> getToken();
+
+  /// Invalidates this install's FCM token on Firebase's side, so any backend
+  /// row still holding it can no longer reach the device. The next
+  /// [getToken] mints a fresh one. Needs no backend or user session.
+  Future<void> deleteToken();
 
   /// Emits whenever FCM rotates the token (reinstall, restore, expiry).
   Stream<String> get onTokenRefresh;

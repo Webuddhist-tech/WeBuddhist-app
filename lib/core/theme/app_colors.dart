@@ -14,6 +14,10 @@ class AppColors {
   static const Color primaryContainer = Color(0xFFFFEBEE); // Red 50
   static const Color primarySurface = Color(0xFFFFF5F5);
 
+  /// Unread count pill and unread dot for chats. Logo red in both themes.
+  static const Color unreadBadge = primary;
+  static const Color unreadBadgeDark = primary;
+
   // ============ Legacy gold (AI + onboarding only) ============
   /// Previous gold primary — kept so AI / onboarding stay visually unchanged
   /// while the rest of the app moves to logo red.
@@ -166,6 +170,11 @@ class AppColors {
   /// at 9% over the page, the brighter amber at 15% over black.
   static const Color liveSegmentHighlight = Color(0x17DC8600);
   static const Color liveSegmentHighlightDark = Color(0x26FDAE33);
+
+  // ============ Reader headings ============
+  /// Table-of-contents titles: deep blue on the page, lighter on black.
+  static const Color readerSectionTitle = Color(0xFF18336B);
+  static const Color readerSectionTitleDark = Color(0xFF8CB5F8);
 
   // ============ Design System Reference ============
   // Figma file: 0TE5qdViUvrisFZfNqODpX/WeBuddhist-App

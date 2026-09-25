@@ -40,6 +40,7 @@ class HomeShortcutsRow extends ConsumerWidget {
         if (seriesList.isEmpty) return;
         Navigator.of(context).push(
           MaterialPageRoute(
+            settings: const RouteSettings(name: 'all-plans'),
             builder:
                 (_) => AllPlansScreen(
                   seriesList: seriesList,
@@ -53,7 +54,10 @@ class HomeShortcutsRow extends ConsumerWidget {
 
   void _onChantsTap(BuildContext context, WidgetRef ref) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AllRecitationsScreen()),
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'all-recitations'),
+        builder: (_) => const AllRecitationsScreen(),
+      ),
     );
   }
 

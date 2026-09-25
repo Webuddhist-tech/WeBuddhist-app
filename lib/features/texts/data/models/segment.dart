@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/texts/data/models/segment_type.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation.dart';
 import '../../domain/entities/segment.dart';
 
@@ -6,6 +7,12 @@ class Segment {
   final int segmentNumber;
   final String? content;
   final Translation? translation;
+
+  /// The edition's own label for this segment, e.g. `1-12` or `I-1`.
+  final String? reference;
+
+  /// What kind of segment this is; the reader styles some kinds differently.
+  final SegmentType type;
 
   /// Ids of this same line in the text's other languages, from `mappings`.
   /// Lets a live position published against one language land here.
@@ -16,14 +23,24 @@ class Segment {
     required this.segmentNumber,
     this.content,
     this.translation,
+    this.reference,
+    this.type = SegmentType.unknown,
     this.mappedSegmentIds = const [],
   });
+
+  /// What the reader shows beside the segment.
+  String get displayNumber {
+    final label = reference?.trim();
+    return label == null || label.isEmpty ? segmentNumber.toString() : label;
+  }
 
   factory Segment.fromJson(Map<String, dynamic> json) {
     return Segment(
       segmentId: json['segment_id'] as String,
       segmentNumber: json['segment_number'] as int,
       content: json['content'] as String?,
+      reference: json['reference'] as String?,
+      type: SegmentType.fromApi(json['type'] as String?),
       translation:
           json['translation'] != null
               ? Translation.fromJson(
@@ -63,6 +80,8 @@ class Segment {
       'segment_number': segmentNumber,
       'content': content ?? '',
       'translation': translation?.toJson(),
+      if (reference != null) 'reference': reference,
+      if (type != SegmentType.unknown) 'type': type.apiName,
       if (mappedSegmentIds.isNotEmpty) 'mappings': mappedSegmentIds,
     };
   }

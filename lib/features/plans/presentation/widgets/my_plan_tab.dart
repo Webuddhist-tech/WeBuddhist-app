@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_p
 import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/my_plans_paginated_provider.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/user_plan_card.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -60,8 +61,28 @@ class _MyPlansTabState extends ConsumerState<MyPlansTab> {
         (failure) => false,
         (success) => success,
       );
+      if (!mounted) return;
 
       if (success) {
+        // The card's status badge keeps the completion status loaded.
+        final completion =
+            ref.exists(userPlanDaysCompletionStatusProvider(plan.id))
+                ? ref
+                    .read(userPlanDaysCompletionStatusProvider(plan.id))
+                    .valueOrNull
+                    ?.fold((_) => null, (status) => status)
+                : null;
+        ref
+            .read(planAnalyticsProvider)
+            .planUnenrolled(
+              planId: plan.id,
+              planName: plan.title,
+              daysCompleted: completion?.values.where((v) => v).length,
+              daysSinceEnrolled: PlanUtils.daysBetween(
+                plan.startedAt,
+                DateTime.now(),
+              ),
+            );
         // Refresh the plans list and home stats
         ref.invalidate(myPlansPaginatedProvider);
         ref.invalidate(findPlansPaginatedProvider);

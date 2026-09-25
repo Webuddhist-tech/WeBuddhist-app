@@ -629,65 +629,83 @@ class GroupProfileRemoteDatasource {
   Future<GroupJoinRequestDecisionModel> approveGroupJoinRequest(
     String groupId, {
     required String requestId,
-  }) async {
-    try {
-      final response = await dio.post(
-        '/cms/author/groups/$groupId/join-requests/$requestId/approve',
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        if (data is! Map) {
-          throw const ServerException('Failed to approve join request');
-        }
-        return GroupJoinRequestDecisionModel.fromJson(
-          Map<String, dynamic>.from(data),
-        );
-      }
-
-      _logger.error(
-        'Failed to approve join request $requestId: ${response.statusCode}',
-      );
-      throw _statusToException(
-        response.statusCode,
-        'Failed to approve join request',
-      );
-    } on DioException catch (e) {
-      _logger.error('Dio error in approveGroupJoinRequest', e);
-      throw _dioToException(e, 'Failed to approve join request');
-    }
+  }) {
+    return _decideGroupJoinRequest(
+      groupId,
+      requestId: requestId,
+      decision: 'approve',
+      appliedStatus: GroupJoinRequestStatus.approved,
+    );
   }
 
   /// `POST /cms/author/groups/{groupId}/join-requests/{requestId}/reject`.
   Future<GroupJoinRequestDecisionModel> rejectGroupJoinRequest(
     String groupId, {
     required String requestId,
+  }) {
+    return _decideGroupJoinRequest(
+      groupId,
+      requestId: requestId,
+      decision: 'reject',
+      appliedStatus: GroupJoinRequestStatus.rejected,
+    );
+  }
+
+  /// Shared body for the approve/reject endpoints.
+  ///
+  /// The contract documents `200` with a `{id, status}` body, but any 2xx
+  /// means the server already applied the decision. Failing the call on an
+  /// unexpected body would tell the admin the decision did not go through
+  /// while the member was in fact admitted or denied, and leave the row in
+  /// the pending list — so a 2xx we cannot parse resolves to [appliedStatus]
+  /// and is logged instead of thrown.
+  Future<GroupJoinRequestDecisionModel> _decideGroupJoinRequest(
+    String groupId, {
+    required String requestId,
+    required String decision,
+    required GroupJoinRequestStatus appliedStatus,
   }) async {
     try {
       final response = await dio.post(
-        '/cms/author/groups/$groupId/join-requests/$requestId/reject',
+        '/cms/author/groups/$groupId/join-requests/$requestId/$decision',
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode >= 200 && statusCode < 300) {
         final data = response.data;
-        if (data is! Map) {
-          throw const ServerException('Failed to reject join request');
+        if (data is Map) {
+          try {
+            return GroupJoinRequestDecisionModel.fromJson(
+              Map<String, dynamic>.from(data),
+            );
+          } on FormatException catch (e) {
+            _logger.error(
+              'Unreadable $decision response for join request $requestId',
+              e,
+            );
+          }
         }
-        return GroupJoinRequestDecisionModel.fromJson(
-          Map<String, dynamic>.from(data),
+
+        _logger.error(
+          'Assuming $decision applied for join request $requestId: '
+          '$statusCode carried no usable body',
+        );
+        return GroupJoinRequestDecisionModel(
+          id: requestId,
+          status: appliedStatus,
         );
       }
 
       _logger.error(
-        'Failed to reject join request $requestId: ${response.statusCode}',
+        'Failed to $decision join request $requestId: ${response.statusCode}',
       );
       throw _statusToException(
         response.statusCode,
-        'Failed to reject join request',
+        'Failed to $decision join request',
       );
     } on DioException catch (e) {
-      _logger.error('Dio error in rejectGroupJoinRequest', e);
-      throw _dioToException(e, 'Failed to reject join request');
+      _logger.error('Dio error in ${decision}GroupJoinRequest', e);
+      throw _dioToException(e, 'Failed to $decision join request');
     }
   }
 

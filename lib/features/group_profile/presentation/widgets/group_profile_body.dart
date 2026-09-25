@@ -426,6 +426,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     final postsState = ref.watch(groupPostsProvider(profile.id));
     final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
+    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
     final canPost = permissionAsync.valueOrNull ?? false;
     // Keep the posts tab when loading failed so its retry action stays
     // reachable, and for anyone allowed to publish so the Post button shows.
@@ -471,6 +472,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   isDark,
                   lineHeight,
                   orderedLinks,
+                  showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
                 ),
               ),
             ];
@@ -517,6 +519,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     List<GroupProfileSocialLink> orderedLinks,
   ) {
     final removal = watchActiveGroupRemovalNotice(ref, profile.id);
+    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
 
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
@@ -537,6 +540,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                 isDark,
                 lineHeight,
                 orderedLinks,
+                showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
                 bottomSpacing: 0,
               ),
             ),
@@ -577,6 +581,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
+    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
+
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
       child: NotificationListener<ScrollNotification>(
@@ -596,6 +602,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                 isDark,
                 lineHeight,
                 orderedLinks,
+                showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
                 bottomSpacing: 0,
               ),
             ),
@@ -614,6 +621,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     bool isDark,
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks, {
+    required bool showsAdminJoinRequestsRow,
     double bottomSpacing = 24,
   }) {
     return Column(
@@ -629,14 +637,18 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         _buildProfileHeader(profile, isDark, lineHeight, orderedLinks),
         const SizedBox(height: 20),
         _GroupFollowButton(profile: profile, isDark: isDark),
-        SizedBox(
-          height:
-              _showsAdminJoinRequestsRow(profile) ? 8 : bottomSpacing,
-        ),
+        SizedBox(height: showsAdminJoinRequestsRow ? 8 : bottomSpacing),
       ],
     );
   }
 
+  /// Whether [GroupJoinRequestsRow] sits under the follow button.
+  ///
+  /// This watches a provider, so it must be called from `build` — resolve it
+  /// there and pass the result down. Called from a sliver builder instead,
+  /// the subscription is torn down and refetched on every rebuild, because
+  /// `ConsumerStatefulElement` closes whatever is left in `_oldDependencies`
+  /// as soon as `build` returns.
   bool _showsAdminJoinRequestsRow(GroupProfile profile) {
     if (!profile.isPrivateCommunity || _isContentRestricted(profile)) {
       return false;
@@ -977,6 +989,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         void openAboutScreen() {
           Navigator.of(context).push(
             MaterialPageRoute(
+              settings: const RouteSettings(name: 'group-about'),
               builder:
                   (_) => GroupAboutScreen(
                     title: profile.title,
@@ -1999,6 +2012,7 @@ class _GroupFollowButton extends ConsumerWidget {
       // context.pop(), which go_router resolves to this route.
       await Navigator.of(context, rootNavigator: true).push<void>(
         MaterialPageRoute<void>(
+          settings: const RouteSettings(name: 'notifications'),
           builder: (_) => const NotificationSettingsScreen(),
         ),
       );

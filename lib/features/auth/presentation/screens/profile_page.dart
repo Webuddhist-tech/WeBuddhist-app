@@ -1,3 +1,4 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,28 +78,34 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(width: 20),
                 Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fullName.isNotEmpty
-                            ? fullName
-                            : (user.username ?? l10n.anonymous),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(email, style: Theme.of(context).textTheme.bodyLarge),
-                      const SizedBox(height: 4),
-                      if (bio.isNotEmpty)
+                  // Personal details stay hidden in Clarity recordings.
+                  child: ClarityMask(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          bio,
+                          fullName.isNotEmpty
+                              ? fullName
+                              : (user.username ?? l10n.anonymous),
                           textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          email,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
-                      if (bio.isNotEmpty) const SizedBox(height: 8),
-                    ],
+                        const SizedBox(height: 4),
+                        if (bio.isNotEmpty)
+                          Text(
+                            bio,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        if (bio.isNotEmpty) const SizedBox(height: 8),
+                      ],
+                    ),
                   ),
                 ),
               ],

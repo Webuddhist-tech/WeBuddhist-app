@@ -142,9 +142,13 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// disables it.
   int get secondaryEnabledGeneration => _secondaryEnabledGeneration;
 
+  // The flags are written here as well as globally: after
+  // [openAsTranslation] this text can differ from the persisted value, which
+  // then has nothing to mirror back.
   void setSecondaryEnabled(bool enabled) {
     if (state.secondaryEnabled == enabled) return;
     _secondaryEnabledGeneration++;
+    state = state.copyWith(secondaryEnabled: enabled);
     _ref.read(readerSecondaryEnabledProvider.notifier).setEnabled(enabled);
     // Turning the translation off must not leave nothing on screen.
     if (!enabled) setOriginalVisible(true);
@@ -155,8 +159,29 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// and the widgets keep showing the original until that version exists.
   void setOriginalVisible(bool visible) {
     if (state.originalVisible == visible) return;
+    state = state.copyWith(originalVisible: visible);
     _ref.read(readerOriginalVisibleProvider.notifier).setVisible(visible);
     if (!visible && !state.secondaryEnabled) setSecondaryEnabled(true);
+  }
+
+  /// Opens a translation as the Translation layer of its root text: the root
+  /// is the primary, the opened edition the secondary, and only the
+  /// translation shows, so the page reads as before. This text only; the
+  /// persisted preferences are left alone.
+  void openAsTranslation({
+    required ReaderSlotConfig original,
+    required ReaderSlotConfig translation,
+  }) {
+    _primaryEdited = true;
+    _secondaryEdited = true;
+    _secondaryResolveGeneration++;
+    _secondaryEnabledGeneration++;
+    state = state.copyWith(
+      primary: original,
+      secondary: translation,
+      secondaryEnabled: true,
+      originalVisible: false,
+    );
   }
 
   void replacePrimary(ReaderSlotConfig config) {

@@ -16,6 +16,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_p
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/data/utils/routine_item_display.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
+import 'package:flutter_pecha/features/practice/presentation/utils/practice_analytics.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/practice_chant_list_tile.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_item_card.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
@@ -347,6 +348,7 @@ class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
                 return _RoutineBlockSection(
                   key: ValueKey(block.id),
                   block: block,
+                  blockIndex: index,
                   expanded: _expandedBlockIds.contains(block.id),
                   onToggleExpanded: () => _toggleBlock(block.id),
                 );
@@ -444,12 +446,14 @@ class _EditButton extends StatelessWidget {
 
 class _RoutineBlockSection extends ConsumerStatefulWidget {
   final RoutineBlock block;
+  final int blockIndex;
   final bool expanded;
   final VoidCallback onToggleExpanded;
 
   const _RoutineBlockSection({
     super.key,
     required this.block,
+    required this.blockIndex,
     required this.expanded,
     required this.onToggleExpanded,
   });
@@ -473,7 +477,9 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
       case RoutineItemType.recitation:
         _navigateToReader(context, item.id);
       case RoutineItemType.plan:
-        await _openPlanDetails(context, ref, item, planId: item.id);
+        if (!await _openPlanDetails(context, ref, item, planId: item.id)) {
+          return;
+        }
       case RoutineItemType.series:
         if (!context.mounted) return;
         context.pushNamed(
@@ -481,7 +487,7 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
           pathParameters: {'id': item.id},
         );
       case RoutineItemType.timer:
-        _navigateToTimer(context, item);
+        if (!_navigateToTimer(context, item)) return;
       case RoutineItemType.accumulator:
         context.push('/mala', extra: {'presetId': item.id});
       case RoutineItemType.groupAccumulator:
@@ -503,8 +509,9 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
         );
       case RoutineItemType.unknown:
         // Written by a newer app version — nothing here knows how to open it.
-        break;
+        return;
     }
+    _trackItemOpened(ref, item);
   }
 
   Future<void> _onPlanArrowTap(
@@ -514,7 +521,21 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
   ) async {
     final planId = item.currentPlanId;
     if (planId == null || planId.isEmpty) return;
-    await _openPlanDetails(context, ref, item, planId: planId);
+    if (await _openPlanDetails(context, ref, item, planId: planId)) {
+      _trackItemOpened(ref, item);
+    }
+  }
+
+  /// Fired once the item's screen has been pushed.
+  void _trackItemOpened(WidgetRef ref, RoutineItem item) {
+    if (!mounted) return;
+    ref
+        .read(practiceAnalyticsProvider)
+        .routineItemOpened(
+          item: item,
+          blockIndex: widget.blockIndex,
+          blockTime: block.time,
+        );
   }
 
   void _navigateToReader(BuildContext context, String textId) {
@@ -524,13 +545,14 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
     context.push('/reader/$textId', extra: navigationContext);
   }
 
-  void _navigateToTimer(BuildContext context, RoutineItem item) {
+  /// Returns false when the item has no duration and nothing was opened.
+  bool _navigateToTimer(BuildContext context, RoutineItem item) {
     final durationMs = item.durationMs;
     if (durationMs == null || durationMs <= 0) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.notFound)));
-      return;
+      return false;
     }
 
     final name = routineItemDisplayTitle(item, context.l10n);
@@ -538,11 +560,12 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
       '/home/timers/active',
       extra: PresetTimer(id: item.id, name: name, durationMs: durationMs),
     );
+    return true;
   }
 
   /// Opens plan details for [planId]. For PLAN sessions that id is
   /// `source_id` from GET /users/me/routine. Does not search My Plans.
-  Future<void> _openPlanDetails(
+  Future<bool> _openPlanDetails(
     BuildContext context,
     WidgetRef ref,
     RoutineItem item, {
@@ -557,9 +580,9 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
           context,
         ).showSnackBar(SnackBar(content: Text(context.l10n.notFound)));
       }
-      return;
+      return false;
     }
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
     final userPlan = _userPlanFromCatalogPlan(catalogPlan, item);
     final startDate =
         item.startDate ?? item.enrolledAt ?? userPlan.startedAt;
@@ -578,6 +601,7 @@ class _RoutineBlockSectionState extends ConsumerState<_RoutineBlockSection> {
         if (item.type == RoutineItemType.series) 'seriesId': item.id,
       },
     );
+    return true;
   }
 
   void _toggleExpanded() {

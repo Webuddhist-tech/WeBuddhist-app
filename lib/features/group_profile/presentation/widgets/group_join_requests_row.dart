@@ -72,7 +72,7 @@ class GroupJoinRequestsRow extends ConsumerWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Join requests',
+                      context.l10n.group_join_requests_title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       strutStyle: context.tibetanStrutStyle(fontSize),

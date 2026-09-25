@@ -18,6 +18,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_accum
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -44,6 +45,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   bool _isJoining = false;
+  bool _viewTracked = false;
 
   @override
   void initState() {
@@ -260,6 +262,16 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
       detail,
       localJoinedIds: localJoinedIds,
     );
+
+    if (!_viewTracked) {
+      _viewTracked = true;
+      ref
+          .read(groupEventAnalyticsProvider)
+          .accumulatorViewed(
+            groupId: detail.groupId,
+            accumulatorId: detail.id,
+          );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

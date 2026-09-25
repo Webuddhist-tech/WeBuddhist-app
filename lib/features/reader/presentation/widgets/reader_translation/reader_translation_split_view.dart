@@ -36,6 +36,7 @@ class ReaderTranslationSplitView extends ConsumerWidget {
                 height: panelHeight,
                 child: ReaderTranslationPanel(
                   segmentId: state.translationSegmentId!,
+                  rootText: state.showsRootText,
                   textLanguage: textLanguage,
                   params: params,
                   availableHeight: availableHeight,

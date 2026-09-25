@@ -2,8 +2,9 @@ name: 🌍 Tolgee Sync
 
 on:
   schedule:
-    # Monday 10:00 AM IST (04:30 UTC)
-    - cron: "30 4 * * 1"
+    # Friday 1:15 PM IST (07:45 UTC). Off the hour: GitHub's busiest time for
+    # scheduled runs is the start of each hour.
+    - cron: "45 7 * * 5"
   workflow_dispatch:
 
 permissions:
@@ -39,7 +40,7 @@ jobs:
       - name: 📝 Create placeholder .env files
         run: |
           for e in dev staging prod; do
-            printf 'BASE_API_URL=\nAI_URL=\nAUTH0_SCHEME=\nAUTH0_AUDIENCE=\nENVIRONMENT=%s\n' "$e" > ".env.$e"
+            printf 'BASE_API_URL=\nLIBRARY_API_URL=\nLIBRARY_CHANTS_TAG_ID=\nAUTH0_SCHEME=\nAUTH0_AUDIENCE=\nENVIRONMENT=%s\n' "$e" > ".env.$e"
           done
 
       - name: 📦 Get dependencies

@@ -342,8 +342,12 @@ group), add offline mala rounds to the active session, and bookmark the preset.
 
 ## Analytics
 
-`mala_screen_opened`, `mala_mantra_switched`, `mala_round_completed`,
-`mala_synced` (see `AnalyticsEvents`).
+`MalaAnalytics` (`presentation/utils/mala_analytics.dart`) owns the events:
+`mala_screen_opened`, `mala_mantra_switched`, `mala_mode_changed`,
+`mala_offline_rounds_added`, `mala_sync_failed`, plus the session events
+`mala_session_started`, `mala_round_completed` and `mala_session_ended`, which
+`MalaSessionTracker` groups from the first counted bead until the screen
+closes, the app backgrounds, or five minutes pass without a bead.
 
 ## Tests (`test/features/mala/`)
 

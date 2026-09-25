@@ -218,7 +218,7 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'Уншлага нэмэх';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -330,13 +330,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get loading => 'Ачааллаж байна...';
 
   @override
-  String get choose_image => 'Зураг сонгох';
-
-  @override
   String get choose_bg_image => 'Дэвсгэр зураг сонгох';
-
-  @override
-  String get create_image => 'Зураг үүсгэх';
 
   @override
   String get save => 'Хадгалах';
@@ -918,7 +912,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_online => 'Онлайн';
 
   @override
-  String get home_group_events => 'Бүлгийн арга хэмжээ';
+  String get home_group_events => 'Онцлох арга хэмжээ';
 
   @override
   String get home_poems => 'Шүлгүүд';
@@ -1180,35 +1174,8 @@ class AppLocalizationsMn extends AppLocalizations {
   String get unknown_error => 'Тодорхойгүй алдаа';
 
   @override
-  String image_share_error(String error) {
-    return 'Хуваалцах боломжгүй: $error';
-  }
-
-  @override
-  String get create_image_capture_error =>
-      'Зураг үүсгэж чадсангүй. Дахин оролдоно уу';
-
-  @override
   String get create_image_share_error =>
       'Хуваалцах боломжгүй. Дахин оролдоно уу';
-
-  @override
-  String get create_image_save_success => 'Зураг хадгалагдлаа';
-
-  @override
-  String get create_image_save_error =>
-      'Зургийг хадгалах боломжгүй. Аппд зургийн хандалт байгаа эсэхийг шалгах эсвэл дахин оролдоно уу';
-
-  @override
-  String get create_image_download_error =>
-      'Зургаа татах боломжгүй. Дахин оролдоно уу';
-
-  @override
-  String get create_image_customize_tooltip => 'Тохируулах';
-
-  @override
-  String get create_image_text_too_long =>
-      'Үсгийн хэмжээг томруулахад бичвэр хэт урт байна';
 
   @override
   String version_search_no_results(String query) {
@@ -1263,82 +1230,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get plans_created => 'Төлөвлөгөө үүсгэсэн';
 
   @override
-  String get ai_chat_history => 'Чатын түүх';
-
-  @override
-  String get ai_buddhist_assistant =>
-      'Өдөр тутмын хэмнэлээ бий болго. Цагаа тохируул, бид танд дадлага хийхийг сануулна';
-
-  @override
-  String get ai_new_chat => 'Шинэ чат';
-
-  @override
-  String get ai_retry => 'Дахин оролдох';
-
-  @override
-  String get ai_dismiss => 'Хаах';
-
-  @override
-  String get ai_sign_in_prompt =>
-      'Бурханы шашны AI туслахыг ашиглахын тулд нэвтэрнэ үү';
-
-  @override
-  String get ai_explore_wisdom => 'Бурханы шашны ухааныг судлах';
-
-  @override
-  String get ai_ask_question => 'Асуулт асуух...';
-
-  @override
-  String get ai_search_chats => 'Чат хайх';
-
-  @override
-  String get ai_chats => 'Чатууд';
-
-  @override
-  String get ai_chat_deleted => 'Чат устгагдлаа';
-
-  @override
-  String get ai_no_conversations => 'Одоогоор яриа байхгүй';
-
-  @override
-  String get ai_start_new_chat => 'Эхлэхийн тулд шинэ чат эхлүүлнэ үү.';
-
-  @override
-  String get ai_delete_chat => 'Чат устгах';
-
-  @override
-  String get ai_delete_confirmation =>
-      'Та энэ чатыг устгахдаа итгэлтэй байна уу?';
-
-  @override
-  String get ai_delete_warning => 'Энэ үйлдлийг буцаах боломжгүй.';
-
-  @override
   String get ai_confirm => 'Баталгаажуулах';
-
-  @override
-  String get ai_delete => 'Устгах';
-
-  @override
-  String ai_greeting(String name) {
-    return 'Сайн уу $name';
-  }
-
-  @override
-  String get ai_text_not_found => 'Бичвэр олдсонгүй.';
-
-  @override
-  String ai_text_not_found_message(String title) {
-    return 'Манай санд \"$title\" одоогоор байхгүй байна.\n\nӨөр гарчиг туршиж үзэх, эсвэл өөрөөр асууна уу';
-  }
-
-  @override
-  String get ai_sources => 'Эх сурвалжууд';
-
-  @override
-  String ai_sources_count(int count) {
-    return '$count эх сурвалж';
-  }
 
   @override
   String search_no_results(String query) {
@@ -1346,48 +1238,7 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get search_show_more => 'Илүү ихийг харах';
-
-  @override
-  String get search_contents => 'Агуулга';
-
-  @override
-  String get search_titles => 'Гарчиг';
-
-  @override
   String get search_all => 'Бүгд';
-
-  @override
-  String get search_author => 'Зохиогч';
-
-  @override
-  String get search_tab_ai_mode => 'AI горим';
-
-  @override
-  String search_error(String message) {
-    return 'Алдаа: $message';
-  }
-
-  @override
-  String get search_retrying => 'Дахин оролдож байна...';
-
-  @override
-  String search_no_titles_found(String query) {
-    return '\"$query\"-д тохирох гарчиг олдсонгүй';
-  }
-
-  @override
-  String search_no_contents_found(String query) {
-    return '\"$query\"-д тохирох агуулга олдсонгүй';
-  }
-
-  @override
-  String search_no_authors_found(String query) {
-    return '\"$query\"-д тохирох зохиогч олдсонгүй';
-  }
-
-  @override
-  String get search_buddhist_texts => 'Бурханы шашны бичвэр хайх...';
 
   @override
   String get common_ok => 'За';
@@ -1674,6 +1525,9 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get second_version_msg =>
       'Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ';
+
+  @override
+  String get root_text => 'Эх бичвэр';
 
   @override
   String get version => 'Хувилбарууд';
@@ -2064,6 +1918,18 @@ class AppLocalizationsMn extends AppLocalizations {
       'Couldn\'t load notification settings.';
 
   @override
+  String get group_chat_mute_notifications => 'Чатын мэдэгдлийг хаах';
+
+  @override
+  String get group_chat_unmute_notifications => 'Чатын мэдэгдлийг нээх';
+
+  @override
+  String get group_chat_notifications_muted => 'Чатын мэдэгдэл хаагдлаа';
+
+  @override
+  String get group_chat_notifications_unmuted => 'Чатын мэдэгдэл асаалттай';
+
+  @override
   String get group_leave => 'Leave group';
 
   @override
@@ -2105,6 +1971,30 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get group_join_request_error =>
       'Хүсэлт илгээж чадсангүй. Дахин оролдоно уу.';
+
+  @override
+  String get group_join_requests_title => 'Join requests';
+
+  @override
+  String get group_join_requests_admit => 'Admit';
+
+  @override
+  String get group_join_requests_deny => 'Deny';
+
+  @override
+  String get group_join_requests_empty => 'No pending requests';
+
+  @override
+  String get group_join_requests_load_error =>
+      'Unable to load join requests. Please try again.';
+
+  @override
+  String get group_join_requests_admit_error =>
+      'Unable to admit this request. Please try again.';
+
+  @override
+  String get group_join_requests_deny_error =>
+      'Unable to deny this request. Please try again.';
 
   @override
   String get group_members_only_title => 'Зөвхөн гишүүд';
@@ -2631,12 +2521,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get timer_notification_complete => 'Таны хуралдаан дууслаа';
 
   @override
-  String get ai_use_search_instead => 'Оронд нь хайлт ашиглах';
-
-  @override
-  String get ai_mode_label => 'AI';
-
-  @override
   String plan_day_of(int day, int total) {
     return '$total өдрийн $day-р өдөр';
   }
@@ -2849,17 +2733,6 @@ class AppLocalizationsMn extends AppLocalizations {
       locale: localeName,
       other: '$count мессежийг устгаж чадсангүй.',
       one: 'Мессежийг устгаж чадсангүй.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String group_chat_message_deleted_toast(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Мессежүүд устгагдлаа',
-      one: 'Мессеж устгагдлаа',
     );
     return '$_temp0';
   }

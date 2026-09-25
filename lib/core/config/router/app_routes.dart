@@ -17,7 +17,6 @@ class AppRoutes {
 
   // ========== MAIN ROUTES ==========
   static const String home = '/home';
-  static const String texts = "/ai-mode";
   static const String practice = "/practice";
   static const String more = "/more";
   static const String settings = '/settings';
@@ -51,9 +50,6 @@ class AppRoutes {
   // ========== PLANS SUB ROUTES ==========
   static const String plansInfo = '/plans/info';
 
-  // ========== RECITATIONS SUB ROUTES ==========
-  static const String recitationDetail = '/recitations/detail';
-
   // ========== READER ROUTES ==========
   static const String reader = '/reader';
 
@@ -63,9 +59,6 @@ class AppRoutes {
   /// Path param is the subtask id; the actual content travels in `extra`
   /// as a [NavigationContext] whose `currentItem` carries inline content.
   static const String planText = '/plan-text';
-
-  // ========== SEARCH ROUTES ==========
-  static const String searchResults = '/search-results';
 
   // ========== CALENDAR ROUTES ==========
   /// Tibetan calendar screen. Nested under /home so the bottom nav persists.
@@ -97,7 +90,6 @@ class AppRoutes {
     legal, // Linked from Settings; terms + privacy live as sibling routes
     termsOfService,
     privacyPolicy,
-    texts,
     practice, // Guests can see empty practice screen
     practiceMyPractices, // Guests can browse my practices empty state
     practicePlanPreview, // Allow guests to browse/preview plans
@@ -111,7 +103,6 @@ class AppRoutes {
     practiceEditRoutine, // Building routine requires auth
     profile,
     plansInfo,
-    recitationDetail,
     mala, // Mala counting is login-gated (no guest mode)
   };
 

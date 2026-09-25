@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/get_group_profile_usecase.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
@@ -603,6 +604,9 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
       },
       (_) async {
         _applyJoinedState(connectGroup: connectGroup, incrementCount: true);
+        _ref
+            .read(groupAnalyticsProvider)
+            .groupFollowed(groupId: _key.groupId, groupType: _key.groupType);
         return true;
       },
     );
@@ -695,6 +699,9 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
           _markPendingUnjoined(connectGroup.id);
           _refreshDiscoverGroupsIfLoaded();
         }
+        _ref
+            .read(groupAnalyticsProvider)
+            .groupUnfollowed(groupId: _key.groupId, groupType: _key.groupType);
         return true;
       },
     );
@@ -1143,7 +1150,7 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
           requests: page.requests,
           total: page.total,
           isLoading: false,
-          hasMore: page.hasMore,
+          hasMore: _hasMore(page.requests.length, page.requests, page.total),
           skip: page.requests.length,
           clearError: true,
         );
@@ -1225,6 +1232,21 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     );
   }
 
+  /// Whether another page is worth asking for, measured against what we have
+  /// actually accumulated rather than the `skip` the server echoed back.
+  ///
+  /// A response that under-reports `total` would otherwise strand every
+  /// request past the first page, and an empty page with a stale `total`
+  /// would keep [loadMore] asking forever.
+  static bool _hasMore(
+    int loaded,
+    List<GroupJoinRequest> page,
+    int total,
+  ) {
+    if (page.isEmpty) return false;
+    return loaded < total;
+  }
+
   void _dropRequest(String requestId) {
     final remaining = [
       for (final request in state.requests)
@@ -1266,12 +1288,13 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
+        final merged = [...state.requests, ...page.requests];
         state = state.copyWith(
-          requests: [...state.requests, ...page.requests],
+          requests: merged,
           total: page.total,
           isLoadingMore: false,
-          hasMore: page.hasMore,
-          skip: state.skip + page.requests.length,
+          hasMore: _hasMore(merged.length, page.requests, page.total),
+          skip: merged.length,
           clearError: true,
         );
       },

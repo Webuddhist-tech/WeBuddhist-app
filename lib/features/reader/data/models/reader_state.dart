@@ -4,18 +4,10 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 
 /// Status of the reader
-enum ReaderStatus {
-  initial,
-  loading,
-  loaded,
-  error,
-}
+enum ReaderStatus { initial, loading, loaded, error }
 
 /// Direction for pagination
-enum PaginationDirection {
-  next,
-  previous,
-}
+enum PaginationDirection { next, previous }
 
 /// Main state model for the reader feature
 class ReaderState {
@@ -23,6 +15,14 @@ class ReaderState {
   final String textId;
   final String? contentId;
   final TextDetail? textDetail;
+
+  /// The opened edition when it is a translation shown as the Translation
+  /// layer; [textDetail] is then its root text.
+  final TextDetail? openedTranslation;
+
+  /// Navigation's verse ids of [openedTranslation] mapped to the loaded
+  /// text's matching verses, so plan ranges and targets still resolve.
+  final Map<String, String> segmentAliases;
   final FlattenedContent? content;
 
   // Navigation context
@@ -34,8 +34,9 @@ class ReaderState {
   // Commentary
   final String? commentarySegmentId;
 
-  // Translation
+  // Translation (versions, or the root text of a commentary)
   final String? translationSegmentId;
+  final bool showsRootText;
 
   final double splitRatio;
 
@@ -59,11 +60,14 @@ class ReaderState {
     required this.textId,
     this.contentId,
     this.textDetail,
+    this.openedTranslation,
+    this.segmentAliases = const {},
     this.content,
     this.navigationContext,
     this.selectedSegment,
     this.commentarySegmentId,
     this.translationSegmentId,
+    this.showsRootText = false,
     this.splitRatio = 0.5,
     this.highlightedSegmentId,
     this.highlightSource = NavigationSource.normal,
@@ -81,6 +85,14 @@ class ReaderState {
   factory ReaderState.initial(String textId) {
     return ReaderState(textId: textId);
   }
+
+  /// What the user opened: the translation when one was opened, else the
+  /// loaded text. Names the chant and what "Add to practices" adds.
+  TextDetail? get openedText => openedTranslation ?? textDetail;
+
+  /// The loaded text's id for a verse id navigation handed in.
+  String loadedSegmentId(String segmentId) =>
+      segmentAliases[segmentId] ?? segmentId;
 
   /// Check if the reader is in a loading state
   bool get isLoading => status == ReaderStatus.loading;
@@ -110,11 +122,14 @@ class ReaderState {
     String? textId,
     String? contentId,
     TextDetail? textDetail,
+    TextDetail? openedTranslation,
+    Map<String, String>? segmentAliases,
     FlattenedContent? content,
     NavigationContext? navigationContext,
     Segment? selectedSegment,
     String? commentarySegmentId,
     String? translationSegmentId,
+    bool? showsRootText,
     double? splitRatio,
     String? highlightedSegmentId,
     NavigationSource? highlightSource,
@@ -137,10 +152,14 @@ class ReaderState {
       textId: textId ?? this.textId,
       contentId: contentId ?? this.contentId,
       textDetail: textDetail ?? this.textDetail,
+      openedTranslation: openedTranslation ?? this.openedTranslation,
+      segmentAliases: segmentAliases ?? this.segmentAliases,
       content: content ?? this.content,
       navigationContext: navigationContext ?? this.navigationContext,
       selectedSegment:
-          clearSelectedSegment ? null : (selectedSegment ?? this.selectedSegment),
+          clearSelectedSegment
+              ? null
+              : (selectedSegment ?? this.selectedSegment),
       commentarySegmentId:
           clearCommentarySegmentId
               ? null
@@ -149,6 +168,7 @@ class ReaderState {
           clearTranslationSegmentId
               ? null
               : (translationSegmentId ?? this.translationSegmentId),
+      showsRootText: showsRootText ?? this.showsRootText,
       splitRatio: splitRatio ?? this.splitRatio,
       highlightedSegmentId:
           clearHighlightedSegmentId

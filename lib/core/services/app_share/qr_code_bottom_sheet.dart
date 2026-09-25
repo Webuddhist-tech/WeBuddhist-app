@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
@@ -103,13 +105,18 @@ Or visit: $url''';
 
       // Share the image with text
       final shareText = _getShareText(platform);
-      await SharePlus.instance.share(
+      final result = await SharePlus.instance.share(
         ShareParams(
           files: [XFile(tempFile.path)],
           text: shareText,
           subject: 'Download WeBuddhist on $platform',
         ),
       );
+      if (mounted && ShareAnalytics.wasUsed(result)) {
+        ProviderScope.containerOf(context, listen: false)
+            .read(shareAnalyticsProvider)
+            .contentShared(surface: ShareSurface.app, method: 'qr');
+      }
     } catch (e) {
       _logger.error('Error sharing QR code', e);
       if (mounted) {

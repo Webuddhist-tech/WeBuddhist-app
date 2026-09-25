@@ -1,5 +1,4 @@
-/// A user recitation collection row from `GET /recitations` when
-/// `should_include_collections=true`.
+/// A user recitation collection row shown at the top of chant lists.
 class MyRecitationListCollectionModel {
   final String type;
   final String name;
