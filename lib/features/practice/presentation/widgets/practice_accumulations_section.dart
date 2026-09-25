@@ -90,6 +90,7 @@ class PracticeAccumulationsSection extends ConsumerWidget {
   ) {
     Navigator.of(context).push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: 'all-accumulations'),
         builder:
             (_) => AllAccumulationsScreen(
               mantras: mantras,

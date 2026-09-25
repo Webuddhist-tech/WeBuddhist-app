@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/services/app_share/app_share_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// Home screen prompt that invites the user to share WeBuddhist with others.
 class HomeSharePrompt extends ConsumerWidget {
   const HomeSharePrompt({super.key});
+
+  Future<void> _shareApp(BuildContext context, WidgetRef ref) async {
+    final message = await ref
+        .read(appShareServiceProvider)
+        .buildShareMessage(AppLocalizations.of(context)!.share_app_message);
+    final result = await SharePlus.instance.share(ShareParams(text: message));
+    if (!context.mounted || !ShareAnalytics.wasUsed(result)) return;
+    ref
+        .read(shareAnalyticsProvider)
+        .contentShared(surface: ShareSurface.app, method: 'link');
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,12 +31,7 @@ class HomeSharePrompt extends ConsumerWidget {
         children: [
           const _PromptLabel(),
           const SizedBox(height: 12.0),
-          _ShareButton(
-            onTap:
-                () => ref
-                    .read(appShareServiceProvider)
-                    .shareApp(AppLocalizations.of(context)!.share_app_message),
-          ),
+          _ShareButton(onTap: () => _shareApp(context, ref)),
         ],
       ),
     );

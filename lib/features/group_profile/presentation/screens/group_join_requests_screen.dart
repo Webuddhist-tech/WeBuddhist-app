@@ -170,7 +170,11 @@ class _GroupJoinRequestsScreenState
       );
     }
 
-    final itemCount = state.requests.length + (state.isLoadingMore ? 1 : 0);
+    // A later page that failed keeps the rows it has; the footer says so and
+    // offers a retry, since a list too short to scroll never asks again.
+    final loadMoreFailed = state.error != null && !state.isLoadingMore;
+    final hasFooter = state.isLoadingMore || loadMoreFailed;
+    final itemCount = state.requests.length + (hasFooter ? 1 : 0);
 
     return NotificationListener<ScrollNotification>(
       onNotification: _onScrollLoadMore,
@@ -179,6 +183,7 @@ class _GroupJoinRequestsScreenState
         itemCount: itemCount,
         itemBuilder: (context, index) {
           if (index >= state.requests.length) {
+            if (loadMoreFailed) return _buildLoadMoreError(context, isDark);
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(child: CircularProgressIndicator()),
@@ -196,6 +201,43 @@ class _GroupJoinRequestsScreenState
             onDeny: canDecide ? () => _reject(request.id) : null,
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreError(BuildContext context, bool isDark) {
+    final fontFamily = getSystemFontFamily(
+      Localizations.localeOf(context).languageCode,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          Text(
+            context.l10n.group_join_requests_load_error,
+            textAlign: TextAlign.center,
+            strutStyle: context.tibetanStrutStyle(14),
+            style: TextStyle(
+              fontSize: 14,
+              color:
+                  isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+              fontFamily: fontFamily,
+            ),
+          ),
+          TextButton(
+            onPressed:
+                () =>
+                    ref
+                        .read(
+                          groupJoinRequestsProvider(widget.groupId).notifier,
+                        )
+                        .retry(),
+            child: Text(
+              context.l10n.retry,
+              style: TextStyle(fontFamily: fontFamily),
+            ),
+          ),
+        ],
       ),
     );
   }

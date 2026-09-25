@@ -217,7 +217,7 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'पाठ को इसमें जोड़ें';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -912,7 +912,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_online => 'ऑनलाइन';
 
   @override
-  String get home_group_events => 'समूह कार्यक्रम';
+  String get home_group_events => 'विशेष कार्यक्रम';
 
   @override
   String get home_poems => 'कविताएँ';
@@ -1527,6 +1527,9 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get second_version_msg =>
       'दूसरा संस्करण मुख्य पाठ के हर श्लोक के नीचे दिखाई देगा';
+
+  @override
+  String get root_text => 'मूल पाठ';
 
   @override
   String get version => 'संस्करण';

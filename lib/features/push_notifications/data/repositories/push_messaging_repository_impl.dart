@@ -32,6 +32,15 @@ class PushMessagingRepositoryImpl implements PushMessagingRepository {
   }
 
   @override
+  Future<bool> willPromptForPermission() async {
+    final status =
+        (await _messaging.getNotificationSettings()).authorizationStatus;
+    return Platform.isAndroid
+        ? status != AuthorizationStatus.authorized
+        : status == AuthorizationStatus.notDetermined;
+  }
+
+  @override
   Future<String?> getToken() => _messaging.getToken();
 
   @override

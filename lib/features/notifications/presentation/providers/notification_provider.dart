@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
+import 'package:flutter_pecha/features/notifications/presentation/utils/notification_settings_analytics.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 
 final _logger = AppLogger('NotificationProvider');
@@ -150,6 +151,10 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.masterToggle);
 
+      _ref.read(notificationSettingsAnalyticsProvider).settingChanged(
+        setting: NotificationSetting.master,
+        enabled: enable,
+      );
       _logger.info('[TOGGLE] master → $enable COMPLETE');
       return NotificationToggleResult.success;
     } catch (e, st) {
@@ -186,6 +191,10 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.routineToggle);
 
+      _ref.read(notificationSettingsAnalyticsProvider).settingChanged(
+        setting: NotificationSetting.routine,
+        enabled: enable,
+      );
       _logger.info('[TOGGLE] routine → $enable COMPLETE');
       return NotificationToggleResult.success;
     } catch (e, st) {
@@ -217,6 +226,10 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.recitationToggle);
 
+      _ref.read(notificationSettingsAnalyticsProvider).settingChanged(
+        setting: NotificationSetting.recitation,
+        enabled: enable,
+      );
       _logger.info('[TOGGLE] recitation → $enable COMPLETE');
       return NotificationToggleResult.success;
     } catch (e, st) {
@@ -248,6 +261,10 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.practiceToggle);
 
+      _ref.read(notificationSettingsAnalyticsProvider).settingChanged(
+        setting: NotificationSetting.practice,
+        enabled: enable,
+      );
       _logger.info('[TOGGLE] practice → $enable COMPLETE');
       return NotificationToggleResult.success;
     } catch (e, st) {
@@ -280,6 +297,10 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.timerToggle);
 
+      _ref.read(notificationSettingsAnalyticsProvider).settingChanged(
+        setting: NotificationSetting.timer,
+        enabled: enable,
+      );
       _logger.info('[TOGGLE] timer → $enable COMPLETE');
       return NotificationToggleResult.success;
     } catch (e, st) {

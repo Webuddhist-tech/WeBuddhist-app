@@ -94,7 +94,7 @@
       }
     }
   },
-  "mala_group_accumulations": "Group accumulations",
+  "mala_group_accumulations": "पाठ को इसमें जोड़ें",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled group",
   "home_timer": "टाइमर",
@@ -544,6 +544,7 @@
   "main_version": "मुख्य संस्करण",
   "second_version": "दूसरा संस्करण",
   "second_version_msg": "दूसरा संस्करण मुख्य पाठ के हर श्लोक के नीचे दिखाई देगा",
+  "root_text": "मूल पाठ",
   "version": "संस्करण",
   "parallel_version": "समानांतर संस्करण",
   "reader_languages_title": "भाषाएँ",
@@ -913,7 +914,7 @@
   "connect_post_comments_empty": "अभी कोई टिप्पणी नहीं। बातचीत शुरू करें।",
   "connect_caption_more": "और",
   "connect_online": "ऑनलाइन",
-  "home_group_events": "समूह कार्यक्रम",
+  "home_group_events": "विशेष कार्यक्रम",
   "home_poems": "कविताएँ",
   "poems_load_error": "कविताएँ लोड नहीं हो सकीं।\nअपना कनेक्शन जाँचें और फिर से प्रयास करें",
   "poems_empty": "अभी कोई कविता नहीं है। जल्द वापस देखें।",

@@ -14,6 +14,22 @@ String normalizeReaderLanguageCode(String code) => code.trim().toLowerCase();
 bool readerLanguagesMatch(String a, String b) =>
     normalizeReaderLanguageCode(a) == normalizeReaderLanguageCode(b);
 
+/// Languages that have something to pick as a translation.
+List<ReaderLanguageOption> translationLanguages(
+  List<ReaderLanguageOption> languages,
+) => [
+  for (final language in languages)
+    if (language.translationCount > 0) language,
+];
+
+/// Versions that can be a translation: root texts are only the original.
+List<ReaderVersionDetail> translationVersions(
+  List<ReaderVersionDetail> versions,
+) => [
+  for (final version in versions)
+    if (!version.isRoot) version,
+];
+
 /// Resolves the version for a just-picked secondary language:
 /// - the edition picked for this text last time in this context, when the
 ///   language offers it
@@ -38,7 +54,9 @@ Future<void> autoSelectSecondaryVersion({
       notifier.secondaryResolveGeneration == resolveGeneration;
 
   try {
-    final versions = await ref.read(readerVersionsProvider(query).future);
+    final versions = translationVersions(
+      await ref.read(readerVersionsProvider(query).future),
+    );
     if (!isCurrentResolve()) return;
 
     final bool sameLanguageAsMain = readerLanguagesMatch(
@@ -126,8 +144,8 @@ Future<SecondaryFillOutcome> fillSecondaryWithLanguages({
   bool slotUnchanged() =>
       notifier.secondaryResolveGeneration == startResolveGeneration;
 
-  final languages = await ref.read(
-    readerLanguagesProvider(scope.textId).future,
+  final languages = translationLanguages(
+    await ref.read(readerLanguagesProvider(scope.textId).future),
   );
   if (!toggleUnchanged() || !slotUnchanged()) {
     return SecondaryFillOutcome.superseded;

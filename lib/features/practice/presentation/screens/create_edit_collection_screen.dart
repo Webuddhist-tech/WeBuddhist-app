@@ -751,6 +751,7 @@ Future<bool?> openEditCollectionScreen(
 }) {
   return Navigator.of(context).push<bool>(
     MaterialPageRoute(
+      settings: const RouteSettings(name: 'edit-collection'),
       builder: (_) => CreateEditCollectionScreen.edit(collection: collection),
     ),
   );

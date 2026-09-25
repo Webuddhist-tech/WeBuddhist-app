@@ -329,6 +329,64 @@ void main() {
       );
     });
 
+    group('a translation opened under its root', () {
+      // A chant tapped in the Hindi list: the Tibetan root is the original,
+      // the Hindi edition the translation.
+      const chant = ReaderSettingsScope(
+        textId: 'hi-edition',
+        context: ReaderLayoutContext.chant,
+      );
+      const root = ReaderSlotConfig(
+        languageCode: 'bo',
+        languageLabel: 'bo',
+        versionId: 'bo-root',
+      );
+      const hindi = ReaderSlotConfig(
+        languageCode: 'hi',
+        languageLabel: 'hi',
+        versionId: 'hi-edition',
+      );
+      ReaderContextLayoutNotifier chantStore() => container.read(
+        readerContextLayoutProvider(ReaderLayoutContext.chant).notifier,
+      );
+
+      test('stays on over a stored "off" and the seed, original hidden', () {
+        chantStore().setTranslationOn(false);
+        final notifier = keep(chant);
+        notifier.openAsTranslation(original: root, translation: hindi);
+        notifier.seed(const ReaderInitialLayout.asWritten(), language: 'bo');
+
+        expect(settingsOf(chant).secondary, hindi);
+        expect(settingsOf(chant).secondaryEnabled, isTrue);
+        expect(settingsOf(chant).originalVisible, isFalse);
+        expect(
+          notifier.preferredTranslationLanguages(contentLanguage: 'en'),
+          ['hi', 'en'],
+        );
+      });
+
+      test('shows the original when the person chose that in this context', () {
+        chantStore().setOriginalVisible(true);
+        keep(chant).openAsTranslation(original: root, translation: hindi);
+        expect(settingsOf(chant).originalVisible, isTrue);
+        expect(settingsOf(chant).secondaryEnabled, isTrue);
+      });
+
+      test('the Translation switch here takes over', () {
+        final notifier = keep(chant);
+        notifier.openAsTranslation(original: root, translation: hindi);
+        notifier.setSecondaryEnabled(false);
+        expect(settingsOf(chant).secondaryEnabled, isFalse);
+        expect(settingsOf(chant).originalVisible, isTrue);
+        expect(
+          container
+              .read(readerContextLayoutProvider(ReaderLayoutContext.chant))
+              .translationOn,
+          isFalse,
+        );
+      });
+    });
+
     test('the library tries only the app language', () {
       container
           .read(readerContextLayoutProvider(ReaderLayoutContext.event).notifier)

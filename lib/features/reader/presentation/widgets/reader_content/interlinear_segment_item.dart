@@ -17,14 +17,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Which lines a verse draws in the dual layout. "Translation only"
 /// ([showOriginal] false) still draws the original wherever there is no
-/// translation to show — still loading, failed to load, or no aligned line
-/// for this verse — so the page never turns into a column of placeholders.
+/// translation to show — failed to load, or no aligned line for this verse —
+/// so the page never turns into a column of placeholders. While the verse's
+/// translation is still on its way ([translationPending]) it draws the
+/// loading line instead, so the original does not flash in before it.
 ({bool original, bool translation}) interlinearLayers({
   required bool showOriginal,
   required bool hasTranslation,
+  bool translationPending = false,
 }) => (
-  original: showOriginal || !hasTranslation,
-  translation: showOriginal || hasTranslation,
+  original: showOriginal || (!hasTranslation && !translationPending),
+  translation: showOriginal || hasTranslation || translationPending,
 );
 
 /// This verse's line in the translation, or null while there is none to show
@@ -75,6 +78,8 @@ class InterlinearSegmentItem extends ConsumerWidget {
   /// Lookup map of secondary version content keyed by segment_number.
   /// Falls back to a placeholder when the key is missing or while loading.
   final Map<int, String>? secondaryContentBySegmentNumber;
+
+  /// True while this verse's translation is still being fetched.
   final bool secondaryIsLoading;
   final bool isSelected;
   // Received from caller but visual highlight not yet applied in interlinear mode.
@@ -99,6 +104,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
     final layers = interlinearLayers(
       showOriginal: showPrimary,
       hasTranslation: !secondary.isPlaceholder,
+      translationPending: secondary.isPending,
     );
     // The aligned line is the same kind of segment, so it shares the style.
     final typeStyle = SegmentTypeStyle.of(segment.type);
@@ -211,6 +217,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
       return _SecondaryResolved(
         text: context.l10n.loading,
         isPlaceholder: true,
+        isPending: true,
       );
     }
     // A version is selected but this particular segment has no translation.
@@ -222,7 +229,14 @@ class InterlinearSegmentItem extends ConsumerWidget {
 class _SecondaryResolved {
   final String text;
   final bool isPlaceholder;
-  const _SecondaryResolved({required this.text, required this.isPlaceholder});
+
+  /// The placeholder is the loading line: the translation is on its way.
+  final bool isPending;
+  const _SecondaryResolved({
+    required this.text,
+    required this.isPlaceholder,
+    this.isPending = false,
+  });
 }
 
 class _SecondaryPlaceholder extends StatelessWidget {

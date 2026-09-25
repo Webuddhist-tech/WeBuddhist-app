@@ -475,7 +475,7 @@ abstract class AppLocalizations {
   /// No description provided for @mala_group_accumulations.
   ///
   /// In en, this message translates to:
-  /// **'Group accumulations'**
+  /// **'Add recitation to'**
   String get mala_group_accumulations;
 
   /// No description provided for @mala_groups_section.
@@ -1705,7 +1705,7 @@ abstract class AppLocalizations {
   /// No description provided for @home_group_events.
   ///
   /// In en, this message translates to:
-  /// **'Group Events'**
+  /// **'Featured Events'**
   String get home_group_events;
 
   /// No description provided for @home_poems.
@@ -2775,6 +2775,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The second version will appear below each verse of the main text'**
   String get second_version_msg;
+
+  /// No description provided for @root_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Root text'**
+  String get root_text;
 
   /// No description provided for @version.
   ///
@@ -4997,7 +5003,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:
-  /// **'Prayer'**
+  /// **'Pray'**
   String get event_prayer_pray;
 
   /// No description provided for @event_prayer_praying.

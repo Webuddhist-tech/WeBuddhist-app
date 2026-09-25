@@ -2,11 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
-import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasource.dart';
 import 'package:flutter_pecha/features/mala/domain/usecases/mala_usecases.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 
 enum SyncReason {
   launch,
@@ -35,7 +34,7 @@ class MalaSyncManager with WidgetsBindingObserver {
     required bool Function() isLoggedIn,
     required Future<String?> Function() currentUserId,
     Stream<bool>? connectivityStream,
-    AnalyticsService? analytics,
+    MalaAnalytics? analytics,
   })  : _local = local,
         _createAccumulator = createAccumulator,
         _updateAccumulator = updateAccumulator,
@@ -52,7 +51,7 @@ class MalaSyncManager with WidgetsBindingObserver {
   final bool Function() _isLoggedIn;
   final Future<String?> Function() _currentUserId;
   final Stream<bool>? _connectivityStream;
-  final AnalyticsService? _analytics;
+  final MalaAnalytics? _analytics;
 
   final _logger = AppLogger('MalaSyncManager');
 
@@ -144,6 +143,13 @@ class MalaSyncManager with WidgetsBindingObserver {
       _retry?.cancel();
     } catch (e) {
       _logger.warning('Mala flush failed ($reason): $e');
+      // Once per outage: retries stay quiet until a flush succeeds again.
+      if (_retryAttempt == 0) {
+        _analytics?.syncFailed(
+          reason: reason.name,
+          pendingDelta: _pendingDelta(userId),
+        );
+      }
       _scheduleRetry();
     } finally {
       _isSyncing = false;
@@ -204,15 +210,6 @@ class MalaSyncManager with WidgetsBindingObserver {
       await _local.clearSession(userId, presetId);
 
       _logger.info('Reset complete presetId=$presetId');
-
-      _analytics?.track(
-        AnalyticsEvents.malaSynced,
-        properties: {
-          if (accumulatorId != null) 'accumulatorId': accumulatorId,
-          'total': 0,
-          'reset': true,
-        },
-      );
     } catch (e, st) {
       _logger.warning('Reset failed presetId=$presetId: $e', e, st);
       rethrow;
@@ -272,16 +269,6 @@ class MalaSyncManager with WidgetsBindingObserver {
 
       _logger.info(
         'Group reset complete groupAccumulatorId=$groupAccumulatorId',
-      );
-
-      _analytics?.track(
-        AnalyticsEvents.malaSynced,
-        properties: {
-          'groupAccumulatorId': groupAccumulatorId,
-          'total': 0,
-          'reset': true,
-          'group': true,
-        },
       );
     } catch (e, st) {
       _logger.warning(
@@ -372,13 +359,7 @@ class MalaSyncManager with WidgetsBindingObserver {
             accumulatorId: count.accumulatorId ?? accumulatorId,
           ),
         );
-        _analytics?.track(
-          AnalyticsEvents.malaSynced,
-          properties: {
-            'accumulatorId': count.accumulatorId ?? accumulatorId,
-            'total': max(after.total, count.total),
-          },
-        );
+        _logger.info('Synced $presetId total=$confirmedTotal');
         onPersonalCountSynced?.call(presetId);
       },
     );
@@ -410,17 +391,24 @@ class MalaSyncManager with WidgetsBindingObserver {
             syncedTotal: confirmedTotal,
           ),
         );
-        _analytics?.track(
-          AnalyticsEvents.malaSynced,
-          properties: {
-            'groupAccumulatorId': groupAccumulatorId,
-            'total': max(after.total, sending),
-            'group': true,
-          },
-        );
+        _logger.info('Synced group $groupAccumulatorId total=$confirmedTotal');
         onGroupCountSynced?.call(groupAccumulatorId);
       },
     );
+  }
+
+  /// Beads still unsynced across this user's personal and group entries.
+  int _pendingDelta(String userId) {
+    var delta = 0;
+    for (final presetId in _local.dirtyPresetIds(userId)) {
+      final s = _local.read(userId, presetId);
+      delta += max(0, s.total - s.syncedTotal);
+    }
+    for (final id in _local.dirtyGroupAccumulatorIds(userId)) {
+      final s = _local.readGroup(userId, id);
+      delta += max(0, s.total - s.syncedTotal);
+    }
+    return delta;
   }
 
   void _scheduleRetry() {

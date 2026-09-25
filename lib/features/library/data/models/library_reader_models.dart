@@ -42,50 +42,90 @@ class LibraryContentWindow {
   final String editionId;
   final List<LibraryReaderSegment> segments;
   final int currentPosition;
+
+  /// Position of the window's last segment; equals [totalSegments] once the
+  /// window reaches the end, which [currentPosition] alone cannot show.
+  final int lastPosition;
   final int totalSegments;
 
   const LibraryContentWindow({
     required this.editionId,
     required this.segments,
     required this.currentPosition,
+    required this.lastPosition,
     required this.totalSegments,
   });
 }
 
-enum LibraryResourceKind { commentary, version }
+enum LibraryResourceKind { translation, commentary, rootText }
 
-/// A related segment paired with the text it belongs to.
-class LibraryRelatedResource {
-  final LibrarySegment segment;
-  final LibraryText text;
+/// One edition aligned to the open segment: its text, its aligned segments in
+/// reading order, and (for a commentary) the editions that translate it.
+class LibraryRelatedEdition {
+  final String editionId;
+  final LibraryText? text;
+  final List<LibrarySegment> segments;
+  final List<LibraryRelatedEdition> translations;
 
-  const LibraryRelatedResource({required this.segment, required this.text});
-
-  String get segmentId => segment.id;
-
-  String get language => text.language;
-
-  String get title => text.displayTitle;
-
-  LibraryResourceKind get kind =>
-      text.isCommentary
-          ? LibraryResourceKind.commentary
-          : LibraryResourceKind.version;
-}
-
-class LibrarySegmentResources {
-  final List<LibraryRelatedResource> commentaries;
-  final List<LibraryRelatedResource> versions;
-
-  const LibrarySegmentResources({
-    required this.commentaries,
-    required this.versions,
+  const LibraryRelatedEdition({
+    required this.editionId,
+    required this.text,
+    required this.segments,
+    this.translations = const [],
   });
 
-  List<LibraryRelatedResource> of(LibraryResourceKind kind) => switch (kind) {
+  String get textId => text?.id ?? segments.first.textId ?? '';
+
+  String get language => text?.language ?? '';
+
+  String get title => text?.displayTitle ?? '';
+
+  LibraryRelatedEdition withTranslations(List<LibraryRelatedEdition> value) =>
+      LibraryRelatedEdition(
+        editionId: editionId,
+        text: text,
+        segments: segments,
+        translations: value,
+      );
+}
+
+/// Related editions of a segment sorted the way the website does it: by the
+/// work each text belongs to. [rootTexts] is only ever filled when the open
+/// text is a commentary or a translation of one ([hasRootWork]).
+class LibrarySegmentResources {
+  final List<LibraryRelatedEdition> translations;
+  final List<LibraryRelatedEdition> commentaries;
+  final List<LibraryRelatedEdition> rootTexts;
+  final bool hasRootWork;
+
+  const LibrarySegmentResources({
+    required this.translations,
+    required this.commentaries,
+    required this.rootTexts,
+    required this.hasRootWork,
+  });
+
+  /// Commentary editions including those nested under their original.
+  int get commentaryEditionCount => _count(commentaries);
+
+  static int _count(List<LibraryRelatedEdition> cards) =>
+      cards.fold(0, (n, c) => n + 1 + _count(c.translations));
+
+  List<LibraryRelatedEdition> of(LibraryResourceKind kind) => switch (kind) {
+    LibraryResourceKind.translation => translations,
     LibraryResourceKind.commentary => commentaries,
-    LibraryResourceKind.version => versions,
+    LibraryResourceKind.rootText => rootTexts,
   };
+}
+
+/// Lines of every segment of a related edition, plus the edition's source.
+class LibraryEditionContent {
+  final List<List<String>> segmentLines;
+  final String? source;
+
+  const LibraryEditionContent({required this.segmentLines, this.source});
+
+  List<String> get htmls => segmentLines.map(libraryLinesToHtml).toList();
 }
 
 /// A related segment's lines plus the source of the edition it comes from.

@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/core/widgets/collection_completion_sheet.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
@@ -44,6 +45,7 @@ class _GroupRecitationCollectionScreenState
   /// staying on this screen instance (e.g. a rebuild triggered by an
   /// unrelated state change).
   bool _hasShownCompletionSheetThisVisit = false;
+  bool _viewTracked = false;
 
   GroupRecitationCollectionKey get _key => GroupRecitationCollectionKey(
     groupId: widget.groupId,
@@ -61,6 +63,16 @@ class _GroupRecitationCollectionScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     _maybeShowCompletionSheet(key, detail, completionState);
+    if (detail != null && !_viewTracked) {
+      _viewTracked = true;
+      ref
+          .read(groupAnalyticsProvider)
+          .recitationCollectionOpened(
+            collectionId: widget.collectionId,
+            groupId: widget.groupId,
+            itemCount: detail.items.length,
+          );
+    }
 
     return Scaffold(
       backgroundColor:

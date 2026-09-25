@@ -11,6 +11,11 @@ abstract class PushMessagingRepository {
   /// Returns `true` when the user has authorised notifications.
   Future<bool> requestPermission();
 
+  /// Whether [requestPermission] will put the OS dialog in front of the user.
+  /// iOS reports "not determined" until the first answer; Android asks
+  /// whenever notifications are off (or auto-denies once refused twice).
+  Future<bool> willPromptForPermission();
+
   /// Current FCM registration token for this device/install, or `null` if it
   /// could not be resolved yet (e.g. APNs token not ready on iOS).
   Future<String?> getToken();

@@ -14,14 +14,16 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
   LibraryRecitationsRemoteDatasource({
     required LibraryRepository library,
     required MyRecitationCollectionsRemoteDatasource collections,
-    required String tagId,
+    required String? tagId,
   }) : _library = library,
        _collections = collections,
        _tagId = tagId;
 
   final LibraryRepository _library;
   final MyRecitationCollectionsRemoteDatasource _collections;
-  final String _tagId;
+
+  /// Null when the build has no chants tag configured.
+  final String? _tagId;
   final _logger = AppLogger('LibraryRecitationsRemoteDatasource');
 
   static const int _defaultLimit = 20;
@@ -61,8 +63,12 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
         search.isNotEmpty &&
         search.length < _minTitleQueryLength;
     if (!tooShort) {
+      final tagId = _tagId;
+      if (tagId == null) {
+        throw StateError('LIBRARY_CHANTS_TAG_ID is not configured');
+      }
       final page = await _library.fetchChants(
-        tagId: _tagId,
+        tagId: tagId,
         language: params.language,
         title: search,
         limit: limit,

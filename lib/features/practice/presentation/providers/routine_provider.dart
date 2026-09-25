@@ -1,14 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
-import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
-import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart'
     show routineLocalStorageProvider;
+import 'package:flutter_pecha/features/practice/presentation/utils/practice_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final _logger = AppLogger('RoutineNotifier');
@@ -19,26 +17,26 @@ final _logger = AppLogger('RoutineNotifier');
 /// [NotificationSyncEngine] for notification scheduling.
 final routineProvider = StateNotifierProvider<RoutineNotifier, RoutineData>((ref) {
   final localStorage = ref.watch(routineLocalStorageProvider);
-  final analyticsService = ref.watch(analyticsServiceProvider);
+  final analytics = ref.watch(practiceAnalyticsProvider);
   return RoutineNotifier(
     localStorage: localStorage,
     syncEngine: () => ref.read(notificationSyncEngineProvider),
-    analyticsService: analyticsService,
+    analytics: analytics,
   );
 });
 
 class RoutineNotifier extends StateNotifier<RoutineData> {
   final RoutineLocalStorage _localStorage;
   final NotificationSyncEngine Function() _syncEngine;
-  final AnalyticsService _analyticsService;
+  final PracticeAnalytics _analytics;
 
   RoutineNotifier({
     required RoutineLocalStorage localStorage,
     required NotificationSyncEngine Function() syncEngine,
-    required AnalyticsService analyticsService,
+    required PracticeAnalytics analytics,
   })  : _localStorage = localStorage,
         _syncEngine = syncEngine,
-        _analyticsService = analyticsService,
+        _analytics = analytics,
         super(const RoutineData()) {
     _loadRoutines();
   }
@@ -117,18 +115,7 @@ class RoutineNotifier extends StateNotifier<RoutineData> {
       if (mounted) {
         state = data;
       }
-
-      final int itemCount = data.blocks.fold<int>(
-        0,
-        (int sum, RoutineBlock block) => sum + block.items.length,
-      );
-      await _analyticsService.track(
-        AnalyticsEvents.routineSaved,
-        properties: {
-          AnalyticsProperties.blockCount: data.blocks.length,
-          AnalyticsProperties.itemCount: itemCount,
-        },
-      );
+      _analytics.routineSaved(data);
     } catch (e) {
       _logger.error('[ROUTINE-SAVE] local persist failed', e);
       rethrow;

@@ -150,7 +150,8 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
     _ref.invalidate(joinedAccumulatorGroupsProvider(_presetId));
   }
 
-  void increment({
+  /// Returns the new total, or null when the tap was ignored.
+  int? increment({
     required String groupAccumulatorId,
     required List<AccumulatorGroup> groups,
     required bool soundEnabled,
@@ -158,7 +159,7 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
     required int beadsPerRound,
   }) {
     final userId = _userId;
-    if (userId == null || userId.isEmpty) return;
+    if (userId == null || userId.isEmpty) return null;
 
     _postResetGroupIds.remove(groupAccumulatorId);
     final current = countFor(groupAccumulatorId, groups);
@@ -176,18 +177,20 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
     }
 
     _sync.onTap(roundComplete: roundComplete);
+    return newTotal;
   }
 
-  void addRounds({
+  /// Returns false when the add was ignored.
+  bool addRounds({
     required String groupAccumulatorId,
     required List<AccumulatorGroup> groups,
     required int rounds,
     required int beadsPerRound,
   }) {
-    if (rounds <= 0) return;
+    if (rounds <= 0) return false;
 
     final userId = _userId;
-    if (userId == null || userId.isEmpty) return;
+    if (userId == null || userId.isEmpty) return false;
 
     _postResetGroupIds.remove(groupAccumulatorId);
     final current = countFor(groupAccumulatorId, groups);
@@ -196,6 +199,7 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
     state = {...state, groupAccumulatorId: newTotal};
     unawaited(_local.addGroupToTotal(userId, groupAccumulatorId, delta));
     _sync.onTap(roundComplete: true);
+    return true;
   }
 
   /// Adds [count] offline recitations on top of the current session total.

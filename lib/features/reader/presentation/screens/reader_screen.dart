@@ -681,8 +681,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   presetId: _chantContext!.presetAccumulatorId!,
                   groupAccumulatorId: _chantContext!.groupAccumulatorId!,
                   sessionCount: chantSessionCount,
-                  chantTitle: textDetail!.title,
-                  chantTitleFontFamily: getFontFamily(textDetail.language),
+                  chantTitle: state.openedText!.title,
+                  chantTitleFontFamily: getFontFamily(
+                    state.openedText!.language,
+                  ),
                 ),
             ],
           ),
@@ -926,10 +928,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     notifier.closeCommentary();
     notifier.closeTranslation();
 
+    // Adds the edition the user opened, not the original it is shown under.
+    final openedText =
+        ref.read(readerNotifierProvider(_params)).openedText ?? textDetail;
     final showAddToPractices =
         (widget.navigationContext?.source == NavigationSource.recitationList ||
             widget.navigationContext?.source == NavigationSource.routine) &&
-        textDetail != null;
+        openedText != null;
 
     showReaderMoreBottomSheet(
       context,
@@ -938,7 +943,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       showOfflineRecitation: _isGroupAccumulatorChant,
       onAddToPractices:
           showAddToPractices
-              ? () => _openRoutineWithRecitation(context, textDetail)
+              ? () => _openRoutineWithRecitation(context, openedText)
               : null,
       onAddOfflineRecitation:
           _isGroupAccumulatorChant ? _addOfflineChantCount : null,

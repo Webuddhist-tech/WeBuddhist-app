@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/practice/presentation/providers/practice_
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_provider.dart';
 import 'package:flutter_pecha/features/practice/presentation/screens/select_session_screen.dart';
+import 'package:flutter_pecha/features/practice/presentation/utils/practice_analytics.dart';
 import 'package:flutter_pecha/features/practice/presentation/widgets/routine_time_block.dart';
 import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -218,11 +219,19 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     return (target: newBlock, isNewBlock: true);
   }
 
-  void _injectInitialPlan(Plan plan) {
-    final alreadyExists = _blocks.any(
-      (b) => b.items.any((item) => item.representsStandalonePlan(plan.id)),
-    );
-    if (alreadyExists) return;
+  bool _routineHasPlan(String planId) => _blocks.any(
+    (b) => b.items.any((i) => i.representsStandalonePlan(planId)),
+  );
+
+  bool _routineHasSeries(String seriesId) => _blocks.any(
+    (b) => b.items.any(
+      (i) => i.id == seriesId && i.type == RoutineItemType.series,
+    ),
+  );
+
+  /// Returns false when the plan was already in the routine.
+  bool _injectInitialPlan(Plan plan) {
+    if (_routineHasPlan(plan.id)) return false;
 
     final newItem = _routineItemFromPlan(plan);
 
@@ -232,6 +241,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       _blocks.add(resolved.target);
     }
     _sortBlocks();
+    return true;
   }
 
   _EditableBlock? _injectInitialRecitation(RecitationModel recitation) {
@@ -429,11 +439,20 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   }
 
   /// Syncs the block that contains [plan] after deep-link injection.
-  void _syncInjectedPlan(Plan plan) {
+  /// [enrolls] when the plan was just injected, so the sync enrols the user.
+  void _syncInjectedPlan(Plan plan, {required bool enrolls}) {
+    final analytics = ref.read(practiceAnalyticsProvider);
     for (final block in _blocks) {
       if (block.items.any((i) => i.representsStandalonePlan(plan.id))) {
         _syncBlock(block)
             .then((_) {
+              if (enrolls) {
+                analytics.planEnrolledFromRoutine(
+                  planId: plan.id,
+                  planName: plan.title,
+                  totalDays: plan.totalDays,
+                );
+              }
               if (mounted) _refreshPracticeEnrollments();
             })
             .catchError((e) {
@@ -445,7 +464,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   }
 
   /// Loads [seriesId] and injects the series into the routine if it is not
-  /// already present in any block.
+  /// already present in any block. Not tracked here: the caller enrolled via
+  /// [seriesEnrollmentProvider], which already fired `series_enrolled`.
   Future<void> _hydrateSeriesEnrollment(String seriesId) async {
     final language = ref.read(contentLanguageProvider);
     final result = await ref.read(getSeriesByIdUseCaseProvider)(
@@ -1300,7 +1320,10 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     try {
       final result = await Navigator.of(context).push<SessionSelection>(
-        MaterialPageRoute(builder: (_) => const SelectSessionScreen()),
+        MaterialPageRoute(
+          settings: const RouteSettings(name: 'select-session'),
+          builder: (_) => const SelectSessionScreen(),
+        ),
       );
 
       if (result == null || !mounted) return;
@@ -1347,12 +1370,21 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       return;
     }
 
+    final enrolls = !_routineHasPlan(plan.id);
+    final analytics = ref.read(practiceAnalyticsProvider);
     final newItem = _routineItemFromPlan(plan);
     final block = _blocks[blockIndex];
     setState(() => block.items.add(newItem));
 
     try {
       await _syncBlock(block);
+      if (enrolls) {
+        analytics.planEnrolledFromRoutine(
+          planId: plan.id,
+          planName: plan.title,
+          totalDays: plan.totalDays,
+        );
+      }
       _refreshPracticeEnrollments();
     } catch (e) {
       if (mounted) {
@@ -1487,6 +1519,8 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
       return;
     }
 
+    final enrolls = !_routineHasSeries(series.id);
+    final analytics = ref.read(practiceAnalyticsProvider);
     final newItem = RoutineItem(
       id: series.id,
       title: series.title,
@@ -1499,6 +1533,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
 
     try {
       await _syncBlock(block);
+      if (enrolls) analytics.seriesEnrolledFromRoutine(seriesId: series.id);
       _refreshPracticeEnrollments();
     } catch (e) {
       if (mounted) {
@@ -1542,11 +1577,13 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
             var collectionAlreadyInRoutine = false;
             var myCollectionAlreadyInRoutine = false;
             var groupAccumulatorAlreadyInRoutine = false;
+            var planInjected = false;
+            var seriesWasInRoutine = false;
             setState(() {
               _hydratedFromApi = true;
               _applyInitialData(routineData);
               if (widget.initialPlan != null) {
-                _injectInitialPlan(widget.initialPlan!);
+                planInjected = _injectInitialPlan(widget.initialPlan!);
               }
               if (widget.initialRecitation != null) {
                 injectedRecitationBlock = _injectInitialRecitation(
@@ -1557,6 +1594,9 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                 injectedTimerBlock = _injectInitialTimer(widget.initialTimer!);
               }
               if (widget.initialSeries != null) {
+                seriesWasInRoutine = _routineHasSeries(
+                  widget.initialSeries!.id,
+                );
                 injectedSeriesBlock = _injectInitialSeries(
                   widget.initialSeries!,
                 );
@@ -1588,7 +1628,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
               }
             });
             if (widget.initialPlan != null) {
-              _syncInjectedPlan(widget.initialPlan!);
+              _syncInjectedPlan(widget.initialPlan!, enrolls: planInjected);
             }
             if (injectedRecitationBlock != null) {
               _syncBlock(injectedRecitationBlock!).catchError((e) {
@@ -1601,8 +1641,14 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
               });
             }
             if (injectedSeriesBlock != null) {
+              final analytics = ref.read(practiceAnalyticsProvider);
               _syncBlock(injectedSeriesBlock!)
                   .then((_) {
+                    if (!seriesWasInRoutine) {
+                      analytics.seriesEnrolledFromRoutine(
+                        seriesId: widget.initialSeries!.id,
+                      );
+                    }
                     if (mounted) _refreshPracticeEnrollments();
                   })
                   .catchError((e) {

@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/analytics/analytics_events.dart';
-import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/home/presentation/providers/series_enroll
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
+import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
@@ -91,6 +92,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   bool _liveAudioOnly = false;
   bool _liveStreamSeen = false;
   final _embedded = PlanEmbeddedController();
+  Timer? _dayViewedTimer;
 
   @override
   void initState() {
@@ -103,22 +105,21 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     _logger.info(
       'PlanDetails opened — id: ${widget.plan.id} | title: "${widget.plan.title}"',
     );
-    unawaited(
-      ref
-          .read(analyticsServiceProvider)
-          .track(
-            AnalyticsEvents.planViewed,
-            properties: {
-              AnalyticsProperties.planId: widget.plan.id,
-              AnalyticsProperties.planName: widget.plan.title,
-              AnalyticsProperties.totalDays: widget.plan.totalDays,
-            },
-          ),
-    );
+    ref
+        .read(planAnalyticsProvider)
+        .planViewed(
+          planId: widget.plan.id,
+          planName: widget.plan.title,
+          totalDays: widget.plan.totalDays,
+          isEnrolled: true,
+          source: _viewSource,
+        );
+    _scheduleDayViewed();
   }
 
   @override
   void dispose() {
+    _dayViewedTimer?.cancel();
     _embedded.removeListener(_onEmbeddedChanged);
     _embedded.dispose();
     super.dispose();
@@ -126,6 +127,50 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
   void _onEmbeddedChanged() {
     if (mounted) setState(() {});
+  }
+
+  PlanSource? get _viewSource {
+    if (widget.eventId != null) return PlanSource.event;
+    if (widget.seriesId != null) return PlanSource.series;
+    return null;
+  }
+
+  /// The day number today falls on, unclamped: 0 or less before the start.
+  int get _todayDayNumber =>
+      PlanUtils.daysBetween(widget.startDate, DateTime.now()) + 1;
+
+  /// The loaded completion status, or null while it is still loading.
+  Map<int, bool>? _completionStatus() =>
+      ref
+          .read(userPlanDaysCompletionStatusProvider(widget.plan.id))
+          .valueOrNull
+          ?.fold((_) => null, (status) => status);
+
+  void _selectDay(int day) {
+    setState(() => selectedDay = day);
+    _scheduleDayViewed();
+  }
+
+  /// Fires once the carousel settles, so tapping through days counts once.
+  void _scheduleDayViewed() {
+    _dayViewedTimer?.cancel();
+    _dayViewedTimer = Timer(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
+      final day = selectedDay;
+      final todayDay = _todayDayNumber;
+      final completion = _completionStatus();
+      ref
+          .read(planAnalyticsProvider)
+          .planDayViewed(
+            planId: widget.plan.id,
+            dayNumber: day,
+            isToday: day == todayDay,
+            isMissed:
+                completion == null
+                    ? null
+                    : day < todayDay && completion[day] != true,
+          );
+    });
   }
 
   /// A commentary / versions panel forces audio; the user's choice returns
@@ -339,6 +384,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       final completionStatusEither = await ref.read(
         userPlanDaysCompletionStatusProvider(widget.plan.id).future,
       );
+      if (!mounted) return;
 
       completionStatusEither.fold(
         (failure) {
@@ -347,22 +393,25 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         (completionStatus) {
           final completedDays = completionStatus.values.where((v) => v).length;
 
-          unawaited(
-            ref
-                .read(analyticsServiceProvider)
-                .track(
-                  AnalyticsEvents.planDayCompleted,
-                  properties: {
-                    AnalyticsProperties.planId: widget.plan.id,
-                    AnalyticsProperties.planName: widget.plan.title,
-                    AnalyticsProperties.dayNumber: dayContent.dayNumber,
-                    AnalyticsProperties.totalDays: widget.plan.totalDays,
-                    AnalyticsProperties.completedDays: completedDays,
-                  },
-                ),
+          final analytics = ref.read(planAnalyticsProvider);
+          analytics.planDayCompleted(
+            planId: widget.plan.id,
+            planName: widget.plan.title,
+            dayNumber: dayContent.dayNumber,
+            totalDays: widget.plan.totalDays,
+            completedDays: completedDays,
+            isOnTime: dayContent.dayNumber == _todayDayNumber,
           );
-
-          if (!mounted) return;
+          if (completedDays >= widget.plan.totalDays) {
+            analytics.planCompleted(
+              planId: widget.plan.id,
+              totalDays: widget.plan.totalDays,
+              daysElapsed: PlanUtils.daysBetween(
+                widget.startDate,
+                DateTime.now(),
+              ),
+            );
+          }
 
           showModalBottomSheet(
             context: context,
@@ -558,11 +607,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       dayCompletionStatus: completionStatus,
       lockFutureDays: true,
       previewUnlockDayCount: _firstPlanPreviewUnlockDayCount(ref),
-      onDaySelected: (day) {
-        setState(() {
-          selectedDay = day;
-        });
-      },
+      onDaySelected: _selectDay,
     );
   }
 
@@ -753,9 +798,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             completionStatus: completionStatus,
             onTap: (firstMissedDay) {
               HapticFeedback.lightImpact();
-              setState(() {
-                selectedDay = firstMissedDay;
-              });
+              _selectDay(firstMissedDay);
             },
           ),
       ],
@@ -790,6 +833,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     final task = tasks[taskIndex];
     final newValue = !task.isCompleted;
+    final dayNumber = selectedDay;
 
     setState(() {
       _togglingTaskIds.add(taskId);
@@ -812,6 +856,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         },
         (success) {
           if (success && mounted) {
+            ref
+                .read(planAnalyticsProvider)
+                .planTaskToggled(
+                  planId: widget.plan.id,
+                  dayNumber: dayNumber,
+                  taskId: taskId,
+                  taskType: PlanAnalytics.taskTypeOf(task),
+                  completed: newValue,
+                );
             ref.invalidate(
               userPlanDayContentFutureProvider(
                 PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
@@ -919,6 +972,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       final resultEither = await ref.read(
         userPlanUnsubscribeFutureProvider(widget.plan.id).future,
       );
+      if (!mounted) return;
 
       resultEither.fold(
         (failure) {
@@ -929,6 +983,18 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         },
         (success) {
           if (success) {
+            ref
+                .read(planAnalyticsProvider)
+                .planUnenrolled(
+                  planId: widget.plan.id,
+                  planName: widget.plan.title,
+                  daysCompleted:
+                      _completionStatus()?.values.where((v) => v).length,
+                  daysSinceEnrolled: PlanUtils.daysBetween(
+                    widget.plan.startedAt,
+                    DateTime.now(),
+                  ),
+                );
             // Invalidate plans to refresh the list and home stats
             ref.invalidate(myPlansPaginatedProvider);
             ref.invalidate(findPlansPaginatedProvider);
@@ -1150,7 +1216,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     setState(() => _isSharing = true);
 
     try {
-      await sharePlanDayImage(
+      final shared = await sharePlanDayImage(
         context: context,
         shareableImageUrl: shareableImageUrl,
         dayNumber: dayNumber,
@@ -1158,6 +1224,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         planLanguage: widget.plan.language,
         shareButtonKey: _shareButtonKey,
       );
+      if (shared && mounted) {
+        ref
+            .read(shareAnalyticsProvider)
+            .contentShared(
+              surface: ShareSurface.planDay,
+              targetId: widget.plan.id,
+              format: 'image',
+            );
+      }
     } finally {
       if (mounted) {
         setState(() => _isSharing = false);

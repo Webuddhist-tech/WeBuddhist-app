@@ -3,11 +3,16 @@ class ReaderLanguageOption {
   final String label;
   final int versionCount;
 
+  /// Versions that can be picked as a translation: [versionCount] less the
+  /// root texts, which are only ever the original.
+  final int translationCount;
+
   const ReaderLanguageOption({
     required this.code,
     required this.label,
     required this.versionCount,
-  });
+    int? translationCount,
+  }) : translationCount = translationCount ?? versionCount;
 
   factory ReaderLanguageOption.fromJson(Map<String, dynamic> json) {
     return ReaderLanguageOption(

@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/error/exceptions.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/repositories/library_repository.dart';
@@ -70,21 +71,29 @@ void main() {
           expect(uri.queryParameters['limit'], '2');
           if (offset == 0) {
             return jsonBody(
-              pageJson([
-                segmentJson('s1', '1', [
-                  [0, 3],
-                ]),
-                segmentJson('empty', null, const []),
-              ], hasMore: true, limit: 2),
+              pageJson(
+                [
+                  segmentJson('s1', '1', [
+                    [0, 3],
+                  ]),
+                  segmentJson('empty', null, const []),
+                ],
+                hasMore: true,
+                limit: 2,
+              ),
             );
           }
           expect(offset, 2);
           return jsonBody(
-            pageJson([
-              segmentJson('s2', '2', [
-                [3, 6],
-              ]),
-            ], offset: 2, limit: 2),
+            pageJson(
+              [
+                segmentJson('s2', '2', [
+                  [3, 6],
+                ]),
+              ],
+              offset: 2,
+              limit: 2,
+            ),
           );
         },
       });
@@ -175,31 +184,37 @@ void main() {
       expect(window.currentPosition, 2);
     });
 
-    test('previous ends before the anchor and reports the first position', () async {
-      final window = await server().repository().loadWindow(
-        editionId: 'e1',
-        anchorSegmentId: 's3',
-        direction: 'previous',
-        size: 1,
-      );
+    test(
+      'previous ends before the anchor and reports the first position',
+      () async {
+        final window = await server().repository().loadWindow(
+          editionId: 'e1',
+          anchorSegmentId: 's3',
+          direction: 'previous',
+          size: 1,
+        );
 
-      expect(window.segments.map((x) => x.id), ['s2']);
-      expect(window.currentPosition, 2);
-    });
+        expect(window.segments.map((x) => x.id), ['s2']);
+        expect(window.currentPosition, 2);
+      },
+    );
 
-    test('previous of the first segment is empty and fetches no content', () async {
-      final s = server();
-      final window = await s.repository().loadWindow(
-        editionId: 'e1',
-        anchorSegmentId: 's1',
-        direction: 'previous',
-        size: 20,
-      );
+    test(
+      'previous of the first segment is empty and fetches no content',
+      () async {
+        final s = server();
+        final window = await s.repository().loadWindow(
+          editionId: 'e1',
+          anchorSegmentId: 's1',
+          direction: 'previous',
+          size: 20,
+        );
 
-      expect(window.segments, isEmpty);
-      expect(window.currentPosition, 1);
-      expect(s.count('/v2/editions/e1/content'), 0);
-    });
+        expect(window.segments, isEmpty);
+        expect(window.currentPosition, 1);
+        expect(s.count('/v2/editions/e1/content'), 0);
+      },
+    );
 
     test('an unknown anchor falls back to the first page', () async {
       final window = await server().repository().loadWindow(
@@ -233,6 +248,123 @@ void main() {
       expect(window.segments.map((x) => x.id), ['b2', 'b3']);
       expect(window.currentPosition, 2);
     });
+
+    test(
+      'an anchor of unknown origin is placed from its own edition',
+      () async {
+        final s = LibraryTestServer({
+          '/v2/editions/e1/segmentation/segments':
+              (_) => jsonBody(pageJson(threeVerses('s'))),
+          '/v2/editions/e2/segmentation/segments':
+              (_) => jsonBody(pageJson(threeVerses('b'))),
+          '/v2/editions/e2/content': (_) => jsonBody('ABCDEFGHI'),
+          '/v2/segments/s3':
+              (_) => jsonBody(
+                segmentJson(
+                  's3',
+                  '3',
+                  [
+                    [6, 9],
+                  ],
+                  textId: 't1',
+                  editionId: 'e1',
+                ),
+              ),
+        });
+
+        // A bookmark on a translation whose root is now the primary.
+        final window = await s.repository().loadWindow(
+          editionId: 'e2',
+          anchorSegmentId: 's3',
+          direction: 'next',
+          size: 20,
+        );
+
+        expect(window.segments.map((x) => x.id), ['b3']);
+        expect(window.currentPosition, 3);
+        expect(s.count('/v2/segments/s3'), 1);
+      },
+    );
+
+    test('the page that reaches the end reports it', () async {
+      final repository = server().repository();
+      final first = await repository.loadWindow(
+        editionId: 'e1',
+        direction: 'next',
+        size: 2,
+      );
+      final last = await repository.loadWindow(
+        editionId: 'e1',
+        anchorSegmentId: 's2',
+        direction: 'next',
+        size: 2,
+      );
+
+      expect(first.lastPosition, 2);
+      expect(last.segments.map((x) => x.id), ['s2', 's3']);
+      expect(last.currentPosition, 2);
+      expect(last.lastPosition, last.totalSegments);
+    });
+  });
+
+  group('LibraryRepository.alignSegment', () {
+    LibraryTestServer server() => LibraryTestServer({
+      '/v2/editions/bo1': (_) => jsonBody({'id': 'bo1', 'text_id': 'tbo'}),
+      '/v2/editions/en1': (_) => jsonBody({'id': 'en1', 'text_id': 'ten'}),
+      '/v2/editions/x1': (_) => jsonBody({'id': 'x1', 'text_id': 'tx'}),
+      '/v2/texts/tbo':
+          (_) => jsonBody(
+            textJson('tbo', editions: ['bo1'], translations: ['ten']),
+          ),
+      '/v2/texts/ten':
+          (_) => jsonBody(
+            textJson(
+              'ten',
+              language: 'en',
+              translationOf: 'tbo',
+              editions: ['en1'],
+            ),
+          ),
+      '/v2/texts/tx': (_) => jsonBody(textJson('tx', editions: ['x1'])),
+      '/v2/editions/bo1/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('bo'))),
+      '/v2/editions/en1/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('en'))),
+      '/v2/editions/x1/segmentation/segments':
+          (_) => jsonBody(pageJson(threeVerses('x'))),
+    });
+
+    test('maps a verse to another language of the same text', () async {
+      final aligned = await server().repository().alignSegment(
+        segmentId: 'bo2',
+        sourceId: 'bo1',
+        targetId: 'en1',
+      );
+
+      expect(aligned, 'en2');
+    });
+
+    test('an unrelated text never matches by verse number', () async {
+      final aligned = await server().repository().alignSegment(
+        segmentId: 'x2',
+        sourceId: 'x1',
+        targetId: 'en1',
+      );
+
+      expect(aligned, isNull);
+    });
+
+    test('the same edition keeps the id without fetching segments', () async {
+      final s = server();
+      final aligned = await s.repository().alignSegment(
+        segmentId: 'bo2',
+        sourceId: 'bo1',
+        targetId: 'bo1',
+      );
+
+      expect(aligned, 'bo2');
+      expect(s.count('/v2/editions/bo1/segmentation/segments'), 0);
+    });
   });
 
   group('LibraryRepository.segmentNumbers', () {
@@ -253,32 +385,133 @@ void main() {
         [1, 2],
       );
       expect(
-        LibraryRepository.segmentNumbers([_segment('a', ''), _segment('b', '2')]),
+        LibraryRepository.segmentNumbers([
+          _segment('a', ''),
+          _segment('b', '2'),
+        ]),
         [1, 2],
       );
     });
   });
 
   group('LibraryRepository.getTextFamily', () {
-    test('lists the root first, then its translations, fetching each once', () async {
+    test(
+      'lists the root first, then its translations, fetching each once',
+      () async {
+        final server = LibraryTestServer({
+          '/v2/texts/root':
+              (_) => jsonBody(textJson('root', translations: ['t1', 't2'])),
+          '/v2/texts/t1':
+              (_) => jsonBody(
+                textJson('t1', language: 'en', translationOf: 'root'),
+              ),
+          '/v2/texts/t2':
+              (_) => jsonBody(
+                textJson('t2', language: 'ne', translationOf: 'root'),
+              ),
+        });
+        final repository = server.repository();
+
+        final fromTranslation = await repository.getTextFamily('t2');
+        final fromRoot = await repository.getTextFamily('root');
+
+        expect(fromTranslation.map((t) => t.id), ['root', 't1', 't2']);
+        expect(fromRoot.map((t) => t.id), ['root', 't1', 't2']);
+        expect(server.count('/v2/texts/root'), 1);
+        expect(server.count('/v2/texts/t1'), 1);
+        expect(server.count('/v2/texts/t2'), 1);
+      },
+    );
+
+    test('follows translations of translations, from any member', () async {
+      // Sanskrit root > Tibetan translation > English translation of it.
       final server = LibraryTestServer({
-        '/v2/texts/root':
-            (_) => jsonBody(textJson('root', translations: ['t1', 't2'])),
-        '/v2/texts/t1':
-            (_) => jsonBody(textJson('t1', language: 'en', translationOf: 'root')),
-        '/v2/texts/t2':
-            (_) => jsonBody(textJson('t2', language: 'ne', translationOf: 'root')),
+        '/v2/texts/sa':
+            (_) => jsonBody(
+              textJson('sa', language: 'sa', translations: ['bo', 'en1']),
+            ),
+        '/v2/texts/bo':
+            (_) => jsonBody(
+              textJson('bo', translationOf: 'sa', translations: ['en2']),
+            ),
+        '/v2/texts/en1':
+            (_) =>
+                jsonBody(textJson('en1', language: 'en', translationOf: 'sa')),
+        '/v2/texts/en2':
+            (_) =>
+                jsonBody(textJson('en2', language: 'en', translationOf: 'bo')),
       });
       final repository = server.repository();
 
-      final fromTranslation = await repository.getTextFamily('t2');
-      final fromRoot = await repository.getTextFamily('root');
+      for (final id in ['en2', 'bo', 'sa']) {
+        final family = await repository.getTextFamily(id);
+        expect(family.map((t) => t.id), ['sa', 'bo', 'en1', 'en2'], reason: id);
+      }
+    });
 
-      expect(fromTranslation.map((t) => t.id), ['root', 't1', 't2']);
-      expect(fromRoot.map((t) => t.id), ['root', 't1', 't2']);
-      expect(server.count('/v2/texts/root'), 1);
-      expect(server.count('/v2/texts/t1'), 1);
-      expect(server.count('/v2/texts/t2'), 1);
+    test(
+      'a parent that does not list the text, or a cycle, still ends',
+      () async {
+        final server = LibraryTestServer({
+          '/v2/texts/root': (_) => jsonBody(textJson('root')),
+          '/v2/texts/orphan':
+              (_) => jsonBody(textJson('orphan', translationOf: 'root')),
+          '/v2/texts/a': (_) => jsonBody(textJson('a', translationOf: 'b')),
+          '/v2/texts/b': (_) => jsonBody(textJson('b', translationOf: 'a')),
+        });
+        final repository = server.repository();
+
+        expect((await repository.getTextFamily('orphan')).map((t) => t.id), [
+          'root',
+          'orphan',
+        ]);
+        expect((await repository.getTextFamily('a')).map((t) => t.id), [
+          'b',
+          'a',
+        ]);
+      },
+    );
+  });
+
+  group('LibraryRepository.alignSegment across a translation chain', () {
+    test("maps a translation's verse to the text it was made from", () async {
+      final server = LibraryTestServer({
+        '/v2/texts/sa':
+            (_) =>
+                jsonBody(textJson('sa', language: 'sa', translations: ['bo'])),
+        '/v2/texts/bo':
+            (_) => jsonBody(
+              textJson(
+                'bo',
+                translationOf: 'sa',
+                translations: ['en'],
+                editions: ['e-bo'],
+              ),
+            ),
+        '/v2/texts/en':
+            (_) => jsonBody(
+              textJson(
+                'en',
+                language: 'en',
+                translationOf: 'bo',
+                editions: ['e-en'],
+              ),
+            ),
+        '/v2/editions/e-bo': (_) => jsonBody({'id': 'e-bo', 'text_id': 'bo'}),
+        '/v2/editions/e-en': (_) => jsonBody({'id': 'e-en', 'text_id': 'en'}),
+        '/v2/editions/e-bo/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('b'))),
+        '/v2/editions/e-en/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('n'))),
+      });
+
+      final aligned = await server.repository().alignSegment(
+        segmentId: 'n2',
+        sourceId: 'e-en',
+        targetId: 'e-bo',
+      );
+
+      expect(aligned, 'b2');
     });
   });
 
@@ -326,39 +559,306 @@ void main() {
   });
 
   group('LibraryRepository.loadSegmentResources', () {
-    test('splits by text kind, fetches each text once, memoizes', () async {
-      final server = LibraryTestServer({
-        '/v2/segments/s1/related':
-            (_) => jsonBody(
-              pageJson([
-                segmentJson('r1', '1', [[0, 5]], textId: 'root', editionId: 'e-root'),
-                segmentJson('r2', '1', [[0, 5]], textId: 'comm', editionId: 'e-comm'),
-                segmentJson('r3', '1', [[0, 5]], textId: 'root', editionId: 'e-root2'),
-                segmentJson('r4', '1', [[0, 5]], textId: 'trans', editionId: 'e-trans'),
-                segmentJson('r5', '1', [[0, 5]]),
-              ], limit: 20),
+    // root (bo) <- trans (en, translation_of root)
+    // comm (bo, commentary_of root) <- comm-en (translation_of comm)
+    // other-comm-en: translation of a commentary that is not itself related.
+    Map<String, ResponseBody Function(Uri)> texts() => {
+      '/v2/texts/root': (_) => jsonBody(textJson('root')),
+      '/v2/texts/trans':
+          (_) => jsonBody(
+            textJson('trans', translationOf: 'root', language: 'en'),
+          ),
+      '/v2/texts/comm': (_) => jsonBody(textJson('comm', commentaryOf: 'root')),
+      '/v2/texts/comm-en':
+          (_) => jsonBody(
+            textJson('comm-en', translationOf: 'comm', language: 'en'),
+          ),
+      '/v2/texts/other-comm-en':
+          (_) => jsonBody(
+            textJson(
+              'other-comm-en',
+              translationOf: 'other-comm',
+              language: 'en',
             ),
-        '/v2/texts/root': (_) => jsonBody(textJson('root')),
-        '/v2/texts/comm':
-            (_) => jsonBody(textJson('comm', commentaryOf: 'root', language: 'en')),
-        '/v2/texts/trans':
-            (_) => jsonBody(textJson('trans', translationOf: 'root', language: 'en')),
+          ),
+      '/v2/texts/other-comm':
+          (_) => jsonBody(textJson('other-comm', commentaryOf: 'root')),
+      '/v2/editions/e-comm':
+          (_) => jsonBody({'id': 'e-comm', 'text_id': 'comm'}),
+    };
+
+    test(
+      'open root: same work is a translation, commentaries nest their translations',
+      () async {
+        final server = LibraryTestServer({
+          '/v2/segments/s1':
+              (_) => jsonBody(
+                segmentJson(
+                  's1',
+                  '1',
+                  [
+                    [0, 5],
+                  ],
+                  textId: 'root',
+                  editionId: 'e-root',
+                ),
+              ),
+          '/v2/segments/s1/related':
+              (_) => jsonBody(
+                pageJson([
+                  segmentJson(
+                    'r0',
+                    '1',
+                    [
+                      [0, 5],
+                    ],
+                    textId: 'root',
+                    editionId: 'e-root2',
+                  ),
+                  segmentJson(
+                    'r1',
+                    '1',
+                    [
+                      [0, 5],
+                    ],
+                    textId: 'trans',
+                    editionId: 'e-trans',
+                  ),
+                  segmentJson(
+                    'c2',
+                    '3',
+                    [
+                      [10, 15],
+                    ],
+                    textId: 'comm',
+                    editionId: 'e-comm',
+                  ),
+                  segmentJson(
+                    'c1',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'comm',
+                    editionId: 'e-comm',
+                  ),
+                  segmentJson(
+                    'ce',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'comm-en',
+                    editionId: 'e-comm-en',
+                  ),
+                  segmentJson(
+                    'oc',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'other-comm-en',
+                    editionId: 'e-oc',
+                  ),
+                  segmentJson('r5', '1', [
+                    [0, 5],
+                  ]),
+                ], limit: 20),
+              ),
+          ...texts(),
+        });
+        final repository = server.repository();
+
+        final resources = await repository.loadSegmentResources('s1');
+        await repository.loadSegmentResources('s1');
+
+        expect(resources.hasRootWork, isFalse);
+        expect(resources.rootTexts, isEmpty);
+        expect(resources.translations.map((e) => e.editionId), ['e-trans']);
+        expect(resources.translations.single.title, 'Title trans');
+        expect(resources.commentaries.map((e) => e.editionId), [
+          'e-comm',
+          'e-oc',
+        ]);
+        final comm = resources.commentaries.first;
+        expect(comm.segments.map((s) => s.id), ['c1', 'c2']);
+        expect(comm.translations.map((e) => e.editionId), ['e-comm-en']);
+      expect(resources.commentaryEditionCount, 3);
+        expect(server.count('/v2/segments/s1/related'), 1);
+        expect(server.count('/v2/texts/root'), 1);
+        expect(server.count('/v2/texts/comm'), 1);
+      },
+    );
+
+    test(
+      'open translated commentary: root work in any language, own work as translations',
+      () async {
+        final server = LibraryTestServer({
+          '/v2/segments/s1':
+              (_) => jsonBody(
+                segmentJson(
+                  's1',
+                  '1',
+                  [
+                    [0, 5],
+                  ],
+                  textId: 'comm-en',
+                  editionId: 'e-comm-en',
+                ),
+              ),
+          '/v2/segments/s1/related':
+              (_) => jsonBody(
+                pageJson([
+                  segmentJson(
+                    'r0',
+                    '1',
+                    [
+                      [0, 5],
+                    ],
+                    textId: 'root',
+                    editionId: 'e-root',
+                  ),
+                  segmentJson(
+                    'r1',
+                    '1',
+                    [
+                      [0, 5],
+                    ],
+                    textId: 'trans',
+                    editionId: 'e-trans',
+                  ),
+                  segmentJson(
+                    'c1',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'comm',
+                    editionId: 'e-comm',
+                  ),
+                  segmentJson(
+                    'oc',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'other-comm-en',
+                    editionId: 'e-oc',
+                  ),
+                  segmentJson(
+                    'x',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'missing',
+                    editionId: 'e-x',
+                  ),
+                ], limit: 20),
+              ),
+          ...texts(),
+        });
+
+        final resources = await server.repository().loadSegmentResources('s1');
+
+        expect(resources.hasRootWork, isTrue);
+        expect(resources.rootTexts.map((e) => e.editionId), [
+          'e-root',
+          'e-trans',
+        ]);
+        expect(resources.translations.map((e) => e.editionId), [
+          'e-comm',
+          'e-x',
+        ]);
+        expect(resources.commentaries.map((e) => e.editionId), ['e-oc']);
+      },
+    );
+
+    test(
+      'the open text is known from an edition the reader already loaded',
+      () async {
+        final server = LibraryTestServer({
+          '/v2/editions/e-comm/segmentation/segments':
+              (_) => jsonBody(
+                pageJson([
+                  segmentJson('s1', '1', [
+                    [0, 5],
+                  ]),
+                ]),
+              ),
+          '/v2/segments/s1/related':
+              (_) => jsonBody(
+                pageJson([
+                  segmentJson(
+                    'c1',
+                    '2',
+                    [
+                      [5, 10],
+                    ],
+                    textId: 'comm-en',
+                    editionId: 'e-comm2',
+                  ),
+                  segmentJson(
+                    'r0',
+                    '1',
+                    [
+                      [0, 5],
+                    ],
+                    textId: 'root',
+                    editionId: 'e-root',
+                  ),
+                ], limit: 20),
+              ),
+          ...texts(),
+        });
+        final repository = server.repository();
+        await repository.getEditionSegments('e-comm');
+
+        final resources = await repository.loadSegmentResources('s1');
+
+        expect(server.count('/v2/segments/s1'), 0);
+        expect(resources.rootTexts.map((e) => e.editionId), ['e-root']);
+        expect(resources.translations.map((e) => e.editionId), ['e-comm2']);
+      },
+    );
+  });
+
+  group('LibraryRepository.loadEditionContent', () {
+    test('slices every segment from one content fetch', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/content': (_) => jsonBody('cdefghi'),
+        '/v2/editions/e1':
+            (_) => jsonBody({'id': 'e1', 'text_id': 't', 'source': 'src'}),
       });
-      final repository = server.repository();
-
-      final resources = await repository.loadSegmentResources('s1');
-      await repository.loadSegmentResources('s1');
-
-      expect(resources.versions.map((r) => r.segmentId), ['r1', 'r3', 'r4']);
-      expect(resources.commentaries.map((r) => r.segmentId), ['r2']);
-      expect(
-        resources.commentaries.single.kind,
-        LibraryResourceKind.commentary,
+      final edition = LibraryRelatedEdition(
+        editionId: 'e1',
+        text: null,
+        segments: [
+          LibrarySegment.fromJson(
+            segmentJson('a', '1', [
+              [2, 4],
+            ]),
+          ),
+          LibrarySegment.fromJson(
+            segmentJson('b', '2', [
+              [4, 6],
+              [6, 9],
+            ]),
+          ),
+        ],
       );
-      expect(resources.versions.first.title, 'Title root');
-      expect(resources.versions.first.language, 'bo');
-      expect(server.count('/v2/segments/s1/related'), 1);
-      expect(server.count('/v2/texts/root'), 1);
+
+      final content = await server.repository().loadEditionContent(edition);
+
+      expect(content.segmentLines, [
+        ['cd'],
+        ['ef', 'ghi'],
+      ]);
+      expect(content.source, 'src');
+      final uri = server.requests.singleWhere(
+        (u) => u.path.endsWith('/content'),
+      );
+      expect(uri.queryParameters, {'span_start': '2', 'span_end': '9'});
     });
   });
 
@@ -405,8 +905,7 @@ void main() {
     test('keeps the content when the edition lookup fails', () async {
       final server = LibraryTestServer({
         '/v2/segments/r1/content': (_) => jsonBody('abcdef'),
-        '/v2/editions/e1':
-            (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
+        '/v2/editions/e1': (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
       });
 
       final content = await server.repository().loadResourceContent(

@@ -217,7 +217,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'Add recitation to';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -906,7 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_online => 'Online';
 
   @override
-  String get home_group_events => 'Group Events';
+  String get home_group_events => 'Featured Events';
 
   @override
   String get home_poems => 'Poems';
@@ -1515,6 +1515,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get second_version_msg =>
       'The second version will appear below each verse of the main text';
+
+  @override
+  String get root_text => 'Root text';
 
   @override
   String get version => 'Versions';
@@ -2813,7 +2816,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Prayer requests are closed for this event.';
 
   @override
-  String get event_prayer_pray => 'Prayer';
+  String get event_prayer_pray => 'Pray';
 
   @override
   String get event_prayer_praying => 'Praying';

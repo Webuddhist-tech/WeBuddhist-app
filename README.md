@@ -40,6 +40,30 @@ Each flavor should use its own PostHog project token:
 | `POSTHOG_HOST` | PostHog ingest host (default `https://us.i.posthog.com`) |
 | `POSTHOG_ENABLED` | Set to `false` to disable analytics locally |
 
+Screen views (`$screen`) come from the route observers on both the root and
+the tab-shell navigator, so every named route is tracked. Product events are
+declared once in `lib/core/analytics/analytics_events.dart` and follow the
+team tracking plan (forum post "Current state of analytics in the WeBuddhist
+app", section 5): `object_verb` names, snake_case properties, never text a
+user typed. Each feature fires them through a small analytics class
+(`PlanAnalytics`, `ReaderAnalytics`, `MalaAnalytics`, ...) in its
+`presentation/utils` folder, so screens never spell out event names or
+property keys themselves. Every share sheet reports one `content_shared`
+event with a `surface`, only after the sheet was actually used.
+
+Microsoft Clarity adds session recordings and per-screen heatmaps on top of
+PostHog. One Clarity project can serve every flavor: each session is tagged
+with `environment` and `app_flavor`, so dev traffic can be filtered out on the
+dashboard. Screens are named after the go_router route name (`reader`,
+`home-settings`, …), imperatively pushed screens after their `RouteSettings`
+name, and the four bottom tabs as `tab-home` / `tab-practice` / `tab-connect` /
+`tab-me`.
+
+| Variable | Description |
+|----------|-------------|
+| `CLARITY_PROJECT_ID` | Clarity project ID (Clarity dashboard → Settings → Overview). Empty disables Clarity |
+| `CLARITY_ENABLED` | Set to `false` to disable Clarity locally |
+
 ### 4. Run the App
 
 **Android**
@@ -178,18 +202,22 @@ Set these in `.env.dev` / `.env.staging` / `.env.prod`:
 
 | Variable | Purpose |
 | --- | --- |
-| `TOLGEE_API_URL` | No longer read by the app; safe to drop from `.env` |
-| `TOLGEE_API_KEY` | Read-only scoped project key. Acts as a feature flag — Content Delivery itself is public |
-| `TOLGEE_CDN_URL` | Content Delivery base URL |
-| `TOLGEE_ENABLED` | Optional override; defaults to on when key and CDN URL are set |
+| `TOLGEE_CDN_URL` | Content Delivery base URL. Setting it turns Tolgee on — the CDN is public, no key needed |
+| `TOLGEE_ENABLED` | Optional; `false` turns Tolgee off even with a URL |
+| `TOLGEE_API_URL`, `TOLGEE_API_KEY` | No longer read by the app; safe to drop from `.env` |
 
-Leaving `TOLGEE_API_KEY` empty disables the integration and the app uses the
-bundled ARB only. This is also the kill switch if a bad translation ships.
+Without a CDN URL (or with `TOLGEE_ENABLED=false`) the app uses the bundled
+ARB only. `TOLGEE_ENABLED=false` is also the kill switch if a bad translation
+ships — but it only reaches users through a new build.
 
-> **The API key ships inside the app.** `.env` files are bundled as assets, so
-> anything in them can be extracted from a release build. Use a project key
-> scoped to `translations.view` and `languages.view` only — a leaked
-> write-capable key would let anyone rewrite the app's copy.
+CI builds write both lines through `ci/scripts/create_env_files.sh`, from the
+`TOLGEE_CDN_URL` / `TOLGEE_ENABLED` repository secrets. An empty or missing
+URL secret falls back to the shared project, so store builds always have
+Tolgee unless `TOLGEE_ENABLED` is `false`.
+
+> **Never put a write-capable key in `.env`.** The files are bundled as assets
+> and can be extracted from a release build. The app needs no key at all; the
+> sync key below stays in your shell or GitHub secrets.
 
 ### Tolgee project requirements
 
@@ -204,18 +232,19 @@ bundled ARB only. This is also the kill switch if a bad translation ships.
 
 ### When updates apply
 
-Translations are fetched on app start and on language change. An edit in
-Tolgee reaches users on their next app launch; there is no live push. A cold
-start with no network shows the bundled ARB text.
+Translations are fetched on app start, on language change, and when the app
+returns to the foreground (at most every 5 minutes). An edit published in
+Tolgee reaches users within minutes of their next launch or return to the app;
+there is no live push. A cold start with no network shows the bundled ARB text
+until a later return to the app fetches again.
 
 ### ARB sync (manual and CI)
 
 Bundled ARB files stay the offline fallback; the Tolgee CDN is the OTA
-override. Sync uses a **second** key that must never live in `.env.*`:
+override. Sync uses a write key that must never live in `.env.*`:
 
 | Key | Where | Role |
 | --- | --- | --- |
-| `TOLGEE_API_KEY` | `.env.*` (ships in app) | Read-only runtime OTA |
 | `TOLGEE_SYNC_API_KEY` | shell env or GitHub Actions secret only | Local / CI ARB ↔ Tolgee sync (write) |
 
 You can sync manually with `dart run tool/tolgee_sync.dart ...`, or let the

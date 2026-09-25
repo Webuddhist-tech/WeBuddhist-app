@@ -117,6 +117,44 @@ void main() {
       expect(previous.currentSegmentPosition, 2);
     });
 
+    test('only the page that reaches the end has no next page', () async {
+      final ds = _datasource(_server());
+
+      final first = await ds.fetchTextDetails(
+        textId: 'E1',
+        direction: 'next',
+        size: 2,
+      );
+      final last = await ds.fetchTextDetails(
+        textId: 'E1',
+        segmentId: 's2',
+        direction: 'next',
+        size: 2,
+      );
+
+      expect(first.hasNextPage, isTrue);
+      expect(last.currentSegmentPosition, 2);
+      expect(last.hasNextPage, isFalse);
+      // Survives the reader cache, and entries cached without it still load.
+      expect(ReaderResponse.fromJson(last.toJson()).hasNextPage, isFalse);
+      final legacy = last.toJson()..remove('last_segment_position');
+      expect(ReaderResponse.fromJson(legacy).lastSegmentPosition, isNull);
+      expect(ReaderResponse.fromJson(legacy).hasNextPage, isTrue);
+    });
+
+    test('aligns a live segment to another language of the text', () async {
+      final ds = _datasource(_server());
+
+      expect(
+        await ds.alignSegment(
+          segmentId: 'b2',
+          sourceTextId: 'E2',
+          targetTextId: 'E1',
+        ),
+        's2',
+      );
+    });
+
     test('a version id loads the companion edition into translation content', () async {
       final response = await _datasource(_server()).fetchTextDetails(
         textId: 'E1',

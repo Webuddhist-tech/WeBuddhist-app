@@ -35,6 +35,11 @@ On cold start, the first frame may still show ARB text. After the CDN fetch
 succeeds, `tolgeeRevisionProvider` bumps and `Localizations` reloads remote
 strings. Offline or failed CDN → ARB only (no crash).
 
+Each return to the foreground calls `TolgeeService.refresh()`, throttled to one
+fetch every 5 minutes. It keeps the loaded strings on screen while fetching and
+if the fetch fails, and bumps the revision only when the payload changed. If
+the first load failed (offline at launch), the refresh retries it.
+
 ## CDN / project
 
 Public Content Delivery prefix (namespace included; **no** trailing file name):
@@ -66,18 +71,23 @@ Requirements in Tolgee Content Delivery:
 Env (per flavor `.env.dev` / `.env.staging` / `.env.prod`):
 
 ```env
-TOLGEE_API_URL=https://app.tolgee.io/v2
-TOLGEE_API_KEY=tgpak_...          # read-only project key
 TOLGEE_CDN_URL=https://cdn.tolg.ee/a23495c159b886551292e856ecf7a332/webuddhist
-TOLGEE_ENABLED=true
+TOLGEE_ENABLED=              # optional; false switches Tolgee off
 ```
 
-`TOLGEE_API_KEY` and `TOLGEE_API_URL` are **no longer used to read
-translations** — Content Delivery is public and the app fetches it directly.
-They are still read by `Env.tolgeeEnabled`, so a build without them keeps
-Tolgee switched off exactly as before; treat the key as a feature flag rather
-than a credential. It ships inside the bundled `.env` asset — never grant write
-scopes.
+The CDN URL alone turns Tolgee on (`Env.tolgeeEnabled`); without it the app
+uses the bundled ARB only. `TOLGEE_API_KEY` and `TOLGEE_API_URL` are **no
+longer read** — Content Delivery is public and the app fetches it directly —
+so they can be dropped from local `.env` files.
+
+**CI builds.** The store and TestFlight / Play internal builds get their `.env`
+files from [`ci/scripts/create_env_files.sh`](../ci/scripts/create_env_files.sh),
+fed by the `TOLGEE_CDN_URL` / `TOLGEE_ENABLED` repository secrets in
+`build-android.yml` / `build-ios.yml`. An empty or missing URL secret falls
+back to the shared project above. Until 2026-09 the script wrote no Tolgee
+lines at all, so every CI build — production included — ran on bundled ARB
+only while local `flutter run` builds (which read the developer's own `.env`)
+showed Tolgee edits.
 
 ## Why the SDK is not used
 
@@ -153,9 +163,8 @@ release build — the sync workflow opens a reviewable PR instead.
 
 ### Create the write-access sync key
 
-Network sync commands need a **separate** write-capable project API key. Do not
-reuse or widen the read-only `TOLGEE_API_KEY` stored in `.env.*` (those files
-ship inside the app).
+Network sync commands need a write-capable project API key. Never put it in
+`.env.*` — those files ship inside the app, which itself needs no key.
 
 1. Open Tolgee → select the WeBuddhist project → **Project API Keys** (Account /
    project settings → API keys).
@@ -178,7 +187,6 @@ the API key.
 
 | Key | Where | Purpose | Scopes |
 | --- | --- | --- | --- |
-| `TOLGEE_API_KEY` | `.env.*` (ships in app) | Runtime OTA / CDN init | read-only (`translations.view`, `languages.view`) |
 | `TOLGEE_SYNC_API_KEY` | shell env / GitHub secret only | Local or CI ARB ↔ Tolgee sync | write sync (`keys.create` + view scopes) |
 
 ### Manual vs automatic sync
@@ -252,8 +260,8 @@ dart run tool/tolgee_sync.dart doctor
 
 Network commands (`push`, `pull`, `doctor --remote`) read
 `TOLGEE_SYNC_API_KEY` from the process environment — not from `.env.*`. The
-value must be a project API key with write scopes, separate from the read-only
-runtime key that ships inside the app. Setting it in PowerShell only affects
+value must be a project API key with write scopes, kept out of the `.env`
+files that ship inside the app. Setting it in PowerShell only affects
 the current terminal session; closing the window clears it. Never commit the
 value, paste it into `.env` files, or check it into git. For recurring
 automation, store the same name as a GitHub Actions secret instead of keeping
@@ -389,11 +397,15 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 3. Logs should include:  
    `Tolgee: Tolgee ready for en (CDN tag en)`  
    not a “no usable strings” warning.
-4. Change `sign_in` in Tolgee → Publish → fully restart the app → UI shows the new text.
+4. Change `sign_in` in Tolgee → Publish → restart the app, or background it and
+   return after 5 minutes → UI shows the new text.
+5. For a CI build (TestFlight / Play internal), repeat step 4 on the installed
+   app: it proves the generated `.env` carries `TOLGEE_CDN_URL`.
 
 ## Known limits
 
-- Updates apply on next launch or language switch (no live push).
+- Updates apply on next launch, language switch, or return to the foreground
+  (at most one fetch every 5 minutes); there is no live push.
 - Empty/404 CDN responses, malformed bodies and transport failures all parse
   to an empty payload, which the bridge treats as “use ARB”.
 - Do not put the filename in `TOLGEE_CDN_URL` — only the prefix through `/webuddhist`.

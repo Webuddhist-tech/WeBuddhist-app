@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/content_language_analytics.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -394,7 +395,11 @@ class MoreScreen extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () async {
-          await selectAppLanguage(ref, language.code);
+          await selectAppLanguage(
+            ref,
+            language.code,
+            source: ContentLanguageSource.settings,
+          );
           if (context.mounted) context.pop();
         },
         borderRadius: BorderRadius.circular(12),

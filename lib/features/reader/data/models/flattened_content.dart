@@ -65,6 +65,19 @@ class FlattenedContent {
   }
 
   /// Get the last segment ID
+  /// Verse numbers of the first and last loaded segments, or null.
+  (int, int)? get segmentNumberRange {
+    int? first;
+    int? last;
+    for (final item in items) {
+      final number = item.segment?.segmentNumber;
+      if (number == null) continue;
+      first ??= number;
+      last = number;
+    }
+    return first == null ? null : (first, last!);
+  }
+
   String? get lastSegmentId {
     for (int i = items.length - 1; i >= 0; i--) {
       if (items[i].isSegment) {

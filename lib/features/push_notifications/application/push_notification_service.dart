@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -36,16 +37,21 @@ class PushNotificationService {
     required PushMessagingRepository repository,
     required LocalStorageService storage,
     required ForegroundPushFilter foregroundFilter,
+    EntryAnalytics? analytics,
     Duration reconcileRetryBaseDelay = const Duration(seconds: 5),
     Duration signOutTimeout = const Duration(seconds: 4),
+    Duration detachRetryBaseDelay = const Duration(seconds: 5),
   }) : _repository = repository,
        _storage = storage,
        _foregroundFilter = foregroundFilter,
+       _analytics = analytics,
        _reconcileRetryBaseDelay = reconcileRetryBaseDelay,
-       _signOutTimeout = signOutTimeout;
+       _signOutTimeout = signOutTimeout,
+       _detachRetryBaseDelay = detachRetryBaseDelay;
 
   final PushMessagingRepository _repository;
   final LocalStorageService _storage;
+  final EntryAnalytics? _analytics;
 
   /// Screens claim the pushes they already show, so the banner is skipped
   /// for a message the member is looking at. Only the foreground path asks:
@@ -60,7 +66,7 @@ class PushNotificationService {
   /// state. Set by the bootstrap layer to route via [PushMessageNavigator].
   /// Foreground taps reach the navigator separately (through the shared
   /// flutter_local_notifications callback), so they don't pass through here.
-  void Function(PushMessage message)? onOpenMessage;
+  void Function(PushMessage message, PushAppState appState)? onOpenMessage;
 
   String? _token;
   bool _loggedIn = false;
@@ -98,17 +104,29 @@ class PushNotificationService {
   Future<void> _runInitialize() async {
     try {
       await _createAndroidChannel();
+      // Only a request the OS actually shows counts as a prompt.
+      final prompting = await _repository.willPromptForPermission();
+      if (prompting) _analytics?.notificationPermissionPrompted();
       final granted = await _repository.requestPermission();
+      if (prompting) {
+        _analytics?.notificationPermissionAnswered(granted: granted);
+      }
       _logger.info('Notification permission granted: $granted');
 
       _subscriptions
         ..add(_repository.onForegroundMessage.listen(_showNotification))
-        ..add(_repository.onMessageOpenedApp.listen(_onNotificationTapped))
+        ..add(
+          _repository.onMessageOpenedApp.listen(
+            (m) => _onNotificationTapped(m, PushAppState.background),
+          ),
+        )
         ..add(_repository.onTokenRefresh.listen(_onToken));
 
       // Terminated-state launch via a notification tap.
       final launchMessage = await _repository.getInitialMessage();
-      if (launchMessage != null) _onNotificationTapped(launchMessage);
+      if (launchMessage != null) {
+        _onNotificationTapped(launchMessage, PushAppState.terminated);
+      }
 
       // Token for this install.
       final token = await _repository.getToken();
@@ -166,11 +184,15 @@ class PushNotificationService {
       _flushPendingForeground();
     }
     if (signedIn) _requestReconcile();
-    if (!loggedIn) {
-      _detaching ??= _detachFromAccount().whenComplete(
-        () => _detaching = null,
-      );
-    }
+    // A fresh snapshot supersedes any pending detach retry.
+    _detachRetryTimer?.cancel();
+    _detachRetryTimer = null;
+    _detachRetryCount = 0;
+    if (!loggedIn) _startDetach();
+  }
+
+  void _startDetach() {
+    _detaching ??= _detachFromAccount().whenComplete(() => _detaching = null);
   }
 
   /// Upper bound on how long sign-out waits for the backend, across every
@@ -180,6 +202,13 @@ class PushNotificationService {
 
   Future<void>? _signOutUnregister;
   Future<void>? _detaching;
+  Timer? _detachRetryTimer;
+  int _detachRetryCount = 0;
+  final Duration _detachRetryBaseDelay;
+
+  /// Max automatic retries after a failed detach. Beyond this the next
+  /// signed-out auth snapshot (at the latest, the next launch) tries again.
+  static const maxDetachRetries = 3;
 
   /// Removes this device's backend registration for the user who is signing
   /// out. Call it before the local credentials are cleared, since the endpoint
@@ -225,7 +254,8 @@ class PushNotificationService {
   ///
   /// Only runs while a registration id is stored. That also covers installs
   /// that signed out before this existed and are still receiving pushes. On
-  /// failure the id is kept, so the next signed-out snapshot tries again.
+  /// failure the id is kept and a backoff retry is scheduled, since until
+  /// the token is gone the OS keeps showing that account's pushes.
   Future<void> _detachFromAccount() async {
     try {
       final pending = _signOutUnregister;
@@ -238,8 +268,12 @@ class PushNotificationService {
         StorageKeys.pushDeviceServerId,
       );
       if (serverId == null || serverId.isEmpty) return;
+      // Checked again after the read: a sign-in landing meanwhile has
+      // registered this token, and deleting it would stop their pushes.
+      if (_loggedIn) return;
 
       await _repository.deleteToken();
+      _detachRetryCount = 0;
       await _storage.remove(StorageKeys.pushDeviceServerId);
       await _storage.remove(StorageKeys.fcmToken);
       _token = null;
@@ -250,7 +284,22 @@ class PushNotificationService {
       if (fresh != null) await _onToken(fresh);
     } catch (e, st) {
       _logger.warning('Push detach after sign-out failed: $e', e, st);
+      _scheduleDetachRetry();
     }
+  }
+
+  void _scheduleDetachRetry() {
+    if (_loggedIn || _detachRetryCount >= maxDetachRetries) return;
+    _detachRetryCount++;
+    _detachRetryTimer?.cancel();
+    _detachRetryTimer = Timer(_detachRetryBaseDelay * _detachRetryCount, () {
+      _detachRetryTimer = null;
+      if (_loggedIn) return;
+      _logger.info(
+        'Retrying push detach (attempt $_detachRetryCount/$maxDetachRetries)',
+      );
+      _startDetach();
+    });
   }
 
   /// Waits, within [_signOutTimeout], for a reconcile pass already in flight,
@@ -513,9 +562,9 @@ class PushNotificationService {
     }
   }
 
-  void _onNotificationTapped(PushMessage message) {
+  void _onNotificationTapped(PushMessage message, PushAppState appState) {
     _logger.info('Notification opened: ${message.title} data=${message.data}');
-    onOpenMessage?.call(message);
+    onOpenMessage?.call(message, appState);
   }
 
   Future<void> _createAndroidChannel() async {
@@ -535,6 +584,8 @@ class PushNotificationService {
     _initRetryTimer = null;
     _reconcileRetryTimer?.cancel();
     _reconcileRetryTimer = null;
+    _detachRetryTimer?.cancel();
+    _detachRetryTimer = null;
     _pendingForeground.clear();
     for (final sub in _subscriptions) {
       unawaited(sub.cancel());

@@ -9,7 +9,8 @@ import 'package:flutter_pecha/features/texts/data/models/translation/segment_tra
 import 'package:flutter_pecha/features/texts/data/models/translation/segment_translation_response.dart';
 import 'package:flutter_pecha/features/texts/domain/repositories/segment_repository.dart';
 
-/// Segment panels (commentaries, versions, info) served by the library API.
+/// Segment panels (commentaries, versions, root text, info) served by the
+/// library API. Each card is one edition with all its aligned segments.
 class LibrarySegmentRepository implements SegmentRepositoryInterface {
   LibrarySegmentRepository({required LibraryRepository library})
     : _library = library;
@@ -32,17 +33,18 @@ class LibrarySegmentRepository implements SegmentRepositoryInterface {
     );
   }
 
-  // The library has no videos or sheets; only the counts are meaningful.
+  // The library has no videos or sheets; counts are editions, not segments.
   @override
   Future<SegmentInfo> getSegmentInfo(String segmentId) async {
     final resources = await _library.loadSegmentResources(segmentId);
     return SegmentInfo(
       segmentId: segmentId,
       textId: '',
-      translations: resources.versions.length,
+      translations: resources.translations.length,
       relatedText: SegmentRelatedTextInfo(
-        commentaries: resources.commentaries.length,
-        rootText: resources.versions.where((r) => !r.text.isTranslation).length,
+        commentaries: resources.commentaryEditionCount,
+        rootText: resources.rootTexts.length,
+        hasRootText: resources.hasRootWork,
       ),
       resources: const SegmentResourcesInfo(sheets: 0),
       videos: const [],
@@ -54,26 +56,9 @@ class LibrarySegmentRepository implements SegmentRepositoryInterface {
     String segmentId,
   ) async {
     final resources = await _library.loadSegmentResources(segmentId);
-    final contents = await _contents(resources.commentaries);
     return SegmentCommentaryResponse(
       parentSegment: ParentSegment(segmentId: segmentId, content: ''),
-      commentaries: [
-        for (var i = 0; i < resources.commentaries.length; i++)
-          SegmentCommentary(
-            textId: resources.commentaries[i].text.id,
-            title: resources.commentaries[i].title,
-            segments: [
-              MappedSegmentDTO(
-                segmentId: resources.commentaries[i].segmentId,
-                content: contents[i].html,
-              ),
-            ],
-            language: resources.commentaries[i].language,
-            count: 1,
-            source: contents[i].source,
-            license: resources.commentaries[i].text.license,
-          ),
-      ],
+      commentaries: await Future.wait(resources.commentaries.map(_commentary)),
     );
   }
 
@@ -82,33 +67,65 @@ class LibrarySegmentRepository implements SegmentRepositoryInterface {
     String segmentId,
   ) async {
     final resources = await _library.loadSegmentResources(segmentId);
-    final contents = await _contents(resources.versions);
+    return _translations(segmentId, resources.translations);
+  }
+
+  @override
+  Future<SegmentTranslationResponse> getSegmentRootTexts(
+    String segmentId,
+  ) async {
+    final resources = await _library.loadSegmentResources(segmentId);
+    return _translations(segmentId, resources.rootTexts);
+  }
+
+  Future<SegmentTranslationResponse> _translations(
+    String segmentId,
+    List<LibraryRelatedEdition> editions,
+  ) async {
+    final contents = await Future.wait(
+      editions.map(_library.loadEditionContent),
+    );
     return SegmentTranslationResponse(
       parentSegment: ParentSegment(segmentId: segmentId, content: ''),
       translations: [
-        for (var i = 0; i < resources.versions.length; i++)
+        for (var i = 0; i < editions.length; i++)
           SegmentTranslation(
-            textId: resources.versions[i].text.id,
-            title: resources.versions[i].title,
-            language: resources.versions[i].language,
+            textId: editions[i].textId,
+            title: editions[i].title,
+            language: editions[i].language,
             source: contents[i].source,
-            license: resources.versions[i].text.license,
+            license: editions[i].text?.license,
             segments: [
-              TranslationSegment(
-                id: resources.versions[i].segmentId,
-                content: contents[i].html,
-              ),
+              for (var j = 0; j < contents[i].segmentLines.length; j++)
+                TranslationSegment(
+                  id: editions[i].segments[j].id,
+                  content: contents[i].htmls[j],
+                ),
             ],
           ),
       ],
     );
   }
 
-  Future<List<LibraryResourceContent>> _contents(
-    List<LibraryRelatedResource> resources,
-  ) {
-    return Future.wait(
-      resources.map((r) => _library.loadResourceContent(r.segment)),
+  Future<SegmentCommentary> _commentary(LibraryRelatedEdition edition) async {
+    final content = await _library.loadEditionContent(edition);
+    final nested = await Future.wait(edition.translations.map(_commentary));
+    final htmls = content.htmls;
+    return SegmentCommentary(
+      textId: edition.textId,
+      title: edition.title,
+      language: edition.language,
+      count: htmls.length,
+      source: content.source,
+      license: edition.text?.license,
+      segments: [
+        for (var j = 0; j < htmls.length; j++)
+          MappedSegmentDTO(
+            segmentId: edition.segments[j].id,
+            content: htmls[j],
+          ),
+      ],
+      translations: nested,
     );
   }
 }

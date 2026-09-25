@@ -1,22 +1,29 @@
 import 'dart:async';
-import 'dart:ui' show VoidCallback;
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart'
-    show ReaderDualLayoutSettings;
-import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
+    show ReaderDualLayoutSettings, ReaderSlotConfig;
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
+import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_flattener_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_merger_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_analytics.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
+import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Parameters for initializing the reader
@@ -55,15 +62,21 @@ class ReaderParams {
 }
 
 /// Notifier for managing reader state
-class ReaderNotifier extends StateNotifier<ReaderState> {
+class ReaderNotifier extends StateNotifier<ReaderState>
+    with WidgetsBindingObserver {
   final Ref _ref;
   final ReaderParams _params;
   final SectionFlattenerService _flattener;
   final SectionMergerService _merger;
+  final ReaderAnalytics _analytics;
+  final _session = ReaderSessionTracker();
   final _logger = AppLogger('ReaderNotifier');
 
   Timer? _highlightTimer;
+  Timer? _backgroundTimer;
   bool _isDisposed = false;
+  bool _openTracked = false;
+  int _pagesFetched = 0;
 
   /// Tracks the `versionId` used for the current/last fetch so we can decide
   /// when a settings change actually warrants a reload. Starts `null` —
@@ -81,16 +94,20 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     required ReaderParams params,
     SectionFlattenerService? flattener,
     SectionMergerService? merger,
+    ReaderAnalytics? analytics,
   }) : _ref = ref,
        _params = params,
        _flattener = flattener ?? const SectionFlattenerService(),
        _merger = merger ?? SectionMergerService(),
+       _analytics = analytics ?? ref.read(readerAnalyticsProvider),
        super(ReaderState.initial(params.textId)) {
     _ref.listen<ReaderDualLayoutSettings>(
       readerDualSettingsProvider(params.settingsScope),
       _onDualSettingsChanged,
       fireImmediately: false,
     );
+    WidgetsBinding.instance.addObserver(this);
+    _session.start();
     Future<void>(_initialize);
   }
 
@@ -116,6 +133,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       'Primary versionId changed: $_activeVersionId -> $newVersionId. '
       'Reloading reader content.',
     );
+    _activeVersionId = newVersionId;
     _reloadForVersionChange();
   }
 
@@ -143,7 +161,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     if (_isDisposed) return;
     _logger.debug('ReaderNotifier initializing with params: $_params');
 
-    final initialSegmentId = useNavParams ? _params.segmentId : null;
+    var initialSegmentId = useNavParams ? _params.segmentId : null;
     final initialSize =
         useNavParams ? _params.navigationContext?.initialPageSize : null;
 
@@ -153,6 +171,11 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     );
 
     try {
+      if (useNavParams) await _openAsTranslation();
+      if (_isDisposed) return;
+      if (initialSegmentId != null) {
+        initialSegmentId = state.loadedSegmentId(initialSegmentId);
+      }
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
@@ -161,6 +184,10 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
         size: initialSize,
       );
       if (_isDisposed) return;
+      if (state.openedTranslation != null) {
+        await _prefetchTranslation(window.content);
+        if (_isDisposed) return;
+      }
       final response = window.response;
       _logger.debug('ReaderNotifier initialized with response: $response');
 
@@ -170,9 +197,11 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
         content: window.content,
         currentSegmentPosition: response.currentSegmentPosition,
         totalSegments: response.totalSegments,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         hasPreviousPage: window.hasPreviousPage,
       );
+      // The edition the user opened, not the original it is shown under.
+      _trackOpened(state.openedText ?? response.textDetail);
 
       // `version_id` in this API is just the loaded text's id. Capture it so
       // the dual-settings listener can treat a user pick of the same version
@@ -192,6 +221,158 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       );
     }
   }
+
+  /// A translation opens as the Translation layer of its root text: the root
+  /// loads as the primary and the opened edition as the secondary, shown
+  /// alone, so the page reads as before while the Languages sheet names the
+  /// real original. Anything failing, or a requested verse the root lacks,
+  /// keeps the opened edition as the primary.
+  ///
+  /// The layout lives per text, so a reader still on screen (a plan's
+  /// previous item during `pushReplacement`) may already have set it up for
+  /// this translation; this reader then adopts it instead of backing off as
+  /// it does from a layout the user picked.
+  Future<void> _openAsTranslation() async {
+    final dual = _ref.read(
+      readerDualSettingsProvider(_params.settingsScope).notifier,
+    );
+    bool userLayout() => dual.isPrimaryEdited || dual.isSecondaryEdited;
+    final ReaderVersionDetail opened;
+    final ReaderVersionDetail root;
+    final Map<String, String> aliases;
+    try {
+      final settings = _ref.read(readerSettingsRemoteDatasourceProvider);
+      opened = await settings.fetchVersionInfo(versionId: _params.textId);
+      final rootId = opened.parentId;
+      if (rootId == null || rootId.isEmpty) return;
+      if (userLayout() && !_isOpenedUnder(rootId, opened.id)) return;
+      root = await settings.fetchVersionInfo(versionId: rootId);
+      aliases = await _alignNavigationSegments(root.id);
+      final requested = _params.segmentId;
+      // Already under the root, the root stays the primary regardless; the
+      // repository still places the verse through its own edition.
+      if (requested != null &&
+          !aliases.containsKey(requested) &&
+          !_isOpenedUnder(root.id, opened.id)) {
+        _logger.debug('$requested has no verse in ${root.id}; kept as opened');
+        return;
+      }
+      // The persisted flags load asynchronously and would otherwise land on
+      // top of the per-text layout set below.
+      await Future.wait([
+        _ref.read(readerSecondaryEnabledProvider.notifier).loaded,
+        _ref.read(readerOriginalVisibleProvider.notifier).loaded,
+      ]);
+    } catch (e) {
+      _logger.warning('Original of ${_params.textId} not resolved', e);
+      return;
+    }
+    if (_isDisposed) return;
+    final adopted = _isOpenedUnder(root.id, opened.id);
+    if (!adopted && userLayout()) return;
+    // Same id the primary is about to load with, so the settings listener
+    // does not reload it.
+    _activeVersionId = root.id;
+    // An adopted layout keeps whatever the user toggled on the other screen.
+    if (!adopted) {
+      dual.openAsTranslation(original: _slot(root), translation: _slot(opened));
+    }
+    state = state.copyWith(
+      openedTranslation: _textDetail(opened),
+      segmentAliases: aliases,
+    );
+  }
+
+  /// True when this text's layout already shows [translationId] as the
+  /// translation of [rootId].
+  bool _isOpenedUnder(String rootId, String translationId) {
+    final dual = _ref.read(readerDualSettingsProvider(_params.settingsScope));
+    return dual.primary.versionId == rootId &&
+        dual.secondary.versionId == translationId;
+  }
+
+  /// The first page of the translation an opened translation is shown as,
+  /// fetched before the page is shown so the original never appears in the
+  /// meantime. It is the request the translation stream makes first, so the
+  /// stream finds it cached; a failure is left for that stream to report.
+  Future<void> _prefetchTranslation(FlattenedContent content) async {
+    final dual = _ref.read(readerDualSettingsProvider(_params.settingsScope));
+    final primaryId = dual.primary.versionId;
+    final translationId = dual.secondary.versionId;
+    if (!dual.secondaryEnabled || primaryId == null || translationId == null) {
+      return;
+    }
+    final key = SecondaryReaderKey(
+      textId: primaryId,
+      versionId: translationId,
+      initialSegmentId: secondaryInitialAnchor(
+        navigationContext: _params.navigationContext,
+        segmentId: _params.segmentId,
+        content: content,
+      ),
+      initialSize: _params.navigationContext?.initialPageSize,
+    );
+    try {
+      await _ref.read(
+        textDetailsFutureProvider(secondaryInitialParams(key)).future,
+      );
+    } catch (e) {
+      _logger.debug('Translation page not fetched ahead: $e');
+    }
+  }
+
+  /// Navigation names verses of the opened translation (a plan's range, a
+  /// bookmark); these are the root's matching verses, by verse number. A
+  /// verse with no counterpart is left out and keeps its own id.
+  Future<Map<String, String>> _alignNavigationSegments(String rootId) async {
+    final ids = <String>{
+      if (_params.segmentId != null) _params.segmentId!,
+      ...?_params.navigationContext?.currentSegmentIds,
+    };
+    if (ids.isEmpty) return const {};
+    final texts = _ref.read(textsRepositoryProvider);
+    final aligned = await Future.wait(
+      ids.map(
+        (id) => texts.alignSegment(
+          segmentId: id,
+          sourceTextId: _params.textId,
+          targetTextId: rootId,
+        ),
+      ),
+    );
+    final aliases = <String, String>{};
+    var i = 0;
+    for (final id in ids) {
+      final target = aligned[i++];
+      if (target != null && target != id) aliases[id] = target;
+    }
+    return aliases;
+  }
+
+  // Labels are localized by the sheet from the code.
+  static ReaderSlotConfig _slot(ReaderVersionDetail version) =>
+      ReaderSlotConfig(
+        languageCode: version.language,
+        languageLabel: version.language,
+        versionId: version.id,
+        versionLabel: version.title,
+      );
+
+  static TextDetail _textDetail(ReaderVersionDetail version) => TextDetail(
+    id: version.id,
+    title: version.title,
+    language: version.language,
+    type: version.type ?? 'text',
+    groupId: version.groupId ?? '',
+    isPublished: version.isPublished,
+    createdDate: version.createdDate ?? '',
+    updatedDate: version.updatedDate ?? '',
+    publishedDate: version.publishedDate ?? '',
+    publishedBy: version.publishedBy ?? '',
+    sourceLink: version.sourceLink,
+    license: version.license,
+    parentId: version.parentId,
+  );
 
   /// The page at [segmentId] (the first page when null). When the target sits
   /// near the top, the previous page is merged in first so the widget gets
@@ -239,36 +420,62 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   }
 
   /// Replaces the loaded window with the page around [segmentId], for a live
-  /// position outside what pagination has fetched. False when the text does
-  /// not have that segment (or the fetch failed), so the caller can report
-  /// being out of sync instead of jumping.
+  /// position outside what pagination has fetched, and returns this
+  /// version's id for it. Null when the text does not have that segment (or
+  /// the fetch failed), so the caller can report being out of sync instead of
+  /// jumping.
   ///
-  /// [segmentId] is the operator's, so in another language it never matches
-  /// this version's ids literally — both checks resolve through the
-  /// segments' `mappings` so a viewer reading English keeps following an
-  /// operator clicking through Tibetan past the loaded page.
-  Future<bool> jumpToSegment(String segmentId) async {
-    if (_isDisposed) return false;
-    if (state.content?.resolveSegmentIndex(segmentId) != null) return true;
+  /// [segmentId] is the operator's. When they read another edition or
+  /// language of this text ([sourceTextId]), it never matches this version's
+  /// ids literally, so it is first aligned to the same verse here. Segments'
+  /// `mappings` still resolve it too.
+  Future<String?> jumpToSegment(
+    String segmentId, {
+    String? sourceTextId,
+  }) async {
+    if (_isDisposed) return null;
+    final loaded = _localSegmentId(state.content, segmentId);
+    if (loaded != null) return loaded;
     try {
-      final window = await _fetchWindow(segmentId: segmentId);
-      if (_isDisposed) return false;
-      if (window.content.resolveSegmentIndex(segmentId) == null) return false;
+      var target = segmentId;
+      if (sourceTextId != null && sourceTextId.isNotEmpty) {
+        final aligned = await _ref
+            .read(textsRepositoryProvider)
+            .alignSegment(
+              segmentId: segmentId,
+              sourceTextId: sourceTextId,
+              targetTextId: await _resolveDetailsTextId(),
+            );
+        if (_isDisposed) return null;
+        if (aligned != null) target = aligned;
+        final alreadyLoaded = _localSegmentId(state.content, target);
+        if (alreadyLoaded != null) return alreadyLoaded;
+      }
+      final window = await _fetchWindow(segmentId: target);
+      if (_isDisposed) return null;
+      final local = _localSegmentId(window.content, target);
+      if (local == null) return null;
       final response = window.response;
       state = state.copyWith(
         content: window.content,
         currentSegmentPosition: response.currentSegmentPosition,
         totalSegments: response.totalSegments,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         hasPreviousPage: window.hasPreviousPage,
         isLoadingNext: false,
         isLoadingPrevious: false,
       );
-      return true;
+      return local;
     } catch (e) {
       _logger.debug('Jump to segment $segmentId failed: $e');
-      return false;
+      return null;
     }
+  }
+
+  /// [content]'s own id for [segmentId], directly or through `mappings`.
+  static String? _localSegmentId(FlattenedContent? content, String segmentId) {
+    final index = content?.resolveSegmentIndex(segmentId);
+    return index == null ? null : content!.items[index].segmentId;
   }
 
   /// Fetch content from the repository.
@@ -313,11 +520,113 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       size: size,
     );
 
+    final stopwatch = Stopwatch()..start();
     final result = await _ref.read(textDetailsFutureProvider(params).future);
+    stopwatch.stop();
     return result.fold(
       (failure) =>
           throw Exception('Failed to fetch content: ${failure.message}'),
-      (response) => response,
+      (response) {
+        _trackPageLoaded(response, stopwatch.elapsedMilliseconds);
+        return response;
+      },
+    );
+  }
+
+  /// Fired once, when the first page is on screen, so the loaded text's
+  /// title, language and version are known.
+  void _trackOpened(TextDetail textDetail) {
+    if (_openTracked) return;
+    _openTracked = true;
+    final layout = readerLayoutFor(
+      _ref.read(readerDualSettingsProvider(_params.settingsScope)),
+    );
+    _analytics.readerOpened(
+      textId: _params.textId,
+      textTitle: textDetail.title,
+      source: readerOpenSourceFor(_params.navigationContext?.source),
+      language: textDetail.language,
+      versionId: textDetail.id,
+      script: _ref.read(
+        readerOriginalScriptProvider(
+          ReaderScriptScope(
+            scope: _params.settingsScope,
+            language: textDetail.language,
+          ),
+        ),
+      ),
+      layout: layout,
+      entrySegment: _params.segmentId,
+    );
+  }
+
+  void _trackPageLoaded(ReaderResponse response, int loadMs) {
+    if (_isDisposed) return;
+    _session.pageLoaded();
+    _analytics.readerPageLoaded(
+      textId: _params.textId,
+      pageNumber: ++_pagesFetched,
+      segmentCount: _countSegments(response.content.sections),
+      loadMs: loadMs,
+    );
+  }
+
+  int _countSegments(List<Section> sections) {
+    var count = 0;
+    for (final section in sections) {
+      count += section.segments.length;
+      count += _countSegments(section.sections ?? const []);
+    }
+    return count;
+  }
+
+  /// The deepest segment scrolled into view, for the session summary.
+  void markSegmentReached(int segmentNumber) {
+    if (_isDisposed) return;
+    _session.segmentReached(segmentNumber);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _onForeground();
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        _onBackground();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
+  /// Out of sight: the session ends unless the app is back within the grace.
+  void _onBackground() {
+    _session.background();
+    _backgroundTimer?.cancel();
+    _backgroundTimer = Timer(ReaderSessionTracker.backgroundGrace, _endSession);
+  }
+
+  /// A suspended app fires the timer late, so the grace is checked here too.
+  void _onForeground() {
+    _backgroundTimer?.cancel();
+    if (_session.backgroundedFor >= ReaderSessionTracker.backgroundGrace) {
+      _endSession();
+    }
+    if (_session.isActive) {
+      _session.foreground();
+    } else {
+      _session.start();
+    }
+  }
+
+  void _endSession() {
+    final summary = _session.end();
+    if (summary == null) return;
+    _analytics.readerSessionEnded(
+      textId: _params.textId,
+      session: summary,
+      segmentsTotal: state.totalSegments,
     );
   }
 
@@ -408,7 +717,7 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
       state = state.copyWith(
         content: mergedContent,
         isLoadingNext: false,
-        hasNextPage: response.currentSegmentPosition < response.totalSegments,
+        hasNextPage: response.hasNextPage,
         totalSegments: response.totalSegments,
       );
     } catch (e, stackTrace) {
@@ -536,12 +845,14 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
     }
   }
 
-  /// Open translation panel for a segment
-  void openTranslation(String segmentId) {
+  /// Open translation panel for a segment; [rootText] shows the root work
+  /// of a commentary instead of the versions.
+  void openTranslation(String segmentId, {bool rootText = false}) {
     if (_isDisposed) return;
     final isOpening = !state.isTranslationOpen;
     state = state.copyWith(
       translationSegmentId: segmentId,
+      showsRootText: rootText,
       splitRatio:
           isOpening ? ReaderConstants.defaultSplitRatio : state.splitRatio,
     );
@@ -554,13 +865,14 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   }
 
   /// Toggle translation panel
-  void toggleTranslation(String segmentId) {
+  void toggleTranslation(String segmentId, {bool rootText = false}) {
     if (_isDisposed) return;
 
-    if (state.translationSegmentId == segmentId) {
+    if (state.translationSegmentId == segmentId &&
+        state.showsRootText == rootText) {
       closeTranslation();
     } else {
-      openTranslation(segmentId);
+      openTranslation(segmentId, rootText: rootText);
     }
   }
 
@@ -654,6 +966,9 @@ class ReaderNotifier extends StateNotifier<ReaderState> {
   void dispose() {
     _isDisposed = true;
     _highlightTimer?.cancel();
+    _backgroundTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _endSession();
     super.dispose();
   }
 }
