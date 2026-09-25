@@ -374,7 +374,7 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 6. **Bad translator copy** — pull trusts Tolgee wording. After merge, that wording becomes the offline ARB fallback. Skim meaningful diffs, especially `en` and high-traffic keys.
 7. **Untranslated warnings** — keys with no Tolgee text for a locale stay missing in that ARB (`gen-l10n` “N untranslated” warnings). Expected until filled; not a CI crash unless doctor finds structural issues.
 8. **`develop` tip only** — sync checks out `develop`. Unmerged ARB work that exists only on another branch is not pushed or pulled until it lands on `develop`.
-9. **Editing existing `en` text in the ARB** — push only creates missing keys, so the change never reaches Tolgee. The next pull writes Tolgee's old `en` back; if the new text added or removed a placeholder (e.g. turned into an ICU plural), `doctor --remote` fails and no PR opens. Update the `en` value in Tolgee in the same change. This is what failed the 2026-09-21 run.
+9. **Editing existing `en` text in the ARB** — push only creates missing keys, so the change never reaches Tolgee. The next pull writes Tolgee's old `en` back before `doctor --remote` runs. The edit may be silently reverted rather than causing doctor to fail. Update the `en` value in Tolgee in the same change.
 
 **Bottom line:** auto-sync → PR → review → merge. The main operational risks are a large first PR, push creating Tolgee keys before ARB merge, CDN publish lag, and occasional conflicts with parallel ARB edits.
 ## Verify OTA
