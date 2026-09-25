@@ -40,9 +40,9 @@ Future<void> _pump(
 }
 
 void main() {
-  testWidgets('nobody praying yet reads Prayer', (tester) async {
+  testWidgets('nobody praying yet reads Pray', (tester) async {
     await _pump(tester, count: 0, prayedByMe: false);
-    expect(find.text('Prayer'), findsOneWidget);
+    expect(find.text('Pray'), findsOneWidget);
   });
 
   testWidgets('others praying counts them even before I join', (

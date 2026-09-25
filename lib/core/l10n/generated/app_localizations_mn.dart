@@ -218,7 +218,7 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'Уншлага нэмэх';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -912,7 +912,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_online => 'Онлайн';
 
   @override
-  String get home_group_events => 'Бүлгийн арга хэмжээ';
+  String get home_group_events => 'Онцлох арга хэмжээ';
 
   @override
   String get home_poems => 'Шүлгүүд';

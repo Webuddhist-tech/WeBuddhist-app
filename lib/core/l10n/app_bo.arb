@@ -94,7 +94,7 @@
       }
     }
   },
-  "mala_group_accumulations": "Group accumulations",
+  "mala_group_accumulations": "ཞལ་འདོན་ཁ་སྣོན།",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled group",
   "home_timer": "སྒོམ་ཡུན།",
@@ -379,7 +379,7 @@
     }
   },
   "select_language": "སྐད་ཡིག་འདེམས།",
-  "logout_confirmation": "ཁྱེད་རང་ཕྱིར་ཐོན་གཏན་འཁེལ་ཡིན་ནམ།",
+  "logout_confirmation": "ཁྱེད་རང་ཕྱིར་ཐོན་རྒྱུ་གཏན་འཁེལ་ཡིན་ནམ།",
   "cancel": "ཕྱིར་འཐེན།",
   "copy": "བཤུས་དང་།",
   "copied": "བཤུས་ཟིན།",
@@ -850,8 +850,8 @@
   "connect_tab_posts": "སྤེལ་བ།",
   "connect_tab_practices": "ཉམས་ལེན།",
   "connect_tab_groups": "ཚོགས་པ།",
-  "connect_segment_my": "ཁྱེད་ལ",
-  "connect_segment_discover": "འཚོལ་སྙེག",
+  "connect_segment_my": "ཁྱེད་དང་འབྲེལ་ཡོད།",
+  "connect_segment_discover": "གསར་རྙེད།",
   "connect_empty_discover_posts": "འཚོལ་རྒྱུའི་སྤེལ་བ་མི་འདུག",
   "connect_empty_discover_events": "འཚོལ་རྒྱུའི་བྱེད་སྒོ་མི་འདུག",
   "connect_empty_discover_feed": "འཚོལ་རྒྱུ་གང་ཡང་མི་འདུག",
@@ -902,7 +902,7 @@
   "poems_load_error": "སྙན་ངག་སྟོན་ཐུབ་མ་སོང་།\nཁྱེད་ཀྱིས་རང་གི་དྲ་རྒྱར་བསྐྱར་ཞིབ་བྱས་ཏེ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།",
   "poems_empty": "ད་ལྟ་སྙན་ངག་མེད། ཡང་བསྐྱར་ཤོག",
   "connect_events_filter_all": "ཡོངས།",
-  "connect_events_filter_in_person": "ས་ཁུལ་དུ།",
+  "connect_events_filter_in_person": "ངོ་བཅར།",
   "connect_events_filter_empty_online": "དྲ་ཐོག་བྱེད་སྒོ་མེད།",
   "connect_events_filter_empty_in_person": "ས་ཁུལ་དུའི་བྱེད་སྒོ་མེད།",
   "connect_events_filter_hybrid": "ཟུང་འབྲེལ།",
@@ -1048,13 +1048,15 @@
   "group_post_edit_title": "སྤེལ་བ་བཟོ་བཅོས།",
   "group_post_update_error": "བཟོ་བཅོས་ཉར་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།",
   "group_post_updated": "བཟོ་བཅོས་ཉར་ཟིན།",
-  "event_prayer_requests": "སྨོན་ལམ་ཞུ་བ།",
-  "event_prayer_empty_title": "ད་ལྟ་སྨོན་ལམ་ཞུ་བ་མེད།",
+  "event_prayer_requests": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།",
+  "event_prayer_empty_title": "ད་བར་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུས་མི་འདུག",
   "event_prayer_empty_body": "ཁྱེད་དང་ཁྱེད་ཀྱི་ཚོགས་པའི་ཞུ་བ་འདིར་མངོན་ངེས།",
   "event_prayer_add": "སྨོན་ལམ་ཞུ་བ་སྣོན་པ།",
   "event_prayer_hint": "དེ་རིང་ཁྱེད་ལ་སྨོན་ལམ་ཅི་ཞིག་འདེབས་དགོས།",
-  "event_prayer_load_failed": "སྨོན་ལམ་ཞུ་བ་ཁུར་མ་ཐུབ།",
-  "event_prayer_closed": "ལས་རིམ་འདིའི་སྨོན་ལམ་ཞུ་བ་བཀག་ཟིན།",
+  "event_prayer_load_failed": "ཐུགས་སྨོན་སྐྱབས་ཞུ་ལེན་ཐུབ་མ་སོང་།",
+  "event_prayer_closed": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་ས་སྒོ་བརྒྱབ་འདུག",
   "event_prayer_pray": "སྨོན་ལམ་འདེབས།",
-  "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན།"
+  "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན།",
+  "bookmark_group_accumulation": "མཉམ་གསོག",
+  "connect_event_joining_in_person": "ངོ་བཅར་ཞུ་བ།"
 }

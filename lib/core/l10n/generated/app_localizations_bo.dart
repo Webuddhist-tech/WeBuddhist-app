@@ -160,7 +160,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get bookmark_texts => 'གསུང་རབ།';
 
   @override
-  String get bookmark_group_accumulation => 'Group accumulation';
+  String get bookmark_group_accumulation => 'མཉམ་གསོག';
 
   @override
   String get mala_add_to_practice => 'ངའི་ཉམས་ལེན་ནང་སྣོན།';
@@ -218,7 +218,7 @@ class AppLocalizationsBo extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'ཞལ་འདོན་ཁ་སྣོན།';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -800,10 +800,10 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_tab_groups => 'ཚོགས་པ།';
 
   @override
-  String get connect_segment_my => 'ཁྱེད་ལ';
+  String get connect_segment_my => 'ཁྱེད་དང་འབྲེལ་ཡོད།';
 
   @override
-  String get connect_segment_discover => 'འཚོལ་སྙེག';
+  String get connect_segment_discover => 'གསར་རྙེད།';
 
   @override
   String get connect_empty_discover_posts => 'འཚོལ་རྒྱུའི་སྤེལ་བ་མི་འདུག';
@@ -933,7 +933,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_events_filter_all => 'ཡོངས།';
 
   @override
-  String get connect_events_filter_in_person => 'ས་ཁུལ་དུ།';
+  String get connect_events_filter_in_person => 'ངོ་བཅར།';
 
   @override
   String get connect_events_filter_empty_online => 'དྲ་ཐོག་བྱེད་སྒོ་མེད།';
@@ -976,7 +976,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_event_participation_prompt => 'How are you attending?';
 
   @override
-  String get connect_event_joining_in_person => 'Joining in person';
+  String get connect_event_joining_in_person => 'ངོ་བཅར་ཞུ་བ།';
 
   @override
   String get connect_event_joining_online => 'Joining online';
@@ -1205,7 +1205,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get select_language => 'སྐད་ཡིག་འདེམས།';
 
   @override
-  String get logout_confirmation => 'ཁྱེད་རང་ཕྱིར་ཐོན་གཏན་འཁེལ་ཡིན་ནམ།';
+  String get logout_confirmation => 'ཁྱེད་རང་ཕྱིར་ཐོན་རྒྱུ་གཏན་འཁེལ་ཡིན་ནམ།';
 
   @override
   String get cancel => 'ཕྱིར་འཐེན།';
@@ -2823,10 +2823,11 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_puja_not_started => 'Puja not started yet';
 
   @override
-  String get event_prayer_requests => 'སྨོན་ལམ་ཞུ་བ།';
+  String get event_prayer_requests => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།';
 
   @override
-  String get event_prayer_empty_title => 'ད་ལྟ་སྨོན་ལམ་ཞུ་བ་མེད།';
+  String get event_prayer_empty_title =>
+      'ད་བར་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུས་མི་འདུག';
 
   @override
   String get event_prayer_empty_body =>
@@ -2839,10 +2840,10 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_hint => 'དེ་རིང་ཁྱེད་ལ་སྨོན་ལམ་ཅི་ཞིག་འདེབས་དགོས།';
 
   @override
-  String get event_prayer_load_failed => 'སྨོན་ལམ་ཞུ་བ་ཁུར་མ་ཐུབ།';
+  String get event_prayer_load_failed => 'ཐུགས་སྨོན་སྐྱབས་ཞུ་ལེན་ཐུབ་མ་སོང་།';
 
   @override
-  String get event_prayer_closed => 'ལས་རིམ་འདིའི་སྨོན་ལམ་ཞུ་བ་བཀག་ཟིན།';
+  String get event_prayer_closed => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་ས་སྒོ་བརྒྱབ་འདུག';
 
   @override
   String get event_prayer_pray => 'སྨོན་ལམ་འདེབས།';

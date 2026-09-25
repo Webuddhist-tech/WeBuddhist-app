@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show mapEquals;
 import 'package:intl/message_format.dart';
 
 import 'tolgee_locale_map.dart';
@@ -33,6 +34,16 @@ class TolgeeBridge {
   }) {
     _language = TolgeeLocaleMap.appLanguageCodeOf(languageCode);
     _strings = strings;
+  }
+
+  /// Whether [strings] is already the loaded payload for [languageCode], so a
+  /// refresh that found no edits can skip reloading every string on screen.
+  static bool holds({
+    required String languageCode,
+    required Map<String, String> strings,
+  }) {
+    return _language == TolgeeLocaleMap.appLanguageCodeOf(languageCode) &&
+        mapEquals(_strings, strings);
   }
 
   /// Drops the loaded payload, making the bridge inert until the next load.

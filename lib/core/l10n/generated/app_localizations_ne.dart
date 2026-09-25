@@ -218,7 +218,7 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => 'Group accumulations';
+  String get mala_group_accumulations => 'पाठ थप्नुहोस्';
 
   @override
   String get mala_groups_section => 'Groups';
@@ -922,7 +922,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_online => 'अनलाइन';
 
   @override
-  String get home_group_events => 'समूह कार्यक्रम';
+  String get home_group_events => 'विशेष कार्यक्रम';
 
   @override
   String get home_poems => 'कविताहरू';

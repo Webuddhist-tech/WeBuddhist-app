@@ -62,6 +62,8 @@ jobs:
           DEV_POSTHOG_API_KEY:     ${{ secrets.DEV_POSTHOG_API_KEY }}
           STAGING_POSTHOG_API_KEY: ${{ secrets.STAGING_POSTHOG_API_KEY }}
           POSTHOG_API_KEY:         ${{ secrets.POSTHOG_API_KEY }}
+          TOLGEE_CDN_URL:          ${{ secrets.TOLGEE_CDN_URL }}
+          TOLGEE_ENABLED:          ${{ secrets.TOLGEE_ENABLED }}
         run: bash ci/scripts/create_env_files.sh
 
       - name: 🔐 Create ios/Flutter/Secrets.xcconfig (Airbridge)
