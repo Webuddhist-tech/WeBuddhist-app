@@ -30,7 +30,7 @@ void main() {
     expect(next.dayNumber, 2);
     expect(next.dayAudioUrl, 'https://audio');
     expect(next.eventId, 'ev1');
-    expect(next.isLiveRecitation, isTrue);
+    expect(next.isLiveRecitation, isFalse);
   });
 
   test('jumps backward with the previous direction', () {

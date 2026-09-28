@@ -510,7 +510,21 @@ class NavigationContext {
   bool get isFromEvent => eventId != null && eventId!.isNotEmpty;
 
   /// True when the reader should follow the event's live recitation.
-  bool get isLiveRecitation => isFromEvent && !isOnlineAttendee;
+  bool get isLiveRecitation =>
+      isFromEvent && !isOnlineAttendee && _isEventRecitationText;
+
+  /// Only the first text of the event's list is recited live; the texts after
+  /// it are read at the user's own pace. A reader opened outside a list (e.g.
+  /// a group accumulation) is the recitation text itself.
+  bool get _isEventRecitationText {
+    final items = planTextItems;
+    final index = currentTextIndex;
+    if (items == null || index == null || index < 0 || index >= items.length) {
+      return true;
+    }
+    final first = items.where((item) => item.isSourceReference).firstOrNull;
+    return first != null && items[index].textId == first.textId;
+  }
 
   /// True when the reader should show chant-again / finish-session controls
   /// and increment the group accumulation count.
