@@ -3,34 +3,54 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i3;
+import 'dart:async' as _i5;
+import 'dart:io' as _i28;
 
-import 'package:flutter_pecha/core/error/failures.dart' as _i5;
-import 'package:flutter_pecha/core/network/connectivity_service.dart' as _i17;
+import 'package:flutter_pecha/core/error/failures.dart' as _i7;
+import 'package:flutter_pecha/core/network/connectivity_service.dart' as _i19;
 import 'package:flutter_pecha/features/auth/domain/entities/auth_credentials.dart'
-    as _i6;
-import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_and_onboarding_usecase.dart'
-    as _i16;
-import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_usecase.dart'
-    as _i14;
-import 'package:flutter_pecha/features/auth/domain/usecases/continue_as_guest_usecase.dart'
-    as _i12;
-import 'package:flutter_pecha/features/auth/domain/usecases/get_credentials_usecase.dart'
-    as _i11;
-import 'package:flutter_pecha/features/auth/domain/usecases/has_valid_credentials_usecase.dart'
-    as _i10;
-import 'package:flutter_pecha/features/auth/domain/usecases/initialize_auth_usecase.dart'
     as _i8;
-import 'package:flutter_pecha/features/auth/domain/usecases/is_guest_mode_usecase.dart'
+import 'package:flutter_pecha/features/auth/domain/entities/user.dart' as _i23;
+import 'package:flutter_pecha/features/auth/domain/entities/username_update_result.dart'
+    as _i26;
+import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_and_onboarding_usecase.dart'
+    as _i18;
+import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_usecase.dart'
+    as _i16;
+import 'package:flutter_pecha/features/auth/domain/usecases/continue_as_guest_usecase.dart'
+    as _i14;
+import 'package:flutter_pecha/features/auth/domain/usecases/get_credentials_usecase.dart'
     as _i13;
-import 'package:flutter_pecha/features/auth/domain/usecases/login_usecase.dart'
-    as _i2;
-import 'package:flutter_pecha/features/auth/domain/usecases/logout_usecase.dart'
+import 'package:flutter_pecha/features/auth/domain/usecases/get_current_user_usecase.dart'
+    as _i22;
+import 'package:flutter_pecha/features/auth/domain/usecases/has_valid_credentials_usecase.dart'
+    as _i12;
+import 'package:flutter_pecha/features/auth/domain/usecases/initialize_auth_usecase.dart'
+    as _i10;
+import 'package:flutter_pecha/features/auth/domain/usecases/is_guest_mode_usecase.dart'
     as _i15;
-import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart' as _i9;
-import 'package:fpdart/fpdart.dart' as _i4;
+import 'package:flutter_pecha/features/auth/domain/usecases/login_usecase.dart'
+    as _i4;
+import 'package:flutter_pecha/features/auth/domain/usecases/logout_usecase.dart'
+    as _i17;
+import 'package:flutter_pecha/features/auth/domain/usecases/update_user_info_usecase.dart'
+    as _i24;
+import 'package:flutter_pecha/features/auth/domain/usecases/update_username_usecase.dart'
+    as _i25;
+import 'package:flutter_pecha/features/auth/domain/usecases/upload_avatar_usecase.dart'
+    as _i27;
+import 'package:flutter_pecha/features/onboarding/data/datasource/onboarding_local_datasource.dart'
+    as _i2;
+import 'package:flutter_pecha/features/onboarding/data/datasource/onboarding_remote_datasource.dart'
+    as _i3;
+import 'package:flutter_pecha/features/onboarding/data/repositories/onboarding_repository.dart'
+    as _i20;
+import 'package:flutter_pecha/features/onboarding/domain/entities/onboarding_preferences.dart'
+    as _i21;
+import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart' as _i11;
+import 'package:fpdart/fpdart.dart' as _i6;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i7;
+import 'package:mockito/src/dummies.dart' as _i9;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -47,224 +67,236 @@ import 'package:mockito/src/dummies.dart' as _i7;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
+class _FakeOnboardingLocalDatasource_0 extends _i1.SmartFake
+    implements _i2.OnboardingLocalDatasource {
+  _FakeOnboardingLocalDatasource_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeOnboardingRemoteDatasource_1 extends _i1.SmartFake
+    implements _i3.OnboardingRemoteDatasource {
+  _FakeOnboardingRemoteDatasource_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [LoginUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockLoginUseCase extends _i1.Mock implements _i2.LoginUseCase {
+class MockLoginUseCase extends _i1.Mock implements _i4.LoginUseCase {
   MockLoginUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, _i6.AuthCredentials>> call(
-    _i2.LoginParams? params,
+  _i5.Future<_i6.Either<_i7.Failure, _i8.AuthCredentials>> call(
+    _i4.LoginParams? params,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
             returnValue:
-                _i3.Future<_i4.Either<_i5.Failure, _i6.AuthCredentials>>.value(
-                  _i7.dummyValue<_i4.Either<_i5.Failure, _i6.AuthCredentials>>(
+                _i5.Future<_i6.Either<_i7.Failure, _i8.AuthCredentials>>.value(
+                  _i9.dummyValue<_i6.Either<_i7.Failure, _i8.AuthCredentials>>(
                     this,
                     Invocation.method(#call, [params]),
                   ),
                 ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, _i6.AuthCredentials>>);
+          as _i5.Future<_i6.Either<_i7.Failure, _i8.AuthCredentials>>);
 }
 
 /// A class which mocks [InitializeAuthUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockInitializeAuthUseCase extends _i1.Mock
-    implements _i8.InitializeAuthUseCase {
+    implements _i10.InitializeAuthUseCase {
   MockInitializeAuthUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, void>> call(_i9.NoParams? params) =>
+  _i5.Future<_i6.Either<_i7.Failure, void>> call(_i11.NoParams? params) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, void>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, void>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, void>>);
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
 }
 
 /// A class which mocks [HasValidCredentialsUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockHasValidCredentialsUseCase extends _i1.Mock
-    implements _i10.HasValidCredentialsUseCase {
+    implements _i12.HasValidCredentialsUseCase {
   MockHasValidCredentialsUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, bool>> call(_i9.NoParams? params) =>
+  _i5.Future<_i6.Either<_i7.Failure, bool>> call(_i11.NoParams? params) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, bool>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, bool>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, bool>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, bool>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, bool>>);
+          as _i5.Future<_i6.Either<_i7.Failure, bool>>);
 }
 
 /// A class which mocks [GetCredentialsUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockGetCredentialsUseCase extends _i1.Mock
-    implements _i11.GetCredentialsUseCase {
+    implements _i13.GetCredentialsUseCase {
   MockGetCredentialsUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, _i6.AuthCredentials>> call(
-    _i9.NoParams? params,
+  _i5.Future<_i6.Either<_i7.Failure, _i8.AuthCredentials>> call(
+    _i11.NoParams? params,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
             returnValue:
-                _i3.Future<_i4.Either<_i5.Failure, _i6.AuthCredentials>>.value(
-                  _i7.dummyValue<_i4.Either<_i5.Failure, _i6.AuthCredentials>>(
+                _i5.Future<_i6.Either<_i7.Failure, _i8.AuthCredentials>>.value(
+                  _i9.dummyValue<_i6.Either<_i7.Failure, _i8.AuthCredentials>>(
                     this,
                     Invocation.method(#call, [params]),
                   ),
                 ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, _i6.AuthCredentials>>);
+          as _i5.Future<_i6.Either<_i7.Failure, _i8.AuthCredentials>>);
 }
 
 /// A class which mocks [ContinueAsGuestUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockContinueAsGuestUseCase extends _i1.Mock
-    implements _i12.ContinueAsGuestUseCase {
+    implements _i14.ContinueAsGuestUseCase {
   MockContinueAsGuestUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, void>> call(_i9.NoParams? params) =>
+  _i5.Future<_i6.Either<_i7.Failure, void>> call(_i11.NoParams? params) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, void>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, void>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, void>>);
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
 }
 
 /// A class which mocks [IsGuestModeUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockIsGuestModeUseCase extends _i1.Mock
-    implements _i13.IsGuestModeUseCase {
+    implements _i15.IsGuestModeUseCase {
   MockIsGuestModeUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, bool>> call(_i9.NoParams? params) =>
+  _i5.Future<_i6.Either<_i7.Failure, bool>> call(_i11.NoParams? params) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, bool>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, bool>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, bool>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, bool>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, bool>>);
+          as _i5.Future<_i6.Either<_i7.Failure, bool>>);
 }
 
 /// A class which mocks [ClearGuestModeUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockClearGuestModeUseCase extends _i1.Mock
-    implements _i14.ClearGuestModeUseCase {
+    implements _i16.ClearGuestModeUseCase {
   MockClearGuestModeUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, void>> call(_i9.NoParams? params) =>
+  _i5.Future<_i6.Either<_i7.Failure, void>> call(_i11.NoParams? params) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, void>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, void>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, void>>);
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
 }
 
 /// A class which mocks [LogoutUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockLogoutUseCase extends _i1.Mock implements _i15.LogoutUseCase {
+class MockLogoutUseCase extends _i1.Mock implements _i17.LogoutUseCase {
   MockLogoutUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, void>> call(_i9.NoParams? params) =>
+  _i5.Future<_i6.Either<_i7.Failure, void>> call(_i11.NoParams? params) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, void>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, void>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, void>>);
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
 }
 
 /// A class which mocks [ClearGuestModeAndOnboardingUseCase].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockClearGuestModeAndOnboardingUseCase extends _i1.Mock
-    implements _i16.ClearGuestModeAndOnboardingUseCase {
+    implements _i18.ClearGuestModeAndOnboardingUseCase {
   MockClearGuestModeAndOnboardingUseCase() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<_i4.Either<_i5.Failure, void>> call(
-    _i16.ClearGuestModeAndOnboardingParams? params,
+  _i5.Future<_i6.Either<_i7.Failure, void>> call(
+    _i18.ClearGuestModeAndOnboardingParams? params,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#call, [params]),
-            returnValue: _i3.Future<_i4.Either<_i5.Failure, void>>.value(
-              _i7.dummyValue<_i4.Either<_i5.Failure, void>>(
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
                 this,
                 Invocation.method(#call, [params]),
               ),
             ),
           )
-          as _i3.Future<_i4.Either<_i5.Failure, void>>);
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
 }
 
 /// A class which mocks [ConnectivityService].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockConnectivityService extends _i1.Mock
-    implements _i17.ConnectivityService {
+    implements _i19.ConnectivityService {
   MockConnectivityService() {
     _i1.throwOnMissingStub(this);
   }
@@ -275,33 +307,259 @@ class MockConnectivityService extends _i1.Mock
           as bool);
 
   @override
-  _i3.Stream<bool> get onConnectivityChanged =>
+  _i5.Stream<bool> get onConnectivityChanged =>
       (super.noSuchMethod(
             Invocation.getter(#onConnectivityChanged),
-            returnValue: _i3.Stream<bool>.empty(),
+            returnValue: _i5.Stream<bool>.empty(),
           )
-          as _i3.Stream<bool>);
+          as _i5.Stream<bool>);
 
   @override
-  _i3.Future<void> initialize() =>
+  _i5.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i3.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i3.Future<bool> checkConnectivity() =>
+  _i5.Future<bool> checkConnectivity() =>
       (super.noSuchMethod(
             Invocation.method(#checkConnectivity, []),
-            returnValue: _i3.Future<bool>.value(false),
+            returnValue: _i5.Future<bool>.value(false),
           )
-          as _i3.Future<bool>);
+          as _i5.Future<bool>);
 
   @override
   void dispose() => super.noSuchMethod(
     Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
+}
+
+/// A class which mocks [OnboardingRepositoryImpl].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockOnboardingRepositoryImpl extends _i1.Mock
+    implements _i20.OnboardingRepositoryImpl {
+  MockOnboardingRepositoryImpl() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i2.OnboardingLocalDatasource get localDatasource =>
+      (super.noSuchMethod(
+            Invocation.getter(#localDatasource),
+            returnValue: _FakeOnboardingLocalDatasource_0(
+              this,
+              Invocation.getter(#localDatasource),
+            ),
+          )
+          as _i2.OnboardingLocalDatasource);
+
+  @override
+  _i3.OnboardingRemoteDatasource get remoteDatasource =>
+      (super.noSuchMethod(
+            Invocation.getter(#remoteDatasource),
+            returnValue: _FakeOnboardingRemoteDatasource_1(
+              this,
+              Invocation.getter(#remoteDatasource),
+            ),
+          )
+          as _i3.OnboardingRemoteDatasource);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, bool>> isOnboardingCompleted() =>
+      (super.noSuchMethod(
+            Invocation.method(#isOnboardingCompleted, []),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, bool>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, bool>>(
+                this,
+                Invocation.method(#isOnboardingCompleted, []),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, bool>>);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, _i21.OnboardingPreferences?>>
+  getPreferences() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPreferences, []),
+            returnValue: _i5.Future<
+              _i6.Either<_i7.Failure, _i21.OnboardingPreferences?>
+            >.value(
+              _i9.dummyValue<
+                _i6.Either<_i7.Failure, _i21.OnboardingPreferences?>
+              >(this, Invocation.method(#getPreferences, [])),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, _i21.OnboardingPreferences?>>);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, _i21.OnboardingPreferences>>
+  savePreferences(_i21.OnboardingPreferences? preferences) =>
+      (super.noSuchMethod(
+            Invocation.method(#savePreferences, [preferences]),
+            returnValue: _i5.Future<
+              _i6.Either<_i7.Failure, _i21.OnboardingPreferences>
+            >.value(
+              _i9.dummyValue<
+                _i6.Either<_i7.Failure, _i21.OnboardingPreferences>
+              >(this, Invocation.method(#savePreferences, [preferences])),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, _i21.OnboardingPreferences>>);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, void>> clearPreferences() =>
+      (super.noSuchMethod(
+            Invocation.method(#clearPreferences, []),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
+                this,
+                Invocation.method(#clearPreferences, []),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, List<_i21.OnboardingStep>>>
+  getOnboardingSteps() =>
+      (super.noSuchMethod(
+            Invocation.method(#getOnboardingSteps, []),
+            returnValue: _i5.Future<
+              _i6.Either<_i7.Failure, List<_i21.OnboardingStep>>
+            >.value(
+              _i9.dummyValue<
+                _i6.Either<_i7.Failure, List<_i21.OnboardingStep>>
+              >(this, Invocation.method(#getOnboardingSteps, [])),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, List<_i21.OnboardingStep>>>);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, void>> completeOnboarding() =>
+      (super.noSuchMethod(
+            Invocation.method(#completeOnboarding, []),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
+                this,
+                Invocation.method(#completeOnboarding, []),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, void>> resetOnboardingStatus() =>
+      (super.noSuchMethod(
+            Invocation.method(#resetOnboardingStatus, []),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, void>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, void>>(
+                this,
+                Invocation.method(#resetOnboardingStatus, []),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, void>>);
+}
+
+/// A class which mocks [GetCurrentUserUseCase].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockGetCurrentUserUseCase extends _i1.Mock
+    implements _i22.GetCurrentUserUseCase {
+  MockGetCurrentUserUseCase() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, _i23.User>> call(_i11.NoParams? params) =>
+      (super.noSuchMethod(
+            Invocation.method(#call, [params]),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, _i23.User>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, _i23.User>>(
+                this,
+                Invocation.method(#call, [params]),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, _i23.User>>);
+}
+
+/// A class which mocks [UpdateUserInfoUseCase].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockUpdateUserInfoUseCase extends _i1.Mock
+    implements _i24.UpdateUserInfoUseCase {
+  MockUpdateUserInfoUseCase() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, _i23.User>> call(
+    _i24.UpdateUserInfoParams? params,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#call, [params]),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, _i23.User>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, _i23.User>>(
+                this,
+                Invocation.method(#call, [params]),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, _i23.User>>);
+}
+
+/// A class which mocks [UpdateUsernameUseCase].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockUpdateUsernameUseCase extends _i1.Mock
+    implements _i25.UpdateUsernameUseCase {
+  MockUpdateUsernameUseCase() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, _i26.UsernameUpdateResult>> call(
+    String? username,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#call, [username]),
+            returnValue: _i5.Future<
+              _i6.Either<_i7.Failure, _i26.UsernameUpdateResult>
+            >.value(
+              _i9.dummyValue<
+                _i6.Either<_i7.Failure, _i26.UsernameUpdateResult>
+              >(this, Invocation.method(#call, [username])),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, _i26.UsernameUpdateResult>>);
+}
+
+/// A class which mocks [UploadAvatarUseCase].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockUploadAvatarUseCase extends _i1.Mock
+    implements _i27.UploadAvatarUseCase {
+  MockUploadAvatarUseCase() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i5.Future<_i6.Either<_i7.Failure, String>> call(_i28.File? file) =>
+      (super.noSuchMethod(
+            Invocation.method(#call, [file]),
+            returnValue: _i5.Future<_i6.Either<_i7.Failure, String>>.value(
+              _i9.dummyValue<_i6.Either<_i7.Failure, String>>(
+                this,
+                Invocation.method(#call, [file]),
+              ),
+            ),
+          )
+          as _i5.Future<_i6.Either<_i7.Failure, String>>);
 }

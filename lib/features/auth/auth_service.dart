@@ -23,7 +23,7 @@ class AuthService {
   /// [isJwtExpired].
   static const int _kMinTokenTtlSeconds = 120;
 
-  /// Dart-side ceiling on native credentials-manager calls so a stall cannot hang launch.
+  /// Ceiling for awaiters of a native credentials call; the call itself runs on.
   static const Duration _kCredentialsTimeout = Duration(seconds: 20);
 
   // SharedPreferences key for guest mode
@@ -260,7 +260,9 @@ class AuthService {
     // accepts any in-flight call; a forced caller only accepts one that is
     // itself forced. A forced caller must NOT join a non-forced cache read, or
     // it could be handed back the token the server just rejected.
-    if (inflight != null && (!force || _inflightIsForced)) return inflight;
+    if (inflight != null && (!force || _inflightIsForced)) {
+      return inflight.timeout(_kCredentialsTimeout);
+    }
 
     // We need a (possibly forced) renewal that no in-flight call provides. If a
     // non-forced call is currently running, sequence our forced fetch *after*
@@ -284,7 +286,8 @@ class AuthService {
     );
     _inflightCredentials = tracked;
     _inflightIsForced = force;
-    return tracked;
+    // Timeout only the awaiter: the slot stays held until the native call ends.
+    return tracked.timeout(_kCredentialsTimeout);
   }
 
   Future<Credentials> _runCredentialsFetch({
@@ -317,15 +320,13 @@ class AuthService {
       // ("minTTL requested … is greater than the lifetime of the renewed access
       // token"); and capping `minTtl` at that lifetime is satisfied by a fresh
       // token, so it would not force a renewal at all.
-      creds = await _auth0.credentialsManager.renewCredentials().timeout(
-        _kCredentialsTimeout,
-      );
+      creds = await _auth0.credentialsManager.renewCredentials();
     } else {
       // Proactive: return the cached token, renewing only when it is within the
       // skew buffer of expiry.
-      creds = await _auth0.credentialsManager
-          .credentials(minTtl: _kMinTokenTtlSeconds)
-          .timeout(_kCredentialsTimeout);
+      creds = await _auth0.credentialsManager.credentials(
+        minTtl: _kMinTokenTtlSeconds,
+      );
     }
     return creds;
   }
@@ -416,6 +417,10 @@ class AuthService {
       return await _auth0.credentialsManager.hasValidCredentials().timeout(
         const Duration(seconds: 10),
       );
+    } on TimeoutException {
+      // Indeterminate: let credentials() make the terminal call, not a logout.
+      _logger.warning('Credentials check timed out — assuming a session');
+      return true;
     } catch (e) {
       _logger.warning('Error checking valid credentials: $e');
       return false;

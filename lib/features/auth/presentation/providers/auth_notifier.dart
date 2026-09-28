@@ -75,7 +75,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   static const _onboardingRetryDebounce = Duration(seconds: 5);
 
   /// Per-step ceiling on the launch restore's API calls so they cannot hold the splash.
-  static const _kRestoreStepBudget = Duration(seconds: 10);
+  final Duration _restoreStepBudget;
 
   AuthNotifier({
     required LoginUseCase loginUseCase,
@@ -89,7 +89,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required ClearGuestModeAndOnboardingUseCase
     clearGuestModeAndOnboardingUseCase,
     required this.ref,
+    Duration restoreStepBudget = const Duration(seconds: 10),
   }) : _loginUseCase = loginUseCase,
+       _restoreStepBudget = restoreStepBudget,
        _initializeAuthUseCase = initializeAuthUseCase,
        _hasValidCredentialsUseCase = hasValidCredentialsUseCase,
        _getCredentialsUseCase = getCredentialsUseCase,
@@ -284,12 +286,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // initializeUser() call is needed afterward.
       // Budgeted: the guard fails open on null and the fetch keeps running.
       final onboardingStatus = await _fetchOnboardingStatusSafe().timeout(
-        _kRestoreStepBudget,
+        _restoreStepBudget,
         onTimeout: () => null,
       );
       if (!_isAuthEpochCurrent(epoch)) return;
       await ref.read(userProvider.notifier).initializeUser().timeout(
-        _kRestoreStepBudget,
+        _restoreStepBudget,
         onTimeout: () {},
       );
       _applyAuthenticatedLoginState(

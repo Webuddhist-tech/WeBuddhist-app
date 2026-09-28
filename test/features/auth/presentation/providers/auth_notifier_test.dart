@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -5,18 +7,26 @@ import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/auth_credentials.dart';
+import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_and_onboarding_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/clear_guest_mode_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/continue_as_guest_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/get_credentials_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/has_valid_credentials_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/initialize_auth_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/is_guest_mode_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/login_usecase.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/update_user_info_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/update_username_usecase.dart';
+import 'package:flutter_pecha/features/auth/domain/usecases/upload_avatar_usecase.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
+import 'package:flutter_pecha/features/onboarding/data/repositories/onboarding_repository.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -37,6 +47,11 @@ import 'auth_notifier_test.mocks.dart';
   LogoutUseCase,
   ClearGuestModeAndOnboardingUseCase,
   ConnectivityService,
+  OnboardingRepositoryImpl,
+  GetCurrentUserUseCase,
+  UpdateUserInfoUseCase,
+  UpdateUsernameUseCase,
+  UploadAvatarUseCase,
 ])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -46,13 +61,17 @@ void main() {
   provideDummy<Either<Failure, AuthCredentials>>(
     const Left(UnknownFailure('dummy')),
   );
+  provideDummy<Either<Failure, User>>(const Left(UnknownFailure('dummy')));
 
   late MockInitializeAuthUseCase initAuth;
   late MockHasValidCredentialsUseCase hasValid;
   late MockGetCredentialsUseCase getCreds;
   late MockIsGuestModeUseCase isGuest;
   late MockConnectivityService connectivity;
+  late MockOnboardingRepositoryImpl onboardingRepo;
+  late MockGetCurrentUserUseCase getUser;
   late FakeLocalStorage storage;
+  late ProviderContainer container;
 
   setUp(() {
     initAuth = MockInitializeAuthUseCase();
@@ -60,6 +79,8 @@ void main() {
     getCreds = MockGetCredentialsUseCase();
     isGuest = MockIsGuestModeUseCase();
     connectivity = MockConnectivityService();
+    onboardingRepo = MockOnboardingRepositoryImpl();
+    getUser = MockGetCurrentUserUseCase();
     when(
       connectivity.onConnectivityChanged,
     ).thenAnswer((_) => const Stream<bool>.empty());
@@ -70,13 +91,25 @@ void main() {
   });
 
   /// Builds the notifier and waits for the launch restore to settle.
-  Future<AuthState> restore() async {
-    final container = ProviderContainer(
+  Future<AuthState> restore({
+    Duration stepBudget = const Duration(seconds: 10),
+  }) async {
+    container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(storage),
         connectivityServiceProvider.overrideWithValue(connectivity),
         analyticsServiceProvider.overrideWithValue(
           const NoOpAnalyticsService(),
+        ),
+        onboardingRepositoryProvider.overrideWithValue(onboardingRepo),
+        userProvider.overrideWith(
+          (ref) => UserNotifier(
+            getCurrentUserUseCase: getUser,
+            updateUserInfoUseCase: MockUpdateUserInfoUseCase(),
+            updateUsernameUseCase: MockUpdateUsernameUseCase(),
+            uploadAvatarUseCase: MockUploadAvatarUseCase(),
+            localStorageService: storage,
+          ),
         ),
         authProvider.overrideWith(
           (ref) => AuthNotifier(
@@ -91,6 +124,7 @@ void main() {
             clearGuestModeAndOnboardingUseCase:
                 MockClearGuestModeAndOnboardingUseCase(),
             ref: ref,
+            restoreStepBudget: stepBudget,
           ),
         ),
       ],
@@ -132,6 +166,39 @@ void main() {
     final state = await restore();
 
     expect(state.isLoading, isFalse);
+  });
+
+  test('slow onboarding and profile fetches do not hold the splash', () async {
+    when(hasValid(any)).thenAnswer((_) async => const Right(true));
+    when(getCreds(any)).thenAnswer(
+      (_) async => Right(
+        AuthCredentials(
+          accessToken: 'access',
+          idToken: 'a.b.c',
+          tokenType: 'Bearer',
+          expiresIn: 3600,
+          obtainedAt: DateTime.now(),
+        ),
+      ),
+    );
+    final onboarding = Completer<Either<Failure, bool>>();
+    when(
+      onboardingRepo.isOnboardingCompleted(),
+    ).thenAnswer((_) => onboarding.future);
+    final profile = Completer<Either<Failure, User>>();
+    when(getUser(any)).thenAnswer((_) => profile.future);
+
+    final state = await restore(stepBudget: const Duration(milliseconds: 50));
+
+    expect(state.isLoading, isFalse);
+    expect(state.isLoggedIn, isTrue);
+    expect(state.hasCompletedOnboarding, isNull);
+
+    // A profile that lands after logout must not resurrect the old account.
+    await container.read(userProvider.notifier).clearUser();
+    profile.complete(const Right(User(id: 'u1')));
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(userProvider).user, isNull);
   });
 
   test('stored guest session is restored', () async {

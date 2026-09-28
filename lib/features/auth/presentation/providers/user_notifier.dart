@@ -30,6 +30,9 @@ class UserNotifier extends StateNotifier<UserState> {
   final UploadAvatarUseCase _uploadAvatarUseCase;
   final LocalStorageService _localStorageService;
 
+  /// Bumped by every load and by [clearUser] so a late response cannot win.
+  int _loadGeneration = 0;
+
   UserNotifier({
     required GetCurrentUserUseCase getCurrentUserUseCase,
     required UpdateUserInfoUseCase updateUserInfoUseCase,
@@ -48,8 +51,10 @@ class UserNotifier extends StateNotifier<UserState> {
   Future<void> initializeUser() async {
     _logger.debug('Initializing user data');
     state = const UserState.loading();
+    final generation = ++_loadGeneration;
 
     final userResult = await _getCurrentUserUseCase(const NoParams());
+    if (generation != _loadGeneration) return;
 
     userResult.fold(
       (failure) {
@@ -67,7 +72,9 @@ class UserNotifier extends StateNotifier<UserState> {
 
   /// Refresh user data from API
   Future<void> refreshUser() async {
+    final generation = ++_loadGeneration;
     final userResult = await _getCurrentUserUseCase(const NoParams());
+    if (generation != _loadGeneration) return;
 
     userResult.fold(
       (failure) {
@@ -192,6 +199,7 @@ class UserNotifier extends StateNotifier<UserState> {
   /// Clear user data (on logout)
   Future<void> clearUser() async {
     try {
+      _loadGeneration++;
       state = const UserState.initial();
 
       // Clear local cache
