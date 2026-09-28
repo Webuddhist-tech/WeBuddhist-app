@@ -33,6 +33,8 @@ import 'package:flutter_pecha/features/reader/domain/services/live_position_reso
 import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
@@ -137,6 +139,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   PlanSegmentAudioController? _audioController;
   bool _isAdvancing = false;
 
+  /// Applies this reader's first-visit language layout once the text and its
+  /// translations are known (see [ReaderInitialLayoutApplier]).
+  final ReaderInitialLayoutApplier _layoutApplier =
+      ReaderInitialLayoutApplier();
+
   bool get _hasAudio => _audioController?.hasAudio ?? false;
 
   @override
@@ -149,6 +156,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
     _initAudio();
     _initGroupAccumulatorChantSession();
+    // Both inputs may already be cached from an earlier visit.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyInitialLayout());
+  }
+
+  void _applyInitialLayout() {
+    if (!mounted) return;
+    unawaited(
+      _layoutApplier.maybeApply(ref: ref, context: context, params: _params),
+    );
   }
 
   void _initGroupAccumulatorChantSession() {
@@ -366,7 +382,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (navContext == null || _isAdvancing) return;
     final state = ref.read(readerNotifierProvider(_params));
     final primaryVersionId =
-        ref.read(readerDualSettingsProvider(widget.textId)).primary.versionId;
+        ref
+            .read(readerDualSettingsProvider(_params.settingsScope))
+            .primary
+            .versionId;
     final onThisText = LivePositionResolver.textMatches(
       position,
       loadedTextIds: [widget.textId, state.textDetail?.id, primaryVersionId],
@@ -449,6 +468,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       ).select((s) => s.isCommentaryOpen || s.isTranslationOpen),
       (_, isPanelOpen) =>
           PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
+    );
+    // The first-visit layout needs the text's language and its list of
+    // translations; whichever arrives last applies it. Listening here also
+    // keeps the languages request alive for the sheet.
+    ref.listen(
+      readerNotifierProvider(_params).select((s) => s.textDetail?.language),
+      (_, __) => _applyInitialLayout(),
+    );
+    ref.listen(
+      readerLanguagesProvider(widget.textId),
+      (_, __) => _applyInitialLayout(),
     );
 
     final liveEventId = _liveEventId;
@@ -726,7 +756,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             onPressed: () => showFontSizeBottomSheet(context),
           ),
           ReaderLanguagesButton(
-            params: _params,
             onPressed: () => _openLanguagesSheet(context, textDetail),
           ),
         ],
@@ -885,7 +914,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     await showReaderLanguagesSheet(
       context,
-      textId: widget.textId,
+      scope: _params.settingsScope,
       primaryDisplay: primaryDisplay,
       sourceSample: scriptDetectionSample(
         ref.read(readerNotifierProvider(_params)).content,

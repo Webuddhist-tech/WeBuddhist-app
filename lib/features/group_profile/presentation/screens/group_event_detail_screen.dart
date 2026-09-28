@@ -10,6 +10,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_attendance_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
@@ -84,13 +86,9 @@ class _GroupEventDetailScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _didOpenPrayerRequests) return;
       _didOpenPrayerRequests = true;
-      // `/home` is guest-accessible, so the query alone is no proof of login.
-      final authState = ref.read(authProvider);
-      if (authState.isGuest || !authState.isLoggedIn) {
-        LoginDrawer.show(context, ref);
-        return;
-      }
-      unawaited(PrayerRequestsSheet.show(context, eventId: widget.eventId));
+      // `/home` is guest-accessible, so the query alone is no proof of login;
+      // the helper sends guests to login like the chip does.
+      _openPrayerRequests(widget.eventId);
     });
   }
 
@@ -211,8 +209,8 @@ class _GroupEventDetailScreenState
     final groupAccumulator = event.groupAccumulator;
     final tabs = <_EventTab>[
       if (videos.isNotEmpty) _EventTab.videos,
-      _EventTab.about,
       if (groupAccumulator != null) _EventTab.accumulations,
+      _EventTab.about,
     ];
     final selectedTab =
         tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
@@ -225,18 +223,34 @@ class _GroupEventDetailScreenState
         children: [
           _EventHeroCard(event: event, isDark: isDark),
           const SizedBox(height: 14),
-          _AttendeesRow(
-            eventId: event.id,
-            participants: participants,
-            totalAttending: totalAttending,
-            isDark: isDark,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _AttendeesRow(
+                  eventId: event.id,
+                  participants: participants,
+                  totalAttending: totalAttending,
+                  isDark: isDark,
+                ),
+              ),
+              if (event.chatEnabled) ...[
+                const SizedBox(width: 12),
+                PrayerRequestsButton(
+                  padding: EdgeInsets.zero,
+                  outlined: true,
+                  onTap: () => _openPrayerRequests(event.id),
+                ),
+              ],
+            ],
           ),
           if (!isPast || (event.hasPuja && isAttending)) ...[
             const SizedBox(height: 14),
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
-          _EventInfoCard(event: event, isDark: isDark),
+          _EventGroupRow(event: event, isDark: isDark),
+          _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
           const SizedBox(height: 20),
@@ -256,6 +270,15 @@ class _GroupEventDetailScreenState
         ],
       ),
     );
+  }
+
+  void _openPrayerRequests(String eventId) {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
   }
 
   int _attendeeCount(GroupEvent event, bool isAttending) {
@@ -332,20 +355,23 @@ class _GroupEventDetailScreenState
       Widget joinButton(GroupEventParticipationType type, String label) {
         final isPending = _pendingJoin == type;
         return Expanded(
-          child: OutlinedButton(
+          child: ElevatedButton(
             onPressed:
                 _isSubmitting || _isOpeningPuja
                     ? null
                     : () => _attendEvent(event, participation: type),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 44),
-              backgroundColor: secondaryButtonColor,
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              minimumSize: const Size(0, 48),
+              backgroundColor:
+                  isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
               foregroundColor:
-                  isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-              side: BorderSide(color: secondaryBorder),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                  isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
+              shape: const StadiumBorder(),
             ),
             child:
                 isPending
@@ -359,7 +385,7 @@ class _GroupEventDetailScreenState
         );
       }
 
-      final formats = Row(
+      return Row(
         children: [
           joinButton(
             GroupEventParticipationType.offline,
@@ -370,14 +396,6 @@ class _GroupEventDetailScreenState
             GroupEventParticipationType.online,
             context.l10n.connect_event_join_online,
           ),
-        ],
-      );
-      if (!isAttending) return formats;
-      return Column(
-        children: [
-          formats,
-          const SizedBox(height: 12),
-          SizedBox(width: double.infinity, child: attendButton),
         ],
       );
     }
@@ -863,10 +881,55 @@ class _AttendeesRow extends StatelessWidget {
 
     final double avatarSize = 28.0;
     final double overlap = 18.0;
+    final borderColor =
+        isDark ? AppColors.scaffoldBackgroundDark : AppColors.surfaceLight;
 
-    final int totalItems = shown.length + (remaining > 0 ? 1 : 0);
-    final double stackWidth =
-        totalItems == 0 ? 0 : (totalItems - 1) * overlap + avatarSize;
+    // Each avatar but the last only takes [overlap] of layout width and paints
+    // past it, so the count pill can size to its text without measuring.
+    Widget overlapped(Widget child) => SizedBox(
+      width: overlap,
+      height: avatarSize,
+      child: OverflowBox(
+        maxWidth: avatarSize,
+        alignment: Alignment.centerLeft,
+        child: child,
+      ),
+    );
+    final avatars = [
+      for (final participant in shown)
+        _ParticipantAvatar(
+          participant: participant,
+          isDark: isDark,
+          size: avatarSize,
+        ),
+    ];
+    final countPill =
+        remaining > 0
+            ? Container(
+              constraints: BoxConstraints(minWidth: avatarSize),
+              height: avatarSize,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(avatarSize / 2),
+                color: isDark ? AppColors.grey800 : const Color(0xFFE8E5DF),
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: Text(
+                '+$remaining',
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                  color:
+                      isDark ? AppColors.textPrimaryDark : AppColors.greyDark,
+                ),
+              ),
+            )
+            : null;
+    final stacked = [...avatars, if (countPill != null) countPill];
+    final int totalItems = stacked.length;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -878,67 +941,20 @@ class _AttendeesRow extends StatelessWidget {
           ),
       child: Row(
         children: [
-          if (totalItems > 0)
-            SizedBox(
-              width: stackWidth,
-              height: avatarSize,
-              child: Stack(
-                children: [
-                  // Paint first avatar last so it sits on top of the rest.
-                  for (var i = shown.length - 1; i >= 0; i--)
-                    Positioned(
-                      left: i * overlap,
-                      child: _ParticipantAvatar(
-                        participant: shown[i],
-                        isDark: isDark,
-                        size: avatarSize,
-                      ),
-                    ),
-                  // Painted after the avatars so the overflow count stays on top.
-                  if (remaining > 0)
-                    Positioned(
-                      left: shown.length * overlap,
-                      child: Container(
-                        width: avatarSize,
-                        height: avatarSize,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              isDark
-                                  ? AppColors.grey800
-                                  : const Color(0xFFE8E5DF),
-                          border: Border.all(
-                            color:
-                                isDark
-                                    ? AppColors.scaffoldBackgroundDark
-                                    : AppColors.surfaceLight,
-                            width: 2,
-                          ),
-                        ),
-                        child: Text(
-                          '+$remaining',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color:
-                                isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.greyDark,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          for (var i = 0; i < stacked.length; i++)
+            i == stacked.length - 1 ? stacked[i] : overlapped(stacked[i]),
           if (totalItems > 0) const SizedBox(width: 8),
-          Text(
-            context.l10n.connect_event_participants_attending(totalAttending),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: textColor,
+          // Shares the line with the prayer requests chip, so let it shrink.
+          Flexible(
+            child: Text(
+              context.l10n.connect_event_participants_attending(totalAttending),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
           ),
         ],
@@ -980,60 +996,130 @@ class _ParticipantAvatar extends StatelessWidget {
                 ? CachedNetworkImageWidget(
                   imageUrl: avatarUrl,
                   fit: BoxFit.cover,
-                  errorWidget: _avatarFallback(),
+                  errorWidget: AvatarFallback(
+                    isDark: isDark,
+                    iconSize: size * 0.5,
+                  ),
                 )
-                : _avatarFallback(),
+                : AvatarFallback(isDark: isDark, iconSize: size * 0.5),
       ),
     );
   }
+}
 
-  Widget _avatarFallback() {
-    final name = participant.displayName;
-    final initials = _getInitials(name);
+class _EventGroupRow extends ConsumerWidget {
+  final GroupEvent event;
+  final bool isDark;
 
-    return ColoredBox(
-      color: AppColors.primary,
-      child: Center(
-        child: Text(
-          initials,
-          style: TextStyle(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primaryDarkest,
+  const _EventGroupRow({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final group = ref
+        .watch(groupProfileProvider(event.groupId))
+        .valueOrNull
+        ?.fold((_) => null, (profile) => profile);
+    // Blank profile fields fall through to the event's own copy.
+    String firstNonEmpty(String? a, String? b) {
+      final first = a?.trim() ?? '';
+      return first.isNotEmpty ? first : (b?.trim() ?? '');
+    }
+
+    final title = firstNonEmpty(group?.title, event.groupName);
+    final avatarUrl = firstNonEmpty(group?.avatarUrl, event.groupAvatarUrl);
+    final subtitle = firstNonEmpty(group?.subTitle, group?.description);
+    // Heading and card share one visibility so the label never stands alone.
+    if (title.isEmpty) return const SizedBox.shrink();
+
+    final subtitleColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final cardColor =
+        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
+
+    final card = Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => context.push('/home/group/${event.groupId}'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor:
+                    isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+                backgroundImage:
+                    avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                child:
+                    avatarUrl.isEmpty
+                        ? Icon(
+                          AppAssets.usersThree,
+                          size: 20,
+                          color: isDark ? AppColors.grey500 : AppColors.grey600,
+                        )
+                        : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        style: TextStyle(fontSize: 13, color: subtitleColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                AppAssets.caretRight,
+                color: isDark ? AppColors.grey500 : AppColors.grey600,
+              ),
+            ],
           ),
         ),
       ),
     );
-  }
 
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length > 1) {
-      return '${parts[0].characters.first}${parts[1].characters.first}'
-          .toUpperCase();
-    }
-    return name.characters.take(2).toString().toUpperCase();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _EventSectionLabel(
+          text: context.l10n.connect_event_organizer,
+          color: subtitleColor,
+        ),
+        const SizedBox(height: 8),
+        card,
+      ],
+    );
   }
 }
 
-class _EventInfoCard extends StatelessWidget {
+/// Meeting rooms and other resource links; empty when the event has none.
+class _EventLinksCard extends StatelessWidget {
   final GroupEvent event;
   final bool isDark;
 
-  const _EventInfoCard({required this.event, required this.isDark});
+  const _EventLinksCard({required this.event, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final dateText = _formatDateText(context, event);
-    final recurrenceText = _formatRecurrenceText(context, event);
-    final locationName = event.location?.name.trim() ?? '';
-    final isOnline = isGroupEventOnline(event);
-    final showLocation = !isOnline && locationName.isNotEmpty;
     final links =
         event.links
             .where(
@@ -1042,17 +1128,11 @@ class _EventInfoCard extends StatelessWidget {
                   GroupEventLinkUtils.kindOf(link) != GroupEventLinkKind.video,
             )
             .toList();
-    final showOnline = isOnline || isGroupEventHybrid(event);
-    // A meeting room stands in for the venue only when the event runs online;
-    // on a venue-only event it is just another resource.
-    bool isVenueLink(GroupEventLink link) =>
-        showOnline &&
-        GroupEventLinkUtils.kindOf(link) == GroupEventLinkKind.meeting;
-    final meetingLinks = links.where(isVenueLink).toList();
-    final otherLinks = links.where((link) => !isVenueLink(link)).toList();
+    if (links.isEmpty) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
         color: cardColor,
@@ -1061,49 +1141,8 @@ class _EventInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _EventSectionLabel(text: context.l10n.connect_event_when),
-          const SizedBox(height: 10),
-          if (dateText != null)
-            _EventInfoRow(
-              icon: AppAssets.clock,
-              text: dateText,
-              iconColor: secondaryColor,
-            )
-          else
-            Text(
-              context.l10n.connect_event_date_tba,
-              style: TextStyle(fontSize: 14, color: secondaryColor),
-            ),
-          if (recurrenceText != null) ...[
-            const SizedBox(height: 10),
-            _EventInfoRow(
-              icon: AppAssets.repeat,
-              text: recurrenceText,
-              iconColor: secondaryColor,
-            ),
-          ],
-          if (showLocation || showOnline) ...[
-            const SizedBox(height: 16),
-            _EventSectionLabel(text: context.l10n.connect_event_where),
-            const SizedBox(height: 10),
-          ],
-          if (showLocation)
-            _EventInfoRow(
-              icon: AppAssets.buildings,
-              text: locationName,
-              iconColor: secondaryColor,
-              bold: true,
-            ),
-          if (showOnline) ...[
-            if (showLocation) const SizedBox(height: 12),
-            _EventInfoRow(
-              icon: AppAssets.videoCamera,
-              text: context.l10n.connect_online,
-              iconColor: secondaryColor,
-              bold: true,
-            ),
-          ],
-          for (final link in meetingLinks) ...[
+          _EventSectionLabel(text: context.l10n.connect_event_links_title),
+          for (final link in links) ...[
             const SizedBox(height: 10),
             _EventLinkText(
               link: link,
@@ -1112,88 +1151,30 @@ class _EventInfoCard extends StatelessWidget {
               isDark: isDark,
             ),
           ],
-          if (otherLinks.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _EventSectionLabel(text: context.l10n.connect_event_links_title),
-            for (final link in otherLinks) ...[
-              const SizedBox(height: 10),
-              _EventLinkText(
-                link: link,
-                eventId: event.id,
-                groupId: event.groupId,
-                isDark: isDark,
-              ),
-            ],
-          ],
         ],
       ),
     );
-  }
-
-  String? _formatDateText(BuildContext context, GroupEvent event) {
-    final start = event.startDate?.toLocal();
-    if (start == null) return null;
-
-    final locale = intlFormatLocaleOf(context);
-    final date = DateFormat('EEE d MMM y', locale).format(start);
-    final startTime = DateFormat.jm(locale).format(start).toLowerCase();
-    final end = event.endDate?.toLocal();
-    if (end == null || end.isAtSameMomentAs(start)) {
-      return '$date\n$startTime ${start.timeZoneName}';
-    }
-
-    final endTime = DateFormat.jm(locale).format(end).toLowerCase();
-    final endZone = end.timeZoneName;
-    // Label the start too when the range crosses a DST change.
-    final startLabel =
-        start.timeZoneName == endZone
-            ? startTime
-            : '$startTime ${start.timeZoneName}';
-    // Dates on one line, times on the next, so the range stays scannable.
-    final isMultiDay = !DateUtils.isSameDay(start, end);
-    final dateLine =
-        isMultiDay
-            ? '$date – ${DateFormat('EEE d MMM y', locale).format(end)}'
-            : date;
-    return '$dateLine\n$startLabel – $endTime $endZone';
-  }
-
-  String? _formatRecurrenceText(BuildContext context, GroupEvent event) {
-    final recurrence = event.recurrence;
-    if (!event.isRecurring || recurrence == null) return null;
-
-    final anchor = (event.occurrenceDate ?? event.startDate)?.toLocal();
-    if (anchor == null) return null;
-
-    final locale = intlFormatLocaleOf(context);
-    return switch (recurrence.frequency.toUpperCase()) {
-      'DAILY' => context.l10n.connect_event_every_day,
-      'WEEKLY' => context.l10n.connect_event_every_weekday(
-        DateFormat.EEEE(locale).format(anchor),
-      ),
-      'MONTHLY' => context.l10n.connect_event_every_month,
-      'YEARLY' => context.l10n.connect_event_every_date(
-        DateFormat('d MMM', locale).format(anchor),
-      ),
-      _ => null,
-    };
   }
 }
 
 class _EventSectionLabel extends StatelessWidget {
   final String text;
+  final Color color;
 
-  const _EventSectionLabel({required this.text});
+  const _EventSectionLabel({
+    required this.text,
+    this.color = AppColors.poemAuthor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.1,
-        color: AppColors.poemAuthor,
+        color: color,
       ),
     );
   }
@@ -1384,29 +1365,17 @@ class _EventAccumulatorPanelState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InkWell(
-          onTap: () => _openAccumulator(detail),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    detail.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: primaryColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(AppAssets.caretRight, size: 18, color: secondaryColor),
-              ],
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            detail.title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: primaryColor,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(height: 6),
@@ -1533,13 +1502,6 @@ class _EventAccumulatorPanelState
                   ),
         ),
       ],
-    );
-  }
-
-  void _openAccumulator(GroupAccumulatorDetail detail) {
-    context.push(
-      '/home/group-accumulator/${detail.id}',
-      extra: {'groupTitle': widget.groupTitle},
     );
   }
 

@@ -5,15 +5,16 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart'
     show ReaderDualLayoutSettings, ReaderSlotConfig;
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_flattener_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/section_merger_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
-import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_analytics.dart';
@@ -39,6 +40,13 @@ class ReaderParams {
 
   /// Language requested by navigation (e.g. the All chants picker).
   String? get language => navigationContext?.language;
+
+  /// Key of this reader's dual-layout settings: the text in the context it
+  /// was opened from (library, event, chant or plan).
+  ReaderSettingsScope get settingsScope => ReaderSettingsScope(
+    textId: textId,
+    context: readerLayoutContextOf(navigationContext),
+  );
 
   @override
   bool operator ==(Object other) {
@@ -76,7 +84,8 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   String? _activeVersionId;
 
   /// Path id for `/texts/{id}/details` when opening from the chant list.
-  /// Resolved once from [readerVersionsProvider] if that language has versions.
+  /// Resolved once from [readerVersionsProvider] if that language has versions,
+  /// or pinned to the opened edition when its root's page fails to load.
   /// Not written into dual-settings primary — chant text stays on top.
   String? _resolvedLanguageTextId;
   bool _didResolveLanguageTextId = false;
@@ -94,7 +103,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
        _analytics = analytics ?? ref.read(readerAnalyticsProvider),
        super(ReaderState.initial(params.textId)) {
     _ref.listen<ReaderDualLayoutSettings>(
-      readerDualSettingsProvider(params.textId),
+      readerDualSettingsProvider(params.settingsScope),
       _onDualSettingsChanged,
       fireImmediately: false,
     );
@@ -153,7 +162,8 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     if (_isDisposed) return;
     _logger.debug('ReaderNotifier initializing with params: $_params');
 
-    var initialSegmentId = useNavParams ? _params.segmentId : null;
+    final requestedSegmentId = useNavParams ? _params.segmentId : null;
+    var initialSegmentId = requestedSegmentId;
     final initialSize =
         useNavParams ? _params.navigationContext?.initialPageSize : null;
 
@@ -163,6 +173,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
 
     try {
+      final versionBeforeRoot = _activeVersionId;
       if (useNavParams) await _openAsTranslation();
       if (_isDisposed) return;
       if (initialSegmentId != null) {
@@ -171,10 +182,25 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       _logger.debug(
         'ReaderNotifier fetching content with params: $initialSegmentId',
       );
-      final window = await _fetchWindow(
-        segmentId: initialSegmentId,
-        size: initialSize,
-      );
+      _ContentWindow window;
+      try {
+        window = await _fetchWindow(
+          segmentId: initialSegmentId,
+          size: initialSize,
+        );
+      } catch (e) {
+        // The root was found but its page failed: open the edition the user
+        // asked for as itself, as when the root cannot be resolved at all.
+        if (_isDisposed || !_closeOpenedTranslation(versionBeforeRoot)) {
+          rethrow;
+        }
+        _logger.warning('Root of ${_params.textId} failed to load', e);
+        initialSegmentId = requestedSegmentId;
+        window = await _fetchWindow(
+          segmentId: initialSegmentId,
+          size: initialSize,
+        );
+      }
       if (_isDisposed) return;
       if (state.openedTranslation != null) {
         await _prefetchTranslation(window.content);
@@ -225,7 +251,9 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// this translation; this reader then adopts it instead of backing off as
   /// it does from a layout the user picked.
   Future<void> _openAsTranslation() async {
-    final dual = _ref.read(readerDualSettingsProvider(_params.textId).notifier);
+    final dual = _ref.read(
+      readerDualSettingsProvider(_params.settingsScope).notifier,
+    );
     bool userLayout() => dual.isPrimaryEdited || dual.isSecondaryEdited;
     final ReaderVersionDetail opened;
     final ReaderVersionDetail root;
@@ -273,10 +301,34 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
   }
 
+  /// Undoes [_openAsTranslation] after the root's page failed to load, so the
+  /// opened edition loads as the primary. False (nothing undone) when no
+  /// translation was opened under a root, or the layout has changed since.
+  bool _closeOpenedTranslation(String? versionBeforeRoot) {
+    final opened = state.openedTranslation;
+    final rootId = _activeVersionId;
+    if (opened == null ||
+        rootId == null ||
+        !_isOpenedUnder(rootId, opened.id)) {
+      return false;
+    }
+    _activeVersionId = versionBeforeRoot;
+    // The edition the user opened, never another one in the list's language.
+    _resolvedLanguageTextId = _params.textId;
+    _ref
+        .read(readerDualSettingsProvider(_params.settingsScope).notifier)
+        .closeOpenedTranslation();
+    state = ReaderState.initial(_params.textId).copyWith(
+      status: ReaderStatus.loading,
+      navigationContext: _params.navigationContext,
+    );
+    return true;
+  }
+
   /// True when this text's layout already shows [translationId] as the
   /// translation of [rootId].
   bool _isOpenedUnder(String rootId, String translationId) {
-    final dual = _ref.read(readerDualSettingsProvider(_params.textId));
+    final dual = _ref.read(readerDualSettingsProvider(_params.settingsScope));
     return dual.primary.versionId == rootId &&
         dual.secondary.versionId == translationId;
   }
@@ -286,7 +338,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// meantime. It is the request the translation stream makes first, so the
   /// stream finds it cached; a failure is left for that stream to report.
   Future<void> _prefetchTranslation(FlattenedContent content) async {
-    final dual = _ref.read(readerDualSettingsProvider(_params.textId));
+    final dual = _ref.read(readerDualSettingsProvider(_params.settingsScope));
     final primaryId = dual.primary.versionId;
     final translationId = dual.secondary.versionId;
     if (!dual.secondaryEnabled || primaryId == null || translationId == null) {
@@ -529,7 +581,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     if (_openTracked) return;
     _openTracked = true;
     final layout = readerLayoutFor(
-      _ref.read(readerDualSettingsProvider(_params.textId)),
+      _ref.read(readerDualSettingsProvider(_params.settingsScope)),
     );
     _analytics.readerOpened(
       textId: _params.textId,
@@ -537,7 +589,14 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       source: readerOpenSourceFor(_params.navigationContext?.source),
       language: textDetail.language,
       versionId: textDetail.id,
-      script: _ref.read(readerScriptForLanguageProvider(textDetail.language)),
+      script: _ref.read(
+        readerOriginalScriptProvider(
+          ReaderScriptScope(
+            scope: _params.settingsScope,
+            language: textDetail.language,
+          ),
+        ),
+      ),
       layout: layout,
       entrySegment: _params.segmentId,
     );
@@ -616,7 +675,9 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// Dual-settings primary version wins. Otherwise, if navigation asked for a
   /// language and versions exist for it, use that version's `text_id`.
   Future<String> _resolveDetailsTextId() async {
-    final dualSettings = _ref.read(readerDualSettingsProvider(_params.textId));
+    final dualSettings = _ref.read(
+      readerDualSettingsProvider(_params.settingsScope),
+    );
     final primaryVersionId = dualSettings.primary.versionId;
     if (primaryVersionId != null && primaryVersionId.isNotEmpty) {
       return primaryVersionId;

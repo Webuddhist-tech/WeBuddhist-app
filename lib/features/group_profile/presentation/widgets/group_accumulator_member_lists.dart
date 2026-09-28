@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -489,19 +489,9 @@ class GroupAccumulatorMemberAvatar extends StatelessWidget {
                 ? CachedNetworkImageWidget(
                   imageUrl: avatarUrl!,
                   fit: BoxFit.cover,
-                  errorWidget: _placeholder(),
+                  errorWidget: AvatarFallback(isDark: isDark),
                 )
-                : _placeholder(),
-      ),
-    );
-  }
-
-  Widget _placeholder() {
-    return ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.profile,
-        color: isDark ? AppColors.grey500 : AppColors.grey600,
+                : AvatarFallback(isDark: isDark),
       ),
     );
   }

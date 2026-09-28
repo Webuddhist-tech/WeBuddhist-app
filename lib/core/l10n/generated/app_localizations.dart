@@ -1831,7 +1831,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_event_participants_attending.
   ///
   /// In en, this message translates to:
-  /// **'{count} attending'**
+  /// **'{count} participants'**
   String connect_event_participants_attending(int count);
 
   /// No description provided for @connect_event_participants_empty.
@@ -1839,6 +1839,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No participants yet'**
   String get connect_event_participants_empty;
+
+  /// No description provided for @connect_event_organizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer'**
+  String get connect_event_organizer;
 
   /// No description provided for @connect_event_tab_videos.
   ///

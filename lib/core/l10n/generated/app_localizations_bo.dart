@@ -990,6 +990,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_event_participants_empty => 'ད་དུང་ཞུགས་མཁན་མེད།';
 
   @override
+  String get connect_event_organizer => 'Organizer';
+
+  @override
   String get connect_event_tab_videos => 'Videos';
 
   @override
