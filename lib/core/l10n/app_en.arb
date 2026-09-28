@@ -373,7 +373,7 @@
   "connect_event_participation_prompt": "How are you attending?",
   "connect_event_joining_in_person": "Joining in person",
   "connect_event_joining_online": "Joining online",
-  "connect_event_participants_attending": "{count} attending",
+  "connect_event_participants_attending": "{count} participants",
   "@connect_event_participants_attending": {
     "placeholders": {
       "count": {
@@ -382,6 +382,7 @@
     }
   },
   "connect_event_participants_empty": "No participants yet",
+  "connect_event_organizer": "Organizer",
   "connect_event_tab_videos": "Videos",
   "connect_event_tab_links": "Links",
   "connect_event_tab_about": "About",

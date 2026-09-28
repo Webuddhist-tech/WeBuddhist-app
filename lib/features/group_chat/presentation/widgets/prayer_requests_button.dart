@@ -50,10 +50,14 @@ class PrayerRequestsButton extends StatelessWidget {
     super.key,
     required this.onTap,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.outlined = false,
   });
 
   final VoidCallback onTap;
   final EdgeInsetsGeometry padding;
+
+  /// White surface with a hairline border instead of the grey fill.
+  final bool outlined;
 
   @override
   Widget build(BuildContext context) {
@@ -66,8 +70,21 @@ class PrayerRequestsButton extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerLeft,
         child: Material(
-          color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-          borderRadius: BorderRadius.circular(10),
+          color:
+              outlined
+                  ? (isDark
+                      ? AppColors.surfaceVariantDark
+                      : AppColors.surfaceWhite)
+                  : (isDark ? AppColors.surfaceVariantDark : AppColors.grey100),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side:
+                outlined
+                    ? BorderSide(
+                      color: isDark ? AppColors.grey800 : AppColors.grey300,
+                    )
+                    : BorderSide.none,
+          ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,

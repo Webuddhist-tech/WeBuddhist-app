@@ -971,11 +971,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String connect_event_participants_attending(int count) {
-    return '$count attending';
+    return '$count participants';
   }
 
   @override
   String get connect_event_participants_empty => 'No participants yet';
+
+  @override
+  String get connect_event_organizer => 'Organizer';
 
   @override
   String get connect_event_tab_videos => 'Videos';

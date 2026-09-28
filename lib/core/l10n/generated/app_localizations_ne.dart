@@ -996,6 +996,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_event_participants_empty => 'अहिलेसम्म कुनै सहभागी छैन';
 
   @override
+  String get connect_event_organizer => 'Organizer';
+
+  @override
   String get connect_event_tab_videos => 'Videos';
 
   @override
