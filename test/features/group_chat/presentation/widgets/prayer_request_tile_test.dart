@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_prayer_text.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -164,6 +165,48 @@ void main() {
     expect(prayerIntentionCardColor(null, false), AppColors.surfaceWhite);
     expect(prayerIntentionCardColor(null, true), AppColors.chipBackgroundDark);
     expect(prayerIntentionCardBorder(null, false), isNot(BorderSide.none));
+  });
+
+  testWidgets('praying floats the mantra up and fades it out', (tester) async {
+    var toggled = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PrayerRequestTile(
+            request: _prayer(count: 0, prayedByMe: false),
+            displayName: 'Tenzin',
+            onTogglePrayer: () => toggled++,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Pray'));
+    await tester.pump();
+    expect(toggled, 1);
+    expect(find.text('Om Tare Tuttare Ture Soha'), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Om Tare Tuttare Ture Soha'), findsNothing);
+  });
+
+  testWidgets('taking a prayer back shows no mantra', (tester) async {
+    await _pump(tester, count: 1, prayedByMe: true);
+    await tester.tap(find.text('Praying'));
+    await tester.pump();
+    expect(find.text('Om Tare Tuttare Ture Soha'), findsNothing);
+  });
+
+  test('the mantra follows the app language, English otherwise', () {
+    expect(prayerMantraForLocale(const Locale('bo')), startsWith('ཨོཾ'));
+    expect(prayerMantraForLocale(const Locale('zh')), startsWith('嗡'));
+    expect(prayerMantraForLocale(const Locale('mn')), startsWith('Ом'));
+    expect(prayerMantraForLocale(const Locale('hi')), startsWith('ॐ'));
+    expect(prayerMantraForLocale(const Locale('ne')), startsWith('ॐ'));
+    expect(prayerMantraForLocale(const Locale('fr')), 'Om Tare Tuttare Ture Soha');
   });
 
   test('intention hex parses with or without the hash', () {

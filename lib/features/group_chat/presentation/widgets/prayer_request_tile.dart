@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_prayer_text.dart';
 
 /// One prayer request as a card tinted by its intention: who asked, what
 /// for, who is praying, and a pray toggle for everyone but the requester.
@@ -316,7 +318,7 @@ class _SupportersSummary extends StatelessWidget {
   }
 }
 
-class _PrayButton extends StatelessWidget {
+class _PrayButton extends StatefulWidget {
   const _PrayButton({
     required this.prayedByMe,
     required this.accent,
@@ -330,7 +332,40 @@ class _PrayButton extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<_PrayButton> createState() => _PrayButtonState();
+}
+
+class _PrayButtonState extends State<_PrayButton> {
+  Offset? _lastTap;
+
+  bool get prayedByMe => widget.prayedByMe;
+  Color get accent => widget.accent;
+  bool get isDark => widget.isDark;
+
+  /// Praying (not un-praying) floats the mantra up from the tap.
+  void _handleTap() {
+    if (!prayedByMe) {
+      final box = context.findRenderObject() as RenderBox?;
+      final origin =
+          _lastTap ??
+          (box == null
+              ? Offset.zero
+              : box.localToGlobal(box.size.center(Offset.zero)));
+      HapticFeedback.lightImpact();
+      showFloatingPrayerText(
+        context,
+        origin: origin,
+        text: prayerMantraForLocale(Localizations.localeOf(context)),
+        accent: accent,
+        isDark: isDark,
+      );
+    }
+    widget.onTap?.call();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final onTap = widget.onTap;
     final label =
         prayedByMe
             ? context.l10n.event_prayer_praying
@@ -355,7 +390,8 @@ class _PrayButton extends StatelessWidget {
       shape: StadiumBorder(side: BorderSide(color: border)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTapDown: (details) => _lastTap = details.globalPosition,
+        onTap: onTap == null ? null : _handleTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Row(
