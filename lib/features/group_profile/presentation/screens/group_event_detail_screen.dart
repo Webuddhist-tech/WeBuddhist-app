@@ -184,8 +184,8 @@ class _GroupEventDetailScreenState
     final groupAccumulator = event.groupAccumulator;
     final tabs = <_EventTab>[
       if (videos.isNotEmpty) _EventTab.videos,
-      _EventTab.about,
       if (groupAccumulator != null) _EventTab.accumulations,
+      _EventTab.about,
     ];
     final selectedTab =
         tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
@@ -1293,29 +1293,17 @@ class _EventAccumulatorPanelState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InkWell(
-          onTap: () => _openAccumulator(detail),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    detail.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: primaryColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(AppAssets.caretRight, size: 18, color: secondaryColor),
-              ],
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            detail.title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: primaryColor,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(height: 6),
@@ -1442,13 +1430,6 @@ class _EventAccumulatorPanelState
                   ),
         ),
       ],
-    );
-  }
-
-  void _openAccumulator(GroupAccumulatorDetail detail) {
-    context.push(
-      '/home/group-accumulator/${detail.id}',
-      extra: {'groupTitle': widget.groupTitle},
     );
   }
 
