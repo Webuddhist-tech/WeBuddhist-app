@@ -59,18 +59,39 @@ class TodayEventBadge extends StatelessWidget {
   }
 }
 
-class _LiveDot extends StatefulWidget {
+class _LiveDot extends StatelessWidget {
   const _LiveDot();
 
   @override
-  State<_LiveDot> createState() => _LiveDotState();
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return const _StaticLiveDot();
+    }
+    return const _PulsingLiveDot();
+  }
 }
 
-class _LiveDotState extends State<_LiveDot>
-    with SingleTickerProviderStateMixin {
-  static const _dotSize = 8.0;
-  static const _liveRed = Color(0xFFE53935);
+class _StaticLiveDot extends StatelessWidget {
+  const _StaticLiveDot();
 
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.square(
+      dimension: _LiveDotMetrics.size * 2,
+      child: Center(child: _LiveDotCore()),
+    );
+  }
+}
+
+class _PulsingLiveDot extends StatefulWidget {
+  const _PulsingLiveDot();
+
+  @override
+  State<_PulsingLiveDot> createState() => _PulsingLiveDotState();
+}
+
+class _PulsingLiveDotState extends State<_PulsingLiveDot>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
@@ -85,7 +106,7 @@ class _LiveDotState extends State<_LiveDot>
   @override
   Widget build(BuildContext context) {
     return SizedBox.square(
-      dimension: _dotSize * 2,
+      dimension: _LiveDotMetrics.size * 2,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -94,25 +115,41 @@ class _LiveDotState extends State<_LiveDot>
             alignment: Alignment.center,
             children: [
               Container(
-                width: _dotSize * (1 + t),
-                height: _dotSize * (1 + t),
+                width: _LiveDotMetrics.size * (1 + t),
+                height: _LiveDotMetrics.size * (1 + t),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _liveRed.withValues(alpha: 0.4 * (1 - t)),
+                  color: _LiveDotMetrics.color.withValues(alpha: 0.4 * (1 - t)),
                 ),
               ),
               child!,
             ],
           );
         },
-        child: Container(
-          width: _dotSize,
-          height: _dotSize,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: _liveRed,
-          ),
-        ),
+        child: const _LiveDotCore(),
+      ),
+    );
+  }
+}
+
+class _LiveDotMetrics {
+  const _LiveDotMetrics._();
+
+  static const size = 8.0;
+  static const color = Color(0xFFE53935);
+}
+
+class _LiveDotCore extends StatelessWidget {
+  const _LiveDotCore();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: _LiveDotMetrics.size,
+      height: _LiveDotMetrics.size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: _LiveDotMetrics.color,
       ),
     );
   }
