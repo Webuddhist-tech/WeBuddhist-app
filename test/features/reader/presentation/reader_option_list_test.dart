@@ -11,6 +11,8 @@ Widget _list({
   required int rows,
   int? revealIndex,
   Map<int, double> heights = const {},
+  Map<int, Widget> blocks = const {},
+  GlobalKey? revealKey,
 }) {
   return MaterialApp(
     theme: ThemeData(
@@ -25,14 +27,32 @@ Widget _list({
           width: 300,
           child: ReaderOptionList(
             revealIndex: revealIndex,
+            revealKey: revealKey,
             children: [
               for (var i = 0; i < rows; i++)
-                SizedBox(key: ValueKey(i), height: heights[i] ?? _rowHeight),
+                blocks[i] ??
+                    SizedBox(
+                      key: ValueKey(i),
+                      height: heights[i] ?? _rowHeight,
+                    ),
             ],
           ),
         ),
       ),
     ),
+  );
+}
+
+/// An open language: its row, [versions] rows, the last one checked and
+/// carrying [checked].
+Widget _openLanguage(int index, {required int versions, required Key checked}) {
+  return Column(
+    key: ValueKey(index),
+    children: [
+      const SizedBox(height: _rowHeight),
+      for (var v = 0; v < versions; v++)
+        SizedBox(key: v == versions - 1 ? checked : null, height: _rowHeight),
+    ],
   );
 }
 
@@ -150,6 +170,69 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_position(tester).pixels, 2 * _rowHeight);
+    });
+
+    testWidgets('shows a language and its checked version together when they '
+        'fit', (tester) async {
+      final checked = GlobalKey();
+      await tester.pumpWidget(
+        _list(
+          rows: 8,
+          revealIndex: 2,
+          revealKey: checked,
+          blocks: {2: _openLanguage(2, versions: 2, checked: checked)},
+        ),
+      );
+      await tester.pump();
+
+      // Rows 2 through 4: the language and both versions, three rows in all.
+      expect(_position(tester).pixels, 5 * _rowHeight - _cap);
+      expect(_inView(tester, 2), isTrue);
+      final list = tester.getRect(find.byType(ReaderOptionList));
+      expect(tester.getRect(find.byKey(checked)).bottom, list.bottom);
+    });
+
+    testWidgets('scrolls to the checked version when its language opens '
+        'taller than the list', (tester) async {
+      final checked = GlobalKey();
+      await tester.pumpWidget(
+        _list(
+          rows: 8,
+          revealIndex: 2,
+          revealKey: checked,
+          blocks: {2: _openLanguage(2, versions: 5, checked: checked)},
+        ),
+      );
+      await tester.pump();
+
+      // The language row is off the top; its last version is at the bottom.
+      final list = tester.getRect(find.byType(ReaderOptionList));
+      expect(tester.getRect(find.byKey(checked)).bottom, list.bottom);
+      expect(_inView(tester, 2), isFalse);
+    });
+
+    testWidgets('follows the checked version once versions arrive', (
+      tester,
+    ) async {
+      final checked = GlobalKey();
+      await tester.pumpWidget(
+        _list(rows: 8, revealIndex: 2, revealKey: checked),
+      );
+      await tester.pump();
+      expect(_position(tester).pixels, 0);
+
+      await tester.pumpWidget(
+        _list(
+          rows: 8,
+          revealIndex: 2,
+          revealKey: checked,
+          blocks: {2: _openLanguage(2, versions: 5, checked: checked)},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final list = tester.getRect(find.byType(ReaderOptionList));
+      expect(tester.getRect(find.byKey(checked)).bottom, list.bottom);
     });
   });
 }

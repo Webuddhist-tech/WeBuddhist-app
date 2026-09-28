@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_context_layout_prefs.dart';
@@ -7,6 +9,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/fake_local_storage.dart';
+
+/// Storage whose write of one value is held back until the test releases it,
+/// so a later write can land first — the ordering a real store may produce.
+class _HeldWriteStorage extends FakeLocalStorage {
+  _HeldWriteStorage({required this.heldValue});
+
+  final Object heldValue;
+  final _release = Completer<void>();
+
+  void release() => _release.complete();
+
+  @override
+  Future<bool> set<T>(String key, T value) async {
+    if (value == heldValue) await _release.future;
+    return super.set<T>(key, value);
+  }
+}
 
 void main() {
   group('readerLayoutsNeedReset', () {
@@ -39,13 +58,15 @@ void main() {
         StorageKeys.readerLayoutPrefs(context.name);
 
     /// Picks in every context, plus the library's app-wide reader settings.
-    void storePicks() {
+    void storePicksIn(FakeLocalStorage target) {
       for (final context in contexts) {
-        storage.values[keyOf(context)] = picks;
+        target.values[keyOf(context)] = picks;
       }
-      storage.values[StorageKeys.readerOriginalVisible] = false;
-      storage.values[StorageKeys.readerScriptPreference] = '{"bo":"phonetic"}';
+      target.values[StorageKeys.readerOriginalVisible] = false;
+      target.values[StorageKeys.readerScriptPreference] = '{"bo":"phonetic"}';
     }
+
+    void storePicks() => storePicksIn(storage);
 
     ReaderLayoutLanguageGuard guard() =>
         container.read(readerLayoutLanguageGuardProvider);
@@ -119,6 +140,31 @@ void main() {
         storage.values.containsKey(keyOf(ReaderLayoutContext.plan)),
         isFalse,
       );
+    });
+
+    test('two quick changes leave the later language as the stamp', () async {
+      final held = _HeldWriteStorage(heldValue: 'hi');
+      container.dispose();
+      container = ProviderContainer(
+        overrides: [localStorageServiceProvider.overrideWithValue(held)],
+      );
+      held.values[StorageKeys.readerLayoutLanguage] = 'en';
+
+      final first = guard().sync('hi');
+      final second = guard().sync('bo');
+      await pumpEventQueue();
+      // The first sync is still writing its stamp; the second waits for it.
+      expect(held.values[StorageKeys.readerLayoutLanguage], 'en');
+
+      held.release();
+      expect(await first, isTrue);
+      expect(await second, isTrue);
+      expect(held.values[StorageKeys.readerLayoutLanguage], 'bo');
+
+      // Picks made under Tibetan now survive the next open.
+      storePicksIn(held);
+      expect(await guard().sync('bo'), isFalse);
+      expect(held.values[keyOf(ReaderLayoutContext.event)], picks);
     });
 
     test('a live store starts over from no picks', () async {

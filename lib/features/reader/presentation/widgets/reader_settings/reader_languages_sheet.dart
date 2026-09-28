@@ -51,6 +51,10 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   String? _expandedLanguage;
   bool _filling = false;
 
+  /// Marks the checked version's row so the capped list scrolls to it, not
+  /// just to its language, when the open language has more rows than fit.
+  final _selectedVersionKey = GlobalKey();
+
   ReaderSettingsScope get _scope => widget.scope;
 
   ReaderDualSettingsNotifier get _notifier =>
@@ -333,6 +337,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
                         textId: _scope.textId,
                         secondary: settings.secondary,
                         expandedLanguage: _expandedLanguage,
+                        selectedVersionKey: _selectedVersionKey,
                         onLanguageTap: busy ? null : _onLanguageTap,
                         onVersionTap: _onVersionTap,
                       ),
@@ -442,6 +447,7 @@ class _LanguageTree extends ConsumerWidget {
     required this.textId,
     required this.secondary,
     required this.expandedLanguage,
+    required this.selectedVersionKey,
     required this.onLanguageTap,
     required this.onVersionTap,
   });
@@ -449,6 +455,7 @@ class _LanguageTree extends ConsumerWidget {
   final String textId;
   final ReaderSlotConfig secondary;
   final String? expandedLanguage;
+  final GlobalKey selectedVersionKey;
   final ValueChanged<ReaderLanguageOption>? onLanguageTap;
   final void Function(ReaderLanguageOption, ReaderVersionDetail) onVersionTap;
 
@@ -473,8 +480,9 @@ class _LanguageTree extends ConsumerWidget {
         return Padding(
           padding: const EdgeInsets.only(top: 4, left: 16),
           child: ReaderOptionList(
-            // The open language stays in view along with its versions.
+            // The open language stays in view, its checked version with it.
             revealIndex: open < 0 ? null : open,
+            revealKey: selectedVersionKey,
             children: [
               for (final lang in langs)
                 Column(
@@ -496,6 +504,7 @@ class _LanguageTree extends ConsumerWidget {
                         textId: textId,
                         language: lang,
                         selectedVersionId: secondary.versionId,
+                        selectedKey: selectedVersionKey,
                         onTap: (v) => onVersionTap(lang, v),
                       ),
                   ],
@@ -567,12 +576,16 @@ class _VersionList extends ConsumerWidget {
     required this.textId,
     required this.language,
     required this.selectedVersionId,
+    required this.selectedKey,
     required this.onTap,
   });
 
   final String textId;
   final ReaderLanguageOption language;
   final String? selectedVersionId;
+
+  /// Goes on the checked version's row, for the list to scroll to.
+  final GlobalKey selectedKey;
   final ValueChanged<ReaderVersionDetail> onTap;
 
   @override
@@ -605,6 +618,7 @@ class _VersionList extends ConsumerWidget {
             children: [
               for (final v in versions) ...[
                 InkWell(
+                  key: v.id == selectedVersionId ? selectedKey : null,
                   onTap: () => onTap(v),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
