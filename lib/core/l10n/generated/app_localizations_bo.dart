@@ -2945,6 +2945,58 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན།';
 
   @override
+  String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_choose_intention => 'Choose an intention';
+
+  @override
+  String get event_prayer_intentions_failed =>
+      'Intentions couldn\'t be loaded.';
+
+  @override
+  String get event_prayer_request_button => 'Request prayer';
+
+  @override
+  String get event_prayer_you => 'You';
+
+  @override
+  String get event_prayer_waiting_first => 'Waiting for the first prayer...';
+
+  @override
+  String event_prayer_more_praying(int count) {
+    return '+$count more are praying';
+  }
+
+  @override
+  String event_prayer_people_praying(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people are praying',
+      one: '1 person is praying',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get event_prayer_praying_for_you => 'Praying for you';
+
+  @override
+  String event_prayer_praying_for(String name) {
+    return 'Praying for $name';
+  }
+
+  @override
+  String get event_prayer_your_request => 'Your request';
+
+  @override
+  String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
+
+  @override
+  String get event_prayer_no_supporters => 'No one is praying yet.';
+
+  @override
   String get recitation_live_sync => 'Sync';
 
   @override

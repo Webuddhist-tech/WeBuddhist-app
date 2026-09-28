@@ -5129,7 +5129,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'How can we pray for you today'**
+  /// **'How can we pray for you today?'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_load_failed.
@@ -5155,6 +5155,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Praying'**
   String get event_prayer_praying;
+
+  /// No description provided for @event_prayer_new_request.
+  ///
+  /// In en, this message translates to:
+  /// **'New prayer request'**
+  String get event_prayer_new_request;
+
+  /// No description provided for @event_prayer_choose_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an intention'**
+  String get event_prayer_choose_intention;
+
+  /// No description provided for @event_prayer_intentions_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Intentions couldn\'t be loaded.'**
+  String get event_prayer_intentions_failed;
+
+  /// No description provided for @event_prayer_request_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Request prayer'**
+  String get event_prayer_request_button;
+
+  /// No description provided for @event_prayer_you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get event_prayer_you;
+
+  /// No description provided for @event_prayer_waiting_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first prayer...'**
+  String get event_prayer_waiting_first;
+
+  /// No description provided for @event_prayer_more_praying.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more are praying'**
+  String event_prayer_more_praying(int count);
+
+  /// No description provided for @event_prayer_people_praying.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person is praying} other{{count} people are praying}}'**
+  String event_prayer_people_praying(int count);
+
+  /// No description provided for @event_prayer_praying_for_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Praying for you'**
+  String get event_prayer_praying_for_you;
+
+  /// No description provided for @event_prayer_praying_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Praying for {name}'**
+  String event_prayer_praying_for(String name);
+
+  /// No description provided for @event_prayer_your_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request'**
+  String get event_prayer_your_request;
+
+  /// No description provided for @event_prayer_supporters_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load who is praying.'**
+  String get event_prayer_supporters_failed;
+
+  /// No description provided for @event_prayer_no_supporters.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is praying yet.'**
+  String get event_prayer_no_supporters;
 
   /// No description provided for @recitation_live_sync.
   ///

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 
 class ChatMessageDTO extends Equatable {
@@ -35,6 +36,7 @@ class ChatMessageDTO extends Equatable {
   final String messageType;
 
   /// Only carried on a `PRAYER` message.
+  final ChatPrayerIntentionDTO? intention;
   final int prayerCount;
   final bool prayedByMe;
   final List<ChatPrayerUserDTO> recentPrayers;
@@ -52,6 +54,7 @@ class ChatMessageDTO extends Equatable {
     this.parent,
     this.reactions = const [],
     this.messageType = typeText,
+    this.intention,
     this.prayerCount = 0,
     this.prayedByMe = false,
     this.recentPrayers = const [],
@@ -61,6 +64,7 @@ class ChatMessageDTO extends Equatable {
 
   factory ChatMessageDTO.fromJson(Map<String, dynamic> json) {
     final parentJson = json['parent'];
+    final intentionJson = json['intention'];
     final prayerCount = json['prayer_count'];
     return ChatMessageDTO(
       id: json['id'] as String? ?? '',
@@ -83,6 +87,10 @@ class ChatMessageDTO extends Equatable {
               .toList() ??
           const [],
       messageType: json['message_type'] as String? ?? typeText,
+      intention:
+          intentionJson is Map<String, dynamic>
+              ? ChatPrayerIntentionDTO.fromJson(intentionJson)
+              : null,
       prayerCount: prayerCount is num ? prayerCount.toInt() : 0,
       prayedByMe: json['prayed_by_me'] as bool? ?? false,
       recentPrayers:
@@ -121,6 +129,7 @@ class ChatMessageDTO extends Equatable {
       parent: parent ?? this.parent,
       reactions: reactions ?? this.reactions,
       messageType: messageType,
+      intention: intention,
       prayerCount: prayerCount ?? this.prayerCount,
       prayedByMe: prayedByMe ?? this.prayedByMe,
       recentPrayers: recentPrayers ?? this.recentPrayers,
@@ -142,6 +151,7 @@ class ChatMessageDTO extends Equatable {
       'reactions': reactions.map((reaction) => reaction.toJson()).toList(),
       'message_type': messageType,
       if (isPrayerRequest) ...{
+        if (intention != null) 'intention': intention!.toJson(),
         'prayer_count': prayerCount,
         'prayed_by_me': prayedByMe,
         'recent_prayers': recentPrayers.map((user) => user.toJson()).toList(),
@@ -163,6 +173,7 @@ class ChatMessageDTO extends Equatable {
     parent,
     reactions,
     messageType,
+    intention,
     prayerCount,
     prayedByMe,
     recentPrayers,
