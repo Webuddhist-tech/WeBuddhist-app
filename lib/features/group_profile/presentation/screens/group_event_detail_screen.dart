@@ -214,6 +214,7 @@ class _GroupEventDetailScreenState
               if (event.chatEnabled)
                 PrayerRequestsButton(
                   padding: EdgeInsets.zero,
+                  outlined: true,
                   onTap: () => _openPrayerRequests(event.id),
                 ),
             ],
@@ -223,6 +224,11 @@ class _GroupEventDetailScreenState
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
+          _EventSectionLabel(
+            text: context.l10n.connect_event_organizer,
+            color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+          ),
+          const SizedBox(height: 8),
           _EventGroupRow(event: event, isDark: isDark),
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
@@ -329,20 +335,23 @@ class _GroupEventDetailScreenState
       Widget joinButton(GroupEventParticipationType type, String label) {
         final isPending = _pendingJoin == type;
         return Expanded(
-          child: OutlinedButton(
+          child: ElevatedButton(
             onPressed:
                 _isSubmitting || _isOpeningPuja
                     ? null
                     : () => _attendEvent(event, participation: type),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 44),
-              backgroundColor: secondaryButtonColor,
+            style: ElevatedButton.styleFrom(
+              elevation: 0,
+              minimumSize: const Size(0, 48),
+              backgroundColor:
+                  isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
               foregroundColor:
-                  isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-              side: BorderSide(color: secondaryBorder),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                  isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
+              shape: const StadiumBorder(),
             ),
             child:
                 isPending
@@ -852,10 +861,55 @@ class _AttendeesRow extends StatelessWidget {
 
     final double avatarSize = 28.0;
     final double overlap = 18.0;
+    final borderColor =
+        isDark ? AppColors.scaffoldBackgroundDark : AppColors.surfaceLight;
 
-    final int totalItems = shown.length + (remaining > 0 ? 1 : 0);
-    final double stackWidth =
-        totalItems == 0 ? 0 : (totalItems - 1) * overlap + avatarSize;
+    // Each avatar but the last only takes [overlap] of layout width and paints
+    // past it, so the count pill can size to its text without measuring.
+    Widget overlapped(Widget child) => SizedBox(
+      width: overlap,
+      height: avatarSize,
+      child: OverflowBox(
+        maxWidth: avatarSize,
+        alignment: Alignment.centerLeft,
+        child: child,
+      ),
+    );
+    final avatars = [
+      for (final participant in shown)
+        _ParticipantAvatar(
+          participant: participant,
+          isDark: isDark,
+          size: avatarSize,
+        ),
+    ];
+    final countPill =
+        remaining > 0
+            ? Container(
+              constraints: BoxConstraints(minWidth: avatarSize),
+              height: avatarSize,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(avatarSize / 2),
+                color: isDark ? AppColors.grey800 : const Color(0xFFE8E5DF),
+                border: Border.all(color: borderColor, width: 2),
+              ),
+              child: Text(
+                '+$remaining',
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                  color:
+                      isDark ? AppColors.textPrimaryDark : AppColors.greyDark,
+                ),
+              ),
+            )
+            : null;
+    final stacked = [...avatars, if (countPill != null) countPill];
+    final int totalItems = stacked.length;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -867,60 +921,8 @@ class _AttendeesRow extends StatelessWidget {
           ),
       child: Row(
         children: [
-          if (totalItems > 0)
-            SizedBox(
-              width: stackWidth,
-              height: avatarSize,
-              child: Stack(
-                children: [
-                  // Paint first avatar last so it sits on top of the rest.
-                  for (var i = shown.length - 1; i >= 0; i--)
-                    Positioned(
-                      left: i * overlap,
-                      child: _ParticipantAvatar(
-                        participant: shown[i],
-                        isDark: isDark,
-                        size: avatarSize,
-                      ),
-                    ),
-                  // Painted after the avatars so the overflow count stays on top.
-                  if (remaining > 0)
-                    Positioned(
-                      left: shown.length * overlap,
-                      child: Container(
-                        width: avatarSize,
-                        height: avatarSize,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              isDark
-                                  ? AppColors.grey800
-                                  : const Color(0xFFE8E5DF),
-                          border: Border.all(
-                            color:
-                                isDark
-                                    ? AppColors.scaffoldBackgroundDark
-                                    : AppColors.surfaceLight,
-                            width: 2,
-                          ),
-                        ),
-                        child: Text(
-                          '+$remaining',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color:
-                                isDark
-                                    ? AppColors.textPrimaryDark
-                                    : AppColors.greyDark,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+          for (var i = 0; i < stacked.length; i++)
+            i == stacked.length - 1 ? stacked[i] : overlapped(stacked[i]),
           if (totalItems > 0) const SizedBox(width: 8),
           Text(
             context.l10n.connect_event_participants_attending(totalAttending),
@@ -1140,18 +1142,22 @@ class _EventLinksCard extends StatelessWidget {
 
 class _EventSectionLabel extends StatelessWidget {
   final String text;
+  final Color color;
 
-  const _EventSectionLabel({required this.text});
+  const _EventSectionLabel({
+    required this.text,
+    this.color = AppColors.poemAuthor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.1,
-        color: AppColors.poemAuthor,
+        color: color,
       ),
     );
   }

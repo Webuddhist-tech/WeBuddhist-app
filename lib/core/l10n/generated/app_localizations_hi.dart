@@ -986,6 +986,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_participants_empty => 'अभी तक कोई प्रतिभागी नहीं';
 
   @override
+  String get connect_event_organizer => 'Organizer';
+
+  @override
   String get connect_event_tab_videos => 'Videos';
 
   @override
