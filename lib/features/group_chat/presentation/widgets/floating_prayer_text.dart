@@ -70,11 +70,13 @@ class _FloatingPrayerTextState extends State<_FloatingPrayerText>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: const Duration(milliseconds: 2400),
   );
 
-  static const double _rise = 110;
-  static const double _sway = 10;
+  /// It climbs all the way to the top: the rise is measured from the tap,
+  /// not fixed, so a tap low on the screen travels farther, not shorter.
+  static const double _topMargin = 24;
+  static const double _sway = 14;
 
   @override
   void initState() {
@@ -101,18 +103,21 @@ class _FloatingPrayerTextState extends State<_FloatingPrayerText>
       (widget.origin.dx / size.width).clamp(0.0, 1.0),
       (widget.origin.dy / size.height).clamp(0.0, 1.0),
     );
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+    final totalRise = math.max(160.0, widget.origin.dy - topInset - _topMargin);
 
     return IgnorePointer(
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
           final t = _controller.value;
-          final rise = Curves.easeOutCubic.transform(t) * _rise;
-          final sway = math.sin(t * math.pi * 2) * _sway * (1 - t);
+          // Quick launch, then a long glide so it keeps moving as it fades.
+          final rise = Curves.easeOutQuad.transform(t) * totalRise;
+          final sway = math.sin(t * math.pi * 3) * _sway * (1 - t);
           final scale =
               0.7 + Curves.easeOutBack.transform(math.min(1, t * 3)) * 0.4;
           final opacity =
-              t < 0.55 ? 1.0 : Curves.easeIn.transform((1 - t) / 0.45);
+              t < 0.6 ? 1.0 : Curves.easeIn.transform((1 - t) / 0.4);
           return Align(
             alignment: alignment,
             child: Transform.translate(
