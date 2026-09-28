@@ -23,6 +23,9 @@ class AuthService {
   /// [isJwtExpired].
   static const int _kMinTokenTtlSeconds = 120;
 
+  /// Dart-side ceiling on native credentials-manager calls so a stall cannot hang launch.
+  static const Duration _kCredentialsTimeout = Duration(seconds: 20);
+
   // SharedPreferences key for guest mode
   static const String _guestModeKey = 'is_guest_mode';
 
@@ -40,9 +43,17 @@ class AuthService {
   /// receive a plain cache read (the very token the server just rejected).
   bool _inflightIsForced = false;
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  /// In-flight [initialize], shared so concurrent callers never double-assign [_auth0].
+  Future<void>? _initializing;
 
+  Future<void> initialize() {
+    if (_isInitialized) return Future.value();
+    return _initializing ??= _doInitialize().whenComplete(
+      () => _initializing = null,
+    );
+  }
+
+  Future<void> _doInitialize() async {
     // load config from config service
     final config = ConfigService.instance;
     await config.loadConfig();
@@ -105,9 +116,9 @@ class AuthService {
       // launch/restore path and the API path never disagree on when to renew —
       // and a low threshold keeps a safe margin below any configured Auth0
       // access-token lifetime (the SDK throws when minTtl exceeds it).
-      return await _auth0.credentialsManager.credentials(
-        minTtl: _kMinTokenTtlSeconds,
-      );
+      return await _auth0.credentialsManager
+          .credentials(minTtl: _kMinTokenTtlSeconds)
+          .timeout(_kCredentialsTimeout);
     } on CredentialsManagerException catch (e) {
       // Surface the SDK code at the boundary for diagnostics, then rethrow so
       // the repository maps it: no-credentials / no-refresh-token / opaque →
@@ -306,13 +317,15 @@ class AuthService {
       // ("minTTL requested … is greater than the lifetime of the renewed access
       // token"); and capping `minTtl` at that lifetime is satisfied by a fresh
       // token, so it would not force a renewal at all.
-      creds = await _auth0.credentialsManager.renewCredentials();
+      creds = await _auth0.credentialsManager.renewCredentials().timeout(
+        _kCredentialsTimeout,
+      );
     } else {
       // Proactive: return the cached token, renewing only when it is within the
       // skew buffer of expiry.
-      creds = await _auth0.credentialsManager.credentials(
-        minTtl: _kMinTokenTtlSeconds,
-      );
+      creds = await _auth0.credentialsManager
+          .credentials(minTtl: _kMinTokenTtlSeconds)
+          .timeout(_kCredentialsTimeout);
     }
     return creds;
   }
@@ -400,7 +413,9 @@ class AuthService {
   /// actual credentials/renewal attempt (see [isSessionPermanentlyLost]).
   Future<bool> hasValidCredentials() async {
     try {
-      return await _auth0.credentialsManager.hasValidCredentials();
+      return await _auth0.credentialsManager.hasValidCredentials().timeout(
+        const Duration(seconds: 10),
+      );
     } catch (e) {
       _logger.warning('Error checking valid credentials: $e');
       return false;

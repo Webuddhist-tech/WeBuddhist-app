@@ -58,8 +58,10 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Portrait only; the live player switches to landscape for fullscreen.
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Portrait only; unawaited: a headless (audio_service) engine never replies.
+  unawaited(
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
+  );
 
   try {
     await PostHogAnalyticsService.create().initialize();
@@ -68,13 +70,27 @@ void main() async {
     _logger.warning('Error initializing analytics: $e');
   }
 
-  await Firebase.initializeApp();
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  bool firebaseReady = false;
+  try {
+    await Firebase.initializeApp();
+    firebaseReady = true;
+  } catch (e) {
+    _logger.warning('Error initializing Firebase: $e');
+  }
+  if (firebaseReady) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    // Uncaught async errors (e.g. in auth restore) are otherwise invisible.
+    WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+      _logger.error('Uncaught async error', error, stack);
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+      return true;
+    };
 
-  // Register the FCM background/terminated-state handler. Must be done before
-  // runApp and references a top-level function so it survives AOT and runs in
-  // its own isolate.
-  FirebaseMessaging.onBackgroundMessage(pushNotificationBackgroundHandler);
+    // Register the FCM background/terminated-state handler. Must be done before
+    // runApp and references a top-level function so it survives AOT and runs in
+    // its own isolate.
+    FirebaseMessaging.onBackgroundMessage(pushNotificationBackgroundHandler);
+  }
 
   // Setup environment-aware logging
   AppLogger.init();

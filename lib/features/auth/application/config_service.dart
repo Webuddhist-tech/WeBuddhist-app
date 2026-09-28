@@ -32,7 +32,9 @@ class ConfigService {
     auth0Scheme = dotenv.env['AUTH0_SCHEME'];
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/props'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/props'))
+          .timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) {
         throw Exception(
           'Failed to fetch auth0 config (HTTP ${response.statusCode})',
