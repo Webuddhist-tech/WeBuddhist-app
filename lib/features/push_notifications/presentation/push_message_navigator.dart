@@ -4,12 +4,15 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter_pecha/features/notifications/data/models/notification_nav.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
 
 /// FCM `session_type` values carried in the push `data` payload.
@@ -138,7 +141,11 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
     case PushSessionType.accumulation:
       return const PushTapResolution(PushTapTarget.practice);
     case PushSessionType.chat:
-      final prayer = _prayerRequestResolution(data, roomSourceId: sourceId);
+      final prayer = _prayerRequestResolution(
+        data,
+        sourceId: sourceId,
+        sourceIsRoom: true,
+      );
       if (prayer != null) return prayer;
       // The payload's `source_id` is the *room* id, but the only chat screen
       // in the app is keyed by group id, so route with `group_id`.
@@ -177,8 +184,14 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
       // (it will need `notification_type` to tell the two flavours apart).
       return PushTapResolution(PushTapTarget.groupProfile, sourceId: sourceId);
     default:
-      // A prayer push that arrived without a recognised `session_type`.
-      final prayer = _prayerRequestResolution(data, roomSourceId: sourceId);
+      // A prayer push that arrived without a recognised `session_type`. A
+      // PRAYER notification carries the event id in `source_id`, as in the
+      // dedicated branch above; anything else here is a chat message.
+      final prayer = _prayerRequestResolution(
+        data,
+        sourceId: sourceId,
+        sourceIsRoom: !_isPrayerNotificationType(data),
+      );
       if (prayer != null) return prayer;
       return const PushTapResolution(PushTapTarget.home);
   }
@@ -208,21 +221,27 @@ String _notificationTypeOf(Map<String, dynamic> data) =>
 String _eventIdOf(Map<String, dynamic> data) =>
     (data['event_id'] as String?)?.trim() ?? '';
 
-bool _isPrayerRequestPush(Map<String, dynamic> data) {
-  if (_chatKindOf(data) == PushChatKind.event) return true;
-  if (_messageTypeOf(data) == pushPrayerMessageType) return true;
+bool _isPrayerNotificationType(Map<String, dynamic> data) {
   final notificationType = _notificationTypeOf(data);
   return notificationType == PushSessionType.prayer ||
       notificationType == PushSessionType.prayerRequest;
 }
 
+bool _isPrayerRequestPush(Map<String, dynamic> data) {
+  if (_chatKindOf(data) == PushChatKind.event) return true;
+  if (_messageTypeOf(data) == pushPrayerMessageType) return true;
+  return _isPrayerNotificationType(data);
+}
+
 /// Event prayer requests, or null when [data] is some other chat.
 ///
-/// [roomSourceId] is the payload `source_id`. For chat that is the room id,
-/// so it is only used to look the event up when `event_id` is absent.
+/// [sourceId] is the payload `source_id`, used only when `event_id` is
+/// absent. [sourceIsRoom] says it is a chat room id, whose event must be
+/// looked up, rather than the event id itself.
 PushTapResolution? _prayerRequestResolution(
   Map<String, dynamic> data, {
-  required String roomSourceId,
+  required String sourceId,
+  required bool sourceIsRoom,
 }) {
   if (!_isPrayerRequestPush(data)) return null;
   final eventId = _eventIdOf(data);
@@ -232,11 +251,11 @@ PushTapResolution? _prayerRequestResolution(
       sourceId: eventId,
     );
   }
-  if (roomSourceId.isEmpty) return null;
+  if (sourceId.isEmpty) return null;
   return PushTapResolution(
     PushTapTarget.eventPrayerRequests,
-    sourceId: roomSourceId,
-    resolvesRoom: true,
+    sourceId: sourceId,
+    resolvesRoom: sourceIsRoom,
   );
 }
 
@@ -255,6 +274,9 @@ class PushMessageNavigator {
   PushMessageNavigator(this._ref);
 
   final Ref _ref;
+
+  /// Bumped on every routed tap so a slow lookup can tell it was superseded.
+  int _tapGeneration = 0;
 
   /// Routes a domain [PushMessage] — used for background / terminated taps.
   void handle(PushMessage message, PushAppState appState) =>
@@ -303,6 +325,7 @@ class PushMessageNavigator {
   }
 
   void _route(Map<String, dynamic> data, PushAppState appState) {
+    _tapGeneration++;
     final resolution = resolvePushTap(data);
     final router = _ref.read(appRouterProvider);
     final sourceId = resolution.sourceId ?? '';
@@ -391,8 +414,22 @@ class PushMessageNavigator {
 
   /// Chat pushes name the room in `source_id`. The prayer sheet is keyed by
   /// the event, which that room carries.
+  ///
+  /// The result is dropped when another tap was routed, or the user moved,
+  /// while the room was loading.
   Future<void> _openPrayerRequestsFromRoom(String roomId) async {
-    final result = await _ref.read(groupChatRepositoryProvider).getRoom(roomId);
+    final generation = _tapGeneration;
+    final delegate = _ref.read(appRouterProvider).routerDelegate;
+    var moved = false;
+    void onMoved() => moved = true;
+    delegate.addListener(onMoved);
+    final Either<Failure, ChatRoomDTO> result;
+    try {
+      result = await _ref.read(groupChatRepositoryProvider).getRoom(roomId);
+    } finally {
+      delegate.removeListener(onMoved);
+    }
+    if (moved || generation != _tapGeneration) return;
     final eventId = result.fold(
       (_) => '',
       (room) => room.eventId?.trim() ?? '',

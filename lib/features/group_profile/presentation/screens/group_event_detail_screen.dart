@@ -84,6 +84,12 @@ class _GroupEventDetailScreenState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _didOpenPrayerRequests) return;
       _didOpenPrayerRequests = true;
+      // `/home` is guest-accessible, so the query alone is no proof of login.
+      final authState = ref.read(authProvider);
+      if (authState.isGuest || !authState.isLoggedIn) {
+        LoginDrawer.show(context, ref);
+        return;
+      }
       unawaited(PrayerRequestsSheet.show(context, eventId: widget.eventId));
     });
   }
