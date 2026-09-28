@@ -226,8 +226,7 @@ class _GroupEventDetailScreenState
           const SizedBox(height: 16),
           _EventSectionLabel(
             text: context.l10n.connect_event_organizer,
-            color:
-                isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+            color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
           ),
           const SizedBox(height: 8),
           _EventGroupRow(event: event, isDark: isDark),
@@ -1009,18 +1008,25 @@ class _ParticipantAvatar extends StatelessWidget {
   }
 }
 
-class _EventGroupRow extends StatelessWidget {
+class _EventGroupRow extends ConsumerWidget {
   final GroupEvent event;
   final bool isDark;
 
   const _EventGroupRow({required this.event, required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
-    final title = event.groupName?.trim() ?? '';
-    final avatarUrl = event.groupAvatarUrl?.trim() ?? '';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final group = ref
+        .watch(groupProfileProvider(event.groupId))
+        .valueOrNull
+        ?.fold((_) => null, (profile) => profile);
+    final title = (group?.title ?? event.groupName ?? '').trim();
+    final avatarUrl = (group?.avatarUrl ?? event.groupAvatarUrl ?? '').trim();
+    final subtitle = (group?.subTitle ?? group?.description ?? '').trim();
     if (title.isEmpty) return const SizedBox.shrink();
 
+    final subtitleColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 
@@ -1051,14 +1057,26 @@ class _EventGroupRow extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        style: TextStyle(fontSize: 13, color: subtitleColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
               Icon(
@@ -1120,6 +1138,7 @@ class _EventLinksCard extends StatelessWidget {
     );
   }
 }
+
 
 class _EventSectionLabel extends StatelessWidget {
   final String text;
