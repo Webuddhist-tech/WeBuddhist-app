@@ -529,6 +529,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         ?.fold((_) => null, (event) => event);
     if (event == null || !event.chatEnabled) return const SizedBox.shrink();
     return PrayerRequestsButton(
+      eventId: eventId,
       count: event.prayerRequestCount,
       onTap: () => _openPrayerRequests(eventId),
       padding:

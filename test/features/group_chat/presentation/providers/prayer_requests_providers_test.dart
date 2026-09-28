@@ -354,6 +354,51 @@ void main() {
       expect(_byId(notifier, 'a').prayerCount, 6);
     });
 
+    test('the live count follows loads, sends and deletions', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+      int? count() => container.read(prayerRequestCountProvider('e1'));
+
+      expect(count(), isNull);
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(count(), 2);
+
+      await notifier.send('Please pray', intention: 'healing');
+      expect(count(), 3);
+
+      notifier.applyDeletion('a');
+      expect(count(), 2);
+    });
+
+    test('leaving a full stack re-reads it from the roster', () async {
+      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
+      const others = [
+        ChatPrayerUserDTO(userId: 'u2', name: 'Pema'),
+        ChatPrayerUserDTO(userId: 'u3', name: 'Sonam'),
+        ChatPrayerUserDTO(userId: 'u4', name: 'Karma'),
+      ];
+      repository =
+          _FakeGroupChatRepository(
+              history: [
+                _prayer('a', count: 4, prayedByMe: true).copyWith(
+                  recentPrayers: [me, others[0], others[1]],
+                ),
+              ],
+            )
+            ..supporters = others;
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.togglePrayer('a', viewer: me);
+      await _settle();
+
+      expect(_byId(notifier, 'a').recentPrayers, others);
+    });
+
     test('togglePrayer moves the viewer in and out of the avatar stack', () async {
       const pema = ChatPrayerUserDTO(userId: 'u2', name: 'Pema');
       const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
@@ -467,6 +512,33 @@ void main() {
       await notifier.loadMore();
       expect(repository.prayersSkips, [0, 20]);
       expect(notifier.state.supporters.length, 25);
+      expect(notifier.state.hasMore, isFalse);
+    });
+
+    test('a newcomer shifting the roster does not stall paging', () async {
+      repository =
+          _FakeGroupChatRepository()
+            ..supporters = [
+              for (var i = 0; i < 21; i++)
+                ChatPrayerUserDTO(userId: 'u$i', name: 'User $i'),
+            ];
+      container = buildContainer();
+
+      final notifier = keepAlive(container);
+      await _settle();
+      expect(notifier.state.supporters.length, 20);
+
+      // Someone prays before the next page: the roster shifts by one, so
+      // page two repeats the last person from page one.
+      repository.supporters = [
+        const ChatPrayerUserDTO(userId: 'new', name: 'Newcomer'),
+        ...repository.supporters,
+      ];
+      await notifier.loadMore();
+      expect(repository.prayersSkips, [0, 20]);
+      // Dedup drops the repeat but the offset still advances by the page.
+      expect(notifier.state.supporters.length, 21);
+      expect(notifier.state.skip, 22);
       expect(notifier.state.hasMore, isFalse);
     });
 

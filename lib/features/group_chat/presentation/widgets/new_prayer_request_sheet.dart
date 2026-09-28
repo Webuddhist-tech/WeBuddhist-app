@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,8 @@ class NewPrayerRequestSheet extends ConsumerStatefulWidget {
   final String eventId;
 
   static const int maxBodyLength = 280;
+  static const int _choicesPerRow = 5;
+  static const double _minChoiceWidth = 64;
 
   static Future<ChatMessageDTO?> show(
     BuildContext context, {
@@ -317,19 +320,37 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            for (final item in items)
-              Expanded(
-                child: _IntentionChoice(
-                  intention: item,
-                  selected: item.slug == selected?.slug,
-                  isDark: isDark,
-                  onTap:
-                      _sending ? null : () => setState(() => _intention = item),
-                ),
-              ),
-          ],
+        // Five share the row as in the design; a larger catalog wraps
+        // rather than squeezing every circle thinner.
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final perRow = math.min(
+              items.length,
+              NewPrayerRequestSheet._choicesPerRow,
+            );
+            final width = math.max(
+              NewPrayerRequestSheet._minChoiceWidth,
+              constraints.maxWidth / math.max(perRow, 1),
+            );
+            return Wrap(
+              runSpacing: 8,
+              children: [
+                for (final item in items)
+                  SizedBox(
+                    width: width,
+                    child: _IntentionChoice(
+                      intention: item,
+                      selected: item.slug == selected?.slug,
+                      isDark: isDark,
+                      onTap:
+                          _sending
+                              ? null
+                              : () => setState(() => _intention = item),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         if (selected != null) ...[
           const SizedBox(height: 16),

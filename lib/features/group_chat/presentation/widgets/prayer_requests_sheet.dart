@@ -119,11 +119,25 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     }
   }
 
+  /// Pixels dragged down past the opening height in the current gesture.
+  /// The sheet cannot shrink below it, so this is how a slow pull-down
+  /// still reads as "close".
+  double _pulledBelow = 0;
+
+  static const double _dismissPull = 60;
+
+  void _onHeaderDragStart(DragStartDetails details) => _pulledBelow = 0;
+
   /// Lets the handle and title resize the sheet, not only the list.
   void _onHeaderDrag(DragUpdateDetails details) {
     if (!_sheetController.isAttached) return;
     final delta = details.primaryDelta ?? 0;
     final next = _sheetController.size - _sheetController.pixelsToSize(delta);
+    if (next < _initialSize) {
+      _pulledBelow += delta;
+    } else {
+      _pulledBelow = 0;
+    }
     _sheetController.jumpTo(next.clamp(_initialSize, _maxSize));
   }
 
@@ -131,7 +145,8 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     if (!_sheetController.isAttached) return;
     final velocity = details.primaryVelocity ?? 0;
     final size = _sheetController.size;
-    if (velocity > 700 && size <= _initialSize + 0.02) {
+    final atRest = size <= _initialSize + 0.02;
+    if (atRest && (velocity > 700 || _pulledBelow >= _dismissPull)) {
       Navigator.of(context).pop();
       return;
     }
@@ -337,6 +352,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                 // Grey band sets the header apart from the list below.
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  onVerticalDragStart: _onHeaderDragStart,
                   onVerticalDragUpdate: _onHeaderDrag,
                   onVerticalDragEnd: _onHeaderDragEnd,
                   child: Container(

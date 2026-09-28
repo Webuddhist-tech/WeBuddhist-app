@@ -216,6 +216,7 @@ class _GroupEventDetailScreenState
               if (event.chatEnabled && isAttending) ...[
                 const SizedBox(width: 12),
                 PrayerRequestsButton(
+                  eventId: event.id,
                   count: event.prayerRequestCount,
                   padding: EdgeInsets.zero,
                   outlined: true,
