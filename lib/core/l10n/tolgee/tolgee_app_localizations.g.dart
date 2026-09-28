@@ -1922,6 +1922,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_organizer => TolgeeBridge.get(
+    localeName,
+    'connect_event_organizer',
+    () => _fallback.connect_event_organizer,
+  );
+
+  @override
   String get connect_event_tab_videos => TolgeeBridge.get(
     localeName,
     'connect_event_tab_videos',

@@ -930,6 +930,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_participants_empty => '尚無參與者';
 
   @override
+  String get connect_event_organizer => 'Organizer';
+
+  @override
   String get connect_event_tab_videos => 'Videos';
 
   @override
