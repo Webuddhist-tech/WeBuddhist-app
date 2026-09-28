@@ -41,6 +41,18 @@ void main() {
       expect(resolution.sourceId, 'grp-1');
     });
 
+    test('an event prayer request opens the prayer requests, not Home', () {
+      final resolution = resolvePushTap({
+        'notification_type': 'PRAYER_RECEIVED',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'event_id': 'evt-1',
+        'source_id': 'room-1',
+      });
+      expect(resolution.target, PushTapTarget.eventPrayerRequests);
+      expect(resolution.sourceId, 'evt-1');
+    });
+
     test('group post push opens the post', () {
       final resolution = resolvePushTap({
         'session_type': 'GROUP_POST',

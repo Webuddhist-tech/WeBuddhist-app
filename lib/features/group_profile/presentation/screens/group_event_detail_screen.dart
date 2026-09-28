@@ -53,7 +53,15 @@ enum _EventTab { videos, about, accumulations }
 class GroupEventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
 
-  const GroupEventDetailScreen({super.key, required this.eventId});
+  /// Opens the prayer-request sheet once this event screen is on screen.
+  /// Set from a prayer-request notification tap.
+  final bool openPrayerRequests;
+
+  const GroupEventDetailScreen({
+    super.key,
+    required this.eventId,
+    this.openPrayerRequests = false,
+  });
 
   @override
   ConsumerState<GroupEventDetailScreen> createState() =>
@@ -69,6 +77,20 @@ class _GroupEventDetailScreenState
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
+  bool _didOpenPrayerRequests = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.openPrayerRequests) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didOpenPrayerRequests) return;
+      _didOpenPrayerRequests = true;
+      // `/home` is guest-accessible, so the query alone is no proof of login;
+      // the helper sends guests to login like the chip does.
+      _openPrayerRequests(widget.eventId);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -63,6 +63,7 @@ push_notifications/
 | RECITATION / COLLECTION / ACCUMULATION | Practice tab |
 | VERSE_OF_DAY (and aliases) | Home tab (verse card) |
 | CHAT + `chat_kind: GROUP` | Group chat by `group_id` (`source_id` is the room id) |
+| CHAT + `chat_kind: EVENT` (any `notification_type`: CHAT_MESSAGE, PRAYER_REQUEST, PRAYER_RECEIVED) | That event's screen, then the prayer-request sheet, by `event_id` (only PRAYER_RECEIVED sends it); otherwise the event is looked up from the room in `source_id` |
 | CHAT + `chat_kind: PRIVATE` | Home tab (no private chat screen yet) |
 | GROUP_POST | Post detail by `source_id` |
 | EVENT / EVENT_REMINDER | Event detail by `source_id` |

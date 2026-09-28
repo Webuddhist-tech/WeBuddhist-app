@@ -1,5 +1,45 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/core/config/router/app_router.dart';
+import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/push_notifications/presentation/push_message_navigator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/analytics/recording_analytics_service.dart';
+
+/// `getRoom` stays pending until the test completes it, so the order in which
+/// lookups finish is under the test's control.
+class _FakeChatRepository extends Fake implements GroupChatRepository {
+  final List<String> requested = [];
+  final Map<String, Completer<Either<Failure, ChatRoomDTO>>> _pending = {};
+
+  @override
+  Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) {
+    requested.add(roomId);
+    return (_pending[roomId] = Completer()).future;
+  }
+
+  void complete(String roomId, Either<Failure, ChatRoomDTO> result) =>
+      _pending.remove(roomId)!.complete(result);
+}
+
+ChatRoomDTO _room(String id, {String? eventId}) => ChatRoomDTO(
+  id: id,
+  createdBy: 'user-1',
+  eventId: eventId,
+  kind: 'EVENT',
+  name: 'Prayers',
+  updatedAt: '',
+);
 
 void main() {
   group('resolvePushTap', () {
@@ -115,6 +155,86 @@ void main() {
       expect(actual.target, PushTapTarget.home);
     });
 
+    // Payloads below mirror webuddhist-worker `build_chat_notification_data`
+    // and `build_prayer_notification_data`: `source_id` is always the room id,
+    // and `message_type` is never sent (FCM reserves that key).
+    test('PRAYER_REQUEST from an event room looks the event up by room', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_REQUEST',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'room_id': 'room-1',
+        'message_id': 'msg-1',
+        'sender_id': 'user-1',
+        'group_id': '',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'room-1');
+      expect(actual.resolvesRoom, isTrue);
+    });
+
+    test('PRAYER_RECEIVED opens prayer requests by its event_id', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_RECEIVED',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'room_id': 'room-1',
+        'message_id': 'msg-1',
+        'prayer_id': 'prayer-1',
+        'group_id': '',
+        'event_id': 'event-1',
+        'prayer_count': '3',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'event-1');
+      expect(actual.resolvesRoom, isFalse);
+    });
+
+    test('a plain message in an event room opens prayer requests', () {
+      final actual = resolvePushTap({
+        'notification_type': 'CHAT_MESSAGE',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'group_id': '',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'room-1');
+      expect(actual.resolvesRoom, isTrue);
+    });
+
+    test('PRAYER_REQUEST from a group room still opens group chat', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_REQUEST',
+        'session_type': 'CHAT',
+        'chat_kind': 'GROUP',
+        'group_id': 'grp-1',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.groupChat);
+      expect(actual.sourceId, 'grp-1');
+    });
+
+    test('an event room push without a room id falls back to Home', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_REQUEST',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+      });
+      expect(actual.target, PushTapTarget.home);
+    });
+
+    test('a prayer notification without session_type falls back to Home', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_REQUEST',
+        'chat_kind': 'EVENT',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.home);
+    });
+
     test('group CHAT without a group_id falls back to Home', () {
       expect(
         resolvePushTap({
@@ -208,6 +328,136 @@ void main() {
         }).target,
         PushTapTarget.home,
       );
+    });
+  });
+
+  group('PushMessageNavigator room lookup', () {
+    late _FakeChatRepository repository;
+    late GoRouter router;
+    late ProviderContainer container;
+
+    Future<void> pumpApp(WidgetTester tester) async {
+      repository = _FakeChatRepository();
+      router = GoRouter(
+        initialLocation: AppRoutes.home,
+        routes: [
+          GoRoute(
+            path: AppRoutes.home,
+            builder: (_, __) => const Text('home'),
+            routes: [
+              GoRoute(
+                path: 'events/:eventId',
+                builder: (_, state) {
+                  final eventId = state.pathParameters['eventId'];
+                  final prayers =
+                      state.uri.queryParameters[AppRoutes.eventPrayersQuery];
+                  return Text('event $eventId prayers=$prayers');
+                },
+              ),
+            ],
+          ),
+          GoRoute(path: '/other', builder: (_, __) => const Text('other')),
+        ],
+      );
+      container = ProviderContainer(
+        overrides: [
+          appRouterProvider.overrideWithValue(router),
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          analyticsServiceProvider.overrideWithValue(
+            RecordingAnalyticsService(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+    }
+
+    Future<void> tap(WidgetTester tester, String roomId) async {
+      container.read(pushMessageNavigatorProvider).handleData({
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'source_id': roomId,
+      });
+      tester.binding.scheduleFrame();
+      await tester.pump();
+    }
+
+    String location() => router.state.uri.toString();
+
+    testWidgets('opens the looked-up event with its prayer requests', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(tester, 'room-1');
+      expect(repository.requested, ['room-1']);
+
+      repository.complete('room-1', Right(_room('room-1', eventId: 'event-1')));
+      await tester.pumpAndSettle();
+
+      expect(location(), '/home/events/event-1?prayers=1');
+      expect(find.text('event event-1 prayers=1'), findsOneWidget);
+    });
+
+    testWidgets('falls back to Home when the room cannot be loaded', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      router.go('/other');
+      await tester.pumpAndSettle();
+      await tap(tester, 'room-1');
+
+      repository.complete('room-1', const Left(NetworkFailure('offline')));
+      await tester.pumpAndSettle();
+
+      expect(location(), AppRoutes.home);
+    });
+
+    testWidgets('falls back to Home when the room has no event', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      router.go('/other');
+      await tester.pumpAndSettle();
+      await tap(tester, 'room-1');
+
+      repository.complete('room-1', Right(_room('room-1')));
+      await tester.pumpAndSettle();
+
+      expect(location(), AppRoutes.home);
+    });
+
+    testWidgets('a lookup superseded by a newer tap does not navigate', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(tester, 'room-1');
+      await tap(tester, 'room-2');
+
+      repository.complete('room-2', Right(_room('room-2', eventId: 'event-2')));
+      await tester.pumpAndSettle();
+      repository.complete('room-1', Right(_room('room-1', eventId: 'event-1')));
+      await tester.pumpAndSettle();
+
+      expect(location(), '/home/events/event-2?prayers=1');
+    });
+
+    testWidgets('a lookup is dropped once the user opens another screen', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(tester, 'room-1');
+      unawaited(router.push('/other'));
+      await tester.pumpAndSettle();
+
+      repository.complete('room-1', Right(_room('room-1', eventId: 'event-1')));
+      await tester.pumpAndSettle();
+
+      expect(location(), '/other');
     });
   });
 
