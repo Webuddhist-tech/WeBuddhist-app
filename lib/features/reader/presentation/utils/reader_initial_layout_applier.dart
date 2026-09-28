@@ -160,7 +160,6 @@ class ReaderInitialLayoutApplier {
               .converterFor(textLanguage)
               ?.scripts ??
           const [],
-      listLanguage: params.language,
     );
     if (layout == null) return null;
     ref
@@ -186,6 +185,16 @@ class ReaderInitialLayoutApplier {
     );
     if (layout == null) return;
     final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
+
+    // An app-language switch the app-wide listener missed still drops the
+    // picks made under the old language; the settings follow the store, so
+    // this visit's defaults then show.
+    await ref.read(contentLanguageProvider.notifier).ensureInitialized();
+    if (!context.mounted) return;
+    await ref
+        .read(readerLayoutLanguageGuardProvider)
+        .sync(ref.read(contentLanguageProvider));
+    if (!context.mounted) return;
 
     // The person's own picks in this context win; they may still be loading.
     await ref.read(readerContextLayoutProvider(scope.context).notifier).loaded;

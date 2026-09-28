@@ -53,17 +53,17 @@ const String _cyrillic = 'Cyrillic';
 /// one of [scripts] (the converter's scripts for the text's language), or null
 /// for the text as written.
 ///
-/// Hindi and Nepali read Devanagari, Mongolian reads Cyrillic, Tibetan readers
-/// see the text as written, and everyone else gets the Roman row. Chinese has
-/// no converter yet, so it reads Roman until a library file exists. A script
-/// the converter does not offer falls back to Roman, and a language with no
+/// Hindi and Nepali read Devanagari, Mongolian reads Cyrillic, and everyone
+/// else gets the Roman row. Tibetan readers see the text as written, and so do
+/// Chinese readers: there is no transliteration into Chinese. A script the
+/// converter does not offer falls back to Roman, and a language with no
 /// converter gets null.
 String? scriptIdForUiLanguage(
   String uiLanguage,
   Iterable<TransliterationScript> scripts,
 ) {
   final ui = normalizeReaderLayoutLanguage(uiLanguage);
-  if (ui == 'bo') return null;
+  if (ui == 'bo' || ui == 'zh') return null;
   final String? wanted = switch (ui) {
     'hi' || 'ne' => _devanagari,
     'mn' => _cyrillic,
@@ -87,23 +87,21 @@ String? scriptIdForUiLanguage(
 /// [translationLanguages] are the languages the text offers a translation in.
 /// [converterScripts] are the scripts the text's language can be
 /// transliterated into on the phone (empty when there is no converter).
-/// [listLanguage] is the language picked on the chant list, when the reader
-/// was opened from one.
 ///
-/// - Event: the original stays on, in the reader's script; the translation is
-///   the UI language, else English (people must be able to follow along),
-///   else off. A text already in the UI language is shown as written.
-/// - Plan, and chants opened without a list language: only the translation in
-///   the UI language when the text offers one; otherwise the text as written.
-/// - Chant opened from the list in the language it was loaded in: as written,
-///   since the list already handed over that language's edition.
+/// A text already in the UI language is shown as written, alone. Otherwise:
+///
+/// - Event: the original stays on, in the reader's script, with the
+///   translation in the UI language, else English (people must be able to
+///   follow along), else none.
+/// - Plan and chant: only the translation, in the UI language, else English;
+///   the text as written when neither is offered. The app language decides,
+///   not the language picked on the chant list.
 ReaderInitialLayout? resolveInitialLayout({
   required ReaderLayoutContext context,
   required String textLanguage,
   required String uiLanguage,
   required Iterable<String> translationLanguages,
   Iterable<TransliterationScript> converterScripts = const [],
-  String? listLanguage,
 }) {
   final text = normalizeReaderLayoutLanguage(textLanguage);
   final ui = normalizeReaderLayoutLanguage(uiLanguage);
@@ -118,14 +116,7 @@ ReaderInitialLayout? resolveInitialLayout({
 
     case ReaderLayoutContext.event:
       if (text == ui) return const ReaderInitialLayout.asWritten();
-      final String? translation;
-      if (offered.contains(ui)) {
-        translation = ui;
-      } else if (offered.contains('en') && text != 'en') {
-        translation = 'en';
-      } else {
-        translation = null;
-      }
+      final translation = _translationFor(text: text, ui: ui, offered: offered);
       return ReaderInitialLayout(
         originalVisible: true,
         originalScriptId: scriptIdForUiLanguage(ui, converterScripts),
@@ -133,16 +124,16 @@ ReaderInitialLayout? resolveInitialLayout({
         translationLanguage: translation,
       );
 
-    case ReaderLayoutContext.chant:
-      final list =
-          listLanguage == null ? '' : normalizeReaderLayoutLanguage(listLanguage);
-      if (list.isNotEmpty && list == text) {
-        return const ReaderInitialLayout.asWritten();
-      }
-      return _translationOnly(text: text, ui: ui, offered: offered);
-
     case ReaderLayoutContext.plan:
-      return _translationOnly(text: text, ui: ui, offered: offered);
+    case ReaderLayoutContext.chant:
+      if (text == ui) return const ReaderInitialLayout.asWritten();
+      final translation = _translationFor(text: text, ui: ui, offered: offered);
+      if (translation == null) return const ReaderInitialLayout.asWritten();
+      return ReaderInitialLayout(
+        originalVisible: false,
+        translationOn: true,
+        translationLanguage: translation,
+      );
   }
 }
 
@@ -164,17 +155,14 @@ List<String> translationCandidates({
   ];
 }
 
-ReaderInitialLayout _translationOnly({
+/// The translation a reader of [ui] gets: their own language when the text
+/// offers it, else English (never for an English text), else none.
+String? _translationFor({
   required String text,
   required String ui,
   required Set<String> offered,
 }) {
-  if (ui != text && offered.contains(ui)) {
-    return ReaderInitialLayout(
-      originalVisible: false,
-      translationOn: true,
-      translationLanguage: ui,
-    );
-  }
-  return const ReaderInitialLayout.asWritten();
+  if (offered.contains(ui)) return ui;
+  if (offered.contains('en') && text != 'en') return 'en';
+  return null;
 }

@@ -31,6 +31,30 @@ String getLanguageName(String code, BuildContext context) {
   }
 }
 
+/// Returns a language's name in its own script (English, བོད་ཡིག, 中文), the
+/// same in every UI language, or null when none is known for [code].
+String? getNativeLanguageName(String code) =>
+    _nativeLanguageNames[code.trim().toLowerCase()];
+
+/// Native names keyed by ISO language code, for the languages the library
+/// serves. The app's own languages match the names its language picker shows.
+const Map<String, String> _nativeLanguageNames = {
+  'bo': 'བོད་ཡིག',
+  'en': 'English',
+  'fr': 'Français',
+  'hi': 'हिन्दी',
+  'ja': '日本語',
+  'lzh': '文言文',
+  'mn': 'Монгол',
+  'mr': 'मराठी',
+  'ne': 'नेपाली',
+  'pi': 'Pāḷi',
+  'ru': 'Русский',
+  'sa': 'संस्कृतम्',
+  'vi': 'Tiếng Việt',
+  'zh': '中文',
+};
+
 /// English fallback names keyed by ISO language code. Used when no localized
 /// translation exists for a given code.
 const Map<String, String> _englishLanguageNames = {
