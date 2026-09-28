@@ -225,6 +225,30 @@ void main() {
     expect(notifier.state.user?.id, 'u1');
   });
 
+  test('a late launch profile does not replace a fresher refresh', () async {
+    final launch = Completer<Either<Failure, User>>();
+    final answers = <Future<Either<Failure, User>>>[
+      launch.future,
+      Future.value(const Right(User(id: 'u1', firstName: 'fresh'))),
+    ];
+    when(getUser(any)).thenAnswer((_) => answers.removeAt(0));
+    final notifier = UserNotifier(
+      getCurrentUserUseCase: getUser,
+      updateUserInfoUseCase: MockUpdateUserInfoUseCase(),
+      updateUsernameUseCase: MockUpdateUsernameUseCase(),
+      uploadAvatarUseCase: MockUploadAvatarUseCase(),
+      localStorageService: storage,
+    );
+    addTearDown(notifier.dispose);
+
+    final launchLoad = notifier.initializeUser();
+    await notifier.refreshUser();
+    launch.complete(const Right(User(id: 'u1', firstName: 'stale')));
+    await launchLoad;
+
+    expect(notifier.state.user?.firstName, 'fresh');
+  });
+
   test('stored guest session is restored', () async {
     when(hasValid(any)).thenAnswer((_) async => const Right(false));
     when(isGuest(any)).thenAnswer((_) async => const Right(true));
