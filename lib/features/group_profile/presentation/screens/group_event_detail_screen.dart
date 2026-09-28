@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
@@ -952,40 +953,14 @@ class _ParticipantAvatar extends StatelessWidget {
                 ? CachedNetworkImageWidget(
                   imageUrl: avatarUrl,
                   fit: BoxFit.cover,
-                  errorWidget: _avatarFallback(),
+                  errorWidget: AvatarFallback(
+                    isDark: isDark,
+                    iconSize: size * 0.5,
+                  ),
                 )
-                : _avatarFallback(),
+                : AvatarFallback(isDark: isDark, iconSize: size * 0.5),
       ),
     );
-  }
-
-  Widget _avatarFallback() {
-    final name = participant.displayName;
-    final initials = _getInitials(name);
-
-    return ColoredBox(
-      color: AppColors.primary,
-      child: Center(
-        child: Text(
-          initials,
-          style: TextStyle(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primaryDarkest,
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length > 1) {
-      return '${parts[0].characters.first}${parts[1].characters.first}'
-          .toUpperCase();
-    }
-    return name.characters.take(2).toString().toUpperCase();
   }
 }
 
