@@ -32,13 +32,9 @@ class PushSessionType {
   static const String dailyVerse = 'DAILY_VERSE';
   static const String verseOfTheDay = 'VERSE_OF_THE_DAY';
 
-  /// `CHAT_MESSAGE` pushes — private, group, or event prayer chat.
-  /// See [PushChatKind].
+  /// `CHAT_MESSAGE`, `PRAYER_REQUEST` and `PRAYER_RECEIVED` pushes — every
+  /// push from a chat room, private, group, or event. See [PushChatKind].
   static const String chat = 'CHAT';
-
-  /// A prayer-request push that is not wrapped as a chat message.
-  static const String prayer = 'PRAYER';
-  static const String prayerRequest = 'PRAYER_REQUEST';
 
   /// `GROUP_POST` pushes — a new post in a group the user follows.
   static const String groupPost = 'GROUP_POST';
@@ -76,9 +72,6 @@ class PushChatKind {
   static const String event = 'EVENT';
 }
 
-/// `message_type` on a chat push when the message is a prayer request.
-const String pushPrayerMessageType = 'PRAYER';
-
 /// Where a push-notification tap should land.
 enum PushTapTarget {
   home,
@@ -107,8 +100,9 @@ class PushTapResolution {
   final String? sourceId;
 
   /// [sourceId] is a chat room id. The event id is loaded from that room
-  /// before the prayer-request sheet opens. Chat pushes set `source_id` to
-  /// the room id; `event_id` is preferred when the payload carries it.
+  /// before the prayer-request sheet opens. Chat pushes always set
+  /// `source_id` to the room id; `event_id` is preferred when the payload
+  /// carries it.
   final bool resolvesRoom;
 }
 
@@ -141,11 +135,7 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
     case PushSessionType.accumulation:
       return const PushTapResolution(PushTapTarget.practice);
     case PushSessionType.chat:
-      final prayer = _prayerRequestResolution(
-        data,
-        sourceId: sourceId,
-        sourceIsRoom: true,
-      );
+      final prayer = _eventRoomResolution(data, roomId: sourceId);
       if (prayer != null) return prayer;
       // The payload's `source_id` is the *room* id, but the only chat screen
       // in the app is keyed by group id, so route with `group_id`.
@@ -156,19 +146,6 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
       // Private chats (and group chats missing a group id) fall back to Home:
       // the app has no private/1:1 chat screen yet, so there is nowhere else
       // to send them. Don't "fix" this to a chat route until one exists.
-      return const PushTapResolution(PushTapTarget.home);
-    case PushSessionType.prayer:
-    case PushSessionType.prayerRequest:
-      // These are not chat-room pushes: `source_id` is the event id, the same
-      // role it plays for EVENT. `event_id` wins when both are present.
-      final eventId = _eventIdOf(data);
-      final id = eventId.isNotEmpty ? eventId : sourceId;
-      if (id.isNotEmpty) {
-        return PushTapResolution(
-          PushTapTarget.eventPrayerRequests,
-          sourceId: id,
-        );
-      }
       return const PushTapResolution(PushTapTarget.home);
     case PushSessionType.groupPost when sourceId.isNotEmpty:
       return PushTapResolution(PushTapTarget.postDetail, sourceId: sourceId);
@@ -184,15 +161,6 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
       // (it will need `notification_type` to tell the two flavours apart).
       return PushTapResolution(PushTapTarget.groupProfile, sourceId: sourceId);
     default:
-      // A prayer push that arrived without a recognised `session_type`. A
-      // PRAYER notification carries the event id in `source_id`, as in the
-      // dedicated branch above; anything else here is a chat message.
-      final prayer = _prayerRequestResolution(
-        data,
-        sourceId: sourceId,
-        sourceIsRoom: !_isPrayerNotificationType(data),
-      );
-      if (prayer != null) return prayer;
       return const PushTapResolution(PushTapTarget.home);
   }
 }
@@ -206,44 +174,24 @@ String _sessionTypeOf(Map<String, dynamic> data) {
   return fromType?.toUpperCase() ?? '';
 }
 
-String _chatKindOf(Map<String, dynamic> data) {
-  final chatKind = (data['chat_kind'] as String?)?.trim();
-  if (chatKind != null && chatKind.isNotEmpty) return chatKind.toUpperCase();
-  return (data['kind'] as String?)?.trim().toUpperCase() ?? '';
-}
-
-String _messageTypeOf(Map<String, dynamic> data) =>
-    (data['message_type'] as String?)?.trim().toUpperCase() ?? '';
-
-String _notificationTypeOf(Map<String, dynamic> data) =>
-    (data['notification_type'] as String?)?.trim().toUpperCase() ?? '';
+String _chatKindOf(Map<String, dynamic> data) =>
+    (data['chat_kind'] as String?)?.trim().toUpperCase() ?? '';
 
 String _eventIdOf(Map<String, dynamic> data) =>
     (data['event_id'] as String?)?.trim() ?? '';
 
-bool _isPrayerNotificationType(Map<String, dynamic> data) {
-  final notificationType = _notificationTypeOf(data);
-  return notificationType == PushSessionType.prayer ||
-      notificationType == PushSessionType.prayerRequest;
-}
-
-bool _isPrayerRequestPush(Map<String, dynamic> data) {
-  if (_chatKindOf(data) == PushChatKind.event) return true;
-  if (_messageTypeOf(data) == pushPrayerMessageType) return true;
-  return _isPrayerNotificationType(data);
-}
-
-/// Event prayer requests, or null when [data] is some other chat.
+/// The event's prayer requests for a push from an event room, or null for
+/// any other room.
 ///
-/// [sourceId] is the payload `source_id`, used only when `event_id` is
-/// absent. [sourceIsRoom] says it is a chat room id, whose event must be
-/// looked up, rather than the event id itself.
-PushTapResolution? _prayerRequestResolution(
+/// The room kind decides, not `notification_type`: PRAYER_REQUEST can also
+/// come from a group room, which has no prayer sheet and keeps opening group
+/// chat. `event_id` is only sent on PRAYER_RECEIVED; otherwise the event is
+/// looked up from [roomId] (the payload's `source_id`).
+PushTapResolution? _eventRoomResolution(
   Map<String, dynamic> data, {
-  required String sourceId,
-  required bool sourceIsRoom,
+  required String roomId,
 }) {
-  if (!_isPrayerRequestPush(data)) return null;
+  if (_chatKindOf(data) != PushChatKind.event) return null;
   final eventId = _eventIdOf(data);
   if (eventId.isNotEmpty) {
     return PushTapResolution(
@@ -251,11 +199,11 @@ PushTapResolution? _prayerRequestResolution(
       sourceId: eventId,
     );
   }
-  if (sourceId.isEmpty) return null;
+  if (roomId.isEmpty) return null;
   return PushTapResolution(
     PushTapTarget.eventPrayerRequests,
-    sourceId: sourceId,
-    resolvesRoom: sourceIsRoom,
+    sourceId: roomId,
+    resolvesRoom: true,
   );
 }
 

@@ -155,25 +155,18 @@ void main() {
       expect(actual.target, PushTapTarget.home);
     });
 
-    test('event prayer chat opens prayer requests by event id', () {
+    // Payloads below mirror webuddhist-worker `build_chat_notification_data`
+    // and `build_prayer_notification_data`: `source_id` is always the room id,
+    // and `message_type` is never sent (FCM reserves that key).
+    test('PRAYER_REQUEST from an event room looks the event up by room', () {
       final actual = resolvePushTap({
-        'notification_type': 'CHAT_MESSAGE',
+        'notification_type': 'PRAYER_REQUEST',
         'session_type': 'CHAT',
         'chat_kind': 'EVENT',
-        'event_id': 'event-1',
         'room_id': 'room-1',
-        'source_id': 'room-1',
-        'message_type': 'PRAYER',
-      });
-      expect(actual.target, PushTapTarget.eventPrayerRequests);
-      expect(actual.sourceId, 'event-1');
-      expect(actual.resolvesRoom, isFalse);
-    });
-
-    test('event prayer chat without event_id keeps the room id to resolve', () {
-      final actual = resolvePushTap({
-        'session_type': 'CHAT',
-        'kind': 'EVENT',
+        'message_id': 'msg-1',
+        'sender_id': 'user-1',
+        'group_id': '',
         'source_id': 'room-1',
       });
       expect(actual.target, PushTapTarget.eventPrayerRequests);
@@ -181,44 +174,65 @@ void main() {
       expect(actual.resolvesRoom, isTrue);
     });
 
-    test('a PRAYER message on a chat push opens prayer requests', () {
+    test('PRAYER_RECEIVED opens prayer requests by its event_id', () {
       final actual = resolvePushTap({
+        'notification_type': 'PRAYER_RECEIVED',
         'session_type': 'CHAT',
-        'message_type': 'PRAYER',
+        'chat_kind': 'EVENT',
+        'room_id': 'room-1',
+        'message_id': 'msg-1',
+        'prayer_id': 'prayer-1',
+        'group_id': '',
         'event_id': 'event-1',
+        'prayer_count': '3',
         'source_id': 'room-1',
       });
       expect(actual.target, PushTapTarget.eventPrayerRequests);
       expect(actual.sourceId, 'event-1');
-    });
-
-    test('PRAYER_REQUEST opens prayer requests by source id', () {
-      final actual = resolvePushTap({
-        'session_type': 'PRAYER_REQUEST',
-        'source_id': 'event-1',
-      });
-      expect(actual.target, PushTapTarget.eventPrayerRequests);
-      expect(actual.sourceId, 'event-1');
       expect(actual.resolvesRoom, isFalse);
     });
 
-    test('a prayer notification with only source_id treats it as the event', () {
+    test('a plain message in an event room opens prayer requests', () {
       final actual = resolvePushTap({
-        'notification_type': 'PRAYER',
-        'source_id': 'event-1',
+        'notification_type': 'CHAT_MESSAGE',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'group_id': '',
+        'source_id': 'room-1',
       });
       expect(actual.target, PushTapTarget.eventPrayerRequests);
-      expect(actual.sourceId, 'event-1');
-      expect(actual.resolvesRoom, isFalse);
+      expect(actual.sourceId, 'room-1');
+      expect(actual.resolvesRoom, isTrue);
     });
 
-    test('a prayer notification type without session_type still opens prayers', () {
+    test('PRAYER_REQUEST from a group room still opens group chat', () {
       final actual = resolvePushTap({
-        'notification_type': 'PRAYER',
-        'event_id': 'event-1',
+        'notification_type': 'PRAYER_REQUEST',
+        'session_type': 'CHAT',
+        'chat_kind': 'GROUP',
+        'group_id': 'grp-1',
+        'source_id': 'room-1',
       });
-      expect(actual.target, PushTapTarget.eventPrayerRequests);
-      expect(actual.sourceId, 'event-1');
+      expect(actual.target, PushTapTarget.groupChat);
+      expect(actual.sourceId, 'grp-1');
+    });
+
+    test('an event room push without a room id falls back to Home', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_REQUEST',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+      });
+      expect(actual.target, PushTapTarget.home);
+    });
+
+    test('a prayer notification without session_type falls back to Home', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_REQUEST',
+        'chat_kind': 'EVENT',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.home);
     });
 
     test('group CHAT without a group_id falls back to Home', () {
