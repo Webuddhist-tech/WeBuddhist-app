@@ -280,6 +280,36 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, void>> removeJoinedUser(
+    String groupId, {
+    required String userId,
+    required int banDurationDays,
+    String? reason,
+  }) async {
+    try {
+      await remote.removeJoinedUser(
+        groupId,
+        userId: userId,
+        banDurationDays: banDurationDays,
+        reason: reason,
+      );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to remove group member: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, GroupEventsPage>> getConnectEvents({
     required bool includeUnfollowed,
     required String language,
@@ -527,6 +557,8 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
       return Left(NetworkFailure(e.message));
     } on AuthenticationException catch (e) {
       return Left(AuthenticationFailure(e.message));
+    } on AuthorizationException catch (e) {
+      return Left(AuthorizationFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure('Failed to submit join request: $e'));
     }

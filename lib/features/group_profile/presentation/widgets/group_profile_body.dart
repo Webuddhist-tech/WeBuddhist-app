@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_members_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_posts_tab.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_removed_notice_card.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
@@ -517,6 +518,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
+    final removal = watchActiveGroupRemovalNotice(ref, profile.id);
     final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
 
     return RefreshIndicator(
@@ -544,14 +546,28 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
             ),
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: _buildRestrictedMessage(
-                  isDark,
-                  lineHeight,
-                  profile.myJoinRequestStatus,
-                ),
-              ),
+              child:
+                  removal != null
+                      ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: GroupRemovedNoticeCard(
+                            groupTitle: profile.title,
+                            expiresAt: removal.expiresAt,
+                            isDark: isDark,
+                            lineHeight: lineHeight,
+                          ),
+                        ),
+                      )
+                      : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: _buildRestrictedMessage(
+                          isDark,
+                          lineHeight,
+                          profile.myJoinRequestStatus,
+                        ),
+                      ),
             ),
           ],
         ),
@@ -1430,7 +1446,13 @@ class _GroupFollowButton extends ConsumerWidget {
       return;
     }
 
-    final sent = await GroupJoinRequestDrawer.show(context, profile);
+    // The profile renders its own removal card, so the shared ban dialog would
+    // only repeat it.
+    final sent = await GroupJoinRequestDrawer.show(
+      context,
+      profile,
+      showRemovalDialog: false,
+    );
     if (sent == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1495,7 +1517,10 @@ class _GroupFollowButton extends ConsumerWidget {
       return _buildRequestSentButton(context);
     }
 
-    return _buildRequestToJoinButton(context, ref, isLoading);
+    final isRemoved =
+        watchActiveGroupRemovalNotice(ref, profile.id) != null;
+
+    return _buildRequestToJoinButton(context, ref, isLoading, isRemoved);
   }
 
   Widget _buildPublicCommunityActions(BuildContext context, WidgetRef ref) {
@@ -1729,6 +1754,7 @@ class _GroupFollowButton extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     bool isLoading,
+    bool isRemoved,
   ) {
     const fontSize = 16.0;
     final locale = Localizations.localeOf(context);
@@ -1741,7 +1767,9 @@ class _GroupFollowButton extends ConsumerWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed:
-              isLoading ? null : () => _onRequestToJoinPressed(context, ref),
+              isLoading || isRemoved
+                  ? null
+                  : () => _onRequestToJoinPressed(context, ref),
           style: ElevatedButton.styleFrom(
             minimumSize: Size(double.infinity, buttonHeight),
             padding: EdgeInsets.symmetric(
@@ -1752,6 +1780,10 @@ class _GroupFollowButton extends ConsumerWidget {
                 isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
             foregroundColor:
                 isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
+            disabledBackgroundColor:
+                isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+            disabledForegroundColor:
+                isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),

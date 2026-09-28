@@ -2005,6 +2005,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_members_empty => 'No members yet';
 
   @override
+  String get group_member_admin => 'Admin';
+
+  @override
+  String group_remove_member(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get group_remove_member_title => 'Remove from group?';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name will be removed from group and blocked from joining until the ban ends';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'Blocked for :';
+
+  @override
+  String get group_remove_member_duration_day => '1 day';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 year';
+
+  @override
+  String get group_remove_member_reason_label => 'Reason (optional)';
+
+  @override
+  String get group_remove_member_reason_hint => 'Something else...';
+
+  @override
+  String get group_remove_member_action => 'Remove';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name was removed from the group.';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'Couldn\'t remove this member. Try again.';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'You were removed from this group and cannot rejoin until $date';
+  }
+
+  @override
+  String get group_join_banned =>
+      'You were removed from this group and cannot rejoin until the ban ends.';
+
+  @override
+  String get group_removed_title => 'You\'ve been removed from this group';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for $duration.';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'You can request to rejoin this group on';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 day left';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count days left';
+  }
+
+  @override
+  String get group_removed_last_day => 'Less than a day left';
+
+  @override
   String get group_followers_empty => 'No followers yet';
 
   @override

@@ -82,6 +82,15 @@ abstract class GroupProfileRepositoryInterface {
     required int limit,
   });
 
+  /// Removes a joined member and blocks them from rejoining.
+  /// [reason] is omitted when empty. [banDurationDays] is 1–365.
+  Future<Either<Failure, void>> removeJoinedUser(
+    String groupId, {
+    required String userId,
+    required int banDurationDays,
+    String? reason,
+  });
+
   Future<Either<Failure, GroupEventsPage>> getGroupEvents(String groupId);
 
   Future<Either<Failure, GroupEventsPage>> getConnectEvents({

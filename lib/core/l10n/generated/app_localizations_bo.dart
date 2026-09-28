@@ -1977,28 +1977,28 @@ class AppLocalizationsBo extends AppLocalizations {
       'རེ་ཞུ་བཏང་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'ཞུགས་པའི་རེ་ཞུ།';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => 'དང་ལེན།';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => 'དགག་པ།';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => 'སྒུག་བཞིན་པའི་རེ་ཞུ་མེད།';
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'ཞུགས་པའི་རེ་ཞུ་སྟོན་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'རེ་ཞུ་འདི་དང་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'རེ་ཞུ་འདི་དགག་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_members_only_title => 'ཚོགས་མི་ཁོ་ན།';
@@ -2024,6 +2024,96 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get group_members_empty => 'ཚོགས་མི་མེད།';
+
+  @override
+  String get group_member_admin => 'དོ་དམ་པ།';
+
+  @override
+  String group_remove_member(String name) {
+    return '$name ཕྱིར་འབུད།';
+  }
+
+  @override
+  String get group_remove_member_title => 'ཚོགས་པ་ནས་ཕྱིར་འབུད་དམ།';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name ཚོགས་པ་ནས་ཕྱིར་འབུད་རྒྱུ་ཡིན་པ་དང་། བཀག་སྡོམ་མ་ཚར་བར་ཞུགས་མི་ཆོག';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'བཀག་ཡུན།';
+
+  @override
+  String get group_remove_member_duration_day => 'ཉིན་ 1';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return 'ཉིན་ $count';
+  }
+
+  @override
+  String get group_remove_member_duration_year => 'ལོ་ 1';
+
+  @override
+  String get group_remove_member_reason_label => 'རྒྱུ་མཚན། (འདེམས་རུང་།)';
+
+  @override
+  String get group_remove_member_reason_hint => 'གཞན་དག...';
+
+  @override
+  String get group_remove_member_action => 'ཕྱིར་འབུད།';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name ཚོགས་པ་ནས་ཕྱིར་བཏོན་ཟིན།';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'ཚོགས་མི་འདི་ཕྱིར་འབུད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་ $date བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
+  }
+
+  @override
+  String get group_join_banned =>
+      'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་བཀག་སྡོམ་མ་ཚར་བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
+
+  @override
+  String get group_removed_title => 'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན།';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། $duration རིང་ལ་ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'ཁྱེད་རང་གིས་ཚེས་འདི་ལ་ཚོགས་པ་འདིར་ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུ་བྱེད་ཆོག';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => 'ཉིན་ 1 ལྷག་ཡོད།';
+
+  @override
+  String group_removed_days_left(int count) {
+    return 'ཉིན་ $count ལྷག་ཡོད།';
+  }
+
+  @override
+  String get group_removed_last_day => 'ཉིན་གཅིག་ལས་ཉུང་བ་ལྷག་ཡོད།';
 
   @override
   String get group_followers_empty => 'རྗེས་འབྲང་པ་མེད།';
