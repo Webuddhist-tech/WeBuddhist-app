@@ -201,6 +201,30 @@ void main() {
     expect(container.read(userProvider).user, isNull);
   });
 
+  test('a late launch profile still loads after a failed refresh', () async {
+    final launch = Completer<Either<Failure, User>>();
+    final answers = <Future<Either<Failure, User>>>[
+      launch.future,
+      Future.value(const Left(UnknownFailure('offline'))),
+    ];
+    when(getUser(any)).thenAnswer((_) => answers.removeAt(0));
+    final notifier = UserNotifier(
+      getCurrentUserUseCase: getUser,
+      updateUserInfoUseCase: MockUpdateUserInfoUseCase(),
+      updateUsernameUseCase: MockUpdateUsernameUseCase(),
+      uploadAvatarUseCase: MockUploadAvatarUseCase(),
+      localStorageService: storage,
+    );
+    addTearDown(notifier.dispose);
+
+    final launchLoad = notifier.initializeUser();
+    await notifier.refreshUser();
+    launch.complete(const Right(User(id: 'u1')));
+    await launchLoad;
+
+    expect(notifier.state.user?.id, 'u1');
+  });
+
   test('stored guest session is restored', () async {
     when(hasValid(any)).thenAnswer((_) async => const Right(false));
     when(isGuest(any)).thenAnswer((_) async => const Right(true));

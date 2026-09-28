@@ -43,6 +43,9 @@ class AuthService {
   /// receive a plain cache read (the very token the server just rejected).
   bool _inflightIsForced = false;
 
+  /// A call whose awaiters timed out; the next fetch waits (bounded) behind it.
+  Future<Credentials>? _staleCredentials;
+
   /// In-flight [initialize], shared so concurrent callers never double-assign [_auth0].
   Future<void>? _initializing;
 
@@ -268,7 +271,7 @@ class AuthService {
     // non-forced call is currently running, sequence our forced fetch *after*
     // it settles rather than racing it, so the credentials manager stays the
     // single, rotation-safe refresh path (one renewal in flight at a time).
-    final previous = inflight;
+    final previous = inflight ?? _staleCredentials;
     // `tracked` IS the future we store and return, so its error is delivered to
     // the awaiting caller (handled). Do NOT drop a separate `whenComplete`
     // future here — its error would have no listener and surface as an
@@ -282,12 +285,23 @@ class AuthService {
           _inflightCredentials = null;
           _inflightIsForced = false;
         }
+        if (identical(_staleCredentials, tracked)) _staleCredentials = null;
       },
     );
     _inflightCredentials = tracked;
     _inflightIsForced = force;
-    // Timeout only the awaiter: the slot stays held until the native call ends.
-    return tracked.timeout(_kCredentialsTimeout);
+    return tracked.timeout(
+      _kCredentialsTimeout,
+      onTimeout: () {
+        // Release the slot so later callers retry instead of queueing forever.
+        if (identical(_inflightCredentials, tracked)) {
+          _inflightCredentials = null;
+          _inflightIsForced = false;
+          _staleCredentials = tracked;
+        }
+        throw TimeoutException('Credentials call timed out', _kCredentialsTimeout);
+      },
+    );
   }
 
   Future<Credentials> _runCredentialsFetch({
@@ -296,9 +310,10 @@ class AuthService {
   }) async {
     if (after != null) {
       // Let the prior renewal finish (ignore its result/error) so two renewals
-      // never hit the rotating refresh token concurrently.
+      // never hit the rotating refresh token concurrently. Bounded, so a stuck
+      // call cannot block every later renewal.
       try {
-        await after;
+        await after.timeout(_kCredentialsTimeout);
       } catch (_) {
         // Ignored — we proceed to our own fetch regardless.
       }
