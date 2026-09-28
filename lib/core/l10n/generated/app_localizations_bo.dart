@@ -1977,28 +1977,28 @@ class AppLocalizationsBo extends AppLocalizations {
       'རེ་ཞུ་བཏང་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'ཞུགས་པའི་རེ་ཞུ།';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => 'དང་ལེན།';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => 'དགག་པ།';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => 'སྒུག་བཞིན་པའི་རེ་ཞུ་མེད།';
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'ཞུགས་པའི་རེ་ཞུ་སྟོན་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'རེ་ཞུ་འདི་དང་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'རེ་ཞུ་འདི་དགག་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_members_only_title => 'ཚོགས་མི་ཁོ་ན།';
@@ -2026,7 +2026,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_members_empty => 'ཚོགས་མི་མེད།';
 
   @override
-  String get group_member_admin => 'Admin';
+  String get group_member_admin => 'དོ་དམ་པ།';
 
   @override
   String group_remove_member(String name) {

@@ -1868,28 +1868,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_join_request_error => '無法送出申請，請再試一次。';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => '加入申請';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => '核准';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => '拒絕';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => '沒有待處理的申請';
 
   @override
-  String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+  String get group_join_requests_load_error => '無法載入加入申請，請再試一次。';
 
   @override
-  String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+  String get group_join_requests_admit_error => '無法核准此申請，請再試一次。';
 
   @override
-  String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+  String get group_join_requests_deny_error => '無法拒絕此申請，請再試一次。';
 
   @override
   String get group_members_only_title => '僅限成員';
@@ -1913,7 +1910,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_members_empty => '尚無成員';
 
   @override
-  String get group_member_admin => 'Admin';
+  String get group_member_admin => '管理員';
 
   @override
   String group_remove_member(String name) {

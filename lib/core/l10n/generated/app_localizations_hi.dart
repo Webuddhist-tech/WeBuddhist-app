@@ -1971,28 +1971,28 @@ class AppLocalizationsHi extends AppLocalizations {
       'अनुरोध भेजने में असमर्थ। कृपया पुनः प्रयास करें।';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'शामिल होने के अनुरोध';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => 'स्वीकार करें';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => 'अस्वीकार करें';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => 'कोई लंबित अनुरोध नहीं';
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'शामिल होने के अनुरोध लोड नहीं हो सके। कृपया पुनः प्रयास करें।';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'इस अनुरोध को स्वीकार नहीं किया जा सका। कृपया पुनः प्रयास करें।';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'इस अनुरोध को अस्वीकार नहीं किया जा सका। कृपया पुनः प्रयास करें।';
 
   @override
   String get group_members_only_title => 'केवल सदस्य';
@@ -2020,7 +2020,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_members_empty => 'अभी कोई सदस्य नहीं';
 
   @override
-  String get group_member_admin => 'Admin';
+  String get group_member_admin => 'एडमिन';
 
   @override
   String group_remove_member(String name) {

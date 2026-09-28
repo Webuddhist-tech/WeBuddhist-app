@@ -1973,28 +1973,28 @@ class AppLocalizationsMn extends AppLocalizations {
       'Хүсэлт илгээж чадсангүй. Дахин оролдоно уу.';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'Нэгдэх хүсэлтүүд';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => 'Зөвшөөрөх';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => 'Татгалзах';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => 'Хүлээгдэж буй хүсэлт байхгүй';
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'Нэгдэх хүсэлтүүдийг ачаалж чадсангүй. Дахин оролдоно уу.';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'Энэ хүсэлтийг зөвшөөрч чадсангүй. Дахин оролдоно уу.';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'Энэ хүсэлтээс татгалзаж чадсангүй. Дахин оролдоно уу.';
 
   @override
   String get group_members_only_title => 'Зөвхөн гишүүд';
@@ -2022,7 +2022,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_members_empty => 'Одоогоор гишүүн байхгүй';
 
   @override
-  String get group_member_admin => 'Admin';
+  String get group_member_admin => 'Админ';
 
   @override
   String group_remove_member(String name) {

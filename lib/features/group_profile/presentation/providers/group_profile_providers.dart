@@ -1238,11 +1238,7 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
   /// A response that under-reports `total` would otherwise strand every
   /// request past the first page, and an empty page with a stale `total`
   /// would keep [loadMore] asking forever.
-  static bool _hasMore(
-    int loaded,
-    List<GroupJoinRequest> page,
-    int total,
-  ) {
+  static bool _hasMore(int loaded, List<GroupJoinRequest> page, int total) {
     if (page.isEmpty) return false;
     return loaded < total;
   }
@@ -1560,16 +1556,31 @@ GroupRemovalNotice? watchActiveGroupRemovalNotice(
 
 /// Forgets the signed-in user's removal notice for [groupId].
 ///
-/// The notice is a client-side cache of the last refused join attempt. The
-/// server may lift the ban early, so a page refresh drops the cache and lets
-/// the next join request re-ask the server, which re-sets the notice if the
-/// ban is still in place.
+/// Only call this with positive evidence that the ban is over. The notice is
+/// the sole record of a refused join attempt: no user-facing endpoint reports
+/// the caller's own ban, and the profile response carries no ban field, so a
+/// blind clear would hide an active ban until the next refusal.
 void clearGroupRemovalNotice(WidgetRef ref, String groupId) {
   final userId = ref.read(userProvider).user?.id;
   if (userId == null || userId.isEmpty) return;
   ref.invalidate(
     groupRemovalNoticeProvider((userId: userId, groupId: groupId)),
   );
+}
+
+/// Drops the removal notice when a fresh [profile] shows the server has since
+/// accepted a join request from this user (pending or approved). A ban would
+/// have refused it, so the notice is stale. Any other status leaves the notice
+/// alone; only a refused or successful join request can settle it.
+void reconcileGroupRemovalNotice(WidgetRef ref, GroupProfile profile) {
+  switch (profile.myJoinRequestStatus) {
+    case GroupJoinRequestStatus.pending:
+    case GroupJoinRequestStatus.approved:
+      clearGroupRemovalNotice(ref, profile.id);
+    case GroupJoinRequestStatus.rejected:
+    case null:
+      break;
+  }
 }
 
 /// Outcome of asking to join. [banned] is set for `GROUP_BANNED`.
@@ -1624,6 +1635,8 @@ Future<GroupJoinRequestOutcome> submitGroupJoinRequest({
       return const GroupJoinRequestOutcome.failed();
     },
     (_) {
+      // The server accepted the request, so any earlier ban is over.
+      clearGroupRemovalNotice(ref, groupId);
       ref.invalidate(groupProfileProvider(groupId));
       return const GroupJoinRequestOutcome.sent();
     },
@@ -1637,10 +1650,16 @@ Future<void> refreshGroupProfilePage({
 }) async {
   final followKey = GroupFollowKey(groupId: groupId, groupType: groupType);
   ref.invalidate(groupFollowProvider(followKey));
-  clearGroupRemovalNotice(ref, groupId);
 
   final refreshTasks = <Future<void>>[
-    ref.refresh(groupProfileProvider(groupId).future).then((_) {}),
+    ref
+        .refresh(groupProfileProvider(groupId).future)
+        .then(
+          (result) => result.fold(
+            (_) {},
+            (profile) => reconcileGroupRemovalNotice(ref, profile),
+          ),
+        ),
   ];
 
   if (ref.exists(groupPracticesProvider(groupId))) {
