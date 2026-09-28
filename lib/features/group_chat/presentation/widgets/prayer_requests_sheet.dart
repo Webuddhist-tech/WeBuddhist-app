@@ -10,16 +10,20 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_composer.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_prompt.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_supporters_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Bottom sheet listing an event's prayer requests, with a composer on top.
+/// Bottom sheet listing an event's prayer requests, with a prompt on top
+/// that opens the composer.
 class PrayerRequestsSheet extends ConsumerStatefulWidget {
   const PrayerRequestsSheet({super.key, required this.eventId});
 
@@ -44,8 +48,6 @@ class PrayerRequestsSheet extends ConsumerStatefulWidget {
 }
 
 class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
-  final _bodyController = TextEditingController();
-  final _bodyFocusNode = FocusNode();
   final _scrollController = ScrollController();
 
   /// Read through the container: socket frames can land after the sheet's
@@ -61,9 +63,6 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   bool _connectingLive = false;
   bool _hadLiveSession = false;
   bool _disposed = false;
-  bool _sending = false;
-
-  /// Composer shown before the first request exists.
   bool _composing = false;
   String? _roomId;
 
@@ -95,8 +94,6 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     unawaited(_tearDownLive());
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _bodyController.dispose();
-    _bodyFocusNode.dispose();
     super.dispose();
   }
 
@@ -230,35 +227,40 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     await _providers.read(groupChatRepositoryProvider).markRoomRead(roomId);
   }
 
-  void _startComposing() {
-    setState(() => _composing = true);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _bodyFocusNode.requestFocus();
-    });
+  /// Opens the composer sheet; the notifier already holds the new request
+  /// when it pops, so only the room bookkeeping is left.
+  Future<void> _openComposer() async {
+    if (_composing) return;
+    _composing = true;
+    try {
+      final created = await NewPrayerRequestSheet.show(
+        context,
+        eventId: widget.eventId,
+      );
+      if (!mounted || created == null) return;
+      unawaited(_markRoomRead());
+      unawaited(_ensureLiveConnected());
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    } finally {
+      _composing = false;
+    }
   }
 
-  Future<void> _send() async {
-    final body = _bodyController.text.trim();
-    if (body.isEmpty || _sending) return;
-    setState(() => _sending = true);
-    try {
-      final result = await _notifier.send(body);
-      if (!mounted) return;
-      result.fold((failure) => presentChatSendError(context, failure), (_) {
-        _bodyController.clear();
-        unawaited(_markRoomRead());
-        unawaited(_ensureLiveConnected());
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    } finally {
-      if (mounted) setState(() => _sending = false);
-    }
+  ChatPrayerUserDTO? _viewerAsSupporter() {
+    final user = _providers.read(userProvider).user;
+    final id = user?.id?.trim() ?? '';
+    if (id.isEmpty) return null;
+    return ChatPrayerUserDTO(
+      userId: id,
+      name: joinChatName(user?.firstName, user?.lastName),
+      avatarUrl: user?.avatarUrl,
+    );
   }
 
   @override
@@ -274,8 +276,6 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final height = math.max(220.0, math.min(size.height * 0.6, available));
 
     final canCompose = state.roomStatus == PrayerRoomStatus.ready;
-    final showComposer =
-        canCompose && (_composing || state.requests.isNotEmpty);
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
@@ -311,15 +311,12 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              if (showComposer)
+              if (canCompose)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: PrayerRequestComposer(
-                    controller: _bodyController,
-                    focusNode: _bodyFocusNode,
+                  child: PrayerRequestPrompt(
                     hintText: context.l10n.event_prayer_hint,
-                    isSending: _sending,
-                    onSubmit: _send,
+                    onTap: () => unawaited(_openComposer()),
                   ),
                 ),
               Expanded(child: _buildBody(context, state, isDark)),
@@ -356,7 +353,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     if (state.requests.isEmpty) {
       return _EmptyState(
         isDark: isDark,
-        onAdd: _composing ? null : _startComposing,
+        onAdd: () => unawaited(_openComposer()),
       );
     }
 
@@ -398,7 +395,23 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           displayName: displayName,
           avatarUrl:
               request.senderAvatarUrl ?? (isSelf ? user?.avatarUrl : null),
-          onTogglePrayer: () => unawaited(_notifier.togglePrayer(request.id)),
+          isOwn: isSelf,
+          onTogglePrayer:
+              () => unawaited(
+                _notifier.togglePrayer(
+                  request.id,
+                  viewer: _viewerAsSupporter(),
+                ),
+              ),
+          onShowSupporters:
+              () => unawaited(
+                PrayerSupportersSheet.show(
+                  context,
+                  request: request,
+                  displayName: displayName,
+                  isOwn: isSelf,
+                ),
+              ),
         );
       },
     );

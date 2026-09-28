@@ -85,10 +85,71 @@ void main() {
         'e1',
         body: 'Please pray',
         messageType: 'PRAYER',
+        intention: 'healing',
       );
 
-      expect(sent, {'body': 'Please pray', 'message_type': 'PRAYER'});
+      expect(sent, {
+        'body': 'Please pray',
+        'message_type': 'PRAYER',
+        'intention': 'healing',
+      });
       expect(message.isPrayerRequest, isTrue);
+    });
+
+    test('listIntentions reads the catalog in display order', () async {
+      final ds = _datasource((options) async {
+        expect(options.method, 'GET');
+        expect(options.path, '/intentions');
+        return _status(200, [
+          {
+            'slug': 'protection',
+            'label': 'Protection',
+            'color': '#2E7D4F',
+            'description': 'For safety.',
+            'display_order': 1,
+          },
+          {
+            'slug': 'healing',
+            'label': 'Healing',
+            'color': '#4A78C2',
+            'description': 'For illness.',
+            'display_order': 0,
+          },
+        ]);
+      });
+
+      final intentions = await ds.listIntentions();
+      expect(intentions.map((i) => i.slug), ['healing', 'protection']);
+      expect(intentions.first.color, '#4A78C2');
+    });
+
+    test('listPrayers pages the who-prayed roster', () async {
+      final ds = _datasource((options) async {
+        expect(options.method, 'GET');
+        expect(options.path, '/chat/messages/a1/prayers');
+        expect(options.queryParameters, {'skip': 20, 'limit': 20});
+        return _status(200, {
+          'message_id': 'a1',
+          'total': 21,
+          'skip': 20,
+          'limit': 20,
+          'prayers': [
+            {
+              'user_id': 'u2',
+              'email': 'pema@example.com',
+              'name': 'Pema',
+              'avatar_url': 'https://a/p.png',
+              'created_at': '2026-09-11T10:04:00+00:00',
+            },
+          ],
+        });
+      });
+
+      final page = await ds.listPrayers('a1', skip: 20);
+      expect(page.messageId, 'a1');
+      expect(page.total, 21);
+      expect(page.prayers.single.name, 'Pema');
+      expect(page.prayers.single.email, 'pema@example.com');
     });
 
     test('listMessages filters by message_type when asked', () async {

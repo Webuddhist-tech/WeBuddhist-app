@@ -3,7 +3,9 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_liv
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
@@ -37,6 +39,9 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   final List<List<String>> prayed = [];
   final List<String> unprayed = [];
   final List<String?> sentTypes = [];
+  final List<String?> sentIntentions = [];
+  final List<int> prayersSkips = [];
+  List<ChatPrayerUserDTO> supporters = const [];
 
   @override
   Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
@@ -80,9 +85,37 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async {
     sentTypes.add(messageType);
+    sentIntentions.add(intention);
     return Right(_prayer('sent'));
+  }
+
+  @override
+  Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async =>
+      const Right([]);
+
+  @override
+  Future<Either<Failure, ChatPrayersPage>> listPrayers(
+    String messageId, {
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    prayersSkips.add(skip);
+    final failure = prayFailure;
+    if (failure != null) return Left(failure);
+    final end = (skip + limit).clamp(0, supporters.length);
+    final start = skip.clamp(0, supporters.length);
+    return Right(
+      ChatPrayersPage(
+        messageId: messageId,
+        prayers: supporters.sublist(start, end),
+        skip: skip,
+        limit: limit,
+        total: supporters.length,
+      ),
+    );
   }
 
   @override
@@ -137,6 +170,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async => const Left(NotFoundFailure('not used'));
 
   @override
@@ -266,9 +300,10 @@ void main() {
 
       final notifier = _keepAlive(container);
       await _settle();
-      await notifier.send('Please pray');
+      await notifier.send('Please pray', intention: 'healing');
 
       expect(repository.sentTypes, ['PRAYER']);
+      expect(repository.sentIntentions, ['healing']);
       expect(notifier.state.requests.first.id, 'sent');
     });
 
@@ -317,6 +352,41 @@ void main() {
       expect(repository.unprayed, ['a']);
       expect(_byId(notifier, 'a').prayedByMe, isFalse);
       expect(_byId(notifier, 'a').prayerCount, 6);
+    });
+
+    test('togglePrayer moves the viewer in and out of the avatar stack', () async {
+      const pema = ChatPrayerUserDTO(userId: 'u2', name: 'Pema');
+      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
+      repository = _FakeGroupChatRepository(
+        history: [
+          _prayer('a', count: 1).copyWith(recentPrayers: const [pema]),
+        ],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final pending = notifier.togglePrayer('a', viewer: me);
+      expect(_byId(notifier, 'a').recentPrayers, [me, pema]);
+      await pending;
+      expect(_byId(notifier, 'a').recentPrayers, [me, pema]);
+
+      await notifier.togglePrayer('a', viewer: me);
+      expect(_byId(notifier, 'a').recentPrayers, [pema]);
+    });
+
+    test('a failed pray restores the avatar stack too', () async {
+      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)])
+        ..prayFailure = const ServerFailure('boom');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.togglePrayer('a', viewer: me);
+
+      expect(_byId(notifier, 'a').recentPrayers, isEmpty);
     });
 
     test('a failed pray rolls the optimistic change back', () async {
@@ -368,6 +438,54 @@ void main() {
       notifier.applyDeletion('a');
 
       expect(notifier.state.requests.map((r) => r.id), ['b']);
+    });
+  });
+
+  group('PrayerSupportersNotifier', () {
+    PrayerSupportersNotifier keepAlive(ProviderContainer container) {
+      container.listen(prayerSupportersProvider('a'), (_, _) {});
+      return container.read(prayerSupportersProvider('a').notifier);
+    }
+
+    test('loads the roster and pages through it', () async {
+      repository =
+          _FakeGroupChatRepository()
+            ..supporters = [
+              for (var i = 0; i < 25; i++)
+                ChatPrayerUserDTO(userId: 'u$i', name: 'User $i'),
+            ];
+      container = buildContainer();
+
+      final notifier = keepAlive(container);
+      await _settle();
+
+      expect(notifier.state.hasLoaded, isTrue);
+      expect(notifier.state.total, 25);
+      expect(notifier.state.supporters.length, 20);
+      expect(notifier.state.hasMore, isTrue);
+
+      await notifier.loadMore();
+      expect(repository.prayersSkips, [0, 20]);
+      expect(notifier.state.supporters.length, 25);
+      expect(notifier.state.hasMore, isFalse);
+    });
+
+    test('a failed load is retryable', () async {
+      repository =
+          _FakeGroupChatRepository()
+            ..prayFailure = const ServerFailure('boom');
+      container = buildContainer();
+
+      final notifier = keepAlive(container);
+      await _settle();
+      expect(notifier.state.error, isNotNull);
+      expect(notifier.state.hasLoaded, isTrue);
+
+      repository.prayFailure = null;
+      repository.supporters = const [ChatPrayerUserDTO(userId: 'u1')];
+      await notifier.load();
+      expect(notifier.state.error, isNull);
+      expect(notifier.state.supporters.length, 1);
     });
   });
 }

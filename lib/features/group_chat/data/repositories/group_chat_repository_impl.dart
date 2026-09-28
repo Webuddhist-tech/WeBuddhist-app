@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
@@ -72,6 +73,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async {
     try {
       return Right(
@@ -80,6 +82,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
           body: body,
           parentMessageId: parentMessageId,
           messageType: messageType,
+          intention: intention,
         ),
       );
     } catch (e) {
@@ -93,6 +96,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async {
     try {
       return Right(
@@ -101,10 +105,35 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
           body: body,
           parentMessageId: parentMessageId,
           messageType: messageType,
+          intention: intention,
         ),
       );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'sendEventMessage'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async {
+    try {
+      return Right(await _remote.listIntentions());
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'listIntentions'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatPrayersPage>> listPrayers(
+    String messageId, {
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      return Right(
+        await _remote.listPrayers(messageId, skip: skip, limit: limit),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'listPrayers'));
     }
   }
 

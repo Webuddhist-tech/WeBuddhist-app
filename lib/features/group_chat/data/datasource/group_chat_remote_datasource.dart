@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_member_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
@@ -43,6 +45,23 @@ class ChatRoomMembersPage {
 
   const ChatRoomMembersPage({
     required this.members,
+    required this.skip,
+    required this.limit,
+    required this.total,
+  });
+}
+
+/// Who prayed for one request, newest first.
+class ChatPrayersPage {
+  final String messageId;
+  final List<ChatPrayerUserDTO> prayers;
+  final int skip;
+  final int limit;
+  final int total;
+
+  const ChatPrayersPage({
+    required this.messageId,
+    required this.prayers,
     required this.skip,
     required this.limit,
     required this.total,
@@ -137,17 +156,20 @@ class GroupChatRemoteDatasource {
     }
   }
 
+  /// [intention] is required with `PRAYER` and must be omitted with `TEXT`.
   Future<ChatMessageDTO> sendGroupMessage(
     String groupId, {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async {
     return _sendMessage(
       '/chat/groups/$groupId/messages',
       body: body,
       parentMessageId: parentMessageId,
       messageType: messageType,
+      intention: intention,
     );
   }
 
@@ -156,12 +178,14 @@ class GroupChatRemoteDatasource {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async {
     return _sendMessage(
       '/chat/events/$eventId/messages',
       body: body,
       parentMessageId: parentMessageId,
       messageType: messageType,
+      intention: intention,
     );
   }
 
@@ -170,6 +194,7 @@ class GroupChatRemoteDatasource {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async {
     try {
       final response = await _dio.post(
@@ -178,9 +203,60 @@ class GroupChatRemoteDatasource {
           'body': body,
           if (parentMessageId != null) 'parent_message_id': parentMessageId,
           if (messageType != null) 'message_type': messageType,
+          if (intention != null) 'intention': intention,
         },
       );
       return ChatMessageDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// The configured intentions, in display order. Public, no auth needed.
+  Future<List<ChatPrayerIntentionDTO>> listIntentions() async {
+    try {
+      final response = await _dio.get('/intentions');
+      final data = response.data;
+      final items =
+          data is Map<String, dynamic> ? data['intentions'] ?? data : data;
+      final intentions =
+          (items as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatPrayerIntentionDTO.fromJson)
+              .toList() ??
+          <ChatPrayerIntentionDTO>[];
+      intentions.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+      return intentions;
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// Everyone praying for one request, newest first.
+  Future<ChatPrayersPage> listPrayers(
+    String messageId, {
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/chat/messages/$messageId/prayers',
+        queryParameters: {'skip': skip, 'limit': limit},
+        options: _noCache,
+      );
+      final data = response.data as Map<String, dynamic>;
+      return ChatPrayersPage(
+        messageId: data['message_id'] as String? ?? messageId,
+        prayers:
+            (data['prayers'] as List<dynamic>?)
+                ?.whereType<Map<String, dynamic>>()
+                .map(ChatPrayerUserDTO.fromJson)
+                .toList() ??
+            const [],
+        skip: _readInt(data['skip']),
+        limit: _readInt(data['limit']),
+        total: _readInt(data['total']),
+      );
     } on DioException catch (e) {
       throw _unwrap(e);
     }

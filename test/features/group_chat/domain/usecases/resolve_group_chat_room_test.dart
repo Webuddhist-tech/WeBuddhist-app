@@ -4,6 +4,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_rem
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_room_cache.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
@@ -103,6 +104,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async => const Left(NotFoundFailure('not used'));
 
   @override
@@ -129,6 +131,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     required String body,
     String? parentMessageId,
     String? messageType,
+    String? intention,
   }) async => const Left(NotFoundFailure('not used'));
 
   @override
@@ -141,6 +144,17 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
     String messageId,
   ) async => const Left(NotFoundFailure('not used'));
+
+  @override
+  Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async =>
+      const Right([]);
+
+  @override
+  Future<Either<Failure, ChatPrayersPage>> listPrayers(
+    String messageId, {
+    int skip = 0,
+    int limit = 20,
+  }) async => const Left(NotFoundFailure('not used'));
 
   @override
   Future<Either<Failure, ChatRoomMembersPage>> listRoomMembers(

@@ -4,126 +4,209 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 
-/// One prayer request: who asked, what for, and a pray toggle.
+/// One prayer request as a card tinted by its intention: who asked, what
+/// for, who is praying, and a pray toggle for everyone but the requester.
 class PrayerRequestTile extends StatelessWidget {
   const PrayerRequestTile({
     super.key,
     required this.request,
     required this.displayName,
     this.avatarUrl,
+    this.isOwn = false,
     this.onTogglePrayer,
+    this.onShowSupporters,
   });
 
   final ChatMessageDTO request;
   final String displayName;
   final String? avatarUrl;
-  final VoidCallback? onTogglePrayer;
 
-  static const double _avatarSize = 22;
+  /// The viewer's own request: named "You", no pray button.
+  final bool isOwn;
+  final VoidCallback? onTogglePrayer;
+  final VoidCallback? onShowSupporters;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final nameColor =
+    final intention = request.intention;
+    final cardColor = prayerIntentionCardColor(intention, isDark);
+    final accent = prayerIntentionColor(intention, isDark);
+    final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final bodyColor =
-        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final name = isOwn ? context.l10n.event_prayer_you : displayName;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _Avatar(
-                avatarUrl: avatarUrl,
-                displayName: displayName,
-                isDark: isDark,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  strutStyle: context.tibetanStrutStyle(13, compact: true),
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: nameColor,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                PrayerAvatar(
+                  avatarUrl: avatarUrl,
+                  label: isOwn ? name : displayName,
+                  size: 28,
+                  accent: accent,
+                  isDark: isDark,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    strutStyle: context.tibetanStrutStyle(13, compact: true),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            request.body,
-            strutStyle: context.tibetanStrutStyle(14),
-            style: TextStyle(fontSize: 14, height: 1.4, color: bodyColor),
-          ),
-          const SizedBox(height: 6),
-          _PrayToggle(
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              request.body,
+              strutStyle: context.tibetanStrutStyle(14),
+              style: TextStyle(fontSize: 14, height: 1.4, color: textColor),
+            ),
+            const SizedBox(height: 12),
+            _buildFooter(context, isDark, accent, cardColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(
+    BuildContext context,
+    bool isDark,
+    Color accent,
+    Color cardColor,
+  ) {
+    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final count = request.prayerCount;
+
+    final Widget supporters;
+    if (count > 0) {
+      supporters = _SupportersSummary(
+        count: count,
+        recent: request.recentPrayers,
+        accent: accent,
+        cardColor: cardColor,
+        isDark: isDark,
+        onTap: onShowSupporters,
+      );
+    } else if (isOwn) {
+      supporters = Text(
+        context.l10n.event_prayer_waiting_first,
+        strutStyle: context.tibetanStrutStyle(12, compact: true),
+        style: TextStyle(fontSize: 12, color: muted),
+      );
+    } else {
+      supporters = const SizedBox.shrink();
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: Align(alignment: Alignment.centerLeft, child: supporters),
+        ),
+        if (!isOwn) ...[
+          const SizedBox(width: 8),
+          _PrayButton(
             prayedByMe: request.prayedByMe,
-            count: request.prayerCount,
+            accent: accent,
             isDark: isDark,
             onTap: onTogglePrayer,
           ),
         ],
-      ),
+      ],
     );
   }
 }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar({
+/// Round avatar with an initial on the intention colour when there is no
+/// picture. Shared by the card header, the avatar stack and the roster.
+class PrayerAvatar extends StatelessWidget {
+  const PrayerAvatar({
+    super.key,
     required this.avatarUrl,
-    required this.displayName,
+    required this.label,
+    required this.size,
+    required this.accent,
     required this.isDark,
+    this.borderColor,
   });
 
   final String? avatarUrl;
-  final String displayName;
+  final String label;
+  final double size;
+  final Color accent;
   final bool isDark;
+
+  /// Ring that separates overlapping avatars in a stack.
+  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
     final url = avatarUrl;
     final hasUrl = url != null && url.isNotEmpty;
-    const size = PrayerRequestTile._avatarSize;
+    final border = borderColor;
+    final inner = size - (border == null ? 0 : 4);
 
-    return ClipOval(
+    final avatar = ClipOval(
       child: SizedBox(
-        width: size,
-        height: size,
+        width: inner,
+        height: inner,
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
                   key: ValueKey(url),
                   imageUrl: url,
-                  width: size,
-                  height: size,
+                  width: inner,
+                  height: inner,
                   fit: BoxFit.cover,
-                  errorWidget: _initials(),
+                  errorWidget: _initial(inner),
                 )
-                : _initials(),
+                : _initial(inner),
       ),
+    );
+    if (border == null) return avatar;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: border, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: avatar,
     );
   }
 
-  Widget _initials() {
+  Widget _initial(double inner) {
     return ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+      color: Color.alphaBlend(
+        accent.withValues(alpha: isDark ? 0.55 : 0.22),
+        isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+      ),
       child: Center(
         child: Text(
-          chatSenderInitials(displayName).characters.take(1).toString(),
+          chatSenderInitials(label).characters.take(1).toString(),
           style: TextStyle(
-            fontSize: 10,
+            fontSize: inner * 0.42,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.grey500 : AppColors.grey600,
+            color: isDark ? AppColors.textPrimaryDark : accent,
           ),
         ),
       ),
@@ -131,55 +214,150 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class _PrayToggle extends StatelessWidget {
-  const _PrayToggle({
-    required this.prayedByMe,
+class _SupportersSummary extends StatelessWidget {
+  const _SupportersSummary({
     required this.count,
+    required this.recent,
+    required this.accent,
+    required this.cardColor,
     required this.isDark,
     required this.onTap,
   });
 
-  final bool prayedByMe;
   final int count;
+  final List<ChatPrayerUserDTO> recent;
+  final Color accent;
+  final Color cardColor;
   final bool isDark;
   final VoidCallback? onTap;
 
+  static const double _avatarSize = 22;
+  static const double _overlap = 7;
+
   @override
   Widget build(BuildContext context) {
-    final activeColor =
-        isDark ? AppColors.accentGold : AppColors.accentGoldDark;
-    final idleColor = isDark ? AppColors.textTertiaryDark : AppColors.grey800;
-    final color = prayedByMe ? activeColor : idleColor;
-    // The label counts everyone praying; only the colour is about me.
+    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final shown = recent.take(3).toList();
+    final extra = count - shown.length;
     final label =
-        count > 0
-            ? context.l10n.event_prayer_praying
-            : context.l10n.event_prayer_pray;
+        shown.isNotEmpty && extra > 0
+            ? context.l10n.event_prayer_more_praying(extra)
+            : context.l10n.event_prayer_people_praying(count);
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              prayedByMe ? AppAssets.handsPrayingFill : AppAssets.handsPraying,
-              size: 16,
-              color: color,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              count > 0 ? '$count · $label' : label,
-              strutStyle: context.tibetanStrutStyle(12, compact: true),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: color,
+            if (shown.isNotEmpty) ...[
+              SizedBox(
+                width:
+                    _avatarSize + (shown.length - 1) * (_avatarSize - _overlap),
+                height: _avatarSize,
+                child: Stack(
+                  children: [
+                    for (var i = 0; i < shown.length; i++)
+                      Positioned(
+                        left: i * (_avatarSize - _overlap),
+                        child: PrayerAvatar(
+                          avatarUrl: shown[i].avatarUrl,
+                          label: shown[i].name ?? '',
+                          size: _avatarSize,
+                          accent: accent,
+                          isDark: isDark,
+                          borderColor: cardColor,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                strutStyle: context.tibetanStrutStyle(12, compact: true),
+                style: TextStyle(fontSize: 12, color: muted),
               ),
             ),
+            if (onTap != null) ...[
+              const SizedBox(width: 2),
+              Icon(AppAssets.caretRight, size: 14, color: muted),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PrayButton extends StatelessWidget {
+  const _PrayButton({
+    required this.prayedByMe,
+    required this.accent,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final bool prayedByMe;
+  final Color accent;
+  final bool isDark;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final label =
+        prayedByMe
+            ? context.l10n.event_prayer_praying
+            : context.l10n.event_prayer_pray;
+    final background =
+        prayedByMe
+            ? accent
+            : (isDark ? AppColors.chipBackgroundDark : AppColors.surfaceWhite);
+    final foreground =
+        prayedByMe
+            ? AppColors.surfaceWhite
+            : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary);
+    final border =
+        prayedByMe
+            ? accent
+            : (isDark ? AppColors.cardBorderDark : AppColors.grey300);
+
+    return Material(
+      color: background,
+      shape: StadiumBorder(side: BorderSide(color: border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                prayedByMe
+                    ? AppAssets.handsPrayingFill
+                    : AppAssets.handsPraying,
+                size: 15,
+                color: foreground,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                strutStyle: context.tibetanStrutStyle(12, compact: true),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: foreground,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
