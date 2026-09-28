@@ -95,35 +95,46 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     final size = MediaQuery.sizeOf(context);
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final topInset = MediaQuery.viewPaddingOf(context).top;
-    final height = size.height - topInset - 56;
+    // Sized to content; capped so the keyboard can never push it past the
+    // status bar, and the middle scrolls when that cap bites.
+    final maxHeight = size.height - topInset - keyboardInset - 24;
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              _buildHeader(context, isDark),
-              Expanded(
-                child: ListView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                  children: [
-                    _buildBodyField(context, isDark),
-                    const SizedBox(height: 20),
-                    _buildIntentionSection(context, isDark),
-                  ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(20),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(context, isDark),
+                Flexible(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildBodyField(context, isDark),
+                        const SizedBox(height: 20),
+                        _buildIntentionSection(context, isDark),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              _buildSubmit(context, isDark),
-            ],
+                _buildSubmit(context, isDark),
+              ],
+            ),
           ),
         ),
       ),
@@ -195,6 +206,9 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
       decoration: BoxDecoration(
         color: prayerIntentionCardColor(_intention, isDark),
         borderRadius: BorderRadius.circular(14),
+        border: Border.fromBorderSide(
+          prayerIntentionCardBorder(_intention, isDark),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
       child: Column(
@@ -482,7 +496,7 @@ class _IntentionDescription extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.textPrimaryDark : accent,
+              color: prayerAccentTextColor(accent, isDark),
             ),
           ),
           if (intention.description.isNotEmpty) ...[

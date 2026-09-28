@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
@@ -134,6 +135,35 @@ void main() {
     );
     final decoration = container.decoration! as BoxDecoration;
     expect(decoration.color, prayerIntentionCardColor(_healing, false));
+  });
+
+  test('a white intention keeps its text readable', () {
+    const peace = ChatPrayerIntentionDTO(
+      slug: 'peace',
+      label: 'Peace',
+      color: '#FFFFFF',
+    );
+    final accent = prayerIntentionColor(peace, false);
+    expect(prayerAccentTextColor(accent, false), AppColors.textPrimary);
+    expect(prayerAccentOnColor(accent), AppColors.textPrimary);
+    expect(prayerIntentionCardBorder(peace, false), isNot(BorderSide.none));
+    expect(prayerIntentionCardBorder(peace, true), isNot(BorderSide.none));
+    expect(prayerIntentionCardBorder(_healing, false), BorderSide.none);
+    expect(prayerIntentionCardBorder(_healing, true), BorderSide.none);
+  });
+
+  test('dark mode keeps the hue but pulls it down to a deep shade', () {
+    final dark = prayerIntentionCardColor(_healing, true);
+    final hsl = HSLColor.fromColor(dark);
+    expect(hsl.lightness, closeTo(0.16, 0.02));
+    expect(hsl.hue, closeTo(HSLColor.fromColor(const Color(0xFF4A78C2)).hue, 2));
+    expect(dark.computeLuminance(), lessThan(0.05));
+  });
+
+  test('no intention means a white card, grey on dark', () {
+    expect(prayerIntentionCardColor(null, false), AppColors.surfaceWhite);
+    expect(prayerIntentionCardColor(null, true), AppColors.chipBackgroundDark);
+    expect(prayerIntentionCardBorder(null, false), isNot(BorderSide.none));
   });
 
   test('intention hex parses with or without the hash', () {

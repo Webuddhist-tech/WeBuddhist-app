@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -48,7 +47,16 @@ class PrayerRequestsSheet extends ConsumerStatefulWidget {
 }
 
 class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
-  final _scrollController = ScrollController();
+  final _sheetController = DraggableScrollableController();
+
+  /// Owned by the draggable sheet; only listened to here.
+  ScrollController? _listController;
+
+  /// Two resting heights only: where it opens, and full. A drag in either
+  /// direction snaps to the nearer one; a drag below the opening height
+  /// dismisses.
+  static const double _initialSize = 0.6;
+  static const double _maxSize = 0.95;
 
   /// Read through the container: socket frames can land after the sheet's
   /// element is deactivated, where `ref.read` throws.
@@ -77,7 +85,6 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   void initState() {
     super.initState();
     _providers = ProviderScope.containerOf(context, listen: false);
-    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -92,17 +99,52 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     _disposed = true;
     _reconnectTimer?.cancel();
     unawaited(_tearDownLive());
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _listController?.removeListener(_onScroll);
+    _sheetController.dispose();
     super.dispose();
   }
 
+  void _attachList(ScrollController controller) {
+    if (identical(controller, _listController)) return;
+    _listController?.removeListener(_onScroll);
+    _listController = controller..addListener(_onScroll);
+  }
+
   void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
+    final controller = _listController;
+    if (controller == null || !controller.hasClients) return;
+    final position = controller.position;
     if (position.pixels >= position.maxScrollExtent - _loadMoreThreshold) {
       unawaited(_notifier.loadMore());
     }
+  }
+
+  /// Lets the handle and title resize the sheet, not only the list.
+  void _onHeaderDrag(DragUpdateDetails details) {
+    if (!_sheetController.isAttached) return;
+    final delta = details.primaryDelta ?? 0;
+    final next = _sheetController.size - _sheetController.pixelsToSize(delta);
+    _sheetController.jumpTo(next.clamp(_initialSize, _maxSize));
+  }
+
+  void _onHeaderDragEnd(DragEndDetails details) {
+    if (!_sheetController.isAttached) return;
+    final velocity = details.primaryVelocity ?? 0;
+    final size = _sheetController.size;
+    if (velocity > 700 && size <= _initialSize + 0.02) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final expand =
+        velocity < -300 ||
+        (velocity <= 300 && size > (_initialSize + _maxSize) / 2);
+    unawaited(
+      _sheetController.animateTo(
+        expand ? _maxSize : _initialSize,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      ),
+    );
   }
 
   /// Connects once the room is known; the socket is event-scoped. A closed
@@ -240,8 +282,9 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
       if (!mounted || created == null) return;
       unawaited(_markRoomRead());
       unawaited(_ensureLiveConnected());
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
+      final list = _listController;
+      if (list != null && list.hasClients) {
+        list.animateTo(
           0,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
@@ -269,61 +312,73 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final state = ref.watch(prayerRequestsProvider(widget.eventId));
     _syncRoom(state);
 
-    final size = MediaQuery.sizeOf(context);
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final topInset = MediaQuery.viewPaddingOf(context).top;
-    final available = size.height - keyboardInset - topInset - 48;
-    final height = math.max(220.0, math.min(size.height * 0.6, available));
-
     final canCompose = state.roomStatus == PrayerRoomStatus.ready;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              // Grey band sets the header apart from the list below.
-              Container(
-                decoration: BoxDecoration(
-                  color:
-                      isDark
-                          ? AppColors.surfaceVariantDark
-                          : AppColors.grey100,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                  border: Border(
-                    bottom: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    _buildDragHandle(context),
-                    _buildTitleBar(context, isDark),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (canCompose)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: PrayerRequestPrompt(
-                    hintText: context.l10n.event_prayer_hint,
-                    onTap: () => unawaited(_openComposer()),
-                  ),
-                ),
-              Expanded(child: _buildBody(context, state, isDark)),
-            ],
+    return DraggableScrollableSheet(
+      controller: _sheetController,
+      initialChildSize: _initialSize,
+      minChildSize: _initialSize,
+      maxChildSize: _maxSize,
+      snap: true,
+      expand: false,
+      builder: (context, scrollController) {
+        _attachList(scrollController);
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(20),
+            ),
           ),
-        ),
-      ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                // Grey band sets the header apart from the list below.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onVerticalDragUpdate: _onHeaderDrag,
+                  onVerticalDragEnd: _onHeaderDragEnd,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color:
+                          isDark
+                              ? AppColors.surfaceVariantDark
+                              : AppColors.grey100,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildDragHandle(context),
+                        _buildTitleBar(context, isDark),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (canCompose)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: PrayerRequestPrompt(
+                      hintText: context.l10n.event_prayer_hint,
+                      onTap: () => unawaited(_openComposer()),
+                    ),
+                  ),
+                Expanded(
+                  child: _buildBody(context, state, isDark, scrollController),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -331,29 +386,47 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     BuildContext context,
     PrayerRequestsState state,
     bool isDark,
+    ScrollController scrollController,
   ) {
     final mutedColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
 
+    final Widget? placeholder;
     if (state.roomStatus == PrayerRoomStatus.closed) {
-      return _Notice(text: context.l10n.event_prayer_closed, color: mutedColor);
-    }
-    if (state.roomStatus == PrayerRoomStatus.failed ||
+      placeholder = _Notice(
+        text: context.l10n.event_prayer_closed,
+        color: mutedColor,
+      );
+    } else if (state.roomStatus == PrayerRoomStatus.failed ||
         (state.error != null && state.requests.isEmpty && state.hasLoaded)) {
-      return _Notice(
+      placeholder = _Notice(
         text: context.l10n.event_prayer_load_failed,
         color: mutedColor,
         actionLabel: context.l10n.group_chat_retry,
         onAction: () => unawaited(_notifier.retry()),
       );
-    }
-    if (!state.hasLoaded || (state.isLoading && state.requests.isEmpty)) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (state.requests.isEmpty) {
-      return _EmptyState(
+    } else if (!state.hasLoaded ||
+        (state.isLoading && state.requests.isEmpty)) {
+      placeholder = const Center(child: CircularProgressIndicator());
+    } else if (state.requests.isEmpty) {
+      placeholder = _EmptyState(
         isDark: isDark,
         onAdd: () => unawaited(_openComposer()),
+      );
+    } else {
+      placeholder = null;
+    }
+
+    // Even a placeholder scrolls, so dragging it still resizes the sheet.
+    if (placeholder != null) {
+      return LayoutBuilder(
+        builder:
+            (context, constraints) => ListView(
+              controller: scrollController,
+              children: [
+                SizedBox(height: constraints.maxHeight, child: placeholder),
+              ],
+            ),
       );
     }
 
@@ -364,7 +437,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final itemCount = state.requests.length + (state.isLoadingMore ? 1 : 0);
 
     return ListView.builder(
-      controller: _scrollController,
+      controller: scrollController,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       itemCount: itemCount,

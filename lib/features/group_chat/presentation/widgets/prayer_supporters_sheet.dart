@@ -280,6 +280,9 @@ class _RequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: prayerIntentionCardColor(request.intention, isDark),
         borderRadius: BorderRadius.circular(14),
+        border: Border.fromBorderSide(
+          prayerIntentionCardBorder(request.intention, isDark),
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(
@@ -322,14 +325,8 @@ class _SupporterRow extends StatelessWidget {
           senderEmail: supporter.email,
         ) ??
         context.l10n.group_chat_unknown_sender;
-    final accent = chatSenderColor(
-      seed: chatSenderSeed(
-        senderId: supporter.userId,
-        senderEmail: supporter.email,
-        name: supporter.name,
-      ),
-      onDark: isDark,
-    );
+    // Same neutral grey as the stack on the card, not a per-person colour.
+    final accent = prayerIntentionColor(null, isDark);
 
     return Container(
       decoration: BoxDecoration(

@@ -46,6 +46,9 @@ class PrayerRequestTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: cardColor,
           borderRadius: BorderRadius.circular(16),
+          border: Border.fromBorderSide(
+            prayerIntentionCardBorder(intention, isDark),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Column(
@@ -83,6 +86,14 @@ class PrayerRequestTile extends StatelessWidget {
               style: TextStyle(fontSize: 14, height: 1.4, color: textColor),
             ),
             const SizedBox(height: 12),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: (isDark ? Colors.white : Colors.black).withValues(
+                alpha: 0.08,
+              ),
+            ),
+            const SizedBox(height: 10),
             _buildFooter(context, isDark, accent, cardColor),
           ],
         ),
@@ -195,18 +206,27 @@ class PrayerAvatar extends StatelessWidget {
   }
 
   Widget _initial(double inner) {
+    // A white or black accent washes out to the surface; use the neutral
+    // fallback fill instead so the circle still shows.
+    final fill =
+        prayerAccentNeedsBorder(accent, isDark)
+            ? (isDark ? AppColors.chipBackgroundDark : AppColors.grey100)
+            : Color.alphaBlend(
+              accent.withValues(alpha: isDark ? 0.55 : 0.22),
+              isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+            );
     return ColoredBox(
-      color: Color.alphaBlend(
-        accent.withValues(alpha: isDark ? 0.55 : 0.22),
-        isDark ? AppColors.cardDark : AppColors.surfaceWhite,
-      ),
+      color: fill,
       child: Center(
         child: Text(
           chatSenderInitials(label).characters.take(1).toString(),
           style: TextStyle(
             fontSize: inner * 0.42,
             fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.textPrimaryDark : accent,
+            color:
+                isDark
+                    ? AppColors.textPrimaryDark
+                    : prayerAccentTextColor(accent, isDark),
           ),
         ),
       ),
@@ -315,18 +335,20 @@ class _PrayButton extends StatelessWidget {
         prayedByMe
             ? context.l10n.event_prayer_praying
             : context.l10n.event_prayer_pray;
+    final idleBorder = isDark ? AppColors.cardBorderDark : AppColors.grey300;
     final background =
         prayedByMe
             ? accent
             : (isDark ? AppColors.chipBackgroundDark : AppColors.surfaceWhite);
     final foreground =
         prayedByMe
-            ? AppColors.surfaceWhite
+            ? prayerAccentOnColor(accent)
             : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary);
+    // A white accent fill needs the hairline to read as a button at all.
     final border =
-        prayedByMe
+        prayedByMe && !prayerAccentNeedsBorder(accent, isDark)
             ? accent
-            : (isDark ? AppColors.cardBorderDark : AppColors.grey300);
+            : idleBorder;
 
     return Material(
       color: background,
