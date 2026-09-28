@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
@@ -328,36 +329,20 @@ class _ParticipantAvatar extends StatelessWidget {
     );
   }
 
+  /// Neutral fallback matching the group members list (grey circle + profile
+  /// icon) rather than brand-red initials.
   Widget _avatarFallback() {
-    final name = participant.displayName;
-    final initials = _getInitials(name);
-
     return ColoredBox(
-      color: AppColors.primary,
+      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
       child: SizedBox(
         width: _size,
         height: _size,
-        child: Center(
-          child: Text(
-            initials,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryDarkest,
-            ),
-          ),
+        child: Icon(
+          AppAssets.profile,
+          size: 22,
+          color: isDark ? AppColors.grey500 : AppColors.grey600,
         ),
       ),
     );
-  }
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length > 1) {
-      return '${parts[0].characters.first}${parts[1].characters.first}'
-          .toUpperCase();
-    }
-    return name.characters.take(2).toString().toUpperCase();
   }
 }

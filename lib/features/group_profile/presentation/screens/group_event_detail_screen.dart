@@ -899,33 +899,19 @@ class _ParticipantAvatar extends StatelessWidget {
     );
   }
 
+  /// Neutral fallback matching the group members list (grey circle + profile
+  /// icon) rather than brand-red initials.
   Widget _avatarFallback() {
-    final name = participant.displayName;
-    final initials = _getInitials(name);
-
     return ColoredBox(
-      color: AppColors.primary,
+      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
       child: Center(
-        child: Text(
-          initials,
-          style: TextStyle(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primaryDarkest,
-          ),
+        child: Icon(
+          AppAssets.profile,
+          size: size * 0.5,
+          color: isDark ? AppColors.grey500 : AppColors.grey600,
         ),
       ),
     );
-  }
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length > 1) {
-      return '${parts[0].characters.first}${parts[1].characters.first}'
-          .toUpperCase();
-    }
-    return name.characters.take(2).toString().toUpperCase();
   }
 }
 
