@@ -24,14 +24,12 @@ void main() {
     required String uiLanguage,
     Iterable<String> translationLanguages = praiseTranslations,
     Iterable<TransliterationScript>? converterScripts,
-    String? listLanguage,
   }) => resolveInitialLayout(
     context: context,
     textLanguage: textLanguage,
     uiLanguage: uiLanguage,
     translationLanguages: translationLanguages,
     converterScripts: converterScripts ?? tibetanScripts,
-    listLanguage: listLanguage,
   );
 
   const asWritten = ReaderInitialLayout.asWritten();
@@ -75,10 +73,10 @@ void main() {
   });
 
   group('scriptIdForUiLanguage', () {
-    test('Tibetan texts: Roman for English and Chinese, Devanagari for Hindi '
-        'and Nepali, Cyrillic for Mongolian, as written for Tibetan', () {
+    test('Tibetan texts: Roman for English, Devanagari for Hindi and Nepali, '
+        'Cyrillic for Mongolian, as written for Tibetan and Chinese', () {
       expect(scriptIdForUiLanguage('en', tibetanScripts), 'phonetic');
-      expect(scriptIdForUiLanguage('zh', tibetanScripts), 'phonetic');
+      expect(scriptIdForUiLanguage('zh', tibetanScripts), isNull);
       expect(scriptIdForUiLanguage('hi', tibetanScripts), 'phonetic:hi');
       expect(scriptIdForUiLanguage('ne', tibetanScripts), 'phonetic:hi');
       expect(scriptIdForUiLanguage('mn', tibetanScripts), 'phonetic:cy');
@@ -89,6 +87,7 @@ void main() {
       expect(scriptIdForUiLanguage('en', paliScripts), 'ro');
       expect(scriptIdForUiLanguage('hi', paliScripts), 'hi');
       expect(scriptIdForUiLanguage('mn', paliScripts), 'cy');
+      expect(scriptIdForUiLanguage('zh', paliScripts), isNull);
     });
 
     test('a language without an app translation reads Roman', () {
@@ -143,10 +142,11 @@ void main() {
       );
     });
 
-    test('Tara praise: Chinese readers get Roman and fall back to English', () {
+    test('Tara praise: Chinese readers see it as written and fall back to '
+        'English', () {
       expect(
         resolve(context: ReaderLayoutContext.event, uiLanguage: 'zh'),
-        bothOn(script: 'phonetic', translation: 'en'),
+        bothOn(translation: 'en'),
       );
     });
 
@@ -186,7 +186,7 @@ void main() {
           uiLanguage: 'zh',
           translationLanguages: sadhanaTranslations,
         ),
-        bothOn(script: 'phonetic', translation: 'zh'),
+        bothOn(translation: 'zh'),
       );
       expect(
         resolve(
@@ -260,6 +260,33 @@ void main() {
       );
     });
 
+    test('a Chinese text in the Chinese app is shown as written', () {
+      expect(
+        resolve(
+          context: ReaderLayoutContext.event,
+          textLanguage: 'zh',
+          uiLanguage: 'zh',
+          translationLanguages: const ['en'],
+          converterScripts: const [],
+        ),
+        asWritten,
+      );
+    });
+
+    test('a Sanskrit text has no converter yet: as written with the '
+        'translation', () {
+      expect(
+        resolve(
+          context: ReaderLayoutContext.event,
+          textLanguage: 'sa',
+          uiLanguage: 'en',
+          translationLanguages: const ['en'],
+          converterScripts: const [],
+        ),
+        bothOn(translation: 'en'),
+      );
+    });
+
     test('a Pali text uses the Pali scripts', () {
       expect(
         resolve(
@@ -306,9 +333,38 @@ void main() {
       );
     });
 
-    test('as written when the UI language is not offered: no English fallback', () {
+    test('falls back to English when the UI language is not offered', () {
       expect(
         resolve(context: ReaderLayoutContext.plan, uiLanguage: 'zh'),
+        translationOnly('en'),
+      );
+      expect(
+        resolve(context: ReaderLayoutContext.plan, uiLanguage: 'mn'),
+        translationOnly('en'),
+      );
+    });
+
+    test('as written when neither the UI language nor English is offered', () {
+      expect(
+        resolve(
+          context: ReaderLayoutContext.plan,
+          uiLanguage: 'zh',
+          translationLanguages: const ['vi'],
+        ),
+        asWritten,
+      );
+    });
+
+    test('an English text never falls back to an English translation of '
+        'itself', () {
+      expect(
+        resolve(
+          context: ReaderLayoutContext.plan,
+          textLanguage: 'en',
+          uiLanguage: 'bo',
+          translationLanguages: englishRootTranslations,
+          converterScripts: const [],
+        ),
         asWritten,
       );
     });
@@ -358,8 +414,28 @@ void main() {
   });
 
   group('resolveInitialLayout: chant', () {
-    test('the edition the list handed over is shown as written', () {
-      // Hindi UI, Hindi list: the reader loaded the Hindi edition.
+    test('follows the app language, not the chant list', () {
+      // English app, Tibetan chant list: only the English translation.
+      expect(
+        resolve(
+          context: ReaderLayoutContext.chant,
+          uiLanguage: 'en',
+          translationLanguages: sadhanaTranslations,
+        ),
+        translationOnly('en'),
+      );
+      expect(
+        resolve(
+          context: ReaderLayoutContext.chant,
+          uiLanguage: 'hi',
+          translationLanguages: sadhanaTranslations,
+        ),
+        translationOnly('hi'),
+      );
+    });
+
+    test('an edition already in the app language is shown as written', () {
+      // Hindi app, Hindi list: the reader loaded the Hindi edition.
       expect(
         resolve(
           context: ReaderLayoutContext.chant,
@@ -367,73 +443,36 @@ void main() {
           uiLanguage: 'hi',
           translationLanguages: const ['vi', 'ne', 'mn', 'zh', 'en'],
           converterScripts: const [],
-          listLanguage: 'hi',
         ),
         asWritten,
       );
-      // English UI, tapped Tibetan in the list.
       expect(
         resolve(
           context: ReaderLayoutContext.chant,
+          uiLanguage: 'bo',
+          translationLanguages: sadhanaTranslations,
+        ),
+        asWritten,
+      );
+    });
+
+    test('a Hindi edition in the English app shows the English translation', () {
+      expect(
+        resolve(
+          context: ReaderLayoutContext.chant,
+          textLanguage: 'hi',
           uiLanguage: 'en',
-          translationLanguages: sadhanaTranslations,
-          listLanguage: 'bo',
+          translationLanguages: const ['vi', 'ne', 'mn', 'zh', 'en'],
+          converterScripts: const [],
         ),
-        asWritten,
+        translationOnly('en'),
       );
     });
 
-    test('the list language is compared like every other code', () {
+    test('falls back to English like a plan', () {
       expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'en',
-          translationLanguages: sadhanaTranslations,
-          listLanguage: ' BO ',
-        ),
-        asWritten,
-      );
-    });
-
-    test('without a list language it behaves like a plan', () {
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'hi',
-          translationLanguages: sadhanaTranslations,
-        ),
-        translationOnly('hi'),
-      );
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'hi',
-          translationLanguages: sadhanaTranslations,
-          listLanguage: '',
-        ),
-        translationOnly('hi'),
-      );
-    });
-
-    test('a list language the edition could not honour falls back to the plan rule', () {
-      // Tapped Hindi, but the reader still loaded the Tibetan edition.
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'hi',
-          translationLanguages: sadhanaTranslations,
-          listLanguage: 'hi',
-        ),
-        translationOnly('hi'),
-      );
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'zh',
-          translationLanguages: praiseTranslations,
-          listLanguage: 'zh',
-        ),
-        asWritten,
+        resolve(context: ReaderLayoutContext.chant, uiLanguage: 'zh'),
+        translationOnly('en'),
       );
     });
   });

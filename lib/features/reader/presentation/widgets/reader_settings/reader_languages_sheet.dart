@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_sett
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_secondary_version.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/picker_state_views.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_option_list.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -49,6 +50,10 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   bool _originalExpanded = false;
   String? _expandedLanguage;
   bool _filling = false;
+
+  /// Marks the checked version's row so the capped list scrolls to it, not
+  /// just to its language, when the open language has more rows than fit.
+  final _selectedVersionKey = GlobalKey();
 
   ReaderSettingsScope get _scope => widget.scope;
 
@@ -164,7 +169,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   String _translationLabel(ReaderSlotConfig slot) {
     final l10n = context.l10n;
     if (slot.isUnset) return l10n.select_language;
-    final language = getLanguageName(slot.languageCode, context);
+    final language = _languageName(context, slot.languageCode);
     if (slot.versionUnavailable) {
       return '$language (${l10n.version_not_available})';
     }
@@ -332,6 +337,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
                         textId: _scope.textId,
                         secondary: settings.secondary,
                         expandedLanguage: _expandedLanguage,
+                        selectedVersionKey: _selectedVersionKey,
                         onLanguageTap: busy ? null : _onLanguageTap,
                         onVersionTap: _onVersionTap,
                       ),
@@ -441,6 +447,7 @@ class _LanguageTree extends ConsumerWidget {
     required this.textId,
     required this.secondary,
     required this.expandedLanguage,
+    required this.selectedVersionKey,
     required this.onLanguageTap,
     required this.onVersionTap,
   });
@@ -448,6 +455,7 @@ class _LanguageTree extends ConsumerWidget {
   final String textId;
   final ReaderSlotConfig secondary;
   final String? expandedLanguage;
+  final GlobalKey selectedVersionKey;
   final ValueChanged<ReaderLanguageOption>? onLanguageTap;
   final void Function(ReaderLanguageOption, ReaderVersionDetail) onVersionTap;
 
@@ -468,29 +476,39 @@ class _LanguageTree extends ConsumerWidget {
         if (langs.isEmpty) {
           return PickerEmpty(message: l10n.reader_no_languages);
         }
+        final open = langs.indexWhere((lang) => lang.code == expandedLanguage);
         return Padding(
           padding: const EdgeInsets.only(top: 4, left: 16),
-          child: Column(
+          child: ReaderOptionList(
+            // The open language stays in view, its checked version with it.
+            revealIndex: open < 0 ? null : open,
+            revealKey: selectedVersionKey,
             children: [
-              for (final lang in langs) ...[
-                _LanguageRow(
-                  option: lang,
-                  isActive: readerLanguagesMatch(
-                    lang.code,
-                    secondary.languageCode,
-                  ),
-                  isOpen: expandedLanguage == lang.code,
-                  onTap:
-                      onLanguageTap == null ? null : () => onLanguageTap!(lang),
+              for (final lang in langs)
+                Column(
+                  children: [
+                    _LanguageRow(
+                      option: lang,
+                      isActive: readerLanguagesMatch(
+                        lang.code,
+                        secondary.languageCode,
+                      ),
+                      isOpen: expandedLanguage == lang.code,
+                      onTap:
+                          onLanguageTap == null
+                              ? null
+                              : () => onLanguageTap!(lang),
+                    ),
+                    if (expandedLanguage == lang.code)
+                      _VersionList(
+                        textId: textId,
+                        language: lang,
+                        selectedVersionId: secondary.versionId,
+                        selectedKey: selectedVersionKey,
+                        onTap: (v) => onVersionTap(lang, v),
+                      ),
+                  ],
                 ),
-                if (expandedLanguage == lang.code)
-                  _VersionList(
-                    textId: textId,
-                    language: lang,
-                    selectedVersionId: secondary.versionId,
-                    onTap: (v) => onVersionTap(lang, v),
-                  ),
-              ],
             ],
           ),
         );
@@ -498,6 +516,11 @@ class _LanguageTree extends ConsumerWidget {
     );
   }
 }
+
+/// Languages are named in their own script (English, བོད་ཡིག, 中文); one
+/// without a known native name keeps its name in the app's language.
+String _languageName(BuildContext context, String code) =>
+    getNativeLanguageName(code) ?? getLanguageName(code, context);
 
 class _LanguageRow extends StatelessWidget {
   const _LanguageRow({
@@ -521,12 +544,15 @@ class _LanguageRow extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: readerOptionRowPadding,
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    getLanguageName(option.code, context),
+                    _languageName(context, option.code),
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: isActive ? accent : null,
                       fontWeight: isActive ? FontWeight.w600 : null,
@@ -550,12 +576,16 @@ class _VersionList extends ConsumerWidget {
     required this.textId,
     required this.language,
     required this.selectedVersionId,
+    required this.selectedKey,
     required this.onTap,
   });
 
   final String textId;
   final ReaderLanguageOption language;
   final String? selectedVersionId;
+
+  /// Goes on the checked version's row, for the list to scroll to.
+  final GlobalKey selectedKey;
   final ValueChanged<ReaderVersionDetail> onTap;
 
   @override
@@ -588,11 +618,12 @@ class _VersionList extends ConsumerWidget {
             children: [
               for (final v in versions) ...[
                 InkWell(
+                  key: v.id == selectedVersionId ? selectedKey : null,
                   onTap: () => onTap(v),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 4,
-                      vertical: 14,
+                      vertical: readerOptionRowPadding,
                     ),
                     child: Row(
                       children: [
@@ -661,9 +692,16 @@ class _ScriptList extends StatelessWidget {
       selectedScriptId: selectedScriptId,
       sourceScriptId: sourceScriptId,
     );
+    final others = [
+      for (final script in converter.scripts)
+        if (script.id != sourceScriptId) script,
+    ];
     return Padding(
       padding: const EdgeInsets.only(top: 4, left: 16),
-      child: Column(
+      child: ReaderOptionList(
+        // The ticked row: "as written" (first) when nothing is picked, else
+        // the picked script after it.
+        revealIndex: others.indexWhere((script) => script.id == picked) + 1,
         children: [
           _ScriptRow(
             label:
@@ -673,13 +711,12 @@ class _ScriptList extends StatelessWidget {
             isActive: picked == null,
             onTap: () => onTap(null),
           ),
-          for (final script in converter.scripts)
-            if (script.id != sourceScriptId)
-              _ScriptRow(
-                label: script.label,
-                isActive: script.id == picked,
-                onTap: () => onTap(script.id),
-              ),
+          for (final script in others)
+            _ScriptRow(
+              label: script.label,
+              isActive: script.id == picked,
+              onTap: () => onTap(script.id),
+            ),
         ],
       ),
     );
@@ -706,7 +743,10 @@ class _ScriptRow extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: readerOptionRowPadding,
+            ),
             child: Row(
               children: [
                 Expanded(

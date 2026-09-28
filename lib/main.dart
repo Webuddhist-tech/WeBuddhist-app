@@ -38,6 +38,7 @@ import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasou
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_context_layout_provider.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -227,6 +228,20 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // bundled ARB strings and swaps to the Tolgee versions once they arrive,
     // so a slow or unreachable CDN can never delay app startup.
     unawaited(_bootstrapTolgee());
+    unawaited(_stampReaderLayouts());
+  }
+
+  /// Records the language the app starts in as the one the reader's event,
+  /// chant and plan picks were made under. Picks from before the stamp existed
+  /// get it too, so a language change made before any reader is opened still
+  /// drops them; the listener in build() alone would keep them and stamp the
+  /// new language.
+  Future<void> _stampReaderLayouts() async {
+    await ref.read(contentLanguageProvider.notifier).ensureInitialized();
+    if (!mounted) return;
+    await ref
+        .read(readerLayoutLanguageGuardProvider)
+        .sync(ref.read(contentLanguageProvider));
   }
 
   Future<void> _bootstrapTolgee() async {
@@ -298,6 +313,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.listen<Locale>(localeProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTolgeeLocale(next));
+    });
+
+    // Reader picks made in events, plans and chants belong to the app
+    // language they were made under; a new language starts from its defaults.
+    ref.listen<String>(contentLanguageProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(ref.read(readerLayoutLanguageGuardProvider).sync(next));
     });
 
     // Bottom tabs are not routes, so Clarity's screen name for the home
