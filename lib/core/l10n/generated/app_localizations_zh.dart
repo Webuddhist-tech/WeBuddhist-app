@@ -2757,6 +2757,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_requests => '祈願請求';
 
   @override
+  String event_prayer_request_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count requests',
+      one: '1 request',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get event_prayer_empty_title => '尚無祈願請求';
 
   @override

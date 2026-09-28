@@ -1429,6 +1429,14 @@
   "event_puja_starts_in": "Puja starts in",
   "event_puja_not_started": "Puja not started yet",
   "event_prayer_requests": "Prayer requests",
+  "event_prayer_request_count": "{count, plural, =1{1 request} other{{count} requests}}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "event_prayer_empty_title": "No prayer requests yet",
   "event_prayer_empty_body": "Your request and your community's will appear here",
   "event_prayer_add": "Add a prayer request",

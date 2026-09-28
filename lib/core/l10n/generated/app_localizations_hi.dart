@@ -2913,6 +2913,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_prayer_requests => 'प्रार्थना अनुरोध';
 
   @override
+  String event_prayer_request_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count requests',
+      one: '1 request',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get event_prayer_empty_title => 'अभी कोई प्रार्थना अनुरोध नहीं';
 
   @override

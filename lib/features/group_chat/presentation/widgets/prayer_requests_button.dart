@@ -49,11 +49,15 @@ class PrayerRequestsButton extends StatelessWidget {
   const PrayerRequestsButton({
     super.key,
     required this.onTap,
+    this.count = 0,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.outlined = false,
   });
 
   final VoidCallback onTap;
+
+  /// Live requests in the room; the label falls back to the plain title at 0.
+  final int count;
   final EdgeInsetsGeometry padding;
 
   /// White surface with a hairline border instead of the grey fill.
@@ -64,6 +68,10 @@ class PrayerRequestsButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final foreground =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final label =
+        count > 0
+            ? context.l10n.event_prayer_request_count(count)
+            : context.l10n.event_prayer_requests;
 
     return Padding(
       padding: padding,
@@ -96,7 +104,7 @@ class PrayerRequestsButton extends StatelessWidget {
                   Icon(AppAssets.handsPraying, size: 18, color: foreground),
                   const SizedBox(width: 6),
                   Text(
-                    context.l10n.event_prayer_requests,
+                    label,
                     strutStyle: context.tibetanStrutStyle(13, compact: true),
                     style: TextStyle(
                       fontSize: 13,

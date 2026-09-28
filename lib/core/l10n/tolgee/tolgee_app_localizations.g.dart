@@ -5677,6 +5677,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String event_prayer_request_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_request_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_request_count(count),
+  );
+
+  @override
   String get event_prayer_empty_title => TolgeeBridge.get(
     localeName,
     'event_prayer_empty_title',

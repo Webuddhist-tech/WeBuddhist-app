@@ -150,6 +150,9 @@ class GroupEvent {
   /// Null until the room is created on first use.
   final String? chatRoomId;
 
+  /// Live prayer requests in the event's room; 0 until the room exists.
+  final int prayerRequestCount;
+
   const GroupEvent({
     required this.id,
     required this.groupId,
@@ -188,6 +191,7 @@ class GroupEvent {
     this.myParticipationType,
     this.chatEnabled = false,
     this.chatRoomId,
+    this.prayerRequestCount = 0,
   });
 
   /// A plan or a series (never both) marks the event as a puja to enter.
