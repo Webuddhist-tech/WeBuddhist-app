@@ -437,12 +437,14 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final hasPosts =
         postsState.posts.isNotEmpty ||
         (postsState.hasLoaded && postsState.error != null);
+    // Posting needs both the permission and membership, so hold the tabs until
+    // both have settled, whichever finishes first.
     final isPostsLoading =
         !postsState.hasLoaded ||
         (permissionAsync.isLoading &&
             !permissionAsync.hasValue &&
             !permissionAsync.hasError) ||
-        (hasCreatePermission && isPrivateGroupMembershipLoading(followState));
+        isPrivateGroupMembershipLoading(followState);
 
     // Wait for every section before laying out the tabs, otherwise tabs would
     // pop in and out as each request settles.
