@@ -23,6 +23,9 @@ class AuthService {
   /// [isJwtExpired].
   static const int _kMinTokenTtlSeconds = 120;
 
+  /// Ceiling for awaiters of a native credentials call; the call itself runs on.
+  static const Duration _kCredentialsTimeout = Duration(seconds: 20);
+
   // SharedPreferences key for guest mode
   static const String _guestModeKey = 'is_guest_mode';
 
@@ -40,9 +43,20 @@ class AuthService {
   /// receive a plain cache read (the very token the server just rejected).
   bool _inflightIsForced = false;
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  /// A call whose awaiters timed out; the next fetch waits (bounded) behind it.
+  Future<Credentials>? _staleCredentials;
 
+  /// In-flight [initialize], shared so concurrent callers never double-assign [_auth0].
+  Future<void>? _initializing;
+
+  Future<void> initialize() {
+    if (_isInitialized) return Future.value();
+    return _initializing ??= _doInitialize().whenComplete(
+      () => _initializing = null,
+    );
+  }
+
+  Future<void> _doInitialize() async {
     // load config from config service
     final config = ConfigService.instance;
     await config.loadConfig();
@@ -105,9 +119,9 @@ class AuthService {
       // launch/restore path and the API path never disagree on when to renew —
       // and a low threshold keeps a safe margin below any configured Auth0
       // access-token lifetime (the SDK throws when minTtl exceeds it).
-      return await _auth0.credentialsManager.credentials(
-        minTtl: _kMinTokenTtlSeconds,
-      );
+      return await _auth0.credentialsManager
+          .credentials(minTtl: _kMinTokenTtlSeconds)
+          .timeout(_kCredentialsTimeout);
     } on CredentialsManagerException catch (e) {
       // Surface the SDK code at the boundary for diagnostics, then rethrow so
       // the repository maps it: no-credentials / no-refresh-token / opaque →
@@ -249,13 +263,15 @@ class AuthService {
     // accepts any in-flight call; a forced caller only accepts one that is
     // itself forced. A forced caller must NOT join a non-forced cache read, or
     // it could be handed back the token the server just rejected.
-    if (inflight != null && (!force || _inflightIsForced)) return inflight;
+    if (inflight != null && (!force || _inflightIsForced)) {
+      return inflight.timeout(_kCredentialsTimeout);
+    }
 
     // We need a (possibly forced) renewal that no in-flight call provides. If a
     // non-forced call is currently running, sequence our forced fetch *after*
     // it settles rather than racing it, so the credentials manager stays the
     // single, rotation-safe refresh path (one renewal in flight at a time).
-    final previous = inflight;
+    final previous = inflight ?? _staleCredentials;
     // `tracked` IS the future we store and return, so its error is delivered to
     // the awaiting caller (handled). Do NOT drop a separate `whenComplete`
     // future here — its error would have no listener and surface as an
@@ -269,11 +285,23 @@ class AuthService {
           _inflightCredentials = null;
           _inflightIsForced = false;
         }
+        if (identical(_staleCredentials, tracked)) _staleCredentials = null;
       },
     );
     _inflightCredentials = tracked;
     _inflightIsForced = force;
-    return tracked;
+    return tracked.timeout(
+      _kCredentialsTimeout,
+      onTimeout: () {
+        // Release the slot so later callers retry instead of queueing forever.
+        if (identical(_inflightCredentials, tracked)) {
+          _inflightCredentials = null;
+          _inflightIsForced = false;
+          _staleCredentials = tracked;
+        }
+        throw TimeoutException('Credentials call timed out', _kCredentialsTimeout);
+      },
+    );
   }
 
   Future<Credentials> _runCredentialsFetch({
@@ -282,9 +310,10 @@ class AuthService {
   }) async {
     if (after != null) {
       // Let the prior renewal finish (ignore its result/error) so two renewals
-      // never hit the rotating refresh token concurrently.
+      // never hit the rotating refresh token concurrently. Bounded, so a stuck
+      // call cannot block every later renewal.
       try {
-        await after;
+        await after.timeout(_kCredentialsTimeout);
       } catch (_) {
         // Ignored — we proceed to our own fetch regardless.
       }
@@ -400,7 +429,13 @@ class AuthService {
   /// actual credentials/renewal attempt (see [isSessionPermanentlyLost]).
   Future<bool> hasValidCredentials() async {
     try {
-      return await _auth0.credentialsManager.hasValidCredentials();
+      return await _auth0.credentialsManager.hasValidCredentials().timeout(
+        const Duration(seconds: 10),
+      );
+    } on TimeoutException {
+      // Indeterminate: let credentials() make the terminal call, not a logout.
+      _logger.warning('Credentials check timed out — assuming a session');
+      return true;
     } catch (e) {
       _logger.warning('Error checking valid credentials: $e');
       return false;

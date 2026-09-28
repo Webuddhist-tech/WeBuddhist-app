@@ -74,6 +74,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   static const _onboardingRetryDebounce = Duration(seconds: 5);
 
+  /// Per-step ceiling on the launch restore's API calls so they cannot hold the splash.
+  final Duration _restoreStepBudget;
+
   AuthNotifier({
     required LoginUseCase loginUseCase,
     required InitializeAuthUseCase initializeAuthUseCase,
@@ -86,7 +89,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required ClearGuestModeAndOnboardingUseCase
     clearGuestModeAndOnboardingUseCase,
     required this.ref,
+    Duration restoreStepBudget = const Duration(seconds: 10),
   }) : _loginUseCase = loginUseCase,
+       _restoreStepBudget = restoreStepBudget,
        _initializeAuthUseCase = initializeAuthUseCase,
        _hasValidCredentialsUseCase = hasValidCredentialsUseCase,
        _getCredentialsUseCase = getCredentialsUseCase,
@@ -133,6 +138,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (_reconciling) return;
     _reconciling = true;
     try {
+      // Let a launch restore finish; isLoading after it means a login is running.
+      final inFlight = _restoreInFlight;
+      if (inFlight != null) await inFlight;
+      if (state.isLoading) return;
       if (state.isLoggedIn && !state.isGuest) {
         _logger.info('Connectivity restored — reconciling user profile');
         await ref.read(userProvider.notifier).refreshUser();
@@ -154,66 +163,89 @@ class AuthNotifier extends StateNotifier<AuthState> {
     super.dispose();
   }
 
-  Future<void> _restoreLoginState() async {
+  /// In-flight restore, shared so launch and reconnect restores never interleave.
+  Future<void>? _restoreInFlight;
+
+  Future<void> _restoreLoginState() {
+    return _restoreInFlight ??= _runRestoreLoginState().whenComplete(
+      () => _restoreInFlight = null,
+    );
+  }
+
+  Future<void> _runRestoreLoginState() async {
     _logger.debug('Restoring login state');
+    final epoch = _authEpoch;
 
-    // Fresh-install handling.
-    // iOS: Keychain survives uninstall — we WANT that, so we never clear here.
-    //      The silent renewal in _restoreCredentials() decides logged-in state,
-    //      giving the seamless reinstall contract.
-    // Android: Auto Backup is disabled (manifest), so a reinstall is a genuine
-    //      clean slate. This clear is belt-and-suspenders for the edge case where
-    //      a residual credential exists (e.g. backup re-enabled by misconfig).
-    final isKnownInstall = await ref
-        .read(localStorageServiceProvider)
-        .get<bool>(StorageKeys.firstLaunch);
-
-    if (isKnownInstall == null) {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        await _localLogoutUseCase(const NoParams());
-        _logger.info(
-          'Android fresh install — cleared any residual credentials',
-        );
-      } else {
-        _logger.info(
-          'iOS fresh install — preserving Keychain for seamless reinstall',
-        );
-      }
-      await ref
+    try {
+      // Fresh-install handling.
+      // iOS: Keychain survives uninstall — we WANT that, so we never clear here.
+      //      The silent renewal in _restoreCredentials() decides logged-in state,
+      //      giving the seamless reinstall contract.
+      // Android: Auto Backup is disabled (manifest), so a reinstall is a genuine
+      //      clean slate. This clear is belt-and-suspenders for the edge case where
+      //      a residual credential exists (e.g. backup re-enabled by misconfig).
+      final isKnownInstall = await ref
           .read(localStorageServiceProvider)
-          .set(StorageKeys.firstLaunch, true);
-    }
+          .get<bool>(StorageKeys.firstLaunch);
 
-    // Initialize auth
-    final initResult = await _initializeAuthUseCase(const NoParams());
-    initResult.fold(
-      (failure) {
-        _logger.error('Failed to initialize auth: ${failure.message}');
-      },
-      (_) {
-        _logger.debug('Auth initialized successfully');
-      },
-    );
-
-    // Check if we have any credentials at all
-    final credentialsResult = await _hasValidCredentialsUseCase(
-      const NoParams(),
-    );
-    credentialsResult.fold(
-      (failure) {
-        _logger.error('Failed to check credentials: ${failure.message}');
-        // Fall through to check guest mode
-      },
-      (hasCredentials) {
-        _logger.debug('Credentials valid: $hasCredentials');
-
-        if (hasCredentials) {
-          _restoreCredentials();
+      if (isKnownInstall == null) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          await _localLogoutUseCase(const NoParams());
+          _logger.info(
+            'Android fresh install — cleared any residual credentials',
+          );
         } else {
-          _checkGuestMode();
+          _logger.info(
+            'iOS fresh install — preserving Keychain for seamless reinstall',
+          );
         }
-      },
-    );
+        await ref
+            .read(localStorageServiceProvider)
+            .set(StorageKeys.firstLaunch, true);
+      }
+
+      // Initialize auth
+      final initResult = await _initializeAuthUseCase(const NoParams());
+      initResult.fold(
+        (failure) {
+          _logger.error('Failed to initialize auth: ${failure.message}');
+        },
+        (_) {
+          _logger.debug('Auth initialized successfully');
+        },
+      );
+
+      // Check if we have any credentials at all
+      final credentialsResult = await _hasValidCredentialsUseCase(
+        const NoParams(),
+      );
+      final hasCredentials = credentialsResult.fold((failure) {
+        _logger.error('Failed to check credentials: ${failure.message}');
+        return false;
+      }, (hasCredentials) => hasCredentials);
+      _logger.debug('Credentials valid: $hasCredentials');
+
+      if (hasCredentials) {
+        await _restoreCredentials();
+      } else {
+        await _checkGuestMode();
+      }
+    } catch (e, st) {
+      _logger.error('Login restore failed, falling back to guest check', e, st);
+      try {
+        await _checkGuestMode();
+      } catch (e2) {
+        _logger.error('Guest check failed during restore fallback', e2);
+      }
+    } finally {
+      // Nothing above resolved the state: never leave the splash up.
+      if (mounted &&
+          state.isLoading &&
+          !state.isLoggedIn &&
+          _isAuthEpochCurrent(epoch)) {
+        _setLoggedOutState();
+      }
+    }
   }
 
   Future<void> _restoreCredentials() async {
@@ -228,33 +260,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Happy path: we have a fresh token.
     if (credentials != null && credentials!.idToken.isNotEmpty) {
       final epoch = _authEpoch;
+      bool? onboardingStatus;
 
-      // Store currentUserId before updating auth state so feature code can
-      // resolve the active account when the router refreshes.
-      final userId = _extractUserIdFromToken(credentials!.idToken);
-      if (userId != null) {
-        await ref
-            .read(localStorageServiceProvider)
-            .set(StorageKeys.currentUserId, userId);
-        if (!_isAuthEpochCurrent(epoch)) return;
-        _logger.debug('Restored currentUserId');
-        await _identifyAuthenticatedUser(
-          userId: userId,
-          isGuest: false,
-          epoch: epoch,
+      // The token is valid, so the steps below are best-effort: a failure in
+      // one (storage, analytics, profile) must not sign the user out.
+      try {
+        // Store currentUserId before updating auth state so feature code can
+        // resolve the active account when the router refreshes.
+        final userId = _extractUserIdFromToken(credentials!.idToken);
+        if (userId != null) {
+          await ref
+              .read(localStorageServiceProvider)
+              .set(StorageKeys.currentUserId, userId);
+          if (!_isAuthEpochCurrent(epoch)) return;
+          _logger.debug('Restored currentUserId');
+          await _identifyAuthenticatedUser(
+            userId: userId,
+            isGuest: false,
+            epoch: epoch,
+          );
+          if (!_isAuthEpochCurrent(epoch)) return;
+        }
+
+        // Prefetch onboarding status while the token is fresh. Emitting auth
+        // state once with the complete picture means the route guard's
+        // redirect fires synchronously — no second navigation or per-nav
+        // network call. This also populates userProvider (via
+        // _fetchOnboardingStatusSafe's caller chain), so no separate
+        // initializeUser() call is needed afterward.
+        // Budgeted: the guard fails open on null and the fetch keeps running.
+        onboardingStatus = await _fetchOnboardingStatusSafe().timeout(
+          _restoreStepBudget,
+          onTimeout: () => null,
         );
         if (!_isAuthEpochCurrent(epoch)) return;
+        await ref
+            .read(userProvider.notifier)
+            .initializeUser()
+            .timeout(_restoreStepBudget, onTimeout: () {});
+      } catch (e, st) {
+        _logger.error('Restore step failed — keeping the session', e, st);
       }
-
-      // Prefetch onboarding status while the token is fresh. Emitting auth
-      // state once with the complete picture means the route guard's
-      // redirect fires synchronously — no second navigation or per-nav
-      // network call. This also populates userProvider (via
-      // _fetchOnboardingStatusSafe's caller chain), so no separate
-      // initializeUser() call is needed afterward.
-      final onboardingStatus = await _fetchOnboardingStatusSafe();
-      if (!_isAuthEpochCurrent(epoch)) return;
-      await ref.read(userProvider.notifier).initializeUser();
       _applyAuthenticatedLoginState(
         epoch: epoch,
         onboardingStatus: onboardingStatus,
@@ -275,7 +321,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _logger.info(
         'Stored credentials permanently invalid — checking guest mode',
       );
-      _checkGuestMode();
+      await _checkGuestMode();
       return;
     }
 
