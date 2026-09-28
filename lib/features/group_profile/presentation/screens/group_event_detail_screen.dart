@@ -225,11 +225,6 @@ class _GroupEventDetailScreenState
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
-          _EventSectionLabel(
-            text: context.l10n.connect_event_organizer,
-            color: isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
-          ),
-          const SizedBox(height: 8),
           _EventGroupRow(event: event, isDark: isDark),
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
@@ -995,9 +990,16 @@ class _EventGroupRow extends ConsumerWidget {
         .watch(groupProfileProvider(event.groupId))
         .valueOrNull
         ?.fold((_) => null, (profile) => profile);
-    final title = (group?.title ?? event.groupName ?? '').trim();
-    final avatarUrl = (group?.avatarUrl ?? event.groupAvatarUrl ?? '').trim();
-    final subtitle = (group?.subTitle ?? group?.description ?? '').trim();
+    // Blank profile fields fall through to the event's own copy.
+    String firstNonEmpty(String? a, String? b) {
+      final first = a?.trim() ?? '';
+      return first.isNotEmpty ? first : (b?.trim() ?? '');
+    }
+
+    final title = firstNonEmpty(group?.title, event.groupName);
+    final avatarUrl = firstNonEmpty(group?.avatarUrl, event.groupAvatarUrl);
+    final subtitle = firstNonEmpty(group?.subTitle, group?.description);
+    // Heading and card share one visibility so the label never stands alone.
     if (title.isEmpty) return const SizedBox.shrink();
 
     final subtitleColor =
@@ -1005,7 +1007,7 @@ class _EventGroupRow extends ConsumerWidget {
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 
-    return Material(
+    final card = Material(
       color: cardColor,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
@@ -1062,6 +1064,18 @@ class _EventGroupRow extends ConsumerWidget {
           ),
         ),
       ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _EventSectionLabel(
+          text: context.l10n.connect_event_organizer,
+          color: subtitleColor,
+        ),
+        const SizedBox(height: 8),
+        card,
+      ],
     );
   }
 }
