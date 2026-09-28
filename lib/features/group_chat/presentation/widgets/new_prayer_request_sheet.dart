@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_l10n.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -411,7 +412,7 @@ class _IntentionChoice extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: intention.label,
+      label: intention.localizedLabel(context),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -448,7 +449,7 @@ class _IntentionChoice extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                intention.label,
+                intention.localizedLabel(context),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -491,7 +492,7 @@ class _IntentionDescription extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            intention.label,
+            intention.localizedLabel(context),
             strutStyle: context.tibetanStrutStyle(13, compact: true),
             style: TextStyle(
               fontSize: 13,
@@ -502,7 +503,7 @@ class _IntentionDescription extends StatelessWidget {
           if (intention.description.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
-              intention.description,
+              intention.localizedDescription(context),
               strutStyle: context.tibetanStrutStyle(12),
               style: TextStyle(fontSize: 12, height: 1.4, color: muted),
             ),
