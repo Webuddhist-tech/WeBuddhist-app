@@ -234,9 +234,12 @@ class _GroupEventDetailScreenState
                   isDark: isDark,
                 ),
               ),
-              if (event.chatEnabled) ...[
+              // Only attendees see the room; joining reveals it straight away.
+              if (event.chatEnabled && isAttending) ...[
                 const SizedBox(width: 12),
                 PrayerRequestsButton(
+                  eventId: event.id,
+                  count: event.prayerRequestCount,
                   padding: EdgeInsets.zero,
                   outlined: true,
                   onTap: () => _openPrayerRequests(event.id),

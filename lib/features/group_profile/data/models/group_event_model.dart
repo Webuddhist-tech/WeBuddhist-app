@@ -237,6 +237,7 @@ class GroupEventModel {
   final String? myParticipationType;
   final bool chatEnabled;
   final String? chatRoomId;
+  final int prayerRequestCount;
 
   const GroupEventModel({
     required this.id,
@@ -274,6 +275,7 @@ class GroupEventModel {
     this.myParticipationType,
     this.chatEnabled = false,
     this.chatRoomId,
+    this.prayerRequestCount = 0,
   });
 
   factory GroupEventModel.fromJson(
@@ -329,6 +331,8 @@ class GroupEventModel {
       myParticipationType: json['my_participation_type'] as String?,
       chatEnabled: json['chat_enabled'] as bool? ?? false,
       chatRoomId: json['chat_room_id'] as String?,
+      prayerRequestCount:
+          (json['prayer_request_count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -373,6 +377,7 @@ class GroupEventModel {
       ),
       chatEnabled: chatEnabled,
       chatRoomId: chatRoomId,
+      prayerRequestCount: prayerRequestCount,
     );
   }
 

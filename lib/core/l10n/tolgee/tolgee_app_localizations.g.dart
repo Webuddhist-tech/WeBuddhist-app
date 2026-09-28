@@ -5677,6 +5677,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String event_prayer_request_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_request_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_request_count(count),
+  );
+
+  @override
   String get event_prayer_empty_title => TolgeeBridge.get(
     localeName,
     'event_prayer_empty_title',
@@ -5730,6 +5738,100 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_prayer_praying',
     () => _fallback.event_prayer_praying,
+  );
+
+  @override
+  String get event_prayer_new_request => TolgeeBridge.get(
+    localeName,
+    'event_prayer_new_request',
+    () => _fallback.event_prayer_new_request,
+  );
+
+  @override
+  String get event_prayer_choose_intention => TolgeeBridge.get(
+    localeName,
+    'event_prayer_choose_intention',
+    () => _fallback.event_prayer_choose_intention,
+  );
+
+  @override
+  String get event_prayer_intentions_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_intentions_failed',
+    () => _fallback.event_prayer_intentions_failed,
+  );
+
+  @override
+  String get event_prayer_request_button => TolgeeBridge.get(
+    localeName,
+    'event_prayer_request_button',
+    () => _fallback.event_prayer_request_button,
+  );
+
+  @override
+  String get event_prayer_you => TolgeeBridge.get(
+    localeName,
+    'event_prayer_you',
+    () => _fallback.event_prayer_you,
+  );
+
+  @override
+  String get event_prayer_waiting_first => TolgeeBridge.get(
+    localeName,
+    'event_prayer_waiting_first',
+    () => _fallback.event_prayer_waiting_first,
+  );
+
+  @override
+  String event_prayer_more_praying(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_more_praying',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_more_praying(count),
+  );
+
+  @override
+  String event_prayer_people_praying(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_people_praying',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_people_praying(count),
+  );
+
+  @override
+  String get event_prayer_praying_for_you => TolgeeBridge.get(
+    localeName,
+    'event_prayer_praying_for_you',
+    () => _fallback.event_prayer_praying_for_you,
+  );
+
+  @override
+  String event_prayer_praying_for(String name) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_praying_for',
+    <String, Object>{'name': name},
+    () => _fallback.event_prayer_praying_for(name),
+  );
+
+  @override
+  String get event_prayer_your_request => TolgeeBridge.get(
+    localeName,
+    'event_prayer_your_request',
+    () => _fallback.event_prayer_your_request,
+  );
+
+  @override
+  String get event_prayer_supporters_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_supporters_failed',
+    () => _fallback.event_prayer_supporters_failed,
+  );
+
+  @override
+  String get event_prayer_no_supporters => TolgeeBridge.get(
+    localeName,
+    'event_prayer_no_supporters',
+    () => _fallback.event_prayer_no_supporters,
   );
 
   @override

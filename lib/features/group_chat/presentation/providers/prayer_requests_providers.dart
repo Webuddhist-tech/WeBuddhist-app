@@ -1,7 +1,13 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -150,8 +156,19 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           skip: page.messages.length,
           clearError: true,
         );
+        _publishCount(page.total);
       },
     );
+  }
+
+  void _publishCount(int count) {
+    ref.read(prayerRequestCountProvider(eventId).notifier).state = count;
+  }
+
+  void _shiftCount(int delta) {
+    final current = ref.read(prayerRequestCountProvider(eventId));
+    if (current == null) return;
+    _publishCount(_clampCount(current + delta));
   }
 
   Future<void> loadMore() async {
@@ -224,11 +241,15 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   /// Posts a prayer request. The created row is inserted directly; the
   /// socket echo dedupes against it by id.
-  Future<Either<Failure, ChatMessageDTO>> send(String body) async {
+  Future<Either<Failure, ChatMessageDTO>> send(
+    String body, {
+    required String intention,
+  }) async {
     final result = await _repository.sendEventMessage(
       eventId,
       body: body,
       messageType: ChatMessageDTO.typePrayer,
+      intention: intention,
     );
     if (!mounted) return result;
     result.fold((_) {}, appendLive);
@@ -246,6 +267,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       skip: state.skip + 1,
       hasLoaded: true,
     );
+    _shiftCount(1);
   }
 
   void applyDeletion(String messageId) {
@@ -255,6 +277,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           state.requests.where((request) => request.id != messageId).toList(),
       skip: state.skip > 0 ? state.skip - 1 : 0,
     );
+    _shiftCount(-1);
   }
 
   /// A `prayers_updated` broadcast. It carries no viewer-specific state, so
@@ -283,8 +306,12 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     state = state.copyWith(roomStatus: PrayerRoomStatus.closed);
   }
 
-  /// Prays or takes a prayer back, optimistically.
-  Future<void> togglePrayer(String messageId) async {
+  /// Prays or takes a prayer back, optimistically. [viewer] joins or leaves
+  /// the avatar stack so the card matches the count straight away.
+  Future<void> togglePrayer(
+    String messageId, {
+    ChatPrayerUserDTO? viewer,
+  }) async {
     final roomId = state.roomId;
     if (roomId == null || _toggling.contains(messageId)) return;
     final current = _find(messageId);
@@ -292,12 +319,18 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
     final wasPrayed = current.prayedByMe;
     final delta = wasPrayed ? -1 : 1;
+    final previousStack = current.recentPrayers;
     _toggling.add(messageId);
     _update(
       messageId,
       (request) => request.copyWith(
         prayedByMe: !wasPrayed,
         prayerCount: _clampCount(request.prayerCount + delta),
+        recentPrayers: _stackWithViewer(
+          request.recentPrayers,
+          viewer,
+          praying: !wasPrayed,
+        ),
       ),
     );
 
@@ -316,6 +349,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         (request) => request.copyWith(
           prayedByMe: wasPrayed,
           prayerCount: _clampCount(request.prayerCount - delta),
+          recentPrayers: previousStack,
         ),
       ),
       (summaries) {
@@ -328,14 +362,54 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
             ),
           );
         }
+        if (wasPrayed) unawaited(_refillStack(messageId));
       },
     );
+  }
+
+  /// Leaving the stack can expose a gap: with more supporters than the
+  /// stack holds, the one who was pushed out is unknown here. Re-read the
+  /// newest few from the roster so the avatars match the count again.
+  Future<void> _refillStack(String messageId) async {
+    final current = _find(messageId);
+    if (current == null) return;
+    final wanted = math.min(_stackSize, current.prayerCount);
+    if (current.recentPrayers.length >= wanted) return;
+
+    final result = await _repository.listPrayers(
+      messageId,
+      skip: 0,
+      limit: _stackSize,
+    );
+    if (!mounted) return;
+    result.fold((_) {}, (page) {
+      _update(
+        messageId,
+        (request) => request.copyWith(
+          recentPrayers: page.prayers.take(_stackSize).toList(),
+        ),
+      );
+    });
   }
 
   static bool _isLive(ChatMessageDTO message) =>
       message.isPrayerRequest && message.deletedAt == null;
 
   static int _clampCount(int value) => value < 0 ? 0 : value;
+
+  /// The server keeps `recent_prayers` to three; mirror that here.
+  static const int _stackSize = 3;
+
+  static List<ChatPrayerUserDTO> _stackWithViewer(
+    List<ChatPrayerUserDTO> stack,
+    ChatPrayerUserDTO? viewer, {
+    required bool praying,
+  }) {
+    if (viewer == null || viewer.userId.isEmpty) return stack;
+    final others = stack.where((user) => user.userId != viewer.userId);
+    if (!praying) return others.toList();
+    return [viewer, ...others].take(_stackSize).toList();
+  }
 
   ChatMessageDTO? _find(String messageId) {
     for (final request in state.requests) {
@@ -366,4 +440,168 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 final prayerRequestsProvider = StateNotifierProvider.autoDispose
     .family<PrayerRequestsNotifier, PrayerRequestsState, String>(
       (ref, eventId) => PrayerRequestsNotifier(ref: ref, eventId: eventId),
+    );
+
+/// The intention picker's choices, in display order.
+final prayerIntentionsProvider =
+    FutureProvider.autoDispose<List<ChatPrayerIntentionDTO>>((ref) async {
+      final result = await ref.read(groupChatRepositoryProvider).listIntentions();
+      return result.fold((failure) => throw failure, (intentions) => intentions);
+    });
+
+class PrayerSupportersState extends Equatable {
+  /// Newest first.
+  final List<ChatPrayerUserDTO> supporters;
+  final int total;
+
+  /// Server offset of the next page. Kept apart from [supporters] length:
+  /// a newcomer shifts the roster, so a page can repeat someone already
+  /// shown, and paging by the deduplicated length would re-request it.
+  final int skip;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasLoaded;
+  final bool hasMore;
+  final String? error;
+
+  const PrayerSupportersState({
+    this.supporters = const [],
+    this.total = 0,
+    this.skip = 0,
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasLoaded = false,
+    this.hasMore = true,
+    this.error,
+  });
+
+  PrayerSupportersState copyWith({
+    List<ChatPrayerUserDTO>? supporters,
+    int? total,
+    int? skip,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasLoaded,
+    bool? hasMore,
+    String? error,
+    bool clearError = false,
+  }) {
+    return PrayerSupportersState(
+      supporters: supporters ?? this.supporters,
+      total: total ?? this.total,
+      skip: skip ?? this.skip,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
+      hasMore: hasMore ?? this.hasMore,
+      error: clearError ? null : error ?? this.error,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    supporters,
+    total,
+    skip,
+    isLoading,
+    isLoadingMore,
+    hasLoaded,
+    hasMore,
+    error,
+  ];
+}
+
+/// Everyone praying for one request, paged from the who-prayed endpoint.
+class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
+  PrayerSupportersNotifier({required this.ref, required this.messageId})
+    : super(const PrayerSupportersState()) {
+    load();
+  }
+
+  final Ref ref;
+  final String messageId;
+  static const int _limit = 20;
+
+  GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
+
+  Future<void> load() async {
+    if (state.isLoading) return;
+    state = state.copyWith(isLoading: true, clearError: true);
+    final result = await _repository.listPrayers(
+      messageId,
+      skip: 0,
+      limit: _limit,
+    );
+    if (!mounted) return;
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          hasLoaded: true,
+          error: failure.message,
+        );
+      },
+      (page) => state = _merged(const [], 0, page, isLoading: false),
+    );
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    state = state.copyWith(isLoadingMore: true, clearError: true);
+    final skip = state.skip;
+    final result = await _repository.listPrayers(
+      messageId,
+      skip: skip,
+      limit: _limit,
+    );
+    if (!mounted) return;
+    result.fold(
+      (failure) {
+        state = state.copyWith(isLoadingMore: false, error: failure.message);
+      },
+      (page) =>
+          state = _merged(
+            state.supporters,
+            skip,
+            page,
+            isLoadingMore: false,
+          ),
+    );
+  }
+
+  PrayerSupportersState _merged(
+    List<ChatPrayerUserDTO> existing,
+    int skip,
+    ChatPrayersPage page, {
+    bool? isLoading,
+    bool? isLoadingMore,
+  }) {
+    final known = existing.map((user) => user.userId).toSet();
+    final fresh = page.prayers.where((user) => !known.contains(user.userId));
+    final supporters = [...existing, ...fresh];
+    final nextSkip = skip + page.prayers.length;
+    return state.copyWith(
+      supporters: supporters,
+      total: page.total,
+      skip: nextSkip,
+      isLoading: isLoading,
+      isLoadingMore: isLoadingMore,
+      hasLoaded: true,
+      hasMore: page.prayers.isNotEmpty && nextSkip < page.total,
+      clearError: true,
+    );
+  }
+}
+
+/// Live prayer-request count per event, kept by [PrayerRequestsNotifier] so
+/// the chip on the event screen moves with the sheet instead of waiting for
+/// the next event fetch. Null until the sheet has loaded once.
+final prayerRequestCountProvider = StateProvider.family<int?, String>(
+  (ref, eventId) => null,
+);
+
+final prayerSupportersProvider = StateNotifierProvider.autoDispose
+    .family<PrayerSupportersNotifier, PrayerSupportersState, String>(
+      (ref, messageId) =>
+          PrayerSupportersNotifier(ref: ref, messageId: messageId),
     );
