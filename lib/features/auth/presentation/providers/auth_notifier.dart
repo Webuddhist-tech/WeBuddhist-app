@@ -260,40 +260,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Happy path: we have a fresh token.
     if (credentials != null && credentials!.idToken.isNotEmpty) {
       final epoch = _authEpoch;
+      bool? onboardingStatus;
 
-      // Store currentUserId before updating auth state so feature code can
-      // resolve the active account when the router refreshes.
-      final userId = _extractUserIdFromToken(credentials!.idToken);
-      if (userId != null) {
-        await ref
-            .read(localStorageServiceProvider)
-            .set(StorageKeys.currentUserId, userId);
-        if (!_isAuthEpochCurrent(epoch)) return;
-        _logger.debug('Restored currentUserId');
-        await _identifyAuthenticatedUser(
-          userId: userId,
-          isGuest: false,
-          epoch: epoch,
+      // The token is valid, so the steps below are best-effort: a failure in
+      // one (storage, analytics, profile) must not sign the user out.
+      try {
+        // Store currentUserId before updating auth state so feature code can
+        // resolve the active account when the router refreshes.
+        final userId = _extractUserIdFromToken(credentials!.idToken);
+        if (userId != null) {
+          await ref
+              .read(localStorageServiceProvider)
+              .set(StorageKeys.currentUserId, userId);
+          if (!_isAuthEpochCurrent(epoch)) return;
+          _logger.debug('Restored currentUserId');
+          await _identifyAuthenticatedUser(
+            userId: userId,
+            isGuest: false,
+            epoch: epoch,
+          );
+          if (!_isAuthEpochCurrent(epoch)) return;
+        }
+
+        // Prefetch onboarding status while the token is fresh. Emitting auth
+        // state once with the complete picture means the route guard's
+        // redirect fires synchronously — no second navigation or per-nav
+        // network call. This also populates userProvider (via
+        // _fetchOnboardingStatusSafe's caller chain), so no separate
+        // initializeUser() call is needed afterward.
+        // Budgeted: the guard fails open on null and the fetch keeps running.
+        onboardingStatus = await _fetchOnboardingStatusSafe().timeout(
+          _restoreStepBudget,
+          onTimeout: () => null,
         );
         if (!_isAuthEpochCurrent(epoch)) return;
+        await ref
+            .read(userProvider.notifier)
+            .initializeUser()
+            .timeout(_restoreStepBudget, onTimeout: () {});
+      } catch (e, st) {
+        _logger.error('Restore step failed — keeping the session', e, st);
       }
-
-      // Prefetch onboarding status while the token is fresh. Emitting auth
-      // state once with the complete picture means the route guard's
-      // redirect fires synchronously — no second navigation or per-nav
-      // network call. This also populates userProvider (via
-      // _fetchOnboardingStatusSafe's caller chain), so no separate
-      // initializeUser() call is needed afterward.
-      // Budgeted: the guard fails open on null and the fetch keeps running.
-      final onboardingStatus = await _fetchOnboardingStatusSafe().timeout(
-        _restoreStepBudget,
-        onTimeout: () => null,
-      );
-      if (!_isAuthEpochCurrent(epoch)) return;
-      await ref.read(userProvider.notifier).initializeUser().timeout(
-        _restoreStepBudget,
-        onTimeout: () {},
-      );
       _applyAuthenticatedLoginState(
         epoch: epoch,
         onboardingStatus: onboardingStatus,

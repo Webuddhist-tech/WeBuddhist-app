@@ -168,6 +168,32 @@ void main() {
     expect(state.isLoading, isFalse);
   });
 
+  test('a failed profile load keeps a restored session signed in', () async {
+    when(hasValid(any)).thenAnswer((_) async => const Right(true));
+    when(getCreds(any)).thenAnswer(
+      (_) async => Right(
+        AuthCredentials(
+          accessToken: 'access',
+          idToken: 'a.b.c',
+          tokenType: 'Bearer',
+          expiresIn: 3600,
+          obtainedAt: DateTime.now(),
+        ),
+      ),
+    );
+    when(
+      onboardingRepo.isOnboardingCompleted(),
+    ).thenAnswer((_) async => const Right(true));
+    when(getUser(any)).thenThrow(StateError('profile blew up'));
+
+    final state = await restore();
+
+    expect(state.isLoading, isFalse);
+    expect(state.isLoggedIn, isTrue);
+    expect(state.isGuest, isFalse);
+    expect(state.hasCompletedOnboarding, isTrue);
+  });
+
   test('slow onboarding and profile fetches do not hold the splash', () async {
     when(hasValid(any)).thenAnswer((_) async => const Right(true));
     when(getCreds(any)).thenAnswer(
