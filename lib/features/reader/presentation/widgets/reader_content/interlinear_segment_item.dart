@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart'
     show liveSegmentHighlightColor;
@@ -47,6 +48,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
     required this.segment,
     required this.depth,
     required this.primaryLanguage,
+    required this.scope,
     this.showPrimary = true,
     required this.secondarySlot,
     this.secondaryContentBySegmentNumber,
@@ -62,6 +64,9 @@ class InterlinearSegmentItem extends ConsumerWidget {
   final Segment segment;
   final int depth;
   final String primaryLanguage;
+
+  /// The reader this line is shown in; decides which script pick applies.
+  final ReaderSettingsScope scope;
 
   /// False for "translation only": the primary line is left out and the
   /// translation is drawn as the main text rather than in the muted tone.
@@ -93,6 +98,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
       ref,
       content: segment.content,
       language: primaryLanguage,
+      scope: scope,
     );
     final secondary = _resolveSecondaryContent(context);
     final layers = interlinearLayers(

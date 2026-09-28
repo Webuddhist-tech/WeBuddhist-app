@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_members_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_posts_tab.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_removed_notice_card.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
@@ -426,17 +427,25 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     final postsState = ref.watch(groupPostsProvider(profile.id));
     final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
     final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
-    final canPost = permissionAsync.valueOrNull ?? false;
+    final followState = _privateGroupFollowState(profile);
+    final hasCreatePermission = permissionAsync.valueOrNull ?? false;
+    final canPost = canPublishGroupPosts(
+      canCreateContent: hasCreatePermission,
+      followState: followState,
+    );
     // Keep the posts tab when loading failed so its retry action stays
     // reachable, and for anyone allowed to publish so the Post button shows.
     final hasPosts =
         postsState.posts.isNotEmpty ||
         (postsState.hasLoaded && postsState.error != null);
+    // Posting needs both the permission and membership, so hold the tabs until
+    // both have settled, whichever finishes first.
     final isPostsLoading =
         !postsState.hasLoaded ||
         (permissionAsync.isLoading &&
             !permissionAsync.hasValue &&
-            !permissionAsync.hasError);
+            !permissionAsync.hasError) ||
+        (hasCreatePermission && isPrivateGroupMembershipLoading(followState));
 
     // Wait for every section before laying out the tabs, otherwise tabs would
     // pop in and out as each request settles.
@@ -503,7 +512,13 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                     controller: controller,
                     children: [
                       for (final tab in _visibleTabs)
-                        _buildTabContent(tab, profile, isDark, lineHeight),
+                        _buildTabContent(
+                          tab,
+                          profile,
+                          isDark,
+                          lineHeight,
+                          canPost: canPost,
+                        ),
                     ],
                   ),
         ),
@@ -517,6 +532,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
+    final removal = watchActiveGroupRemovalNotice(ref, profile.id);
     final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
 
     return RefreshIndicator(
@@ -544,14 +560,28 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
             ),
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: _buildRestrictedMessage(
-                  isDark,
-                  lineHeight,
-                  profile.myJoinRequestStatus,
-                ),
-              ),
+              child:
+                  removal != null
+                      ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: GroupRemovedNoticeCard(
+                            groupTitle: profile.title,
+                            expiresAt: removal.expiresAt,
+                            isDark: isDark,
+                            lineHeight: lineHeight,
+                          ),
+                        ),
+                      )
+                      : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: _buildRestrictedMessage(
+                          isDark,
+                          lineHeight,
+                          profile.myJoinRequestStatus,
+                        ),
+                      ),
             ),
           ],
         ),
@@ -698,8 +728,9 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     _GroupProfileTab tab,
     GroupProfile profile,
     bool isDark,
-    double? lineHeight,
-  ) {
+    double? lineHeight, {
+    required bool canPost,
+  }) {
     final pageStorageKey = '${profile.id}-${tab.name}';
 
     return switch (tab) {
@@ -708,11 +739,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         isDark: isDark,
         lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
-        canPost: ref.watch(
-          groupPostPermissionProvider(
-            profile.id,
-          ).select((async) => async.valueOrNull ?? false),
-        ),
+        canPost: canPost,
         onCreatePost: () => _onCreatePost(profile),
         onEditPost: (post) => _onEditPost(profile, post),
       ),
@@ -737,12 +764,26 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     };
   }
 
+  bool _canPublishPosts(GroupProfile profile) {
+    final canCreateContent =
+        ref.read(groupPostPermissionProvider(profile.id)).valueOrNull ?? false;
+    return canPublishGroupPosts(
+      canCreateContent: canCreateContent,
+      followState: ref.read(
+        groupFollowProvider(
+          GroupFollowKey(groupId: profile.id, groupType: profile.groupType),
+        ),
+      ),
+    );
+  }
+
   Future<void> _onCreatePost(GroupProfile profile) async {
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
       LoginDrawer.show(context, ref);
       return;
     }
+    if (!_canPublishPosts(profile)) return;
 
     final result = await GroupPostComposerScreen.show(context, profile);
     if (result == null || !mounted) return;
@@ -754,6 +795,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
   }
 
   Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {
+    if (!_canPublishPosts(profile)) return;
+
     final result = await GroupPostComposerScreen.show(
       context,
       profile,
@@ -1430,7 +1473,13 @@ class _GroupFollowButton extends ConsumerWidget {
       return;
     }
 
-    final sent = await GroupJoinRequestDrawer.show(context, profile);
+    // The profile renders its own removal card, so the shared ban dialog would
+    // only repeat it.
+    final sent = await GroupJoinRequestDrawer.show(
+      context,
+      profile,
+      showRemovalDialog: false,
+    );
     if (sent == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1495,7 +1544,10 @@ class _GroupFollowButton extends ConsumerWidget {
       return _buildRequestSentButton(context);
     }
 
-    return _buildRequestToJoinButton(context, ref, isLoading);
+    final isRemoved =
+        watchActiveGroupRemovalNotice(ref, profile.id) != null;
+
+    return _buildRequestToJoinButton(context, ref, isLoading, isRemoved);
   }
 
   Widget _buildPublicCommunityActions(BuildContext context, WidgetRef ref) {
@@ -1729,6 +1781,7 @@ class _GroupFollowButton extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     bool isLoading,
+    bool isRemoved,
   ) {
     const fontSize = 16.0;
     final locale = Localizations.localeOf(context);
@@ -1741,7 +1794,9 @@ class _GroupFollowButton extends ConsumerWidget {
         width: double.infinity,
         child: ElevatedButton(
           onPressed:
-              isLoading ? null : () => _onRequestToJoinPressed(context, ref),
+              isLoading || isRemoved
+                  ? null
+                  : () => _onRequestToJoinPressed(context, ref),
           style: ElevatedButton.styleFrom(
             minimumSize: Size(double.infinity, buttonHeight),
             padding: EdgeInsets.symmetric(
@@ -1752,6 +1807,10 @@ class _GroupFollowButton extends ConsumerWidget {
                 isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
             foregroundColor:
                 isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
+            disabledBackgroundColor:
+                isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+            disabledForegroundColor:
+                isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),

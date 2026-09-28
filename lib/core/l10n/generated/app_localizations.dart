@@ -1831,7 +1831,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_event_participants_attending.
   ///
   /// In en, this message translates to:
-  /// **'{count} attending'**
+  /// **'{count} participants'**
   String connect_event_participants_attending(int count);
 
   /// No description provided for @connect_event_participants_empty.
@@ -1839,6 +1839,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No participants yet'**
   String get connect_event_participants_empty;
+
+  /// No description provided for @connect_event_organizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer'**
+  String get connect_event_organizer;
 
   /// No description provided for @connect_event_tab_videos.
   ///
@@ -3658,6 +3664,144 @@ abstract class AppLocalizations {
   /// **'No members yet'**
   String get group_members_empty;
 
+  /// No description provided for @group_member_admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get group_member_admin;
+
+  /// No description provided for @group_remove_member.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}'**
+  String group_remove_member(String name);
+
+  /// No description provided for @group_remove_member_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from group?'**
+  String get group_remove_member_title;
+
+  /// No description provided for @group_remove_member_message.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} will be removed from group and blocked from joining until the ban ends'**
+  String group_remove_member_message(String name);
+
+  /// No description provided for @group_remove_member_blocked_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked for :'**
+  String get group_remove_member_blocked_for;
+
+  /// No description provided for @group_remove_member_duration_day.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day'**
+  String get group_remove_member_duration_day;
+
+  /// No description provided for @group_remove_member_duration_days.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String group_remove_member_duration_days(int count);
+
+  /// No description provided for @group_remove_member_duration_year.
+  ///
+  /// In en, this message translates to:
+  /// **'1 year'**
+  String get group_remove_member_duration_year;
+
+  /// No description provided for @group_remove_member_reason_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get group_remove_member_reason_label;
+
+  /// No description provided for @group_remove_member_reason_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else...'**
+  String get group_remove_member_reason_hint;
+
+  /// No description provided for @group_remove_member_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get group_remove_member_action;
+
+  /// No description provided for @group_remove_member_success.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was removed from the group.'**
+  String group_remove_member_success(String name);
+
+  /// No description provided for @group_remove_member_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t remove this member. Try again.'**
+  String get group_remove_member_error;
+
+  /// No description provided for @group_join_banned_until.
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from this group and cannot rejoin until {date}'**
+  String group_join_banned_until(String date);
+
+  /// No description provided for @group_join_banned.
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from this group and cannot rejoin until the ban ends.'**
+  String get group_join_banned;
+
+  /// No description provided for @group_removed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been removed from this group'**
+  String get group_removed_title;
+
+  /// No description provided for @group_removed_message.
+  ///
+  /// In en, this message translates to:
+  /// **'An admin from {group} removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for {duration}.'**
+  String group_removed_message(String group, String duration);
+
+  /// No description provided for @group_removed_message_no_date.
+  ///
+  /// In en, this message translates to:
+  /// **'An admin from {group} removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.'**
+  String group_removed_message_no_date(String group);
+
+  /// No description provided for @group_removed_rejoin_label.
+  ///
+  /// In en, this message translates to:
+  /// **'You can request to rejoin this group on'**
+  String get group_removed_rejoin_label;
+
+  /// No description provided for @group_removed_rejoin_value.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {remaining}'**
+  String group_removed_rejoin_value(String date, String remaining);
+
+  /// No description provided for @group_removed_day_left.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day left'**
+  String get group_removed_day_left;
+
+  /// No description provided for @group_removed_days_left.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days left'**
+  String group_removed_days_left(int count);
+
+  /// No description provided for @group_removed_last_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Less than a day left'**
+  String get group_removed_last_day;
+
   /// No description provided for @group_followers_empty.
   ///
   /// In en, this message translates to:
@@ -4964,6 +5108,12 @@ abstract class AppLocalizations {
   /// **'Prayer requests'**
   String get event_prayer_requests;
 
+  /// No description provided for @event_prayer_request_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 request} other{{count} requests}}'**
+  String event_prayer_request_count(int count);
+
   /// No description provided for @event_prayer_empty_title.
   ///
   /// In en, this message translates to:
@@ -4985,7 +5135,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'How can we pray for you today'**
+  /// **'How can we pray for you today?'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_load_failed.
@@ -5011,6 +5161,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Praying'**
   String get event_prayer_praying;
+
+  /// No description provided for @event_prayer_new_request.
+  ///
+  /// In en, this message translates to:
+  /// **'New prayer request'**
+  String get event_prayer_new_request;
+
+  /// No description provided for @event_prayer_choose_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an intention'**
+  String get event_prayer_choose_intention;
+
+  /// No description provided for @event_prayer_intentions_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Intentions couldn\'t be loaded.'**
+  String get event_prayer_intentions_failed;
+
+  /// No description provided for @event_prayer_request_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Request prayer'**
+  String get event_prayer_request_button;
+
+  /// No description provided for @event_prayer_you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get event_prayer_you;
+
+  /// No description provided for @event_prayer_waiting_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the first prayer...'**
+  String get event_prayer_waiting_first;
+
+  /// No description provided for @event_prayer_more_praying.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more are praying'**
+  String event_prayer_more_praying(int count);
+
+  /// No description provided for @event_prayer_people_praying.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person is praying} other{{count} people are praying}}'**
+  String event_prayer_people_praying(int count);
+
+  /// No description provided for @event_prayer_praying_for_you.
+  ///
+  /// In en, this message translates to:
+  /// **'Praying for you'**
+  String get event_prayer_praying_for_you;
+
+  /// No description provided for @event_prayer_praying_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Praying for {name}'**
+  String event_prayer_praying_for(String name);
+
+  /// No description provided for @event_prayer_your_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request'**
+  String get event_prayer_your_request;
+
+  /// No description provided for @event_prayer_supporters_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load who is praying.'**
+  String get event_prayer_supporters_failed;
+
+  /// No description provided for @event_prayer_no_supporters.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is praying yet.'**
+  String get event_prayer_no_supporters;
 
   /// No description provided for @recitation_live_sync.
   ///

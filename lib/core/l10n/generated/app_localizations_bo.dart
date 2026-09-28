@@ -990,6 +990,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_event_participants_empty => 'ད་དུང་ཞུགས་མཁན་མེད།';
 
   @override
+  String get connect_event_organizer => 'Organizer';
+
+  @override
   String get connect_event_tab_videos => 'Videos';
 
   @override
@@ -1977,28 +1980,28 @@ class AppLocalizationsBo extends AppLocalizations {
       'རེ་ཞུ་བཏང་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'ཞུགས་པའི་རེ་ཞུ།';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => 'དང་ལེན།';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => 'དགག་པ།';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => 'སྒུག་བཞིན་པའི་རེ་ཞུ་མེད།';
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'ཞུགས་པའི་རེ་ཞུ་སྟོན་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'རེ་ཞུ་འདི་དང་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'རེ་ཞུ་འདི་དགག་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_members_only_title => 'ཚོགས་མི་ཁོ་ན།';
@@ -2024,6 +2027,96 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get group_members_empty => 'ཚོགས་མི་མེད།';
+
+  @override
+  String get group_member_admin => 'དོ་དམ་པ།';
+
+  @override
+  String group_remove_member(String name) {
+    return '$name ཕྱིར་འབུད།';
+  }
+
+  @override
+  String get group_remove_member_title => 'ཚོགས་པ་ནས་ཕྱིར་འབུད་དམ།';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name ཚོགས་པ་ནས་ཕྱིར་འབུད་རྒྱུ་ཡིན་པ་དང་། བཀག་སྡོམ་མ་ཚར་བར་ཞུགས་མི་ཆོག';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'བཀག་ཡུན།';
+
+  @override
+  String get group_remove_member_duration_day => 'ཉིན་ 1';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return 'ཉིན་ $count';
+  }
+
+  @override
+  String get group_remove_member_duration_year => 'ལོ་ 1';
+
+  @override
+  String get group_remove_member_reason_label => 'རྒྱུ་མཚན། (འདེམས་རུང་།)';
+
+  @override
+  String get group_remove_member_reason_hint => 'གཞན་དག...';
+
+  @override
+  String get group_remove_member_action => 'ཕྱིར་འབུད།';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name ཚོགས་པ་ནས་ཕྱིར་བཏོན་ཟིན།';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'ཚོགས་མི་འདི་ཕྱིར་འབུད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་ $date བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
+  }
+
+  @override
+  String get group_join_banned =>
+      'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་བཀག་སྡོམ་མ་ཚར་བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག';
+
+  @override
+  String get group_removed_title => 'ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན།';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། $duration རིང་ལ་ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'ཁྱེད་རང་གིས་ཚེས་འདི་ལ་ཚོགས་པ་འདིར་ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུ་བྱེད་ཆོག';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => 'ཉིན་ 1 ལྷག་ཡོད།';
+
+  @override
+  String group_removed_days_left(int count) {
+    return 'ཉིན་ $count ལྷག་ཡོད།';
+  }
+
+  @override
+  String get group_removed_last_day => 'ཉིན་གཅིག་ལས་ཉུང་བ་ལྷག་ཡོད།';
 
   @override
   String get group_followers_empty => 'རྗེས་འབྲང་པ་མེད།';
@@ -2826,6 +2919,17 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_requests => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།';
 
   @override
+  String event_prayer_request_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count requests',
+      one: '1 request',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get event_prayer_empty_title =>
       'ད་བར་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུས་མི་འདུག';
 
@@ -2850,6 +2954,58 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན།';
+
+  @override
+  String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_choose_intention => 'Choose an intention';
+
+  @override
+  String get event_prayer_intentions_failed =>
+      'Intentions couldn\'t be loaded.';
+
+  @override
+  String get event_prayer_request_button => 'Request prayer';
+
+  @override
+  String get event_prayer_you => 'You';
+
+  @override
+  String get event_prayer_waiting_first => 'Waiting for the first prayer...';
+
+  @override
+  String event_prayer_more_praying(int count) {
+    return '+$count more are praying';
+  }
+
+  @override
+  String event_prayer_people_praying(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people are praying',
+      one: '1 person is praying',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get event_prayer_praying_for_you => 'Praying for you';
+
+  @override
+  String event_prayer_praying_for(String name) {
+    return 'Praying for $name';
+  }
+
+  @override
+  String get event_prayer_your_request => 'Your request';
+
+  @override
+  String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
+
+  @override
+  String get event_prayer_no_supporters => 'No one is praying yet.';
 
   @override
   String get recitation_live_sync => 'Sync';

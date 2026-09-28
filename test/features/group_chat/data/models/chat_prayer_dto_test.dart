@@ -16,6 +16,13 @@ void main() {
         'body': 'Please pray for my mother',
         'created_at': '2026-09-11T10:04:00+00:00',
         'message_type': 'PRAYER',
+        'intention': {
+          'slug': 'healing',
+          'label': 'Healing',
+          'color': '#4A78C2',
+          'description': 'For illness, surgery and recovery.',
+          'display_order': 0,
+        },
         'prayer_count': 12,
         'prayed_by_me': true,
         'recent_prayers': [
@@ -24,6 +31,8 @@ void main() {
       });
 
       expect(message.isPrayerRequest, isTrue);
+      expect(message.intention?.slug, 'healing');
+      expect(message.intention?.color, '#4A78C2');
       expect(message.prayerCount, 12);
       expect(message.prayedByMe, isTrue);
       expect(message.recentPrayers, [
@@ -53,6 +62,20 @@ void main() {
       expect(json.containsKey('prayer_count'), isFalse);
       expect(json.containsKey('prayed_by_me'), isFalse);
       expect(json.containsKey('recent_prayers'), isFalse);
+      expect(json.containsKey('intention'), isFalse);
+    });
+
+    test('a who-prayed row keeps email and time', () {
+      final user = ChatPrayerUserDTO.fromJson({
+        'user_id': 'u2',
+        'email': 'pema@example.com',
+        'name': 'Pema',
+        'avatar_url': 'https://a/p.png',
+        'created_at': '2026-09-11T10:04:00+00:00',
+      });
+      expect(user.email, 'pema@example.com');
+      expect(user.createdAt, '2026-09-11T10:04:00+00:00');
+      expect(ChatPrayerUserDTO.fromJson(user.toJson()), user);
     });
 
     test('copyWith keeps message_type and rewrites prayer state', () {

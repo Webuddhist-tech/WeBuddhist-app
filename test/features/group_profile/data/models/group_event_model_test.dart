@@ -120,4 +120,25 @@ void main() {
       );
     });
   });
+
+  group('GroupEventModel prayer requests', () {
+    test('reads the live prayer request count', () {
+      final event =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'chat_enabled': true,
+            'prayer_request_count': 12,
+          }).toEntity();
+
+      expect(event.chatEnabled, isTrue);
+      expect(event.prayerRequestCount, 12);
+    });
+
+    test('defaults to zero when the field is absent', () {
+      final event =
+          GroupEventModel.fromJson({'id': 'e1', 'group_id': 'g1'}).toEntity();
+      expect(event.prayerRequestCount, 0);
+    });
+  });
 }

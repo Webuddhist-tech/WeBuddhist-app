@@ -1922,6 +1922,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_organizer => TolgeeBridge.get(
+    localeName,
+    'connect_event_organizer',
+    () => _fallback.connect_event_organizer,
+  );
+
+  @override
   String get connect_event_tab_videos => TolgeeBridge.get(
     localeName,
     'connect_event_tab_videos',
@@ -3940,6 +3947,178 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_member_admin => TolgeeBridge.get(
+    localeName,
+    'group_member_admin',
+    () => _fallback.group_member_admin,
+  );
+
+  @override
+  String group_remove_member(String name) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member',
+    <String, Object>{'name': name},
+    () => _fallback.group_remove_member(name),
+  );
+
+  @override
+  String get group_remove_member_title => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_title',
+    () => _fallback.group_remove_member_title,
+  );
+
+  @override
+  String group_remove_member_message(String name) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member_message',
+    <String, Object>{'name': name},
+    () => _fallback.group_remove_member_message(name),
+  );
+
+  @override
+  String get group_remove_member_blocked_for => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_blocked_for',
+    () => _fallback.group_remove_member_blocked_for,
+  );
+
+  @override
+  String get group_remove_member_duration_day => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_duration_day',
+    () => _fallback.group_remove_member_duration_day,
+  );
+
+  @override
+  String group_remove_member_duration_days(int count) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member_duration_days',
+    <String, Object>{'count': count},
+    () => _fallback.group_remove_member_duration_days(count),
+  );
+
+  @override
+  String get group_remove_member_duration_year => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_duration_year',
+    () => _fallback.group_remove_member_duration_year,
+  );
+
+  @override
+  String get group_remove_member_reason_label => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_reason_label',
+    () => _fallback.group_remove_member_reason_label,
+  );
+
+  @override
+  String get group_remove_member_reason_hint => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_reason_hint',
+    () => _fallback.group_remove_member_reason_hint,
+  );
+
+  @override
+  String get group_remove_member_action => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_action',
+    () => _fallback.group_remove_member_action,
+  );
+
+  @override
+  String group_remove_member_success(String name) => TolgeeBridge.format(
+    localeName,
+    'group_remove_member_success',
+    <String, Object>{'name': name},
+    () => _fallback.group_remove_member_success(name),
+  );
+
+  @override
+  String get group_remove_member_error => TolgeeBridge.get(
+    localeName,
+    'group_remove_member_error',
+    () => _fallback.group_remove_member_error,
+  );
+
+  @override
+  String group_join_banned_until(String date) => TolgeeBridge.format(
+    localeName,
+    'group_join_banned_until',
+    <String, Object>{'date': date},
+    () => _fallback.group_join_banned_until(date),
+  );
+
+  @override
+  String get group_join_banned => TolgeeBridge.get(
+    localeName,
+    'group_join_banned',
+    () => _fallback.group_join_banned,
+  );
+
+  @override
+  String get group_removed_title => TolgeeBridge.get(
+    localeName,
+    'group_removed_title',
+    () => _fallback.group_removed_title,
+  );
+
+  @override
+  String group_removed_message(String group, String duration) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_message',
+        <String, Object>{'group': group, 'duration': duration},
+        () => _fallback.group_removed_message(group, duration),
+      );
+
+  @override
+  String group_removed_message_no_date(String group) => TolgeeBridge.format(
+    localeName,
+    'group_removed_message_no_date',
+    <String, Object>{'group': group},
+    () => _fallback.group_removed_message_no_date(group),
+  );
+
+  @override
+  String get group_removed_rejoin_label => TolgeeBridge.get(
+    localeName,
+    'group_removed_rejoin_label',
+    () => _fallback.group_removed_rejoin_label,
+  );
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_rejoin_value',
+        <String, Object>{'date': date, 'remaining': remaining},
+        () => _fallback.group_removed_rejoin_value(date, remaining),
+      );
+
+  @override
+  String get group_removed_day_left => TolgeeBridge.get(
+    localeName,
+    'group_removed_day_left',
+    () => _fallback.group_removed_day_left,
+  );
+
+  @override
+  String group_removed_days_left(int count) => TolgeeBridge.format(
+    localeName,
+    'group_removed_days_left',
+    <String, Object>{'count': count},
+    () => _fallback.group_removed_days_left(count),
+  );
+
+  @override
+  String get group_removed_last_day => TolgeeBridge.get(
+    localeName,
+    'group_removed_last_day',
+    () => _fallback.group_removed_last_day,
+  );
+
+  @override
   String get group_followers_empty => TolgeeBridge.get(
     localeName,
     'group_followers_empty',
@@ -5498,6 +5677,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String event_prayer_request_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_request_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_request_count(count),
+  );
+
+  @override
   String get event_prayer_empty_title => TolgeeBridge.get(
     localeName,
     'event_prayer_empty_title',
@@ -5551,6 +5738,100 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_prayer_praying',
     () => _fallback.event_prayer_praying,
+  );
+
+  @override
+  String get event_prayer_new_request => TolgeeBridge.get(
+    localeName,
+    'event_prayer_new_request',
+    () => _fallback.event_prayer_new_request,
+  );
+
+  @override
+  String get event_prayer_choose_intention => TolgeeBridge.get(
+    localeName,
+    'event_prayer_choose_intention',
+    () => _fallback.event_prayer_choose_intention,
+  );
+
+  @override
+  String get event_prayer_intentions_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_intentions_failed',
+    () => _fallback.event_prayer_intentions_failed,
+  );
+
+  @override
+  String get event_prayer_request_button => TolgeeBridge.get(
+    localeName,
+    'event_prayer_request_button',
+    () => _fallback.event_prayer_request_button,
+  );
+
+  @override
+  String get event_prayer_you => TolgeeBridge.get(
+    localeName,
+    'event_prayer_you',
+    () => _fallback.event_prayer_you,
+  );
+
+  @override
+  String get event_prayer_waiting_first => TolgeeBridge.get(
+    localeName,
+    'event_prayer_waiting_first',
+    () => _fallback.event_prayer_waiting_first,
+  );
+
+  @override
+  String event_prayer_more_praying(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_more_praying',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_more_praying(count),
+  );
+
+  @override
+  String event_prayer_people_praying(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_people_praying',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_people_praying(count),
+  );
+
+  @override
+  String get event_prayer_praying_for_you => TolgeeBridge.get(
+    localeName,
+    'event_prayer_praying_for_you',
+    () => _fallback.event_prayer_praying_for_you,
+  );
+
+  @override
+  String event_prayer_praying_for(String name) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_praying_for',
+    <String, Object>{'name': name},
+    () => _fallback.event_prayer_praying_for(name),
+  );
+
+  @override
+  String get event_prayer_your_request => TolgeeBridge.get(
+    localeName,
+    'event_prayer_your_request',
+    () => _fallback.event_prayer_your_request,
+  );
+
+  @override
+  String get event_prayer_supporters_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_supporters_failed',
+    () => _fallback.event_prayer_supporters_failed,
+  );
+
+  @override
+  String get event_prayer_no_supporters => TolgeeBridge.get(
+    localeName,
+    'event_prayer_no_supporters',
+    () => _fallback.event_prayer_no_supporters,
   );
 
   @override

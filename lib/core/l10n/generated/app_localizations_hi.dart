@@ -986,6 +986,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_participants_empty => 'अभी तक कोई प्रतिभागी नहीं';
 
   @override
+  String get connect_event_organizer => 'Organizer';
+
+  @override
   String get connect_event_tab_videos => 'Videos';
 
   @override
@@ -1971,28 +1974,28 @@ class AppLocalizationsHi extends AppLocalizations {
       'अनुरोध भेजने में असमर्थ। कृपया पुनः प्रयास करें।';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'शामिल होने के अनुरोध';
 
   @override
-  String get group_join_requests_admit => 'Admit';
+  String get group_join_requests_admit => 'स्वीकार करें';
 
   @override
-  String get group_join_requests_deny => 'Deny';
+  String get group_join_requests_deny => 'अस्वीकार करें';
 
   @override
-  String get group_join_requests_empty => 'No pending requests';
+  String get group_join_requests_empty => 'कोई लंबित अनुरोध नहीं';
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'शामिल होने के अनुरोध लोड नहीं हो सके। कृपया पुनः प्रयास करें।';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'इस अनुरोध को स्वीकार नहीं किया जा सका। कृपया पुनः प्रयास करें।';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'इस अनुरोध को अस्वीकार नहीं किया जा सका। कृपया पुनः प्रयास करें।';
 
   @override
   String get group_members_only_title => 'केवल सदस्य';
@@ -2018,6 +2021,96 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_members_empty => 'अभी कोई सदस्य नहीं';
+
+  @override
+  String get group_member_admin => 'एडमिन';
+
+  @override
+  String group_remove_member(String name) {
+    return '$name को हटाएँ';
+  }
+
+  @override
+  String get group_remove_member_title => 'समूह से हटाएँ?';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name को समूह से हटा दिया जाएगा और प्रतिबंध समाप्त होने तक शामिल होने से रोका जाएगा';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'प्रतिबंध अवधि :';
+
+  @override
+  String get group_remove_member_duration_day => '1 दिन';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count दिन';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 वर्ष';
+
+  @override
+  String get group_remove_member_reason_label => 'कारण (वैकल्पिक)';
+
+  @override
+  String get group_remove_member_reason_hint => 'कुछ और...';
+
+  @override
+  String get group_remove_member_action => 'हटाएँ';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name को समूह से हटा दिया गया।';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'इस सदस्य को हटाया नहीं जा सका। फिर से प्रयास करें।';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'आपको इस समूह से हटा दिया गया था और आप $date तक फिर से शामिल नहीं हो सकते';
+  }
+
+  @override
+  String get group_join_banned =>
+      'आपको इस समूह से हटा दिया गया था और प्रतिबंध समाप्त होने तक आप फिर से शामिल नहीं हो सकते।';
+
+  @override
+  String get group_removed_title => 'आपको इस समूह से हटा दिया गया है';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return '$group के एक व्यवस्थापक ने आपको इस समूह से हटा दिया है। आप $duration तक इस समूह की पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और न ही फिर से शामिल होने का अनुरोध कर पाएँगे।';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return '$group के एक व्यवस्थापक ने आपको इस समूह से हटा दिया है। आप इस समूह की पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और न ही फिर से शामिल होने का अनुरोध कर पाएँगे।';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'आप इस दिन इस समूह में फिर से शामिल होने का अनुरोध कर सकते हैं';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 दिन शेष';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count दिन शेष';
+  }
+
+  @override
+  String get group_removed_last_day => 'एक दिन से कम शेष';
 
   @override
   String get group_followers_empty => 'अभी कोई अनुयायी नहीं';
@@ -2820,6 +2913,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_prayer_requests => 'प्रार्थना अनुरोध';
 
   @override
+  String event_prayer_request_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count requests',
+      one: '1 request',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get event_prayer_empty_title => 'अभी कोई प्रार्थना अनुरोध नहीं';
 
   @override
@@ -2844,6 +2948,58 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_prayer_praying => 'प्रार्थना कर रहे हैं';
+
+  @override
+  String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_choose_intention => 'Choose an intention';
+
+  @override
+  String get event_prayer_intentions_failed =>
+      'Intentions couldn\'t be loaded.';
+
+  @override
+  String get event_prayer_request_button => 'Request prayer';
+
+  @override
+  String get event_prayer_you => 'You';
+
+  @override
+  String get event_prayer_waiting_first => 'Waiting for the first prayer...';
+
+  @override
+  String event_prayer_more_praying(int count) {
+    return '+$count more are praying';
+  }
+
+  @override
+  String event_prayer_people_praying(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people are praying',
+      one: '1 person is praying',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get event_prayer_praying_for_you => 'Praying for you';
+
+  @override
+  String event_prayer_praying_for(String name) {
+    return 'Praying for $name';
+  }
+
+  @override
+  String get event_prayer_your_request => 'Your request';
+
+  @override
+  String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
+
+  @override
+  String get event_prayer_no_supporters => 'No one is praying yet.';
 
   @override
   String get recitation_live_sync => 'Sync';

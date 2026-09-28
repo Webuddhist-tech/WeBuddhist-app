@@ -360,7 +360,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
                   final eventId = state.pathParameters['eventId'] ?? '';
-                  return GroupEventDetailScreen(eventId: eventId);
+                  final openPrayerRequests =
+                      state.uri.queryParameters[AppRoutes.eventPrayersQuery] ==
+                      '1';
+                  return GroupEventDetailScreen(
+                    eventId: eventId,
+                    openPrayerRequests: openPrayerRequests,
+                  );
                 },
               ),
               GoRoute(

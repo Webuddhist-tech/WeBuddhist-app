@@ -15,8 +15,15 @@ void main() {
     expect(permission(role: 'admin').isGroupAdmin, isTrue);
   });
 
-  test('member and missing roles are not group admin', () {
+  test('OWNER role is a group admin', () {
+    expect(permission(role: 'OWNER').isGroupAdmin, isTrue);
+    expect(permission(role: ' owner ').isGroupAdmin, isTrue);
+  });
+
+  test('author, viewer and missing roles are not group admin', () {
     expect(permission().isGroupAdmin, isFalse);
+    expect(permission(role: 'AUTHOR').isGroupAdmin, isFalse);
+    expect(permission(role: 'VIEWER').isGroupAdmin, isFalse);
     expect(permission(role: 'MEMBER').isGroupAdmin, isFalse);
     expect(permission(role: '  ').isGroupAdmin, isFalse);
   });

@@ -38,6 +38,7 @@ import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasou
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_context_layout_provider.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,8 +59,10 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Portrait only; the live player switches to landscape for fullscreen.
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Portrait only; unawaited: a headless (audio_service) engine never replies.
+  unawaited(
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
+  );
 
   try {
     await PostHogAnalyticsService.create().initialize();
@@ -68,13 +71,27 @@ void main() async {
     _logger.warning('Error initializing analytics: $e');
   }
 
-  await Firebase.initializeApp();
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  bool firebaseReady = false;
+  try {
+    await Firebase.initializeApp();
+    firebaseReady = true;
+  } catch (e) {
+    _logger.warning('Error initializing Firebase: $e');
+  }
+  if (firebaseReady) {
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    // Uncaught async errors (e.g. in auth restore) are otherwise invisible.
+    WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+      _logger.error('Uncaught async error', error, stack);
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+      return true;
+    };
 
-  // Register the FCM background/terminated-state handler. Must be done before
-  // runApp and references a top-level function so it survives AOT and runs in
-  // its own isolate.
-  FirebaseMessaging.onBackgroundMessage(pushNotificationBackgroundHandler);
+    // Register the FCM background/terminated-state handler. Must be done before
+    // runApp and references a top-level function so it survives AOT and runs in
+    // its own isolate.
+    FirebaseMessaging.onBackgroundMessage(pushNotificationBackgroundHandler);
+  }
 
   // Setup environment-aware logging
   AppLogger.init();
@@ -227,6 +244,20 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // bundled ARB strings and swaps to the Tolgee versions once they arrive,
     // so a slow or unreachable CDN can never delay app startup.
     unawaited(_bootstrapTolgee());
+    unawaited(_stampReaderLayouts());
+  }
+
+  /// Records the language the app starts in as the one the reader's event,
+  /// chant and plan picks were made under. Picks from before the stamp existed
+  /// get it too, so a language change made before any reader is opened still
+  /// drops them; the listener in build() alone would keep them and stamp the
+  /// new language.
+  Future<void> _stampReaderLayouts() async {
+    await ref.read(contentLanguageProvider.notifier).ensureInitialized();
+    if (!mounted) return;
+    await ref
+        .read(readerLayoutLanguageGuardProvider)
+        .sync(ref.read(contentLanguageProvider));
   }
 
   Future<void> _bootstrapTolgee() async {
@@ -279,7 +310,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       );
       // Retry FCM initialization if a previous attempt failed (e.g. transient
       // Firebase error on cold start). No-op once _initialized is true.
-      unawaited(ref.read(pushNotificationServiceProvider).initialize());
+      if (Firebase.apps.isNotEmpty) {
+        unawaited(ref.read(pushNotificationServiceProvider).initialize());
+      }
       // Picks up strings published in Tolgee since the app was opened, which
       // on iOS can be days without a cold start. Throttled inside the service.
       unawaited(_refreshTolgee());
@@ -298,6 +331,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.listen<Locale>(localeProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTolgeeLocale(next));
+    });
+
+    // Reader picks made in events, plans and chants belong to the app
+    // language they were made under; a new language starts from its defaults.
+    ref.listen<String>(contentLanguageProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(ref.read(readerLayoutLanguageGuardProvider).sync(next));
     });
 
     // Bottom tabs are not routes, so Clarity's screen name for the home

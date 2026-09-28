@@ -30,6 +30,10 @@ class UserNotifier extends StateNotifier<UserState> {
   final UploadAvatarUseCase _uploadAvatarUseCase;
   final LocalStorageService _localStorageService;
 
+  /// Load ordering: a result applies only if no newer load already applied one.
+  int _loadSequence = 0;
+  int _appliedSequence = 0;
+
   UserNotifier({
     required GetCurrentUserUseCase getCurrentUserUseCase,
     required UpdateUserInfoUseCase updateUserInfoUseCase,
@@ -48,8 +52,10 @@ class UserNotifier extends StateNotifier<UserState> {
   Future<void> initializeUser() async {
     _logger.debug('Initializing user data');
     state = const UserState.loading();
+    final sequence = ++_loadSequence;
 
     final userResult = await _getCurrentUserUseCase(const NoParams());
+    if (sequence <= _appliedSequence) return;
 
     userResult.fold(
       (failure) {
@@ -59,6 +65,7 @@ class UserNotifier extends StateNotifier<UserState> {
       },
       (user) {
         _logger.info('User data loaded from API: ${user.displayName}');
+        _appliedSequence = sequence;
         state = UserState.loaded(user);
         _cacheUserLocally(user);
       },
@@ -67,7 +74,9 @@ class UserNotifier extends StateNotifier<UserState> {
 
   /// Refresh user data from API
   Future<void> refreshUser() async {
+    final sequence = ++_loadSequence;
     final userResult = await _getCurrentUserUseCase(const NoParams());
+    if (sequence <= _appliedSequence) return;
 
     userResult.fold(
       (failure) {
@@ -77,6 +86,7 @@ class UserNotifier extends StateNotifier<UserState> {
       },
       (user) {
         _logger.debug('User data refreshed: ${user.displayName}');
+        _appliedSequence = sequence;
         state = UserState.loaded(user);
         _cacheUserLocally(user);
       },
@@ -192,6 +202,8 @@ class UserNotifier extends StateNotifier<UserState> {
   /// Clear user data (on logout)
   Future<void> clearUser() async {
     try {
+      // Every load still pending belongs to the cleared session.
+      _appliedSequence = _loadSequence;
       state = const UserState.initial();
 
       // Clear local cache

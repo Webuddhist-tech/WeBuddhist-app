@@ -90,24 +90,32 @@ class HomeEventBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todayEventName = ref
+    final todayEvent = ref
         .watch(todayEventsFutureProvider)
         .maybeWhen(
           data:
               (eventsEither) => eventsEither.fold(
                 (_) => null,
-                (events) => events.isNotEmpty ? events.first.name : null,
+                (events) => events.isNotEmpty ? events.first : null,
               ),
           orElse: () => null,
         );
 
-    if (todayEventName == null) {
+    if (todayEvent == null) {
       return const SizedBox.shrink();
     }
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-      child: TodayEventBadge(label: todayEventName),
+      child: TodayEventBadge(
+        label: todayEvent.name,
+        onTap:
+            todayEvent.id.isEmpty
+                ? null
+                : () => context.push(
+                  '/home/events/${Uri.encodeComponent(todayEvent.id)}',
+                ),
+      ),
     );
   }
 }

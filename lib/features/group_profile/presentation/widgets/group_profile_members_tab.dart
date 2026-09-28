@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_member.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_remove_member_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class GroupProfileMembersTab extends ConsumerStatefulWidget {
@@ -64,9 +67,36 @@ class _GroupProfileMembersTabState
         : context.l10n.group_members_heading(count);
   }
 
+  bool _canRemoveMembers() {
+    if (widget.groupType.isPage) return false;
+    return ref
+            .watch(groupMyPermissionProvider(widget.groupId))
+            .valueOrNull
+            ?.isGroupAdmin ??
+        false;
+  }
+
+  Future<void> _removeMember(GroupMember member) async {
+    final removed = await GroupRemoveMemberSheet.show(
+      context,
+      groupId: widget.groupId,
+      member: member,
+    );
+    if (removed != true || !mounted) return;
+    final name =
+        member.fullname.trim().isNotEmpty
+            ? member.fullname.trim()
+            : member.username;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.group_remove_member_success(name))),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final membersState = ref.watch(groupMembersProvider(widget.groupId));
+    final canRemove = _canRemoveMembers();
+    final currentUserId = ref.watch(userProvider).user?.id?.trim() ?? '';
 
     if (membersState.isLoading && membersState.members.isEmpty) {
       return GroupProfileNestedTabScrollView.centered(
@@ -158,10 +188,18 @@ class _GroupProfileMembersTabState
 
                 final memberIndex = index - 1;
                 if (memberIndex < membersState.members.length) {
+                  final member = membersState.members[memberIndex];
+                  final isSelf =
+                      currentUserId.isNotEmpty && member.userId == currentUserId;
                   return _GroupMemberRow(
-                    member: membersState.members[memberIndex],
+                    member: member,
                     isDark: widget.isDark,
                     lineHeight: widget.lineHeight,
+                    showAdminBadge: member.isAdmin,
+                    onRemove:
+                        canRemove && member.canBeRemovedByAdmin && !isSelf
+                            ? () => _removeMember(member)
+                            : null,
                   );
                 }
 
@@ -210,11 +248,15 @@ class _GroupMemberRow extends StatelessWidget {
   final GroupMember member;
   final bool isDark;
   final double? lineHeight;
+  final bool showAdminBadge;
+  final VoidCallback? onRemove;
 
   const _GroupMemberRow({
     required this.member,
     required this.isDark,
     this.lineHeight,
+    this.showAdminBadge = false,
+    this.onRemove,
   });
 
   @override
@@ -242,9 +284,12 @@ class _GroupMemberRow extends StatelessWidget {
                             key: ValueKey(member.avatarUrl),
                             imageUrl: member.avatarUrl,
                             fit: BoxFit.cover,
-                            errorWidget: _buildAvatarFallback(isDark),
+                            errorWidget: AvatarFallback(
+                              isDark: isDark,
+                              iconSize: 22,
+                            ),
                           )
-                          : _buildAvatarFallback(isDark),
+                          : AvatarFallback(isDark: isDark, iconSize: 22),
                 ),
               ),
               const SizedBox(width: 12),
@@ -279,6 +324,27 @@ class _GroupMemberRow extends StatelessWidget {
                   ],
                 ),
               ),
+              if (showAdminBadge) ...[
+                const SizedBox(width: 8),
+                _AdminBadge(isDark: isDark),
+              ] else if (onRemove != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: onRemove,
+                  tooltip: context.l10n.group_remove_member(displayName),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: Icon(
+                    Icons.close,
+                    size: 22,
+                    color:
+                        isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textSecondary,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -286,14 +352,28 @@ class _GroupMemberRow extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _buildAvatarFallback(bool isDark) {
-    return ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.profile,
-        size: 22,
-        color: isDark ? AppColors.grey500 : AppColors.grey600,
+class _AdminBadge extends StatelessWidget {
+  final bool isDark;
+
+  const _AdminBadge({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.chipBackgroundDark : AppColors.grey100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        context.l10n.group_member_admin,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? AppColors.textSecondaryDark : AppColors.textPrimary,
+        ),
       ),
     );
   }

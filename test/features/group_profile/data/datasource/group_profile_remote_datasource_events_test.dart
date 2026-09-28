@@ -124,4 +124,109 @@ void main() {
       expect(decision.status, GroupJoinRequestStatus.rejected);
     });
   });
+
+  group('GroupProfileRemoteDatasource removeJoinedUser', () {
+    test('posts the ban duration and reason', () async {
+      Object? sent;
+      final ds = _datasource((options) async {
+        sent = options.data;
+        expect(options.method, 'POST');
+        expect(options.path, '/cms/author/groups/g1/joined-users/u1/remove');
+        return ResponseBody.fromString('{}', 200);
+      });
+
+      await ds.removeJoinedUser(
+        'g1',
+        userId: 'u1',
+        banDurationDays: 7,
+        reason: '  testing...  ',
+      );
+
+      expect(sent, {'ban_duration_days': 7, 'reason': 'testing...'});
+    });
+
+    test('sends a null reason when the note is blank', () async {
+      Object? sent;
+      final ds = _datasource((options) async {
+        sent = options.data;
+        return ResponseBody.fromString('{}', 200);
+      });
+
+      await ds.removeJoinedUser(
+        'g1',
+        userId: 'u1',
+        banDurationDays: 365,
+        reason: '   ',
+      );
+
+      expect(sent, {'ban_duration_days': 365, 'reason': null});
+    });
+  });
+
+  group('groupJoinBan', () {
+    test('reads expires_at from a GROUP_BANNED body', () {
+      final ban = groupJoinBan({
+        'detail': {
+          'error': 'GROUP_BANNED',
+          'message':
+              'You were removed from this group and cannot rejoin until 25 Sep 2026',
+          'expires_at': '2026-09-25T10:11:15.952092+00:00',
+        },
+      });
+
+      expect(
+        ban?.expiresAt,
+        DateTime.parse('2026-09-25T10:11:15.952092+00:00'),
+      );
+      expect(
+        groupJoinBanExpiresAt(ban!.payload),
+        DateTime.parse('2026-09-25T10:11:15.952092+00:00'),
+      );
+    });
+
+    test('still treats a blank message as a ban when the error matches', () {
+      final ban = groupJoinBan({
+        'detail': {'error': 'GROUP_BANNED', 'message': '  '},
+      });
+
+      expect(ban, isNotNull);
+      expect(ban!.expiresAt, isNull);
+      expect(isGroupJoinBanned(ban.payload), isTrue);
+    });
+
+    test('ignores other errors', () {
+      expect(
+        groupJoinBan({
+          'detail': {'error': 'OTHER', 'message': 'nope'},
+        }),
+        isNull,
+      );
+      expect(groupJoinBan({'detail': 'Group not found'}), isNull);
+    });
+  });
+
+  group('GroupProfileRemoteDatasource submitJoinRequest', () {
+    test('throws the ban message on GROUP_BANNED', () async {
+      final ds = _datasource(
+        (options) async => ResponseBody.fromString(
+          '{"detail":{"error":"GROUP_BANNED","message":"Cannot rejoin until 25 Sep 2026","expires_at":"2026-09-25T10:11:15.952092+00:00"}}',
+          403,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+          },
+        ),
+      );
+
+      expect(
+        () => ds.submitJoinRequest('g1', message: 'let me back'),
+        throwsA(
+          isA<AuthorizationException>().having(
+            (error) => groupJoinBanExpiresAt(error.message),
+            'expiresAt',
+            DateTime.parse('2026-09-25T10:11:15.952092+00:00'),
+          ),
+        ),
+      );
+    });
+  });
 }

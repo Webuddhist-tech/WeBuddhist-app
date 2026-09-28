@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'dart:async';
 
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
@@ -42,6 +43,8 @@ final pushNotificationServiceProvider =
 /// device token is registered once the user signs in. Watch for the app
 /// lifetime (e.g. in `MyApp.build`).
 final pushNotificationBootstrapProvider = Provider<void>((ref) {
+  // Firebase failed to start in main(): FirebaseMessaging cannot be built.
+  if (Firebase.apps.isEmpty) return;
   final service = ref.watch(pushNotificationServiceProvider);
   final navigator = ref.read(pushMessageNavigatorProvider);
 

@@ -38,6 +38,19 @@ class AppRoutes {
 
   static String groupChatPath(String groupId) => '/groups/$groupId/chat';
 
+  /// Query on `/home/events/:eventId`. When `1`, the event screen opens the
+  /// prayer-request sheet after it is showing.
+  static const String eventPrayersQuery = 'prayers';
+
+  static String groupEventPath(
+    String eventId, {
+    bool openPrayerRequests = false,
+  }) {
+    final path = '/home/events/$eventId';
+    if (!openPrayerRequests) return path;
+    return '$path?$eventPrayersQuery=1';
+  }
+
   /// Every group chat the viewer belongs to. Top-level for the same reason as
   /// [groupChat] — it is not guest-accessible.
   static const String chats = '/chats';

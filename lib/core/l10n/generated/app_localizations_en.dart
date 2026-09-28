@@ -971,11 +971,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String connect_event_participants_attending(int count) {
-    return '$count attending';
+    return '$count participants';
   }
 
   @override
   String get connect_event_participants_empty => 'No participants yet';
+
+  @override
+  String get connect_event_organizer => 'Organizer';
 
   @override
   String get connect_event_tab_videos => 'Videos';
@@ -2005,6 +2008,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_members_empty => 'No members yet';
 
   @override
+  String get group_member_admin => 'Admin';
+
+  @override
+  String group_remove_member(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get group_remove_member_title => 'Remove from group?';
+
+  @override
+  String group_remove_member_message(String name) {
+    return '$name will be removed from group and blocked from joining until the ban ends';
+  }
+
+  @override
+  String get group_remove_member_blocked_for => 'Blocked for :';
+
+  @override
+  String get group_remove_member_duration_day => '1 day';
+
+  @override
+  String group_remove_member_duration_days(int count) {
+    return '$count days';
+  }
+
+  @override
+  String get group_remove_member_duration_year => '1 year';
+
+  @override
+  String get group_remove_member_reason_label => 'Reason (optional)';
+
+  @override
+  String get group_remove_member_reason_hint => 'Something else...';
+
+  @override
+  String get group_remove_member_action => 'Remove';
+
+  @override
+  String group_remove_member_success(String name) {
+    return '$name was removed from the group.';
+  }
+
+  @override
+  String get group_remove_member_error =>
+      'Couldn\'t remove this member. Try again.';
+
+  @override
+  String group_join_banned_until(String date) {
+    return 'You were removed from this group and cannot rejoin until $date';
+  }
+
+  @override
+  String get group_join_banned =>
+      'You were removed from this group and cannot rejoin until the ban ends.';
+
+  @override
+  String get group_removed_title => 'You\'ve been removed from this group';
+
+  @override
+  String group_removed_message(String group, String duration) {
+    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for $duration.';
+  }
+
+  @override
+  String group_removed_message_no_date(String group) {
+    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.';
+  }
+
+  @override
+  String get group_removed_rejoin_label =>
+      'You can request to rejoin this group on';
+
+  @override
+  String group_removed_rejoin_value(String date, String remaining) {
+    return '$date · $remaining';
+  }
+
+  @override
+  String get group_removed_day_left => '1 day left';
+
+  @override
+  String group_removed_days_left(int count) {
+    return '$count days left';
+  }
+
+  @override
+  String get group_removed_last_day => 'Less than a day left';
+
+  @override
   String get group_followers_empty => 'No followers yet';
 
   @override
@@ -2796,6 +2889,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_requests => 'Prayer requests';
 
   @override
+  String event_prayer_request_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count requests',
+      one: '1 request',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get event_prayer_empty_title => 'No prayer requests yet';
 
   @override
@@ -2806,7 +2910,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_add => 'Add a prayer request';
 
   @override
-  String get event_prayer_hint => 'How can we pray for you today';
+  String get event_prayer_hint => 'How can we pray for you today?';
 
   @override
   String get event_prayer_load_failed => 'Prayer requests couldn\'t be loaded.';
@@ -2820,6 +2924,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_prayer_praying => 'Praying';
+
+  @override
+  String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_choose_intention => 'Choose an intention';
+
+  @override
+  String get event_prayer_intentions_failed =>
+      'Intentions couldn\'t be loaded.';
+
+  @override
+  String get event_prayer_request_button => 'Request prayer';
+
+  @override
+  String get event_prayer_you => 'You';
+
+  @override
+  String get event_prayer_waiting_first => 'Waiting for the first prayer...';
+
+  @override
+  String event_prayer_more_praying(int count) {
+    return '+$count more are praying';
+  }
+
+  @override
+  String event_prayer_people_praying(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people are praying',
+      one: '1 person is praying',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get event_prayer_praying_for_you => 'Praying for you';
+
+  @override
+  String event_prayer_praying_for(String name) {
+    return 'Praying for $name';
+  }
+
+  @override
+  String get event_prayer_your_request => 'Your request';
+
+  @override
+  String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
+
+  @override
+  String get event_prayer_no_supporters => 'No one is praying yet.';
 
   @override
   String get recitation_live_sync => 'Sync';

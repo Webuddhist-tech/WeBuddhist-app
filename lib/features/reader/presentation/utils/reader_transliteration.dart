@@ -1,5 +1,7 @@
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,14 +18,20 @@ class PrimarySegmentHtml {
 }
 
 /// Normalises [content] and transliterates it into the script the user picked
-/// for [language], when they picked one. Watches only that language's pick.
+/// for [language] in the reader [scope], when they picked one. Watches only
+/// that language's pick.
 PrimarySegmentHtml primarySegmentHtml(
   WidgetRef ref, {
   required String? content,
   required String language,
+  required ReaderSettingsScope scope,
 }) {
   final html = normalizeSegmentHtml(content);
-  final scriptId = ref.watch(readerScriptForLanguageProvider(language));
+  final scriptId = ref.watch(
+    readerOriginalScriptProvider(
+      ReaderScriptScope(scope: scope, language: language),
+    ),
+  );
   if (scriptId == null) {
     return PrimarySegmentHtml(html: html, fontLanguage: language);
   }
