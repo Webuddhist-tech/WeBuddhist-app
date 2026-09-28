@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -16,6 +17,8 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_attendance_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
@@ -197,11 +200,23 @@ class _GroupEventDetailScreenState
         children: [
           _EventHeroCard(event: event, isDark: isDark),
           const SizedBox(height: 14),
-          _AttendeesRow(
-            eventId: event.id,
-            participants: participants,
-            totalAttending: totalAttending,
-            isDark: isDark,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _AttendeesRow(
+                  eventId: event.id,
+                  participants: participants,
+                  totalAttending: totalAttending,
+                  isDark: isDark,
+                ),
+              ),
+              if (event.chatEnabled)
+                PrayerRequestsButton(
+                  padding: EdgeInsets.zero,
+                  onTap: () => _openPrayerRequests(event.id),
+                ),
+            ],
           ),
           if (!isPast || (event.hasPuja && isAttending)) ...[
             const SizedBox(height: 14),
@@ -229,6 +244,15 @@ class _GroupEventDetailScreenState
         ],
       ),
     );
+  }
+
+  void _openPrayerRequests(String eventId) {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
   }
 
   int _attendeeCount(GroupEvent event, bool isAttending) {
