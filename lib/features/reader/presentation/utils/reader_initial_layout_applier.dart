@@ -217,9 +217,11 @@ class ReaderInitialLayoutApplier {
     // claiming a translation the screen does not have. Hold it off for this
     // visit, unless the person touched the switch or picked a translation in
     // the sheet meanwhile (a superseded fill): that is theirs. A failed
-    // request is no proof the text lacks one, so that "on" stays as it is.
+    // request is held off the same way: the hold never touches the stored
+    // pick, and switching on again requests the versions afresh.
     if (prefs.translationOn == true &&
-        outcome == SecondaryFillOutcome.unavailable) {
+        (outcome == SecondaryFillOutcome.unavailable ||
+            outcome == SecondaryFillOutcome.failed)) {
       notifier.markTranslationUnavailable();
     }
   }

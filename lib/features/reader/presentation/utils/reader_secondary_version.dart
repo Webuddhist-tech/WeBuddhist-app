@@ -125,8 +125,8 @@ enum SecondaryFillOutcome {
   unavailable,
 
   /// Nothing was filled and at least one candidate's versions request
-  /// failed, so a translation may exist: the text cannot be said to lack
-  /// one. The slot holds the last candidate's "not available" mark.
+  /// failed, so a translation may exist and trying again can find it. The
+  /// slot holds the last candidate's "not available" mark.
   failed,
 
   /// The switch was toggled, the slot picked by hand or the screen closed

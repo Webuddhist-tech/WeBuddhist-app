@@ -426,6 +426,34 @@ void main() {
       expect(datasource.versionRequests, ['hi']);
     });
 
+    testWidgets('after a failed lookup is held off, switching on again '
+        'requests the versions afresh', (tester) async {
+      final datasource = _FakeSettingsDatasource(
+        languages: [_english],
+        versions: {},
+      );
+      final host = await _pumpHost(tester, datasource);
+      _eventStoreOf(host).setTranslationOn(true);
+      final notifier = _notifierOf(host);
+      notifier.seed(_romanAndEnglish, language: 'bo');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.failed);
+      notifier.markTranslationUnavailable();
+      final settings = (host as WidgetRef).read(
+        readerDualSettingsProvider(_scope),
+      );
+      expect(settings.secondaryEnabled, isFalse, reason: 'sheet reads off');
+
+      // The failed request is disposed (autoDispose) before anyone can tap.
+      await tester.pump();
+      // The network is back; the person switches the translation on.
+      datasource.versions['en'] = [_englishVersion];
+      notifier.setSecondaryEnabled(true);
+      expect(await _fillPreferred(host), isTrue);
+      expect(_secondaryOf(host).versionId, 'v-en');
+      expect(datasource.versionRequests, ['en', 'en']);
+    });
+
     testWidgets('nothing offered leaves the translation off', (tester) async {
       final datasource = _FakeSettingsDatasource(
         languages: [_hindi],
