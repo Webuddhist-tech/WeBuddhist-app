@@ -118,6 +118,10 @@ bool readerLayoutsNeedReset({
 /// under: when that language changes they are dropped, so the reader starts
 /// from the new language's defaults, switching back included. Library reading
 /// keeps its app-wide settings.
+///
+/// The app syncs once at startup as well as on each change. Picks stored
+/// before the stamp existed are taken as made under the language the app
+/// starts in, so a change made before any reader is opened still drops them.
 class ReaderLayoutLanguageGuard {
   ReaderLayoutLanguageGuard({
     required LocalStorageService localStorage,
@@ -130,9 +134,23 @@ class ReaderLayoutLanguageGuard {
   /// Restarts the live context stores once their stored picks are gone.
   final void Function() _onCleared;
 
+  /// The sync in flight, if any: the next one queues behind it.
+  Future<void> _last = Future.value();
+
   /// Drops the context picks when [language] is not the one they were made
   /// under, then records [language]. Returns whether anything was dropped.
-  Future<bool> sync(String language) async {
+  ///
+  /// Syncs run one at a time, in the order they were asked for. Two quick
+  /// language changes would otherwise both read the same old stamp, and
+  /// whichever wrote last would set it — the earlier language, possibly —
+  /// so the next reader open would drop picks made under the current one.
+  Future<bool> sync(String language) {
+    final run = _last.then((_) => _sync(language));
+    _last = run.then((_) {}, onError: (_) {});
+    return run;
+  }
+
+  Future<bool> _sync(String language) async {
     final current = TransliterationService.normalizeLanguage(language);
     if (current.isEmpty) return false;
     final stamped = await _storage.get<String>(StorageKeys.readerLayoutLanguage);

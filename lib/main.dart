@@ -228,6 +228,20 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // bundled ARB strings and swaps to the Tolgee versions once they arrive,
     // so a slow or unreachable CDN can never delay app startup.
     unawaited(_bootstrapTolgee());
+    unawaited(_stampReaderLayouts());
+  }
+
+  /// Records the language the app starts in as the one the reader's event,
+  /// chant and plan picks were made under. Picks from before the stamp existed
+  /// get it too, so a language change made before any reader is opened still
+  /// drops them; the listener in build() alone would keep them and stamp the
+  /// new language.
+  Future<void> _stampReaderLayouts() async {
+    await ref.read(contentLanguageProvider.notifier).ensureInitialized();
+    if (!mounted) return;
+    await ref
+        .read(readerLayoutLanguageGuardProvider)
+        .sync(ref.read(contentLanguageProvider));
   }
 
   Future<void> _bootstrapTolgee() async {

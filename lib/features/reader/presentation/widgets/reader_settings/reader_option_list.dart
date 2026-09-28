@@ -63,15 +63,22 @@ double? readerOptionRevealOffset({
 /// first lays out, when [revealIndex] changes, and when the rows change height
 /// (a language opening, its versions arriving). Only this list scrolls, never
 /// the sheet around it.
+///
+/// A row inside that child can carry [revealKey] (the checked version under
+/// an open language). The list then shows the child's top through that row
+/// when the two fit together, and the row alone when they do not, so the
+/// pick is never left below the fold.
 class ReaderOptionList extends StatefulWidget {
   const ReaderOptionList({
     super.key,
     required this.children,
     this.revealIndex,
+    this.revealKey,
   });
 
   final List<Widget> children;
   final int? revealIndex;
+  final GlobalKey? revealKey;
 
   @override
   State<ReaderOptionList> createState() => _ReaderOptionListState();
@@ -124,11 +131,25 @@ class _ReaderOptionListState extends State<ReaderOptionList> {
     final block = _keys[index].currentContext?.findRenderObject();
     final viewport = RenderAbstractViewport.maybeOf(block);
     if (block == null || viewport == null) return;
+    var top = viewport.getOffsetToReveal(block, 0).offset;
+    var bottom = viewport.getOffsetToReveal(block, 1).offset;
+    final row = widget.revealKey?.currentContext?.findRenderObject();
+    if (row != null && RenderAbstractViewport.maybeOf(row) == viewport) {
+      final rowBottom = viewport.getOffsetToReveal(row, 1).offset;
+      if (rowBottom <= top) {
+        // The block's top through the row fits: show both.
+        bottom = rowBottom;
+      } else {
+        // Too tall together: the row is what matters.
+        top = viewport.getOffsetToReveal(row, 0).offset;
+        bottom = rowBottom;
+      }
+    }
     final position = _controller.position;
     final offset = readerOptionRevealOffset(
       current: position.pixels,
-      top: viewport.getOffsetToReveal(block, 0).offset,
-      bottom: viewport.getOffsetToReveal(block, 1).offset,
+      top: top,
+      bottom: bottom,
       min: position.minScrollExtent,
       max: position.maxScrollExtent,
     );

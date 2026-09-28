@@ -119,9 +119,12 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    (`StorageKeys.readerLayoutLanguage`). When the content language changes,
    `ReaderLayoutLanguageGuard.sync` drops the event, chant and plan stores so
    the new language's defaults apply — switching back included; the library's
-   app-wide settings stay. `MyApp` listens to `contentLanguageProvider` for
-   this, and the applier re-checks before it fills, in case a switch was
-   missed.
+   app-wide settings stay. `MyApp` stamps the startup language once the
+   content language is read (so picks from before the stamp existed count as
+   made under it) and listens to `contentLanguageProvider` for changes; the
+   applier re-checks before it fills, in case a switch was missed. Syncs run
+   one at a time, so two quick changes cannot leave the earlier language as
+   the stamp.
 
 Known gap: a chant tapped in the Hindi list arrives as the Hindi edition and
 the API never lists its Tibetan original, so the sheet reads "Original: Hindi"
