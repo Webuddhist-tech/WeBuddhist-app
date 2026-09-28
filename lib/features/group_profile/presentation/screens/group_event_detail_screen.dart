@@ -331,7 +331,7 @@ class _GroupEventDetailScreenState
         );
       }
 
-      final formats = Row(
+      return Row(
         children: [
           joinButton(
             GroupEventParticipationType.offline,
@@ -342,14 +342,6 @@ class _GroupEventDetailScreenState
             GroupEventParticipationType.online,
             context.l10n.connect_event_join_online,
           ),
-        ],
-      );
-      if (!isAttending) return formats;
-      return Column(
-        children: [
-          formats,
-          const SizedBox(height: 12),
-          SizedBox(width: double.infinity, child: attendButton),
         ],
       );
     }
