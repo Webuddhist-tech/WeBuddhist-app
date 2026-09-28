@@ -80,11 +80,13 @@ reader/
 `event` (any event id), `chant` (chant list, routine, collections, group chant)
 or `plan`. The library keeps the app-wide settings untouched. The others:
 
-1. `resolveInitialLayout` (`domain/layout/`) is a pure table: event → original
-   on in the UI language's script (Roman, Devanagari for hi/ne, Cyrillic for
-   mn, as written for bo) + translation in the UI language, else English;
-   chant / plan → translation only in the UI language when offered, else as
-   written; a chant opened in the list's own language → as written.
+1. `resolveInitialLayout` (`domain/layout/`) is a pure table. A text already
+   in the UI (content) language is shown as written, alone. Otherwise: event →
+   original on in the UI language's script (Roman, Devanagari for hi/ne,
+   Cyrillic for mn, as written for bo and zh — there is no transliteration
+   into Chinese) + translation in the UI language, else English; chant / plan
+   → translation only, in the UI language, else English, else as written. The
+   app language decides, not the language picked on the chant list.
 2. `ReaderInitialLayoutApplier` (owned by `ReaderScreen`) runs once when the
    text language and `/texts/{id}/languages` are known: seeds the layout into
    `ReaderDualSettingsNotifier` and fills the translation (remembered pick →
@@ -113,6 +115,13 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    only). So switching the translation back on, or hiding the original,
    through `fillPreferredSecondary` brings back what the first open showed
    (Chinese UI on an English-only event text gets English again).
+5. The picks belong to the app language they were made under
+   (`StorageKeys.readerLayoutLanguage`). When the content language changes,
+   `ReaderLayoutLanguageGuard.sync` drops the event, chant and plan stores so
+   the new language's defaults apply — switching back included; the library's
+   app-wide settings stay. `MyApp` listens to `contentLanguageProvider` for
+   this, and the applier re-checks before it fills, in case a switch was
+   missed.
 
 Known gap: a chant tapped in the Hindi list arrives as the Hindi edition and
 the API never lists its Tibetan original, so the sheet reads "Original: Hindi"

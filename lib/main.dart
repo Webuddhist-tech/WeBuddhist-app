@@ -38,6 +38,7 @@ import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasou
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_context_layout_provider.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/timers_local_datasource.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -298,6 +299,13 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     ref.listen<Locale>(localeProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTolgeeLocale(next));
+    });
+
+    // Reader picks made in events, plans and chants belong to the app
+    // language they were made under; a new language starts from its defaults.
+    ref.listen<String>(contentLanguageProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(ref.read(readerLayoutLanguageGuardProvider).sync(next));
     });
 
     // Bottom tabs are not routes, so Clarity's screen name for the home
