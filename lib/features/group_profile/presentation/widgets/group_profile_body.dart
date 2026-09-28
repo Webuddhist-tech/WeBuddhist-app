@@ -444,7 +444,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         (permissionAsync.isLoading &&
             !permissionAsync.hasValue &&
             !permissionAsync.hasError) ||
-        isPrivateGroupMembershipLoading(followState);
+        (hasCreatePermission && isPrivateGroupMembershipLoading(followState));
 
     // Wait for every section before laying out the tabs, otherwise tabs would
     // pop in and out as each request settles.
