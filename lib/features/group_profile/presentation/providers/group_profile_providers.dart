@@ -1577,6 +1577,7 @@ void reconcileGroupRemovalNotice(WidgetRef ref, GroupProfile profile) {
     case GroupJoinRequestStatus.pending:
     case GroupJoinRequestStatus.approved:
       clearGroupRemovalNotice(ref, profile.id);
+      break;
     case GroupJoinRequestStatus.rejected:
     case null:
       break;
