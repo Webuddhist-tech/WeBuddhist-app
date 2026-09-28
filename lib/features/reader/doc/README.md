@@ -94,7 +94,11 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    the list and the applier then runs for real. A stored "on" with nothing to
    fill is held off for the visit (`markTranslationUnavailable`) so the sheet
    never claims a translation the screen lacks — but not when the fill was
-   `superseded` by a toggle or a pick made in the sheet meanwhile.
+   `superseded` by a toggle or a pick made in the sheet meanwhile, nor when
+   it `failed` on a versions request (no proof the text lacks one). Automatic
+   fills write the slot with `fillSecondary`, so `isSecondaryEdited` stays
+   the person's own picks only. A stored script pick applies from the first
+   frame (`readerOriginalScriptProvider` reads the store before the seed).
 3. Seeds live in memory for the visit. What the person changes goes to
    `readerContextLayoutProvider(context)` and wins on every later open in that
    context; untouched fields keep following the resolver. That covers the

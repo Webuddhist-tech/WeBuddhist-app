@@ -120,6 +120,10 @@ class ReaderInitialLayoutApplier {
     required String textVersionId,
   }) async {
     final scope = params.settingsScope;
+    // This runs once per reader, so read the switch only once it is loaded:
+    // a still-loading "on" would read as off and the slot would never fill.
+    await ref.read(readerSecondaryEnabledProvider.notifier).loaded;
+    if (!context.mounted) return;
     final dual = ref.read(readerDualSettingsProvider(scope));
     if (!dual.secondaryEnabled || dual.secondary.versionId != null) return;
     final navLanguage = params.language?.trim();
@@ -212,7 +216,8 @@ class ReaderInitialLayoutApplier {
     // A stored "on" with nothing to show on this text would leave the sheet
     // claiming a translation the screen does not have. Hold it off for this
     // visit, unless the person touched the switch or picked a translation in
-    // the sheet meanwhile (a superseded fill): that is theirs.
+    // the sheet meanwhile (a superseded fill): that is theirs. A failed
+    // request is no proof the text lacks one, so that "on" stays as it is.
     if (prefs.translationOn == true &&
         outcome == SecondaryFillOutcome.unavailable) {
       notifier.markTranslationUnavailable();

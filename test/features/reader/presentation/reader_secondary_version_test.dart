@@ -198,6 +198,37 @@ void main() {
       expect(_secondaryOf(host).versionId, 'v-en');
     });
 
+    testWidgets('a failed request with nothing filled is failed, not '
+        'unavailable', (tester) async {
+      // Hindi has no version; English's request fails. English may exist,
+      // so a stored "on" must not be held off.
+      final datasource = _FakeSettingsDatasource(
+        languages: [_hindi, _english],
+        versions: {'hi': []},
+      );
+      final host = await _pumpHost(tester, datasource);
+
+      expect(await _fill(host, ['en', 'hi']), SecondaryFillOutcome.failed);
+      expect(datasource.versionRequests, ['en', 'hi']);
+      expect(_secondaryOf(host).versionUnavailable, isTrue);
+    });
+
+    testWidgets('an automatic fill is not the person\'s pick', (tester) async {
+      final datasource = _FakeSettingsDatasource(
+        languages: [_english],
+        versions: {'en': [_englishVersion]},
+      );
+      final host = await _pumpHost(tester, datasource);
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(_notifierOf(host).isSecondaryEdited, isFalse);
+
+      _notifierOf(host).replaceSecondary(
+        const ReaderSlotConfig(languageCode: 'hi', languageLabel: 'Hindi'),
+      );
+      expect(_notifierOf(host).isSecondaryEdited, isTrue);
+    });
+
     testWidgets('the last candidate stays marked unavailable', (tester) async {
       final datasource = _FakeSettingsDatasource(
         languages: [_hindi, _english],

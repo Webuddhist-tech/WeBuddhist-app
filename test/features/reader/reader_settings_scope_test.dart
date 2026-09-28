@@ -428,6 +428,24 @@ void main() {
       expect(scriptOf(_event, 'BO '), 'phonetic');
     });
 
+    test("a stored pick applies before this visit's seed arrives", () {
+      keep(_event);
+      container
+          .read(readerContextLayoutProvider(ReaderLayoutContext.event).notifier)
+          .setScript('bo', 'phonetic');
+      expect(scriptOf(_event, 'bo'), 'phonetic');
+      expect(scriptOf(_event, 'pi'), isNull);
+    });
+
+    test('a stored "as written" wins over the seed', () {
+      final notifier = keep(_event);
+      container
+          .read(readerContextLayoutProvider(ReaderLayoutContext.event).notifier)
+          .setScript('bo', null);
+      notifier.seed(_romanAndEnglish, language: 'bo');
+      expect(scriptOf(_event, 'bo'), isNull);
+    });
+
     test('scopes normalise the language code', () {
       expect(
         ReaderScriptScope(scope: _event, language: ' BO '),

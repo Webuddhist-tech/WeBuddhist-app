@@ -386,6 +386,14 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
 
   void replaceSecondary(ReaderSlotConfig config) {
     _secondaryEdited = true;
+    fillSecondary(config);
+  }
+
+  /// Writes a secondary slot the app chose (a default fill or a resolved
+  /// version) without marking it as the person's pick, so
+  /// [isSecondaryEdited] keeps telling their layout apart from automatic
+  /// ones. Still bumps [secondaryResolveGeneration] like any slot write.
+  void fillSecondary(ReaderSlotConfig config) {
     _secondaryResolveGeneration++;
     state = state.copyWith(secondary: config);
   }
@@ -441,14 +449,25 @@ class ReaderScriptScope {
 /// The script the original is shown in for [ReaderScriptScope.language] in
 /// the reader [ReaderScriptScope.scope]; null shows the text as written.
 ///
-/// The library reads the app-wide script map straight away, so a stored pick
-/// applies from the first frame; every other context reads the settings the
-/// context store and this visit's seed produce.
+/// A stored pick applies from the first frame: the library reads the
+/// app-wide script map, every other context its own store. Only where that
+/// store has no pick does a context fall back to this visit's seed, which
+/// waits for the text's list of translations.
 final readerOriginalScriptProvider = Provider.autoDispose
     .family<String?, ReaderScriptScope>((ref, scriptScope) {
       if (scriptScope.scope.context == ReaderLayoutContext.library) {
         return ref.watch(readerScriptForLanguageProvider(scriptScope.language));
       }
+      final language = scriptScope.language;
+      // A one-field record, so a stored "as written" (null) stays apart from
+      // no pick at all.
+      final stored = ref.watch(
+        readerContextLayoutProvider(scriptScope.scope.context).select(
+          (prefs) =>
+              prefs.hasScriptFor(language) ? (prefs.scriptFor(language),) : null,
+        ),
+      );
+      if (stored != null) return stored.$1;
       return ref.watch(
         readerDualSettingsProvider(
           scriptScope.scope,
