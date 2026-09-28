@@ -115,6 +115,62 @@ void main() {
       expect(actual.target, PushTapTarget.home);
     });
 
+    test('event prayer chat opens prayer requests by event id', () {
+      final actual = resolvePushTap({
+        'notification_type': 'CHAT_MESSAGE',
+        'session_type': 'CHAT',
+        'chat_kind': 'EVENT',
+        'event_id': 'event-1',
+        'room_id': 'room-1',
+        'source_id': 'room-1',
+        'message_type': 'PRAYER',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'event-1');
+      expect(actual.resolvesRoom, isFalse);
+    });
+
+    test('event prayer chat without event_id keeps the room id to resolve', () {
+      final actual = resolvePushTap({
+        'session_type': 'CHAT',
+        'kind': 'EVENT',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'room-1');
+      expect(actual.resolvesRoom, isTrue);
+    });
+
+    test('a PRAYER message on a chat push opens prayer requests', () {
+      final actual = resolvePushTap({
+        'session_type': 'CHAT',
+        'message_type': 'PRAYER',
+        'event_id': 'event-1',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'event-1');
+    });
+
+    test('PRAYER_REQUEST opens prayer requests by source id', () {
+      final actual = resolvePushTap({
+        'session_type': 'PRAYER_REQUEST',
+        'source_id': 'event-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'event-1');
+      expect(actual.resolvesRoom, isFalse);
+    });
+
+    test('a prayer notification type without session_type still opens prayers', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER',
+        'event_id': 'event-1',
+      });
+      expect(actual.target, PushTapTarget.eventPrayerRequests);
+      expect(actual.sourceId, 'event-1');
+    });
+
     test('group CHAT without a group_id falls back to Home', () {
       expect(
         resolvePushTap({

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_attendance_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
@@ -49,7 +51,15 @@ enum _EventTab { videos, about, accumulations }
 class GroupEventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
 
-  const GroupEventDetailScreen({super.key, required this.eventId});
+  /// Opens the prayer-request sheet once this event screen is on screen.
+  /// Set from a prayer-request notification tap.
+  final bool openPrayerRequests;
+
+  const GroupEventDetailScreen({
+    super.key,
+    required this.eventId,
+    this.openPrayerRequests = false,
+  });
 
   @override
   ConsumerState<GroupEventDetailScreen> createState() =>
@@ -65,6 +75,18 @@ class _GroupEventDetailScreenState
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
+  bool _didOpenPrayerRequests = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.openPrayerRequests) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didOpenPrayerRequests) return;
+      _didOpenPrayerRequests = true;
+      unawaited(PrayerRequestsSheet.show(context, eventId: widget.eventId));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1090,11 +1112,11 @@ class _EventInfoCard extends StatelessWidget {
             for (final link in otherLinks) ...[
               const SizedBox(height: 10),
               _EventLinkText(
-              link: link,
-              eventId: event.id,
-              groupId: event.groupId,
-              isDark: isDark,
-            ),
+                link: link,
+                eventId: event.id,
+                groupId: event.groupId,
+                isDark: isDark,
+              ),
             ],
           ],
         ],
