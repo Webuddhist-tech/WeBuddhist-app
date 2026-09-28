@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_member.dart';
@@ -242,9 +242,12 @@ class _GroupMemberRow extends StatelessWidget {
                             key: ValueKey(member.avatarUrl),
                             imageUrl: member.avatarUrl,
                             fit: BoxFit.cover,
-                            errorWidget: _buildAvatarFallback(isDark),
+                            errorWidget: AvatarFallback(
+                              isDark: isDark,
+                              iconSize: 22,
+                            ),
                           )
-                          : _buildAvatarFallback(isDark),
+                          : AvatarFallback(isDark: isDark, iconSize: 22),
                 ),
               ),
               const SizedBox(width: 12),
@@ -284,17 +287,6 @@ class _GroupMemberRow extends StatelessWidget {
         ),
         SizedBox(height: 20),
       ],
-    );
-  }
-
-  Widget _buildAvatarFallback(bool isDark) {
-    return ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.profile,
-        size: 22,
-        color: isDark ? AppColors.grey500 : AppColors.grey600,
-      ),
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
@@ -892,24 +893,12 @@ class _ParticipantAvatar extends StatelessWidget {
                 ? CachedNetworkImageWidget(
                   imageUrl: avatarUrl,
                   fit: BoxFit.cover,
-                  errorWidget: _avatarFallback(),
+                  errorWidget: AvatarFallback(
+                    isDark: isDark,
+                    iconSize: size * 0.5,
+                  ),
                 )
-                : _avatarFallback(),
-      ),
-    );
-  }
-
-  /// Neutral fallback matching the group members list (grey circle + profile
-  /// icon) rather than brand-red initials.
-  Widget _avatarFallback() {
-    return ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Center(
-        child: Icon(
-          AppAssets.profile,
-          size: size * 0.5,
-          color: isDark ? AppColors.grey500 : AppColors.grey600,
-        ),
+                : AvatarFallback(isDark: isDark, iconSize: size * 0.5),
       ),
     );
   }
