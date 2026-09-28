@@ -454,7 +454,14 @@ sealed class GroupFollowState {
 class GroupFollowLoading extends GroupFollowState {
   final bool isInitialCheck;
 
-  const GroupFollowLoading({this.isInitialCheck = false});
+  /// Membership the server last confirmed before this request started. Always
+  /// false for the initial check, when nothing has been confirmed yet.
+  final bool wasFollowing;
+
+  const GroupFollowLoading({
+    this.isInitialCheck = false,
+    this.wasFollowing = false,
+  });
 }
 
 class GroupFollowSuccess extends GroupFollowState {
@@ -466,7 +473,12 @@ class GroupFollowSuccess extends GroupFollowState {
 
 class GroupFollowFailure extends GroupFollowState {
   final Failure failure;
-  const GroupFollowFailure(this.failure);
+
+  /// Membership the server last confirmed. A failed join or leave does not
+  /// change it, and a failed status check leaves it unconfirmed (false).
+  final bool wasFollowing;
+
+  const GroupFollowFailure(this.failure, {this.wasFollowing = false});
 }
 
 /// Whether the initial join-status check for a private group is still in flight.
@@ -483,6 +495,29 @@ bool isPrivateGroupMember({required GroupFollowState followState}) {
     GroupFollowSuccess(isFollowing: final isFollowing) => isFollowing,
     _ => false,
   };
+}
+
+/// Membership the server last confirmed, carried through join/leave requests
+/// and their failures. A leave in flight or a failed leave keeps a member a
+/// member; a join in flight or a failed join keeps a non-member out.
+/// False while the initial check runs or after it failed.
+bool lastConfirmedGroupMembership(GroupFollowState followState) {
+  return switch (followState) {
+    GroupFollowSuccess(isFollowing: final isFollowing) => isFollowing,
+    GroupFollowLoading(wasFollowing: final wasFollowing) => wasFollowing,
+    GroupFollowFailure(wasFollowing: final wasFollowing) => wasFollowing,
+  };
+}
+
+/// Create, edit, and delete need both the content permission and confirmed
+/// membership, for every group type. A pending join request does not count.
+/// Membership comes from [lastConfirmedGroupMembership], so a join or leave
+/// in flight or a failed leave does not flicker these controls.
+bool canPublishGroupPosts({
+  required bool canCreateContent,
+  required GroupFollowState followState,
+}) {
+  return canCreateContent && lastConfirmedGroupMembership(followState);
 }
 
 class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
@@ -584,22 +619,26 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
     );
     if (!mounted) return;
 
+    // A failed check is unknown, not a confirmed non-member: record it as a
+    // failure so membership stays unconfirmed. The network layer has already
+    // retried; a page refresh re-runs the check.
     result.fold(
-      (_) => state = const GroupFollowSuccess(isFollowing: false),
+      (failure) => state = GroupFollowFailure(failure),
       (isFollowing) => state = GroupFollowSuccess(isFollowing: isFollowing),
     );
   }
 
   Future<bool> follow({GroupProfile? connectGroup}) async {
     if (state is GroupFollowLoading) return false;
-    state = const GroupFollowLoading();
+    final wasFollowing = lastConfirmedGroupMembership(state);
+    state = GroupFollowLoading(wasFollowing: wasFollowing);
 
     final result = await _repository.followGroup(_key.groupId, _key.groupType);
     if (!mounted) return false;
 
     return await result.fold(
       (failure) async {
-        state = GroupFollowFailure(failure);
+        state = GroupFollowFailure(failure, wasFollowing: wasFollowing);
         return false;
       },
       (_) async {
@@ -673,7 +712,8 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
   Future<bool> unfollow({GroupProfile? connectGroup}) async {
     if (state is GroupFollowLoading) return false;
     final previousDelta = _currentCountDelta();
-    state = const GroupFollowLoading();
+    final wasFollowing = lastConfirmedGroupMembership(state);
+    state = GroupFollowLoading(wasFollowing: wasFollowing);
 
     final result = await _repository.unfollowGroup(
       _key.groupId,
@@ -683,7 +723,7 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
 
     return await result.fold(
       (failure) async {
-        state = GroupFollowFailure(failure);
+        state = GroupFollowFailure(failure, wasFollowing: wasFollowing);
         return false;
       },
       (_) async {
