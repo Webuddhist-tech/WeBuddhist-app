@@ -209,7 +209,8 @@ class _GroupEventDetailScreenState
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
           const SizedBox(height: 16),
-          _EventInfoCard(event: event, isDark: isDark),
+          _EventGroupRow(event: event, isDark: isDark),
+          _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
           const SizedBox(height: 20),
@@ -956,23 +957,100 @@ class _ParticipantAvatar extends StatelessWidget {
   }
 }
 
-class _EventInfoCard extends StatelessWidget {
+class _EventGroupRow extends ConsumerWidget {
   final GroupEvent event;
   final bool isDark;
 
-  const _EventInfoCard({required this.event, required this.isDark});
+  const _EventGroupRow({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final group = ref
+        .watch(groupProfileProvider(event.groupId))
+        .valueOrNull
+        ?.fold((_) => null, (profile) => profile);
+    final title = (group?.title ?? event.groupName ?? '').trim();
+    final avatarUrl = (group?.avatarUrl ?? event.groupAvatarUrl ?? '').trim();
+    final subtitle = (group?.subTitle ?? group?.description ?? '').trim();
+    if (title.isEmpty) return const SizedBox.shrink();
+
+    final subtitleColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final cardColor =
+        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
+
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => context.push('/home/group/${event.groupId}'),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor:
+                    isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+                backgroundImage:
+                    avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                child:
+                    avatarUrl.isEmpty
+                        ? Icon(
+                          AppAssets.usersThree,
+                          size: 20,
+                          color: isDark ? AppColors.grey500 : AppColors.grey600,
+                        )
+                        : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        style: TextStyle(fontSize: 13, color: subtitleColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                AppAssets.caretRight,
+                color: isDark ? AppColors.grey500 : AppColors.grey600,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Meeting rooms and other resource links; empty when the event has none.
+class _EventLinksCard extends StatelessWidget {
+  final GroupEvent event;
+  final bool isDark;
+
+  const _EventLinksCard({required this.event, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
-    final secondaryColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final dateText = _formatDateText(context, event);
-    final recurrenceText = _formatRecurrenceText(context, event);
-    final locationName = event.location?.name.trim() ?? '';
-    final isOnline = isGroupEventOnline(event);
-    final showLocation = !isOnline && locationName.isNotEmpty;
     final links =
         event.links
             .where(
@@ -981,17 +1059,11 @@ class _EventInfoCard extends StatelessWidget {
                   GroupEventLinkUtils.kindOf(link) != GroupEventLinkKind.video,
             )
             .toList();
-    final showOnline = isOnline || isGroupEventHybrid(event);
-    // A meeting room stands in for the venue only when the event runs online;
-    // on a venue-only event it is just another resource.
-    bool isVenueLink(GroupEventLink link) =>
-        showOnline &&
-        GroupEventLinkUtils.kindOf(link) == GroupEventLinkKind.meeting;
-    final meetingLinks = links.where(isVenueLink).toList();
-    final otherLinks = links.where((link) => !isVenueLink(link)).toList();
+    if (links.isEmpty) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
       decoration: BoxDecoration(
         color: cardColor,
@@ -1000,49 +1072,8 @@ class _EventInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _EventSectionLabel(text: context.l10n.connect_event_when),
-          const SizedBox(height: 10),
-          if (dateText != null)
-            _EventInfoRow(
-              icon: AppAssets.clock,
-              text: dateText,
-              iconColor: secondaryColor,
-            )
-          else
-            Text(
-              context.l10n.connect_event_date_tba,
-              style: TextStyle(fontSize: 14, color: secondaryColor),
-            ),
-          if (recurrenceText != null) ...[
-            const SizedBox(height: 10),
-            _EventInfoRow(
-              icon: AppAssets.repeat,
-              text: recurrenceText,
-              iconColor: secondaryColor,
-            ),
-          ],
-          if (showLocation || showOnline) ...[
-            const SizedBox(height: 16),
-            _EventSectionLabel(text: context.l10n.connect_event_where),
-            const SizedBox(height: 10),
-          ],
-          if (showLocation)
-            _EventInfoRow(
-              icon: AppAssets.buildings,
-              text: locationName,
-              iconColor: secondaryColor,
-              bold: true,
-            ),
-          if (showOnline) ...[
-            if (showLocation) const SizedBox(height: 12),
-            _EventInfoRow(
-              icon: AppAssets.videoCamera,
-              text: context.l10n.connect_online,
-              iconColor: secondaryColor,
-              bold: true,
-            ),
-          ],
-          for (final link in meetingLinks) ...[
+          _EventSectionLabel(text: context.l10n.connect_event_links_title),
+          for (final link in links) ...[
             const SizedBox(height: 10),
             _EventLinkText(
               link: link,
@@ -1051,73 +1082,12 @@ class _EventInfoCard extends StatelessWidget {
               isDark: isDark,
             ),
           ],
-          if (otherLinks.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _EventSectionLabel(text: context.l10n.connect_event_links_title),
-            for (final link in otherLinks) ...[
-              const SizedBox(height: 10),
-              _EventLinkText(
-              link: link,
-              eventId: event.id,
-              groupId: event.groupId,
-              isDark: isDark,
-            ),
-            ],
-          ],
         ],
       ),
     );
   }
-
-  String? _formatDateText(BuildContext context, GroupEvent event) {
-    final start = event.startDate?.toLocal();
-    if (start == null) return null;
-
-    final locale = intlFormatLocaleOf(context);
-    final date = DateFormat('EEE d MMM y', locale).format(start);
-    final startTime = DateFormat.jm(locale).format(start).toLowerCase();
-    final end = event.endDate?.toLocal();
-    if (end == null || end.isAtSameMomentAs(start)) {
-      return '$date\n$startTime ${start.timeZoneName}';
-    }
-
-    final endTime = DateFormat.jm(locale).format(end).toLowerCase();
-    final endZone = end.timeZoneName;
-    // Label the start too when the range crosses a DST change.
-    final startLabel =
-        start.timeZoneName == endZone
-            ? startTime
-            : '$startTime ${start.timeZoneName}';
-    // Dates on one line, times on the next, so the range stays scannable.
-    final isMultiDay = !DateUtils.isSameDay(start, end);
-    final dateLine =
-        isMultiDay
-            ? '$date – ${DateFormat('EEE d MMM y', locale).format(end)}'
-            : date;
-    return '$dateLine\n$startLabel – $endTime $endZone';
-  }
-
-  String? _formatRecurrenceText(BuildContext context, GroupEvent event) {
-    final recurrence = event.recurrence;
-    if (!event.isRecurring || recurrence == null) return null;
-
-    final anchor = (event.occurrenceDate ?? event.startDate)?.toLocal();
-    if (anchor == null) return null;
-
-    final locale = intlFormatLocaleOf(context);
-    return switch (recurrence.frequency.toUpperCase()) {
-      'DAILY' => context.l10n.connect_event_every_day,
-      'WEEKLY' => context.l10n.connect_event_every_weekday(
-        DateFormat.EEEE(locale).format(anchor),
-      ),
-      'MONTHLY' => context.l10n.connect_event_every_month,
-      'YEARLY' => context.l10n.connect_event_every_date(
-        DateFormat('d MMM', locale).format(anchor),
-      ),
-      _ => null,
-    };
-  }
 }
+
 
 class _EventSectionLabel extends StatelessWidget {
   final String text;
