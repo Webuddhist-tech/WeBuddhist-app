@@ -97,6 +97,13 @@ class StorageKeys {
   /// Global preference (bool), default true; ignored when no translation is
   /// showing so the screen is never empty.
   static const String readerOriginalVisible = 'reader_original_visible';
+  /// JSON of what the reader changed inside one layout context (`event`,
+  /// `chant`, `plan`): original on/off, translation on/off and language,
+  /// original language, script per source language. Only touched fields are
+  /// stored; the library context uses the three keys above instead.
+  static const String readerLayoutPrefsPrefix = 'reader_layout_';
+  static String readerLayoutPrefs(String context) =>
+      '$readerLayoutPrefsPrefix$context';
   /// Bead-tap sound on the mala counter. Default: true.
   static const String malaSoundEnabled = 'mala_sound_enabled';
   /// Haptic feedback on the mala counter. Default: true.

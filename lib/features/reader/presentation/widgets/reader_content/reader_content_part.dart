@@ -347,7 +347,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final range = content?.segmentNumberRange;
     if (range == null) return;
     final dualSettings = ref.read(
-      readerDualSettingsProvider(widget.params.textId),
+      readerDualSettingsProvider(widget.params.settingsScope),
     );
     final versionId = dualSettings.secondary.versionId;
     if (!dualSettings.secondaryEnabled || versionId == null) return;
@@ -517,7 +517,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     ReaderState readerState,
   ) {
     final dualSettings = ref.read(
-      readerDualSettingsProvider(widget.params.textId),
+      readerDualSettingsProvider(widget.params.settingsScope),
     );
     final content = readerState.content;
     return LivePositionResolver.textMatches(
@@ -721,7 +721,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final state = ref.watch(readerNotifierProvider(widget.params));
     final notifier = ref.read(readerNotifierProvider(widget.params).notifier);
     final dualSettings = ref.watch(
-      readerDualSettingsProvider(widget.params.textId),
+      readerDualSettingsProvider(widget.params.settingsScope),
     );
 
     RecitationLivePosition? livePosition;
@@ -1001,6 +1001,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             segment: segment,
             depth: depth,
             primaryLanguage: widget.language,
+            scope: widget.params.settingsScope,
             showPrimary: showOriginal,
             secondarySlot: secondarySlot,
             secondaryContentBySegmentNumber:
@@ -1037,6 +1038,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           segment: segment,
           depth: depth,
           language: widget.language,
+          scope: widget.params.settingsScope,
           isSelected: isSelected,
           isLive: isLive,
           onTap: () {

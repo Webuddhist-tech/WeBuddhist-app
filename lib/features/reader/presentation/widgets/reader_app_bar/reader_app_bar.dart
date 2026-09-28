@@ -82,7 +82,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
         ReaderSearchButton(onPressed: onSearchPressed),
         if (onFontSizePressed != null)
           ReaderFontSizeButton(onPressed: onFontSizePressed!),
-        ReaderLanguagesButton(params: params, onPressed: onLanguagesPressed),
+        ReaderLanguagesButton(onPressed: onLanguagesPressed),
         const SizedBox(width: 4),
         if (onMorePressed != null) ...[
           IconButton(
@@ -166,10 +166,7 @@ class ReaderAppBar extends ConsumerWidget {
         ReaderSearchButton(
           onPressed: onSearchPressed ?? () => _handleSearch(context, ref),
         ),
-        ReaderLanguagesButton(
-          params: params,
-          onPressed: onLanguagesPressed ?? () {},
-        ),
+        ReaderLanguagesButton(onPressed: onLanguagesPressed ?? () {}),
         const SizedBox(width: 4),
         IconButton(
           icon: const Icon(Icons.more_vert),
