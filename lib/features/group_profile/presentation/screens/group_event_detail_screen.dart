@@ -212,12 +212,14 @@ class _GroupEventDetailScreenState
                   isDark: isDark,
                 ),
               ),
-              if (event.chatEnabled)
+              if (event.chatEnabled) ...[
+                const SizedBox(width: 12),
                 PrayerRequestsButton(
                   padding: EdgeInsets.zero,
                   outlined: true,
                   onTap: () => _openPrayerRequests(event.id),
                 ),
+              ],
             ],
           ),
           if (!isPast || (event.hasPuja && isAttending)) ...[
@@ -920,12 +922,17 @@ class _AttendeesRow extends StatelessWidget {
           for (var i = 0; i < stacked.length; i++)
             i == stacked.length - 1 ? stacked[i] : overlapped(stacked[i]),
           if (totalItems > 0) const SizedBox(width: 8),
-          Text(
-            context.l10n.connect_event_participants_attending(totalAttending),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: textColor,
+          // Shares the line with the prayer requests chip, so let it shrink.
+          Flexible(
+            child: Text(
+              context.l10n.connect_event_participants_attending(totalAttending),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
           ),
         ],
@@ -1127,7 +1134,6 @@ class _EventLinksCard extends StatelessWidget {
     );
   }
 }
-
 
 class _EventSectionLabel extends StatelessWidget {
   final String text;
