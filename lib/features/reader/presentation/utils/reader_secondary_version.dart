@@ -207,16 +207,32 @@ Future<SecondaryFillOutcome> fillSecondaryWithLanguages({
   );
 
   // A slot already in a candidate's language is done, unless this text has
-  // another edition remembered: that one may be in the same language.
+  // another edition remembered in that same language: that one replaces it.
   final remembered = notifier.rememberedTranslationVersionId;
   var anyFailed = false;
   for (final option in options) {
     if (!context.mounted) return SecondaryFillOutcome.superseded;
     final current = ref.read(readerDualSettingsProvider(scope)).secondary;
     if (current.versionId != null &&
-        readerLanguagesMatch(current.languageCode, option.code) &&
-        (remembered == null || current.versionId == remembered)) {
-      return SecondaryFillOutcome.filled;
+        readerLanguagesMatch(current.languageCode, option.code)) {
+      if (remembered == null || current.versionId == remembered) {
+        return SecondaryFillOutcome.filled;
+      }
+      final generation = notifier.secondaryResolveGeneration;
+      final offersRemembered = await _languageOffersVersion(
+        ref: ref,
+        textId: scope.textId,
+        language: option.code,
+        versionId: remembered,
+      );
+      if (!toggleUnchanged() ||
+          !context.mounted ||
+          notifier.secondaryResolveGeneration != generation) {
+        return SecondaryFillOutcome.superseded;
+      }
+      // Re-resolving would only clear the slot and put the same edition
+      // back, reloading the translation for nothing.
+      if (!offersRemembered) return SecondaryFillOutcome.filled;
     }
 
     final slot = ReaderSlotConfig(
@@ -251,6 +267,28 @@ Future<SecondaryFillOutcome> fillSecondaryWithLanguages({
   return anyFailed
       ? SecondaryFillOutcome.failed
       : SecondaryFillOutcome.unavailable;
+}
+
+/// Whether [language]'s translation editions of [textId] include
+/// [versionId]; false when they cannot be fetched.
+Future<bool> _languageOffersVersion({
+  required WidgetRef ref,
+  required String textId,
+  required String language,
+  required String versionId,
+}) async {
+  try {
+    final versions = translationVersions(
+      await ref.read(
+        readerVersionsProvider(
+          ReaderLanguageQuery(textId: textId, language: language),
+        ).future,
+      ),
+    );
+    return versions.any((version) => version.id == versionId);
+  } catch (_) {
+    return false;
+  }
 }
 
 /// Fills the secondary slot with the translation this reader prefers

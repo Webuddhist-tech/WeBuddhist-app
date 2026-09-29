@@ -410,6 +410,23 @@ void main() {
         );
       });
 
+      test('stays on from the first frame when picked in the Hindi list', () {
+        // The seed waits for the text's languages; the pin must not.
+        chantStore()
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        final notifier = keep(chant);
+        notifier.openAsTranslation(
+          original: root,
+          translation: hindi,
+          listLanguage: 'hi',
+        );
+
+        expect(notifier.isTranslationPinnedByList, isTrue);
+        expect(settingsOf(chant).secondaryEnabled, isTrue);
+        expect(settingsOf(chant).secondary, hindi);
+      });
+
       test('shows the original when the person chose that in this context', () {
         chantStore().setOriginalVisible(true);
         keep(chant).openAsTranslation(original: root, translation: hindi);

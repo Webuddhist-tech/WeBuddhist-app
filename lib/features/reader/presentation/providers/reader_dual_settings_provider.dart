@@ -269,12 +269,17 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     if (isLibrary) return;
     _seed = layout;
     _language = TransliterationService.normalizeLanguage(language);
-    final list = TransliterationService.normalizeLanguage(listLanguage ?? '');
-    _listLanguage =
-        scope.context == ReaderLayoutContext.chant && list.isNotEmpty
-            ? list
-            : null;
+    _listLanguage = _chantListLanguage(listLanguage);
     _recompute();
+  }
+
+  /// [listLanguage] normalised, in the chant context only; null elsewhere or
+  /// when blank.
+  String? _chantListLanguage(String? listLanguage) {
+    final list = TransliterationService.normalizeLanguage(listLanguage ?? '');
+    return scope.context == ReaderLayoutContext.chant && list.isNotEmpty
+        ? list
+        : null;
   }
 
   /// Turns the seeded translation on once a version for it has been found.
@@ -340,10 +345,12 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// Outside the library this layout is the visit's default in place of the
   /// seed's: the translation is on and, except in an event, the original
   /// hidden, unless the person chose otherwise in this context. A chant
-  /// picked in the opened edition's language keeps it on regardless.
+  /// picked in the opened edition's language ([listLanguage]) keeps it on
+  /// regardless, from the first frame rather than once [seed] runs.
   void openAsTranslation({
     required ReaderSlotConfig original,
     required ReaderSlotConfig translation,
+    String? listLanguage,
   }) {
     _primaryEdited = true;
     _secondaryEdited = true;
@@ -360,6 +367,7 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
       translation.languageCode,
     );
     _openedTranslationVersionId = translation.versionId;
+    _listLanguage = _chantListLanguage(listLanguage);
     _recompute();
   }
 
