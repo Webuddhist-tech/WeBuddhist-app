@@ -368,6 +368,88 @@ void main() {
       expect(_secondaryOf(host).versionId, 'v-en');
     });
 
+    testWidgets('replaces the opened edition when it is in the same language', (
+      tester,
+    ) async {
+      // The Tara plan links v-en; the person picked the Simple English here.
+      final datasource = _FakeSettingsDatasource(
+        languages: [_english],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).openAsTranslation(
+        original: const ReaderSlotConfig(
+          languageCode: 'bo',
+          languageLabel: 'bo',
+          versionId: 'bo-root',
+        ),
+        translation: const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en',
+        ),
+      );
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-en-2');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(_secondaryOf(host).versionId, 'v-en-2');
+    });
+
+    testWidgets('the opened edition comes back before the first one', (
+      tester,
+    ) async {
+      final datasource = _FakeSettingsDatasource(
+        languages: [_english],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).openAsTranslation(
+        original: const ReaderSlotConfig(
+          languageCode: 'bo',
+          languageLabel: 'bo',
+          versionId: 'bo-root',
+        ),
+        translation: const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en-2',
+        ),
+      );
+      // Remembered, but no longer offered.
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-gone');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(_secondaryOf(host).versionId, 'v-en-2');
+      expect(datasource.versionRequests, ['en']);
+    });
+
+    testWidgets('a slot already holding the remembered edition is done', (
+      tester,
+    ) async {
+      final datasource = _FakeSettingsDatasource(
+        languages: [_english],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).fillSecondary(
+        const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en-2',
+        ),
+      );
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-en-2');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(datasource.versionRequests, isEmpty);
+    });
+
     testWidgets('another text keeps its own pick', (tester) async {
       final datasource = _FakeSettingsDatasource(
         languages: [_english],
