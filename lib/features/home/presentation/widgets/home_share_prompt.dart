@@ -63,8 +63,7 @@ class _PromptLabel extends StatelessWidget {
     final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final supportTextColor =
-        isDark ? AppColors.grey500 : AppColors.grey600;
+    final supportTextColor = isDark ? AppColors.grey500 : AppColors.grey600;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -115,23 +114,35 @@ class _PromptButton extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: SizedBox(
-          width: double.infinity,
-          height: 52.0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 22.0, color: colorScheme.onSurface),
-              const SizedBox(width: 8.0),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16.0,
-                  color: colorScheme.onSurface,
+        // Grows past 52 rather than clipping the label at large text scales.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: 52.0,
+            minWidth: double.infinity,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 8.0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 22.0, color: colorScheme.onSurface),
+                const SizedBox(width: 8.0),
+                Flexible(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16.0,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

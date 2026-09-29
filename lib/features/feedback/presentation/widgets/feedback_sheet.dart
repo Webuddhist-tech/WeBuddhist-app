@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +21,11 @@ class FeedbackSheet extends ConsumerStatefulWidget {
 
   static const double _initialSize = 0.6;
   static const double _maxSize = 0.95;
+
+  /// Floor for the sheet, in pixels. The header and the Send footer do not
+  /// scroll, so a fraction of the space left above an open keyboard can be
+  /// too short to show the composer on a compact phone.
+  static const double _minSheetHeight = 380;
 
   static Future<bool?> show(BuildContext context) {
     return showModalBottomSheet<bool>(
@@ -163,45 +169,62 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: FeedbackSheet._initialSize,
-        minChildSize: FeedbackSheet._initialSize,
-        maxChildSize: FeedbackSheet._maxSize,
-        snap: true,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                children: [
-                  _buildHeader(context, isDark),
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                      children: [
-                        _buildMessageField(context, isDark),
-                        const SizedBox(height: 16),
-                        _buildImages(context, isDark),
-                      ],
-                    ),
-                  ),
-                  _buildSubmit(context, isDark),
-                ],
-              ),
-            ),
-          );
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Fractions are of the space left above the keyboard, so they have
+          // to grow as that space shrinks to keep the sheet usable.
+          final floor = (FeedbackSheet._minSheetHeight / constraints.maxHeight)
+              .clamp(0.0, 1.0);
+          final initial = math.max(FeedbackSheet._initialSize, floor);
+          final max = math.max(FeedbackSheet._maxSize, initial);
+          return _buildSheet(context, isDark, initial: initial, max: max);
         },
       ),
+    );
+  }
+
+  Widget _buildSheet(
+    BuildContext context,
+    bool isDark, {
+    required double initial,
+    required double max,
+  }) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: initial,
+      minChildSize: initial,
+      maxChildSize: max,
+      snap: true,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                _buildHeader(context, isDark),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    children: [
+                      _buildMessageField(context, isDark),
+                      const SizedBox(height: 16),
+                      _buildImages(context, isDark),
+                    ],
+                  ),
+                ),
+                _buildSubmit(context, isDark),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

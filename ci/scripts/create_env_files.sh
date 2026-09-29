@@ -33,6 +33,7 @@ fi
   echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${DEV_CLARITY_ENABLED-}"
+  echo "DISCORD_FEEDBACK_WEBHOOK_URL=${DISCORD_FEEDBACK_WEBHOOK_URL-}"
 } > .env.dev
 
 # --- Staging ---------------------------------------------------------------
@@ -47,6 +48,7 @@ fi
   echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${STAGING_CLARITY_ENABLED-}"
+  echo "DISCORD_FEEDBACK_WEBHOOK_URL=${DISCORD_FEEDBACK_WEBHOOK_URL-}"
 } > .env.staging
 
 # --- Production ------------------------------------------------------------
@@ -65,6 +67,9 @@ fi
   # without Clarity.
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${CLARITY_ENABLED-}"
+  # All flavors post to the same channel; the message carries no environment
+  # tag, so feedback from a test build is indistinguishable from a real one.
+  echo "DISCORD_FEEDBACK_WEBHOOK_URL=${DISCORD_FEEDBACK_WEBHOOK_URL-}"
 } > .env.prod
 
 echo "Created .env.dev, .env.staging, .env.prod"
