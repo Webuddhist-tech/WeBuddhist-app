@@ -877,18 +877,15 @@ class _AttendeesRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final shown = participants.take(2).toList();
-    final remaining = math.max(0, totalAttending - shown.length);
+    final shown = participants.take(3).toList();
     final textColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
 
     final double avatarSize = 28.0;
     final double overlap = 18.0;
-    final borderColor =
-        isDark ? AppColors.scaffoldBackgroundDark : AppColors.surfaceLight;
 
     // Each avatar but the last only takes [overlap] of layout width and paints
-    // past it, so the count pill can size to its text without measuring.
+    // past it, so the stack overlaps without measuring.
     Widget overlapped(Widget child) => SizedBox(
       width: overlap,
       height: avatarSize,
@@ -898,7 +895,7 @@ class _AttendeesRow extends StatelessWidget {
         child: child,
       ),
     );
-    final avatars = [
+    final stacked = [
       for (final participant in shown)
         _ParticipantAvatar(
           participant: participant,
@@ -906,32 +903,6 @@ class _AttendeesRow extends StatelessWidget {
           size: avatarSize,
         ),
     ];
-    final countPill =
-        remaining > 0
-            ? Container(
-              constraints: BoxConstraints(minWidth: avatarSize),
-              height: avatarSize,
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(avatarSize / 2),
-                color: isDark ? AppColors.grey800 : const Color(0xFFE8E5DF),
-                border: Border.all(color: borderColor, width: 2),
-              ),
-              child: Text(
-                '+$remaining',
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color:
-                      isDark ? AppColors.textPrimaryDark : AppColors.greyDark,
-                ),
-              ),
-            )
-            : null;
-    final stacked = [...avatars, if (countPill != null) countPill];
     final int totalItems = stacked.length;
 
     return GestureDetector(
