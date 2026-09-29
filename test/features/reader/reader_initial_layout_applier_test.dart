@@ -45,4 +45,65 @@ void main() {
       );
     });
   });
+
+  group('readerOpenedTranslationNeedsRefill', () {
+    bool needsRefill({
+      String? openedLanguage = 'en',
+      String? openedVersionId = 'v-en',
+      String? currentVersionId = 'v-en',
+      String? rememberedLanguage,
+      String? rememberedVersionId,
+      bool pinnedByList = false,
+    }) => readerOpenedTranslationNeedsRefill(
+      openedLanguage: openedLanguage,
+      openedVersionId: openedVersionId,
+      currentVersionId: currentVersionId,
+      rememberedLanguage: rememberedLanguage,
+      rememberedVersionId: rememberedVersionId,
+      pinnedByList: pinnedByList,
+    );
+
+    test('nothing remembered keeps the opened edition', () {
+      expect(needsRefill(), isFalse);
+    });
+
+    test('another language picked in this context replaces it', () {
+      expect(needsRefill(rememberedLanguage: 'zh'), isTrue);
+      expect(
+        needsRefill(rememberedLanguage: ' EN'),
+        isFalse,
+        reason: 'the same language, whatever the case',
+      );
+    });
+
+    test('another edition picked for this text replaces it', () {
+      expect(needsRefill(rememberedVersionId: 'v-en-2'), isTrue);
+      expect(needsRefill(rememberedVersionId: 'v-en'), isFalse);
+    });
+
+    test('a slot written since opening is left alone', () {
+      expect(
+        needsRefill(currentVersionId: 'v-zh', rememberedLanguage: 'hi'),
+        isFalse,
+      );
+    });
+
+    test('a chant picked in the opened language keeps it', () {
+      expect(
+        needsRefill(rememberedLanguage: 'zh', pinnedByList: true),
+        isFalse,
+      );
+    });
+
+    test('a text that was not opened as a translation has nothing to swap', () {
+      expect(
+        needsRefill(
+          openedLanguage: null,
+          openedVersionId: null,
+          rememberedLanguage: 'zh',
+        ),
+        isFalse,
+      );
+    });
+  });
 }

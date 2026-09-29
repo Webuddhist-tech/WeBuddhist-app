@@ -51,6 +51,8 @@ enum SecondaryResolveOutcome {
 /// - the edition picked for this text last time in this context, when the
 ///   language offers it
 ///   ([ReaderDualSettingsNotifier.rememberedTranslationVersionId]),
+/// - else the edition the reader was opened with, when the language offers
+///   it ([ReaderDualSettingsNotifier.openedTranslationVersionId]),
 /// - else, different language than Main → first available version,
 /// - same language as Main → first version whose id differs from Main's,
 /// - nothing usable → mark the slot [ReaderSlotConfig.versionUnavailable].
@@ -86,15 +88,20 @@ Future<SecondaryResolveOutcome> autoSelectSecondaryVersion({
     );
 
     final remembered = notifier.rememberedTranslationVersionId;
+    final opened = notifier.openedTranslationVersionId;
     ReaderVersionDetail? chosen;
+    ReaderVersionDetail? openedVersion;
+    ReaderVersionDetail? first;
     for (final version in versions) {
       if (sameLanguageAsMain && version.id == mainConfig.versionId) continue;
       if (version.id == remembered) {
         chosen = version;
         break;
       }
-      chosen ??= version;
+      if (version.id == opened) openedVersion ??= version;
+      first ??= version;
     }
+    chosen ??= openedVersion ?? first;
 
     if (chosen == null) {
       notifier.fillSecondary(slot.copyWith(versionUnavailable: true));
@@ -199,12 +206,16 @@ Future<SecondaryFillOutcome> fillSecondaryWithLanguages({
     versionId: sourceVersionId,
   );
 
+  // A slot already in a candidate's language is done, unless this text has
+  // another edition remembered: that one may be in the same language.
+  final remembered = notifier.rememberedTranslationVersionId;
   var anyFailed = false;
   for (final option in options) {
     if (!context.mounted) return SecondaryFillOutcome.superseded;
     final current = ref.read(readerDualSettingsProvider(scope)).secondary;
     if (current.versionId != null &&
-        readerLanguagesMatch(current.languageCode, option.code)) {
+        readerLanguagesMatch(current.languageCode, option.code) &&
+        (remembered == null || current.versionId == remembered)) {
       return SecondaryFillOutcome.filled;
     }
 
