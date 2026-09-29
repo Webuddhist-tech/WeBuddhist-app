@@ -10,8 +10,10 @@ import 'package:fpdart/fpdart.dart';
 
 /// Records update calls and lets each one be held open so the test controls
 /// the order in which responses land.
+const _allOn = GroupNotificationPreferences(chat: true, content: true);
+
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
-  GroupNotificationPreferences server = GroupNotificationPreferences.allOn;
+  GroupNotificationPreferences server = _allOn;
   Failure? getFailure;
   Failure? updateFailure;
   int getCalls = 0;
@@ -74,7 +76,10 @@ void main() {
               );
         final notifier = _notifier(repo);
         expect(notifier.state.isLoading, isTrue);
-        expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
+        expect(
+          notifier.state.preferences,
+          GroupNotificationPreferences.defaults,
+        );
 
         await _settle();
         expect(notifier.state.isLoading, isFalse);
@@ -128,22 +133,22 @@ void main() {
             _FakeRepository()
               ..getHold = Completer<void>()
               ..server = const GroupNotificationPreferences(
-                chat: true,
+                chat: false,
                 content: false,
               );
         final notifier = _notifier(repo);
 
-        final flip = notifier.setChat(false);
+        final flip = notifier.setChat(true);
         repo.release(0);
         expect(await flip, isTrue);
-        expect(notifier.state.preferences.chat, isFalse);
+        expect(notifier.state.preferences.chat, isTrue);
 
         repo.getHold!.complete();
         await _settle();
         expect(notifier.state.isLoading, isFalse);
         expect(
           notifier.state.preferences,
-          const GroupNotificationPreferences(chat: false, content: false),
+          const GroupNotificationPreferences(chat: true, content: false),
         );
       },
     );
@@ -183,7 +188,7 @@ void main() {
       final flip = notifier.setChat(false);
       repo.release(0);
       expect(await flip, isFalse);
-      expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
+      expect(notifier.state.preferences, _allOn);
       expect(notifier.state.lastFailure, isA<NetworkFailure>());
     });
 

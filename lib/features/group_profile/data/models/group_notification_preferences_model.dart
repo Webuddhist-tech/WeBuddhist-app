@@ -30,8 +30,9 @@ abstract final class GroupNotificationTypes {
 /// ```
 ///
 /// A toggle reads on only when every type behind it is enabled and not
-/// currently muted; a type the backend does not list falls back to the
-/// default, on. A tap writes every type behind the toggle to the same value.
+/// currently muted; a type the backend does not list falls back to that
+/// toggle's value in [GroupNotificationPreferences.defaults]. A tap writes
+/// every type behind the toggle to the same value.
 class GroupNotificationPreferencesModel {
   final bool chat;
   final bool content;
@@ -55,11 +56,15 @@ class GroupNotificationPreferencesModel {
         delivering[type] = _isDelivering(entry, clock);
       }
     }
-    bool allOn(List<String> types) =>
-        types.every((type) => delivering[type] ?? true);
+    const defaults = GroupNotificationPreferences.defaults;
+    bool allOn(List<String> types, {required bool fallback}) =>
+        types.every((type) => delivering[type] ?? fallback);
     return GroupNotificationPreferencesModel(
-      chat: allOn(GroupNotificationTypes.chat),
-      content: allOn(GroupNotificationTypes.content),
+      chat: allOn(GroupNotificationTypes.chat, fallback: defaults.chat),
+      content: allOn(
+        GroupNotificationTypes.content,
+        fallback: defaults.content,
+      ),
     );
   }
 

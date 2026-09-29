@@ -2,8 +2,8 @@ import 'package:equatable/equatable.dart';
 
 /// A member's push-notification choices for one group.
 ///
-/// Both flags default to `true` on the backend when the user joins, so a
-/// fresh membership receives everything until the member opts out.
+/// A fresh membership gets [defaults]: chat off, content on. Chat pushes only
+/// start once the member opts in.
 ///
 /// - [chat] gates group chat message pushes.
 /// - [content] gates everything else the group sends: new posts, new events
@@ -19,9 +19,9 @@ class GroupNotificationPreferences extends Equatable {
     required this.content,
   });
 
-  /// Backend defaults for a member who never touched the toggles.
-  static const GroupNotificationPreferences allOn =
-      GroupNotificationPreferences(chat: true, content: true);
+  /// Values for a member who never touched the toggles.
+  static const GroupNotificationPreferences defaults =
+      GroupNotificationPreferences(chat: false, content: true);
 
   GroupNotificationPreferences copyWith({bool? chat, bool? content}) {
     return GroupNotificationPreferences(

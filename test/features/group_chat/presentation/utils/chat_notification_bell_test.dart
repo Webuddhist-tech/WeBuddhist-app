@@ -10,7 +10,7 @@ GroupNotificationPreferencesState _prefs({
   Failure? loadFailure,
 }) {
   return GroupNotificationPreferencesState(
-    preferences: GroupNotificationPreferences.allOn.copyWith(chat: chat),
+    preferences: GroupNotificationPreferences.defaults.copyWith(chat: chat),
     isLoading: isLoading,
     loadFailure: loadFailure,
   );
