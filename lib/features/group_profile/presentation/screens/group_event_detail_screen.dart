@@ -253,6 +253,8 @@ class _GroupEventDetailScreenState
           ],
           const SizedBox(height: 16),
           _EventGroupRow(event: event, isDark: isDark),
+          const SizedBox(height: 16),
+          _EventInfoCard(event: event, isDark: isDark),
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
@@ -1080,6 +1082,149 @@ class _EventGroupRow extends ConsumerWidget {
         card,
       ],
     );
+  }
+}
+
+/// When and where the event happens: date range, time, venue and online.
+class _EventInfoCard extends StatelessWidget {
+  final GroupEvent event;
+  final bool isDark;
+
+  const _EventInfoCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final cardColor =
+        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final dateText = _formatDateText(context, event);
+    final recurrenceText = _formatRecurrenceText(context, event);
+    final locationName = event.location?.name.trim() ?? '';
+    final isOnline = isGroupEventOnline(event);
+    final showLocation = !isOnline && locationName.isNotEmpty;
+    final showOnline = isOnline || isGroupEventHybrid(event);
+    final meetingLinks = event.links.where(
+      (link) =>
+          link.url.isNotEmpty &&
+          GroupEventLinkUtils.kindOf(link) == GroupEventLinkKind.meeting,
+    );
+    final meetingLink = meetingLinks.isEmpty ? null : meetingLinks.first;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _EventSectionLabel(text: context.l10n.connect_event_when),
+          const SizedBox(height: 10),
+          if (dateText != null)
+            _EventInfoRow(
+              icon: AppAssets.clock,
+              text: dateText,
+              iconColor: secondaryColor,
+            )
+          else
+            Text(
+              context.l10n.connect_event_date_tba,
+              style: TextStyle(fontSize: 14, color: secondaryColor),
+            ),
+          if (recurrenceText != null) ...[
+            const SizedBox(height: 10),
+            _EventInfoRow(
+              icon: AppAssets.repeat,
+              text: recurrenceText,
+              iconColor: secondaryColor,
+            ),
+          ],
+          if (showLocation || showOnline) ...[
+            const SizedBox(height: 16),
+            _EventSectionLabel(text: context.l10n.connect_event_where),
+            const SizedBox(height: 10),
+          ],
+          if (showLocation)
+            _EventInfoRow(
+              icon: AppAssets.mapPin,
+              text: locationName,
+              iconColor: secondaryColor,
+            ),
+          if (showOnline) ...[
+            if (showLocation) const SizedBox(height: 12),
+            // Opens the meeting room straight from the row when there is one.
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap:
+                  meetingLink == null ? null : () => _openLink(meetingLink.url),
+              child: _EventInfoRow(
+                icon: AppAssets.globe,
+                text: context.l10n.connect_online,
+                iconColor: secondaryColor,
+                textColor: isDark ? AppColors.blueDark : AppColors.blue,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String? _formatDateText(BuildContext context, GroupEvent event) {
+    final start = event.startDate?.toLocal();
+    if (start == null) return null;
+
+    final locale = intlFormatLocaleOf(context);
+    final end = event.endDate?.toLocal();
+    final now = DateTime.now();
+    // Drop the year when the whole range sits in the current year.
+    final showYear =
+        start.year != now.year || (end != null && end.year != now.year);
+    final datePattern = showYear ? 'd MMM y' : 'd MMM';
+    String day(DateTime value) => DateFormat(datePattern, locale).format(value);
+    String time(DateTime value) =>
+        DateFormat.jm(locale).format(value).toLowerCase().replaceAll(':00', '');
+
+    final zone = _utcOffsetLabel(start);
+    if (end == null || end.isAtSameMomentAs(start)) {
+      return '${day(start)} · ${time(start)} · $zone';
+    }
+
+    final isMultiDay = !DateUtils.isSameDay(start, end);
+    final dates = isMultiDay ? '${day(start)} – ${day(end)}' : day(start);
+    return '$dates · ${time(start)} – ${time(end)} · $zone';
+  }
+
+  String _utcOffsetLabel(DateTime value) {
+    final offset = value.timeZoneOffset;
+    final sign = offset.isNegative ? '-' : '+';
+    final hours = offset.inHours.abs().toString().padLeft(2, '0');
+    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    return 'UTC $sign$hours:$minutes';
+  }
+
+  String? _formatRecurrenceText(BuildContext context, GroupEvent event) {
+    final recurrence = event.recurrence;
+    if (!event.isRecurring || recurrence == null) return null;
+
+    final anchor = (event.occurrenceDate ?? event.startDate)?.toLocal();
+    if (anchor == null) return null;
+
+    final locale = intlFormatLocaleOf(context);
+    return switch (recurrence.frequency.toUpperCase()) {
+      'DAILY' => context.l10n.connect_event_every_day,
+      'WEEKLY' => context.l10n.connect_event_every_weekday(
+        DateFormat.EEEE(locale).format(anchor),
+      ),
+      'MONTHLY' => context.l10n.connect_event_every_month,
+      'YEARLY' => context.l10n.connect_event_every_date(
+        DateFormat('d MMM', locale).format(anchor),
+      ),
+      _ => null,
+    };
   }
 }
 
