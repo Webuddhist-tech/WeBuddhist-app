@@ -954,7 +954,7 @@
   "connect_event_tab_videos": "影片",
   "connect_event_tab_links": "連結",
   "connect_event_tab_about": "活動介紹",
-  "connect_event_links_title": "More about this event",
+  "connect_event_links_title": "更多活動介紹",
   "connect_event_links_empty": "尚無連結",
   "connect_event_link_tap_to_join": "點擊進入",
   "connect_event_link_open": "打開連結",
@@ -1128,7 +1128,7 @@
   "event_live_go_live": "直播中",
   "event_puja_starts_in": "法會開始於",
   "event_puja_not_started": "法會尚未開始",
-  "event_prayer_request_count": "{count, plural,\nother {# 個祈福請求}\n=1 {# 個祈福請求}\n}",
+  "event_prayer_request_count": "{count, plural,\nother {{count} 個祈福請求}\n=1 {1 個祈福請求}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {

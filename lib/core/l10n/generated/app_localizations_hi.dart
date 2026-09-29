@@ -998,7 +998,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_tab_about => 'About';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => 'इवेंट की ज़्यादा जानकारी';
 
   @override
   String get connect_event_links_empty => 'No links yet';
@@ -2917,8 +2917,8 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      one: '# अनुरोध',
-      other: '# अनुरोध',
+      one: '1 अनुरोध',
+      other: '$count अनुरोध',
     );
     return '$_temp0';
   }

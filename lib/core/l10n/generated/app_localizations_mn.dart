@@ -998,7 +998,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_tab_about => 'About';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => 'Үйл явдлын дэлгэрэнгүй мэдээлэл';
 
   @override
   String get connect_event_links_empty => 'No links yet';
@@ -2923,8 +2923,8 @@ class AppLocalizationsMn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      one: '# хүсэлт',
-      other: '# хүсэлт',
+      one: '1 хүсэлт',
+      other: '$count хүсэлт',
     );
     return '$_temp0';
   }

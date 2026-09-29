@@ -1867,7 +1867,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_event_links_title.
   ///
   /// In en, this message translates to:
-  /// **'更多活動介紹'**
+  /// **'More event details'**
   String get connect_event_links_title;
 
   /// No description provided for @connect_event_links_empty.
@@ -5111,7 +5111,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_request_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural,\n=1 {1 request}\nother {{count} requests}\n}'**
+  /// **'{count, plural,\n=1 {1 request}\nother {{count} requests}\none {1 request}\n}'**
   String event_prayer_request_count(int count);
 
   /// No description provided for @event_prayer_empty_title.

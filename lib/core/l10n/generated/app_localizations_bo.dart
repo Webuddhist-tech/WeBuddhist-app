@@ -1002,7 +1002,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_event_tab_about => 'ངོ་སྤྲོད།';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => 'བྱུང་རིམ་གྱི་ཞིབ་ཕྲ་མང་ཙམ';
 
   @override
   String get connect_event_links_empty => 'No links yet';
@@ -2924,8 +2924,8 @@ class AppLocalizationsBo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      one: '# རེ་ཞུ་',
-      other: '# རེ་ཞུ་',
+      one: 'རེ་ཞུ་ 1',
+      other: 'རེ་ཞུ་ $count',
     );
     return '$_temp0';
   }

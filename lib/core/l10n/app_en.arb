@@ -386,7 +386,7 @@
   "connect_event_tab_videos": "Videos",
   "connect_event_tab_links": "Links",
   "connect_event_tab_about": "About",
-  "connect_event_links_title": "更多活動介紹",
+  "connect_event_links_title": "More event details",
   "connect_event_links_empty": "No links yet",
   "connect_event_link_tap_to_join": "Tap to join",
   "connect_event_link_open": "Open link",
@@ -1429,7 +1429,7 @@
   "event_puja_starts_in": "Puja starts in",
   "event_puja_not_started": "Puja not started yet",
   "event_prayer_requests": "Prayer requests",
-  "event_prayer_request_count": "{count, plural,\n=1 {1 request}\nother {{count} requests}\n}",
+  "event_prayer_request_count": "{count, plural,\n=1 {1 request}\nother {{count} requests}\none {1 request}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {

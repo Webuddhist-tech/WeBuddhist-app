@@ -991,7 +991,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_tab_about => 'About';
 
   @override
-  String get connect_event_links_title => '更多活動介紹';
+  String get connect_event_links_title => 'More event details';
 
   @override
   String get connect_event_links_empty => 'No links yet';
@@ -2894,8 +2894,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count requests',
       one: '1 request',
+      other: '$count requests',
     );
     return '$_temp0';
   }

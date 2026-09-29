@@ -942,7 +942,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_tab_about => '活動介紹';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => '更多活動介紹';
 
   @override
   String get connect_event_links_empty => '尚無連結';
@@ -2757,8 +2757,8 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      one: '# 個祈福請求',
-      other: '# 個祈福請求',
+      one: '1 個祈福請求',
+      other: '$count 個祈福請求',
     );
     return '$_temp0';
   }

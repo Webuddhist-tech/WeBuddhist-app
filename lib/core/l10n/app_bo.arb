@@ -954,7 +954,7 @@
   "connect_event_tab_videos": "Videos",
   "connect_event_tab_links": "Links",
   "connect_event_tab_about": "ངོ་སྤྲོད།",
-  "connect_event_links_title": "More about this event",
+  "connect_event_links_title": "བྱུང་རིམ་གྱི་ཞིབ་ཕྲ་མང་ཙམ",
   "connect_event_links_empty": "No links yet",
   "connect_event_link_tap_to_join": "Tap to join",
   "connect_event_link_open": "Open link",
@@ -1102,7 +1102,7 @@
   "group_notifications_open_settings": "སྒོ་ཕྱེས།",
   "group_notifications_update_failed": "གསར་བརྡའི་སྒྲིག་འགོད་ཁ་གསོ་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་བརྡ་བྱོས།",
   "group_notifications_load_failed": "གསར་བརྡའི་སྒྲིག་འགོད་ལེན་ཐུབ་མ་སོང་།",
-  "event_prayer_request_count": "{count, plural,\nother {# རེ་ཞུ་}\n=1 {# རེ་ཞུ་}\n}",
+  "event_prayer_request_count": "{count, plural,\nother {རེ་ཞུ་ {count}}\n=1 {རེ་ཞུ་ 1}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {
