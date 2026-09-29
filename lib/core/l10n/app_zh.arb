@@ -1086,5 +1086,16 @@
   "event_prayer_load_failed": "無法載入祈願請求。",
   "event_prayer_closed": "此活動的祈願請求已關閉。",
   "event_prayer_pray": "祈願",
-  "event_prayer_praying": "祈願中"
+  "event_prayer_praying": "祈願中",
+  "feedback_title": "提交意見回饋",
+  "feedback_hint": "告訴我們哪些功能好用、哪些需要改進，或您希望看到什麼",
+  "feedback_add_image": "新增圖片",
+  "feedback_image_limit": "最多可附加 {count} 張圖片",
+  "feedback_send": "傳送",
+  "feedback_sent": "謝謝！您的意見回饋已送出",
+  "feedback_error_offline": "您目前離線，請稍後再試",
+  "feedback_error_rate_limited": "請求過於頻繁，請稍候再試",
+  "feedback_error_too_large": "圖片太大，請移除一張後再試",
+  "feedback_error_failed": "無法傳送意見回饋，請再試一次",
+  "feedback_error_unavailable": "目前無法使用意見回饋"
 }

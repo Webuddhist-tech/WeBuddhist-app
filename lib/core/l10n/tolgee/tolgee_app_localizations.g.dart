@@ -5854,4 +5854,82 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'recitation_live_session_ended',
     () => _fallback.recitation_live_session_ended,
   );
+
+  @override
+  String get feedback_title => TolgeeBridge.get(
+    localeName,
+    'feedback_title',
+    () => _fallback.feedback_title,
+  );
+
+  @override
+  String get feedback_hint => TolgeeBridge.get(
+    localeName,
+    'feedback_hint',
+    () => _fallback.feedback_hint,
+  );
+
+  @override
+  String get feedback_add_image => TolgeeBridge.get(
+    localeName,
+    'feedback_add_image',
+    () => _fallback.feedback_add_image,
+  );
+
+  @override
+  String feedback_image_limit(int count) => TolgeeBridge.format(
+    localeName,
+    'feedback_image_limit',
+    <String, Object>{'count': count},
+    () => _fallback.feedback_image_limit(count),
+  );
+
+  @override
+  String get feedback_send => TolgeeBridge.get(
+    localeName,
+    'feedback_send',
+    () => _fallback.feedback_send,
+  );
+
+  @override
+  String get feedback_sent => TolgeeBridge.get(
+    localeName,
+    'feedback_sent',
+    () => _fallback.feedback_sent,
+  );
+
+  @override
+  String get feedback_error_offline => TolgeeBridge.get(
+    localeName,
+    'feedback_error_offline',
+    () => _fallback.feedback_error_offline,
+  );
+
+  @override
+  String get feedback_error_rate_limited => TolgeeBridge.get(
+    localeName,
+    'feedback_error_rate_limited',
+    () => _fallback.feedback_error_rate_limited,
+  );
+
+  @override
+  String get feedback_error_too_large => TolgeeBridge.get(
+    localeName,
+    'feedback_error_too_large',
+    () => _fallback.feedback_error_too_large,
+  );
+
+  @override
+  String get feedback_error_failed => TolgeeBridge.get(
+    localeName,
+    'feedback_error_failed',
+    () => _fallback.feedback_error_failed,
+  );
+
+  @override
+  String get feedback_error_unavailable => TolgeeBridge.get(
+    localeName,
+    'feedback_error_unavailable',
+    () => _fallback.feedback_error_unavailable,
+  );
 }

@@ -3009,4 +3009,44 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => 'फ़ीडबैक भेजें';
+
+  @override
+  String get feedback_hint =>
+      'हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे';
+
+  @override
+  String get feedback_add_image => 'तस्वीर जोड़ें';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'आप अधिकतम $count तस्वीरें जोड़ सकते हैं';
+  }
+
+  @override
+  String get feedback_send => 'भेजें';
+
+  @override
+  String get feedback_sent => 'धन्यवाद! आपका फ़ीडबैक भेज दिया गया है';
+
+  @override
+  String get feedback_error_offline =>
+      'आप ऑफ़लाइन हैं। कृपया बाद में फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'बहुत अधिक अनुरोध। कृपया थोड़ी देर रुककर फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_too_large =>
+      'तस्वीरें बहुत बड़ी हैं। एक हटाकर फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_failed =>
+      'फ़ीडबैक नहीं भेजा जा सका। कृपया फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_unavailable => 'फ़ीडबैक अभी उपलब्ध नहीं है';
 }

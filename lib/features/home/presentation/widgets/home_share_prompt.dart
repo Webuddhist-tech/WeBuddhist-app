@@ -4,16 +4,13 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/services/app_share/app_share_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/feedback/presentation/widgets/feedback_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// Home screen prompt that invites the user to share WeBuddhist with others.
 class HomeSharePrompt extends ConsumerWidget {
   const HomeSharePrompt({super.key});
-
-  static const _feedbackUrl =
-      'https://app-webuddhist.ideas.userback.io/p/5omSMHB8A9VMUrD6vLrE';
 
   Future<void> _shareApp(BuildContext context, WidgetRef ref) async {
     final message = await ref
@@ -24,10 +21,6 @@ class HomeSharePrompt extends ConsumerWidget {
     ref
         .read(shareAnalyticsProvider)
         .contentShared(surface: ShareSurface.app, method: 'link');
-  }
-
-  Future<void> _openFeedback() async {
-    await launchUrl(Uri.parse(_feedbackUrl));
   }
 
   @override
@@ -50,7 +43,7 @@ class HomeSharePrompt extends ConsumerWidget {
           _PromptButton(
             icon: AppAssets.feedback,
             label: localizations.settings_feedback_row,
-            onTap: _openFeedback,
+            onTap: () => FeedbackSheet.show(context),
           ),
         ],
       ),

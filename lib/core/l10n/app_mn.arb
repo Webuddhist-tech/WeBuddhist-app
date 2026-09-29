@@ -1103,5 +1103,16 @@
   "event_prayer_load_failed": "Залбирлын хүсэлтийг ачаалж чадсангүй.",
   "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.",
   "event_prayer_pray": "Залбирах",
-  "event_prayer_praying": "Залбирч байна"
+  "event_prayer_praying": "Залбирч байна",
+  "feedback_title": "Санал хүсэлт илгээх",
+  "feedback_hint": "Юу сайн ажиллаж байгаа, юу болохгүй байгаа эсвэл юу харахыг хүсэж байгаагаа бидэнд хэлээрэй",
+  "feedback_add_image": "Зураг нэмэх",
+  "feedback_image_limit": "Та хамгийн ихдээ {count} зураг хавсаргах боломжтой",
+  "feedback_send": "Илгээх",
+  "feedback_sent": "Баярлалаа! Таны санал хүсэлт илгээгдлээ",
+  "feedback_error_offline": "Та офлайн байна. Дараа дахин оролдоно уу",
+  "feedback_error_rate_limited": "Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу",
+  "feedback_error_too_large": "Зургууд хэт том байна. Нэгийг хасаад дахин оролдоно уу",
+  "feedback_error_failed": "Санал хүсэлт илгээж чадсангүй. Дахин оролдоно уу",
+  "feedback_error_unavailable": "Санал хүсэлт одоогоор боломжгүй байна"
 }

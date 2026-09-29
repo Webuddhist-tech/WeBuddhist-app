@@ -3015,4 +3015,44 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => 'བསམ་འཆར་བསྐུར།';
+
+  @override
+  String get feedback_hint =>
+      'ག་རེ་ཡག་པོ་འདུག་ག ག་རེ་ཡག་པོ་མི་འདུག་ག ཡང་ན་ཁྱེད་ཀྱིས་ག་རེ་མཐོང་འདོད་ཡོད་པ་ང་ཚོར་ཤོད་རོགས།';
+
+  @override
+  String get feedback_add_image => 'པར་སྣོན།';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'པར་ཆེས་མང་ན་$countབར་སྦྲེལ་ཆོག';
+  }
+
+  @override
+  String get feedback_send => 'བསྐུར།';
+
+  @override
+  String get feedback_sent => 'ཐུགས་རྗེ་ཆེ། ཁྱེད་ཀྱི་བསམ་འཆར་བསྐུར་ཟིན།';
+
+  @override
+  String get feedback_error_offline =>
+      'ཁྱེད་དྲ་ཐོག་མིན། རྗེས་སུ་ཡང་བསྐྱར་བྱེད་རོགས།';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'རེ་ཞུ་མང་དྲགས་འདུག སྐར་མ་ཙམ་སྒུག་ནས་ཡང་བསྐྱར་བྱེད་རོགས།';
+
+  @override
+  String get feedback_error_too_large =>
+      'པར་ཆེ་དྲགས་འདུག གཅིག་བསུབས་ནས་ཡང་བསྐྱར་བྱེད་རོགས།';
+
+  @override
+  String get feedback_error_failed =>
+      'བསམ་འཆར་བསྐུར་མ་ཐུབ། ཡང་བསྐྱར་བྱེད་རོགས།';
+
+  @override
+  String get feedback_error_unavailable => 'ད་ལྟ་བསམ་འཆར་བསྐུར་མི་ཐུབ།';
 }

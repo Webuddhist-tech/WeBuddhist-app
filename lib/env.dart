@@ -93,6 +93,12 @@ class Env {
     return projectId != null && projectId.isNotEmpty;
   }
 
+  /// Discord webhook that receives in-app feedback. Null disables sending.
+  static String? get discordFeedbackWebhookUrl {
+    final value = _optional['DISCORD_FEEDBACK_WEBHOOK_URL']?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
   /// Normalized flavor label for analytics super properties
   static String get appFlavor {
     final String env = environment.toLowerCase();
