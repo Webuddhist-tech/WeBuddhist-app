@@ -258,6 +258,9 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get home_share_support => 'Your support helps our community grow.';
+
+  @override
   String get no_feature_content => 'कोई विशेष सामग्री उपलब्ध नहीं';
 
   @override

@@ -62,14 +62,31 @@ class _PromptLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final supportTextColor =
+        isDark ? AppColors.grey500 : AppColors.grey600;
 
-    return Text(
-      localizations.home_share_prompt(localizations.appTitle),
-      textAlign: TextAlign.center,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w400,
-        color: colorScheme.onSurfaceVariant,
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          localizations.home_share_prompt(localizations.appTitle),
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          localizations.home_share_support,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w400,
+            color: supportTextColor,
+          ),
+        ),
+      ],
     );
   }
 }

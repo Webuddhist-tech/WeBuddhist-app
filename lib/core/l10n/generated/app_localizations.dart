@@ -550,6 +550,12 @@ abstract class AppLocalizations {
   /// **'Enjoying {appName}?'**
   String home_share_prompt(String appName);
 
+  /// No description provided for @home_share_support.
+  ///
+  /// In en, this message translates to:
+  /// **'Your support helps our community grow.'**
+  String get home_share_support;
+
   /// No description provided for @no_feature_content.
   ///
   /// In en, this message translates to:

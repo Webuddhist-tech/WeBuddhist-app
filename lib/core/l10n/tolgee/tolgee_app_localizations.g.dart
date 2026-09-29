@@ -508,6 +508,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get home_share_support => TolgeeBridge.get(
+    localeName,
+    'home_share_support',
+    () => _fallback.home_share_support,
+  );
+
+  @override
   String get no_feature_content => TolgeeBridge.get(
     localeName,
     'no_feature_content',
