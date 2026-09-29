@@ -399,6 +399,35 @@ void main() {
       expect(datasource.versionRequests, isEmpty);
     });
 
+    testWidgets('a slot in the language stays when the remembered edition '
+        'is in another language', (tester) async {
+      final datasource = FakeReaderSettingsDatasource(
+        languages: [_english, _hindi],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+          'hi': [_hindiVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).fillSecondary(
+        const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en-2',
+        ),
+      );
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-hi');
+      final generation = _notifierOf(host).secondaryResolveGeneration;
+
+      expect(await _fill(host, ['en', 'hi']), SecondaryFillOutcome.filled);
+      expect(_secondaryOf(host).versionId, 'v-en-2');
+      expect(
+        _notifierOf(host).secondaryResolveGeneration,
+        generation,
+        reason: 'the slot is not cleared and refilled, so nothing reloads',
+      );
+    });
+
     testWidgets('another text keeps its own pick', (tester) async {
       final datasource = FakeReaderSettingsDatasource(
         languages: [_english],
