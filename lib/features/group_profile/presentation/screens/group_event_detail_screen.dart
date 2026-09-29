@@ -1086,14 +1086,14 @@ class _EventGroupRow extends ConsumerWidget {
 }
 
 /// When and where the event happens: date range, time, venue and online.
-class _EventInfoCard extends StatelessWidget {
+class _EventInfoCard extends ConsumerWidget {
   final GroupEvent event;
   final bool isDark;
 
   const _EventInfoCard({required this.event, required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cardColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final secondaryColor =
@@ -1159,12 +1159,26 @@ class _EventInfoCard extends StatelessWidget {
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap:
-                  meetingLink == null ? null : () => _openLink(meetingLink.url),
+                  meetingLink == null
+                      ? null
+                      : () {
+                        ref
+                            .read(groupEventAnalyticsProvider)
+                            .eventLinkOpened(
+                              eventId: event.id,
+                              groupId: event.groupId,
+                              kind: GroupEventLinkKind.meeting,
+                            );
+                        _openLink(meetingLink.url);
+                      },
               child: _EventInfoRow(
                 icon: AppAssets.globe,
                 text: context.l10n.connect_online,
                 iconColor: secondaryColor,
-                textColor: isDark ? AppColors.blueDark : AppColors.blue,
+                textColor:
+                    meetingLink == null
+                        ? null
+                        : (isDark ? AppColors.blueDark : AppColors.blue),
               ),
             ),
           ],
@@ -1188,14 +1202,19 @@ class _EventInfoCard extends StatelessWidget {
     String time(DateTime value) =>
         DateFormat.jm(locale).format(value).toLowerCase().replaceAll(':00', '');
 
-    final zone = _utcOffsetLabel(start);
+    final startZone = _utcOffsetLabel(start);
     if (end == null || end.isAtSameMomentAs(start)) {
-      return '${day(start)} · ${time(start)} · $zone';
+      return '${day(start)} · ${time(start)} · $startZone';
     }
 
     final isMultiDay = !DateUtils.isSameDay(start, end);
     final dates = isMultiDay ? '${day(start)} – ${day(end)}' : day(start);
-    return '$dates · ${time(start)} – ${time(end)} · $zone';
+    final endZone = _utcOffsetLabel(end);
+    // A range crossing a DST switch has two offsets, so label each end.
+    if (startZone != endZone) {
+      return '$dates · ${time(start)} $startZone – ${time(end)} $endZone';
+    }
+    return '$dates · ${time(start)} – ${time(end)} · $startZone';
   }
 
   String _utcOffsetLabel(DateTime value) {
