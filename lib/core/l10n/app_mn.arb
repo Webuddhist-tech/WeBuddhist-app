@@ -1103,5 +1103,15 @@
   "event_prayer_load_failed": "Залбирлын хүсэлтийг ачаалж чадсангүй.",
   "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.",
   "event_prayer_pray": "Залбирах",
-  "event_prayer_praying": "Залбирч байна"
+  "event_prayer_praying": "Залбирч байна",
+  "connect_event_organizer": "Зохион байгуулагч",
+  "event_prayer_request_count": "{count, plural,\nother {# хүсэлт}\n=1 {# хүсэлт}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_request_button": "Залбирал хүсэх"
 }

@@ -1103,5 +1103,15 @@
   "event_prayer_load_failed": "प्रार्थना अनुरोध लोड गर्न सकिएन।",
   "event_prayer_closed": "यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।",
   "event_prayer_pray": "प्रार्थना गर्नुहोस्",
-  "event_prayer_praying": "प्रार्थना गर्दै"
+  "event_prayer_praying": "प्रार्थना गर्दै",
+  "connect_event_organizer": "आयोजक",
+  "event_prayer_request_count": "{count, plural,\nother {# अनुरोध}\n=1 {# अनुरोध}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_request_button": "प्रार्थना अनुरोध गर्नुहोस्"
 }

@@ -160,7 +160,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get bookmark_texts => 'ग्रन्थहरू';
 
   @override
-  String get bookmark_group_accumulation => 'Group accumulation';
+  String get bookmark_group_accumulation => 'Channel accumulations';
 
   @override
   String get mala_add_to_practice => 'मेरा अभ्यासहरूमा थप्नुहोस्';
@@ -996,7 +996,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_event_participants_empty => 'अहिलेसम्म कुनै सहभागी छैन';
 
   @override
-  String get connect_event_organizer => 'Organizer';
+  String get connect_event_organizer => 'आयोजक';
 
   @override
   String get connect_event_tab_videos => 'Videos';
@@ -1042,7 +1042,7 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get connect_event_add_recitations_message =>
-      'Add the number of recitations you did with the livestream or outside this app.';
+      'Add recitations you did with the livestream or outside this app';
 
   @override
   String get connect_event_every_day => 'Every day';
@@ -1916,18 +1916,18 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get group_notifications_master_off =>
-      'Notifications are turned off for the app.';
+      'Notifications are turned off for the app';
 
   @override
   String get group_notifications_open_settings => 'Turn on';
 
   @override
   String get group_notifications_update_failed =>
-      'Couldn\'t update notification settings. Try again.';
+      'Couldn\'t update notification settings. Try again';
 
   @override
   String get group_notifications_load_failed =>
-      'Couldn\'t load notification settings.';
+      'Couldn\'t load notification settings';
 
   @override
   String get group_chat_mute_notifications => 'च्याट सूचनाहरू म्युट गर्नुहोस्';
@@ -1950,10 +1950,10 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group.';
+      'You\'ll stop getting messages and updates from this group';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again';
 
   @override
   String get group_request_to_join => 'सामेल हुन अनुरोध';
@@ -2266,7 +2266,7 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get group_recitation_collection_dedication =>
-      'By this merit, may all beings\nbe free from suffering.';
+      'By this merit, may all beings\nbe free from suffering';
 
   @override
   String get share_this_quote => 'यो उद्धरण साझा गर्नुहोस्';
@@ -2406,11 +2406,11 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No group accumulations bookmarked yet.';
+      'No group accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a group accumulation to save it here.';
+      'Bookmark a group accumulation to save it here';
 
   @override
   String get bookmarks_empty_timers_title =>
@@ -2930,8 +2930,8 @@ class AppLocalizationsNe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count requests',
-      one: '1 request',
+      one: '# अनुरोध',
+      other: '# अनुरोध',
     );
     return '$_temp0';
   }
@@ -2973,7 +2973,7 @@ class AppLocalizationsNe extends AppLocalizations {
       'Intentions couldn\'t be loaded.';
 
   @override
-  String get event_prayer_request_button => 'Request prayer';
+  String get event_prayer_request_button => 'प्रार्थना अनुरोध गर्नुहोस्';
 
   @override
   String get event_prayer_you => 'You';
