@@ -350,8 +350,7 @@ void main() {
         readerContextLayoutProvider(ReaderLayoutContext.chant).notifier,
       );
 
-      test('stays on over a stored "off" and the seed, original hidden', () {
-        chantStore().setTranslationOn(false);
+      test('is the default: translation on, original hidden', () {
         final notifier = keep(chant);
         notifier.openAsTranslation(original: root, translation: hindi);
         notifier.seed(const ReaderInitialLayout.asWritten(), language: 'bo');
@@ -359,10 +358,73 @@ void main() {
         expect(settingsOf(chant).secondary, hindi);
         expect(settingsOf(chant).secondaryEnabled, isTrue);
         expect(settingsOf(chant).originalVisible, isFalse);
+        expect(notifier.openedTranslationLanguage, 'hi');
+        expect(notifier.openedTranslationVersionId, 'hi-edition');
         expect(
           notifier.preferredTranslationLanguages(contentLanguage: 'en'),
           ['hi', 'en'],
         );
+      });
+
+      test('a stored "off" wins when the chant was not picked in its '
+          'language', () {
+        // A routine or a collection item without a language.
+        chantStore()
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        final notifier = keep(chant);
+        notifier.openAsTranslation(original: root, translation: hindi);
+        notifier.seed(const ReaderInitialLayout.asWritten(), language: 'bo');
+
+        expect(settingsOf(chant).secondaryEnabled, isFalse);
+        expect(settingsOf(chant).originalVisible, isTrue);
+        expect(
+          settingsOf(chant).secondary,
+          hindi,
+          reason: 'switching it on shows the opened edition',
+        );
+      });
+
+      test('stays on over a stored "off" when picked in the Hindi list', () {
+        chantStore()
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        final notifier = keep(chant);
+        notifier.openAsTranslation(original: root, translation: hindi);
+        notifier.seed(
+          const ReaderInitialLayout(
+            originalVisible: false,
+            translationOn: true,
+            translationLanguage: 'hi',
+          ),
+          language: 'bo',
+          listLanguage: 'HI',
+        );
+
+        expect(notifier.isTranslationPinnedByList, isTrue);
+        expect(settingsOf(chant).secondaryEnabled, isTrue);
+        expect(
+          settingsOf(chant).originalVisible,
+          isTrue,
+          reason: 'a stored "original on" still adds the Tibetan',
+        );
+      });
+
+      test('stays on from the first frame when picked in the Hindi list', () {
+        // The seed waits for the text's languages; the pin must not.
+        chantStore()
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        final notifier = keep(chant);
+        notifier.openAsTranslation(
+          original: root,
+          translation: hindi,
+          listLanguage: 'hi',
+        );
+
+        expect(notifier.isTranslationPinnedByList, isTrue);
+        expect(settingsOf(chant).secondaryEnabled, isTrue);
+        expect(settingsOf(chant).secondary, hindi);
       });
 
       test('shows the original when the person chose that in this context', () {
@@ -375,7 +437,13 @@ void main() {
       test('the Translation switch here takes over', () {
         final notifier = keep(chant);
         notifier.openAsTranslation(original: root, translation: hindi);
+        notifier.seed(
+          const ReaderInitialLayout.asWritten(),
+          language: 'bo',
+          listLanguage: 'hi',
+        );
         notifier.setSecondaryEnabled(false);
+        expect(notifier.isTranslationPinnedByList, isFalse);
         expect(settingsOf(chant).secondaryEnabled, isFalse);
         expect(settingsOf(chant).originalVisible, isTrue);
         expect(
@@ -384,6 +452,203 @@ void main() {
               .translationOn,
           isFalse,
         );
+      });
+    });
+
+    group('a translation opened under its root in an event', () {
+      // The Tara event's English plan links the English edition.
+      const tara = ReaderSettingsScope(
+        textId: 'en-edition',
+        context: ReaderLayoutContext.event,
+      );
+      const root = ReaderSlotConfig(
+        languageCode: 'bo',
+        languageLabel: 'bo',
+        versionId: 'bo-root',
+      );
+      const english = ReaderSlotConfig(
+        languageCode: 'en',
+        languageLabel: 'en',
+        versionId: 'en-edition',
+      );
+      ReaderContextLayoutNotifier eventStore() => container.read(
+        readerContextLayoutProvider(ReaderLayoutContext.event).notifier,
+      );
+
+      test('defaults to the original with the translation, as events do', () {
+        final notifier = keep(tara);
+        notifier.openAsTranslation(original: root, translation: english);
+        notifier.seed(_romanAndEnglish, language: 'bo');
+
+        expect(settingsOf(tara).secondaryEnabled, isTrue);
+        expect(settingsOf(tara).originalVisible, isTrue);
+        expect(settingsOf(tara).originalScriptId, 'phonetic');
+      });
+
+      test('keeps a stored "off" on reopening', () {
+        eventStore()
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        final notifier = keep(tara);
+        notifier.openAsTranslation(original: root, translation: english);
+        notifier.seed(_romanAndEnglish, language: 'bo');
+
+        expect(settingsOf(tara).secondaryEnabled, isFalse);
+        expect(settingsOf(tara).originalVisible, isTrue);
+      });
+
+      test('keeps a stored "original off"', () {
+        eventStore().setOriginalVisible(false);
+        final notifier = keep(tara);
+        notifier.openAsTranslation(original: root, translation: english);
+        notifier.seed(_romanAndEnglish, language: 'bo');
+
+        expect(settingsOf(tara).secondaryEnabled, isTrue);
+        expect(settingsOf(tara).originalVisible, isFalse);
+      });
+
+      test('ignores a list language', () {
+        eventStore()
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        final notifier = keep(tara);
+        notifier.openAsTranslation(original: root, translation: english);
+        notifier.seed(_romanAndEnglish, language: 'bo', listLanguage: 'en');
+
+        expect(notifier.isTranslationPinnedByList, isFalse);
+        expect(settingsOf(tara).secondaryEnabled, isFalse);
+      });
+
+      test('tries the last pick before the opened edition', () {
+        eventStore().setTranslationLanguage('zh');
+        final notifier = keep(tara);
+        notifier.openAsTranslation(original: root, translation: english);
+        notifier.seed(
+          const ReaderInitialLayout(
+            originalVisible: true,
+            translationOn: true,
+            translationLanguage: 'hi',
+          ),
+          language: 'bo',
+        );
+        expect(
+          notifier.preferredTranslationLanguages(contentLanguage: 'mn'),
+          ['zh', 'en', 'hi', 'mn'],
+        );
+      });
+    });
+
+    group('a plan translation opened under its root', () {
+      const planText = ReaderSettingsScope(
+        textId: 'en-edition',
+        context: ReaderLayoutContext.plan,
+      );
+      const root = ReaderSlotConfig(
+        languageCode: 'bo',
+        languageLabel: 'bo',
+        versionId: 'bo-root',
+      );
+      const english = ReaderSlotConfig(
+        languageCode: 'en',
+        languageLabel: 'en',
+        versionId: 'en-edition',
+      );
+
+      test('shows the translation alone by default', () {
+        keep(planText).openAsTranslation(original: root, translation: english);
+        expect(settingsOf(planText).secondaryEnabled, isTrue);
+        expect(settingsOf(planText).originalVisible, isFalse);
+      });
+
+      test('keeps a stored "off"', () {
+        container
+            .read(readerContextLayoutProvider(ReaderLayoutContext.plan).notifier)
+          ..setTranslationOn(false)
+          ..setOriginalVisible(true);
+        keep(planText).openAsTranslation(original: root, translation: english);
+        expect(settingsOf(planText).secondaryEnabled, isFalse);
+        expect(settingsOf(planText).originalVisible, isTrue);
+      });
+    });
+
+    group('a chant picked in the language of its original', () {
+      // A Tibetan chant from the Tibetan list, in the English app.
+      const chant = ReaderSettingsScope(
+        textId: 'bo-root',
+        context: ReaderLayoutContext.chant,
+      );
+      ReaderContextLayoutNotifier chantStore() => container.read(
+        readerContextLayoutProvider(ReaderLayoutContext.chant).notifier,
+      );
+
+      test('reads as written', () {
+        keep(chant).seed(
+          const ReaderInitialLayout.asWritten(),
+          language: 'bo',
+          listLanguage: 'bo',
+        );
+        expect(settingsOf(chant).originalVisible, isTrue);
+        expect(settingsOf(chant).secondaryEnabled, isFalse);
+      });
+
+      test('a stored "original off" never hides it', () {
+        chantStore()
+          ..setOriginalVisible(false)
+          ..setTranslationOn(true);
+        keep(chant).seed(
+          const ReaderInitialLayout.asWritten(),
+          language: 'bo',
+          listLanguage: 'bo',
+        );
+        expect(settingsOf(chant).originalVisible, isTrue);
+        expect(
+          settingsOf(chant).secondaryEnabled,
+          isTrue,
+          reason: 'a stored translation still shows under it',
+        );
+      });
+
+      test('turning the translation on keeps it', () {
+        chantStore().setOriginalVisible(false);
+        final notifier = keep(chant);
+        notifier.seed(
+          const ReaderInitialLayout.asWritten(),
+          language: 'bo',
+          listLanguage: 'bo',
+        );
+        notifier.setSecondaryEnabled(true);
+        expect(settingsOf(chant).originalVisible, isTrue);
+      });
+
+      test('hiding it here works and is stored', () {
+        chantStore().setOriginalVisible(false);
+        final notifier = keep(chant);
+        notifier.seed(
+          const ReaderInitialLayout.asWritten(),
+          language: 'bo',
+          listLanguage: 'bo',
+        );
+        notifier.setSecondaryEnabled(true);
+        notifier.setOriginalVisible(false);
+        expect(settingsOf(chant).originalVisible, isFalse);
+        expect(settingsOf(chant).secondaryEnabled, isTrue);
+        expect(
+          container
+              .read(readerContextLayoutProvider(ReaderLayoutContext.chant))
+              .originalVisible,
+          isFalse,
+        );
+      });
+
+      test('without a list language the store decides, as before', () {
+        chantStore()
+          ..setOriginalVisible(false)
+          ..setTranslationOn(true);
+        keep(chant).seed(
+          const ReaderInitialLayout.asWritten(),
+          language: 'bo',
+        );
+        expect(settingsOf(chant).originalVisible, isFalse);
       });
     });
 
