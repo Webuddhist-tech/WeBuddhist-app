@@ -16,7 +16,6 @@ import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.da
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MoreScreen extends ConsumerWidget {
   const MoreScreen({super.key});
@@ -95,17 +94,6 @@ class MoreScreen extends ConsumerWidget {
               icon: AppAssets.legal,
               title: localizations.legal_title,
               onTap: () => context.push(AppRoutes.legal),
-            ),
-            _buildSettingsRow(
-              context,
-              icon: AppAssets.feedback,
-              title: localizations.settings_feedback_row,
-              trailingIcon: AppAssets.arrowSquareOut,
-              onTap: () async {
-                final url =
-                    "https://app-webuddhist.ideas.userback.io/p/5omSMHB8A9VMUrD6vLrE";
-                await launchUrl(Uri.parse(url));
-              },
             ),
             const SizedBox(height: 24),
 

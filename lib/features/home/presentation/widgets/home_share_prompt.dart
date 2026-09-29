@@ -6,10 +6,14 @@ import 'package:flutter_pecha/core/services/app_share/app_share_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Home screen prompt that invites the user to share WeBuddhist with others.
 class HomeSharePrompt extends ConsumerWidget {
   const HomeSharePrompt({super.key});
+
+  static const _feedbackUrl =
+      'https://app-webuddhist.ideas.userback.io/p/5omSMHB8A9VMUrD6vLrE';
 
   Future<void> _shareApp(BuildContext context, WidgetRef ref) async {
     final message = await ref
@@ -22,8 +26,14 @@ class HomeSharePrompt extends ConsumerWidget {
         .contentShared(surface: ShareSurface.app, method: 'link');
   }
 
+  Future<void> _openFeedback() async {
+    await launchUrl(Uri.parse(_feedbackUrl));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final localizations = AppLocalizations.of(context)!;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
       child: Column(
@@ -31,7 +41,17 @@ class HomeSharePrompt extends ConsumerWidget {
         children: [
           const _PromptLabel(),
           const SizedBox(height: 12.0),
-          _ShareButton(onTap: () => _shareApp(context, ref)),
+          _PromptButton(
+            icon: AppAssets.readerShare,
+            label: localizations.share,
+            onTap: () => _shareApp(context, ref),
+          ),
+          const SizedBox(height: 12.0),
+          _PromptButton(
+            icon: AppAssets.feedback,
+            label: localizations.settings_feedback_row,
+            onTap: _openFeedback,
+          ),
         ],
       ),
     );
@@ -61,14 +81,19 @@ class _PromptLabel extends StatelessWidget {
   }
 }
 
-class _ShareButton extends StatelessWidget {
+class _PromptButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
-  const _ShareButton({required this.onTap});
+  const _PromptButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final buttonColor =
@@ -86,14 +111,10 @@ class _ShareButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                AppAssets.readerShare,
-                size: 22.0,
-                color: colorScheme.onSurface,
-              ),
+              Icon(icon, size: 22.0, color: colorScheme.onSurface),
               const SizedBox(width: 8.0),
               Text(
-                localizations.share,
+                label,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                   fontSize: 16.0,
