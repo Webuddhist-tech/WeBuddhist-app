@@ -89,15 +89,39 @@ class ReaderInitialLayoutApplier {
     required WidgetRef ref,
     required BuildContext context,
     required ReaderParams params,
-  }) async {
+  }) {
     final textDetail = ref.read(readerNotifierProvider(params)).textDetail;
+    return applyForText(
+      ref: ref,
+      context: context,
+      params: params,
+      textLanguage: textDetail?.language,
+      textVersionId: textDetail?.id,
+    );
+  }
+
+  /// [maybeApply] for the text on screen, in [textLanguage] with id
+  /// [textVersionId]; both null while it is still loading. Split out so
+  /// tests can run the applier without loading a text.
+  @visibleForTesting
+  Future<void> applyForText({
+    required WidgetRef ref,
+    required BuildContext context,
+    required ReaderParams params,
+    required String? textLanguage,
+    required String? textVersionId,
+  }) async {
     final languagesAsync = ref.read(readerLanguagesProvider(params.textId));
     final step = readerInitialLayoutStep(
       applied: _applied,
-      hasText: textDetail != null,
+      hasText: textLanguage != null && textVersionId != null,
       languages: languagesAsync,
     );
-    if (step == ReaderInitialLayoutStep.wait || textDetail == null) return;
+    if (step == ReaderInitialLayoutStep.wait ||
+        textLanguage == null ||
+        textVersionId == null) {
+      return;
+    }
 
     final scope = params.settingsScope;
     if (step == ReaderInitialLayoutStep.seedOnly) {
@@ -105,7 +129,7 @@ class ReaderInitialLayoutApplier {
         _seed(
           ref: ref,
           params: params,
-          textLanguage: textDetail.language,
+          textLanguage: textLanguage,
           translationLanguages: const [],
         );
       }
@@ -120,8 +144,8 @@ class ReaderInitialLayoutApplier {
           ref: ref,
           context: context,
           params: params,
-          textLanguage: textDetail.language,
-          textVersionId: textDetail.id,
+          textLanguage: textLanguage,
+          textVersionId: textVersionId,
         );
         return;
       }
@@ -129,8 +153,8 @@ class ReaderInitialLayoutApplier {
         ref: ref,
         context: context,
         params: params,
-        textLanguage: textDetail.language,
-        textVersionId: textDetail.id,
+        textLanguage: textLanguage,
+        textVersionId: textVersionId,
         translationLanguages: [for (final language in languages) language.code],
       );
     } catch (e, st) {
