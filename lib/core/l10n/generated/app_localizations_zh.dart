@@ -248,7 +248,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get home_share_support => 'Your support helps our community grow.';
+  String get home_share_support => '您的支持有助於我們的社群成長。';
 
   @override
   String get no_feature_content => '尚無精選內容';

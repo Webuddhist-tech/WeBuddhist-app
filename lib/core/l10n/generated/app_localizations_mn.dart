@@ -259,7 +259,8 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get home_share_support => 'Your support helps our community grow.';
+  String get home_share_support =>
+      'Таны дэмжлэг манай хамт олныг өсгөхөд тусална.';
 
   @override
   String get no_feature_content => 'Онцлох агуулга байхгүй байна';

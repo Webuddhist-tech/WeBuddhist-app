@@ -259,7 +259,8 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
-  String get home_share_support => 'Your support helps our community grow.';
+  String get home_share_support =>
+      'तपाईंको सहयोगले हाम्रो समुदाय बढ्न मद्दत गर्छ।';
 
   @override
   String get no_feature_content => 'कुनै विशेष सामग्री उपलब्ध छैन';
