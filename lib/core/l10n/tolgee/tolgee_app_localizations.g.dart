@@ -5877,6 +5877,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get feedback_images => TolgeeBridge.get(
+    localeName,
+    'feedback_images',
+    () => _fallback.feedback_images,
+  );
+
+  @override
   String get feedback_add_image => TolgeeBridge.get(
     localeName,
     'feedback_add_image',

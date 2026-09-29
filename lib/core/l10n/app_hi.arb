@@ -1106,6 +1106,7 @@
   "event_prayer_praying": "प्रार्थना कर रहे हैं",
   "feedback_title": "फ़ीडबैक भेजें",
   "feedback_hint": "हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे",
+  "feedback_images": "तस्वीरें",
   "feedback_add_image": "तस्वीर जोड़ें",
   "feedback_image_limit": "आप अधिकतम {count} तस्वीरें जोड़ सकते हैं",
   "feedback_send": "भेजें",

@@ -3027,6 +3027,9 @@ class AppLocalizationsBo extends AppLocalizations {
       'ག་རེ་ཡག་པོ་འདུག་ག ག་རེ་ཡག་པོ་མི་འདུག་ག ཡང་ན་ཁྱེད་ཀྱིས་ག་རེ་མཐོང་འདོད་ཡོད་པ་ང་ཚོར་ཤོད་རོགས།';
 
   @override
+  String get feedback_images => 'པར།';
+
+  @override
   String get feedback_add_image => 'པར་སྣོན།';
 
   @override

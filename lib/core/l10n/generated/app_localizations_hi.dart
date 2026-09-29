@@ -3021,6 +3021,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे';
 
   @override
+  String get feedback_images => 'तस्वीरें';
+
+  @override
   String get feedback_add_image => 'तस्वीर जोड़ें';
 
   @override

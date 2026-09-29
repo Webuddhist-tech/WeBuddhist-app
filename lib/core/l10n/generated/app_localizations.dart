@@ -5267,14 +5267,20 @@ abstract class AppLocalizations {
   /// No description provided for @feedback_title.
   ///
   /// In en, this message translates to:
-  /// **'Send feedback'**
+  /// **'Feedback'**
   String get feedback_title;
 
   /// No description provided for @feedback_hint.
   ///
   /// In en, this message translates to:
-  /// **'Tell us what\'s working, what isn\'t, or what you\'d like to see'**
+  /// **'Tell us what\'s working, what isn\'t, or what you\'d like to see...'**
   String get feedback_hint;
+
+  /// No description provided for @feedback_images.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get feedback_images;
 
   /// No description provided for @feedback_add_image.
   ///

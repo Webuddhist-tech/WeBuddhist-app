@@ -100,15 +100,12 @@ class DiscordFeedbackClient {
       'allowed_mentions': {'parse': <String>[]},
       'embeds': [
         {
-          'title': 'New feedback',
           'description': _truncate(report.message, _maxDescription),
           'color': _embedColor,
           'fields': [
-            _field('User', reporter?.name ?? 'Guest'),
             if (reporter != null) _field('Email', reporter.email),
             _field('App version', report.appVersion),
             _field('Platform', report.platform),
-            _field('Language', report.language),
           ],
         },
       ],

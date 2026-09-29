@@ -1106,6 +1106,7 @@
   "event_prayer_praying": "Залбирч байна",
   "feedback_title": "Санал хүсэлт илгээх",
   "feedback_hint": "Юу сайн ажиллаж байгаа, юу болохгүй байгаа эсвэл юу харахыг хүсэж байгаагаа бидэнд хэлээрэй",
+  "feedback_images": "Зургууд",
   "feedback_add_image": "Зураг нэмэх",
   "feedback_image_limit": "Та хамгийн ихдээ {count} зураг хавсаргах боломжтой",
   "feedback_send": "Илгээх",

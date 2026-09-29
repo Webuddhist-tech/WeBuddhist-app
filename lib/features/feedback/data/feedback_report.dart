@@ -1,8 +1,7 @@
 /// Who sent a piece of feedback. Absent for guests.
 class FeedbackReporter {
-  const FeedbackReporter({this.name, this.email});
+  const FeedbackReporter({this.email});
 
-  final String? name;
   final String? email;
 }
 
@@ -13,7 +12,6 @@ class FeedbackReport {
     required this.imagePaths,
     required this.appVersion,
     required this.platform,
-    required this.language,
     this.reporter,
   });
 
@@ -26,5 +24,4 @@ class FeedbackReport {
 
   /// e.g. `ios Version 17.2 (Build 21C62)`.
   final String platform;
-  final String language;
 }

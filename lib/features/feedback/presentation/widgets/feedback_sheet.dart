@@ -16,7 +16,7 @@ import 'package:image_picker/image_picker.dart';
 class FeedbackSheet extends ConsumerStatefulWidget {
   const FeedbackSheet({super.key});
 
-  static const int maxMessageLength = 2000;
+  static const int maxMessageLength = 400;
   static const int maxImages = 3;
 
   static const double _initialSize = 0.6;
@@ -76,6 +76,7 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
       return;
     }
 
+    FocusScope.of(context).unfocus();
     setState(() => _pickingImages = true);
     final picker = ImagePicker();
     var picked = <XFile>[];
@@ -231,70 +232,54 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
   Widget _buildHeader(BuildContext context, bool isDark) {
     final titleColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(
-          bottom: BorderSide(color: Theme.of(context).dividerColor),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 8),
+          child: Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
         ),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              context.l10n.feedback_title,
+              strutStyle: context.tibetanStrutStyle(18, compact: true),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: titleColor,
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 4, 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    context.l10n.feedback_title,
-                    strutStyle: context.tibetanStrutStyle(17, compact: true),
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(AppAssets.x),
-                  tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildMessageField(BuildContext context, bool isDark) {
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final hintColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final hintColor = isDark ? AppColors.grey500 : AppColors.grey600;
+    final borderColor = isDark ? AppColors.cardBorderDark : AppColors.grey300;
     final length = _messageController.text.characters.length;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-        borderRadius: BorderRadius.circular(14),
+        color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+      padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -302,7 +287,7 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
             controller: _messageController,
             enabled: !_sending,
             minLines: 5,
-            maxLines: 10,
+            maxLines: 8,
             keyboardType: TextInputType.multiline,
             textInputAction: TextInputAction.newline,
             textCapitalization: TextCapitalization.sentences,
@@ -325,7 +310,7 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
           ),
           Text(
             '$length / ${FeedbackSheet.maxMessageLength}',
-            style: TextStyle(fontSize: 11, color: hintColor),
+            style: TextStyle(fontSize: 12, color: hintColor),
           ),
         ],
       ),
@@ -333,60 +318,54 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
   }
 
   Widget _buildImages(BuildContext context, bool isDark) {
-    const tileSize = 88.0;
-    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final tileColor = isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
+    const tileSize = 72.0;
+    final labelColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final muted = isDark ? AppColors.grey500 : AppColors.grey600;
+    final dashColor = isDark ? AppColors.grey600 : AppColors.grey400;
 
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final (index, image) in _images.indexed)
-          _ImageThumb(
-            file: File(image.path),
-            size: tileSize,
-            onRemove: _sending ? null : () => _removeImage(index),
-          ),
-        if (_remainingImages > 0)
-          Material(
-            color: tileColor,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: _sending ? null : _pickImages,
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: tileSize,
-                height: tileSize,
-                child:
-                    _pickingImages
-                        ? const Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        )
-                        : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(AppAssets.photoLibrary, color: muted),
-                            const SizedBox(height: 6),
-                            Text(
-                              context.l10n.feedback_add_image,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              strutStyle: context.tibetanStrutStyle(
-                                11,
-                                compact: true,
-                              ),
-                              style: TextStyle(fontSize: 11, color: muted),
-                            ),
-                          ],
-                        ),
+        Row(
+          children: [
+            Text(
+              context.l10n.feedback_images,
+              strutStyle: context.tibetanStrutStyle(15, compact: true),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: labelColor,
               ),
             ),
-          ),
+            const Spacer(),
+            Text(
+              '${_images.length} / ${FeedbackSheet.maxImages}',
+              style: TextStyle(fontSize: 13, color: muted),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final (index, image) in _images.indexed)
+              _ImageThumb(
+                file: File(image.path),
+                size: tileSize,
+                onRemove: _sending ? null : () => _removeImage(index),
+              ),
+            if (_remainingImages > 0)
+              _AddImageTile(
+                size: tileSize,
+                color: dashColor,
+                onTap: _sending ? null : _pickImages,
+                loading: _pickingImages,
+                tooltip: context.l10n.feedback_add_image,
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -394,9 +373,16 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
   Widget _buildSubmit(BuildContext context, bool isDark) {
     final background = isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
     final foreground = isDark ? AppColors.textPrimary : AppColors.surfaceWhite;
+    final disabledBackground = isDark ? AppColors.grey800 : AppColors.grey300;
+    final disabledForeground = isDark ? AppColors.grey500 : AppColors.grey600;
+    final labelColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final error = _error;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -414,17 +400,50 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
                 ),
               ),
             ),
-          _buildSubmitButton(context, background, foreground),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed:
+                      _sending ? null : () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: labelColor,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  child: Text(
+                    context.l10n.cancel,
+                    strutStyle: context.tibetanStrutStyle(15, compact: true),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSubmitButton(
+                  context,
+                  background: background,
+                  foreground: foreground,
+                  disabledBackground: disabledBackground,
+                  disabledForeground: disabledForeground,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSubmitButton(
-    BuildContext context,
-    Color background,
-    Color foreground,
-  ) {
+    BuildContext context, {
+    required Color background,
+    required Color foreground,
+    required Color disabledBackground,
+    required Color disabledForeground,
+  }) {
     return ElevatedButton(
       onPressed: _canSend ? _send : null,
       style: ElevatedButton.styleFrom(
@@ -432,8 +451,8 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
         minimumSize: const Size.fromHeight(48),
         backgroundColor: background,
         foregroundColor: foreground,
-        disabledBackgroundColor: background.withValues(alpha: 0.4),
-        disabledForegroundColor: foreground.withValues(alpha: 0.8),
+        disabledBackgroundColor: disabledBackground,
+        disabledForegroundColor: disabledForeground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       child:
@@ -446,23 +465,113 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
                   color: foreground,
                 ),
               )
-              : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(AppAssets.paperPlaneRight, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    context.l10n.feedback_send,
-                    strutStyle: context.tibetanStrutStyle(15, compact: true),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              : Text(
+                context.l10n.feedback_send,
+                strutStyle: context.tibetanStrutStyle(15, compact: true),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
     );
   }
+}
+
+class _AddImageTile extends StatelessWidget {
+  const _AddImageTile({
+    required this.size,
+    required this.color,
+    required this.onTap,
+    required this.loading,
+    required this.tooltip,
+  });
+
+  final double size;
+  final Color color;
+  final VoidCallback? onTap;
+  final bool loading;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: CustomPaint(
+            painter: _DashedRoundedBorderPainter(color: color, radius: 12),
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: Center(
+                child:
+                    loading
+                        ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: color,
+                          ),
+                        )
+                        : Icon(AppAssets.plus, size: 28, color: color),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashedRoundedBorderPainter extends CustomPainter {
+  const _DashedRoundedBorderPainter({required this.color, required this.radius});
+
+  final Color color;
+  final double radius;
+
+  static const _strokeWidth = 1.5;
+  static const _dashWidth = 5.0;
+  static const _dashSpace = 4.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth;
+
+    final rRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        _strokeWidth / 2,
+        _strokeWidth / 2,
+        size.width - _strokeWidth,
+        size.height - _strokeWidth,
+      ),
+      Radius.circular(radius),
+    );
+
+    final dashed = Path();
+    for (final metric in (Path()..addRRect(rRect)).computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = distance + _dashWidth;
+        dashed.addPath(
+          metric.extractPath(distance, next.clamp(0, metric.length)),
+          Offset.zero,
+        );
+        distance = next + _dashSpace;
+      }
+    }
+    canvas.drawPath(dashed, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRoundedBorderPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius;
 }
 
 class _ImageThumb extends StatelessWidget {

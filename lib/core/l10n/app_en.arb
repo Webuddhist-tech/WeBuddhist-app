@@ -1483,8 +1483,9 @@
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",
-  "feedback_title": "Send feedback",
-  "feedback_hint": "Tell us what's working, what isn't, or what you'd like to see",
+  "feedback_title": "Feedback",
+  "feedback_hint": "Tell us what's working, what isn't, or what you'd like to see...",
+  "feedback_images": "Images",
   "feedback_add_image": "Add image",
   "feedback_image_limit": "You can attach up to {count} images",
   "@feedback_image_limit": {

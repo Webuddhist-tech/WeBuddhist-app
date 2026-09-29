@@ -3034,6 +3034,9 @@ class AppLocalizationsNe extends AppLocalizations {
       'के राम्रो छ, के छैन, वा तपाईं के हेर्न चाहनुहुन्छ हामीलाई बताउनुहोस्';
 
   @override
+  String get feedback_images => 'तस्बिरहरू';
+
+  @override
   String get feedback_add_image => 'तस्बिर थप्नुहोस्';
 
   @override

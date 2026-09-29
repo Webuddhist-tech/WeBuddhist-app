@@ -3029,6 +3029,9 @@ class AppLocalizationsMn extends AppLocalizations {
       'Юу сайн ажиллаж байгаа, юу болохгүй байгаа эсвэл юу харахыг хүсэж байгаагаа бидэнд хэлээрэй';
 
   @override
+  String get feedback_images => 'Зургууд';
+
+  @override
   String get feedback_add_image => 'Зураг нэмэх';
 
   @override

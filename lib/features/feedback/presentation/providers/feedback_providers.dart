@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -48,7 +47,6 @@ class SendFeedback {
         reporter: _reporter(),
         appVersion: await _appVersion(),
         platform: _platform(),
-        language: _language(),
       ),
     );
   }
@@ -57,13 +55,7 @@ class SendFeedback {
     final auth = _ref.read(authProvider);
     final user = _ref.read(userProvider).user;
     if (!auth.isLoggedIn || auth.isGuest || user == null) return null;
-    return FeedbackReporter(
-      name:
-          user.username == null
-              ? user.fullName
-              : '${user.fullName} (@${user.username})',
-      email: user.email,
-    );
+    return FeedbackReporter(email: user.email);
   }
 
   Future<String> _appVersion() async {
@@ -84,11 +76,5 @@ class SendFeedback {
     } catch (_) {
       return 'unknown';
     }
-  }
-
-  String _language() {
-    final ui = _ref.read(localeProvider).toLanguageTag();
-    final content = _ref.read(contentLanguageProvider);
-    return content == ui ? ui : '$ui (content: $content)';
   }
 }

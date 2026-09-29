@@ -10,7 +10,6 @@ FeedbackReport _report({FeedbackReporter? reporter, String message = 'Hi'}) {
     reporter: reporter,
     appVersion: '2.5.5 (120)',
     platform: 'ios 17.2',
-    language: 'bo',
   );
 }
 
@@ -31,27 +30,27 @@ void main() {
       expect(payload['allowed_mentions'], {'parse': <String>[]});
     });
 
-    test('guests are labelled and carry no identity fields', () {
+    test('carries the message and device context, nothing identifying', () {
       final payload = DiscordFeedbackClient.buildPayload(_report());
       final embed = (payload['embeds'] as List).single as Map;
+      expect(embed.containsKey('title'), isFalse);
       expect(embed.containsKey('timestamp'), isFalse);
+      expect(embed['description'], 'Hi');
       final fields = _fields(payload);
-      expect(fields['User'], 'Guest');
+      expect(fields.containsKey('User'), isFalse);
       expect(fields.containsKey('Email'), isFalse);
-      expect(fields.containsKey('User ID'), isFalse);
-      expect(fields.containsKey('Environment'), isFalse);
+      expect(fields.containsKey('Language'), isFalse);
       expect(fields['App version'], '2.5.5 (120)');
-      expect(fields['Language'], 'bo');
+      expect(fields['Platform'], 'ios 17.2');
     });
 
-    test('signed-in users include name and email; blanks become a dash', () {
+    test('signed-in users include their email; a blank becomes a dash', () {
       final fields = _fields(
         DiscordFeedbackClient.buildPayload(
-          _report(reporter: const FeedbackReporter(name: 'Tenzin')),
+          _report(reporter: const FeedbackReporter()),
         ),
       );
-      expect(fields['User'], 'Tenzin');
-      expect(fields.containsKey('User ID'), isFalse);
+      expect(fields.containsKey('User'), isFalse);
       expect(fields['Email'], '—');
     });
 

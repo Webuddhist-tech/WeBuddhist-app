@@ -2862,6 +2862,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get feedback_hint => '告訴我們哪些功能好用、哪些需要改進，或您希望看到什麼';
 
   @override
+  String get feedback_images => '圖片';
+
+  @override
   String get feedback_add_image => '新增圖片';
 
   @override

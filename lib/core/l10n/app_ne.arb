@@ -1106,6 +1106,7 @@
   "event_prayer_praying": "प्रार्थना गर्दै",
   "feedback_title": "प्रतिक्रिया पठाउनुहोस्",
   "feedback_hint": "के राम्रो छ, के छैन, वा तपाईं के हेर्न चाहनुहुन्छ हामीलाई बताउनुहोस्",
+  "feedback_images": "तस्बिरहरू",
   "feedback_add_image": "तस्बिर थप्नुहोस्",
   "feedback_image_limit": "तपाईं बढीमा {count} वटा तस्बिर संलग्न गर्न सक्नुहुन्छ",
   "feedback_send": "पठाउनुहोस्",

@@ -45,8 +45,12 @@ void main() {
   testWidgets('composer and send button are both reachable', (tester) async {
     await _openSheet(tester);
 
-    expect(find.text('Send feedback'), findsOneWidget);
+    expect(find.text('Feedback'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('0 / 400'), findsOneWidget);
+    expect(find.text('Images'), findsOneWidget);
+    expect(find.text('0 / 3'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Send'), findsOneWidget);
   });
 

@@ -2990,11 +2990,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recitation_live_session_ended => 'The live session has ended';
 
   @override
-  String get feedback_title => 'Send feedback';
+  String get feedback_title => 'Feedback';
 
   @override
   String get feedback_hint =>
-      'Tell us what\'s working, what isn\'t, or what you\'d like to see';
+      'Tell us what\'s working, what isn\'t, or what you\'d like to see...';
+
+  @override
+  String get feedback_images => 'Images';
 
   @override
   String get feedback_add_image => 'Add image';
