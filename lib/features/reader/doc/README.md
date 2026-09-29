@@ -85,10 +85,8 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    original on in the UI language's script (Roman, Devanagari for hi/ne,
    Cyrillic for mn, as written for bo and zh — there is no transliteration
    into Chinese) + translation in the UI language, else English; chant / plan
-   → translation only, in the UI language, else English, else as written. A
-   chant picked in a language (`NavigationContext.language`, sent by the chant
-   list and collection items) shows that language whatever the app language:
-   the edition as written when it is the text, else only its translation.
+   → translation only, in the UI language, else English, else as written. The
+   app language decides, not the language picked on the chant list.
 2. `ReaderInitialLayoutApplier` (owned by `ReaderScreen`) runs once when the
    text language and `/texts/{id}/languages` are known: seeds the layout into
    `ReaderDualSettingsNotifier` and fills the translation (remembered pick →
@@ -110,18 +108,13 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    Original and Translation switches, the translation language, the script per
    source language and the translation edition per text
    (`translationVersions`, the 50 most recent texts), which
-   `autoSelectSecondaryVersion` prefers whenever the language offers it
-   (then the edition the reader was opened with, then the first). The picks
-   are kept on the device only (SharedPreferences, `reader_layout_<context>`);
-   the API has no reader-settings endpoint, so they do not follow the person
-   to another device.
+   `autoSelectSecondaryVersion` prefers whenever the language offers it.
 4. Every fill uses the same order,
    `ReaderDualSettingsNotifier.preferredTranslationLanguages`: remembered pick
-   → the opened edition's language → this visit's default → content language
-   (library: content language only). So switching the translation back on, or
-   hiding the original, through `fillPreferredSecondary` brings back what the
-   first open showed (Chinese UI on an English-only event text gets English
-   again).
+   → this visit's default → content language (library: content language
+   only). So switching the translation back on, or hiding the original,
+   through `fillPreferredSecondary` brings back what the first open showed
+   (Chinese UI on an English-only event text gets English again).
 5. The picks belong to the app language they were made under
    (`StorageKeys.readerLayoutLanguage`). When the content language changes,
    `ReaderLayoutLanguageGuard.sync` drops the event, chant and plan stores so
@@ -132,22 +125,10 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    applier re-checks before it fills, in case a switch was missed. Syncs run
    one at a time, so two quick changes cannot leave the earlier language as
    the stamp.
-6. A translated edition (the library's `translation_of`: the hi / zh / mn /
-   en chant lists, the Tara event's English and Chinese plans) opens under
-   its original (`ReaderNotifier._openAsTranslation` →
-   `ReaderDualSettingsNotifier.openAsTranslation`). That layout is this
-   visit's default, not an override: translation on, original hidden except
-   in an event (events keep it on, as for any text), and the saved picks
-   win — a stored "off" stays off, and a remembered translation language or
-   edition replaces the opened edition
-   (`readerOpenedTranslationNeedsRefill`, whether or not the switch is on;
-   if nothing can be shown the opened edition goes back). A chant picked in
-   a language pins the layer that holds it: the opened translation stays on
-   until the person touches the Translation switch, an original picked in
-   its own language stays shown until they touch the Original switch, and a
-   remembered language never replaces the picked edition. When the original
-   cannot be loaded, the edition opens as the text itself.
 
+Known gap: a chant tapped in the Hindi list arrives as the Hindi edition and
+the API never lists its Tibetan original, so the sheet reads "Original: Hindi"
+rather than "Original off + Translation Hindi".
 - `ReaderRepository` domain interface exists but **not wired in presentation**
 
 ---

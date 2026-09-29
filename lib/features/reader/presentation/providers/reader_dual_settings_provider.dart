@@ -163,18 +163,6 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// Cleared when the person touches the Translation switch here.
   String? _openedTranslationLanguage;
 
-  /// The edition [openAsTranslation] put in the Translation layer, kept for
-  /// the whole visit so a refill in its language comes back to it.
-  String? _openedTranslationVersionId;
-
-  /// The language a chant was picked in (chant list or collection item),
-  /// normalised; null elsewhere. The layer holding that edition stays on.
-  String? _listLanguage;
-
-  /// Set once the person shows or hides the original here, which lifts the
-  /// list language's hold on it for this visit.
-  bool _originalPinReleased = false;
-
   // "User has edited this slot" flags. Needed because the slot config alone
   // can't tell "untouched defaults" apart from "user picked something that
   // happens to match the defaults" (e.g. picking English when defaults are
@@ -203,26 +191,9 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   ReaderContextLayoutPrefs get _prefs =>
       _ref.read(readerContextLayoutProvider(scope.context));
 
-  /// True while a chant picked in a language shows that language through the
-  /// opened translation: the Translation layer stays on until the person
-  /// touches its switch here.
-  bool get isTranslationPinnedByList =>
-      !isLibrary &&
-      _listLanguage != null &&
-      _openedTranslationLanguage == _listLanguage;
-
-  /// True while a chant picked in a language is that edition itself: the
-  /// original stays on until the person shows or hides it here.
-  bool get _isOriginalPinnedByList =>
-      !_originalPinReleased &&
-      _listLanguage != null &&
-      _openedTranslationLanguage == null &&
-      _language == _listLanguage;
-
-  /// Outside the library: the context store's picks over this visit's
-  /// default, which is the opened translation ([openAsTranslation]) when
-  /// there is one, else the seed. A chant picked in a language keeps the
-  /// layer holding that language on whatever the store says.
+  /// Outside the library: the context store's picks over this visit's seed,
+  /// or over the opened translation ([openAsTranslation]), which keeps the
+  /// translation on whatever the store says.
   void _recompute() {
     if (!mounted || isLibrary) return;
     final prefs = _prefs;
@@ -232,23 +203,16 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
         language != null && prefs.hasScriptFor(language)
             ? prefs.scriptFor(language)
             : _seed?.originalScriptId;
-    // An event keeps the original on under an opened translation, as it
-    // does over any other text; plans and chants show the translation alone.
     final bool? defaultOriginalVisible =
-        opened
-            ? scope.context == ReaderLayoutContext.event
-            : _seed?.originalVisible;
-    final secondaryEnabled =
-        isTranslationPinnedByList ||
-        (!_translationUnavailable &&
-            (prefs.translationOn ?? (opened || _seededTranslationOn)));
-    final originalVisible =
-        _translationUnavailable ||
-        _isOriginalPinnedByList ||
-        (prefs.originalVisible ?? defaultOriginalVisible ?? true);
+        opened ? false : _seed?.originalVisible;
     final next = state.copyWith(
-      secondaryEnabled: secondaryEnabled,
-      originalVisible: originalVisible,
+      secondaryEnabled:
+          opened ||
+          (!_translationUnavailable &&
+              (prefs.translationOn ?? _seededTranslationOn)),
+      originalVisible:
+          _translationUnavailable ||
+          (prefs.originalVisible ?? defaultOriginalVisible ?? true),
       originalScriptId: script,
       clearOriginalScriptId: script == null,
     );
@@ -258,28 +222,11 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// Applies this visit's defaults for a text in [language] (outside the
   /// library). Stored picks for this context win over the seed; the seed's
   /// translation only switches on through [seedTranslationOn].
-  ///
-  /// [listLanguage] is the language a chant was picked in; outside the chant
-  /// context it is ignored.
-  void seed(
-    ReaderInitialLayout layout, {
-    required String language,
-    String? listLanguage,
-  }) {
+  void seed(ReaderInitialLayout layout, {required String language}) {
     if (isLibrary) return;
     _seed = layout;
     _language = TransliterationService.normalizeLanguage(language);
-    _listLanguage = _chantListLanguage(listLanguage);
     _recompute();
-  }
-
-  /// [listLanguage] normalised, in the chant context only; null elsewhere or
-  /// when blank.
-  String? _chantListLanguage(String? listLanguage) {
-    final list = TransliterationService.normalizeLanguage(listLanguage ?? '');
-    return scope.context == ReaderLayoutContext.chant && list.isNotEmpty
-        ? list
-        : null;
   }
 
   /// Turns the seeded translation on once a version for it has been found.
@@ -328,11 +275,7 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
       state = state.copyWith(originalVisible: visible);
       _ref.read(readerOriginalVisibleProvider.notifier).setVisible(visible);
     } else {
-      _originalPinReleased = true;
-      // The store may already hold this value, in which case it does not
-      // notify; recompute either way.
       _store.setOriginalVisible(visible);
-      _recompute();
     }
     if (!visible && !state.secondaryEnabled) setSecondaryEnabled(true);
   }
@@ -343,14 +286,12 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// persisted preferences are left alone.
   ///
   /// Outside the library this layout is the visit's default in place of the
-  /// seed's: the translation is on and, except in an event, the original
-  /// hidden, unless the person chose otherwise in this context. A chant
-  /// picked in the opened edition's language ([listLanguage]) keeps it on
-  /// regardless, from the first frame rather than once [seed] runs.
+  /// seed's: the translation stays on until the person touches the switch
+  /// here, and the original stays hidden unless they chose to show it in
+  /// this context.
   void openAsTranslation({
     required ReaderSlotConfig original,
     required ReaderSlotConfig translation,
-    String? listLanguage,
   }) {
     _primaryEdited = true;
     _secondaryEdited = true;
@@ -366,18 +307,8 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     _openedTranslationLanguage = TransliterationService.normalizeLanguage(
       translation.languageCode,
     );
-    _openedTranslationVersionId = translation.versionId;
-    _listLanguage = _chantListLanguage(listLanguage);
     _recompute();
   }
-
-  /// The language of the edition the reader was opened with, while it is
-  /// this visit's translation default (outside the library).
-  String? get openedTranslationLanguage => _openedTranslationLanguage;
-
-  /// The edition the reader was opened with, when it opened under its root
-  /// (outside the library).
-  String? get openedTranslationVersionId => _openedTranslationVersionId;
 
   /// Undoes [openAsTranslation] when the root cannot be loaded: the opened
   /// edition goes back to being the text, no translation is picked, and the
@@ -388,7 +319,6 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
     _secondaryResolveGeneration++;
     _secondaryEnabledGeneration++;
     _openedTranslationLanguage = null;
-    _openedTranslationVersionId = null;
     state = state.copyWith(
       primary: ReaderDualLayoutSettings.initial().primary,
       secondary: const ReaderSlotConfig.empty(),
@@ -435,16 +365,16 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
 
   /// Translation languages to try whenever the translation fills in, most
   /// wanted first. Outside the library: the person's last pick in this
-  /// context, then the opened translation's language, then the seed's, then
-  /// [contentLanguage]; the library tries only [contentLanguage].
+  /// context, then this visit's default (the opened translation's language,
+  /// else the seed's), then [contentLanguage]; the library tries only
+  /// [contentLanguage].
   List<String> preferredTranslationLanguages({
     required String contentLanguage,
   }) {
     if (isLibrary) return translationCandidates(fallback: contentLanguage);
     return translationCandidates(
       remembered: _prefs.translationLanguage,
-      opened: _openedTranslationLanguage,
-      seeded: _seed?.translationLanguage,
+      seeded: _openedTranslationLanguage ?? _seed?.translationLanguage,
       fallback: contentLanguage,
     );
   }

@@ -87,28 +87,21 @@ String? scriptIdForUiLanguage(
 /// [translationLanguages] are the languages the text offers a translation in.
 /// [converterScripts] are the scripts the text's language can be
 /// transliterated into on the phone (empty when there is no converter).
-/// [listLanguage] is the language the chant was picked in (the chant list or
-/// a recitation collection item); only chants use it.
 ///
-/// A chant picked in a language shows that language, whatever the app
-/// language: the edition itself as written when it is the text, else only
-/// its translation (a translated edition opened under its original).
-///
-/// Otherwise a text already in the UI language is shown as written, alone,
-/// and:
+/// A text already in the UI language is shown as written, alone. Otherwise:
 ///
 /// - Event: the original stays on, in the reader's script, with the
 ///   translation in the UI language, else English (people must be able to
 ///   follow along), else none.
 /// - Plan and chant: only the translation, in the UI language, else English;
-///   the text as written when neither is offered.
+///   the text as written when neither is offered. The app language decides,
+///   not the language picked on the chant list.
 ReaderInitialLayout? resolveInitialLayout({
   required ReaderLayoutContext context,
   required String textLanguage,
   required String uiLanguage,
   required Iterable<String> translationLanguages,
   Iterable<TransliterationScript> converterScripts = const [],
-  String? listLanguage,
 }) {
   final text = normalizeReaderLayoutLanguage(textLanguage);
   final ui = normalizeReaderLayoutLanguage(uiLanguage);
@@ -116,20 +109,6 @@ ReaderInitialLayout? resolveInitialLayout({
     for (final language in translationLanguages)
       normalizeReaderLayoutLanguage(language),
   };
-
-  if (context == ReaderLayoutContext.chant) {
-    final list = normalizeReaderLayoutLanguage(listLanguage ?? '');
-    if (list.isNotEmpty) {
-      if (list == text) return const ReaderInitialLayout.asWritten();
-      if (offered.contains(list)) {
-        return ReaderInitialLayout(
-          originalVisible: false,
-          translationOn: true,
-          translationLanguage: list,
-        );
-      }
-    }
-  }
 
   switch (context) {
     case ReaderLayoutContext.library:
@@ -159,18 +138,16 @@ ReaderInitialLayout? resolveInitialLayout({
 }
 
 /// Translation languages to try, most wanted first: what the person picked
-/// last time in this context, then the language of the edition the reader
-/// was opened with, then this visit's default, then the app content
-/// language. Blank and repeated codes are dropped.
+/// last time in this context, then this visit's default, then the app
+/// content language. Blank and repeated codes are dropped.
 List<String> translationCandidates({
   String? remembered,
-  String? opened,
   String? seeded,
   required String fallback,
 }) {
   final seen = <String>{};
   return [
-    for (final code in [remembered, opened, seeded, fallback])
+    for (final code in [remembered, seeded, fallback])
       if (code != null)
         if (normalizeReaderLayoutLanguage(code).isNotEmpty &&
             seen.add(normalizeReaderLayoutLanguage(code)))

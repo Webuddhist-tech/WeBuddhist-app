@@ -24,14 +24,12 @@ void main() {
     required String uiLanguage,
     Iterable<String> translationLanguages = praiseTranslations,
     Iterable<TransliterationScript>? converterScripts,
-    String? listLanguage,
   }) => resolveInitialLayout(
     context: context,
     textLanguage: textLanguage,
     uiLanguage: uiLanguage,
     translationLanguages: translationLanguages,
     converterScripts: converterScripts ?? tibetanScripts,
-    listLanguage: listLanguage,
   );
 
   const asWritten = ReaderInitialLayout.asWritten();
@@ -415,97 +413,9 @@ void main() {
     });
   });
 
-  group('resolveInitialLayout: chant picked in a language', () {
-    test('a Tibetan chant from the Tibetan list reads as written, whatever '
-        'the app language', () {
-      for (final ui in ['en', 'hi', 'zh', 'mn', 'ne', 'bo']) {
-        expect(
-          resolve(
-            context: ReaderLayoutContext.chant,
-            uiLanguage: ui,
-            translationLanguages: sadhanaTranslations,
-            listLanguage: 'bo',
-          ),
-          asWritten,
-          reason: ui,
-        );
-      }
-    });
-
-    test('a Hindi edition opened under its Tibetan original shows only the '
-        'Hindi', () {
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'en',
-          translationLanguages: sadhanaTranslations,
-          listLanguage: 'hi',
-        ),
-        translationOnly('hi'),
-      );
-    });
-
-    test('a Hindi edition that stayed the text reads as written', () {
-      // Its original could not be loaded, so the Hindi edition is the text.
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          textLanguage: 'hi',
-          uiLanguage: 'en',
-          translationLanguages: const ['en'],
-          converterScripts: const [],
-          listLanguage: 'HI ',
-        ),
-        asWritten,
-      );
-    });
-
-    test('a list language the text does not offer falls back to the app '
-        'language', () {
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'en',
-          listLanguage: 'vi',
-        ),
-        translationOnly('en'),
-      );
-    });
-
-    test('a blank list language is no pick', () {
-      expect(
-        resolve(
-          context: ReaderLayoutContext.chant,
-          uiLanguage: 'en',
-          listLanguage: ' ',
-        ),
-        translationOnly('en'),
-      );
-    });
-
-    test('events and plans ignore it', () {
-      expect(
-        resolve(
-          context: ReaderLayoutContext.event,
-          uiLanguage: 'en',
-          listLanguage: 'bo',
-        ),
-        bothOn(script: 'phonetic', translation: 'en'),
-      );
-      expect(
-        resolve(
-          context: ReaderLayoutContext.plan,
-          uiLanguage: 'en',
-          listLanguage: 'bo',
-        ),
-        translationOnly('en'),
-      );
-    });
-  });
-
   group('resolveInitialLayout: chant', () {
-    test('without a list language, follows the app language', () {
-      // English app, a routine's Tibetan chant: only the English translation.
+    test('follows the app language, not the chant list', () {
+      // English app, Tibetan chant list: only the English translation.
       expect(
         resolve(
           context: ReaderLayoutContext.chant,
@@ -572,18 +482,6 @@ void main() {
       expect(
         translationCandidates(remembered: 'zh', seeded: 'hi', fallback: 'en'),
         ['zh', 'hi', 'en'],
-      );
-    });
-
-    test("the opened edition's language comes before the seeded default", () {
-      expect(
-        translationCandidates(
-          remembered: 'zh',
-          opened: 'mn',
-          seeded: 'hi',
-          fallback: 'en',
-        ),
-        ['zh', 'mn', 'hi', 'en'],
       );
     });
 
