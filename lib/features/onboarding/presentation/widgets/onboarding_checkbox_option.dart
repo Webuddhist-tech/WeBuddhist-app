@@ -1,68 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_option_card.dart';
 
-/// Reusable checkbox option widget for multi-select questions
+/// Multi-select row used on the tradition step.
 class OnboardingCheckboxOption extends StatelessWidget {
   const OnboardingCheckboxOption({
     super.key,
-    required this.id,
     required this.label,
-    required this.isSelected,
-    required this.isEnabled,
+    required this.isChecked,
     required this.onTap,
+    this.bordered = true,
   });
 
-  final String id;
   final String label;
-  final bool isSelected;
-  final bool isEnabled;
+  final bool isChecked;
   final VoidCallback onTap;
+
+  /// See [OnboardingOptionCard.bordered].
+  final bool bordered;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: InkWell(
-        onTap: isEnabled ? onTap : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Row(
-          children: [
-            _buildCheckbox(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: -0.306,
-                  color: isEnabled ? null : AppColors.greyMedium,
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Semantics(
+      checked: isChecked,
+      child: OnboardingOptionCard(
+        mark: _CheckMark(isChecked: isChecked),
+        label: label,
+        onTap: onTap,
+        bordered: bordered,
       ),
     );
   }
+}
 
-  Widget _buildCheckbox() {
-    return Container(
+class _CheckMark extends StatelessWidget {
+  const _CheckMark({required this.isChecked});
+
+  final bool isChecked;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final idleBorder = isDark ? AppColors.grey500 : const Color(0xFFC8C8C8);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
       width: 22,
       height: 22,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(6),
+        color: isChecked ? AppColors.brandblue : Colors.transparent,
         border: Border.all(
-          color: isSelected ? AppColors.primary : AppColors.greyMedium,
-          width: 2,
+          color: isChecked ? AppColors.brandblue : idleBorder,
+          width: 1.5,
         ),
-        color: isSelected ? AppColors.primary : Colors.transparent,
       ),
       child:
-          isSelected
-              ? const Center(
-                child: Icon(Icons.check, size: 14, color: Colors.white),
-              )
+          isChecked
+              ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
               : null,
     );
   }

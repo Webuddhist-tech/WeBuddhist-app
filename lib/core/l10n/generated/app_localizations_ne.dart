@@ -67,44 +67,6 @@ class AppLocalizationsNe extends AppLocalizations {
       'समूह, कार्यक्रम, समाचार र कुराकानी';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'जप, संचय, ध्यान र अध्ययन योजनाहरू छान्न';
-
-  @override
-  String get onboarding_all_set_feature_reminders =>
-      'कोमल दैनिक रिमाइन्डर, जब तपाईं तयार हुनुहुन्छ';
-
-  @override
-  String get onboarding_begin_practice => 'आफ्नो पहिलो अभ्यास खोज्नुहोस्';
-
-  @override
-  String get onboarding_2_title => 'अब, यसरी यो काम गर्छ।';
-
-  @override
-  String get onboarding_2_subtitle => 'बानी बसाउन तीन साना कदम';
-
-  @override
-  String get onboarding_2_step1_title => 'आफ्ना अभ्यासहरू छान्नुहोस्';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'जप गर्नुहोस्, मन्त्र गन्नुहोस्, ध्यान टाइमर सेट गर्नुहोस्, वा आफ्नो परम्पराको अध्ययन योजना पालना गर्नुहोस्।';
-
-  @override
-  String get onboarding_2_step2_title => 'तिनीहरूलाई आफ्नो दिनमा थप्नुहोस्';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'दैनिक दिनचर्या बनाउनुहोस् र हामी यसलाई जारी राख्न कोमल रिमाइन्डर पठाउनेछौँ।';
-
-  @override
-  String get onboarding_2_step3_title => 'दिनमा केही मिनेट अभ्यास गर्नुहोस्';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'एक क्षण पनि महत्त्वपूर्ण छ। दिन-प्रतिदिन, तपाईंको अभ्यास बढ्दै जान्छ।';
-
-  @override
   String get home_recitation => 'पाठ';
 
   @override
@@ -698,10 +660,6 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get onboarding_tradition_show_all_title => 'मलाई सबै देखाउनुहोस्';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'हरेक मार्गका अभ्यास र ग्रन्थहरू';
 
   @override
   String get onboarding_skip_for_now => 'अहिलेलाई छोड्नुहोस्';

@@ -39,13 +39,17 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
     super.dispose();
   }
 
-  void _nextPage() {
+  /// Advances only while [page] is still the current page, so a double tap
+  /// (or a callback that lands mid-animation) cannot skip the next step.
+  VoidCallback _nextFrom(int page) => () {
+    if (ref.read(onboardingProvider).currentPage != page) return;
     ref.read(onboardingProvider.notifier).goToNextPage();
-  }
+  };
 
-  void _previousPage() {
+  VoidCallback _previousFrom(int page) => () {
+    if (ref.read(onboardingProvider).currentPage != page) return;
     ref.read(onboardingProvider.notifier).goToPreviousPage();
-  }
+  };
 
   Future<void> _completeOnboarding() async {
     final completed =
@@ -93,11 +97,11 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
               }
             },
             children: [
-              OnboardingScreen1(onNext: _nextPage),
-              OnboardingScreenLanguage(onNext: _nextPage),
+              OnboardingScreen1(onNext: _nextFrom(0)),
+              OnboardingScreenLanguage(onNext: _nextFrom(1)),
               OnboardingScreenTradition(
-                onNext: _nextPage,
-                onBack: _previousPage,
+                onNext: _nextFrom(2),
+                onBack: _previousFrom(2),
               ),
               OnboardingScreen5(onComplete: _completeOnboarding),
             ],

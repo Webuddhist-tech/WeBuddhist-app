@@ -20,44 +20,56 @@ class OnboardingScreen1 extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-              Text(
-                l10n.onboarding_welcome,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: onSurface,
-                  height: 1.2,
+          // Scrolls only when the content cannot fit (short screens, large
+          // text); otherwise the spacers spread it over the full height.
+          child: CustomScrollView(
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  children: [
+                    const Spacer(flex: 2),
+                    Text(
+                      l10n.onboarding_welcome,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: onSurface,
+                        height: 1.2,
+                      ),
+                    ),
+                    Text(
+                      l10n.appTitle,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: getFontFamily('en'),
+                        color: onSurface,
+                        height: 1.2,
+                      ),
+                    ),
+                    const Spacer(flex: 2),
+                    Image.asset(
+                      AppAssets.weBuddhistLogo,
+                      height: 168,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.self_improvement_rounded,
+                          size: 120,
+                          color: AppColors.primary,
+                        );
+                      },
+                    ),
+                    const Spacer(flex: 3),
+                    _PillButton(
+                      label: l10n.onboarding_find_peace,
+                      onPressed: onNext,
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                l10n.appTitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: getFontFamily('en'),
-                  color: onSurface,
-                  height: 1.2,
-                ),
-              ),
-              const Spacer(flex: 2),
-              Image.asset(
-                AppAssets.weBuddhistLogo,
-                height: 168,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.self_improvement_rounded,
-                    size: 120,
-                    color: AppColors.primary,
-                  );
-                },
-              ),
-              const Spacer(flex: 3),
-              _PillButton(label: l10n.onboarding_find_peace, onPressed: onNext),
             ],
           ),
         ),

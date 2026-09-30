@@ -57,5 +57,3 @@ class SaveTraditionRequest {
 }
 
 const traditionPathOrder = ['pali', 'chinese', 'tibetan'];
-
-const traditionShowAllCode = 'show_all';

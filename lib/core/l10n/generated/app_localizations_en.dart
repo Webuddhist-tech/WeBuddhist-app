@@ -69,44 +69,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Groups, events, news feed and chat';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'Chants, accumulations, meditation, and study plans to choose from';
-
-  @override
-  String get onboarding_all_set_feature_reminders =>
-      'Gentle daily reminders, whenever you\'re ready';
-
-  @override
-  String get onboarding_begin_practice => 'Find your first practices';
-
-  @override
-  String get onboarding_2_title => 'Next, here\'s how it works';
-
-  @override
-  String get onboarding_2_subtitle => 'Three small steps to build the habit';
-
-  @override
-  String get onboarding_2_step1_title => 'Choose your practices';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'Chant, count mantras, set a meditation timer, or follow a study plan from your tradition.';
-
-  @override
-  String get onboarding_2_step2_title => 'Add them to your day';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'Build a daily routine and we\'ll send gentle reminders to keep it going.';
-
-  @override
-  String get onboarding_2_step3_title => 'Practice a few minutes a day';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'Even a moment counts. Day by day, your practice grows.';
-
-  @override
   String get home_recitation => 'recitations';
 
   @override
@@ -690,10 +652,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_tradition_show_all_title => 'Show me everything';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'Practices and texts from every path';
 
   @override
   String get onboarding_skip_for_now => 'Skip for now';

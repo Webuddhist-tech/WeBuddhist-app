@@ -68,45 +68,6 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཚོགས་པ། བྱེད་སྒོ། གསར་འགྱུར། གླེང་མོལ།';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'སྔགས་བཟླས། བསགས་པ། སྒོམ་སྒྲུབ། དང་སློབ་སྦྱོང་ཐབས་ཀྱི་རྗེས་འདེམས་ཆོག';
-
-  @override
-  String get onboarding_all_set_feature_reminders =>
-      'ཉིན་རེའི་དྲན་སྐུལ་འཇམ་པོ། ཁྱེད་གྲ་སྒྲིག་བྱས་ཚེ་ནམ་ཡང';
-
-  @override
-  String get onboarding_begin_practice => 'ཉམས་ལེན་ཐོག་མ་འཚོལ།';
-
-  @override
-  String get onboarding_2_title => 'དེ་ནས། འདིས་ཕན་ཐོག་འབྱུང་ཚུལ་ནི།';
-
-  @override
-  String get onboarding_2_subtitle =>
-      'གོམས་གཤིས་ཆགས་ཐབས་ཀྱི་གོམ་སྟབས་ཆུང་ངུ་གསུམ།';
-
-  @override
-  String get onboarding_2_step1_title => 'ཁྱེད་རང་གི་ཉམས་ལེན་འདེམས།';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'ཞལ་འདོན་བྱེད་པ། གཟུངས་སྔགས་བགྲང་བ། སྒོམ་ཡུན་སྒྲིག་པ། ཁྱེད་རང་གི་ཆོས་བརྒྱུད་ནས་སློབ་སྦྱོང་གི་འཆར་གཞི་ཞིག་གི་རྗེས་སུ་འཇུག་པ་གང་རུང་བྱོས།';
-
-  @override
-  String get onboarding_2_step2_title => 'ཉིན་རེའི་ལས་རིམ་དུ་སྣོན།';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'ཉིན་རེའི་འཆར་ཅན་ལས་རིམ་ཞིག་བཟོས་དང་། ང་ཚོས་ཁྱེད་ལ་ཉིན་ལྟར་དྲན་སྐུལ་བཏང་ནས་ཉམས་ལེན་རྒྱུན་འཁྱོངས་ཡོང་བ་བྱེད།';
-
-  @override
-  String get onboarding_2_step3_title => 'ཉིན་རེར་སྐར་མ་ཁ་ཤས་རེ་ཉམས་ལེན་བྱོས།';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'དུས་ཡུན་ཐུང་ངུ་ཞིག་ཡིན་ཡང་གལ་ཆེ། ཉི་མ་ནས་ཉི་མ་མཐུད་ན་ཉམས་ལེན་གོང་འཕེལ་དུ་འགྲོ།';
-
-  @override
   String get home_recitation => 'བཟླས་བརྗོད།';
 
   @override
@@ -695,10 +656,6 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get onboarding_tradition_show_all_title => 'ཡོངས་རྫོགས་སྟོན་རོགས།';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'ལམ་ཐམས་ཅད་ཀྱི་སྒྲུབ་པ་དང་གཞུང་ལུགས།';
 
   @override
   String get onboarding_skip_for_now => 'ད་ལྟ་བསྲུབ་རོགས།';

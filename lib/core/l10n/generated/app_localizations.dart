@@ -214,72 +214,6 @@ abstract class AppLocalizations {
   /// **'Groups, events, news feed and chat'**
   String get onboarding_all_set_connect_body;
 
-  /// No description provided for @onboarding_all_set_feature_practices.
-  ///
-  /// In en, this message translates to:
-  /// **'Chants, accumulations, meditation, and study plans to choose from'**
-  String get onboarding_all_set_feature_practices;
-
-  /// No description provided for @onboarding_all_set_feature_reminders.
-  ///
-  /// In en, this message translates to:
-  /// **'Gentle daily reminders, whenever you\'re ready'**
-  String get onboarding_all_set_feature_reminders;
-
-  /// No description provided for @onboarding_begin_practice.
-  ///
-  /// In en, this message translates to:
-  /// **'Find your first practices'**
-  String get onboarding_begin_practice;
-
-  /// No description provided for @onboarding_2_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Next, here\'s how it works'**
-  String get onboarding_2_title;
-
-  /// No description provided for @onboarding_2_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Three small steps to build the habit'**
-  String get onboarding_2_subtitle;
-
-  /// No description provided for @onboarding_2_step1_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose your practices'**
-  String get onboarding_2_step1_title;
-
-  /// No description provided for @onboarding_2_step1_desc.
-  ///
-  /// In en, this message translates to:
-  /// **'Chant, count mantras, set a meditation timer, or follow a study plan from your tradition.'**
-  String get onboarding_2_step1_desc;
-
-  /// No description provided for @onboarding_2_step2_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Add them to your day'**
-  String get onboarding_2_step2_title;
-
-  /// No description provided for @onboarding_2_step2_desc.
-  ///
-  /// In en, this message translates to:
-  /// **'Build a daily routine and we\'ll send gentle reminders to keep it going.'**
-  String get onboarding_2_step2_desc;
-
-  /// No description provided for @onboarding_2_step3_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Practice a few minutes a day'**
-  String get onboarding_2_step3_title;
-
-  /// No description provided for @onboarding_2_step3_desc.
-  ///
-  /// In en, this message translates to:
-  /// **'Even a moment counts. Day by day, your practice grows.'**
-  String get onboarding_2_step3_desc;
-
   /// No description provided for @home_recitation.
   ///
   /// In en, this message translates to:
@@ -1317,12 +1251,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show me everything'**
   String get onboarding_tradition_show_all_title;
-
-  /// No description provided for @onboarding_tradition_show_all_description.
-  ///
-  /// In en, this message translates to:
-  /// **'Practices and texts from every path'**
-  String get onboarding_tradition_show_all_description;
 
   /// No description provided for @onboarding_skip_for_now.
   ///

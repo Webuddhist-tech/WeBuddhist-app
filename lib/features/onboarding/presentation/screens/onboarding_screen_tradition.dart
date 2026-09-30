@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/onboarding/application/tradition_selection_provider.dart';
 import 'package:flutter_pecha/features/onboarding/application/tradition_selection_state.dart';
-import 'package:flutter_pecha/features/onboarding/data/models/tradition_models.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/utils/onboarding_analytics.dart';
+import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_checkbox_option.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_choice_scaffold.dart';
-import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_radio_option.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// Onboarding screen: select a Buddhist tradition path.
+/// Onboarding screen: check one or more Buddhist tradition paths.
 class OnboardingScreenTradition extends ConsumerWidget {
   const OnboardingScreenTradition({
     super.key,
@@ -30,11 +29,12 @@ class OnboardingScreenTradition extends ConsumerWidget {
       }
       return;
     }
-    // Only a count reaches analytics: one tradition, or none for "show all".
-    final isShowAll = ref.read(traditionSelectionProvider).isShowAllSelected;
+    // Only a count reaches analytics, never which traditions.
     ref
         .read(onboardingAnalyticsProvider)
-        .traditionsChosen(count: isShowAll ? 0 : 1);
+        .traditionsChosen(
+          count: ref.read(traditionSelectionProvider).selectedCodes.length,
+        );
     onNext();
   }
 
@@ -89,23 +89,20 @@ class OnboardingScreenTradition extends ConsumerWidget {
     }
 
     final l10n = context.l10n;
-    final select =
-        ref.read(traditionSelectionProvider.notifier).selectTradition;
+    final notifier = ref.read(traditionSelectionProvider.notifier);
 
     return Column(
       children: [
         for (final path in selectionState.paths)
-          OnboardingRadioOption(
-            id: path.code,
+          OnboardingCheckboxOption(
             label: path.title,
-            selectedId: selectionState.selectedCode,
-            onSelect: select,
+            isChecked: selectionState.selectedCodes.contains(path.code),
+            onTap: () => notifier.toggleTradition(path.code),
           ),
-        OnboardingRadioOption(
-          id: traditionShowAllCode,
+        OnboardingCheckboxOption(
           label: l10n.onboarding_tradition_show_all_title,
-          selectedId: selectionState.selectedCode,
-          onSelect: select,
+          isChecked: selectionState.isAllSelected,
+          onTap: notifier.toggleAll,
           bordered: false,
         ),
       ],

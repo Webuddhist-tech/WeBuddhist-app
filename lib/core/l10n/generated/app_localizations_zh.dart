@@ -63,39 +63,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_all_set_connect_body => '群組、活動、動態與聊天';
 
   @override
-  String get onboarding_all_set_feature_practices => '持咒、計數、禪修和學習計畫供您選擇';
-
-  @override
-  String get onboarding_all_set_feature_reminders => '每日溫馨提醒，隨時等您準備好～';
-
-  @override
-  String get onboarding_begin_practice => '尋找您的第一項修持';
-
-  @override
-  String get onboarding_2_title => '接下來，這個應用程式是這樣使用的:';
-
-  @override
-  String get onboarding_2_subtitle => '養成習慣的三個小步驟';
-
-  @override
-  String get onboarding_2_step1_title => '選擇您的修持方式';
-
-  @override
-  String get onboarding_2_step1_desc => '持咒、數念珠、設定禪坐計時器，或跟隨您傳承中的學習計畫。';
-
-  @override
-  String get onboarding_2_step2_title => '加入您的每日修持計畫';
-
-  @override
-  String get onboarding_2_step2_desc => '建立日常日程，我們會發送溫和的提醒，幫助您堅持。';
-
-  @override
-  String get onboarding_2_step3_title => '每天修持幾分鐘';
-
-  @override
-  String get onboarding_2_step3_desc => '哪怕只是一刻也有意義。日復一日，您的修持會不斷成長。';
-
-  @override
   String get home_recitation => '持誦';
 
   @override
@@ -652,9 +619,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get onboarding_tradition_show_all_title => '顯示所有內容';
-
-  @override
-  String get onboarding_tradition_show_all_description => '每條道路的實踐和經典';
 
   @override
   String get onboarding_skip_for_now => '暫時跳過';

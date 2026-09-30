@@ -6,18 +6,23 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 final _logger = AppLogger('TraditionSelectionNotifier');
 
-class TraditionSelectionNotifier extends StateNotifier<TraditionSelectionState> {
+class TraditionSelectionNotifier
+    extends StateNotifier<TraditionSelectionState> {
   TraditionSelectionNotifier({
     required OnboardingRemoteDatasource remoteDatasource,
     required String language,
-  })  : _remoteDatasource = remoteDatasource,
-        _language = language,
-        super(const TraditionSelectionState()) {
+  }) : _remoteDatasource = remoteDatasource,
+       _language = language,
+       super(const TraditionSelectionState()) {
     loadPaths();
   }
 
   final OnboardingRemoteDatasource _remoteDatasource;
   final String _language;
+
+  /// Codes already saved by an earlier, partly failed submit. A retry skips
+  /// them so the backend never gets the same tradition twice.
+  final Set<String> _savedCodes = {};
 
   Future<void> loadPaths() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -36,33 +41,48 @@ class TraditionSelectionNotifier extends StateNotifier<TraditionSelectionState> 
     }
   }
 
-  void selectTradition(String code) {
-    state = state.copyWith(selectedCode: code, clearError: true);
+  /// Checks [code] if unchecked, unchecks it otherwise.
+  void toggleTradition(String code) {
+    final codes = {...state.selectedCodes};
+    if (!codes.remove(code)) codes.add(code);
+    state = state.copyWith(selectedCodes: codes, clearError: true);
   }
 
-  Future<bool> submitSelection() async {
-    final selectedCode = state.selectedCode;
-    if (selectedCode == null || state.isSaving) return false;
+  /// "Show me everything": checks every path, or clears them all when every
+  /// path is already checked.
+  void toggleAll() {
+    state = state.copyWith(
+      selectedCodes:
+          state.isAllSelected ? {} : {for (final p in state.paths) p.code},
+      clearError: true,
+    );
+  }
 
-    if (selectedCode == traditionShowAllCode) {
-      return true;
-    }
+  /// Saves every checked tradition, one request each (the API takes one
+  /// tradition per call). Returns false if any request failed; the ones that
+  /// succeeded are kept and not re-sent on retry.
+  Future<bool> submitSelection() async {
+    if (!state.hasSelection || state.isSaving) return false;
 
     state = state.copyWith(isSaving: true, clearError: true);
 
-    try {
-      await _remoteDatasource.saveUserTradition(
-        SaveTraditionRequest(traditionCode: selectedCode),
-      );
-      state = state.copyWith(isSaving: false);
-      return true;
-    } catch (e, stackTrace) {
-      _logger.error('Failed to save user tradition', e, stackTrace);
-      state = state.copyWith(
-        isSaving: false,
-        error: 'Failed to save tradition',
-      );
-      return false;
+    var allSaved = true;
+    for (final code in state.selectedCodes.difference(_savedCodes)) {
+      try {
+        await _remoteDatasource.saveUserTradition(
+          SaveTraditionRequest(traditionCode: code),
+        );
+        _savedCodes.add(code);
+      } catch (e, stackTrace) {
+        _logger.error('Failed to save user tradition $code', e, stackTrace);
+        allSaved = false;
+      }
     }
+
+    state = state.copyWith(
+      isSaving: false,
+      error: allSaved ? null : 'Failed to save tradition',
+    );
+    return allSaved;
   }
 }

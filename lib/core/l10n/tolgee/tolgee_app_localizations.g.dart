@@ -134,83 +134,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get onboarding_all_set_feature_practices => TolgeeBridge.get(
-    localeName,
-    'onboarding_all_set_feature_practices',
-    () => _fallback.onboarding_all_set_feature_practices,
-  );
-
-  @override
-  String get onboarding_all_set_feature_reminders => TolgeeBridge.get(
-    localeName,
-    'onboarding_all_set_feature_reminders',
-    () => _fallback.onboarding_all_set_feature_reminders,
-  );
-
-  @override
-  String get onboarding_begin_practice => TolgeeBridge.get(
-    localeName,
-    'onboarding_begin_practice',
-    () => _fallback.onboarding_begin_practice,
-  );
-
-  @override
-  String get onboarding_2_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_title',
-    () => _fallback.onboarding_2_title,
-  );
-
-  @override
-  String get onboarding_2_subtitle => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_subtitle',
-    () => _fallback.onboarding_2_subtitle,
-  );
-
-  @override
-  String get onboarding_2_step1_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step1_title',
-    () => _fallback.onboarding_2_step1_title,
-  );
-
-  @override
-  String get onboarding_2_step1_desc => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step1_desc',
-    () => _fallback.onboarding_2_step1_desc,
-  );
-
-  @override
-  String get onboarding_2_step2_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step2_title',
-    () => _fallback.onboarding_2_step2_title,
-  );
-
-  @override
-  String get onboarding_2_step2_desc => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step2_desc',
-    () => _fallback.onboarding_2_step2_desc,
-  );
-
-  @override
-  String get onboarding_2_step3_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step3_title',
-    () => _fallback.onboarding_2_step3_title,
-  );
-
-  @override
-  String get onboarding_2_step3_desc => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step3_desc',
-    () => _fallback.onboarding_2_step3_desc,
-  );
-
-  @override
   String get home_recitation => TolgeeBridge.get(
     localeName,
     'home_recitation',
@@ -1320,13 +1243,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'onboarding_tradition_show_all_title',
     () => _fallback.onboarding_tradition_show_all_title,
-  );
-
-  @override
-  String get onboarding_tradition_show_all_description => TolgeeBridge.get(
-    localeName,
-    'onboarding_tradition_show_all_description',
-    () => _fallback.onboarding_tradition_show_all_description,
   );
 
   @override
