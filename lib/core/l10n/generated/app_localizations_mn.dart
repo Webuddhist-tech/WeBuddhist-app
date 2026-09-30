@@ -176,7 +176,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get bookmark_texts => 'Бичвэрүүд';
 
   @override
-  String get bookmark_group_accumulation => 'Group accumulation';
+  String get bookmark_group_accumulation => 'Channel accumulations';
 
   @override
   String get mala_add_to_practice => 'Миний дадлагад нэмэх';
@@ -1002,7 +1002,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_participants_empty => 'Одоогоор оролцогч байхгүй';
 
   @override
-  String get connect_event_organizer => 'Organizer';
+  String get connect_event_organizer => 'Зохион байгуулагч';
 
   @override
   String get connect_event_tab_videos => 'Videos';
@@ -1014,7 +1014,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_tab_about => 'About';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => 'Үйл явдлын дэлгэрэнгүй мэдээлэл';
 
   @override
   String get connect_event_links_empty => 'No links yet';
@@ -1048,7 +1048,7 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_event_add_recitations_message =>
-      'Add the number of recitations you did with the livestream or outside this app.';
+      'Add recitations you did with the livestream or outside this app';
 
   @override
   String get connect_event_every_day => 'Every day';
@@ -1923,18 +1923,18 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_notifications_master_off =>
-      'Notifications are turned off for the app.';
+      'Notifications are turned off for the app';
 
   @override
   String get group_notifications_open_settings => 'Turn on';
 
   @override
   String get group_notifications_update_failed =>
-      'Couldn\'t update notification settings. Try again.';
+      'Couldn\'t update notification settings. Try again';
 
   @override
   String get group_notifications_load_failed =>
-      'Couldn\'t load notification settings.';
+      'Couldn\'t load notification settings';
 
   @override
   String get group_chat_mute_notifications => 'Чатын мэдэгдлийг хаах';
@@ -1956,10 +1956,10 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group.';
+      'You\'ll stop getting messages and updates from this group';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again';
 
   @override
   String get group_request_to_join => 'Нэгдэх хүсэлт илгээх';
@@ -2272,7 +2272,7 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_recitation_collection_dedication =>
-      'By this merit, may all beings\nbe free from suffering.';
+      'By this merit, may all beings\nbe free from suffering';
 
   @override
   String get share_this_quote => 'Энэ ишлэлийг хуваалцах';
@@ -2412,11 +2412,11 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No group accumulations bookmarked yet.';
+      'No group accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a group accumulation to save it here.';
+      'Bookmark a group accumulation to save it here';
 
   @override
   String get bookmarks_empty_timers_title =>
@@ -2939,8 +2939,8 @@ class AppLocalizationsMn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count requests',
-      one: '1 request',
+      one: '1 хүсэлт',
+      other: '$count хүсэлт',
     );
     return '$_temp0';
   }
@@ -2984,7 +2984,7 @@ class AppLocalizationsMn extends AppLocalizations {
       'Intentions couldn\'t be loaded.';
 
   @override
-  String get event_prayer_request_button => 'Request prayer';
+  String get event_prayer_request_button => 'Залбирал хүсэх';
 
   @override
   String get event_prayer_you => 'You';

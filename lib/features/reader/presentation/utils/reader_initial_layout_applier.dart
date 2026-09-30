@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/domain/layout/reader_initial_layout.dart';
 import 'package:flutter_pecha/features/reader/domain/layout/reader_layout_context.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_context_layout_provider.dart';
@@ -40,6 +42,33 @@ ReaderInitialLayoutStep readerInitialLayoutStep({
   return ReaderInitialLayoutStep.wait;
 }
 
+/// Whether the translation a text was opened as must give way to the one the
+/// person picked in this context: another edition remembered for this text,
+/// or another language remembered for the context.
+///
+/// Only while the slot still holds the opened edition ([currentVersionId]
+/// equals [openedVersionId]); a slot written since is someone's pick. Never
+/// for a chant picked in the opened edition's language ([pinnedByList]).
+bool readerOpenedTranslationNeedsRefill({
+  required String? openedLanguage,
+  required String? openedVersionId,
+  required String? currentVersionId,
+  required String? rememberedLanguage,
+  required String? rememberedVersionId,
+  required bool pinnedByList,
+}) {
+  if (pinnedByList || openedLanguage == null || openedVersionId == null) {
+    return false;
+  }
+  if (currentVersionId != openedVersionId) return false;
+  if (rememberedVersionId != null && rememberedVersionId != openedVersionId) {
+    return true;
+  }
+  final remembered = normalizeReaderLanguageCode(rememberedLanguage ?? '');
+  return remembered.isNotEmpty &&
+      !readerLanguagesMatch(remembered, openedLanguage);
+}
+
 /// Sets a reader up the first time its text is on screen, once per reader.
 ///
 /// In the library it does what the globe button used to do: fill the
@@ -60,15 +89,39 @@ class ReaderInitialLayoutApplier {
     required WidgetRef ref,
     required BuildContext context,
     required ReaderParams params,
-  }) async {
+  }) {
     final textDetail = ref.read(readerNotifierProvider(params)).textDetail;
+    return applyForText(
+      ref: ref,
+      context: context,
+      params: params,
+      textLanguage: textDetail?.language,
+      textVersionId: textDetail?.id,
+    );
+  }
+
+  /// [maybeApply] for the text on screen, in [textLanguage] with id
+  /// [textVersionId]; both null while it is still loading. Split out so
+  /// tests can run the applier without loading a text.
+  @visibleForTesting
+  Future<void> applyForText({
+    required WidgetRef ref,
+    required BuildContext context,
+    required ReaderParams params,
+    required String? textLanguage,
+    required String? textVersionId,
+  }) async {
     final languagesAsync = ref.read(readerLanguagesProvider(params.textId));
     final step = readerInitialLayoutStep(
       applied: _applied,
-      hasText: textDetail != null,
+      hasText: textLanguage != null && textVersionId != null,
       languages: languagesAsync,
     );
-    if (step == ReaderInitialLayoutStep.wait || textDetail == null) return;
+    if (step == ReaderInitialLayoutStep.wait ||
+        textLanguage == null ||
+        textVersionId == null) {
+      return;
+    }
 
     final scope = params.settingsScope;
     if (step == ReaderInitialLayoutStep.seedOnly) {
@@ -76,7 +129,7 @@ class ReaderInitialLayoutApplier {
         _seed(
           ref: ref,
           params: params,
-          textLanguage: textDetail.language,
+          textLanguage: textLanguage,
           translationLanguages: const [],
         );
       }
@@ -91,8 +144,8 @@ class ReaderInitialLayoutApplier {
           ref: ref,
           context: context,
           params: params,
-          textLanguage: textDetail.language,
-          textVersionId: textDetail.id,
+          textLanguage: textLanguage,
+          textVersionId: textVersionId,
         );
         return;
       }
@@ -100,8 +153,8 @@ class ReaderInitialLayoutApplier {
         ref: ref,
         context: context,
         params: params,
-        textLanguage: textDetail.language,
-        textVersionId: textDetail.id,
+        textLanguage: textLanguage,
+        textVersionId: textVersionId,
         translationLanguages: [for (final language in languages) language.code],
       );
     } catch (e, st) {
@@ -149,6 +202,9 @@ class ReaderInitialLayoutApplier {
     required List<String> translationLanguages,
   }) {
     final scope = params.settingsScope;
+    // The chant list and collection items pass the language the chant was
+    // picked in; for a chant it wins over the app language.
+    final listLanguage = params.language;
     final layout = resolveInitialLayout(
       context: scope.context,
       textLanguage: textLanguage,
@@ -160,11 +216,12 @@ class ReaderInitialLayoutApplier {
               .converterFor(textLanguage)
               ?.scripts ??
           const [],
+      listLanguage: listLanguage,
     );
     if (layout == null) return null;
     ref
         .read(readerDualSettingsProvider(scope).notifier)
-        .seed(layout, language: textLanguage);
+        .seed(layout, language: textLanguage, listLanguage: listLanguage);
     return layout;
   }
 
@@ -200,6 +257,31 @@ class ReaderInitialLayoutApplier {
     await ref.read(readerContextLayoutProvider(scope.context).notifier).loaded;
     if (!context.mounted) return;
     final prefs = ref.read(readerContextLayoutProvider(scope.context));
+
+    // A text opened as a translation (a plan or event linking an English
+    // edition) already fills the slot. The translation picked in this
+    // context replaces it, whether or not the switch is on, so switching on
+    // later shows the pick too.
+    final current = ref.read(readerDualSettingsProvider(scope)).secondary;
+    if (readerOpenedTranslationNeedsRefill(
+      openedLanguage: notifier.openedTranslationLanguage,
+      openedVersionId: notifier.openedTranslationVersionId,
+      currentVersionId: current.versionId,
+      rememberedLanguage: prefs.translationLanguage,
+      rememberedVersionId: notifier.rememberedTranslationVersionId,
+      pinnedByList: notifier.isTranslationPinnedByList,
+    )) {
+      await _refillOpenedTranslation(
+        ref: ref,
+        context: context,
+        scope: scope,
+        opened: current,
+        textLanguage: textLanguage,
+        textVersionId: textVersionId,
+      );
+      return;
+    }
+
     final translationOn = prefs.translationOn ?? layout.translationOn;
     if (!translationOn) return;
     if (ref.read(readerDualSettingsProvider(scope)).secondary.versionId != null) {
@@ -232,6 +314,38 @@ class ReaderInitialLayoutApplier {
         (outcome == SecondaryFillOutcome.unavailable ||
             outcome == SecondaryFillOutcome.failed)) {
       notifier.markTranslationUnavailable();
+    }
+  }
+
+  /// Swaps the [opened] edition for the translation picked in this context:
+  /// the remembered edition or language first, then the opened edition's
+  /// language (which comes back to [opened] itself), then this visit's
+  /// default and the app language. When none can be shown, [opened] goes
+  /// back in the slot, so the reader never loses the translation it opened
+  /// with.
+  Future<void> _refillOpenedTranslation({
+    required WidgetRef ref,
+    required BuildContext context,
+    required ReaderSettingsScope scope,
+    required ReaderSlotConfig opened,
+    required String textLanguage,
+    required String textVersionId,
+  }) async {
+    final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
+    final outcome = await fillSecondaryWithLanguages(
+      ref: ref,
+      context: context,
+      scope: scope,
+      sourceLanguage: textLanguage,
+      sourceVersionId: textVersionId,
+      candidates: notifier.preferredTranslationLanguages(
+        contentLanguage: ref.read(contentLanguageProvider),
+      ),
+    );
+    if (outcome == SecondaryFillOutcome.unavailable ||
+        outcome == SecondaryFillOutcome.failed) {
+      if (!context.mounted) return;
+      notifier.fillSecondary(opened);
     }
   }
 }
