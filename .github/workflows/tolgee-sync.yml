@@ -49,6 +49,9 @@ jobs:
       - name: ⬆️ Create missing Tolgee keys
         run: dart run tool/tolgee_sync.dart push
 
+      - name: 🙏 Create Tolgee keys for prayer intentions
+        run: dart run tool/tolgee_sync.dart intentions
+
       - name: ⬇️ Pull Tolgee translations
         run: dart run tool/tolgee_sync.dart pull
 

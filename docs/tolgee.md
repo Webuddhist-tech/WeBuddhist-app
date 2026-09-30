@@ -142,6 +142,32 @@ dart run tool/generate_tolgee_bridge.dart
 CI runs `dart run tool/generate_tolgee_bridge.dart --check` so the generated
 bridge cannot drift from gen-l10n.
 
+## Dynamic keys: prayer intentions
+
+Prayer intentions (the coloured chips on the "New prayer request" sheet) come
+from the backend, `GET /intentions`, in English: `slug`, `label`, `color`,
+`description`, `display_order`. The list can grow and a group may later offer
+a subset, so their translations cannot live in the ARBs. They are Tolgee-only
+keys derived from the slug, in the same `webuddhist` namespace:
+
+```text
+prayer_intention_{slug}_label
+prayer_intention_{slug}_description
+```
+
+`prayer_intention_l10n.dart` looks them up through `TolgeeBridge.get` with the
+backend English as the fallback, so a language with no translation, an empty
+translation, or an app that has not fetched the CDN yet shows the backend
+text. Slugs must be lowercase ASCII (`[a-z0-9_-]`); anything else keeps the
+backend text and gets no key. Colours stay in the backend and never touch
+Tolgee.
+
+`push` only knows ARB keys, so these are created by the `intentions` command
+(see "Detailed commands"), which the Tolgee Sync workflow runs every week. A
+new intention therefore gets its two keys within a week, or at once with a
+manual run; translators fill them in Tolgee and publish Content Delivery. No
+app release is needed.
+
 ## Keeping ARB and Tolgee in sync
 
 `tool/tolgee_sync.dart` is the supported sync tool. The same commands run
@@ -246,7 +272,7 @@ dart run tool/tolgee_sync.dart doctor
 
 #### 2. Set the write sync key
 
-Network commands (`push`, `pull`, `doctor --remote`) read
+Network commands (`push`, `pull`, `intentions`, `doctor --remote`) read
 `TOLGEE_SYNC_API_KEY` from the process environment — not from `.env.*`. The
 value must be a project API key with write scopes, kept out of the `.env`
 files that ship inside the app. Setting it in PowerShell only affects
@@ -281,6 +307,23 @@ the API create alone does not refresh CDN files.
 
 ```powershell
 dart run tool/tolgee_sync.dart push
+```
+
+#### 4b. Intentions
+
+Reads the public `GET /intentions` list from the WeBuddhist API (default
+`https://api.webuddhist.com/api/v1`; set `WEBUDDHIST_API_BASE` to point at
+staging), compares the `prayer_intention_{slug}_label` /
+`prayer_intention_{slug}_description` keys against Tolgee, and creates the
+missing ones with the backend English as the initial translation, through the
+same create-only import as `push`. Existing keys are never overwritten. Keys
+whose slug the API no longer returns are listed with a `?` and left in place
+for a human to retire. Dry-run lists without creating; both need
+`TOLGEE_SYNC_API_KEY`. See "Dynamic keys: prayer intentions" above.
+
+```powershell
+dart run tool/tolgee_sync.dart intentions --dry-run
+dart run tool/tolgee_sync.dart intentions
 ```
 
 #### 5. Pull dry-run
