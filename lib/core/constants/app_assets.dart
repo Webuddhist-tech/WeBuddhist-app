@@ -102,6 +102,7 @@ class AppAssets {
   static const IconData chatCircleDots = PhosphorIconsRegular.chatCircleDots;
   static const IconData rows = PhosphorIconsRegular.rows;
   static const IconData x = PhosphorIconsRegular.x;
+  static const IconData dotsThree = PhosphorIconsRegular.dotsThree;
   static const IconData dotsThreeVertical =
       PhosphorIconsRegular.dotsThreeVertical;
   static const IconData paperPlaneRight = PhosphorIconsRegular.paperPlaneRight;

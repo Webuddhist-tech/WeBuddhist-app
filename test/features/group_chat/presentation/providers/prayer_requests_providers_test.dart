@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -41,6 +43,15 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   final List<String?> sentTypes = [];
   final List<String?> sentIntentions = [];
   final List<int> prayersSkips = [];
+  final List<Map<String, String?>> updates = [];
+  ChatMessageDTO? updateResponse;
+  final List<String> deleted = [];
+  Failure? deleteFailure;
+  final List<int> listedSkips = [];
+
+  /// Awaited before a page or an update is answered, to stage a race.
+  Completer<void>? listGate;
+  Completer<void>? updateGate;
   List<ChatPrayerUserDTO> supporters = const [];
 
   @override
@@ -67,6 +78,9 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String? messageType,
   }) async {
     listedTypes.add(messageType);
+    listedSkips.add(skip);
+    final gate = listGate;
+    if (gate != null) await gate.future;
     final end = (skip + limit).clamp(0, history.length);
     final start = skip.clamp(0, history.length);
     return Right(
@@ -195,10 +209,34 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Right(unit);
 
   @override
+  Future<Either<Failure, ChatMessageDTO?>> updateMessage(
+    String roomId, {
+    required String messageId,
+    required String body,
+    String? intention,
+  }) async {
+    updates.add({
+      'roomId': roomId,
+      'messageId': messageId,
+      'body': body,
+      'intention': intention,
+    });
+    final gate = updateGate;
+    if (gate != null) await gate.future;
+    return Right(updateResponse);
+  }
+
+  @override
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,
-  }) async => const Right(unit);
+  }) async {
+    deleted.add('$roomId/$messageId');
+    final failure = deleteFailure;
+    if (failure != null) return Left(failure);
+    history = history.where((message) => message.id != messageId).toList();
+    return const Right(unit);
+  }
 
   @override
   Future<Either<Failure, Unit>> deleteMessages(
@@ -307,6 +345,178 @@ void main() {
       expect(notifier.state.requests.first.id, 'sent');
     });
 
+    test('edit patches the row in place and keeps its prayers', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      const healing = ChatPrayerIntentionDTO(
+        slug: 'healing',
+        label: 'Healing',
+        color: '#4A78C2',
+      );
+      final result = await notifier.edit(
+        'a',
+        body: 'Please pray again',
+        intention: healing,
+      );
+
+      expect(result.isRight(), isTrue);
+      expect(repository.updates, [
+        {
+          'roomId': 'room-1',
+          'messageId': 'a',
+          'body': 'Please pray again',
+          'intention': 'healing',
+        },
+      ]);
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Please pray again');
+      expect(edited.intention, healing);
+      expect(edited.prayerCount, 3);
+    });
+
+    test('edit prefers what the server answers with', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      const peace = ChatPrayerIntentionDTO(
+        slug: 'peace',
+        label: 'Peace',
+        color: '#FFFFFF',
+      );
+      repository.updateResponse = _prayer(
+        'a',
+      ).copyWith(body: 'Trimmed by server', intention: peace);
+      await notifier.edit(
+        'a',
+        body: 'Trimmed by server   ',
+        intention: const ChatPrayerIntentionDTO(
+          slug: 'peace',
+          label: 'Peace',
+          color: '#000000',
+        ),
+      );
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Trimmed by server');
+      expect(edited.intention, peace);
+    });
+
+    test('a prayer that lands mid-edit survives the save', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.updateGate = Completer<void>();
+      const healing = ChatPrayerIntentionDTO(
+        slug: 'healing',
+        label: 'Healing',
+        color: '#4A78C2',
+      );
+      final pending = notifier.edit('a', body: 'Edited', intention: healing);
+      await _settle();
+      notifier.applyPrayersUpdated(
+        const [
+          ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['u9']),
+        ],
+        viewerId: 'u1',
+      );
+      repository.updateGate!.complete();
+      final result = await pending;
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Edited');
+      expect(edited.intention, healing);
+      expect(edited.prayerCount, 4);
+      expect(result.getOrElse((_) => throw StateError('left')).prayerCount, 4);
+    });
+
+    test('applyEdit rewrites body and intention, nothing else', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 2)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      const peace = ChatPrayerIntentionDTO(
+        slug: 'peace',
+        label: 'Peace',
+        color: '#FFFFFF',
+      );
+      notifier.applyEdit(
+        _prayer('a').copyWith(body: 'From elsewhere', intention: peace),
+      );
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'From elsewhere');
+      expect(edited.intention, peace);
+      expect(edited.prayerCount, 2);
+    });
+
+    test('a delete during loadMore rereads the shifted page', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(notifier.state.requests.length, 30);
+
+      repository.listGate = Completer<void>();
+      final pending = notifier.loadMore();
+      await _settle();
+      await notifier.delete('m0');
+      repository.listGate!.complete();
+      await pending;
+      await _settle();
+
+      expect(repository.listedSkips, [0, 30, 29]);
+      expect(notifier.state.requests.map((r) => r.id), [
+        for (var i = 1; i < 35; i++) 'm$i',
+      ]);
+      expect(notifier.state.hasMore, isFalse);
+    });
+
+    test('delete removes the row once the server agrees', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final result = await notifier.delete('a');
+
+      expect(result.isRight(), isTrue);
+      expect(repository.deleted, ['room-1/a']);
+      expect(notifier.state.requests.map((r) => r.id), ['b']);
+      expect(notifier.state.skip, 1);
+    });
+
+    test('a refused delete leaves the row in place', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a')])
+            ..deleteFailure = const ServerFailure('boom');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final result = await notifier.delete('a');
+
+      expect(result.isLeft(), isTrue);
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+    });
+
     test('appendLive ignores TEXT messages and duplicates', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a')]);
       container = buildContainer();
@@ -359,7 +569,13 @@ void main() {
         history: [_prayer('a'), _prayer('b')],
       );
       container = buildContainer();
-      int? count() => container.read(prayerRequestCountProvider('e1'));
+      // The chip's watch is what keeps the auto-disposed count alive.
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+      int? count() => countSub.read();
 
       expect(count(), isNull);
       final notifier = _keepAlive(container);
