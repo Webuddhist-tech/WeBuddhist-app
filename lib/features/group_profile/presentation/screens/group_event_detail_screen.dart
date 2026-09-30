@@ -26,6 +26,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_link_utils.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_time_format.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
@@ -1199,8 +1200,7 @@ class _EventInfoCard extends ConsumerWidget {
         start.year != now.year || (end != null && end.year != now.year);
     final datePattern = showYear ? 'd MMM y' : 'd MMM';
     String day(DateTime value) => DateFormat(datePattern, locale).format(value);
-    String time(DateTime value) =>
-        DateFormat.jm(locale).format(value).toLowerCase().replaceAll(':00', '');
+    String time(DateTime value) => formatGroupEventTime(value, locale);
 
     final startZone = _utcOffsetLabel(start);
     if (end == null || end.isAtSameMomentAs(start)) {
