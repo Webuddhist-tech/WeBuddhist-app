@@ -9,11 +9,11 @@
   "onboarding_quote": "थोपा-थोपा गरेर पानीको भाँडो भरिन्छ। त्यसै गरी, बुद्धिमान् व्यक्तिले अलिअलि सङ्ग्रह गर्दै आफूलाई असल गुणले भर्दछ।",
   "onboarding_find_peace": "सुरु गर्नुहोस्",
   "onboarding_continue": "जारी राख्नुहोस्",
-  "onboarding_first_question": "आफ्नो भाषा छान्नुहोस्",
+  "onboarding_first_question": "आफ्नो भाषा छान्नुहोस्:",
   "onboarding_language_subtitle": "यसले एपको भाषा सेट गर्छ",
   "onboarding_choose_option": "कम्तीमा एउटा छान्नुहोस्:",
   "onboarding_all_set": "तपाईं पूर्ण रूपमा तयार हुनुभयो",
-  "onboarding_all_set_description": "तपाईंका लागि यो पर्खिरहेको छ:",
+  "onboarding_all_set_description": "तपाईंको अभ्यासका लागि यो तयार छ।",
   "onboarding_all_set_practice_title": "अभ्यास",
   "onboarding_all_set_practice_body": "योजना, जप, माला र ध्यान",
   "onboarding_all_set_connect_title": "जोडिनुहोस्",
@@ -249,7 +249,7 @@
   "something_went_wrong": "केही गडबड भयो। कृपया फेरि प्रयास गर्नुहोस्",
   "onboarding_quote_citation": "— धम्मपद 122",
   "onboarding_traditions_question": "तपाईं कुन परम्पराहरू\nपालना गर्नुहुन्छ?",
-  "onboarding_tradition_title": "तपाईं बुद्धका शिक्षाहरू कसरी पालना गर्नुहुन्छ?",
+  "onboarding_tradition_title": "तपाईं बुद्धको अनुसरण कसरी गर्नुहुन्छ?",
   "onboarding_tradition_subtitle": "आफ्नो सामग्रीका लागि एक वा बढी परम्परा छान्नुहोस्। तपाईं यसलाई सेटिङमा जुनसुकै बेला परिवर्तन गर्न सक्नुहुन्छ।",
   "onboarding_tradition_option_intro": "मार्फत:",
   "onboarding_tradition_show_all_title": "मलाई सबै देखाउनुहोस्",
@@ -702,7 +702,7 @@
   "group_members": "सदस्यहरू",
   "group_tab_members": "सदस्यहरू",
   "group_tab_followers": "अनुयायीहरू",
-  "group_members_heading": "सदस्यहरू({count})",
+  "group_members_heading": "सदस्यहरू ({count})",
   "group_followers_heading": "अनुयायीहरू({count})",
   "@group_members_heading": {
     "placeholders": {
@@ -758,8 +758,8 @@
   "group_join_banned_until": "तपाईंलाई यो समूहबाट हटाइएको थियो र तपाईं {date} सम्म फेरि सामेल हुन सक्नुहुन्न",
   "group_join_banned": "तपाईंलाई यो समूहबाट हटाइएको थियो र प्रतिबन्ध सकिएसम्म तपाईं फेरि सामेल हुन सक्नुहुन्न।",
   "group_removed_title": "तपाईंलाई यो समूहबाट हटाइएको छ",
-  "group_removed_message": "{group} का एक प्रशासकले तपाईंलाई यो समूहबाट हटाउनुभएको छ। तपाईं {duration} सम्म यो समूहका पोस्ट, कार्यक्रम र अभ्यास हेर्न वा फेरि सामेल हुन अनुरोध गर्न सक्नुहुन्न।",
-  "group_removed_message_no_date": "{group} का एक प्रशासकले तपाईंलाई यो समूहबाट हटाउनुभएको छ। तपाईं यो समूहका पोस्ट, कार्यक्रम र अभ्यास हेर्न वा फेरि सामेल हुन अनुरोध गर्न सक्नुहुन्न।",
+  "group_removed_message": "{group} का एक प्रशासकले तपाईंलाई यस च्यानलबाट हटाउनुभयो। तपाईंले {duration} सम्म यसका पोस्ट, कार्यक्रम र अभ्यासहरू हेर्न वा पुनः सामेल हुन अनुरोध गर्न सक्नुहुने छैन।",
+  "group_removed_message_no_date": "{group} का एक प्रशासकले तपाईंलाई यस च्यानलबाट हटाउनुभयो। तपाईंले यसका पोस्ट, कार्यक्रम र अभ्यासहरू हेर्न वा पुनः सामेल हुन अनुरोध गर्न सक्नुहुने छैन।",
   "group_removed_rejoin_label": "तपाईं यस दिन यो समूहमा फेरि सामेल हुन अनुरोध गर्न सक्नुहुन्छ",
   "group_removed_rejoin_value": "{date} · {remaining}",
   "group_removed_day_left": "1 दिन बाँकी",
@@ -943,11 +943,11 @@
   "poems_load_error": "कविताहरू लोड गर्न सकिएन।\nआफ्नो जडान जाँच गर्नुहोस् र फेरि प्रयास गर्नुहोस्",
   "poems_empty": "अहिले कुनै कविता छैन। चाँडै फर्किएर हेर्नुहोस्।",
   "connect_events_filter_all": "सबै",
-  "connect_events_filter_in_person": "प्रत्यक्ष",
-  "connect_events_filter_empty_online": "कुनै अनलाइन कार्यक्रम छैन",
+  "connect_events_filter_in_person": "प्रत्यक्ष रूपमा",
+  "connect_events_filter_empty_online": "अनलाइन कार्यक्रमहरू छैनन्",
   "connect_events_filter_empty_in_person": "कुनै प्रत्यक्ष कार्यक्रम छैन",
   "connect_events_filter_hybrid": "हाइब्रिड",
-  "connect_events_filter_empty_hybrid": "कुनै हाइब्रिड कार्यक्रम छैन",
+  "connect_events_filter_empty_hybrid": "कुनै हाइब्रिड कार्यक्रम छैनन्",
   "connect_open": "खोल्नुहोस्",
   "connect_event_fallback_title": "कार्यक्रम",
   "connect_group_fallback_title": "समूह",
@@ -961,16 +961,16 @@
       }
     }
   },
-  "connect_event_participants_empty": "अहिलेसम्म कुनै सहभागी छैन",
-  "connect_event_tab_videos": "Videos",
-  "connect_event_tab_links": "Links",
-  "connect_event_tab_about": "About",
+  "connect_event_participants_empty": "अहिलेसम्म कुनै सहभागी छैनन्",
+  "connect_event_tab_videos": "भिडियोहरू",
+  "connect_event_tab_links": "लिङ्कहरू",
+  "connect_event_tab_about": "बारेमा",
   "connect_event_links_title": "कार्यक्रमका थप विवरण",
-  "connect_event_links_empty": "No links yet",
-  "connect_event_link_tap_to_join": "Tap to join",
-  "connect_event_link_open": "Open link",
-  "connect_event_date_tba": "Date to be announced",
-  "connect_event_about_empty": "No event details yet",
+  "connect_event_links_empty": "अहिलेसम्म कुनै लिङ्क छैन",
+  "connect_event_link_tap_to_join": "सामेल हुन ट्याप गर्नुहोस्",
+  "connect_event_link_open": "लिङ्क खोल्नुहोस्",
+  "connect_event_date_tba": "मिति पछि घोषणा गरिनेछ",
+  "connect_event_about_empty": "अहिलेसम्म कुनै कार्यक्रमको जानकारी छैन",
   "timer_notification_in_progress": "ध्यान जारी छ",
   "timer_notification_paused": "रोकिएको · {time} बाँकी",
   "@timer_notification_paused": {
@@ -1089,13 +1089,13 @@
   "group_post_edit_title": "पोस्ट सम्पादन गर्नुहोस्",
   "group_post_update_error": "तपाईंका परिवर्तनहरू सुरक्षित गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्।",
   "group_post_updated": "तपाईंका परिवर्तनहरू सुरक्षित गरियो।",
-  "event_prayer_requests": "प्रार्थना अनुरोध",
-  "event_prayer_empty_title": "अहिले कुनै प्रार्थना अनुरोध छैन",
-  "event_prayer_empty_body": "तपाईं र तपाईंको समुदायको अनुरोध यहाँ देखिनेछ",
+  "event_prayer_requests": "प्रार्थना अनुरोधहरू",
+  "event_prayer_empty_title": "अहिलेसम्म कुनै प्रार्थना अनुरोधहरू छैनन्",
+  "event_prayer_empty_body": "तपाईंको अनुरोध र तपाईंको समुदायका अनुरोधहरू यहाँ देखिनेछन्",
   "event_prayer_add": "प्रार्थना अनुरोध थप्नुहोस्",
-  "event_prayer_hint": "आज हामी तपाईंका लागि के प्रार्थना गरौं",
-  "event_prayer_load_failed": "प्रार्थना अनुरोध लोड गर्न सकिएन।",
-  "event_prayer_closed": "यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।",
+  "event_prayer_hint": "आज हामी तपाईंको लागि कसरी प्रार्थना गर्न सक्छौं",
+  "event_prayer_load_failed": "प्रार्थना अनुरोधहरू लोड गर्न सकिएन",
+  "event_prayer_closed": "यस कार्यक्रमका लागि प्रार्थना अनुरोधहरू बन्द छन्",
   "event_prayer_pray": "प्रार्थना गर्नुहोस्",
   "event_prayer_praying": "प्रार्थना गर्दै",
   "connect_event_organizer": "आयोजक",
@@ -1119,5 +1119,81 @@
   "feedback_error_rate_limited": "धेरै अनुरोधहरू भए। कृपया केही समय पर्खेर फेरि प्रयास गर्नुहोस्",
   "feedback_error_too_large": "तस्बिरहरू धेरै ठूला छन्। एउटा हटाएर फेरि प्रयास गर्नुहोस्",
   "feedback_error_failed": "प्रतिक्रिया पठाउन सकिएन। कृपया फेरि प्रयास गर्नुहोस्",
-  "feedback_error_unavailable": "प्रतिक्रिया अहिले उपलब्ध छैन"
+  "feedback_error_unavailable": "प्रतिक्रिया अहिले उपलब्ध छैन",
+  "connect_event_join_in_person": "प्रत्यक्ष रूपमा सहभागी हुनुहोस्",
+  "connect_event_join_online": "अनलाइन सहभागी हुनुहोस्",
+  "connect_event_enter": "प्रवेश गर्नुहोस्",
+  "connect_event_participation_prompt": "तपाईं कसरी सहभागी हुँदै हुनुहुन्छ?",
+  "connect_event_joining_in_person": "प्रत्यक्ष रूपमा सहभागी हुँदै",
+  "connect_event_joining_online": "अनलाइन सहभागी हुँदै",
+  "connect_event_when": "कहिले",
+  "connect_event_where": "कहाँ",
+  "connect_event_practices": "कार्यक्रमका अभ्यासहरू",
+  "connect_event_tab_accumulations": "संचय",
+  "connect_event_tab_recitations": "पाठहरू",
+  "connect_event_add_recitations": "पाठहरू थप्नुहोस्",
+  "connect_event_add_recitations_message": "तपाईंले लाइभस्ट्रिमसँगै वा यस एप बाहिर गर्नुभएको पाठहरू थप्नुहोस्",
+  "connect_event_every_day": "हरेक दिन",
+  "connect_event_every_weekday": "हरेक {weekday}",
+  "@connect_event_every_weekday": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_event_every_month": "हरेक महिना",
+  "connect_event_every_date": "हरेक {date}",
+  "@connect_event_every_date": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "player_fullscreen": "पूर्णस्क्रिन",
+  "player_exit_fullscreen": "पूर्णस्क्रिनबाट बाहिर निस्कनुहोस्",
+  "event_live_badge": "प्रत्यक्ष",
+  "event_live_audio": "प्रत्यक्ष अडियो",
+  "event_live_video_mode": "भिडियो",
+  "event_live_audio_mode": "अडियो",
+  "event_live_go_live": "लाइभ",
+  "event_puja_starts_in": "पूजा सुरु हुन बाँकी",
+  "event_puja_not_started": "पूजा अझै सुरु भएको छैन",
+  "event_prayer_new_request": "नयाँ प्रार्थना अनुरोध",
+  "event_prayer_choose_intention": "नियत छान्नुहोस्",
+  "event_prayer_intentions_failed": "प्रार्थना अभिप्रायहरू लोड गर्न सकिएन।",
+  "event_prayer_you": "तपाईं",
+  "event_prayer_waiting_first": "पहिलो प्रार्थनाको प्रतीक्षा गर्दै...",
+  "event_prayer_more_praying": "+{count} जना थप प्रार्थना गर्दैछन्",
+  "@event_prayer_more_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_people_praying": "{count, plural,\nother {# जना मानिसहरू प्रार्थना गर्दै हुनुहुन्छ}\none {# जना व्यक्ति प्रार्थना गर्दै हुनुहुन्छ}\n}",
+  "@event_prayer_people_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_praying_for_you": "तपाईंको लागि प्रार्थना गर्दै",
+  "event_prayer_praying_for": "{name} को लागि प्रार्थना गर्दै",
+  "@event_prayer_praying_for": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "event_prayer_your_request": "तपाईंको अनुरोध",
+  "event_prayer_supporters_failed": "कसले प्रार्थना गरिरहेको छ भन्ने लोड गर्न सकिएन।",
+  "event_prayer_no_supporters": "अहिलेसम्म कसैले प्रार्थना गरिरहेको छैन।",
+  "recitation_live_sync": "सिङ्क गर्नुहोस्",
+  "recitation_live_label": "लाइभ",
+  "recitation_live_session_ended": "प्रत्यक्ष सत्र समाप्त भएको छ"
 }

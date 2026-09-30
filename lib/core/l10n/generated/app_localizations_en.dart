@@ -52,7 +52,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_all_set_description =>
-      'Here\'s what\'s waiting for you:';
+      'Here\'s what\'s ready for your practice';
 
   @override
   String get onboarding_all_set_practice_title => 'Practice';
@@ -644,7 +644,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_tradition_title =>
-      'How do you follow the Buddha\'s teachings?';
+      'How do you follow the Buddha’s teachings?';
 
   @override
   String get onboarding_tradition_subtitle =>
@@ -752,7 +752,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_groups_empty_subtitle =>
-      'Congrats, you\'ve joined all our channels! Check back soon. New ones are on the way';
+      'Congrats, you\'re subscribed to all our channels! Check back soon. New ones are on the way';
 
   @override
   String get connect_tab_feed => 'Feed';
@@ -770,7 +770,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_tab_groups => 'Channels';
 
   @override
-  String get connect_segment_my => 'For you';
+  String get connect_segment_my => 'Your channels';
 
   @override
   String get connect_segment_discover => 'Discover';
@@ -807,7 +807,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'Nothing new from the channels you\'ve joined. Others are posting today';
+      'Nothing new from your channels. Others are posting today';
 
   @override
   String get connect_my_empty_events_subtitle =>
@@ -819,7 +819,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_groups_subtitle =>
-      'You haven\'t joined any channels yet. Discover some to practice with';
+      'You haven\'t subscribed to any channels yet. Discover some to practice with';
 
   @override
   String get connect_my_empty_feed_browse =>
@@ -1830,10 +1830,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moon_phase_waning_crescent => 'Waning crescent';
 
   @override
-  String get join => 'Join';
+  String get join => 'Subscribe';
 
   @override
-  String get joined => 'Joined';
+  String get joined => 'Subscribed';
 
   @override
   String get group_member => 'member';
@@ -1849,7 +1849,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_members_heading(int count) {
-    return 'Members($count)';
+    return 'Members ($count)';
   }
 
   @override
@@ -1864,10 +1864,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_notifications_title => 'Notifications';
 
   @override
-  String get group_notifications_chat => 'Group chat';
+  String get group_notifications_chat => 'Channel chat';
 
   @override
-  String get group_notifications_content => 'Group content';
+  String get group_notifications_content => 'Channel content';
 
   @override
   String get group_notifications_master_off =>
@@ -1897,20 +1897,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'Chat notifications on';
 
   @override
-  String get group_leave => 'Leave group';
+  String get group_leave => 'Unsubscribe';
 
   @override
-  String get group_leave_confirm_title => 'Leave group?';
+  String get group_leave_confirm_title => 'Unsubscribe?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group';
+      'You\'ll stop getting messages and updates from this channel';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again';
+  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
 
   @override
-  String get group_request_to_join => 'Request to join';
+  String get group_request_to_join => 'Request to subscribe';
 
   @override
   String get group_request => 'Request';
@@ -1919,7 +1919,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_request_sent => 'Request sent';
 
   @override
-  String get group_join_request_title => 'Request to join';
+  String get group_join_request_title => 'Request to subscribe';
 
   @override
   String get group_join_request_message_label => 'Message (optional)';
@@ -1940,7 +1940,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to send request. Please try again';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'Subscribe requests';
 
   @override
   String get group_join_requests_admit => 'Admit';
@@ -1968,7 +1968,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_members_only_message =>
-      'Join to see this group\'s chants, events and posts';
+      'Subscribe to see this channel\'s content';
 
   @override
   String get group_join_request_waiting_title => 'Waiting on an admin';
@@ -1997,15 +1997,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get group_remove_member_title => 'Remove from group?';
+  String get group_remove_member_title => 'Remove from channel?';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from group and blocked from joining until the ban ends';
+    return '$name will be removed from this channel and unable to resubscribe until the ban is lifted';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'Blocked for :';
+  String get group_remove_member_blocked_for => 'Blocked for:';
 
   @override
   String get group_remove_member_duration_day => '1 day';
@@ -2029,38 +2029,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the group.';
+    return '$name was removed from the channel';
   }
 
   @override
   String get group_remove_member_error =>
-      'Couldn\'t remove this member. Try again.';
+      'Couldn\'t remove this member. Try again';
 
   @override
   String group_join_banned_until(String date) {
-    return 'You were removed from this group and cannot rejoin until $date';
+    return 'You were removed from this channel and cannot resubscribe until $date';
   }
 
   @override
   String get group_join_banned =>
-      'You were removed from this group and cannot rejoin until the ban ends.';
+      'You were removed from this channel and cannot resubscribe until the ban is lifted';
 
   @override
-  String get group_removed_title => 'You\'ve been removed from this group';
+  String get group_removed_title => 'You\'ve been removed from this channel';
 
   @override
   String group_removed_message(String group, String duration) {
-    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for $duration.';
+    return 'An admin from $group removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe for $duration.';
   }
 
   @override
   String group_removed_message_no_date(String group) {
-    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.';
+    return 'An admin from $group removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe';
   }
 
   @override
   String get group_removed_rejoin_label =>
-      'You can request to rejoin this group on';
+      'You can request to resubscribe to this channel on';
 
   @override
   String group_removed_rejoin_value(String date, String remaining) {
@@ -2110,14 +2110,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get group_change_practice_title => 'Change group practice';
+  String get group_change_practice_title => 'Change practice channel';
 
   @override
   String get group_change_practice_message =>
       'You are already practicing this plan with another channel. Would you like to change your practice channel?';
 
   @override
-  String get group_join_to_contribute => 'Join to contribute';
+  String get group_join_to_contribute => 'Subscribe to contribute';
 
   @override
   String get group_accumulator_join_error =>
@@ -2185,7 +2185,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String accumulation,
     String group,
   ) {
-    return 'I completed $count recitations in \"$accumulation\", a group accumulation by $group on WeBuddhist. Come join me!';
+    return 'I completed $count recitations in \"$accumulation\", an accumulation by $group on WeBuddhist. Come join me!';
   }
 
   @override
@@ -2193,7 +2193,7 @@ class AppLocalizationsEn extends AppLocalizations {
     int count,
     String accumulation,
   ) {
-    return 'I completed $count recitations in the group accumulation \"$accumulation\" on WeBuddhist. Come join me!';
+    return 'I completed $count recitations in the \"$accumulation\" accumulation on WeBuddhist. Come join me!';
   }
 
   @override
@@ -2277,7 +2277,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get share_group_invite_message =>
-      'I\'d love for you to join our group. Let\'s practice together on WeBuddhist.';
+      'Join me on this channel. Let\'s practice together on WeBuddhist!';
 
   @override
   String get weekday_monday => 'MON';
@@ -2355,11 +2355,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No group accumulations bookmarked yet';
+      'No channel accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a group accumulation to save it here';
+      'Bookmark a channel accumulation to save it here';
 
   @override
   String get bookmarks_empty_timers_title => 'No timers bookmarked yet';
@@ -2538,12 +2538,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_accumulator_share_message(String accumulation, String group) {
-    return 'I am taking part in \"$accumulation\", a group accumulation by $group on WeBuddhist. Come join me!';
+    return 'I am taking part in \"$accumulation\", an accumulation by $group on WeBuddhist. Come join me!';
   }
 
   @override
   String group_accumulator_share_message_no_group(String accumulation) {
-    return 'I am taking part in the group accumulation \"$accumulation\" on WeBuddhist. Come join me!';
+    return 'I am taking part in the \"$accumulation\" accumulation on WeBuddhist. Come join me!';
   }
 
   @override
@@ -2556,7 +2556,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chats_empty_title => 'No chats yet';
 
   @override
-  String get chats_empty_body => 'Join a channel to start chatting';
+  String get chats_empty_body => 'Subscribe to a channel to start chatting';
 
   @override
   String get group_chat_inappropriate =>
@@ -2572,7 +2572,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_message_hint => 'Message';
 
   @override
-  String get group_chat_join_to_send => 'Join chat to send message.';
+  String get group_chat_join_to_send => 'Join chat to send message';
 
   @override
   String get group_chat_today => 'Today';

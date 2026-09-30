@@ -9,11 +9,11 @@
   "onboarding_quote": "Дусал дуслаар ус сав дүүрдэгийн адил, ухаант хүн ч багаахан багаахнаар хуримтлуулж, өөрийгөө буянаар дүүргэдэг.",
   "onboarding_find_peace": "Эхлэх",
   "onboarding_continue": "Үргэлжлүүлэх",
-  "onboarding_first_question": "Хэлээ сонгоно уу",
+  "onboarding_first_question": "Хэлээ сонгоно уу:",
   "onboarding_language_subtitle": "Энэ нь аппын хэлийг тохируулна",
   "onboarding_choose_option": "Дор хаяж нэгийг сонгоно уу:",
   "onboarding_all_set": "Бүх зүйл бэлэн боллоо",
-  "onboarding_all_set_description": "Танд хүлээж буй зүйлс:",
+  "onboarding_all_set_description": "Таны дадлагад бэлэн зүйлс энд байна.",
   "onboarding_all_set_practice_title": "Дадлага",
   "onboarding_all_set_practice_body": "Төлөвлөгөө, уншлага, эрхи, бясалгал",
   "onboarding_all_set_connect_title": "Холбогдох",
@@ -249,7 +249,7 @@
   "something_went_wrong": "Алдаа гарлаа. Дахин оролдоно уу",
   "onboarding_quote_citation": "— Дхаммапада 122",
   "onboarding_traditions_question": "Та ямар уламжлал\nдагадаг вэ?",
-  "onboarding_tradition_title": "Та Бурхан багшийн сургаалийг хэрхэн дагадаг вэ?",
+  "onboarding_tradition_title": "Та Бурхан багшийг хэрхэн дагадаг вэ?",
   "onboarding_tradition_subtitle": "Агуулгадаа нэг буюу хэд хэдэн уламжлал сонгоно уу. Тохиргооноос хэзээ ч өөрчилж болно.",
   "onboarding_tradition_option_intro": "Дараах:",
   "onboarding_tradition_show_all_title": "Бүгдийг харуулах",
@@ -702,7 +702,7 @@
   "group_members": "гишүүд",
   "group_tab_members": "Гишүүд",
   "group_tab_followers": "Дагагчид",
-  "group_members_heading": "Гишүүд({count})",
+  "group_members_heading": "Гишүүд ({count})",
   "group_followers_heading": "Дагагчид({count})",
   "@group_members_heading": {
     "placeholders": {
@@ -758,8 +758,8 @@
   "group_join_banned_until": "Та энэ бүлгээс хасагдсан тул {date} хүртэл дахин нэгдэх боломжгүй",
   "group_join_banned": "Та энэ бүлгээс хасагдсан тул хориг дуустал дахин нэгдэх боломжгүй.",
   "group_removed_title": "Таныг энэ бүлгээс хассан",
-  "group_removed_message": "{group} бүлгийн админ таныг энэ бүлгээс хассан. Та {duration}-ийн турш энэ бүлгийн нийтлэл, арга хэмжээ, дадлагыг харах болон дахин нэгдэх хүсэлт илгээх боломжгүй.",
-  "group_removed_message_no_date": "{group} бүлгийн админ таныг энэ бүлгээс хассан. Та энэ бүлгийн нийтлэл, арга хэмжээ, дадлагыг харах болон дахин нэгдэх хүсэлт илгээх боломжгүй.",
+  "group_removed_message": "{group}-ийн админ таныг энэ сувгаас хаслаа. Та {duration}-ийн турш тус сувгийн нийтлэл, арга хэмжээ, бэлтгэлийг үзэх эсвэл дахин нэгдэх хүсэлт гаргах боломжгүй.",
+  "group_removed_message_no_date": "{group}-ийн админ таныг энэ сувгаас хаслаа. Та тус сувгийн нийтлэл, арга хэмжээ, бэлтгэлийг үзэх эсвэл дахин нэгдэх хүсэлт гаргах боломжгүй.",
   "group_removed_rejoin_label": "Та энэ өдөр энэ бүлэгт дахин нэгдэх хүсэлт илгээж болно",
   "group_removed_rejoin_value": "{date} · {remaining}",
   "group_removed_day_left": "1 өдөр үлдсэн",
@@ -944,10 +944,10 @@
   "poems_empty": "Одоогоор шүлэг байхгүй. Удахгүй дахин шалгаарай.",
   "connect_events_filter_all": "Бүгд",
   "connect_events_filter_in_person": "Биечлэн",
-  "connect_events_filter_empty_online": "Онлайн арга хэмжээ байхгүй",
-  "connect_events_filter_empty_in_person": "Биечлэн арга хэмжээ байхгүй",
+  "connect_events_filter_empty_online": "Онлайн арга хэмжээ алга",
+  "connect_events_filter_empty_in_person": "Биечлэн оролцох арга хэмжээ байхгүй",
   "connect_events_filter_hybrid": "Хосолсон",
-  "connect_events_filter_empty_hybrid": "Хосолсон арга хэмжээ байхгүй",
+  "connect_events_filter_empty_hybrid": "Хосолмол арга хэмжээ байхгүй",
   "connect_open": "Нээх",
   "connect_event_fallback_title": "Арга хэмжээ",
   "connect_group_fallback_title": "Бүлэг",
@@ -961,16 +961,16 @@
       }
     }
   },
-  "connect_event_participants_empty": "Одоогоор оролцогч байхгүй",
-  "connect_event_tab_videos": "Videos",
-  "connect_event_tab_links": "Links",
-  "connect_event_tab_about": "About",
+  "connect_event_participants_empty": "Одоогоор оролцогч алга",
+  "connect_event_tab_videos": "Бичлэгүүд",
+  "connect_event_tab_links": "Холбоосууд",
+  "connect_event_tab_about": "Тухай",
   "connect_event_links_title": "Үйл явдлын дэлгэрэнгүй мэдээлэл",
-  "connect_event_links_empty": "No links yet",
-  "connect_event_link_tap_to_join": "Tap to join",
-  "connect_event_link_open": "Open link",
-  "connect_event_date_tba": "Date to be announced",
-  "connect_event_about_empty": "No event details yet",
+  "connect_event_links_empty": "Одоогоор холбоос алга",
+  "connect_event_link_tap_to_join": "Нэгдэхийн тулд товшино уу",
+  "connect_event_link_open": "Холбоос нээх",
+  "connect_event_date_tba": "Огноог дараа зарлана",
+  "connect_event_about_empty": "Үйл ажиллагааны мэдээлэл одоогоор алга",
   "timer_notification_in_progress": "Бясалгал үргэлжилж байна",
   "timer_notification_paused": "Түр зогссон · {time} үлдсэн",
   "@timer_notification_paused": {
@@ -1089,13 +1089,13 @@
   "group_post_edit_title": "Нийтлэлийг засах",
   "group_post_update_error": "Таны өөрчлөлтийг хадгалж чадсангүй. Дахин оролдоно уу.",
   "group_post_updated": "Таны өөрчлөлт хадгалагдлаа.",
-  "event_prayer_requests": "Залбирлын хүсэлт",
+  "event_prayer_requests": "Залбирлын хүсэлтүүд",
   "event_prayer_empty_title": "Одоогоор залбирлын хүсэлт алга",
-  "event_prayer_empty_body": "Таны болон нийгэмлэгийн хүсэлт энд харагдана",
+  "event_prayer_empty_body": "Таны хүсэлт болон танай нийгэмлэгийн хүсэлтүүд энд харагдана",
   "event_prayer_add": "Залбирлын хүсэлт нэмэх",
-  "event_prayer_hint": "Өнөөдөр бид таны төлөө юуны төлөө залбирах вэ",
-  "event_prayer_load_failed": "Залбирлын хүсэлтийг ачаалж чадсангүй.",
-  "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.",
+  "event_prayer_hint": "Өнөөдөр бид таны төлөө хэрхэн залбирах вэ",
+  "event_prayer_load_failed": "Залбирлын хүсэлтүүдийг ачаалж чадсангүй",
+  "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан",
   "event_prayer_pray": "Залбирах",
   "event_prayer_praying": "Залбирч байна",
   "connect_event_organizer": "Зохион байгуулагч",
@@ -1119,5 +1119,81 @@
   "feedback_error_rate_limited": "Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу",
   "feedback_error_too_large": "Зургууд хэт том байна. Нэгийг хасаад дахин оролдоно уу",
   "feedback_error_failed": "Санал хүсэлт илгээж чадсангүй. Дахин оролдоно уу",
-  "feedback_error_unavailable": "Санал хүсэлт одоогоор боломжгүй байна"
+  "feedback_error_unavailable": "Санал хүсэлт одоогоор боломжгүй байна",
+  "connect_event_join_in_person": "Биечлэн оролцох",
+  "connect_event_join_online": "Онлайнаар нэгдэх",
+  "connect_event_enter": "Орох",
+  "connect_event_participation_prompt": "Та хэрхэн оролцож байна вэ?",
+  "connect_event_joining_in_person": "Биечлэн оролцож байна",
+  "connect_event_joining_online": "Онлайнаар нэгдэж байна",
+  "connect_event_when": "Хэзээ",
+  "connect_event_where": "Хаана",
+  "connect_event_practices": "Үйл явдлын дадлагууд",
+  "connect_event_tab_accumulations": "Хуримтлал",
+  "connect_event_tab_recitations": "Уншлагууд",
+  "connect_event_add_recitations": "Уншлага нэмэх",
+  "connect_event_add_recitations_message": "Шууд дамжуулалттай хамт эсвэл энэ аппын гадуур хийсэн уншлагуудаа нэмэх",
+  "connect_event_every_day": "Өдөр бүр",
+  "connect_event_every_weekday": "{weekday} бүр",
+  "@connect_event_every_weekday": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_event_every_month": "Сар бүр",
+  "connect_event_every_date": "{date} бүр",
+  "@connect_event_every_date": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "player_fullscreen": "Бүтэн дэлгэц",
+  "player_exit_fullscreen": "Бүтэн дэлгэцээс гарах",
+  "event_live_badge": "ШУУД",
+  "event_live_audio": "Шууд аудио",
+  "event_live_video_mode": "Бичлэг",
+  "event_live_audio_mode": "Аудио",
+  "event_live_go_live": "Шууд",
+  "event_puja_starts_in": "Пүжа эхлэхэд",
+  "event_puja_not_started": "Пүжа хараахан эхлээгүй байна",
+  "event_prayer_new_request": "Шинэ залбирлын хүсэлт",
+  "event_prayer_choose_intention": "Залбирлын зорилго сонгох",
+  "event_prayer_intentions_failed": "Залбирлын хүсэлтүүдийг ачаалж чадсангүй.",
+  "event_prayer_you": "Та",
+  "event_prayer_waiting_first": "Эхний залбирлыг хүлээж байна...",
+  "event_prayer_more_praying": "+{count} хүн нэмж залбирч байна",
+  "@event_prayer_more_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_people_praying": "{count, plural,\none {# хүн залбирч байна}\nother {# хүн залбирч байна}\n}",
+  "@event_prayer_people_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_praying_for_you": "Таны төлөө залбирч байна",
+  "event_prayer_praying_for": "{name}-ийн төлөө залбирч байна",
+  "@event_prayer_praying_for": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "event_prayer_your_request": "Таны хүсэлт",
+  "event_prayer_supporters_failed": "Хэн залбирч байгааг ачаалж чадсангүй.",
+  "event_prayer_no_supporters": "Одоогоор хэн ч залбираагүй байна.",
+  "recitation_live_sync": "Синк хийх",
+  "recitation_live_label": "Шууд",
+  "recitation_live_session_ended": "Шууд хичээл дууссан"
 }

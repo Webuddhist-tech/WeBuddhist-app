@@ -9,11 +9,11 @@
   "onboarding_quote": "滴水穿石 ‧ 聚沙成塔",
   "onboarding_find_peace": "立即開始",
   "onboarding_continue": "下一步",
-  "onboarding_first_question": "選擇您的語言",
+  "onboarding_first_question": "選擇您的語言：",
   "onboarding_language_subtitle": "這將設定應用程式的語言",
   "onboarding_choose_option": "至少選擇一項",
   "onboarding_all_set": "一切就緒",
-  "onboarding_all_set_description": "以下內容正等著您：",
+  "onboarding_all_set_description": "以下是為您的修行準備的內容",
   "onboarding_all_set_practice_title": "修行",
   "onboarding_all_set_practice_body": "計畫、持咒、念珠與禪修",
   "onboarding_all_set_connect_title": "連結",
@@ -249,7 +249,7 @@
   "something_went_wrong": "出了點問題。請再試一次",
   "onboarding_quote_citation": "— 法句經 122",
   "onboarding_traditions_question": "您跟隨哪些傳承？",
-  "onboarding_tradition_title": "您如何追隨佛陀的教導？",
+  "onboarding_tradition_title": "您如何追随佛陀的教导？",
   "onboarding_tradition_subtitle": "為您的內容選擇一種或多種傳承。您可以隨時在設定中更改。",
   "onboarding_tradition_option_intro": "通過：",
   "onboarding_tradition_show_all_title": "顯示所有內容",
@@ -585,9 +585,9 @@
   "person_name_max_length": "不得超過 50 個字元",
   "person_name_invalid_chars": "僅允許字母、空格、連字號和撇號",
   "about_title": "關於",
-  "about_connect_with_us": "與我們交流",
+  "about_connect_with_us": "聯繫我們",
   "about_description": "我們協助佛教徒透過每日的學習、修持與交流，減少惡行、增長善行，更深入了解自己的心。並希望藉此，讓一切眾生皆能離苦得樂。",
-  "about_social_website": "網頁",
+  "about_social_website": "官網",
   "me_guest_headline": "體驗完整功能",
   "me_guest_subtitle": "建立免費帳號以儲存您的進度",
   "me_my_stats": "我的統計",
@@ -685,7 +685,7 @@
   "group_members": "位成員",
   "group_tab_members": "成員",
   "group_tab_followers": "追蹤者",
-  "group_members_heading": "成員({count})",
+  "group_members_heading": "成員 ({count})",
   "group_followers_heading": "追蹤者({count})",
   "@group_members_heading": {
     "placeholders": {
@@ -741,8 +741,8 @@
   "group_join_banned_until": "您已被移出此群組，在 {date} 之前無法重新加入",
   "group_join_banned": "您已被移出此群組，在封鎖結束前無法重新加入。",
   "group_removed_title": "您已被移出此群組",
-  "group_removed_message": "{group} 的管理員已將您移出此群組。在 {duration} 內，您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。",
-  "group_removed_message_no_date": "{group} 的管理員已將您移出此群組。您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。",
+  "group_removed_message": "{group} 的管理員已將你移出此頻道。你將無法查看其中的貼文、活動和練習，也無法在 {duration} 內要求重新加入。",
+  "group_removed_message_no_date": "{group} 的管理員已將你移出此頻道。你將無法查看其中的貼文、活動和練習，也無法要求重新加入。",
   "group_removed_rejoin_label": "您可以在此日期申請重新加入此群組",
   "group_removed_rejoin_value": "{date} · {remaining}",
   "group_removed_day_left": "剩餘 1 天",
@@ -802,7 +802,7 @@
   "search_for_groups": "搜尋社群",
   "no_groups_found": "找不到符合的社群",
   "connect_groups_empty_title": "尚無社群",
-  "connect_groups_empty_subtitle": "恭喜，你已加入我們所有的社群！請稍後再來，更多社群即將推出",
+  "connect_groups_empty_subtitle": "恭喜您，你已加入所有的共修社群！新社群即將上線，敬請期待 ~",
   "connect_groups_load_error": "無法載入社群，\n請檢查網路連線後重試",
   "weekday_monday": "週一",
   "weekday_tuesday": "週二",
@@ -820,7 +820,7 @@
   "mala_count_load_error": "無法載入您的計數",
   "mala_mantra_label": "咒語",
   "bookmarks_empty_all_title": "尚無書籤",
-  "bookmarks_empty_all_subtitle": "將任何內容加入書籤即可儲存於此",
+  "bookmarks_empty_all_subtitle": "加入書籤，即可將任何內容儲存於此。",
   "bookmarks_empty_plans_title": "尚無已加書籤的修持計畫",
   "bookmarks_empty_plans_subtitle": "將修持計畫加入書籤即可儲存於此",
   "bookmarks_empty_malas_title": "尚無已加書籤的念珠",
@@ -856,7 +856,7 @@
   "plan_day_of": "第 {day} 天，共 {total} 天",
   "pagination_position": "{current} / {total}",
   "plan_shorts_title": "社群短片",
-  "author_details_load_error": "無法載入作者資訊。\n請重試。",
+  "author_details_load_error": "無法載入作者資料\n請重試",
   "link_cannot_open": "無法開啟此連結",
   "link_invalid": "無效的網址",
   "author_no_plans": "尚未建立修持計畫",
@@ -929,7 +929,7 @@
   "connect_events_filter_in_person": "現場",
   "connect_events_filter_empty_online": "尚無線上活動",
   "connect_events_filter_empty_in_person": "尚無現場活動",
-  "connect_events_filter_hybrid": "混合",
+  "connect_events_filter_hybrid": "混合式",
   "connect_events_filter_empty_hybrid": "沒有合併的活動",
   "connect_open": "開啟",
   "connect_event_fallback_title": "活動",
@@ -1104,7 +1104,7 @@
     }
   },
   "connect_event_every_month": "每個月",
-  "connect_event_every_date": "每年{date}",
+  "connect_event_every_date": "輸入{date}",
   "@connect_event_every_date": {
     "placeholders": {
       "date": {
@@ -1142,5 +1142,44 @@
   "feedback_error_rate_limited": "請求過於頻繁，請稍候再試",
   "feedback_error_too_large": "圖片太大，請移除一張後再試",
   "feedback_error_failed": "無法傳送意見回饋，請再試一次",
-  "feedback_error_unavailable": "目前無法使用意見回饋"
+  "feedback_error_unavailable": "目前無法使用意見回饋",
+  "connect_event_enter": "進入",
+  "player_fullscreen": "全螢幕",
+  "player_exit_fullscreen": "退出全螢幕",
+  "event_prayer_new_request": "新增迴向祈願",
+  "event_prayer_choose_intention": "選擇一個意向",
+  "event_prayer_intentions_failed": "無法載入祈禱意向。",
+  "event_prayer_you": "你",
+  "event_prayer_waiting_first": "正在等待第一個祈禱⋯⋯",
+  "event_prayer_more_praying": "另有 +{count} 人正在禱告",
+  "@event_prayer_more_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_people_praying": "{count, plural,\nother {# 人正在禱告}\n}",
+  "@event_prayer_people_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_praying_for_you": "為你迴向",
+  "event_prayer_praying_for": "為 {name} 禱告",
+  "@event_prayer_praying_for": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "event_prayer_your_request": "您的請求",
+  "event_prayer_supporters_failed": "無法載入正在禱告的人",
+  "event_prayer_no_supporters": "目前還沒有人祈禱。",
+  "recitation_live_sync": "同步",
+  "recitation_live_label": "直播中",
+  "recitation_live_session_ended": "直播已結束"
 }

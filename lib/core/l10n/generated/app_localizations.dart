@@ -187,7 +187,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_all_set_description.
   ///
   /// In en, this message translates to:
-  /// **'Here\'s what\'s waiting for you:'**
+  /// **'Here\'s what\'s ready for your practice'**
   String get onboarding_all_set_description;
 
   /// No description provided for @onboarding_all_set_practice_title.
@@ -1237,7 +1237,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_tradition_title.
   ///
   /// In en, this message translates to:
-  /// **'How do you follow the Buddha\'s teachings?'**
+  /// **'How do you follow the Buddha’s teachings?'**
   String get onboarding_tradition_title;
 
   /// No description provided for @onboarding_tradition_subtitle.
@@ -1435,7 +1435,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_groups_empty_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Congrats, you\'ve joined all our channels! Check back soon. New ones are on the way'**
+  /// **'Congrats, you\'re subscribed to all our channels! Check back soon. New ones are on the way'**
   String get connect_groups_empty_subtitle;
 
   /// No description provided for @connect_tab_feed.
@@ -1471,7 +1471,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_segment_my.
   ///
   /// In en, this message translates to:
-  /// **'For you'**
+  /// **'Your channels'**
   String get connect_segment_my;
 
   /// No description provided for @connect_segment_discover.
@@ -1543,7 +1543,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_feed_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing new from the channels you\'ve joined. Others are posting today'**
+  /// **'Nothing new from your channels. Others are posting today'**
   String get connect_my_empty_feed_subtitle;
 
   /// No description provided for @connect_my_empty_events_subtitle.
@@ -1561,7 +1561,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_groups_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'You haven\'t joined any channels yet. Discover some to practice with'**
+  /// **'You haven\'t subscribed to any channels yet. Discover some to practice with'**
   String get connect_my_empty_groups_subtitle;
 
   /// No description provided for @connect_my_empty_feed_browse.
@@ -3349,13 +3349,13 @@ abstract class AppLocalizations {
   /// No description provided for @join.
   ///
   /// In en, this message translates to:
-  /// **'Join'**
+  /// **'Subscribe'**
   String get join;
 
   /// No description provided for @joined.
   ///
   /// In en, this message translates to:
-  /// **'Joined'**
+  /// **'Subscribed'**
   String get joined;
 
   /// No description provided for @group_member.
@@ -3385,7 +3385,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_members_heading.
   ///
   /// In en, this message translates to:
-  /// **'Members({count})'**
+  /// **'Members ({count})'**
   String group_members_heading(int count);
 
   /// No description provided for @group_followers_heading.
@@ -3409,13 +3409,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_notifications_chat.
   ///
   /// In en, this message translates to:
-  /// **'Group chat'**
+  /// **'Channel chat'**
   String get group_notifications_chat;
 
   /// No description provided for @group_notifications_content.
   ///
   /// In en, this message translates to:
-  /// **'Group content'**
+  /// **'Channel content'**
   String get group_notifications_content;
 
   /// No description provided for @group_notifications_master_off.
@@ -3469,31 +3469,31 @@ abstract class AppLocalizations {
   /// No description provided for @group_leave.
   ///
   /// In en, this message translates to:
-  /// **'Leave group'**
+  /// **'Unsubscribe'**
   String get group_leave;
 
   /// No description provided for @group_leave_confirm_title.
   ///
   /// In en, this message translates to:
-  /// **'Leave group?'**
+  /// **'Unsubscribe?'**
   String get group_leave_confirm_title;
 
   /// No description provided for @group_leave_confirm_message.
   ///
   /// In en, this message translates to:
-  /// **'You\'ll stop getting messages and updates from this group'**
+  /// **'You\'ll stop getting messages and updates from this channel'**
   String get group_leave_confirm_message;
 
   /// No description provided for @group_leave_failed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t leave the group. Try again'**
+  /// **'Couldn\'t unsubscribe. Try again'**
   String get group_leave_failed;
 
   /// No description provided for @group_request_to_join.
   ///
   /// In en, this message translates to:
-  /// **'Request to join'**
+  /// **'Request to subscribe'**
   String get group_request_to_join;
 
   /// No description provided for @group_request.
@@ -3511,7 +3511,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_request_title.
   ///
   /// In en, this message translates to:
-  /// **'Request to join'**
+  /// **'Request to subscribe'**
   String get group_join_request_title;
 
   /// No description provided for @group_join_request_message_label.
@@ -3547,7 +3547,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_requests_title.
   ///
   /// In en, this message translates to:
-  /// **'Join requests'**
+  /// **'Subscribe requests'**
   String get group_join_requests_title;
 
   /// No description provided for @group_join_requests_admit.
@@ -3595,7 +3595,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_members_only_message.
   ///
   /// In en, this message translates to:
-  /// **'Join to see this group\'s chants, events and posts'**
+  /// **'Subscribe to see this channel\'s content'**
   String get group_members_only_message;
 
   /// No description provided for @group_join_request_waiting_title.
@@ -3643,19 +3643,19 @@ abstract class AppLocalizations {
   /// No description provided for @group_remove_member_title.
   ///
   /// In en, this message translates to:
-  /// **'Remove from group?'**
+  /// **'Remove from channel?'**
   String get group_remove_member_title;
 
   /// No description provided for @group_remove_member_message.
   ///
   /// In en, this message translates to:
-  /// **'{name} will be removed from group and blocked from joining until the ban ends'**
+  /// **'{name} will be removed from this channel and unable to resubscribe until the ban is lifted'**
   String group_remove_member_message(String name);
 
   /// No description provided for @group_remove_member_blocked_for.
   ///
   /// In en, this message translates to:
-  /// **'Blocked for :'**
+  /// **'Blocked for:'**
   String get group_remove_member_blocked_for;
 
   /// No description provided for @group_remove_member_duration_day.
@@ -3697,49 +3697,49 @@ abstract class AppLocalizations {
   /// No description provided for @group_remove_member_success.
   ///
   /// In en, this message translates to:
-  /// **'{name} was removed from the group.'**
+  /// **'{name} was removed from the channel'**
   String group_remove_member_success(String name);
 
   /// No description provided for @group_remove_member_error.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t remove this member. Try again.'**
+  /// **'Couldn\'t remove this member. Try again'**
   String get group_remove_member_error;
 
   /// No description provided for @group_join_banned_until.
   ///
   /// In en, this message translates to:
-  /// **'You were removed from this group and cannot rejoin until {date}'**
+  /// **'You were removed from this channel and cannot resubscribe until {date}'**
   String group_join_banned_until(String date);
 
   /// No description provided for @group_join_banned.
   ///
   /// In en, this message translates to:
-  /// **'You were removed from this group and cannot rejoin until the ban ends.'**
+  /// **'You were removed from this channel and cannot resubscribe until the ban is lifted'**
   String get group_join_banned;
 
   /// No description provided for @group_removed_title.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve been removed from this group'**
+  /// **'You\'ve been removed from this channel'**
   String get group_removed_title;
 
   /// No description provided for @group_removed_message.
   ///
   /// In en, this message translates to:
-  /// **'An admin from {group} removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for {duration}.'**
+  /// **'An admin from {group} removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe for {duration}.'**
   String group_removed_message(String group, String duration);
 
   /// No description provided for @group_removed_message_no_date.
   ///
   /// In en, this message translates to:
-  /// **'An admin from {group} removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.'**
+  /// **'An admin from {group} removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe'**
   String group_removed_message_no_date(String group);
 
   /// No description provided for @group_removed_rejoin_label.
   ///
   /// In en, this message translates to:
-  /// **'You can request to rejoin this group on'**
+  /// **'You can request to resubscribe to this channel on'**
   String get group_removed_rejoin_label;
 
   /// No description provided for @group_removed_rejoin_value.
@@ -3823,7 +3823,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_change_practice_title.
   ///
   /// In en, this message translates to:
-  /// **'Change group practice'**
+  /// **'Change practice channel'**
   String get group_change_practice_title;
 
   /// No description provided for @group_change_practice_message.
@@ -3835,7 +3835,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_to_contribute.
   ///
   /// In en, this message translates to:
-  /// **'Join to contribute'**
+  /// **'Subscribe to contribute'**
   String get group_join_to_contribute;
 
   /// No description provided for @group_accumulator_join_error.
@@ -3943,7 +3943,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_accumulator_session_share_message.
   ///
   /// In en, this message translates to:
-  /// **'I completed {count} recitations in \"{accumulation}\", a group accumulation by {group} on WeBuddhist. Come join me!'**
+  /// **'I completed {count} recitations in \"{accumulation}\", an accumulation by {group} on WeBuddhist. Come join me!'**
   String group_accumulator_session_share_message(
     int count,
     String accumulation,
@@ -3953,7 +3953,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_accumulator_session_share_message_no_group.
   ///
   /// In en, this message translates to:
-  /// **'I completed {count} recitations in the group accumulation \"{accumulation}\" on WeBuddhist. Come join me!'**
+  /// **'I completed {count} recitations in the \"{accumulation}\" accumulation on WeBuddhist. Come join me!'**
   String group_accumulator_session_share_message_no_group(
     int count,
     String accumulation,
@@ -4079,7 +4079,7 @@ abstract class AppLocalizations {
   /// No description provided for @share_group_invite_message.
   ///
   /// In en, this message translates to:
-  /// **'I\'d love for you to join our group. Let\'s practice together on WeBuddhist.'**
+  /// **'Join me on this channel. Let\'s practice together on WeBuddhist!'**
   String get share_group_invite_message;
 
   /// No description provided for @weekday_monday.
@@ -4211,13 +4211,13 @@ abstract class AppLocalizations {
   /// No description provided for @bookmarks_empty_group_accumulations_title.
   ///
   /// In en, this message translates to:
-  /// **'No group accumulations bookmarked yet'**
+  /// **'No channel accumulations bookmarked yet'**
   String get bookmarks_empty_group_accumulations_title;
 
   /// No description provided for @bookmarks_empty_group_accumulations_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a group accumulation to save it here'**
+  /// **'Bookmark a channel accumulation to save it here'**
   String get bookmarks_empty_group_accumulations_subtitle;
 
   /// No description provided for @bookmarks_empty_timers_title.
@@ -4505,13 +4505,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_accumulator_share_message.
   ///
   /// In en, this message translates to:
-  /// **'I am taking part in \"{accumulation}\", a group accumulation by {group} on WeBuddhist. Come join me!'**
+  /// **'I am taking part in \"{accumulation}\", an accumulation by {group} on WeBuddhist. Come join me!'**
   String group_accumulator_share_message(String accumulation, String group);
 
   /// No description provided for @group_accumulator_share_message_no_group.
   ///
   /// In en, this message translates to:
-  /// **'I am taking part in the group accumulation \"{accumulation}\" on WeBuddhist. Come join me!'**
+  /// **'I am taking part in the \"{accumulation}\" accumulation on WeBuddhist. Come join me!'**
   String group_accumulator_share_message_no_group(String accumulation);
 
   /// No description provided for @group_chat_title.
@@ -4535,7 +4535,7 @@ abstract class AppLocalizations {
   /// No description provided for @chats_empty_body.
   ///
   /// In en, this message translates to:
-  /// **'Join a channel to start chatting'**
+  /// **'Subscribe to a channel to start chatting'**
   String get chats_empty_body;
 
   /// No description provided for @group_chat_inappropriate.
@@ -4565,7 +4565,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_join_to_send.
   ///
   /// In en, this message translates to:
-  /// **'Join chat to send message.'**
+  /// **'Join chat to send message'**
   String get group_chat_join_to_send;
 
   /// No description provided for @group_chat_today.

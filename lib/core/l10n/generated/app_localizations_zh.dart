@@ -36,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_continue => '下一步';
 
   @override
-  String get onboarding_first_question => '選擇您的語言';
+  String get onboarding_first_question => '選擇您的語言：';
 
   @override
   String get onboarding_language_subtitle => '這將設定應用程式的語言';
@@ -48,7 +48,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_all_set => '一切就緒';
 
   @override
-  String get onboarding_all_set_description => '以下內容正等著您：';
+  String get onboarding_all_set_description => '以下是為您的修行準備的內容';
 
   @override
   String get onboarding_all_set_practice_title => '修行';
@@ -612,7 +612,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_traditions_question => '您跟隨哪些傳承？';
 
   @override
-  String get onboarding_tradition_title => '您如何追隨佛陀的教導？';
+  String get onboarding_tradition_title => '您如何追随佛陀的教导？';
 
   @override
   String get onboarding_tradition_subtitle => '為您的內容選擇一種或多種傳承。您可以隨時在設定中更改。';
@@ -713,7 +713,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_groups_empty_title => '尚無社群';
 
   @override
-  String get connect_groups_empty_subtitle => '恭喜，你已加入我們所有的社群！請稍後再來，更多社群即將推出';
+  String get connect_groups_empty_subtitle => '恭喜您，你已加入所有的共修社群！新社群即將上線，敬請期待 ~';
 
   @override
   String get connect_tab_feed => '動態';
@@ -864,7 +864,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_events_filter_empty_in_person => '尚無現場活動';
 
   @override
-  String get connect_events_filter_hybrid => '混合';
+  String get connect_events_filter_hybrid => '混合式';
 
   @override
   String get connect_events_filter_empty_hybrid => '沒有合併的活動';
@@ -891,7 +891,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_join_online => '線上參加';
 
   @override
-  String get connect_event_enter => 'Enter';
+  String get connect_event_enter => '進入';
 
   @override
   String get connect_event_participation_prompt => '您會怎麼參加?';
@@ -971,7 +971,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String connect_event_every_date(String date) {
-    return '每年$date';
+    return '輸入$date';
   }
 
   @override
@@ -1592,14 +1592,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get about_title => '關於';
 
   @override
-  String get about_connect_with_us => '與我們交流';
+  String get about_connect_with_us => '聯繫我們';
 
   @override
   String get about_description =>
       '我們協助佛教徒透過每日的學習、修持與交流，減少惡行、增長善行，更深入了解自己的心。並希望藉此，讓一切眾生皆能離苦得樂。';
 
   @override
-  String get about_social_website => '網頁';
+  String get about_social_website => '官網';
 
   @override
   String get me_guest_headline => '體驗完整功能';
@@ -1763,7 +1763,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String group_members_heading(int count) {
-    return '成員($count)';
+    return '成員 ($count)';
   }
 
   @override
@@ -1778,10 +1778,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_notifications_title => 'Notifications';
 
   @override
-  String get group_notifications_chat => 'Group chat';
+  String get group_notifications_chat => 'Channel chat';
 
   @override
-  String get group_notifications_content => 'Group content';
+  String get group_notifications_content => 'Channel content';
 
   @override
   String get group_notifications_master_off =>
@@ -1811,17 +1811,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_notifications_unmuted => '聊天通知已開啟';
 
   @override
-  String get group_leave => 'Leave group';
+  String get group_leave => 'Unsubscribe';
 
   @override
-  String get group_leave_confirm_title => 'Leave group?';
+  String get group_leave_confirm_title => 'Unsubscribe?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group';
+      'You\'ll stop getting messages and updates from this channel';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again';
+  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
 
   @override
   String get group_request_to_join => '申請加入';
@@ -1952,12 +1952,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) {
-    return '$group 的管理員已將您移出此群組。在 $duration 內，您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。';
+    return '$group 的管理員已將你移出此頻道。你將無法查看其中的貼文、活動和練習，也無法在 $duration 內要求重新加入。';
   }
 
   @override
   String group_removed_message_no_date(String group) {
-    return '$group 的管理員已將您移出此群組。您將無法查看此群組的貼文、活動和修行，也無法申請重新加入。';
+    return '$group 的管理員已將你移出此頻道。你將無法查看其中的貼文、活動和練習，也無法要求重新加入。';
   }
 
   @override
@@ -2225,7 +2225,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmarks_empty_all_title => '尚無書籤';
 
   @override
-  String get bookmarks_empty_all_subtitle => '將任何內容加入書籤即可儲存於此';
+  String get bookmarks_empty_all_subtitle => '加入書籤，即可將任何內容儲存於此。';
 
   @override
   String get bookmarks_empty_plans_title => '尚無已加書籤的修持計畫';
@@ -2305,10 +2305,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get player_forward_10 => '快進 10 秒';
 
   @override
-  String get player_fullscreen => 'Fullscreen';
+  String get player_fullscreen => '全螢幕';
 
   @override
-  String get player_exit_fullscreen => 'Exit fullscreen';
+  String get player_exit_fullscreen => '退出全螢幕';
 
   @override
   String get session_plans_load_error => '無法載入計畫。\n請稍後重試。';
@@ -2371,7 +2371,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get plan_shorts_title => '社群短片';
 
   @override
-  String get author_details_load_error => '無法載入作者資訊。\n請重試。';
+  String get author_details_load_error => '無法載入作者資料\n請重試';
 
   @override
   String get link_cannot_open => '無法開啟此連結';
@@ -2769,7 +2769,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_praying => '正在迴向';
 
   @override
-  String get event_prayer_new_request => 'New prayer request';
+  String get event_prayer_new_request => '新增迴向祈願';
 
   @override
   String get event_prayer_edit_request => 'Edit prayer request';
@@ -2786,24 +2786,23 @@ class AppLocalizationsZh extends AppLocalizations {
       'The prayer request couldn\'t be deleted.';
 
   @override
-  String get event_prayer_choose_intention => 'Choose an intention';
+  String get event_prayer_choose_intention => '選擇一個意向';
 
   @override
-  String get event_prayer_intentions_failed =>
-      'Intentions couldn\'t be loaded.';
+  String get event_prayer_intentions_failed => '無法載入祈禱意向。';
 
   @override
   String get event_prayer_request_button => '申請迴向祈願';
 
   @override
-  String get event_prayer_you => 'You';
+  String get event_prayer_you => '你';
 
   @override
-  String get event_prayer_waiting_first => 'Waiting for the first prayer...';
+  String get event_prayer_waiting_first => '正在等待第一個祈禱⋯⋯';
 
   @override
   String event_prayer_more_praying(int count) {
-    return '+$count more are praying';
+    return '另有 +$count 人正在禱告';
   }
 
   @override
@@ -2811,37 +2810,36 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count people are praying',
-      one: '1 person is praying',
+      other: '# 人正在禱告',
     );
     return '$_temp0';
   }
 
   @override
-  String get event_prayer_praying_for_you => 'Praying for you';
+  String get event_prayer_praying_for_you => '為你迴向';
 
   @override
   String event_prayer_praying_for(String name) {
-    return 'Praying for $name';
+    return '為 $name 禱告';
   }
 
   @override
-  String get event_prayer_your_request => 'Your request';
+  String get event_prayer_your_request => '您的請求';
 
   @override
-  String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
+  String get event_prayer_supporters_failed => '無法載入正在禱告的人';
 
   @override
-  String get event_prayer_no_supporters => 'No one is praying yet.';
+  String get event_prayer_no_supporters => '目前還沒有人祈禱。';
 
   @override
-  String get recitation_live_sync => 'Sync';
+  String get recitation_live_sync => '同步';
 
   @override
-  String get recitation_live_label => 'Live';
+  String get recitation_live_label => '直播中';
 
   @override
-  String get recitation_live_session_ended => 'The live session has ended';
+  String get recitation_live_session_ended => '直播已結束';
 
   @override
   String get feedback_title => '提交意見回饋';

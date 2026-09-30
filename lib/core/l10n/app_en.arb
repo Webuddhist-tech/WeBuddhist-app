@@ -13,7 +13,7 @@
   "onboarding_language_subtitle": "This sets the language of the app",
   "onboarding_choose_option": "Choose at least one:",
   "onboarding_all_set": "You're all set",
-  "onboarding_all_set_description": "Here's what's waiting for you:",
+  "onboarding_all_set_description": "Here's what's ready for your practice",
   "onboarding_all_set_practice_title": "Practice",
   "onboarding_all_set_practice_body": "Plans, chants, malas and meditation",
   "onboarding_all_set_connect_title": "Connect",
@@ -250,7 +250,7 @@
   "something_went_wrong": "Something went wrong. Please try again",
   "onboarding_quote_citation": "— Dhammapada 122",
   "onboarding_traditions_question": "Which traditions\ndo you follow?",
-  "onboarding_tradition_title": "How do you follow the Buddha's teachings?",
+  "onboarding_tradition_title": "How do you follow the Buddha’s teachings?",
   "onboarding_tradition_subtitle": "Choose one or more traditions for your content. You can change this anytime in Settings.",
   "onboarding_tradition_option_intro": "Through:",
   "onboarding_tradition_show_all_title": "Show me everything",
@@ -293,13 +293,13 @@
   "see_all": "See all",
   "connect_groups_load_error": "Unable to load channels.\nCheck your connection and try again",
   "connect_groups_empty_title": "No more channels",
-  "connect_groups_empty_subtitle": "Congrats, you've joined all our channels! Check back soon. New ones are on the way",
+  "connect_groups_empty_subtitle": "Congrats, you're subscribed to all our channels! Check back soon. New ones are on the way",
   "connect_tab_feed": "Feed",
   "connect_tab_events": "Events",
   "connect_tab_posts": "Posts",
   "connect_tab_practices": "Practices",
   "connect_tab_groups": "Channels",
-  "connect_segment_my": "For you",
+  "connect_segment_my": "Your channels",
   "connect_segment_discover": "Discover",
   "connect_empty_discover_posts": "No posts to discover",
   "connect_empty_discover_events": "No events to discover",
@@ -311,10 +311,10 @@
   "connect_my_empty_events_title": "No upcoming events",
   "connect_my_empty_posts_title": "No posts yet",
   "connect_my_empty_groups_title": "No channels yet",
-  "connect_my_empty_feed_subtitle": "Nothing new from the channels you've joined. Others are posting today",
+  "connect_my_empty_feed_subtitle": "Nothing new from your channels. Others are posting today",
   "connect_my_empty_events_subtitle": "None of your channels have anything scheduled. Others have events open to everyone",
   "connect_my_empty_posts_subtitle": "Your channels haven't posted anything. See what others are sharing",
-  "connect_my_empty_groups_subtitle": "You haven't joined any channels yet. Discover some to practice with",
+  "connect_my_empty_groups_subtitle": "You haven't subscribed to any channels yet. Discover some to practice with",
   "connect_my_empty_feed_browse": "See what other channels are sharing",
   "connect_my_empty_events_browse": "Browse open events",
   "connect_my_empty_posts_browse": "Browse other posts",
@@ -827,13 +827,13 @@
   "moon_phase_waning_gibbous": "Waning gibbous",
   "moon_phase_last_quarter": "Last quarter",
   "moon_phase_waning_crescent": "Waning crescent",
-  "join": "Join",
-  "joined": "Joined",
+  "join": "Subscribe",
+  "joined": "Subscribed",
   "group_member": "member",
   "group_members": "members",
   "group_tab_members": "Members",
   "group_tab_followers": "Followers",
-  "group_members_heading": "Members({count})",
+  "group_members_heading": "Members ({count})",
   "group_followers_heading": "Followers({count})",
   "@group_members_heading": {
     "placeholders": {
@@ -851,8 +851,8 @@
   },
   "group_invite": "Invite",
   "group_notifications_title": "Notifications",
-  "group_notifications_chat": "Group chat",
-  "group_notifications_content": "Group content",
+  "group_notifications_chat": "Channel chat",
+  "group_notifications_content": "Channel content",
   "group_notifications_master_off": "Notifications are turned off for the app",
   "group_notifications_open_settings": "Turn on",
   "group_notifications_update_failed": "Couldn't update notification settings. Try again",
@@ -861,20 +861,20 @@
   "group_chat_unmute_notifications": "Unmute chat notifications",
   "group_chat_notifications_muted": "Chat notifications muted",
   "group_chat_notifications_unmuted": "Chat notifications on",
-  "group_leave": "Leave group",
-  "group_leave_confirm_title": "Leave group?",
-  "group_leave_confirm_message": "You'll stop getting messages and updates from this group",
-  "group_leave_failed": "Couldn't leave the group. Try again",
-  "group_request_to_join": "Request to join",
+  "group_leave": "Unsubscribe",
+  "group_leave_confirm_title": "Unsubscribe?",
+  "group_leave_confirm_message": "You'll stop getting messages and updates from this channel",
+  "group_leave_failed": "Couldn't unsubscribe. Try again",
+  "group_request_to_join": "Request to subscribe",
   "group_request": "Request",
   "group_request_sent": "Request sent",
-  "group_join_request_title": "Request to join",
+  "group_join_request_title": "Request to subscribe",
   "group_join_request_message_label": "Message (optional)",
   "group_join_request_message_hint": "How do you practice, or who invited you?",
   "group_join_request_send": "Send request",
   "group_join_request_sent_snackbar": "Request sent. An admin will review it",
   "group_join_request_error": "Unable to send request. Please try again",
-  "group_join_requests_title": "Join requests",
+  "group_join_requests_title": "Subscribe requests",
   "group_join_requests_admit": "Admit",
   "group_join_requests_deny": "Deny",
   "group_join_requests_empty": "No pending requests",
@@ -882,7 +882,7 @@
   "group_join_requests_admit_error": "Unable to admit this request. Please try again",
   "group_join_requests_deny_error": "Unable to deny this request. Please try again",
   "group_members_only_title": "Members only",
-  "group_members_only_message": "Join to see this group's chants, events and posts",
+  "group_members_only_message": "Subscribe to see this channel's content",
   "group_join_request_waiting_title": "Waiting on an admin",
   "group_join_request_waiting_message": "We'll notify you as soon as your request is reviewed",
   "group_members_load_error": "Unable to load members. Please try again",
@@ -897,8 +897,8 @@
       }
     }
   },
-  "group_remove_member_title": "Remove from group?",
-  "group_remove_member_message": "{name} will be removed from group and blocked from joining until the ban ends",
+  "group_remove_member_title": "Remove from channel?",
+  "group_remove_member_message": "{name} will be removed from this channel and unable to resubscribe until the ban is lifted",
   "@group_remove_member_message": {
     "placeholders": {
       "name": {
@@ -906,7 +906,7 @@
       }
     }
   },
-  "group_remove_member_blocked_for": "Blocked for :",
+  "group_remove_member_blocked_for": "Blocked for:",
   "group_remove_member_duration_day": "1 day",
   "group_remove_member_duration_days": "{count} days",
   "@group_remove_member_duration_days": {
@@ -920,7 +920,7 @@
   "group_remove_member_reason_label": "Reason (optional)",
   "group_remove_member_reason_hint": "Something else...",
   "group_remove_member_action": "Remove",
-  "group_remove_member_success": "{name} was removed from the group.",
+  "group_remove_member_success": "{name} was removed from the channel",
   "@group_remove_member_success": {
     "placeholders": {
       "name": {
@@ -928,8 +928,8 @@
       }
     }
   },
-  "group_remove_member_error": "Couldn't remove this member. Try again.",
-  "group_join_banned_until": "You were removed from this group and cannot rejoin until {date}",
+  "group_remove_member_error": "Couldn't remove this member. Try again",
+  "group_join_banned_until": "You were removed from this channel and cannot resubscribe until {date}",
   "@group_join_banned_until": {
     "placeholders": {
       "date": {
@@ -937,9 +937,9 @@
       }
     }
   },
-  "group_join_banned": "You were removed from this group and cannot rejoin until the ban ends.",
-  "group_removed_title": "You've been removed from this group",
-  "group_removed_message": "An admin from {group} removed you from this group. You won't be able to view this group's posts, events and practices, or request to rejoin for {duration}.",
+  "group_join_banned": "You were removed from this channel and cannot resubscribe until the ban is lifted",
+  "group_removed_title": "You've been removed from this channel",
+  "group_removed_message": "An admin from {group} removed you from this channel. You won't be able to view its posts, events and practices, or ask to resubscribe for {duration}.",
   "@group_removed_message": {
     "placeholders": {
       "group": {
@@ -950,7 +950,7 @@
       }
     }
   },
-  "group_removed_message_no_date": "An admin from {group} removed you from this group. You won't be able to view this group's posts, events and practices, or request to rejoin.",
+  "group_removed_message_no_date": "An admin from {group} removed you from this channel. You won't be able to view its posts, events and practices, or ask to resubscribe",
   "@group_removed_message_no_date": {
     "placeholders": {
       "group": {
@@ -958,7 +958,7 @@
       }
     }
   },
-  "group_removed_rejoin_label": "You can request to rejoin this group on",
+  "group_removed_rejoin_label": "You can request to resubscribe to this channel on",
   "group_removed_rejoin_value": "{date} · {remaining}",
   "@group_removed_rejoin_value": {
     "placeholders": {
@@ -996,9 +996,9 @@
       }
     }
   },
-  "group_change_practice_title": "Change group practice",
+  "group_change_practice_title": "Change practice channel",
   "group_change_practice_message": "You are already practicing this plan with another channel. Would you like to change your practice channel?",
-  "group_join_to_contribute": "Join to contribute",
+  "group_join_to_contribute": "Subscribe to contribute",
   "group_accumulator_join_error": "Unable to join accumulation. Please try again",
   "group_accumulator_join_before_practice": "Join this accumulation before adding it to your practices",
   "group_accumulator_participants": "{count} participants",
@@ -1030,7 +1030,7 @@
       }
     }
   },
-  "group_accumulator_session_share_message": "I completed {count} recitations in \"{accumulation}\", a group accumulation by {group} on WeBuddhist. Come join me!",
+  "group_accumulator_session_share_message": "I completed {count} recitations in \"{accumulation}\", an accumulation by {group} on WeBuddhist. Come join me!",
   "@group_accumulator_session_share_message": {
     "placeholders": {
       "count": {
@@ -1044,7 +1044,7 @@
       }
     }
   },
-  "group_accumulator_session_share_message_no_group": "I completed {count} recitations in the group accumulation \"{accumulation}\" on WeBuddhist. Come join me!",
+  "group_accumulator_session_share_message_no_group": "I completed {count} recitations in the \"{accumulation}\" accumulation on WeBuddhist. Come join me!",
   "@group_accumulator_session_share_message_no_group": {
     "placeholders": {
       "count": {
@@ -1112,7 +1112,7 @@
   "share_timer_message": "I wanted to share this meditation timer from WeBuddhist with you. It makes it easy to build a meditation practice.",
   "share_plan_message": "I'm following this Buddhist practice plan and wanted to share it with you. You can join me for free on WeBuddhist.",
   "share_plan_subject": "Join me on WeBuddhist",
-  "share_group_invite_message": "I'd love for you to join our group. Let's practice together on WeBuddhist.",
+  "share_group_invite_message": "Join me on this channel. Let's practice together on WeBuddhist!",
   "weekday_monday": "MON",
   "weekday_tuesday": "TUE",
   "weekday_wednesday": "WED",
@@ -1141,8 +1141,8 @@
   "bookmarks_empty_plans_subtitle": "Bookmark a plan to save it here",
   "bookmarks_empty_malas_title": "No malas bookmarked yet",
   "bookmarks_empty_malas_subtitle": "Bookmark a mala to save it here",
-  "bookmarks_empty_group_accumulations_title": "No group accumulations bookmarked yet",
-  "bookmarks_empty_group_accumulations_subtitle": "Bookmark a group accumulation to save it here",
+  "bookmarks_empty_group_accumulations_title": "No channel accumulations bookmarked yet",
+  "bookmarks_empty_group_accumulations_subtitle": "Bookmark a channel accumulation to save it here",
   "bookmarks_empty_timers_title": "No timers bookmarked yet",
   "bookmarks_empty_timers_subtitle": "Bookmark a timer to save it here",
   "bookmarks_empty_texts_title": "No texts bookmarked yet",
@@ -1269,7 +1269,7 @@
   },
   "drag_to_resize": "Drag to resize",
   "day_completion_share_message": "I just completed a day of my practice on WeBuddhist. Join me and build a daily practice habit together.",
-  "group_accumulator_share_message": "I am taking part in \"{accumulation}\", a group accumulation by {group} on WeBuddhist. Come join me!",
+  "group_accumulator_share_message": "I am taking part in \"{accumulation}\", an accumulation by {group} on WeBuddhist. Come join me!",
   "@group_accumulator_share_message": {
     "placeholders": {
       "accumulation": {
@@ -1280,7 +1280,7 @@
       }
     }
   },
-  "group_accumulator_share_message_no_group": "I am taking part in the group accumulation \"{accumulation}\" on WeBuddhist. Come join me!",
+  "group_accumulator_share_message_no_group": "I am taking part in the \"{accumulation}\" accumulation on WeBuddhist. Come join me!",
   "@group_accumulator_share_message_no_group": {
     "placeholders": {
       "accumulation": {
@@ -1291,12 +1291,12 @@
   "group_chat_title": "Chat",
   "chats_title": "Chats",
   "chats_empty_title": "No chats yet",
-  "chats_empty_body": "Join a channel to start chatting",
+  "chats_empty_body": "Subscribe to a channel to start chatting",
   "group_chat_inappropriate": "This message couldn't be sent because it contains language that isn't allowed",
   "group_chat_not_a_member": "Only members can open this chat",
   "group_chat_open": "Chat",
   "group_chat_message_hint": "Message",
-  "group_chat_join_to_send": "Join chat to send message.",
+  "group_chat_join_to_send": "Join chat to send message",
   "group_chat_today": "Today",
   "group_chat_yesterday": "Yesterday",
   "group_chat_empty_title": "No messages yet",
