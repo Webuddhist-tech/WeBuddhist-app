@@ -204,21 +204,32 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
         );
         if (!overflows) return body;
 
+        final toggleLabel =
+            _expanded ? context.l10n.show_less : context.l10n.show_more;
+        void toggle() => setState(() => _expanded = !_expanded);
+
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: toggle,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               body,
               const SizedBox(height: 4),
-              Text(
-                _expanded ? context.l10n.show_less : context.l10n.show_more,
-                strutStyle: context.tibetanStrutStyle(13, compact: true),
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: widget.linkColor,
+              Semantics(
+                button: true,
+                expanded: _expanded,
+                label: toggleLabel,
+                onTap: toggle,
+                excludeSemantics: true,
+                child: Text(
+                  toggleLabel,
+                  strutStyle: context.tibetanStrutStyle(13, compact: true),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: widget.linkColor,
+                  ),
                 ),
               ),
             ],
