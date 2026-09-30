@@ -3,6 +3,7 @@ import 'package:flutter_pecha/features/library/data/models/library_reader_models
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
+import 'package:flutter_pecha/features/library/data/models/library_yigchung.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const Map<String, dynamic> _textJson = {
@@ -164,6 +165,43 @@ void main() {
         spanEnd: 7,
       );
       expect(segment.html, 'one<br>two');
+    });
+
+    test('reader segment keeps html given to it', () {
+      const segment = LibraryReaderSegment(
+        id: 's',
+        reference: '1',
+        type: 'verse',
+        number: 1,
+        lines: ['one', 'two'],
+        html: 'one<br><span class="yigchung">two</span>',
+        spanStart: 0,
+        spanEnd: 7,
+      );
+      expect(segment.html, 'one<br><span class="yigchung">two</span>');
+    });
+  });
+
+  group('LibraryYigchung', () {
+    test('parses its span', () {
+      final yigchung = LibraryYigchung.fromJson({
+        'span': {'start': 2917, 'end': 3084},
+        'metadata': null,
+        'id': 'J75VmkfRfGgwfSdrOMeul',
+        'edition_id': '15wVPrtIrRTkGcJvzN4Jo',
+        'text_id': 'ensaae8K1Hi0n1Wv2JF6o',
+      });
+      expect(yigchung.id, 'J75VmkfRfGgwfSdrOMeul');
+      expect(yigchung.editionId, '15wVPrtIrRTkGcJvzN4Jo');
+      expect(yigchung.textId, 'ensaae8K1Hi0n1Wv2JF6o');
+      expect(yigchung.span.start, 2917);
+      expect(yigchung.span.end, 3084);
+    });
+
+    test('a missing span is empty', () {
+      final yigchung = LibraryYigchung.fromJson({'id': 'x'});
+      expect(yigchung.span.start, 0);
+      expect(yigchung.span.end, 0);
     });
   });
 

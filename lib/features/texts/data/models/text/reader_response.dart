@@ -13,6 +13,11 @@ class ReaderResponse {
   final int? lastSegmentPosition;
   final int totalSegments;
 
+  /// True when something optional (the library's yigchung marks) did not
+  /// load. Stored with the page, so a saved partial page opens at once and is
+  /// refreshed in the background while online.
+  final bool isPartial;
+
   ReaderResponse({
     required this.textDetail,
     required this.content,
@@ -21,6 +26,7 @@ class ReaderResponse {
     required this.currentSegmentPosition,
     this.lastSegmentPosition,
     required this.totalSegments,
+    this.isPartial = false,
   });
 
   /// Whether segments exist after this page. Measured from its last segment,
@@ -37,6 +43,7 @@ class ReaderResponse {
       currentSegmentPosition: json['current_segment_position'],
       lastSegmentPosition: json['last_segment_position'] as int?,
       totalSegments: json['total_segments'],
+      isPartial: json['is_partial'] as bool? ?? false,
     );
   }
 
@@ -50,6 +57,7 @@ class ReaderResponse {
       if (lastSegmentPosition != null)
         'last_segment_position': lastSegmentPosition,
       'total_segments': totalSegments,
+      if (isPartial) 'is_partial': true,
     };
   }
 }
