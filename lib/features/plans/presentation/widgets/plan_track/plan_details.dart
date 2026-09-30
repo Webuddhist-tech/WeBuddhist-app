@@ -793,7 +793,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             fontFamily: "Inter",
           ),
         ),
-        if (completionStatus != null)
+        // An event page shows no backlog: the count runs from Day 1, so
+        // late joiners would only see days they never signed up for.
+        if (completionStatus != null && widget.eventId == null)
           MissedDaysBadge(
             planStartDate: widget.startDate,
             totalDays: widget.plan.totalDays,

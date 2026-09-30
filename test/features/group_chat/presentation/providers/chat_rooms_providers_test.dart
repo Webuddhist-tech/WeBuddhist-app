@@ -172,6 +172,14 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Right(unit);
 
   @override
+  Future<Either<Failure, ChatMessageDTO?>> updateMessage(
+    String roomId, {
+    required String messageId,
+    required String body,
+    String? intention,
+  }) async => const Right(null);
+
+  @override
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,

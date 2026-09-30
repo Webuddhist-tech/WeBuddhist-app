@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/group_c
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_delete_dialog.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_prompt.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
@@ -253,6 +254,9 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
         if (json.isEmpty) return;
         _notifier.appendLive(ChatMessageDTO.fromJson(json));
         unawaited(_markRoomRead());
+      case ChatLiveMessageUpdated(message: final json):
+        if (json.isEmpty) return;
+        _notifier.applyEdit(ChatMessageDTO.fromJson(json));
       case ChatLivePrayersUpdated(prayers: final updates):
         _notifier.applyPrayersUpdated(updates, viewerId: _viewerId);
       case ChatLiveMessageDeleted(messageId: final messageId):
@@ -284,17 +288,18 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     await _providers.read(groupChatRepositoryProvider).markRoomRead(roomId);
   }
 
-  /// Opens the composer sheet; the notifier already holds the new request
-  /// when it pops, so only the room bookkeeping is left.
-  Future<void> _openComposer() async {
+  /// Opens the composer sheet; the notifier already holds the new or edited
+  /// request when it pops, so only a new one has room bookkeeping left.
+  Future<void> _openComposer({ChatMessageDTO? editing}) async {
     if (_composing) return;
     _composing = true;
     try {
-      final created = await NewPrayerRequestSheet.show(
+      final result = await NewPrayerRequestSheet.show(
         context,
         eventId: widget.eventId,
+        editing: editing,
       );
-      if (!mounted || created == null) return;
+      if (!mounted || result == null || editing != null) return;
       unawaited(_markRoomRead());
       unawaited(_ensureLiveConnected());
       final list = _listController;
@@ -308,6 +313,27 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     } finally {
       _composing = false;
     }
+  }
+
+  /// Confirms, then deletes one of the viewer's own requests. No success
+  /// toast: the card leaving the list already shows the delete landed.
+  Future<void> _deleteRequest(ChatMessageDTO request) async {
+    final l10n = context.l10n;
+    final confirmed = await confirmChatMessageDelete(
+      context,
+      title: l10n.event_prayer_delete_title,
+      body: l10n.event_prayer_delete_body,
+    );
+    if (!confirmed || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await _notifier.delete(request.id);
+    if (!mounted) return;
+    result.fold(
+      (_) => messenger.showSnackBar(
+        SnackBar(content: Text(l10n.event_prayer_delete_failed)),
+      ),
+      (_) {},
+    );
   }
 
   ChatPrayerUserDTO? _viewerAsSupporter() {
@@ -450,6 +476,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final selfName = joinChatName(user?.firstName, user?.lastName);
     final viewerId = _viewerId;
     final viewerEmail = user?.email;
+    final canEdit = state.roomStatus == PrayerRoomStatus.ready;
     final itemCount = state.requests.length + (state.isLoadingMore ? 1 : 0);
 
     return ListView.builder(
@@ -496,11 +523,20 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
               () => unawaited(
                 PrayerSupportersSheet.show(
                   context,
+                  eventId: widget.eventId,
                   request: request,
                   displayName: displayName,
                   isOwn: isSelf,
                 ),
               ),
+          onEdit:
+              isSelf && canEdit
+                  ? () => unawaited(_openComposer(editing: request))
+                  : null,
+          onDelete:
+              isSelf && canEdit
+                  ? () => unawaited(_deleteRequest(request))
+                  : null,
         );
       },
     );

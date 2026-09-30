@@ -4,11 +4,11 @@
 
 ## Purpose
 
-First-run multi-step onboarding: language, welcome, tradition selection, how-it-works, finish — plus optional event plan enrollment.
+First-run multi-step onboarding: welcome, language, tradition selection, finish — plus optional event plan enrollment.
 
 ## User-facing functionality
 
-- PageView flow: Language → Welcome → Tradition → How it works → Finish
+- PageView flow: Welcome → Language → Tradition → Finish
 - Persists preferences locally during flow
 - Optional event plan enrollment (`kOnboardingEvents` hardcoded promos)
 - On completion: save preferences, mark onboarding done in auth, enroll plans + routine block, navigate home

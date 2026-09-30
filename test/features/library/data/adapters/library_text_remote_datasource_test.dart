@@ -293,6 +293,108 @@ void main() {
     });
   });
 
+  group('LibraryTextRemoteDatasource yigchungs', () {
+    LibraryTestServer withYigchungs(
+      ResponseBody Function(Uri uri) yigchungs,
+    ) => LibraryTestServer({
+      ..._server().routes,
+      '/v2/editions/E1/yigchungs': yigchungs,
+    });
+
+    test('marks the small text of each verse, end exclusive', () async {
+      final server = withYigchungs(
+        (_) => jsonBody([
+          {
+            'span': {'start': 1, 'end': 5},
+            'metadata': null,
+            'id': 'y1',
+            'edition_id': 'E1',
+            'text_id': 'T1',
+          },
+        ]),
+      );
+
+      final ds = _datasource(server);
+      final response = await ds.fetchTextDetails(textId: 'E1');
+
+      expect(response.isPartial, isFalse);
+      final segments = response.content.sections.single.segments;
+      expect(
+        segments.map((s) => s.content),
+        [
+          'a<span class="yigchung">&lt;b</span>',
+          '<span class="yigchung">&amp;c</span>d',
+          'efg',
+        ],
+      );
+
+      // The reader cache stores pages as JSON; the marks must survive it.
+      final cached = ReaderResponse.fromJson(response.toJson());
+      expect(
+        cached.content.sections.single.segments.first.content,
+        'a<span class="yigchung">&lt;b</span>',
+      );
+
+      await ds.fetchTextDetails(textId: 'E1', segmentId: 's3', size: 1);
+      expect(server.count('/v2/editions/E1/yigchungs'), 1);
+    });
+
+    test('a companion edition gets its own marks', () async {
+      final server = LibraryTestServer({
+        ..._server().routes,
+        '/v2/editions/E2/yigchungs':
+            (_) => jsonBody([
+              {
+                'span': {'start': 3, 'end': 6},
+                'id': 'y1',
+                'edition_id': 'E2',
+                'text_id': 'R',
+              },
+            ]),
+      });
+
+      final response = await _datasource(server).fetchTextDetails(
+        textId: 'E1',
+        versionId: 'E2',
+      );
+
+      final segments = response.content.sections.single.segments;
+      expect(segments.map((s) => s.translation?.content), [
+        'ABC',
+        '<span class="yigchung">DEF</span>',
+        'GHI',
+      ]);
+    });
+
+    test('the text still opens when the yigchungs fail', () async {
+      final server = withYigchungs(
+        (_) => jsonBody({'detail': 'boom'}, statusCode: 500),
+      );
+
+      final response = await _datasource(server).fetchTextDetails(
+        textId: 'E1',
+      );
+
+      final segments = response.content.sections.single.segments;
+      expect(segments.map((s) => s.content), ['a&lt;b', '&amp;cd', 'efg']);
+      expect(response.isPartial, isTrue);
+
+      // Saved pages keep the flag, so the reader knows to fetch them again.
+      expect(ReaderResponse.fromJson(response.toJson()).isPartial, isTrue);
+    });
+
+    test('a text with no yigchungs is a complete page', () async {
+      final server = withYigchungs((_) => jsonBody([]));
+
+      final response = await _datasource(server).fetchTextDetails(
+        textId: 'E1',
+      );
+
+      expect(response.isPartial, isFalse);
+      expect(response.toJson().containsKey('is_partial'), isFalse);
+    });
+  });
+
   test('multilingualSearch searches the edition and keys hits by it', () async {
     final response = await _datasource(_server()).multilingualSearch(
       query: 'def',

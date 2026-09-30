@@ -14,7 +14,9 @@ import 'package:go_router/go_router.dart';
 class ReaderAppBarOverlay extends ConsumerWidget {
   final ReaderParams params;
   final int? colorIndex;
-  final VoidCallback onSearchPressed;
+
+  /// Opens in-text search. The button is hidden when null.
+  final VoidCallback? onSearchPressed;
 
   /// Opens the Languages drawer (original + translation).
   final VoidCallback onLanguagesPressed;
@@ -36,7 +38,7 @@ class ReaderAppBarOverlay extends ConsumerWidget {
     super.key,
     required this.params,
     this.colorIndex,
-    required this.onSearchPressed,
+    this.onSearchPressed,
     required this.onLanguagesPressed,
     this.onMorePressed,
     this.onFontSizePressed,
@@ -79,7 +81,8 @@ class ReaderAppBarOverlay extends ConsumerWidget {
       actions: [
         if (liveSyncToggle != null) liveSyncToggle!,
         if (prayerRequestsButton != null) prayerRequestsButton!,
-        ReaderSearchButton(onPressed: onSearchPressed),
+        if (onSearchPressed != null)
+          ReaderSearchButton(onPressed: onSearchPressed!),
         if (onFontSizePressed != null)
           ReaderFontSizeButton(onPressed: onFontSizePressed!),
         ReaderLanguagesButton(onPressed: onLanguagesPressed),

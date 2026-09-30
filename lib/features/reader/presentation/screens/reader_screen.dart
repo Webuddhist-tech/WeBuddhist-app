@@ -766,7 +766,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       colorIndex: widget.colorIndex,
       liveSyncToggle: liveSyncToggle,
       prayerRequestsButton: prayerRequestsButton,
-      onSearchPressed: () => _handleSearch(context, state),
+      // Picking a result replaces the route without the event, which drops
+      // the live sync, so the reader that follows a recitation has no search.
+      onSearchPressed:
+          liveEventId == null ? () => _handleSearch(context, state) : null,
       onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
       // The event page already offers share and offline recitations, so the
       // menu goes and font size gets its own button.

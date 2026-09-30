@@ -38,7 +38,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onboarding_continue => 'जारी रखें';
 
   @override
-  String get onboarding_first_question => 'अपनी भाषा चुनें:';
+  String get onboarding_first_question => 'अपनी भाषा चुनें';
+
+  @override
+  String get onboarding_language_subtitle => 'यह ऐप की भाषा सेट करता है';
 
   @override
   String get onboarding_choose_option => 'कम से कम एक चुनें:';
@@ -47,46 +50,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onboarding_all_set => 'सब तैयार है';
 
   @override
-  String get onboarding_all_set_description =>
-      'आपके अभ्यास के लिए यह तैयार है।';
+  String get onboarding_all_set_description => 'आपके लिए यह तैयार है:';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'जाप, संचय, ध्यान और अध्ययन योजनाएँ चुनने के लिए';
+  String get onboarding_all_set_practice_title => 'अभ्यास';
 
   @override
-  String get onboarding_all_set_feature_reminders =>
-      'कोमल दैनिक अनुस्मारक, जब भी आप तैयार हों';
+  String get onboarding_all_set_practice_body => 'योजनाएँ, जाप, माला और ध्यान';
 
   @override
-  String get onboarding_begin_practice => 'अपने पहले अभ्यास खोजें';
+  String get onboarding_all_set_connect_title => 'जुड़ें';
 
   @override
-  String get onboarding_2_title => 'अगला, यह इस तरह काम करता है।';
-
-  @override
-  String get onboarding_2_subtitle => 'आदत बनाने के तीन छोटे कदम';
-
-  @override
-  String get onboarding_2_step1_title => 'अपने अभ्यास चुनें';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'जाप करें, मंत्र गिनें, ध्यान टाइमर सेट करें, या अपनी परंपरा की अध्ययन योजना का पालन करें।';
-
-  @override
-  String get onboarding_2_step2_title => 'इन्हें अपने दिन में जोड़ें';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'एक दैनिक दिनचर्या बनाएँ और हम इसे जारी रखने के लिए कोमल अनुस्मारक भेजेंगे।';
-
-  @override
-  String get onboarding_2_step3_title => 'हर दिन कुछ मिनट अभ्यास करें';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'एक पल भी मायने रखता है। दिन-प्रतिदिन, आपका अभ्यास बढ़ता जाएगा।';
+  String get onboarding_all_set_connect_body =>
+      'समूह, कार्यक्रम, समाचार और चैट';
 
   @override
   String get home_recitation => 'पाठ';
@@ -668,21 +645,18 @@ class AppLocalizationsHi extends AppLocalizations {
       'आप किन परंपराओं\nका पालन करते हैं?';
 
   @override
-  String get onboarding_tradition_title => 'आप बुद्ध का अनुसरण कैसे करते हैं?';
+  String get onboarding_tradition_title =>
+      'आप बुद्ध की शिक्षाओं का अनुसरण कैसे करते हैं?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'हम आपको आपके मार्ग की प्रथाएं और ग्रंथ दिखाएंगे। आप इसे ऐप सेटिंग्स में कभी भी बदल सकते हैं।';
+      'अपनी सामग्री के लिए एक या अधिक परंपराएँ चुनें। आप इसे सेटिंग्स में कभी भी बदल सकते हैं।';
 
   @override
   String get onboarding_tradition_option_intro => 'के माध्यम से:';
 
   @override
   String get onboarding_tradition_show_all_title => 'मुझे सब कुछ दिखाएँ';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'हर मार्ग की साधनाएँ और ग्रंथ';
 
   @override
   String get onboarding_skip_for_now => 'अभी के लिए छोड़ें';
@@ -2955,6 +2929,20 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_edit_request => 'Edit prayer request';
+
+  @override
+  String get event_prayer_delete_title => 'Delete prayer request?';
+
+  @override
+  String get event_prayer_delete_body =>
+      'It will be removed for everyone in this event.';
+
+  @override
+  String get event_prayer_delete_failed =>
+      'The prayer request couldn\'t be deleted.';
 
   @override
   String get event_prayer_choose_intention => 'Choose an intention';

@@ -84,7 +84,8 @@ class GroupNotificationPreferencesNotifier
   final UpdateGroupNotificationPreferencesUseCase _update;
 
   /// Last value the backend confirmed per toggle, the revert target.
-  GroupNotificationPreferences _persisted = GroupNotificationPreferences.allOn;
+  GroupNotificationPreferences _persisted =
+      GroupNotificationPreferences.defaults;
 
   /// Value the next PATCH for a toggle should carry, if one is waiting.
   final Map<GroupNotificationToggle, bool> _pending = {};
@@ -105,7 +106,7 @@ class GroupNotificationPreferencesNotifier
        _update = update,
        super(
          const GroupNotificationPreferencesState(
-           preferences: GroupNotificationPreferences.allOn,
+           preferences: GroupNotificationPreferences.defaults,
            isLoading: true,
          ),
        ) {

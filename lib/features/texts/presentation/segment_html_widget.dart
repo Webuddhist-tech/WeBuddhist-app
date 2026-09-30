@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Yigchung text size relative to the verse.
+const double _yigchungScale = 0.85;
 
 class SegmentHtmlWidget extends ConsumerStatefulWidget {
   final String htmlContent;
@@ -42,9 +47,16 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
   @override
   Widget build(BuildContext context) {
     int footnoteCounter = 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Html(
       data: widget.htmlContent,
       style: {
+        ".$libraryYigchungClass": Style(
+          color:
+              isDark ? AppColors.readerYigchungDark : AppColors.readerYigchung,
+          fontStyle: FontStyle.italic,
+          fontSize: FontSize(widget.fontSize * _yigchungScale),
+        ),
         ".footnote-marker": Style(
           color: const Color(0xFF007bff),
           fontWeight: FontWeight.w700,

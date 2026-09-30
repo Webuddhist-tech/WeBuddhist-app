@@ -9,9 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 /// Records update calls and lets each one be held open so the test controls
-/// the order in which responses land.
+/// the order in which responses land. Starts as a member who never touched
+/// the toggles: chat off, content on.
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
-  GroupNotificationPreferences server = GroupNotificationPreferences.allOn;
+  GroupNotificationPreferences server = GroupNotificationPreferences.defaults;
   Failure? getFailure;
   Failure? updateFailure;
   int getCalls = 0;
@@ -74,7 +75,10 @@ void main() {
               );
         final notifier = _notifier(repo);
         expect(notifier.state.isLoading, isTrue);
-        expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
+        expect(
+          notifier.state.preferences,
+          GroupNotificationPreferences.defaults,
+        );
 
         await _settle();
         expect(notifier.state.isLoading, isFalse);
@@ -128,42 +132,44 @@ void main() {
             _FakeRepository()
               ..getHold = Completer<void>()
               ..server = const GroupNotificationPreferences(
-                chat: true,
+                chat: false,
                 content: false,
               );
         final notifier = _notifier(repo);
 
-        final flip = notifier.setChat(false);
+        final flip = notifier.setChat(true);
         repo.release(0);
         expect(await flip, isTrue);
-        expect(notifier.state.preferences.chat, isFalse);
+        expect(notifier.state.preferences.chat, isTrue);
 
         repo.getHold!.complete();
         await _settle();
         expect(notifier.state.isLoading, isFalse);
         expect(
           notifier.state.preferences,
-          const GroupNotificationPreferences(chat: false, content: false),
+          const GroupNotificationPreferences(chat: true, content: false),
         );
       },
     );
   });
 
   group('flipping', () {
-    test('flips optimistically and sends only the changed flag', () async {
+    test('opting in to chat flips optimistically and sends only chat', () async {
       final repo = _FakeRepository();
       final notifier = _notifier(repo);
       await _settle();
+      expect(notifier.state.preferences.chat, isFalse);
 
-      final flip = notifier.setContent(false);
-      expect(notifier.state.preferences.content, isFalse);
-      expect(repo.updates, [(chat: null, content: false)]);
+      final flip = notifier.setChat(true);
+      expect(notifier.state.preferences.chat, isTrue);
+      expect(repo.updates, [(chat: true, content: null)]);
 
       repo.release(0);
       expect(await flip, isTrue);
+      expect(repo.server.chat, isTrue);
       expect(
         notifier.state.preferences,
-        const GroupNotificationPreferences(chat: true, content: false),
+        const GroupNotificationPreferences(chat: true, content: true),
       );
     });
 
@@ -171,19 +177,20 @@ void main() {
       final repo = _FakeRepository();
       final notifier = _notifier(repo);
       await _settle();
-      expect(await notifier.setChat(true), isTrue);
+      expect(await notifier.setChat(false), isTrue);
+      expect(await notifier.setContent(true), isTrue);
       expect(repo.updates, isEmpty);
     });
 
-    test('reverts only the failed flag to the last confirmed value', () async {
+    test('a failed opt-in falls back to the default, chat off', () async {
       final repo = _FakeRepository()..updateFailure = const NetworkFailure('x');
       final notifier = _notifier(repo);
       await _settle();
 
-      final flip = notifier.setChat(false);
+      final flip = notifier.setChat(true);
       repo.release(0);
       expect(await flip, isFalse);
-      expect(notifier.state.preferences, GroupNotificationPreferences.allOn);
+      expect(notifier.state.preferences, GroupNotificationPreferences.defaults);
       expect(notifier.state.lastFailure, isA<NetworkFailure>());
     });
 
@@ -194,11 +201,11 @@ void main() {
         final notifier = _notifier(repo);
         await _settle();
 
-        final chatFlip = notifier.setChat(false);
+        final chatFlip = notifier.setChat(true);
         final contentFlip = notifier.setContent(false);
         expect(
           notifier.state.preferences,
-          const GroupNotificationPreferences(chat: false, content: false),
+          const GroupNotificationPreferences(chat: true, content: false),
         );
 
         repo.updateFailure = const ServerFailure('chat failed');
@@ -206,7 +213,7 @@ void main() {
         expect(await chatFlip, isFalse);
         expect(
           notifier.state.preferences,
-          const GroupNotificationPreferences(chat: true, content: false),
+          const GroupNotificationPreferences(chat: false, content: false),
         );
 
         repo.updateFailure = null;
@@ -214,7 +221,7 @@ void main() {
         expect(await contentFlip, isTrue);
         expect(
           notifier.state.preferences,
-          const GroupNotificationPreferences(chat: true, content: false),
+          const GroupNotificationPreferences(chat: false, content: false),
         );
       },
     );
@@ -224,13 +231,13 @@ void main() {
       final notifier = _notifier(repo);
       await _settle();
 
-      final failed = notifier.setChat(false);
+      final failed = notifier.setChat(true);
       repo.release(0);
       await failed;
       expect(notifier.state.lastFailure, isNotNull);
 
       repo.updateFailure = null;
-      final ok = notifier.setChat(false);
+      final ok = notifier.setChat(true);
       expect(notifier.state.lastFailure, isNull);
       repo.release(1);
       await ok;
@@ -245,26 +252,26 @@ void main() {
         final notifier = _notifier(repo);
         await _settle();
 
-        final first = notifier.setChat(false);
-        final second = notifier.setChat(true);
-        final third = notifier.setChat(false);
-        expect(notifier.state.preferences.chat, isFalse);
+        final first = notifier.setChat(true);
+        final second = notifier.setChat(false);
+        final third = notifier.setChat(true);
+        expect(notifier.state.preferences.chat, isTrue);
         // Only the first request has gone out; the rest wait on it.
-        expect(repo.updates, [(chat: false, content: null)]);
+        expect(repo.updates, [(chat: true, content: null)]);
 
         repo.release(0);
         await _settle();
         // Intermediate values collapse: the queue carries only the latest.
         expect(repo.updates, [
-          (chat: false, content: null),
-          (chat: false, content: null),
+          (chat: true, content: null),
+          (chat: true, content: null),
         ]);
-        expect(notifier.state.preferences.chat, isFalse);
+        expect(notifier.state.preferences.chat, isTrue);
 
         repo.release(1);
         expect(await Future.wait([first, second, third]), [true, true, true]);
-        expect(repo.server.chat, isFalse);
-        expect(notifier.state.preferences.chat, isFalse);
+        expect(repo.server.chat, isTrue);
+        expect(notifier.state.preferences.chat, isTrue);
       },
     );
 
@@ -273,17 +280,17 @@ void main() {
       final notifier = _notifier(repo);
       await _settle();
 
-      notifier.setChat(false);
-      final last = notifier.setChat(true);
-      expect(notifier.state.preferences.chat, isTrue);
+      notifier.setChat(true);
+      final last = notifier.setChat(false);
+      expect(notifier.state.preferences.chat, isFalse);
 
       repo.release(0);
       await _settle();
-      expect(repo.updates.last, (chat: true, content: null));
+      expect(repo.updates.last, (chat: false, content: null));
       repo.release(1);
       expect(await last, isTrue);
-      expect(repo.server.chat, isTrue);
-      expect(notifier.state.preferences.chat, isTrue);
+      expect(repo.server.chat, isFalse);
+      expect(notifier.state.preferences.chat, isFalse);
     });
 
     test('a superseded failure does not revert a newer queued value', () async {
@@ -291,32 +298,28 @@ void main() {
       final notifier = _notifier(repo);
       await _settle();
 
-      notifier.setChat(false);
-      final last = notifier.setChat(true);
+      notifier.setChat(true);
+      final last = notifier.setChat(false);
 
       repo.updateFailure = const ServerFailure('first failed');
       repo.release(0);
       await _settle();
       // The failure belongs to a write already replaced; the switch keeps
       // the user's latest choice and no error is reported yet.
-      expect(notifier.state.preferences.chat, isTrue);
+      expect(notifier.state.preferences.chat, isFalse);
       expect(notifier.state.lastFailure, isNull);
 
       repo.updateFailure = null;
       repo.release(1);
       expect(await last, isTrue);
-      expect(notifier.state.preferences.chat, isTrue);
+      expect(notifier.state.preferences.chat, isFalse);
     });
 
     test('a superseded success moves the revert target', () async {
-      // Chat starts off. Enabling succeeds but is superseded by a disable
-      // that then fails: the backend holds "on", so the switch must show on.
-      final repo =
-          _FakeRepository()
-            ..server = const GroupNotificationPreferences(
-              chat: false,
-              content: true,
-            );
+      // Chat starts off, the default. Enabling succeeds but is superseded by
+      // a disable that then fails: the backend holds "on", so the switch
+      // must show on.
+      final repo = _FakeRepository();
       final notifier = _notifier(repo);
       await _settle();
       expect(notifier.state.preferences.chat, isFalse);
@@ -341,11 +344,11 @@ void main() {
       final notifier = _notifier(repo);
       await _settle();
 
-      notifier.setChat(false);
+      notifier.setChat(true);
       notifier.setContent(false);
       // Both first writes go out at once; they never block each other.
       expect(repo.updates, [
-        (chat: false, content: null),
+        (chat: true, content: null),
         (chat: null, content: false),
       ]);
     });

@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/library/data/models/library_search_result
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
+import 'package:flutter_pecha/features/library/data/models/library_yigchung.dart';
 import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
 
 /// Composes the library API calls into what the reader and chant list need.
@@ -18,11 +19,15 @@ class LibraryRepository {
     this.relatedPageSize = 20,
     this.maxPages = 1000,
     this.segmentCacheSize = 6,
+    this.yigchungTimeout = const Duration(seconds: 5),
   }) : _datasource = datasource;
 
   final LibraryRemoteDatasource _datasource;
   final int segmentPageSize;
   final int relatedPageSize;
+
+  /// How long a page waits for its yigchung marks before opening without.
+  final Duration yigchungTimeout;
 
   /// Upper bound on pages walked for one list (500,000 segments at 500).
   final int maxPages;
@@ -41,6 +46,7 @@ class LibraryRepository {
   final Map<String, Future<LibrarySegmentResources>> _resources = {};
   final Map<String, Future<LibraryEdition>> _resolvedEditions = {};
   final Map<String, Future<List<LibraryTocSection>>> _tocs = {};
+  final Map<String, Future<List<LibraryLineSpan>>> _yigchungs = {};
   Future<Map<String, String>>? _languageNames;
 
   Future<LibraryTextPage> fetchChants({
@@ -150,6 +156,32 @@ class LibraryRepository {
     });
   }
 
+  /// Spans of [editionId]'s yigchung (small text) runs, sorted by start;
+  /// empty when it has none.
+  Future<List<LibraryLineSpan>> getYigchungs(String editionId) {
+    return _memo(_yigchungs, editionId, capacity: segmentCacheSize, () async {
+      final List<LibraryYigchung> yigchungs;
+      try {
+        yigchungs = await _datasource.fetchYigchungs(editionId);
+      } catch (e) {
+        if (_isNotFound(e)) return const [];
+        rethrow;
+      }
+      return yigchungs.map((y) => y.span).toList(growable: false)
+        ..sort((a, b) => a.start.compareTo(b.start));
+    });
+  }
+
+  /// [editionId]'s marks, or null when they fail; never throws.
+  Future<List<LibraryLineSpan>?> _yigchungsOrNull(String editionId) async {
+    try {
+      return await getYigchungs(editionId);
+    } catch (e) {
+      _logger.warning('Yigchungs for $editionId failed', e);
+      return null;
+    }
+  }
+
   /// Every version of [textId]'s work: the root first, then translations
   /// level by level. Translations chain (English of a Tibetan that is itself
   /// a translation of a Sanskrit root), so the walk goes up to the top and
@@ -249,11 +281,28 @@ class LibraryRepository {
     }
 
     final spanStart = page.first.spanStart!;
+    final spanEnd = page.last.spanEnd!;
+    // Marks load alongside the content and get [yigchungTimeout] in all, so
+    // ones that land while the content is still loading are kept. A slow
+    // fetch keeps going so later pages get them.
+    final clock = Stopwatch()..start();
+    final yigchungsFuture = _yigchungsOrNull(editionId);
     final content = await _datasource.fetchEditionContent(
       editionId,
       spanStart: spanStart,
-      spanEnd: page.last.spanEnd!,
+      spanEnd: spanEnd,
     );
+    final left = yigchungTimeout - clock.elapsed;
+    final yigchungs = await yigchungsFuture.timeout(
+      left.isNegative ? Duration.zero : left,
+      onTimeout: () {
+        _logger.warning('Yigchungs for $editionId are slow; page opens bare');
+        return null;
+      },
+    );
+    final marks = (yigchungs ?? const <LibraryLineSpan>[])
+        .where((y) => y.end > spanStart && y.start < spanEnd)
+        .toList(growable: false);
     final numbers = segmentNumbers(segments);
     return LibraryContentWindow(
       editionId: editionId,
@@ -269,6 +318,12 @@ class LibraryRepository {
               segments[i].lines,
               spanStart: spanStart,
             ),
+            html: sliceLibraryHtml(
+              content,
+              segments[i].lines,
+              spanStart: spanStart,
+              yigchungs: marks,
+            ),
             spanStart: segments[i].spanStart!,
             spanEnd: segments[i].spanEnd!,
           ),
@@ -276,6 +331,7 @@ class LibraryRepository {
       currentPosition: start + 1,
       lastPosition: end,
       totalSegments: total,
+      isPartial: yigchungs == null,
     );
   }
 

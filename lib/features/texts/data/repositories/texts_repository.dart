@@ -50,15 +50,23 @@ class TextsRepository {
       language: language,
       size: size,
     );
+    final previousKey = CacheKeys.textDetailsPrevious(
+      textId: textId,
+      contentId: contentId,
+      versionId: versionId,
+      segmentId: segmentId,
+      direction: direction,
+      language: language,
+      size: size,
+    );
     final isOnline = _connectivityService.isOnline;
 
     try {
       // Skip cache if force refresh requested AND we're online
       if (!forceRefresh || !isOnline) {
-        final cacheResult = _cacheService.get<ReaderResponse>(
+        final cacheResult = _readCachedPage(
           key: cacheKey,
-          box: _cacheService.textContentBox,
-          fromJson: ReaderResponse.fromJson,
+          previousKey: previousKey,
           ignoreExpiry: !isOnline, // Return expired data if offline
         );
 
@@ -67,8 +75,10 @@ class TextsRepository {
             'Text details cache hit for: $textId (offline: ${!isOnline})',
           );
 
-          // If stale and online, refresh in background
-          if (cacheResult.needsRefresh && isOnline) {
+          // If stale, or saved without its yigchung marks, and online,
+          // refresh in background; the saved page shows meanwhile.
+          if ((cacheResult.needsRefresh || cacheResult.data!.isPartial) &&
+              isOnline) {
             _refreshTextDetailsInBackground(
               textId,
               contentId,
@@ -114,10 +124,9 @@ class TextsRepository {
     } catch (e) {
       // If network fails, try to return cached data (even expired)
       if (e is! OfflineException) {
-        final fallbackCache = _cacheService.get<ReaderResponse>(
+        final fallbackCache = _readCachedPage(
           key: cacheKey,
-          box: _cacheService.textContentBox,
-          fromJson: ReaderResponse.fromJson,
+          previousKey: previousKey,
           ignoreExpiry: true,
         );
 
@@ -130,6 +139,28 @@ class TextsRepository {
       _logger.error('Error fetching text details', e);
       return Left(ExceptionMapper.map(e, context: 'Failed to load text content'));
     }
+  }
+
+  /// The page under [key]; when the network is not an option ([ignoreExpiry])
+  /// and it is missing, the page as saved before the last key bump.
+  CacheResult<ReaderResponse> _readCachedPage({
+    required String key,
+    required String previousKey,
+    required bool ignoreExpiry,
+  }) {
+    final current = _cacheService.get<ReaderResponse>(
+      key: key,
+      box: _cacheService.textContentBox,
+      fromJson: ReaderResponse.fromJson,
+      ignoreExpiry: ignoreExpiry,
+    );
+    if (current.isHit || !ignoreExpiry) return current;
+    return _cacheService.get<ReaderResponse>(
+      key: previousKey,
+      box: _cacheService.textContentBox,
+      fromJson: ReaderResponse.fromJson,
+      ignoreExpiry: true,
+    );
   }
 
   Future<ReaderResponse> _fetchAndCacheTextDetails(
@@ -151,6 +182,19 @@ class TextsRepository {
       language: language,
       size: size,
     );
+
+    // A page without its marks never replaces a live one that has them: a
+    // slower refresh finishing last would otherwise wipe them.
+    if (result.isPartial) {
+      final saved = _cacheService.get<ReaderResponse>(
+        key: cacheKey,
+        box: _cacheService.textContentBox,
+        fromJson: ReaderResponse.fromJson,
+      );
+      if (saved.isHit && saved.data != null && !saved.data!.isPartial) {
+        return saved.data!;
+      }
+    }
 
     // Cache the result
     await _cacheService.put<ReaderResponse>(

@@ -39,7 +39,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get onboarding_continue => 'Үргэлжлүүлэх';
 
   @override
-  String get onboarding_first_question => 'Хэлээ сонгоно уу:';
+  String get onboarding_first_question => 'Хэлээ сонгоно уу';
+
+  @override
+  String get onboarding_language_subtitle => 'Энэ нь аппын хэлийг тохируулна';
 
   @override
   String get onboarding_choose_option => 'Дор хаяж нэгийг сонгоно уу:';
@@ -48,46 +51,21 @@ class AppLocalizationsMn extends AppLocalizations {
   String get onboarding_all_set => 'Бүх зүйл бэлэн боллоо';
 
   @override
-  String get onboarding_all_set_description =>
-      'Таны дадлагад бэлэн зүйлс энд байна.';
+  String get onboarding_all_set_description => 'Танд хүлээж буй зүйлс:';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'Шүтэл залгах, хуримтлал, бясалгал, сургалтын төлөвлөгөөнөөс сонгох боломжтой';
+  String get onboarding_all_set_practice_title => 'Дадлага';
 
   @override
-  String get onboarding_all_set_feature_reminders =>
-      'Зөөлөн өдөр тутмын сануулагч, та бэлэн болох үедээ';
+  String get onboarding_all_set_practice_body =>
+      'Төлөвлөгөө, уншлага, эрхи, бясалгал';
 
   @override
-  String get onboarding_begin_practice => 'Эхний дадлагаа олох';
+  String get onboarding_all_set_connect_title => 'Холбогдох';
 
   @override
-  String get onboarding_2_title => 'Дараагийн алхам — энэ хэрхэн ажилладаг вэ.';
-
-  @override
-  String get onboarding_2_subtitle => 'Дадал хэвшүүлэх гурван жижиг алхам';
-
-  @override
-  String get onboarding_2_step1_title => 'Дадлагаа сонгоно уу';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'Шүтэл залгах, мантра тоолох, бясалгалын цаг тохируулах эсвэл уламжлалаасаа сургалтын төлөвлөгөөг дагах.';
-
-  @override
-  String get onboarding_2_step2_title => 'Өдөртөө нэмнэ үү';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'Өдөр тутмын хэвшил бий болгоод, үргэлжлүүлэхэд тань зөөлөн сануулагч илгээнэ.';
-
-  @override
-  String get onboarding_2_step3_title => 'Өдөр бүр хэдхэн минут дадлага хий';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'Нэг мөч ч чухал. Өдөр өндөр дадлага тань өснө.';
+  String get onboarding_all_set_connect_body =>
+      'Бүлэг, арга хэмжээ, мэдээ, чат';
 
   @override
   String get home_recitation => 'Уншлага';
@@ -668,21 +646,17 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get onboarding_tradition_title =>
-      'Та Бурхан багшийг хэрхэн дагадаг вэ?';
+      'Та Бурхан багшийн сургаалийг хэрхэн дагадаг вэ?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'Бид танд өөрийн сонгосон замын дагуух бясалгал, практик болон судар бичгүүдийг харуулах болно. Та үүнийг аппликейшний тохиргоо хэсгээс хэдийд ч өөрчлөх боломжтой.';
+      'Агуулгадаа нэг буюу хэд хэдэн уламжлал сонгоно уу. Тохиргооноос хэзээ ч өөрчилж болно.';
 
   @override
   String get onboarding_tradition_option_intro => 'Дараах:';
 
   @override
   String get onboarding_tradition_show_all_title => 'Бүгдийг харуулах';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'Бүх замын дадлага, бичиг';
 
   @override
   String get onboarding_skip_for_now => 'Одоохондоо алгасах';
@@ -2963,6 +2937,20 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_edit_request => 'Edit prayer request';
+
+  @override
+  String get event_prayer_delete_title => 'Delete prayer request?';
+
+  @override
+  String get event_prayer_delete_body =>
+      'It will be removed for everyone in this event.';
+
+  @override
+  String get event_prayer_delete_failed =>
+      'The prayer request couldn\'t be deleted.';
 
   @override
   String get event_prayer_choose_intention => 'Choose an intention';

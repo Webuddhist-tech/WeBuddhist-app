@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_p
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_cover_image.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/activity_list.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/missed_days_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/plan_details.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -120,9 +121,15 @@ Future<void> _pumpLiveEventDetails(
   Completer<Either<Failure, GroupEvent>>? stream,
   // Answers every fetch, including the retries a started event makes.
   Future<Either<Failure, GroupEvent>> Function()? fetch,
-}) async {
+  // Null opens the same plan outside any event.
+  String? eventId = 'event-1',
+  // Started today by default, so no missed-days badge crowds the narrow row.
+  DateTime? startDate,
+  Map<int, bool> completion = const {1: false},
   // Phone portrait: the pinned 16:9 stream must leave room for the list.
-  tester.view.physicalSize = const Size(390, 844);
+  Size viewSize = const Size(390, 844),
+}) async {
+  tester.view.physicalSize = viewSize;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
 
@@ -145,7 +152,7 @@ Future<void> _pumpLiveEventDetails(
           (ref, params) => Stream.value(Right(day)),
         ),
         userPlanDaysCompletionStatusProvider.overrideWith(
-          (ref, planId) => Stream.value(const Right({1: false})),
+          (ref, planId) => Stream.value(Right(completion)),
         ),
         planDaysByPlanIdFutureProvider.overrideWith(
           (ref, planId) => Stream.value(const Right(<PlanDaysModel>[])),
@@ -164,9 +171,8 @@ Future<void> _pumpLiveEventDetails(
         home: PlanDetails(
           plan: _makePlan(),
           selectedDay: 1,
-          // Started today, so no missed-days badge crowds the narrow row.
-          startDate: DateTime.now(),
-          eventId: 'event-1',
+          startDate: startDate ?? DateTime.now(),
+          eventId: eventId,
           showLiveStream: showLiveStream,
         ),
       ),
@@ -414,5 +420,61 @@ void main() {
     expect(find.text('Tara of the day'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 1));
+  });
+
+  // Three scheduled days went by unticked; today is Day 4. Stepped back by
+  // calendar date: 72 hours can land on another date across a DST change.
+  final today = DateTime.now();
+  final threeDaysIn = DateTime(today.year, today.month, today.day - 3);
+  const threeMissed = {1: false, 2: false, 3: false};
+
+  testWidgets('an online attendee sees no missed days on the event page', (
+    tester,
+  ) async {
+    await _pumpLiveEventDetails(
+      tester,
+      startDate: threeDaysIn,
+      completion: threeMissed,
+    );
+    await _settle(tester);
+
+    expect(find.text('Day 1 of 21'), findsOneWidget);
+    expect(find.byType(MissedDaysBadge), findsNothing);
+    expect(find.textContaining('missed'), findsNothing);
+  });
+
+  testWidgets('an in-person attendee sees no missed days on the event page', (
+    tester,
+  ) async {
+    await _pumpLiveEventDetails(
+      tester,
+      showLiveStream: false,
+      startDate: threeDaysIn,
+      completion: threeMissed,
+    );
+    await _settle(tester);
+
+    expect(find.byType(PlanCoverImage), findsOneWidget);
+    expect(find.text('Day 1 of 21'), findsOneWidget);
+    expect(find.byType(MissedDaysBadge), findsNothing);
+    expect(find.textContaining('missed'), findsNothing);
+  });
+
+  testWidgets('the same plan outside an event still counts its missed days', (
+    tester,
+  ) async {
+    await _pumpLiveEventDetails(
+      tester,
+      eventId: null,
+      startDate: threeDaysIn,
+      completion: threeMissed,
+      // The square test glyphs make the title and badge overflow a phone.
+      viewSize: const Size(600, 844),
+    );
+    await _settle(tester);
+
+    expect(find.text('Day 1 of 21'), findsOneWidget);
+    expect(find.byType(MissedDaysBadge), findsOneWidget);
+    expect(find.text('3 missed days'), findsOneWidget);
   });
 }

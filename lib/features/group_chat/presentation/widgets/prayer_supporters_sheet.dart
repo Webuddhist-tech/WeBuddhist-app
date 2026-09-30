@@ -17,17 +17,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class PrayerSupportersSheet extends ConsumerStatefulWidget {
   const PrayerSupportersSheet({
     super.key,
+    required this.eventId,
     required this.request,
     required this.displayName,
     required this.isOwn,
   });
 
+  final String eventId;
+
+  /// The request as it was when opened; an edit made while the sheet is up
+  /// is picked up from the event's request list.
   final ChatMessageDTO request;
   final String displayName;
   final bool isOwn;
 
   static Future<void> show(
     BuildContext context, {
+    required String eventId,
     required ChatMessageDTO request,
     required String displayName,
     required bool isOwn,
@@ -40,6 +46,7 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder:
           (_) => PrayerSupportersSheet(
+            eventId: eventId,
             request: request,
             displayName: displayName,
             isOwn: isOwn,
@@ -79,6 +86,17 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
             .loadMore(),
       );
     }
+  }
+
+  ChatMessageDTO _currentRequest() {
+    final id = widget.request.id;
+    return ref.watch(
+          prayerRequestsProvider(widget.eventId).select(
+            (state) =>
+                state.requests.where((request) => request.id == id).firstOrNull,
+          ),
+        ) ??
+        widget.request;
   }
 
   @override
@@ -177,6 +195,8 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
     bool isDark,
   ) {
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    // Watched here, in build: the item builder below runs during layout.
+    final request = _currentRequest();
     final count = state.hasLoaded ? state.total : widget.request.prayerCount;
     final showError =
         state.error != null && state.supporters.isEmpty && state.hasLoaded;
@@ -194,7 +214,7 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _RequestCard(
-                request: widget.request,
+                request: request,
                 title:
                     widget.isOwn
                         ? context.l10n.event_prayer_your_request

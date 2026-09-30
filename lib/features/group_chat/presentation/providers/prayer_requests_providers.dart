@@ -94,6 +94,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// Messages with a pray/un-pray round trip in flight.
   final Set<String> _toggling = {};
 
+  /// A loaded row was deleted while a page was being fetched, so that page
+  /// started one row late on the server and has to be read again.
+  bool _pageShifted = false;
+
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
 
   /// Resolves the room, then fetches its first page of prayer requests.
@@ -189,6 +193,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     );
     if (!mounted) return;
 
+    if (_pageShifted) {
+      _pageShifted = false;
+      state = state.copyWith(isLoadingMore: false);
+      // `skip` was already pulled back by the deletion, so this rereads
+      // from the row the shifted page missed. A failed page retries too.
+      return loadMore();
+    }
+
     result.fold(
       (failure) {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
@@ -256,6 +268,65 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     return result;
   }
 
+  /// Edits one of the viewer's own requests in place. Only body and intention
+  /// are taken from the server's answer, so prayer counts stay as they are.
+  Future<Either<Failure, ChatMessageDTO>> edit(
+    String messageId, {
+    required String body,
+    required ChatPrayerIntentionDTO intention,
+  }) async {
+    final roomId = state.roomId;
+    final current = _find(messageId);
+    if (roomId == null || current == null) {
+      return const Left(NotFoundFailure('Prayer request not found'));
+    }
+    final result = await _repository.updateMessage(
+      roomId,
+      messageId: messageId,
+      body: body,
+      intention: intention.slug,
+    );
+    return result.map((updated) {
+      final newBody = updated?.body ?? body;
+      final newIntention = updated?.intention ?? intention;
+      // Patched onto whatever the row is now, not the copy from before the
+      // round trip: a prayer that landed meanwhile must survive the save.
+      var message = current.copyWith(body: newBody, intention: newIntention);
+      if (mounted) {
+        _update(messageId, (request) {
+          message = request.copyWith(body: newBody, intention: newIntention);
+          return message;
+        });
+      }
+      return message;
+    });
+  }
+
+  /// A `message_updated` broadcast: another device or member's edit.
+  void applyEdit(ChatMessageDTO message) {
+    if (!_isLive(message)) return;
+    _update(
+      message.id,
+      (request) =>
+          request.copyWith(body: message.body, intention: message.intention),
+    );
+  }
+
+  /// Deletes one of the viewer's own requests for everyone, then drops it
+  /// locally; the socket echo finds nothing left to remove.
+  Future<Either<Failure, Unit>> delete(String messageId) async {
+    final roomId = state.roomId;
+    if (roomId == null) {
+      return const Left(NotFoundFailure('Prayer request not found'));
+    }
+    final result = await _repository.deleteMessage(
+      roomId,
+      messageId: messageId,
+    );
+    if (mounted) result.fold((_) {}, (_) => applyDeletion(messageId));
+    return result;
+  }
+
   /// Inserts a prayer request that arrived over the socket or came back from
   /// a send. Anything else in the room is ignored here.
   void appendLive(ChatMessageDTO message) {
@@ -272,6 +343,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   void applyDeletion(String messageId) {
     if (!state.requests.any((request) => request.id == messageId)) return;
+    if (state.isLoadingMore) _pageShifted = true;
     state = state.copyWith(
       requests:
           state.requests.where((request) => request.id != messageId).toList(),
@@ -595,10 +667,10 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
 
 /// Live prayer-request count per event, kept by [PrayerRequestsNotifier] so
 /// the chip on the event screen moves with the sheet instead of waiting for
-/// the next event fetch. Null until the sheet has loaded once.
-final prayerRequestCountProvider = StateProvider.family<int?, String>(
-  (ref, eventId) => null,
-);
+/// the next event fetch. Null until the sheet has loaded once. Lives only
+/// while a chip watches it, so a later visit starts from the server count.
+final prayerRequestCountProvider = StateProvider.autoDispose
+    .family<int?, String>((ref, eventId) => null);
 
 final prayerSupportersProvider = StateNotifierProvider.autoDispose
     .family<PrayerSupportersNotifier, PrayerSupportersState, String>(
