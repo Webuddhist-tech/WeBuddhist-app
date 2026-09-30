@@ -168,7 +168,9 @@ new intention therefore gets its two keys within a week, or at once with a
 manual run; translators fill them in Tolgee and publish Content Delivery. No
 app release is needed. The workflow step is `continue-on-error`: if
 `GET /intentions` is down, the pull and the sync PR still go ahead and the
-keys are created on the next run.
+keys are created on the next run. A final step then fails the run, so a
+failed key creation shows as a red Tolgee Sync run rather than passing
+unnoticed.
 
 ## Keeping ARB and Tolgee in sync
 

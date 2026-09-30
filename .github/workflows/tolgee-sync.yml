@@ -51,7 +51,9 @@ jobs:
 
       - name: 🙏 Create Tolgee keys for prayer intentions
         # Reads the WeBuddhist API. An outage there must not stop the pull and
-        # sync PR below; missing keys are picked up on the next run.
+        # sync PR below; missing keys are picked up on the next run. The last
+        # step turns the run red so a failure here is still seen.
+        id: intentions
         continue-on-error: true
         run: dart run tool/tolgee_sync.dart intentions
 
@@ -106,3 +108,9 @@ jobs:
             - ARB doctor (offline and remote)
             - Tolgee bridge freshness check
             - localization tests
+
+      - name: 🚨 Report failed intention key creation
+        if: steps.intentions.outcome == 'failure'
+        run: |
+          echo "::error::Prayer intention keys were not created; pull and the sync PR still ran."
+          exit 1
