@@ -422,8 +422,10 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  // Three scheduled days went by unticked; today is Day 4.
-  final threeDaysIn = DateTime.now().subtract(const Duration(days: 3));
+  // Three scheduled days went by unticked; today is Day 4. Stepped back by
+  // calendar date: 72 hours can land on another date across a DST change.
+  final today = DateTime.now();
+  final threeDaysIn = DateTime(today.year, today.month, today.day - 3);
   const threeMissed = {1: false, 2: false, 3: false};
 
   testWidgets('an online attendee sees no missed days on the event page', (

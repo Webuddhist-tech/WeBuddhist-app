@@ -50,6 +50,9 @@ jobs:
         run: dart run tool/tolgee_sync.dart push
 
       - name: 🙏 Create Tolgee keys for prayer intentions
+        # Reads the WeBuddhist API. An outage there must not stop the pull and
+        # sync PR below; missing keys are picked up on the next run.
+        continue-on-error: true
         run: dart run tool/tolgee_sync.dart intentions
 
       - name: ⬇️ Pull Tolgee translations
