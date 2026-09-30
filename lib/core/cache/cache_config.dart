@@ -67,9 +67,50 @@ class CacheKeys {
     String? direction,
     String? language,
     int? size,
+  }) => _textDetails(
+    'v7',
+    textId: textId,
+    contentId: contentId,
+    versionId: versionId,
+    segmentId: segmentId,
+    direction: direction,
+    language: language,
+    size: size,
+  );
+
+  /// The same page under the version before, so a page saved before an
+  /// update still opens offline (without what the update added).
+  static String textDetailsPrevious({
+    required String textId,
+    String? contentId,
+    String? versionId,
+    String? segmentId,
+    String? direction,
+    String? language,
+    int? size,
+  }) => _textDetails(
+    'v6',
+    textId: textId,
+    contentId: contentId,
+    versionId: versionId,
+    segmentId: segmentId,
+    direction: direction,
+    language: language,
+    size: size,
+  );
+
+  static String _textDetails(
+    String version, {
+    required String textId,
+    String? contentId,
+    String? versionId,
+    String? segmentId,
+    String? direction,
+    String? language,
+    int? size,
   }) {
     final parts = [
-      'text_details_v7',
+      'text_details_$version',
       textId,
       contentId ?? 'default',
       versionId ?? 'default',

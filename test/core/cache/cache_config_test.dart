@@ -14,6 +14,18 @@ void main() {
       expect(key, 'text_details_v7_t1_default_v1_s1_next_bo');
     });
 
+    test('the previous key differs only in its version', () {
+      final previous = CacheKeys.textDetailsPrevious(
+        textId: 't1',
+        versionId: 'v1',
+        segmentId: 's1',
+        direction: 'next',
+        language: 'bo',
+        size: 45,
+      );
+      expect(previous, 'text_details_v6_t1_default_v1_s1_next_bo_size45');
+    });
+
     test('keeps the legacy key shape for default-sized fetches', () {
       // Entries cached before `size` existed must still resolve.
       final before = CacheKeys.textDetails(textId: 't1');

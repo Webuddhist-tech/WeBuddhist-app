@@ -19,11 +19,15 @@ class LibraryRepository {
     this.relatedPageSize = 20,
     this.maxPages = 1000,
     this.segmentCacheSize = 6,
+    this.yigchungTimeout = const Duration(seconds: 5),
   }) : _datasource = datasource;
 
   final LibraryRemoteDatasource _datasource;
   final int segmentPageSize;
   final int relatedPageSize;
+
+  /// How long a page waits for its yigchung marks before opening without.
+  final Duration yigchungTimeout;
 
   /// Upper bound on pages walked for one list (500,000 segments at 500).
   final int maxPages;
@@ -152,7 +156,8 @@ class LibraryRepository {
     });
   }
 
-  /// Spans of [editionId]'s yigchung (small text) runs; empty when it has none.
+  /// Spans of [editionId]'s yigchung (small text) runs, sorted by start;
+  /// empty when it has none.
   Future<List<LibraryLineSpan>> getYigchungs(String editionId) {
     return _memo(_yigchungs, editionId, capacity: segmentCacheSize, () async {
       final List<LibraryYigchung> yigchungs;
@@ -162,16 +167,26 @@ class LibraryRepository {
         if (_isNotFound(e)) return const [];
         rethrow;
       }
-      return yigchungs.map((y) => y.span).toList(growable: false);
+      return yigchungs.map((y) => y.span).toList(growable: false)
+        ..sort((a, b) => a.start.compareTo(b.start));
     });
   }
 
-  /// The text still reads when its yigchungs cannot be fetched.
-  Future<List<LibraryLineSpan>> _yigchungsOrNone(String editionId) async {
+  /// The marks that touch [spanStart]..[spanEnd]. The page still opens when
+  /// they fail or take longer than [yigchungTimeout]; a slow fetch keeps
+  /// going so later pages get them.
+  Future<List<LibraryLineSpan>> _yigchungsWithin(
+    String editionId, {
+    required int spanStart,
+    required int spanEnd,
+  }) async {
     try {
-      return await getYigchungs(editionId);
+      final all = await getYigchungs(editionId).timeout(yigchungTimeout);
+      return all
+          .where((y) => y.end > spanStart && y.start < spanEnd)
+          .toList(growable: false);
     } catch (e) {
-      _logger.warning('Yigchungs for $editionId failed', e);
+      _logger.warning('Yigchungs for $editionId unavailable', e);
       return const [];
     }
   }
@@ -275,11 +290,16 @@ class LibraryRepository {
     }
 
     final spanStart = page.first.spanStart!;
-    final yigchungsFuture = _yigchungsOrNone(editionId);
+    final spanEnd = page.last.spanEnd!;
+    final yigchungsFuture = _yigchungsWithin(
+      editionId,
+      spanStart: spanStart,
+      spanEnd: spanEnd,
+    );
     final content = await _datasource.fetchEditionContent(
       editionId,
       spanStart: spanStart,
-      spanEnd: page.last.spanEnd!,
+      spanEnd: spanEnd,
     );
     final yigchungs = await yigchungsFuture;
     final numbers = segmentNumbers(segments);

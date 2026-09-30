@@ -26,7 +26,8 @@ List<String> sliceLibraryLines(
 
 /// The same lines as one escaped HTML block (blank lines dropped, `<br>`
 /// between the rest), with the parts inside [yigchungs] wrapped in a
-/// `<span class="yigchung">`. Span ends are exclusive.
+/// `<span class="yigchung">`. Span ends are exclusive; [yigchungs] must be
+/// sorted by start.
 String sliceLibraryHtml(
   String content,
   List<LibraryLineSpan> lines, {
@@ -35,7 +36,6 @@ String sliceLibraryHtml(
 }) {
   if (lines.isEmpty) return '';
   final runes = content.runes.toList(growable: false);
-  final marks = [...yigchungs]..sort((a, b) => a.start.compareTo(b.start));
   final parts = <String>[];
   for (final line in lines) {
     var start = _clamp(line.start - spanStart, 0, runes.length);
@@ -45,7 +45,7 @@ String sliceLibraryHtml(
     start += raw.length - raw.trimLeft().length;
     end -= raw.length - raw.trimRight().length;
     if (start >= end) continue;
-    parts.add(_lineHtml(runes, start, end, spanStart, marks));
+    parts.add(_lineHtml(runes, start, end, spanStart, yigchungs));
   }
   return parts.join('<br>');
 }
@@ -60,6 +60,7 @@ String _lineHtml(
   final buffer = StringBuffer();
   var cursor = start;
   for (final mark in marks) {
+    if (mark.start - spanStart >= end) break;
     final from = _clamp(mark.start - spanStart, cursor, end);
     final to = _clamp(mark.end - spanStart, from, end);
     if (from >= to) continue;

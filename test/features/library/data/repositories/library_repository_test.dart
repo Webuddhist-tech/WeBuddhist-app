@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
@@ -64,19 +66,19 @@ void main() {
   });
 
   group('LibraryRepository.getYigchungs', () {
-    test('returns the spans once per edition', () async {
+    test('returns the spans sorted, once per edition', () async {
       final server = LibraryTestServer({
         '/v2/editions/e1/yigchungs':
             (_) => jsonBody([
               {
-                'span': {'start': 0, 'end': 51},
-                'id': 'y1',
+                'span': {'start': 2917, 'end': 3084},
+                'id': 'y2',
                 'edition_id': 'e1',
                 'text_id': 't1',
               },
               {
-                'span': {'start': 2917, 'end': 3084},
-                'id': 'y2',
+                'span': {'start': 0, 'end': 51},
+                'id': 'y1',
                 'edition_id': 'e1',
                 'text_id': 't1',
               },
@@ -89,6 +91,52 @@ void main() {
 
       expect(yigchungs.map((y) => y.start), [0, 2917]);
       expect(yigchungs.map((y) => y.end), [51, 3084]);
+      expect(server.count('/v2/editions/e1/yigchungs'), 1);
+    });
+
+    test('a slow fetch does not hold the page and still lands later', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('s'))),
+        '/v2/editions/e1/content': (uri) {
+          final start = int.parse(uri.queryParameters['span_start']!);
+          final end = int.parse(uri.queryParameters['span_end']!);
+          return jsonBody('abcdefghi'.substring(start, end));
+        },
+        '/v2/editions/e1/yigchungs':
+            (_) => jsonBody([
+              {
+                'span': {'start': 3, 'end': 6},
+                'id': 'y1',
+                'edition_id': 'e1',
+                'text_id': 't1',
+              },
+            ]),
+      });
+      final gate = server.gates['/v2/editions/e1/yigchungs'] = Completer();
+      final repository = server.repository(
+        yigchungTimeout: const Duration(milliseconds: 20),
+      );
+
+      final slow = await repository.loadWindow(
+        editionId: 'e1',
+        direction: 'next',
+        size: 3,
+      );
+      expect(slow.segments.map((s) => s.html), ['abc', 'def', 'ghi']);
+
+      gate.complete();
+      await repository.getYigchungs('e1');
+      final later = await repository.loadWindow(
+        editionId: 'e1',
+        direction: 'next',
+        size: 3,
+      );
+      expect(later.segments.map((s) => s.html), [
+        'abc',
+        '<span class="yigchung">def</span>',
+        'ghi',
+      ]);
       expect(server.count('/v2/editions/e1/yigchungs'), 1);
     });
 

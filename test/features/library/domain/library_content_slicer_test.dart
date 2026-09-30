@@ -89,11 +89,11 @@ void main() {
       expect(html, '<span class="yigchung">ab</span><br>cd');
     });
 
-    test('adjacent and unsorted marks each get their own span', () {
+    test('adjacent marks each get their own span', () {
       final html = sliceLibraryHtml(
         'abcdef',
         [_span(0, 6)],
-        yigchungs: [_span(3, 5), _span(1, 3)],
+        yigchungs: [_span(1, 3), _span(3, 5)],
       );
       expect(
         html,
@@ -106,7 +106,7 @@ void main() {
       final html = sliceLibraryHtml(
         'abcdef',
         [_span(0, 3)],
-        yigchungs: [_span(4, 9), _span(1, 3), _span(2, 5)],
+        yigchungs: [_span(1, 3), _span(2, 5), _span(4, 9)],
       );
       expect(html, 'a<span class="yigchung">bc</span>');
     });
