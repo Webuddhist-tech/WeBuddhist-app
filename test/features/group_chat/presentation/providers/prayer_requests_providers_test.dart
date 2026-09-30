@@ -41,6 +41,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   final List<String?> sentTypes = [];
   final List<String?> sentIntentions = [];
   final List<int> prayersSkips = [];
+  final List<Map<String, String?>> updates = [];
+  ChatMessageDTO? updateResponse;
   List<ChatPrayerUserDTO> supporters = const [];
 
   @override
@@ -195,6 +197,22 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Right(unit);
 
   @override
+  Future<Either<Failure, ChatMessageDTO?>> updateMessage(
+    String roomId, {
+    required String messageId,
+    required String body,
+    String? intention,
+  }) async {
+    updates.add({
+      'roomId': roomId,
+      'messageId': messageId,
+      'body': body,
+      'intention': intention,
+    });
+    return Right(updateResponse);
+  }
+
+  @override
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,
@@ -305,6 +323,69 @@ void main() {
       expect(repository.sentTypes, ['PRAYER']);
       expect(repository.sentIntentions, ['healing']);
       expect(notifier.state.requests.first.id, 'sent');
+    });
+
+    test('edit patches the row in place and keeps its prayers', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      const healing = ChatPrayerIntentionDTO(
+        slug: 'healing',
+        label: 'Healing',
+        color: '#4A78C2',
+      );
+      final result = await notifier.edit(
+        'a',
+        body: 'Please pray again',
+        intention: healing,
+      );
+
+      expect(result.isRight(), isTrue);
+      expect(repository.updates, [
+        {
+          'roomId': 'room-1',
+          'messageId': 'a',
+          'body': 'Please pray again',
+          'intention': 'healing',
+        },
+      ]);
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Please pray again');
+      expect(edited.intention, healing);
+      expect(edited.prayerCount, 3);
+    });
+
+    test('edit prefers what the server answers with', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      const peace = ChatPrayerIntentionDTO(
+        slug: 'peace',
+        label: 'Peace',
+        color: '#FFFFFF',
+      );
+      repository.updateResponse = _prayer(
+        'a',
+      ).copyWith(body: 'Trimmed by server', intention: peace);
+      await notifier.edit(
+        'a',
+        body: 'Trimmed by server   ',
+        intention: const ChatPrayerIntentionDTO(
+          slug: 'peace',
+          label: 'Peace',
+          color: '#000000',
+        ),
+      );
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Trimmed by server');
+      expect(edited.intention, peace);
     });
 
     test('appendLive ignores TEXT messages and duplicates', () async {

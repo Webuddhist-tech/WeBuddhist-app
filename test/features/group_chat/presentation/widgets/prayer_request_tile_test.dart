@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -45,6 +46,7 @@ Future<void> _pump(
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
   VoidCallback? onShowSupporters,
+  VoidCallback? onEdit,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -62,6 +64,7 @@ Future<void> _pump(
           displayName: 'Tenzin',
           isOwn: isOwn,
           onShowSupporters: onShowSupporters,
+          onEdit: onEdit,
         ),
       ),
     ),
@@ -122,6 +125,27 @@ void main() {
     expect(find.text('You'), findsOneWidget);
     expect(find.text('Pray'), findsNothing);
     expect(find.text('Waiting for the first prayer...'), findsOneWidget);
+  });
+
+  testWidgets('my own request offers Edit from its menu', (tester) async {
+    var edited = false;
+    await _pump(
+      tester,
+      count: 0,
+      prayedByMe: false,
+      isOwn: true,
+      onEdit: () => edited = true,
+    );
+    await tester.tap(find.byIcon(AppAssets.dotsThree));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(edited, isTrue);
+  });
+
+  testWidgets('a request without onEdit has no menu', (tester) async {
+    await _pump(tester, count: 0, prayedByMe: false);
+    expect(find.byIcon(AppAssets.dotsThree), findsNothing);
   });
 
   testWidgets('the card takes the intention colour', (tester) async {

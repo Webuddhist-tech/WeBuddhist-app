@@ -96,6 +96,38 @@ void main() {
       expect(message.isPrayerRequest, isTrue);
     });
 
+    test('updateMessage patches body and intention', () async {
+      Object? sent;
+      final ds = _datasource((options) async {
+        sent = options.data;
+        expect(options.method, 'PATCH');
+        expect(options.path, '/chat/rooms/r1/messages/m1');
+        return _status(200, {..._message, 'body': 'Please pray again'});
+      });
+
+      final message = await ds.updateMessage(
+        'r1',
+        messageId: 'm1',
+        body: 'Please pray again',
+        intention: 'healing',
+      );
+
+      expect(sent, {'body': 'Please pray again', 'intention': 'healing'});
+      expect(message?.body, 'Please pray again');
+    });
+
+    test('updateMessage answers null when the server sends no body', () async {
+      final ds = _datasource((options) async => _status(204));
+
+      final message = await ds.updateMessage(
+        'r1',
+        messageId: 'm1',
+        body: 'Please pray again',
+      );
+
+      expect(message, isNull);
+    });
+
     test('listIntentions reads the catalog in display order', () async {
       final ds = _datasource((options) async {
         expect(options.method, 'GET');

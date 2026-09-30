@@ -5168,6 +5168,12 @@ abstract class AppLocalizations {
   /// **'New prayer request'**
   String get event_prayer_new_request;
 
+  /// No description provided for @event_prayer_edit_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit prayer request'**
+  String get event_prayer_edit_request;
+
   /// No description provided for @event_prayer_choose_intention.
   ///
   /// In en, this message translates to:

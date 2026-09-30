@@ -284,17 +284,18 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     await _providers.read(groupChatRepositoryProvider).markRoomRead(roomId);
   }
 
-  /// Opens the composer sheet; the notifier already holds the new request
-  /// when it pops, so only the room bookkeeping is left.
-  Future<void> _openComposer() async {
+  /// Opens the composer sheet; the notifier already holds the new or edited
+  /// request when it pops, so only a new one has room bookkeeping left.
+  Future<void> _openComposer({ChatMessageDTO? editing}) async {
     if (_composing) return;
     _composing = true;
     try {
-      final created = await NewPrayerRequestSheet.show(
+      final result = await NewPrayerRequestSheet.show(
         context,
         eventId: widget.eventId,
+        editing: editing,
       );
-      if (!mounted || created == null) return;
+      if (!mounted || result == null || editing != null) return;
       unawaited(_markRoomRead());
       unawaited(_ensureLiveConnected());
       final list = _listController;
@@ -450,6 +451,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final selfName = joinChatName(user?.firstName, user?.lastName);
     final viewerId = _viewerId;
     final viewerEmail = user?.email;
+    final canEdit = state.roomStatus == PrayerRoomStatus.ready;
     final itemCount = state.requests.length + (state.isLoadingMore ? 1 : 0);
 
     return ListView.builder(
@@ -501,6 +503,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                   isOwn: isSelf,
                 ),
               ),
+          onEdit:
+              isSelf && canEdit
+                  ? () => unawaited(_openComposer(editing: request))
+                  : null,
         );
       },
     );

@@ -11,6 +11,7 @@ class ConnectActionMenu extends StatelessWidget {
     super.key,
     this.onEdit,
     this.onDelete,
+    this.icon = AppAssets.dotsThreeVertical,
     this.iconSize = 20,
     this.iconColor,
     this.style,
@@ -18,6 +19,7 @@ class ConnectActionMenu extends StatelessWidget {
 
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final IconData icon;
   final double iconSize;
   final Color? iconColor;
   final ButtonStyle? style;
@@ -30,7 +32,7 @@ class ConnectActionMenu extends StatelessWidget {
 
     return PopupMenuButton<_ConnectAction>(
       icon: Icon(
-        AppAssets.dotsThreeVertical,
+        icon,
         size: iconSize,
         color:
             iconColor ??

@@ -256,6 +256,34 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     return result;
   }
 
+  /// Edits one of the viewer's own requests in place. Only body and intention
+  /// are taken from the server's answer, so prayer counts stay as they are.
+  Future<Either<Failure, ChatMessageDTO>> edit(
+    String messageId, {
+    required String body,
+    required ChatPrayerIntentionDTO intention,
+  }) async {
+    final roomId = state.roomId;
+    final current = _find(messageId);
+    if (roomId == null || current == null) {
+      return const Left(NotFoundFailure('Prayer request not found'));
+    }
+    final result = await _repository.updateMessage(
+      roomId,
+      messageId: messageId,
+      body: body,
+      intention: intention.slug,
+    );
+    return result.map((updated) {
+      final message = current.copyWith(
+        body: updated?.body ?? body,
+        intention: updated?.intention ?? intention,
+      );
+      if (mounted) _update(messageId, (_) => message);
+      return message;
+    });
+  }
+
   /// Inserts a prayer request that arrived over the socket or came back from
   /// a send. Anything else in the room is ignored here.
   void appendLive(ChatMessageDTO message) {

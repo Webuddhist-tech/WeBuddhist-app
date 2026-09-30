@@ -378,6 +378,29 @@ class GroupChatRemoteDatasource {
         const [];
   }
 
+  /// Edits one of the caller's own messages. Sender-only, enforced server
+  /// side. Returns the updated message when the server answers with one.
+  Future<ChatMessageDTO?> updateMessage(
+    String roomId, {
+    required String messageId,
+    required String body,
+    String? intention,
+  }) async {
+    try {
+      final response = await _dio.patch(
+        '/chat/rooms/$roomId/messages/$messageId',
+        data: {'body': body, if (intention != null) 'intention': intention},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['id'] is String) {
+        return ChatMessageDTO.fromJson(data);
+      }
+      return null;
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
   /// Deletes one of the caller's own messages, for everyone. Returns 204
   /// with no body.
   ///

@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
@@ -21,6 +22,7 @@ class PrayerRequestTile extends StatelessWidget {
     this.isOwn = false,
     this.onTogglePrayer,
     this.onShowSupporters,
+    this.onEdit,
   });
 
   final ChatMessageDTO request;
@@ -31,6 +33,9 @@ class PrayerRequestTile extends StatelessWidget {
   final bool isOwn;
   final VoidCallback? onTogglePrayer;
   final VoidCallback? onShowSupporters;
+
+  /// Shows the overflow menu with Edit when set.
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -79,6 +84,20 @@ class PrayerRequestTile extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (onEdit != null)
+                  ConnectActionMenu(
+                    icon: AppAssets.dotsThree,
+                    iconColor:
+                        isDark
+                            ? AppColors.textTertiaryDark
+                            : AppColors.textSecondary,
+                    onEdit: onEdit,
+                    style: IconButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(32, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 10),

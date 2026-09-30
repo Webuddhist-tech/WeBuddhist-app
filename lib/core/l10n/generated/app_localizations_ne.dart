@@ -2966,6 +2966,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get event_prayer_new_request => 'New prayer request';
 
   @override
+  String get event_prayer_edit_request => 'Edit prayer request';
+
+  @override
   String get event_prayer_choose_intention => 'Choose an intention';
 
   @override
