@@ -78,6 +78,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get onboarding_language_subtitle => TolgeeBridge.get(
+    localeName,
+    'onboarding_language_subtitle',
+    () => _fallback.onboarding_language_subtitle,
+  );
+
+  @override
   String get onboarding_choose_option => TolgeeBridge.get(
     localeName,
     'onboarding_choose_option',
@@ -99,80 +106,31 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get onboarding_all_set_feature_practices => TolgeeBridge.get(
+  String get onboarding_all_set_practice_title => TolgeeBridge.get(
     localeName,
-    'onboarding_all_set_feature_practices',
-    () => _fallback.onboarding_all_set_feature_practices,
+    'onboarding_all_set_practice_title',
+    () => _fallback.onboarding_all_set_practice_title,
   );
 
   @override
-  String get onboarding_all_set_feature_reminders => TolgeeBridge.get(
+  String get onboarding_all_set_practice_body => TolgeeBridge.get(
     localeName,
-    'onboarding_all_set_feature_reminders',
-    () => _fallback.onboarding_all_set_feature_reminders,
+    'onboarding_all_set_practice_body',
+    () => _fallback.onboarding_all_set_practice_body,
   );
 
   @override
-  String get onboarding_begin_practice => TolgeeBridge.get(
+  String get onboarding_all_set_connect_title => TolgeeBridge.get(
     localeName,
-    'onboarding_begin_practice',
-    () => _fallback.onboarding_begin_practice,
+    'onboarding_all_set_connect_title',
+    () => _fallback.onboarding_all_set_connect_title,
   );
 
   @override
-  String get onboarding_2_title => TolgeeBridge.get(
+  String get onboarding_all_set_connect_body => TolgeeBridge.get(
     localeName,
-    'onboarding_2_title',
-    () => _fallback.onboarding_2_title,
-  );
-
-  @override
-  String get onboarding_2_subtitle => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_subtitle',
-    () => _fallback.onboarding_2_subtitle,
-  );
-
-  @override
-  String get onboarding_2_step1_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step1_title',
-    () => _fallback.onboarding_2_step1_title,
-  );
-
-  @override
-  String get onboarding_2_step1_desc => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step1_desc',
-    () => _fallback.onboarding_2_step1_desc,
-  );
-
-  @override
-  String get onboarding_2_step2_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step2_title',
-    () => _fallback.onboarding_2_step2_title,
-  );
-
-  @override
-  String get onboarding_2_step2_desc => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step2_desc',
-    () => _fallback.onboarding_2_step2_desc,
-  );
-
-  @override
-  String get onboarding_2_step3_title => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step3_title',
-    () => _fallback.onboarding_2_step3_title,
-  );
-
-  @override
-  String get onboarding_2_step3_desc => TolgeeBridge.get(
-    localeName,
-    'onboarding_2_step3_desc',
-    () => _fallback.onboarding_2_step3_desc,
+    'onboarding_all_set_connect_body',
+    () => _fallback.onboarding_all_set_connect_body,
   );
 
   @override
@@ -505,6 +463,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'home_share_prompt',
     <String, Object>{'appName': appName},
     () => _fallback.home_share_prompt(appName),
+  );
+
+  @override
+  String get home_share_support => TolgeeBridge.get(
+    localeName,
+    'home_share_support',
+    () => _fallback.home_share_support,
   );
 
   @override
@@ -1285,13 +1250,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'onboarding_tradition_show_all_title',
     () => _fallback.onboarding_tradition_show_all_title,
-  );
-
-  @override
-  String get onboarding_tradition_show_all_description => TolgeeBridge.get(
-    localeName,
-    'onboarding_tradition_show_all_description',
-    () => _fallback.onboarding_tradition_show_all_description,
   );
 
   @override
@@ -5748,6 +5706,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_prayer_edit_request => TolgeeBridge.get(
+    localeName,
+    'event_prayer_edit_request',
+    () => _fallback.event_prayer_edit_request,
+  );
+
+  @override
+  String get event_prayer_delete_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_delete_title',
+    () => _fallback.event_prayer_delete_title,
+  );
+
+  @override
+  String get event_prayer_delete_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_delete_body',
+    () => _fallback.event_prayer_delete_body,
+  );
+
+  @override
+  String get event_prayer_delete_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_delete_failed',
+    () => _fallback.event_prayer_delete_failed,
+  );
+
+  @override
   String get event_prayer_choose_intention => TolgeeBridge.get(
     localeName,
     'event_prayer_choose_intention',
@@ -5853,5 +5839,90 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'recitation_live_session_ended',
     () => _fallback.recitation_live_session_ended,
+  );
+
+  @override
+  String get feedback_title => TolgeeBridge.get(
+    localeName,
+    'feedback_title',
+    () => _fallback.feedback_title,
+  );
+
+  @override
+  String get feedback_hint => TolgeeBridge.get(
+    localeName,
+    'feedback_hint',
+    () => _fallback.feedback_hint,
+  );
+
+  @override
+  String get feedback_images => TolgeeBridge.get(
+    localeName,
+    'feedback_images',
+    () => _fallback.feedback_images,
+  );
+
+  @override
+  String get feedback_add_image => TolgeeBridge.get(
+    localeName,
+    'feedback_add_image',
+    () => _fallback.feedback_add_image,
+  );
+
+  @override
+  String feedback_image_limit(int count) => TolgeeBridge.format(
+    localeName,
+    'feedback_image_limit',
+    <String, Object>{'count': count},
+    () => _fallback.feedback_image_limit(count),
+  );
+
+  @override
+  String get feedback_send => TolgeeBridge.get(
+    localeName,
+    'feedback_send',
+    () => _fallback.feedback_send,
+  );
+
+  @override
+  String get feedback_sent => TolgeeBridge.get(
+    localeName,
+    'feedback_sent',
+    () => _fallback.feedback_sent,
+  );
+
+  @override
+  String get feedback_error_offline => TolgeeBridge.get(
+    localeName,
+    'feedback_error_offline',
+    () => _fallback.feedback_error_offline,
+  );
+
+  @override
+  String get feedback_error_rate_limited => TolgeeBridge.get(
+    localeName,
+    'feedback_error_rate_limited',
+    () => _fallback.feedback_error_rate_limited,
+  );
+
+  @override
+  String get feedback_error_too_large => TolgeeBridge.get(
+    localeName,
+    'feedback_error_too_large',
+    () => _fallback.feedback_error_too_large,
+  );
+
+  @override
+  String get feedback_error_failed => TolgeeBridge.get(
+    localeName,
+    'feedback_error_failed',
+    () => _fallback.feedback_error_failed,
+  );
+
+  @override
+  String get feedback_error_unavailable => TolgeeBridge.get(
+    localeName,
+    'feedback_error_unavailable',
+    () => _fallback.feedback_error_unavailable,
   );
 }

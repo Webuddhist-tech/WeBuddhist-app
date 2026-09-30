@@ -41,6 +41,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onboarding_first_question => 'अपनी भाषा चुनें:';
 
   @override
+  String get onboarding_language_subtitle => 'यह ऐप की भाषा सेट करता है';
+
+  @override
   String get onboarding_choose_option => 'कम से कम एक चुनें:';
 
   @override
@@ -51,42 +54,17 @@ class AppLocalizationsHi extends AppLocalizations {
       'आपके अभ्यास के लिए यह तैयार है।';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'जाप, संचय, ध्यान और अध्ययन योजनाएँ चुनने के लिए';
+  String get onboarding_all_set_practice_title => 'अभ्यास';
 
   @override
-  String get onboarding_all_set_feature_reminders =>
-      'कोमल दैनिक अनुस्मारक, जब भी आप तैयार हों';
+  String get onboarding_all_set_practice_body => 'योजनाएँ, जाप, माला और ध्यान';
 
   @override
-  String get onboarding_begin_practice => 'अपने पहले अभ्यास खोजें';
+  String get onboarding_all_set_connect_title => 'जुड़ें';
 
   @override
-  String get onboarding_2_title => 'अगला, यह इस तरह काम करता है।';
-
-  @override
-  String get onboarding_2_subtitle => 'आदत बनाने के तीन छोटे कदम';
-
-  @override
-  String get onboarding_2_step1_title => 'अपने अभ्यास चुनें';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'जाप करें, मंत्र गिनें, ध्यान टाइमर सेट करें, या अपनी परंपरा की अध्ययन योजना का पालन करें।';
-
-  @override
-  String get onboarding_2_step2_title => 'इन्हें अपने दिन में जोड़ें';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'एक दैनिक दिनचर्या बनाएँ और हम इसे जारी रखने के लिए कोमल अनुस्मारक भेजेंगे।';
-
-  @override
-  String get onboarding_2_step3_title => 'हर दिन कुछ मिनट अभ्यास करें';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'एक पल भी मायने रखता है। दिन-प्रतिदिन, आपका अभ्यास बढ़ता जाएगा।';
+  String get onboarding_all_set_connect_body =>
+      'समूह, कार्यक्रम, समाचार और चैट';
 
   @override
   String get home_recitation => 'पाठ';
@@ -159,7 +137,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get bookmark_texts => 'ग्रंथ';
 
   @override
-  String get bookmark_group_accumulation => 'Group accumulation';
+  String get bookmark_group_accumulation => 'Channel accumulations';
 
   @override
   String get mala_add_to_practice => 'मेरे अभ्यास में जोड़ें';
@@ -256,6 +234,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String home_share_prompt(String appName) {
     return '$appName पसंद आ रहा है?';
   }
+
+  @override
+  String get home_share_support =>
+      'आपका सहयोग हमारे समुदाय को बढ़ने में मदद करता है।';
 
   @override
   String get no_feature_content => 'कोई विशेष सामग्री उपलब्ध नहीं';
@@ -668,17 +650,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get onboarding_tradition_subtitle =>
-      'हम आपको आपके मार्ग की प्रथाएं और ग्रंथ दिखाएंगे। आप इसे ऐप सेटिंग्स में कभी भी बदल सकते हैं।';
+      'अपनी सामग्री के लिए एक या अधिक परंपराएँ चुनें। आप इसे सेटिंग्स में कभी भी बदल सकते हैं।';
 
   @override
   String get onboarding_tradition_option_intro => 'के माध्यम से:';
 
   @override
   String get onboarding_tradition_show_all_title => 'मुझे सब कुछ दिखाएँ';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'हर मार्ग की साधनाएँ और ग्रंथ';
 
   @override
   String get onboarding_skip_for_now => 'अभी के लिए छोड़ें';
@@ -928,21 +906,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_events_filter_all => 'सभी';
 
   @override
-  String get connect_events_filter_in_person => 'सामने';
+  String get connect_events_filter_in_person => 'व्यक्तिगत रूप से';
 
   @override
-  String get connect_events_filter_empty_online => 'कोई ऑनलाइन कार्यक्रम नहीं';
+  String get connect_events_filter_empty_online => 'कोई ऑनलाइन इवेंट नहीं';
 
   @override
   String get connect_events_filter_empty_in_person =>
-      'कोई सामने का कार्यक्रम नहीं';
+      'कोई व्यक्तिगत कार्यक्रम नहीं';
 
   @override
   String get connect_events_filter_hybrid => 'हाइब्रिड';
 
   @override
-  String get connect_events_filter_empty_hybrid =>
-      'कोई हाइब्रिड कार्यक्रम नहीं';
+  String get connect_events_filter_empty_hybrid => 'कोई हाइब्रिड इवेंट नहीं';
 
   @override
   String get connect_open => 'खोलें';
@@ -960,22 +937,23 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_attending => 'शामिल हैं';
 
   @override
-  String get connect_event_join_in_person => 'Join in person';
+  String get connect_event_join_in_person => 'व्यक्तिगत रूप से शामिल हों';
 
   @override
-  String get connect_event_join_online => 'Join online';
+  String get connect_event_join_online => 'ऑनलाइन जुड़ें';
 
   @override
-  String get connect_event_enter => 'Enter';
+  String get connect_event_enter => 'प्रवेश करें';
 
   @override
-  String get connect_event_participation_prompt => 'How are you attending?';
+  String get connect_event_participation_prompt => 'आप कैसे शामिल हो रहे हैं?';
 
   @override
-  String get connect_event_joining_in_person => 'Joining in person';
+  String get connect_event_joining_in_person =>
+      'व्यक्तिगत रूप से शामिल हो रहे हैं';
 
   @override
-  String get connect_event_joining_online => 'Joining online';
+  String get connect_event_joining_online => 'ऑनलाइन जुड़ रहे हैं';
 
   @override
   String connect_event_participants_attending(int count) {
@@ -986,72 +964,72 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_participants_empty => 'अभी तक कोई प्रतिभागी नहीं';
 
   @override
-  String get connect_event_organizer => 'Organizer';
+  String get connect_event_organizer => 'आयोजक';
 
   @override
-  String get connect_event_tab_videos => 'Videos';
+  String get connect_event_tab_videos => 'वीडियो';
 
   @override
-  String get connect_event_tab_links => 'Links';
+  String get connect_event_tab_links => 'लिंक';
 
   @override
-  String get connect_event_tab_about => 'About';
+  String get connect_event_tab_about => 'परिचय';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => 'इवेंट की ज़्यादा जानकारी';
 
   @override
-  String get connect_event_links_empty => 'No links yet';
+  String get connect_event_links_empty => 'अभी तक कोई लिंक नहीं';
 
   @override
-  String get connect_event_link_tap_to_join => 'Tap to join';
+  String get connect_event_link_tap_to_join => 'शामिल होने के लिए टैप करें';
 
   @override
-  String get connect_event_link_open => 'Open link';
+  String get connect_event_link_open => 'लिंक खोलें';
 
   @override
-  String get connect_event_date_tba => 'Date to be announced';
+  String get connect_event_date_tba => 'तारीख की घोषणा की जाएगी';
 
   @override
-  String get connect_event_when => 'When';
+  String get connect_event_when => 'जब';
 
   @override
-  String get connect_event_where => 'Where';
+  String get connect_event_where => 'कहाँ';
 
   @override
-  String get connect_event_practices => 'Event practices';
+  String get connect_event_practices => 'कार्यक्रम के अभ्यास';
 
   @override
-  String get connect_event_tab_accumulations => 'Accumulations';
+  String get connect_event_tab_accumulations => 'संचय';
 
   @override
-  String get connect_event_tab_recitations => 'Recitations';
+  String get connect_event_tab_recitations => 'पाठ';
 
   @override
-  String get connect_event_add_recitations => 'Add recitations';
+  String get connect_event_add_recitations => 'पाठ जोड़ें';
 
   @override
   String get connect_event_add_recitations_message =>
-      'Add the number of recitations you did with the livestream or outside this app.';
+      'लाइवस्ट्रीम के साथ या इस ऐप के बाहर किए गए पाठ जोड़ें';
 
   @override
-  String get connect_event_every_day => 'Every day';
+  String get connect_event_every_day => 'हर दिन';
 
   @override
   String connect_event_every_weekday(String weekday) {
-    return 'Every $weekday';
+    return 'हर $weekday';
   }
 
   @override
-  String get connect_event_every_month => 'Every month';
+  String get connect_event_every_month => 'हर महीने';
 
   @override
   String connect_event_every_date(String date) {
-    return 'Every $date';
+    return 'हर $date';
   }
 
   @override
-  String get connect_event_about_empty => 'No event details yet';
+  String get connect_event_about_empty => 'अभी कोई गतिविधि जानकारी नहीं है';
 
   @override
   String get search_groups => 'समूह खोजें';
@@ -1883,7 +1861,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String group_members_heading(int count) {
-    return 'सदस्य($count)';
+    return 'सदस्य ($count)';
   }
 
   @override
@@ -1898,25 +1876,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_notifications_title => 'Notifications';
 
   @override
-  String get group_notifications_chat => 'Group chat';
+  String get group_notifications_chat => 'Channel chat';
 
   @override
-  String get group_notifications_content => 'Group content';
+  String get group_notifications_content => 'Channel content';
 
   @override
   String get group_notifications_master_off =>
-      'Notifications are turned off for the app.';
+      'Notifications are turned off for the app';
 
   @override
   String get group_notifications_open_settings => 'Turn on';
 
   @override
   String get group_notifications_update_failed =>
-      'Couldn\'t update notification settings. Try again.';
+      'Couldn\'t update notification settings. Try again';
 
   @override
   String get group_notifications_load_failed =>
-      'Couldn\'t load notification settings.';
+      'Couldn\'t load notification settings';
 
   @override
   String get group_chat_mute_notifications => 'चैट सूचनाएँ म्यूट करें';
@@ -1931,17 +1909,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'चैट सूचनाएँ चालू हैं';
 
   @override
-  String get group_leave => 'Leave group';
+  String get group_leave => 'Unsubscribe';
 
   @override
-  String get group_leave_confirm_title => 'Leave group?';
+  String get group_leave_confirm_title => 'Unsubscribe?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group.';
+      'You\'ll stop getting messages and updates from this channel';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
 
   @override
   String get group_request_to_join => 'शामिल होने का अनुरोध';
@@ -2084,12 +2062,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) {
-    return '$group के एक व्यवस्थापक ने आपको इस समूह से हटा दिया है। आप $duration तक इस समूह की पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और न ही फिर से शामिल होने का अनुरोध कर पाएँगे।';
+    return '$group के एक एडमिन ने आपको इस चैनल से हटा दिया है। आप इसकी पोस्ट, इवेंट और अभ्यास नहीं देख पाएँगे और $duration तक फिर से शामिल होने का अनुरोध भी नहीं कर पाएँगे।';
   }
 
   @override
   String group_removed_message_no_date(String group) {
-    return '$group के एक व्यवस्थापक ने आपको इस समूह से हटा दिया है। आप इस समूह की पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और न ही फिर से शामिल होने का अनुरोध कर पाएँगे।';
+    return '$group के एक एडमिन ने आपको इस चैनल से हटा दिया है। आप इसकी पोस्ट, इवेंट और अभ्यास नहीं देख पाएँगे और फिर से शामिल होने का अनुरोध भी नहीं कर पाएँगे।';
   }
 
   @override
@@ -2254,7 +2232,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_recitation_collection_dedication =>
-      'By this merit, may all beings\nbe free from suffering.';
+      'By this merit, may all beings\nbe free from suffering';
 
   @override
   String get share_this_quote => 'यह उद्धरण शेयर करें';
@@ -2393,11 +2371,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No group accumulations bookmarked yet.';
+      'No channel accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a group accumulation to save it here.';
+      'Bookmark a channel accumulation to save it here';
 
   @override
   String get bookmarks_empty_timers_title =>
@@ -2466,10 +2444,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get player_forward_10 => '10 सेकंड आगे';
 
   @override
-  String get player_fullscreen => 'Fullscreen';
+  String get player_fullscreen => 'पूर्ण स्क्रीन';
 
   @override
-  String get player_exit_fullscreen => 'Exit fullscreen';
+  String get player_exit_fullscreen => 'पूर्ण स्क्रीन से बाहर निकलें';
 
   @override
   String get session_plans_load_error =>
@@ -2889,25 +2867,25 @@ class AppLocalizationsHi extends AppLocalizations {
       'This accumulation is already in your practices';
 
   @override
-  String get event_live_badge => 'LIVE';
+  String get event_live_badge => 'लाइव';
 
   @override
-  String get event_live_audio => 'Live audio';
+  String get event_live_audio => 'लाइव ऑडियो';
 
   @override
-  String get event_live_video_mode => 'Video';
+  String get event_live_video_mode => 'वीडियो';
 
   @override
-  String get event_live_audio_mode => 'Audio';
+  String get event_live_audio_mode => 'ऑडियो';
 
   @override
-  String get event_live_go_live => 'Live';
+  String get event_live_go_live => 'लाइव';
 
   @override
-  String get event_puja_starts_in => 'Puja starts in';
+  String get event_puja_starts_in => 'पूजा शुरू होने में';
 
   @override
-  String get event_puja_not_started => 'Puja not started yet';
+  String get event_puja_not_started => 'पूजा अभी शुरू नहीं हुई';
 
   @override
   String get event_prayer_requests => 'प्रार्थना अनुरोध';
@@ -2917,60 +2895,74 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count requests',
-      one: '1 request',
+      one: '1 अनुरोध',
+      other: '$count अनुरोध',
     );
     return '$_temp0';
   }
 
   @override
-  String get event_prayer_empty_title => 'अभी कोई प्रार्थना अनुरोध नहीं';
+  String get event_prayer_empty_title => 'अभी तक कोई प्रार्थना अनुरोध नहीं';
 
   @override
   String get event_prayer_empty_body =>
-      'आपका और आपके समुदाय का अनुरोध यहाँ दिखाई देगा';
+      'आपका अनुरोध और आपके समुदाय के अनुरोध यहाँ दिखाई देंगे';
 
   @override
   String get event_prayer_add => 'प्रार्थना अनुरोध जोड़ें';
 
   @override
-  String get event_prayer_hint => 'आज हम आपके लिए क्या प्रार्थना करें';
+  String get event_prayer_hint => 'आज हम आपके लिए कैसे प्रार्थना कर सकते हैं';
 
   @override
-  String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड नहीं हो सके।';
+  String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड नहीं किए जा सके';
 
   @override
   String get event_prayer_closed =>
-      'इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं।';
+      'इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं';
 
   @override
   String get event_prayer_pray => 'प्रार्थना करें';
 
   @override
-  String get event_prayer_praying => 'प्रार्थना कर रहे हैं';
+  String get event_prayer_praying => 'प्रार्थना करना';
 
   @override
-  String get event_prayer_new_request => 'New prayer request';
+  String get event_prayer_new_request => 'नया प्रार्थना अनुरोध';
 
   @override
-  String get event_prayer_choose_intention => 'Choose an intention';
+  String get event_prayer_edit_request => 'Edit prayer request';
+
+  @override
+  String get event_prayer_delete_title => 'Delete prayer request?';
+
+  @override
+  String get event_prayer_delete_body =>
+      'It will be removed for everyone in this event.';
+
+  @override
+  String get event_prayer_delete_failed =>
+      'The prayer request couldn\'t be deleted.';
+
+  @override
+  String get event_prayer_choose_intention => 'प्रार्थना का उद्देश्य चुनें';
 
   @override
   String get event_prayer_intentions_failed =>
-      'Intentions couldn\'t be loaded.';
+      'प्रार्थना के उद्देश्य लोड नहीं किए जा सके।';
 
   @override
-  String get event_prayer_request_button => 'Request prayer';
+  String get event_prayer_request_button => 'प्रार्थना का अनुरोध करें';
 
   @override
-  String get event_prayer_you => 'You';
+  String get event_prayer_you => 'आप';
 
   @override
-  String get event_prayer_waiting_first => 'Waiting for the first prayer...';
+  String get event_prayer_waiting_first => 'पहली प्रार्थना की प्रतीक्षा...';
 
   @override
   String event_prayer_more_praying(int count) {
-    return '+$count more are praying';
+    return '+$count और प्रार्थना कर रहे हैं';
   }
 
   @override
@@ -2978,35 +2970,80 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count people are praying',
-      one: '1 person is praying',
+      other: '',
+      one: '# व्यक्ति प्रार्थना कर रहा है',
     );
     return '$_temp0';
   }
 
   @override
-  String get event_prayer_praying_for_you => 'Praying for you';
+  String get event_prayer_praying_for_you => 'आपके लिए प्रार्थना कर रहे हैं';
 
   @override
   String event_prayer_praying_for(String name) {
-    return 'Praying for $name';
+    return '$name के लिए प्रार्थना कर रहे हैं';
   }
 
   @override
-  String get event_prayer_your_request => 'Your request';
+  String get event_prayer_your_request => 'आपका अनुरोध';
 
   @override
-  String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
+  String get event_prayer_supporters_failed =>
+      'प्रार्थना करने वालों को लोड नहीं किया जा सका।';
 
   @override
-  String get event_prayer_no_supporters => 'No one is praying yet.';
+  String get event_prayer_no_supporters =>
+      'अभी तक कोई प्रार्थना नहीं कर रहा है।';
 
   @override
-  String get recitation_live_sync => 'Sync';
+  String get recitation_live_sync => 'सिंक';
 
   @override
-  String get recitation_live_label => 'Live';
+  String get recitation_live_label => 'लाइव';
 
   @override
-  String get recitation_live_session_ended => 'The live session has ended';
+  String get recitation_live_session_ended => 'लाइव सत्र समाप्त हो गया है';
+
+  @override
+  String get feedback_title => 'फ़ीडबैक भेजें';
+
+  @override
+  String get feedback_hint =>
+      'हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे';
+
+  @override
+  String get feedback_images => 'तस्वीरें';
+
+  @override
+  String get feedback_add_image => 'तस्वीर जोड़ें';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'आप अधिकतम $count तस्वीरें जोड़ सकते हैं';
+  }
+
+  @override
+  String get feedback_send => 'भेजें';
+
+  @override
+  String get feedback_sent => 'धन्यवाद! आपका फ़ीडबैक भेज दिया गया है';
+
+  @override
+  String get feedback_error_offline =>
+      'आप ऑफ़लाइन हैं। कृपया बाद में फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'बहुत अधिक अनुरोध। कृपया थोड़ी देर रुककर फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_too_large =>
+      'तस्वीरें बहुत बड़ी हैं। एक हटाकर फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_failed =>
+      'फ़ीडबैक नहीं भेजा जा सका। कृपया फिर से प्रयास करें';
+
+  @override
+  String get feedback_error_unavailable => 'फ़ीडबैक अभी उपलब्ध नहीं है';
 }

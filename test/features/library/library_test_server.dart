@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -38,9 +39,13 @@ class LibraryTestServer {
   final Map<String, ResponseBody Function(Uri uri)> routes;
   final List<Uri> requests = [];
 
+  /// A path held here is not answered until its completer completes.
+  final Map<String, Completer<void>> gates = {};
+
   Future<ResponseBody> handle(RequestOptions options) async {
     final uri = options.uri;
     requests.add(uri);
+    await gates[uri.path]?.future;
     final route = routes[uri.path];
     if (route == null) return jsonBody({'detail': 'missing'}, statusCode: 404);
     return route(uri);
@@ -58,12 +63,14 @@ class LibraryTestServer {
     int segmentPageSize = 500,
     int relatedPageSize = 20,
     int maxPages = 1000,
+    Duration yigchungTimeout = const Duration(seconds: 5),
   }) {
     return LibraryRepository(
       datasource: LibraryRemoteDatasource(dio: dio()),
       segmentPageSize: segmentPageSize,
       relatedPageSize: relatedPageSize,
       maxPages: maxPages,
+      yigchungTimeout: yigchungTimeout,
     );
   }
 }

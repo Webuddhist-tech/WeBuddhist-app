@@ -46,4 +46,78 @@ void main() {
       expect(sliceLibraryLines('abc', const []), isEmpty);
     });
   });
+
+  group('sliceLibraryHtml', () {
+    test('without yigchungs matches the plain lines, escaped', () {
+      final html = sliceLibraryHtml('a<b\n\ncd ', [
+        _span(0, 3),
+        _span(3, 5),
+        _span(5, 8),
+      ]);
+      expect(html, 'a&lt;b<br>cd');
+    });
+
+    test('wraps the marked part of a line; the end is exclusive', () {
+      final html = sliceLibraryHtml(
+        'abcdef',
+        [_span(0, 6)],
+        yigchungs: [_span(2, 4)],
+      );
+      expect(html, 'ab<span class="yigchung">cd</span>ef');
+    });
+
+    test('marks are relative to spanStart and may cross lines', () {
+      final html = sliceLibraryHtml(
+        'abc&ef',
+        [_span(100, 103), _span(103, 106)],
+        spanStart: 100,
+        yigchungs: [_span(101, 105)],
+      );
+      expect(
+        html,
+        'a<span class="yigchung">bc</span><br>'
+        '<span class="yigchung">&amp;e</span>f',
+      );
+    });
+
+    test('a mark on a whole line stays inside the trimmed text', () {
+      final html = sliceLibraryHtml(
+        ' ab \ncd',
+        [_span(0, 4), _span(4, 7)],
+        yigchungs: [_span(0, 4)],
+      );
+      expect(html, '<span class="yigchung">ab</span><br>cd');
+    });
+
+    test('adjacent marks each get their own span', () {
+      final html = sliceLibraryHtml(
+        'abcdef',
+        [_span(0, 6)],
+        yigchungs: [_span(1, 3), _span(3, 5)],
+      );
+      expect(
+        html,
+        'a<span class="yigchung">bc</span>'
+        '<span class="yigchung">de</span>f',
+      );
+    });
+
+    test('marks outside the lines and overlapping marks are harmless', () {
+      final html = sliceLibraryHtml(
+        'abcdef',
+        [_span(0, 3)],
+        yigchungs: [_span(1, 3), _span(2, 5), _span(4, 9)],
+      );
+      expect(html, 'a<span class="yigchung">bc</span>');
+    });
+
+    test('counts code points like the plain slicer', () {
+      final html = sliceLibraryHtml(
+        '😀ab',
+        [_span(0, 3)],
+        yigchungs: [_span(1, 2)],
+      );
+      expect(html, '😀<span class="yigchung">a</span>b');
+    });
+  });
 }

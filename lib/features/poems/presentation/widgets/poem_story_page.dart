@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/poems/domain/entities/poem.dart';
 import 'package:flutter_pecha/features/poems/presentation/providers/poems_providers.dart';
@@ -67,6 +69,10 @@ class _PoemStoryPageState extends ConsumerState<PoemStoryPage> {
             ? AppColors.scaffoldBackgroundDark
             : AppColors.scaffoldBackgroundLight;
     final imageHeight = MediaQuery.sizeOf(context).height * 0.32;
+    final languageCode = ref.watch(contentLanguageProvider);
+    final isTibetan = AppFontConfig.isTibetanLanguage(languageCode);
+    // Tibetan glyphs sit tall above the baseline, so give the title extra room.
+    final titleTopPadding = isTibetan ? 20.0 : 8.0;
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
@@ -97,9 +103,9 @@ class _PoemStoryPageState extends ConsumerState<PoemStoryPage> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
+              padding: EdgeInsets.fromLTRB(
                 PoemStoryPage.horizontalPadding,
-                8,
+                titleTopPadding,
                 PoemStoryPage.horizontalPadding,
                 12,
               ),
@@ -109,11 +115,14 @@ class _PoemStoryPageState extends ConsumerState<PoemStoryPage> {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                strutStyle: AppFontConfig.tibetanStrutStyle(languageCode, 20),
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                   color: primaryColor,
-                  height: 1.3,
+                  height: isTibetan ? AppFontConfig.tibetanUiLineHeight : 1.3,
+                  leadingDistribution:
+                      isTibetan ? AppFontConfig.tibetanLeadingDistribution : null,
                 ),
               ),
             ),

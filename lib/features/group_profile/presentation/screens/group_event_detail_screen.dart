@@ -26,6 +26,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_link_utils.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_time_format.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
@@ -71,6 +72,10 @@ class GroupEventDetailScreen extends ConsumerStatefulWidget {
 class _GroupEventDetailScreenState
     extends ConsumerState<GroupEventDetailScreen> {
   _EventTab? _selectedTab;
+
+  /// Tab shown until the user picks one, fixed on first load so joining here
+  /// doesn't move them off what they're reading.
+  _EventTab? _openingTab;
   bool? _attendingOverride;
   GroupEventParticipationType? _participationOverride;
   GroupEventParticipationType? _pendingJoin;
@@ -208,12 +213,22 @@ class _GroupEventDetailScreenState
     final videos = _videoLinks(event);
     final groupAccumulator = event.groupAccumulator;
     final tabs = <_EventTab>[
-      if (videos.isNotEmpty) _EventTab.videos,
       if (groupAccumulator != null) _EventTab.accumulations,
       _EventTab.about,
+      if (videos.isNotEmpty) _EventTab.videos,
     ];
+    // Newcomers start on About; returning participants (`is_joined`, the same
+    // rows `participant_count` counts) go straight to the accumulation.
+    _openingTab ??=
+        event.isJoined && groupAccumulator != null
+            ? _EventTab.accumulations
+            : _EventTab.about;
     final selectedTab =
-        tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
+        tabs.contains(_selectedTab)
+            ? _selectedTab!
+            : tabs.contains(_openingTab)
+            ? _openingTab!
+            : _EventTab.about;
     final isPast = isGroupEventPast(event);
 
     return SingleChildScrollView(
@@ -247,12 +262,12 @@ class _GroupEventDetailScreenState
               ],
             ],
           ),
+          const SizedBox(height: 14),
+          _EventGroupRow(event: event, isDark: isDark),
           if (!isPast || (event.hasPuja && isAttending)) ...[
             const SizedBox(height: 14),
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
-          const SizedBox(height: 16),
-          _EventGroupRow(event: event, isDark: isDark),
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
@@ -877,18 +892,15 @@ class _AttendeesRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final shown = participants.take(2).toList();
-    final remaining = math.max(0, totalAttending - shown.length);
+    final shown = participants.take(3).toList();
     final textColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
 
     final double avatarSize = 28.0;
     final double overlap = 18.0;
-    final borderColor =
-        isDark ? AppColors.scaffoldBackgroundDark : AppColors.surfaceLight;
 
     // Each avatar but the last only takes [overlap] of layout width and paints
-    // past it, so the count pill can size to its text without measuring.
+    // past it, so the stack overlaps without measuring.
     Widget overlapped(Widget child) => SizedBox(
       width: overlap,
       height: avatarSize,
@@ -898,7 +910,7 @@ class _AttendeesRow extends StatelessWidget {
         child: child,
       ),
     );
-    final avatars = [
+    final stacked = [
       for (final participant in shown)
         _ParticipantAvatar(
           participant: participant,
@@ -906,32 +918,6 @@ class _AttendeesRow extends StatelessWidget {
           size: avatarSize,
         ),
     ];
-    final countPill =
-        remaining > 0
-            ? Container(
-              constraints: BoxConstraints(minWidth: avatarSize),
-              height: avatarSize,
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(avatarSize / 2),
-                color: isDark ? AppColors.grey800 : const Color(0xFFE8E5DF),
-                border: Border.all(color: borderColor, width: 2),
-              ),
-              child: Text(
-                '+$remaining',
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                  color:
-                      isDark ? AppColors.textPrimaryDark : AppColors.greyDark,
-                ),
-              ),
-            )
-            : null;
-    final stacked = [...avatars, if (countPill != null) countPill];
     final int totalItems = stacked.length;
 
     return GestureDetector(
@@ -1030,7 +1016,6 @@ class _EventGroupRow extends ConsumerWidget {
 
     final title = firstNonEmpty(group?.title, event.groupName);
     final avatarUrl = firstNonEmpty(group?.avatarUrl, event.groupAvatarUrl);
-    final subtitle = firstNonEmpty(group?.subTitle, group?.description);
     // Heading and card share one visibility so the label never stands alone.
     if (title.isEmpty) return const SizedBox.shrink();
 
@@ -1066,26 +1051,14 @@ class _EventGroupRow extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (subtitle.isNotEmpty)
-                      Text(
-                        subtitle,
-                        style: TextStyle(fontSize: 13, color: subtitleColor),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(
@@ -1109,6 +1082,168 @@ class _EventGroupRow extends ConsumerWidget {
         card,
       ],
     );
+  }
+}
+
+/// When and where the event happens: date range, time, venue and online.
+class _EventInfoCard extends ConsumerWidget {
+  final GroupEvent event;
+  final bool isDark;
+
+  const _EventInfoCard({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cardColor =
+        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final iconColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final linkColor = isDark ? AppColors.blueDark : AppColors.blue;
+    final dateText = _formatDateText(context, event);
+    final recurrenceText = _formatRecurrenceText(context, event);
+    final locationName = event.location?.name.trim() ?? '';
+    final isOnline = isGroupEventOnline(event);
+    final showLocation = !isOnline && locationName.isNotEmpty;
+    final showOnline = isOnline || isGroupEventHybrid(event);
+    final meetingLinks = event.links.where(
+      (link) =>
+          link.url.isNotEmpty &&
+          GroupEventLinkUtils.kindOf(link) == GroupEventLinkKind.meeting,
+    );
+    final meetingLink = meetingLinks.isEmpty ? null : meetingLinks.first;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _EventSectionLabel(text: context.l10n.connect_event_when),
+          const SizedBox(height: 8),
+          if (dateText != null)
+            _EventInfoRow(
+              icon: AppAssets.clock,
+              text: dateText,
+              iconColor: iconColor,
+            )
+          else
+            Text(
+              context.l10n.connect_event_date_tba,
+              style: TextStyle(fontSize: 14, color: secondaryColor),
+            ),
+          if (recurrenceText != null) ...[
+            const SizedBox(height: 8),
+            _EventInfoRow(
+              icon: AppAssets.repeat,
+              text: recurrenceText,
+              iconColor: iconColor,
+            ),
+          ],
+          if (showLocation || showOnline) ...[
+            const SizedBox(height: 12),
+            _EventSectionLabel(text: context.l10n.connect_event_where),
+            const SizedBox(height: 8),
+          ],
+          if (showLocation)
+            _EventInfoRow(
+              icon: AppAssets.mapPin,
+              text: locationName,
+              iconColor: iconColor,
+            ),
+          if (showOnline) ...[
+            if (showLocation) const SizedBox(height: 8),
+            // Always link-coloured, per the design; opens the meeting room
+            // when the event has one.
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap:
+                  meetingLink == null
+                      ? null
+                      : () {
+                        ref
+                            .read(groupEventAnalyticsProvider)
+                            .eventLinkOpened(
+                              eventId: event.id,
+                              groupId: event.groupId,
+                              kind: GroupEventLinkKind.meeting,
+                            );
+                        _openLink(meetingLink.url);
+                      },
+              child: _EventInfoRow(
+                icon: AppAssets.globe,
+                text: context.l10n.connect_online,
+                iconColor: iconColor,
+                textColor: linkColor,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String? _formatDateText(BuildContext context, GroupEvent event) {
+    final start = event.startDate?.toLocal();
+    if (start == null) return null;
+
+    final locale = intlFormatLocaleOf(context);
+    final end = event.endDate?.toLocal();
+    final now = DateTime.now();
+    // Drop the year when the whole range sits in the current year.
+    final showYear =
+        start.year != now.year || (end != null && end.year != now.year);
+    final datePattern = showYear ? 'd MMM y' : 'd MMM';
+    String day(DateTime value) => DateFormat(datePattern, locale).format(value);
+    String time(DateTime value) => formatGroupEventTime(value, locale);
+
+    final startZone = _utcOffsetLabel(start);
+    if (end == null || end.isAtSameMomentAs(start)) {
+      return '${day(start)} · ${time(start)} · $startZone';
+    }
+
+    final isMultiDay = !DateUtils.isSameDay(start, end);
+    final dates = isMultiDay ? '${day(start)} – ${day(end)}' : day(start);
+    final endZone = _utcOffsetLabel(end);
+    // A range crossing a DST switch has two offsets, so label each end.
+    if (startZone != endZone) {
+      return '$dates · ${time(start)} $startZone – ${time(end)} $endZone';
+    }
+    return '$dates · ${time(start)} – ${time(end)} · $startZone';
+  }
+
+  String _utcOffsetLabel(DateTime value) {
+    final offset = value.timeZoneOffset;
+    final sign = offset.isNegative ? '-' : '+';
+    final hours = offset.inHours.abs().toString().padLeft(2, '0');
+    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    return 'UTC $sign$hours:$minutes';
+  }
+
+  String? _formatRecurrenceText(BuildContext context, GroupEvent event) {
+    final recurrence = event.recurrence;
+    if (!event.isRecurring || recurrence == null) return null;
+
+    final anchor = (event.occurrenceDate ?? event.startDate)?.toLocal();
+    if (anchor == null) return null;
+
+    final locale = intlFormatLocaleOf(context);
+    return switch (recurrence.frequency.toUpperCase()) {
+      'DAILY' => context.l10n.connect_event_every_day,
+      'WEEKLY' => context.l10n.connect_event_every_weekday(
+        DateFormat.EEEE(locale).format(anchor),
+      ),
+      'MONTHLY' => context.l10n.connect_event_every_month,
+      'YEARLY' => context.l10n.connect_event_every_date(
+        DateFormat('d MMM', locale).format(anchor),
+      ),
+      _ => null,
+    };
   }
 }
 
@@ -1861,28 +1996,34 @@ class _AboutPanel extends StatelessWidget {
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final description = event.description?.trim();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child:
-          description != null && description.isNotEmpty
-              ? PlanInlineMarkdownView(
-                content: description,
-                fontSize: getLocalizedFontSize(AppTextSize.body),
-              )
-              : Text(
-                context.l10n.connect_event_about_empty,
-                style: TextStyle(
-                  color:
-                      isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textSecondary,
-                ),
-              ),
+    return Column(
+      children: [
+        _EventInfoCard(event: event, isDark: isDark),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child:
+              description != null && description.isNotEmpty
+                  ? PlanInlineMarkdownView(
+                    content: description,
+                    fontSize: getLocalizedFontSize(AppTextSize.body),
+                  )
+                  : Text(
+                    context.l10n.connect_event_about_empty,
+                    style: TextStyle(
+                      color:
+                          isDark
+                              ? AppColors.textTertiaryDark
+                              : AppColors.textSecondary,
+                    ),
+                  ),
+        ),
+      ],
     );
   }
 }

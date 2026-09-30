@@ -63,6 +63,14 @@ abstract class GroupChatRepository {
 
   Future<Either<Failure, Unit>> markRoomRead(String roomId);
 
+  /// Right with the server's copy, or null when it answered without one.
+  Future<Either<Failure, ChatMessageDTO?>> updateMessage(
+    String roomId, {
+    required String messageId,
+    required String body,
+    String? intention,
+  });
+
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,

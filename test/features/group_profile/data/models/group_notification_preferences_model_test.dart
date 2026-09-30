@@ -16,6 +16,8 @@ Map<String, dynamic> _entry(
   'source': source,
 };
 
+const _allOn = GroupNotificationPreferences(chat: true, content: true);
+
 Map<String, dynamic> _response(List<Map<String, dynamic>> preferences) => {
   'group_id': 'grp-1',
   'channel': 'PUSH',
@@ -38,7 +40,7 @@ void main() {
           _entry('EVENT'),
           _entry('ACCUMULATION'),
         ]),
-        GroupNotificationPreferences.allOn,
+        _allOn,
       );
     });
 
@@ -90,21 +92,42 @@ void main() {
       );
     });
 
-    test('types the backend omits, and unrelated types, default to on', () {
-      expect(_parse(const []), GroupNotificationPreferences.allOn);
+    test('types the backend omits fall back to chat off, content on', () {
+      expect(_parse(const []), GroupNotificationPreferences.defaults);
+      expect(
+        _parse([_entry('CHAT_MESSAGE')]),
+        const GroupNotificationPreferences(chat: true, content: true),
+      );
+      expect(
+        _parse([_entry('GROUP_POST', enabled: false)]),
+        const GroupNotificationPreferences(chat: false, content: false),
+      );
+    });
+
+    test('a listed type without enabled falls back the same way', () {
+      expect(
+        _parse([
+          {'notification_type': 'CHAT_MESSAGE'},
+          {'notification_type': 'GROUP_POST'},
+        ]),
+        GroupNotificationPreferences.defaults,
+      );
+    });
+
+    test('unrelated types do not affect either toggle', () {
       expect(
         _parse([
           _entry('EVENT_REMINDER', enabled: false),
           _entry('SERIES', enabled: false),
         ]),
-        GroupNotificationPreferences.allOn,
+        GroupNotificationPreferences.defaults,
       );
     });
 
     test('tolerates a missing preferences array', () {
       expect(
         GroupNotificationPreferencesModel.fromJson(const {}).toEntity(),
-        GroupNotificationPreferences.allOn,
+        GroupNotificationPreferences.defaults,
       );
     });
   });

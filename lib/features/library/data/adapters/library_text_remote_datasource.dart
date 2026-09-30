@@ -108,6 +108,7 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       currentSegmentPosition: window.currentPosition,
       lastSegmentPosition: window.lastPosition,
       totalSegments: window.totalSegments,
+      isPartial: window.isPartial,
     );
   }
 

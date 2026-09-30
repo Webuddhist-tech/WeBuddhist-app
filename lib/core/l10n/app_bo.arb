@@ -10,20 +10,14 @@
   "onboarding_find_peace": "འགོ་འཛུགས།",
   "onboarding_continue": "མུ་མཐུད།",
   "onboarding_first_question": "ཁྱེད་ཀྱི་སྐད་ཡིག་འདེམས་རོགས།",
+  "onboarding_language_subtitle": "འདིས་མཉེན་ཆས་ཀྱི་སྐད་ཡིག་སྒྲིག་འཇུག་བྱེད།",
   "onboarding_choose_option": "ཉུང་མཐར་གཅིག་འདེམས་དགོས།",
   "onboarding_all_set": "ཁྱེད་ཀྱི་སྒྲིག་འཇུག་གྲུབ་ཟིན།",
   "onboarding_all_set_description": "ཁྱེད་ཀྱི་ཉམས་ལེན་ལ་གྲ་སྒྲིག་བྱས་ཟིན་པའི་དངོས་པོ་འདི་དག་ཡིན།",
-  "onboarding_all_set_feature_practices": "སྔགས་བཟླས། བསགས་པ། སྒོམ་སྒྲུབ། དང་སློབ་སྦྱོང་ཐབས་ཀྱི་རྗེས་འདེམས་ཆོག",
-  "onboarding_all_set_feature_reminders": "ཉིན་རེའི་དྲན་སྐུལ་འཇམ་པོ། ཁྱེད་གྲ་སྒྲིག་བྱས་ཚེ་ནམ་ཡང",
-  "onboarding_begin_practice": "ཉམས་ལེན་ཐོག་མ་འཚོལ།",
-  "onboarding_2_title": "དེ་ནས། འདིས་ཕན་ཐོག་འབྱུང་ཚུལ་ནི།",
-  "onboarding_2_subtitle": "གོམས་གཤིས་ཆགས་ཐབས་ཀྱི་གོམ་སྟབས་ཆུང་ངུ་གསུམ།",
-  "onboarding_2_step1_title": "ཁྱེད་རང་གི་ཉམས་ལེན་འདེམས།",
-  "onboarding_2_step1_desc": "ཞལ་འདོན་བྱེད་པ། གཟུངས་སྔགས་བགྲང་བ། སྒོམ་ཡུན་སྒྲིག་པ། ཁྱེད་རང་གི་ཆོས་བརྒྱུད་ནས་སློབ་སྦྱོང་གི་འཆར་གཞི་ཞིག་གི་རྗེས་སུ་འཇུག་པ་གང་རུང་བྱོས།",
-  "onboarding_2_step2_title": "ཉིན་རེའི་ལས་རིམ་དུ་སྣོན།",
-  "onboarding_2_step2_desc": "ཉིན་རེའི་འཆར་ཅན་ལས་རིམ་ཞིག་བཟོས་དང་། ང་ཚོས་ཁྱེད་ལ་ཉིན་ལྟར་དྲན་སྐུལ་བཏང་ནས་ཉམས་ལེན་རྒྱུན་འཁྱོངས་ཡོང་བ་བྱེད།",
-  "onboarding_2_step3_title": "ཉིན་རེར་སྐར་མ་ཁ་ཤས་རེ་ཉམས་ལེན་བྱོས།",
-  "onboarding_2_step3_desc": "དུས་ཡུན་ཐུང་ངུ་ཞིག་ཡིན་ཡང་གལ་ཆེ། ཉི་མ་ནས་ཉི་མ་མཐུད་ན་ཉམས་ལེན་གོང་འཕེལ་དུ་འགྲོ།",
+  "onboarding_all_set_practice_title": "ཉམས་ལེན།",
+  "onboarding_all_set_practice_body": "འཆར་གཞི། ཞལ་འདོན། ཕྲེང་བ། སྒོམ་སྒྲུབ།",
+  "onboarding_all_set_connect_title": "འབྲེལ་མཐུད།",
+  "onboarding_all_set_connect_body": "ཚོགས་པ། བྱེད་སྒོ། གསར་འགྱུར། གླེང་མོལ།",
   "home_today": "དེ་རིང་",
   "home_good_morning": "སྔ་དྲོ་བདེ་ལེགས།",
   "home_good_afternoon": "ཕྱི་དྲོ་བདེ་ལེགས།",
@@ -37,7 +31,7 @@
   "home_recitation": "བཟླས་བརྗོད།",
   "home_overall_stats": "སྤྱིའི་གྲངས་ཐོ།",
   "home_plans": "ཐུན་འཆར།",
-  "home_plans_count": "ཐུན་འཆར་ {count}",
+  "home_plans_count": "ཐུན་འཆར།: {count}",
   "@home_plans_count": {
     "placeholders": {
       "count": {
@@ -45,7 +39,7 @@
       }
     }
   },
-  "home_recitation_count": "ཞལ་འདོན། {count}",
+  "home_recitation_count": "ཞལ་འདོན།: {count}",
   "@home_recitation_count": {
     "placeholders": {
       "count": {
@@ -114,13 +108,14 @@
       }
     }
   },
+  "home_share_support": "ཁྱེད་ཀྱི་རྒྱབ་སྐྱོར་གྱིས་ང་ཚོའི་སྤྱི་ཚོགས་འཕེལ་རྒྱས་སུ་ཕན།",
   "no_feature_content": "ཆེད་སྒྲིག་ནང་དོན་མི་འདུག",
-  "nav_home": "འདུན་ངོས།",
+  "nav_home": "མདུན་ངོས།",
   "nav_explore": "འཚོལ་ཞིབ།",
   "nav_learn": "སློབ་གཉེར།",
   "nav_practice": "ཉམས་ལེན།",
   "nav_settings": "སྒྲིག་འགོད།",
-  "nav_connect": "མཐུད།",
+  "nav_connect": "མཉམ་ཞུགས།",
   "nav_me": "རང་ཉིད།",
   "tab_practices": "ཉམས་ལེན།",
   "text_search": "འཚོལ།",
@@ -219,7 +214,7 @@
   "notification_settings": "གསལ་བརྡའི་སྒྲིག་འགོད།",
   "notification_allow_title": "གསར་བརྡ་གཏོང་ཆོག",
   "notification_allow_subtitle_enabled": "མཉེན་ཆས་འདིའི་ནང་གསར་བརྡའི་སྒོ་ཕྱེས་འདུག",
-  "notification_allow_subtitle_disabled": "འདིར་སྣུན་ཏེ་ཁ་པར་གྱི་མ་ལག་ཁ་ཕྱེས་ཏེ་བྱེད་ནུས་སྒོ་ཕྱེས།",
+  "notification_allow_subtitle_disabled": "ཆོག་མཁན་དགོས། འདིར་སྣུན་ཏེ་སྒྲིག་འགོད་ནང་ཆོག་མཆན་སྤྲོད།",
   "notification_allow_subtitle_paused": "དྲན་སྐུལ་རྣམས་བཀག་འདུག མུ་མཐུད་དགོས་ན་འདིར་ནོན།",
   "notification_routine_title": "འཆར་ཅན་ཉམས་ལེན་དྲན་སྐུལ།",
   "notification_routine_subtitle_enabled": "ཉམས་ལེན་དུས་མཚམས་ཀྱི་ཉིན་རེའི་དྲན་སྐུལ།",
@@ -255,10 +250,9 @@
   "onboarding_quote_citation": "— ཆོས་ཀྱི་ཚིགས་སུ་བཅད་པ། ༡༢༢",
   "onboarding_traditions_question": "ཁྱེད་རང་ཆོས་བརྒྱུད་གང་གི་རྗེས་འཇུག་ཡིན་ནམ།",
   "onboarding_tradition_title": "ཁྱེད་ཀྱིས་སངས་རྒྱས་ཀྱི་རྗེས་སུ་ཇི་ལྟར་འབྲང་ངམ།",
-  "onboarding_tradition_subtitle": "ང་ཚོས་ཁྱེད་ལ་འཚམ་པའི་ལམ་གྱི་ཉམས་ལེན་དང་གསུང་རབ་རྣམས་བསྟན་པར་བྱ། འདེམས་ཁ་འདི་ཉིད་མཉེན་ཆས་ཀྱི་སྒྲིག་བཀོད་ནང་ནས་ག་དུས་ཡིན་ཡང་སྒྱུར་བཅོས་གཏང་ཆོག",
+  "onboarding_tradition_subtitle": "ནང་དོན་ཆེད་དུ་ལུགས་གཅིག་གམ་དུ་མ་འདེམས། སྒྲིག་བཀོད་ནང་ནས་ག་དུས་ཡིན་ཡང་སྒྱུར་ཆོག",
   "onboarding_tradition_option_intro": "བརྒྱུད་ནས།",
   "onboarding_tradition_show_all_title": "ཡོངས་རྫོགས་སྟོན་རོགས།",
-  "onboarding_tradition_show_all_description": "ལམ་ཐམས་ཅད་ཀྱི་སྒྲུབ་པ་དང་གཞུང་ལུགས།",
   "onboarding_skip_for_now": "ད་ལྟ་བསྲུབ་རོགས།",
   "onboarding_add_another_tradition": "ཆོས་བརྒྱུད་གཞན་པ་སྣོན།",
   "onboarding_select_all": "ཚང་མ་འདེམས།",
@@ -747,8 +741,8 @@
   "group_join_banned_until": "ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་ {date} བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག",
   "group_join_banned": "ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན་པས་བཀག་སྡོམ་མ་ཚར་བར་ཡང་བསྐྱར་ཞུགས་མི་ཆོག",
   "group_removed_title": "ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན།",
-  "group_removed_message": "{group} ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། {duration} རིང་ལ་ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག",
-  "group_removed_message_no_date": "{group} ཡི་དོ་དམ་པས་ཁྱེད་རང་ཚོགས་པ་འདི་ནས་ཕྱིར་བཏོན་ཟིན། ཁྱེད་རང་གིས་ཚོགས་པ་འདིའི་སྤེལ་ཡིག་དང་བྱེད་སྒོ། ཉམས་ལེན་བཅས་བལྟ་མི་ཐུབ་ལ། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཆོག",
+  "group_removed_message": "{group} ནས་དོ་དམ་པ་ཞིག་གིས་ཁྱེད་རང་རྒྱུ་ལམ་འདི་ནས་ཕུད་འདུག ཁྱེད་ཀྱིས་དུས་ཡུན་{duration} རིང་འདིའི་སྤེལ་ཡིག་དང་། བྱེད་སྒོ། ལག་ལེན་བཅས་ལྟ་མི་ཐུབ་པ་དང་། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཐུབ།",
+  "group_removed_message_no_date": "{group} ནས་དོ་དམ་པ་ཞིག་གིས་ཁྱེད་རང་རྒྱུ་ལམ་འདི་ནས་ཕུད་འདུག ཁྱེད་ཀྱིས་འདིའི་སྤེལ་ཡིག་དང་། བྱེད་སྒོ། ལག་ལེན་བཅས་ལྟ་མི་ཐུབ་པ་དང་། ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུའང་བྱེད་མི་ཐུབ།",
   "group_removed_rejoin_label": "ཁྱེད་རང་གིས་ཚེས་འདི་ལ་ཚོགས་པ་འདིར་ཡང་བསྐྱར་ཞུགས་པའི་རེ་ཞུ་བྱེད་ཆོག",
   "group_removed_rejoin_value": "{date} · {remaining}",
   "group_removed_day_left": "ཉིན་ 1 ལྷག་ཡོད།",
@@ -887,7 +881,7 @@
   "connect_empty_discover_feed": "འཚོལ་རྒྱུ་གང་ཡང་མི་འདུག",
   "connect_empty_discover_groups": "འཚོལ་རྒྱུའི་ཚོགས་པ་མི་འདུག",
   "connect_empty_discover_practices": "འཚོལ་རྒྱུའི་ཉམས་ལེན་མི་འདུག",
-  "connect_all_groups": "ཚོགས་པ་ཡོངས།",
+  "connect_all_groups": "བརྒྱུད་ལམ་ཡོངས།",
   "connect_my_empty_feed_title": "ཁྱེད་ཀྱི་ཚོགས་པ་ཁག་ཁུ་སིམ་མེ་རེད་འདུག",
   "connect_my_empty_events_title": "འབྱུང་འགྱུར་གྱི་བྱེད་སྒོ་མི་འདུག",
   "connect_my_empty_posts_title": "ད་དུང་སྤེལ་བ་མི་འདུག",
@@ -931,15 +925,15 @@
   "home_poems": "སྙན་ངག",
   "poems_load_error": "སྙན་ངག་སྟོན་ཐུབ་མ་སོང་།\nཁྱེད་ཀྱིས་རང་གི་དྲ་རྒྱར་བསྐྱར་ཞིབ་བྱས་ཏེ་བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།",
   "poems_empty": "ད་ལྟ་སྙན་ངག་མེད། ཡང་བསྐྱར་ཤོག",
-  "connect_events_filter_all": "ཡོངས།",
+  "connect_events_filter_all": "ཆ་ཚང་།",
   "connect_events_filter_in_person": "ངོ་བཅར།",
-  "connect_events_filter_empty_online": "དྲ་ཐོག་བྱེད་སྒོ་མེད།",
-  "connect_events_filter_empty_in_person": "ས་ཁུལ་དུའི་བྱེད་སྒོ་མེད།",
-  "connect_events_filter_hybrid": "ཟུང་འབྲེལ།",
-  "connect_events_filter_empty_hybrid": "ཟུང་འབྲེལ་བྱེད་སྒོ་མེད།",
+  "connect_events_filter_empty_online": "དྲ་ཐོག་གི་ལས་འགུལ་མེད།",
+  "connect_events_filter_empty_in_person": "ངོ་བཅར་གྱི་ལས་རིམ་མེད།",
+  "connect_events_filter_hybrid": "མཉམ་བསྲེས",
+  "connect_events_filter_empty_hybrid": "རྣམ་པ་བསྲེས་མའི་ལས་རིམ་མེད།",
   "connect_open": "ཁ་ཕྱེ།",
   "connect_event_fallback_title": "བྱེད་སྒོ།",
-  "connect_group_fallback_title": "ཚོགས་པ།",
+  "connect_group_fallback_title": "བརྒྱུད་ལམ།",
   "connect_event_attend": "ཞུགས།",
   "connect_event_attending": "ཞུགས་ཟིན།",
   "connect_event_participants_attending": "ཞུགས་མཁན་ {count}",
@@ -950,16 +944,16 @@
       }
     }
   },
-  "connect_event_participants_empty": "ད་དུང་ཞུགས་མཁན་མེད།",
-  "connect_event_tab_videos": "Videos",
-  "connect_event_tab_links": "Links",
-  "connect_event_tab_about": "About",
-  "connect_event_links_title": "More about this event",
-  "connect_event_links_empty": "No links yet",
-  "connect_event_link_tap_to_join": "Tap to join",
-  "connect_event_link_open": "Open link",
-  "connect_event_date_tba": "Date to be announced",
-  "connect_event_about_empty": "No event details yet",
+  "connect_event_participants_empty": "ད་དུང་ཞུགས་མཁན་མེད",
+  "connect_event_tab_videos": "བརྙན་ཐུང་།",
+  "connect_event_tab_links": "འབྲེལ་ཐག",
+  "connect_event_tab_about": "ངོ་སྤྲོད།",
+  "connect_event_links_title": "བྱུང་རིམ་གྱི་ཞིབ་ཕྲ་མང་ཙམ",
+  "connect_event_links_empty": "ད་དུང་སྦྲེལ་ཐག་མེད།",
+  "connect_event_link_tap_to_join": "ཞུགས་པར་མནན་རེག་བྱེད།",
+  "connect_event_link_open": "སྦྲེལ་ཐག་ཁ་ཕྱེ།",
+  "connect_event_date_tba": "ཚེས་གྲངས་རྗེས་སུ་ཁྱབ་བསྒྲགས་བྱ་རྒྱུ",
+  "connect_event_about_empty": "ད་ལྟ་བྱེད་སྒོའི་ཆ་འཕྲིན་མེད།",
   "timer_notification_in_progress": "སྒོམ་སྒྲུབ་བྱེད་བཞིན་པ།",
   "timer_notification_paused": "བཀག་སོང་། {time} ལྷག་འདུག",
   "@timer_notification_paused": {
@@ -1027,10 +1021,10 @@
     }
   },
   "group_chat_selection_limit": "འཕྲིན་ཐུང་མང་ཤོས་ {count} འདེམས་ཆོག",
-  "group_chat_mute_notifications": "ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོ།",
-  "group_chat_unmute_notifications": "ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་ཡོད་བཟོ།",
-  "group_chat_notifications_muted": "ཁ་བརྡའི་བརྡ་ཐོ་སྒྲ་མེད་བཟོས་ཟིན།",
-  "group_chat_notifications_unmuted": "ཁ་བརྡའི་བརྡ་ཐོ་ཁ་ཕྱེ་ཟིན།",
+  "group_chat_mute_notifications": "གླེང་མོལ་གསར་བརྡའི་སྒྲ་ཁོགས།",
+  "group_chat_unmute_notifications": "གླེང་མོལ་གསར་བརྡའི་སྒྲ་སྒོ་ཕྱེས།",
+  "group_chat_notifications_muted": "གླེང་མོལ་གསར་བརྡའི་སྒྲ་བཀག་ཡོད།",
+  "group_chat_notifications_unmuted": "གླེང་མོལ་གསར་བརྡའི་སྒྲ་སྒོ་ཕྱེས་ཡོད།",
   "group_chat_message_deleted_by_sender": "འཕྲིན་ཐུང་འདི་བསུབས་ཟིན།",
   "group_chat_reaction_failed": "ཁྱེད་ཀྱི་དྲན་བརྡ་ཉར་མ་ཐུབ།",
   "group_chat_reactions_count": "{count, plural, =1{དྲན་བརྡ་ ༡} other{དྲན་བརྡ་ {count}}}",
@@ -1080,13 +1074,117 @@
   "group_post_updated": "བཟོ་བཅོས་ཉར་ཟིན།",
   "event_prayer_requests": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།",
   "event_prayer_empty_title": "ད་བར་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུས་མི་འདུག",
-  "event_prayer_empty_body": "ཁྱེད་དང་ཁྱེད་ཀྱི་ཚོགས་པའི་ཞུ་བ་འདིར་མངོན་ངེས།",
-  "event_prayer_add": "སྨོན་ལམ་ཞུ་བ་སྣོན་པ།",
-  "event_prayer_hint": "དེ་རིང་ཁྱེད་ལ་སྨོན་ལམ་ཅི་ཞིག་འདེབས་དགོས།",
+  "event_prayer_empty_body": "ཁྱེད་ཀྱི་རེ་ཞུ་དང་ཁྱེད་ཀྱི་སྤྱི་ཚོགས་ཀྱི་རེ་ཞུ་འདིར་མངོན་རྒྱུ་རེད",
+  "event_prayer_add": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་ཁ་སྣོན།",
+  "event_prayer_hint": "དེ་རིང་ང་ཚོས་ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་ཇི་ལྟར་འདེབས་དགོས",
   "event_prayer_load_failed": "ཐུགས་སྨོན་སྐྱབས་ཞུ་ལེན་ཐུབ་མ་སོང་།",
   "event_prayer_closed": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་ས་སྒོ་བརྒྱབ་འདུག",
-  "event_prayer_pray": "སྨོན་ལམ་འདེབས།",
-  "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན།",
+  "event_prayer_pray": "སྨོན་ལམ་ཞུ།",
+  "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན་པ",
   "bookmark_group_accumulation": "མཉམ་གསོག",
-  "connect_event_joining_in_person": "ངོ་བཅར་ཞུ་བ།"
+  "connect_event_joining_in_person": "ངོ་བཅར་ཞུ་བ།",
+  "connect_event_join_in_person": "མཉམ་ཞུགས།",
+  "connect_event_join_online": "དྲ་ཐོག་མཉམ་ཞུགས།",
+  "connect_event_organizer": "གོ་སྒྲིག་པ།",
+  "connect_event_when": "ཚོགས་དུས།",
+  "connect_event_where": "ཚོགས་ཡུལ།",
+  "connect_event_tab_accumulations": "གསོག་སྒྲུབ།",
+  "group_notifications_title": "གསར་བརྡ་ཁག",
+  "group_notifications_chat": "ནང་ཁུལ་གླེང་མོལ།",
+  "group_notifications_content": "ནང་ཁུལ་བརྗོད་བྱ།",
+  "group_notifications_master_off": "གསར་བརྡ་རྣམས་སྒོ་བརྒྱབ་འདུག",
+  "group_notifications_open_settings": "སྒོ་ཕྱེས།",
+  "group_notifications_update_failed": "གསར་བརྡའི་སྒྲིག་འགོད་ཁ་གསོ་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་བརྡ་བྱོས།",
+  "group_notifications_load_failed": "གསར་བརྡའི་སྒྲིག་འགོད་ལེན་ཐུབ་མ་སོང་།",
+  "event_prayer_request_count": "{count, plural,\nother {རེ་ཞུ་ {count}}\n=1 {རེ་ཞུ་ 1}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_request_button": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།",
+  "feedback_title": "བསམ་འཆར་བསྐུར།",
+  "feedback_hint": "ག་རེ་ཡག་པོ་འདུག་ག ག་རེ་ཡག་པོ་མི་འདུག་ག ཡང་ན་ཁྱེད་ཀྱིས་ག་རེ་མཐོང་འདོད་ཡོད་པ་ང་ཚོར་ཤོད་རོགས།",
+  "feedback_images": "པར།",
+  "feedback_add_image": "པར་སྣོན།",
+  "feedback_image_limit": "པར་ཆེས་མང་ན་{count}བར་སྦྲེལ་ཆོག",
+  "feedback_send": "བསྐུར།",
+  "feedback_sent": "ཐུགས་རྗེ་ཆེ། ཁྱེད་ཀྱི་བསམ་འཆར་བསྐུར་ཟིན།",
+  "feedback_error_offline": "ཁྱེད་དྲ་ཐོག་མིན། རྗེས་སུ་ཡང་བསྐྱར་བྱེད་རོགས།",
+  "feedback_error_rate_limited": "རེ་ཞུ་མང་དྲགས་འདུག སྐར་མ་ཙམ་སྒུག་ནས་ཡང་བསྐྱར་བྱེད་རོགས།",
+  "feedback_error_too_large": "པར་ཆེ་དྲགས་འདུག གཅིག་བསུབས་ནས་ཡང་བསྐྱར་བྱེད་རོགས།",
+  "feedback_error_failed": "བསམ་འཆར་བསྐུར་མ་ཐུབ། ཡང་བསྐྱར་བྱེད་རོགས།",
+  "feedback_error_unavailable": "ད་ལྟ་བསམ་འཆར་བསྐུར་མི་ཐུབ།",
+  "connect_event_enter": "འཇུག",
+  "connect_event_participation_prompt": "ཁྱེད་རང་ཇི་ལྟར་ཞུགས་ཀྱི་ཡིན་ནམ།",
+  "connect_event_joining_online": "དྲ་ཐོག་མཉམ་ཞུགས་བྱེད་བཞིན་པ།",
+  "connect_event_practices": "མཛད་སྒོའི་ཉམས་ལེན།",
+  "connect_event_tab_recitations": "ཞལ་འདོན།",
+  "connect_event_add_recitations": "ཞལ་འདོན་ཁ་སྣོན།",
+  "connect_event_add_recitations_message": "ཐད་གཏོང་དང་མཉམ་དུའམ་ཡང་ན་ཉེར་སྤྱོད་འདིའི་ཕྱི་རོལ་དུ་ཁྱེད་ཀྱིས་བཏོན་པའི་འདོན་པ་ཁ་སྣོན་བྱོས",
+  "connect_event_every_day": "ཉིན་རེར",
+  "connect_event_every_weekday": "{weekday} རེར",
+  "@connect_event_every_weekday": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_event_every_month": "ཟླ་རེར",
+  "connect_event_every_date": "{date} རེ་རེར",
+  "@connect_event_every_date": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "player_fullscreen": "བརྙན་ཡོལ་ཧྲིལ་པོ",
+  "player_exit_fullscreen": "བརྙན་ཡོལ་ཧྲིལ་པོ་ནས་ཕྱིར་ཐོན",
+  "event_live_badge": "ཐད་གཏོང་།",
+  "event_live_audio": "ཐད་གཏོང་སྒྲ།",
+  "event_live_video_mode": "བརྙན་ཐུང་།",
+  "event_live_audio_mode": "སྒྲ།",
+  "event_live_go_live": "ཐད་གཏོང་།",
+  "event_puja_starts_in": "པཱུ་ཛ་འགོ་འཛུགས་པར་དུས་ཚོད།",
+  "event_puja_not_started": "པུ་ཇ་ད་དུང་འགོ་བཙུགས་མེད",
+  "event_prayer_new_request": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་གསར་པ།",
+  "event_prayer_choose_intention": "སྨོན་ལམ་གྱི་དམིགས་ཡུལ་ཞིག་འདེམས",
+  "event_prayer_intentions_failed": "སྨོན་ལམ་གྱི་དམིགས་ཡུལ་རྣམས་འཇུག་ཐུབ་མ་སོང་།",
+  "event_prayer_you": "ཁྱེད།",
+  "event_prayer_waiting_first": "ཐོག་མའི་སྨོན་ལམ་ལ་སྒུག་བཞིན་པ...",
+  "event_prayer_more_praying": "+{count} མང་བ་སྨོན་ལམ་འདེབས་བཞིན་འདུག",
+  "@event_prayer_more_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_people_praying": "{count, plural,\nother {# མིས་སྨོན་ལམ་འདེབས་བཞིན་ཡོད}\n}",
+  "@event_prayer_people_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_praying_for_you": "ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་འདེབས་བཞིན་པ",
+  "event_prayer_praying_for": "{name} ཆེད་དུ་སྨོན་ལམ་འདེབས་བཞིན་པ",
+  "@event_prayer_praying_for": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "event_prayer_your_request": "ཁྱེད་ཀྱི་རེ་ཞུ",
+  "event_prayer_supporters_failed": "སྨོན་ལམ་རྒྱག་མཁན་སུ་ཡིན་མིན་འཇུག་ཐུབ་མ་སོང་།",
+  "event_prayer_no_supporters": "ད་དུང་སུས་ཀྱང་སྨོན་ལམ་འདེབས་ཀྱི་མི་འདུག",
+  "recitation_live_sync": "མཉམ་སྒྲིག",
+  "recitation_live_label": "ཐད་གཏོང་།",
+  "recitation_live_session_ended": "ཐད་གཏོང་གི་སྐབས་ཚོགས་མཇུག་བསྡུས་ཟིན།"
 }

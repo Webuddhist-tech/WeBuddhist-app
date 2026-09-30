@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/library/data/models/library_search_result
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
+import 'package:flutter_pecha/features/library/data/models/library_yigchung.dart';
 
 /// Library (texts) API. Errors are mapped by ErrorInterceptor and propagate.
 class LibraryRemoteDatasource {
@@ -77,6 +78,13 @@ class LibraryRemoteDatasource {
     final response = await dio.get('/v2/editions/$editionId/table-of-contents');
     return _asList(response.data, '/v2/editions/{id}/table-of-contents')
         .map(LibraryTableOfContents.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<List<LibraryYigchung>> fetchYigchungs(String editionId) async {
+    final response = await dio.get('/v2/editions/$editionId/yigchungs');
+    return _asList(response.data, '/v2/editions/{id}/yigchungs')
+        .map(LibraryYigchung.fromJson)
         .toList(growable: false);
   }
 

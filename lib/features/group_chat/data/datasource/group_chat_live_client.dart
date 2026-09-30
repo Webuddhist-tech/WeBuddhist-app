@@ -17,6 +17,12 @@ class ChatLiveMessageCreated extends ChatLiveEvent {
   const ChatLiveMessageCreated({required this.message});
 }
 
+/// The sender edited a message; [message] is its full updated row.
+class ChatLiveMessageUpdated extends ChatLiveEvent {
+  final Map<String, dynamic> message;
+  const ChatLiveMessageUpdated({required this.message});
+}
+
 class ChatLiveReactionsUpdated extends ChatLiveEvent {
   final String messageId;
   final List<dynamic> reactions;
@@ -159,6 +165,12 @@ class ChatLiveClient {
     return switch (type) {
       'room_info' => ChatLiveRoomInfo(roomId: json['room_id'] as String? ?? ''),
       'message_created' => ChatLiveMessageCreated(
+        message:
+            json['message'] is Map
+                ? Map<String, dynamic>.from(json['message'] as Map)
+                : const {},
+      ),
+      'message_updated' => ChatLiveMessageUpdated(
         message:
             json['message'] is Map
                 ? Map<String, dynamic>.from(json['message'] as Map)

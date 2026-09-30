@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -31,10 +30,7 @@ class SectionHeader extends ConsumerWidget {
     final fontSize = ref.watch(fontSizeProvider);
     final theme = Theme.of(context);
     final fontFamily = getFontFamily(language);
-    final titleColor =
-        theme.brightness == Brightness.dark
-            ? AppColors.readerSectionTitleDark
-            : AppColors.readerSectionTitle;
+    final titleColor = theme.textTheme.bodyMedium?.color;
     final scale = switch (depth) {
       0 => 1.2,
       1 => 1.0,

@@ -57,6 +57,17 @@ void main() {
       expect(deleted.deletedBy, 'u9');
     });
 
+    test('parses a message_updated frame', () {
+      final event = ChatLiveClient.parseFrame(
+        '{"type":"message_updated","message":{"id":"m1","body":"again"}}',
+      );
+
+      expect(event, isA<ChatLiveMessageUpdated>());
+      final updated = event! as ChatLiveMessageUpdated;
+      expect(updated.message['id'], 'm1');
+      expect(updated.message['body'], 'again');
+    });
+
     test('a message_deleted frame missing fields does not throw', () {
       final event = ChatLiveClient.parseFrame('{"type":"message_deleted"}');
 

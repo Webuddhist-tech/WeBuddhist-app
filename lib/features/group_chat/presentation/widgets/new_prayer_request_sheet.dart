@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -15,19 +14,22 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_inte
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Compose a prayer request: body plus one intention. Pops with the created
-/// message, or null when dismissed.
+/// (or, given [editing], updated) message, or null when dismissed.
 class NewPrayerRequestSheet extends ConsumerStatefulWidget {
-  const NewPrayerRequestSheet({super.key, required this.eventId});
+  const NewPrayerRequestSheet({super.key, required this.eventId, this.editing});
 
   final String eventId;
 
-  static const int maxBodyLength = 280;
+  /// The viewer's own request to edit; null composes a new one.
+  final ChatMessageDTO? editing;
+
   static const int _choicesPerRow = 5;
   static const double _minChoiceWidth = 64;
 
   static Future<ChatMessageDTO?> show(
     BuildContext context, {
     required String eventId,
+    ChatMessageDTO? editing,
   }) {
     return showModalBottomSheet<ChatMessageDTO>(
       context: context,
@@ -35,7 +37,7 @@ class NewPrayerRequestSheet extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => NewPrayerRequestSheet(eventId: eventId),
+      builder: (_) => NewPrayerRequestSheet(eventId: eventId, editing: editing),
     );
   }
 
@@ -50,9 +52,16 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
   ChatPrayerIntentionDTO? _intention;
   bool _sending = false;
 
+  bool get _isEditing => widget.editing != null;
+
   @override
   void initState() {
     super.initState();
+    final editing = widget.editing;
+    if (editing != null) {
+      _bodyController.text = editing.body;
+      _intention = editing.intention;
+    }
     _bodyController.addListener(_onBodyChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _bodyFocusNode.requestFocus();
@@ -72,7 +81,17 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
   bool get _canSend =>
       !_sending &&
       _intention != null &&
-      _bodyController.text.trim().isNotEmpty;
+      _bodyController.text.trim().isNotEmpty &&
+      _hasChanges;
+
+  /// An untouched edit would still come back marked edited, so Save waits
+  /// for a change.
+  bool get _hasChanges {
+    final editing = widget.editing;
+    if (editing == null) return true;
+    return _bodyController.text.trim() != editing.body.trim() ||
+        _intention?.slug != editing.intention?.slug;
+  }
 
   Future<void> _send() async {
     final intention = _intention;
@@ -80,9 +99,18 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     if (intention == null || body.isEmpty || _sending) return;
     setState(() => _sending = true);
     try {
-      final result = await ref
-          .read(prayerRequestsProvider(widget.eventId).notifier)
-          .send(body, intention: intention.slug);
+      final notifier = ref.read(
+        prayerRequestsProvider(widget.eventId).notifier,
+      );
+      final editing = widget.editing;
+      final result =
+          editing == null
+              ? await notifier.send(body, intention: intention.slug)
+              : await notifier.edit(
+                editing.id,
+                body: body,
+                intention: intention,
+              );
       if (!mounted) return;
       result.fold(
         (failure) => presentChatSendError(context, failure),
@@ -182,7 +210,9 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
                 ),
                 Expanded(
                   child: Text(
-                    context.l10n.event_prayer_new_request,
+                    _isEditing
+                        ? context.l10n.event_prayer_edit_request
+                        : context.l10n.event_prayer_new_request,
                     strutStyle: context.tibetanStrutStyle(17, compact: true),
                     style: TextStyle(
                       fontSize: 17,
@@ -204,8 +234,6 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final hintColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final length = _bodyController.text.characters.length;
-
     return Container(
       decoration: BoxDecoration(
         color: prayerIntentionCardColor(_intention, isDark),
@@ -215,45 +243,27 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          TextField(
-            controller: _bodyController,
-            focusNode: _bodyFocusNode,
-            enabled: !_sending,
-            minLines: 4,
-            maxLines: 8,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            textCapitalization: TextCapitalization.sentences,
-            inputFormatters: [
-              LengthLimitingTextInputFormatter(
-                NewPrayerRequestSheet.maxBodyLength,
-              ),
-            ],
-            style: TextStyle(fontSize: 15, height: 1.4, color: textColor),
-            decoration: InputDecoration(
-              hintText: context.l10n.event_prayer_hint,
-              hintStyle: TextStyle(
-                fontSize: 15,
-                height: 1.4,
-                color: hintColor,
-              ),
-              isDense: true,
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-          ),
-          Text(
-            '$length / ${NewPrayerRequestSheet.maxBodyLength}',
-            style: TextStyle(fontSize: 11, color: hintColor),
-          ),
-        ],
+      child: TextField(
+        controller: _bodyController,
+        focusNode: _bodyFocusNode,
+        enabled: !_sending,
+        minLines: 4,
+        maxLines: 8,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(fontSize: 15, height: 1.4, color: textColor),
+        decoration: InputDecoration(
+          hintText: context.l10n.event_prayer_hint,
+          hintStyle: TextStyle(fontSize: 15, height: 1.4, color: hintColor),
+          isDense: true,
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        ),
       ),
     );
   }
@@ -316,7 +326,12 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     bool isDark,
     List<ChatPrayerIntentionDTO> items,
   ) {
-    final selected = _intention;
+    // A request being edited carries its intention without the catalog's
+    // description, so prefer the catalog's copy of the same slug.
+    final selectedSlug = _intention?.slug;
+    final selected =
+        items.where((item) => item.slug == selectedSlug).firstOrNull ??
+        _intention;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -391,10 +406,14 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
                 : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(AppAssets.handsPraying, size: 18),
-                    const SizedBox(width: 8),
+                    if (!_isEditing) ...[
+                      const Icon(AppAssets.handsPraying, size: 18),
+                      const SizedBox(width: 8),
+                    ],
                     Text(
-                      context.l10n.event_prayer_request_button,
+                      _isEditing
+                          ? context.l10n.save
+                          : context.l10n.event_prayer_request_button,
                       strutStyle: context.tibetanStrutStyle(15, compact: true),
                       style: const TextStyle(
                         fontSize: 15,

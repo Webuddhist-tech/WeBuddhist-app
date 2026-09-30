@@ -38,7 +38,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_continue => 'Continue';
 
   @override
-  String get onboarding_first_question => 'Choose your language:';
+  String get onboarding_first_question => 'Choose your language';
+
+  @override
+  String get onboarding_language_subtitle =>
+      'This sets the language of the app';
 
   @override
   String get onboarding_choose_option => 'Choose at least one:';
@@ -48,45 +52,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_all_set_description =>
-      'Here\'s what\'s ready for your practice.';
+      'Here\'s what\'s ready for your practice';
 
   @override
-  String get onboarding_all_set_feature_practices =>
-      'Chants, accumulations, meditation, and study plans to choose from';
+  String get onboarding_all_set_practice_title => 'Practice';
 
   @override
-  String get onboarding_all_set_feature_reminders =>
-      'Gentle daily reminders, whenever you\'re ready';
+  String get onboarding_all_set_practice_body =>
+      'Plans, chants, malas and meditation';
 
   @override
-  String get onboarding_begin_practice => 'Find your first practices';
+  String get onboarding_all_set_connect_title => 'Connect';
 
   @override
-  String get onboarding_2_title => 'Next, here\'s how it works.';
-
-  @override
-  String get onboarding_2_subtitle => 'Three small steps to build the habit';
-
-  @override
-  String get onboarding_2_step1_title => 'Choose your practices';
-
-  @override
-  String get onboarding_2_step1_desc =>
-      'Chant, count mantras, set a meditation timer, or follow a study plan from your tradition.';
-
-  @override
-  String get onboarding_2_step2_title => 'Add them to your day';
-
-  @override
-  String get onboarding_2_step2_desc =>
-      'Build a daily routine and we\'ll send gentle reminders to keep it going.';
-
-  @override
-  String get onboarding_2_step3_title => 'Practice a few minutes a day';
-
-  @override
-  String get onboarding_2_step3_desc =>
-      'Even a moment counts. Day by day, your practice grows.';
+  String get onboarding_all_set_connect_body =>
+      'Groups, events, news feed and chat';
 
   @override
   String get home_recitation => 'recitations';
@@ -159,7 +139,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookmark_texts => 'Texts';
 
   @override
-  String get bookmark_group_accumulation => 'Group accumulation';
+  String get bookmark_group_accumulation => 'Channel accumulations';
 
   @override
   String get mala_add_to_practice => 'Add to my practices';
@@ -172,7 +152,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mala_add_rounds_message =>
-      'Add the number of mala rounds you did outside this app.';
+      'Add the mala rounds you did outside the app';
 
   @override
   String get mala_add_to_bookmark => 'Bookmark';
@@ -191,7 +171,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mala_reset_count_confirm =>
-      'Your current count will go back to zero, but your accumulations will stay in your lifetime total.';
+      'Your current count will go back to zero, but your accumulations will stay in your lifetime total';
 
   @override
   String get mala_reset_confirm => 'Reset';
@@ -232,7 +212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get preset_timers => 'Preset timers';
 
   @override
-  String get meditation_timer => 'Meditation Timer';
+  String get meditation_timer => 'Meditation timer';
 
   @override
   String get timer_min => 'min';
@@ -256,6 +236,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String home_share_prompt(String appName) {
     return 'Enjoying $appName?';
   }
+
+  @override
+  String get home_share_support => 'Your support helps our community grow.';
 
   @override
   String get no_feature_content => 'No featured content available';
@@ -485,7 +468,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get my_recitation_collection_delete_message =>
-      'This collection will be permanently removed.';
+      'This collection will be permanently removed';
 
   @override
   String get my_recitation_collection_fallback_title => 'Chant collection';
@@ -519,11 +502,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bookmarks_empty_chant_collections_title =>
-      'No chant collections bookmarked yet.';
+      'No chant collections bookmarked yet';
 
   @override
   String get bookmarks_empty_chant_collections_subtitle =>
-      'Bookmark a chant collection to save it here.';
+      'Bookmark a chant collection to save it here';
 
   @override
   String get notification_settings => 'Notification settings';
@@ -537,11 +520,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notification_allow_subtitle_disabled =>
-      'Permission needed. Tap to grant in Settings.';
+      'Permission needed. Tap to grant in Settings';
 
   @override
   String get notification_allow_subtitle_paused =>
-      'Reminders are paused. Tap to resume.';
+      'Reminders are paused. Tap to resume';
 
   @override
   String get notification_routine_title => 'Plan reminders';
@@ -559,7 +542,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notification_battery_subtitle_enabled =>
-      'Your reminders are sent on time, even when the app is closed.';
+      'Your reminders are sent on time, even when the app is closed';
 
   @override
   String get notification_battery_subtitle_disabled =>
@@ -585,7 +568,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notification_practice_subtitle_disabled =>
-      'Mala reminders are paused. Tap to resume.';
+      'Mala reminders are paused. Tap to resume';
 
   @override
   String get notification_timer_title => 'Timer reminders';
@@ -596,7 +579,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notification_timer_subtitle_disabled =>
-      'Timer reminders are paused. Tap to resume.';
+      'Timer reminders are paused. Tap to resume';
 
   @override
   String get notification_battery_info_title => 'About background reminders';
@@ -611,11 +594,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notification_snack_disable_alarms_in_settings =>
-      'Turn off alarms & reminders in Settings.';
+      'Turn off alarms & reminders in Settings';
 
   @override
   String get notification_snack_battery_reenable =>
-      'Restore battery optimization in Settings → Battery.';
+      'Restore battery optimization in Settings → Battery';
 
   @override
   String get profile_default_bio => 'Welcome to WeBuddhist';
@@ -643,7 +626,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auth_drawer_subtitle =>
-      'Continue your practice on any device, wherever you go.';
+      'Continue your practice on any device, wherever you go';
 
   @override
   String get routine_delete_block_message =>
@@ -660,21 +643,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Which traditions\ndo you follow?';
 
   @override
-  String get onboarding_tradition_title => 'How do you follow the Buddha?';
+  String get onboarding_tradition_title =>
+      'How do you follow the Buddha’s teachings?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'We\'ll show you the practices and texts of your path. You can change this anytime in the app settings.';
+      'Choose one or more traditions for your content. You can change this anytime in Settings.';
 
   @override
   String get onboarding_tradition_option_intro => 'Through:';
 
   @override
   String get onboarding_tradition_show_all_title => 'Show me everything';
-
-  @override
-  String get onboarding_tradition_show_all_description =>
-      'Practices and texts from every path';
 
   @override
   String get onboarding_skip_for_now => 'Skip for now';
@@ -752,27 +732,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Teachers, communities, challenges, and events to support you on the path';
 
   @override
-  String get connect_subtitle => 'Find your groups and practice together';
+  String get connect_subtitle => 'Find channels and practice together';
 
   @override
-  String get discover_groups => 'Discover groups';
+  String get discover_groups => 'Discover channels';
 
   @override
-  String get my_groups => 'My groups';
+  String get my_groups => 'My channels';
 
   @override
   String get see_all => 'See all';
 
   @override
   String get connect_groups_load_error =>
-      'Unable to load groups.\nCheck your connection and try again';
+      'Unable to load channels.\nCheck your connection and try again';
 
   @override
-  String get connect_groups_empty_title => 'No more groups';
+  String get connect_groups_empty_title => 'No more channels';
 
   @override
   String get connect_groups_empty_subtitle =>
-      'Congratulations, you\'ve joined all our groups! Check back soon. New ones are on the way';
+      'Congrats, you\'re subscribed to all our channels! Check back soon. New ones are on the way';
 
   @override
   String get connect_tab_feed => 'Feed';
@@ -787,10 +767,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_tab_practices => 'Practices';
 
   @override
-  String get connect_tab_groups => 'Groups';
+  String get connect_tab_groups => 'Channels';
 
   @override
-  String get connect_segment_my => 'For you';
+  String get connect_segment_my => 'Your channels';
 
   @override
   String get connect_segment_discover => 'Discover';
@@ -805,16 +785,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_empty_discover_feed => 'Nothing to discover';
 
   @override
-  String get connect_empty_discover_groups => 'No groups to discover';
+  String get connect_empty_discover_groups => 'No channels to discover';
 
   @override
   String get connect_empty_discover_practices => 'No practices to discover';
 
   @override
-  String get connect_all_groups => 'All groups';
+  String get connect_all_groups => 'All channels';
 
   @override
-  String get connect_my_empty_feed_title => 'Your groups have been quiet';
+  String get connect_my_empty_feed_title => 'Your channels have been quiet';
 
   @override
   String get connect_my_empty_events_title => 'No upcoming events';
@@ -823,26 +803,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_my_empty_posts_title => 'No posts yet';
 
   @override
-  String get connect_my_empty_groups_title => 'No groups yet';
+  String get connect_my_empty_groups_title => 'No channels yet';
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'Nothing new from the groups you have joined. Other groups are posting today.';
+      'Nothing new from your channels. Others are posting today';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'None of your groups have anything scheduled. Other groups have events open to everyone.';
+      'None of your channels have anything scheduled. Others have events open to everyone';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'Your groups have not posted anything. See what other groups are sharing.';
+      'Your channels haven\'t posted anything. See what others are sharing';
 
   @override
   String get connect_my_empty_groups_subtitle =>
-      'You have not joined any groups yet. Discover communities to practice with.';
+      'You haven\'t subscribed to any channels yet. Discover some to practice with';
 
   @override
-  String get connect_my_empty_feed_browse => 'See what other groups share';
+  String get connect_my_empty_feed_browse =>
+      'See what other channels are sharing';
 
   @override
   String get connect_my_empty_events_browse => 'Browse open events';
@@ -855,7 +836,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'Your groups have not started any practices. See what other groups are offering.';
+      'Your channels haven\'t started any practices. See what others are offering';
 
   @override
   String get connect_my_empty_practices_browse => 'Browse other practices';
@@ -879,7 +860,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_comment_delete_message =>
-      'This comment will be permanently removed.';
+      'This comment will be permanently removed';
 
   @override
   String get connect_comment_delete_failed => 'Failed to delete comment';
@@ -897,7 +878,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_post_comments_empty =>
-      'No comments yet. Start the conversation.';
+      'No comments yet. Start the conversation';
 
   @override
   String get connect_caption_more => 'More';
@@ -906,7 +887,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_online => 'Online';
 
   @override
-  String get home_group_events => 'Featured Events';
+  String get home_group_events => 'Featured events';
 
   @override
   String get home_poems => 'Poems';
@@ -916,7 +897,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load poems.\nCheck your connection and try again';
 
   @override
-  String get poems_empty => 'No poems yet. Check back soon.';
+  String get poems_empty => 'No poems yet. Check back soon';
 
   @override
   String get connect_events_filter_all => 'All';
@@ -943,7 +924,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_fallback_title => 'Event';
 
   @override
-  String get connect_group_fallback_title => 'Group';
+  String get connect_group_fallback_title => 'Channel';
 
   @override
   String get connect_event_attend => 'Attend';
@@ -990,7 +971,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_tab_about => 'About';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => 'More event details';
 
   @override
   String get connect_event_links_empty => 'No links yet';
@@ -1024,7 +1005,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_event_add_recitations_message =>
-      'Add the number of recitations you did with the livestream or outside this app.';
+      'Add recitations you did with the livestream or outside this app';
 
   @override
   String get connect_event_every_day => 'Every day';
@@ -1046,13 +1027,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_about_empty => 'No event details yet';
 
   @override
-  String get search_groups => 'Search groups';
+  String get search_groups => 'Search channels';
 
   @override
-  String get search_for_groups => 'Search for groups';
+  String get search_for_groups => 'Search for channels';
 
   @override
-  String get no_groups_found => 'No matching groups found';
+  String get no_groups_found => 'No matching channels found';
 
   @override
   String get explore_coming_soon_subtitle =>
@@ -1353,7 +1334,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueAsGuest => 'Continue as guest';
 
   @override
-  String get exploreAsGuest => 'Explore as a Guest';
+  String get exploreAsGuest => 'Explore as a guest';
 
   @override
   String get signIn => 'Sign In';
@@ -1436,7 +1417,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notFound =>
-      'This is no longer available. Edit your routine to update.';
+      'This is no longer available. Edit your routine to update';
 
   @override
   String get noTimeSlot =>
@@ -1778,7 +1759,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get delete_account_description =>
-      'If you delete your account, all your information, history, and personalized settings within WeBuddhist will be permanently eliminated. Please note that this action is irreversible. To proceed, tap the button below.';
+      'If you delete your account, all your information, history, and personalized settings on WeBuddhist will be permanently deleted. Note that this action is irreversible. To proceed, tap the button below.';
 
   @override
   String get delete_account_button => 'Delete account';
@@ -1849,10 +1830,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moon_phase_waning_crescent => 'Waning crescent';
 
   @override
-  String get join => 'Join';
+  String get join => 'Subscribe';
 
   @override
-  String get joined => 'Joined';
+  String get joined => 'Subscribed';
 
   @override
   String get group_member => 'member';
@@ -1868,7 +1849,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_members_heading(int count) {
-    return 'Members($count)';
+    return 'Members ($count)';
   }
 
   @override
@@ -1883,25 +1864,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_notifications_title => 'Notifications';
 
   @override
-  String get group_notifications_chat => 'Group chat';
+  String get group_notifications_chat => 'Channel chat';
 
   @override
-  String get group_notifications_content => 'Group content';
+  String get group_notifications_content => 'Channel content';
 
   @override
   String get group_notifications_master_off =>
-      'Notifications are turned off for the app.';
+      'Notifications are turned off for the app';
 
   @override
   String get group_notifications_open_settings => 'Turn on';
 
   @override
   String get group_notifications_update_failed =>
-      'Couldn\'t update notification settings. Try again.';
+      'Couldn\'t update notification settings. Try again';
 
   @override
   String get group_notifications_load_failed =>
-      'Couldn\'t load notification settings.';
+      'Couldn\'t load notification settings';
 
   @override
   String get group_chat_mute_notifications => 'Mute chat notifications';
@@ -1916,20 +1897,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'Chat notifications on';
 
   @override
-  String get group_leave => 'Leave group';
+  String get group_leave => 'Unsubscribe';
 
   @override
-  String get group_leave_confirm_title => 'Leave group?';
+  String get group_leave_confirm_title => 'Unsubscribe?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group.';
+      'You\'ll stop getting messages and updates from this channel';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
 
   @override
-  String get group_request_to_join => 'Request to join';
+  String get group_request_to_join => 'Request to subscribe';
 
   @override
   String get group_request => 'Request';
@@ -1938,7 +1919,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_request_sent => 'Request sent';
 
   @override
-  String get group_join_request_title => 'Request to join';
+  String get group_join_request_title => 'Request to subscribe';
 
   @override
   String get group_join_request_message_label => 'Message (optional)';
@@ -1952,14 +1933,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_join_request_sent_snackbar =>
-      'Request sent — an admin will review it.';
+      'Request sent. An admin will review it';
 
   @override
   String get group_join_request_error =>
-      'Unable to send request. Please try again.';
+      'Unable to send request. Please try again';
 
   @override
-  String get group_join_requests_title => 'Join requests';
+  String get group_join_requests_title => 'Subscribe requests';
 
   @override
   String get group_join_requests_admit => 'Admit';
@@ -1972,33 +1953,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_join_requests_load_error =>
-      'Unable to load join requests. Please try again.';
+      'Unable to load join requests. Please try again';
 
   @override
   String get group_join_requests_admit_error =>
-      'Unable to admit this request. Please try again.';
+      'Unable to admit this request. Please try again';
 
   @override
   String get group_join_requests_deny_error =>
-      'Unable to deny this request. Please try again.';
+      'Unable to deny this request. Please try again';
 
   @override
   String get group_members_only_title => 'Members only';
 
   @override
   String get group_members_only_message =>
-      'Join to see this group\'s chants, events and posts.';
+      'Subscribe to see this channel\'s content';
 
   @override
   String get group_join_request_waiting_title => 'Waiting on an admin';
 
   @override
   String get group_join_request_waiting_message =>
-      'We\'ll notify you as soon as your request is reviewed.';
+      'We\'ll notify you as soon as your request is reviewed';
 
   @override
   String get group_members_load_error =>
-      'Unable to load members. Please try again.';
+      'Unable to load members. Please try again';
 
   @override
   String get group_followers_load_error =>
@@ -2016,15 +1997,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get group_remove_member_title => 'Remove from group?';
+  String get group_remove_member_title => 'Remove from channel?';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from group and blocked from joining until the ban ends';
+    return '$name will be removed from this channel and unable to resubscribe until the ban is lifted';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'Blocked for :';
+  String get group_remove_member_blocked_for => 'Blocked for:';
 
   @override
   String get group_remove_member_duration_day => '1 day';
@@ -2048,38 +2029,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the group.';
+    return '$name was removed from the channel';
   }
 
   @override
   String get group_remove_member_error =>
-      'Couldn\'t remove this member. Try again.';
+      'Couldn\'t remove this member. Try again';
 
   @override
   String group_join_banned_until(String date) {
-    return 'You were removed from this group and cannot rejoin until $date';
+    return 'You were removed from this channel and cannot resubscribe until $date';
   }
 
   @override
   String get group_join_banned =>
-      'You were removed from this group and cannot rejoin until the ban ends.';
+      'You were removed from this channel and cannot resubscribe until the ban is lifted';
 
   @override
-  String get group_removed_title => 'You\'ve been removed from this group';
+  String get group_removed_title => 'You\'ve been removed from this channel';
 
   @override
   String group_removed_message(String group, String duration) {
-    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin for $duration.';
+    return 'An admin from $group removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe for $duration.';
   }
 
   @override
   String group_removed_message_no_date(String group) {
-    return 'An admin from $group removed you from this group. You won\'t be able to view this group\'s posts, events and practices, or request to rejoin.';
+    return 'An admin from $group removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe';
   }
 
   @override
   String get group_removed_rejoin_label =>
-      'You can request to rejoin this group on';
+      'You can request to resubscribe to this channel on';
 
   @override
   String group_removed_rejoin_value(String date, String remaining) {
@@ -2129,18 +2110,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get group_change_practice_title => 'Change group practice';
+  String get group_change_practice_title => 'Change practice channel';
 
   @override
   String get group_change_practice_message =>
-      'You are already practicing this plan with another group. Would you like to change your practice group?';
+      'You are already practicing this plan with another channel. Would you like to change your practice channel?';
 
   @override
-  String get group_join_to_contribute => 'Join to contribute';
+  String get group_join_to_contribute => 'Subscribe to contribute';
 
   @override
   String get group_accumulator_join_error =>
-      'Unable to join accumulation. Please try again.';
+      'Unable to join accumulation. Please try again';
 
   @override
   String get group_accumulator_join_before_practice =>
@@ -2155,7 +2136,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_accumulator_leaderboard => 'Leaderboard';
 
   @override
-  String get group_accumulator_my_contributions => 'My Contributions';
+  String get group_accumulator_my_contributions => 'My contributions';
 
   @override
   String get group_accumulator_recited => 'Recited';
@@ -2165,10 +2146,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_accumulator_contributions_empty =>
-      'Join this accumulation to track your contributions.';
+      'Join this accumulation to track your contributions';
 
   @override
-  String get group_accumulator_leaderboard_empty => 'No recitations yet.';
+  String get group_accumulator_leaderboard_empty => 'No recitations yet';
 
   @override
   String get group_accumulator_recite_now => 'Recite now';
@@ -2188,7 +2169,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_accumulator_add_offline_chants_message =>
-      'Add the number of chants you did outside this app.';
+      'Add the number of chants you did outside the app';
 
   @override
   String get group_accumulator_session_complete => 'Session complete!';
@@ -2204,7 +2185,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String accumulation,
     String group,
   ) {
-    return 'I completed $count recitations in \"$accumulation\", a group accumulation by $group on WeBuddhist. Come join me!';
+    return 'I completed $count recitations in \"$accumulation\", an accumulation by $group on WeBuddhist. Come join me!';
   }
 
   @override
@@ -2212,7 +2193,7 @@ class AppLocalizationsEn extends AppLocalizations {
     int count,
     String accumulation,
   ) {
-    return 'I completed $count recitations in the group accumulation \"$accumulation\" on WeBuddhist. Come join me!';
+    return 'I completed $count recitations in the \"$accumulation\" accumulation on WeBuddhist. Come join me!';
   }
 
   @override
@@ -2239,7 +2220,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_recitation_collection_dedication =>
-      'By this merit, may all beings\nbe free from suffering.';
+      'By this merit, may all beings\nbe free from suffering';
 
   @override
   String get share_this_quote => 'Share this quote';
@@ -2264,7 +2245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get share_quote_message =>
-      'I liked this quote from WeBuddhist and wanted to share it with you. Read more such insightful quotes on the WeBuddhist App';
+      'I liked this quote from WeBuddhist and wanted to share it with you. Read more such insightful quotes on the WeBuddhist app.';
 
   @override
   String get share_poem_message =>
@@ -2296,7 +2277,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get share_group_invite_message =>
-      'I\'d love for you to join our group. Let\'s practice together on WeBuddhist.';
+      'Join me on this channel. Let\'s practice together on WeBuddhist!';
 
   @override
   String get weekday_monday => 'MON';
@@ -2352,47 +2333,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_mantra_label => 'Mantra';
 
   @override
-  String get bookmarks_empty_all_title => 'Nothing bookmarked yet.';
+  String get bookmarks_empty_all_title => 'Nothing bookmarked yet';
 
   @override
   String get bookmarks_empty_all_subtitle =>
-      'Bookmark anything to save it here.';
+      'Bookmark anything to save it here';
 
   @override
-  String get bookmarks_empty_plans_title => 'No plans bookmarked yet.';
+  String get bookmarks_empty_plans_title => 'No plans bookmarked yet';
 
   @override
   String get bookmarks_empty_plans_subtitle =>
-      'Bookmark a plan to save it here.';
+      'Bookmark a plan to save it here';
 
   @override
-  String get bookmarks_empty_malas_title => 'No malas bookmarked yet.';
+  String get bookmarks_empty_malas_title => 'No malas bookmarked yet';
 
   @override
   String get bookmarks_empty_malas_subtitle =>
-      'Bookmark a mala to save it here.';
+      'Bookmark a mala to save it here';
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No group accumulations bookmarked yet.';
+      'No channel accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a group accumulation to save it here.';
+      'Bookmark a channel accumulation to save it here';
 
   @override
-  String get bookmarks_empty_timers_title => 'No timers bookmarked yet.';
+  String get bookmarks_empty_timers_title => 'No timers bookmarked yet';
 
   @override
   String get bookmarks_empty_timers_subtitle =>
-      'Bookmark a timer to save it here.';
+      'Bookmark a timer to save it here';
 
   @override
-  String get bookmarks_empty_texts_title => 'No texts bookmarked yet.';
+  String get bookmarks_empty_texts_title => 'No texts bookmarked yet';
 
   @override
   String get bookmarks_empty_texts_subtitle =>
-      'Bookmark a text to save it here.';
+      'Bookmark a text to save it here';
 
   @override
   String get bookmark_removed => 'Bookmark removed';
@@ -2411,18 +2392,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webview_timeout_error =>
-      'Page took too long to load. Please check your internet connection.';
+      'Page took too long to load. Please check your internet connection';
 
   @override
   String get webview_load_failed => 'Failed to load page';
 
   @override
   String get privacy_policy_load_error =>
-      'Unable to load the privacy policy page.';
+      'Unable to load the privacy policy page';
 
   @override
   String get terms_of_service_load_error =>
-      'Unable to load the terms of service page.';
+      'Unable to load the terms of service page';
 
   @override
   String get series_enroll_error => 'Failed to enroll in series';
@@ -2452,7 +2433,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get session_plans_load_error =>
-      'Unable to load plans.\nPlease try again later.';
+      'Unable to load plans.\nPlease try again later';
 
   @override
   String get session_chants_load_error => 'Unable to load chants';
@@ -2514,7 +2495,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get author_details_load_error =>
-      'Unable to load author details.\nPlease try again.';
+      'Unable to load author details.\nPlease try again';
 
   @override
   String get link_cannot_open => 'Cannot open this link';
@@ -2557,12 +2538,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_accumulator_share_message(String accumulation, String group) {
-    return 'I am taking part in \"$accumulation\", a group accumulation by $group on WeBuddhist. Come join me!';
+    return 'I am taking part in \"$accumulation\", an accumulation by $group on WeBuddhist. Come join me!';
   }
 
   @override
   String group_accumulator_share_message_no_group(String accumulation) {
-    return 'I am taking part in the group accumulation \"$accumulation\" on WeBuddhist. Come join me!';
+    return 'I am taking part in the \"$accumulation\" accumulation on WeBuddhist. Come join me!';
   }
 
   @override
@@ -2575,14 +2556,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chats_empty_title => 'No chats yet';
 
   @override
-  String get chats_empty_body => 'Join a community to start chatting.';
+  String get chats_empty_body => 'Subscribe to a channel to start chatting';
 
   @override
   String get group_chat_inappropriate =>
-      'This message couldn\'t be sent because it contains language that isn\'t allowed.';
+      'This message couldn\'t be sent because it contains language that isn\'t allowed';
 
   @override
-  String get group_chat_not_a_member => 'Only members can open this chat.';
+  String get group_chat_not_a_member => 'Only members can open this chat';
 
   @override
   String get group_chat_open => 'Chat';
@@ -2591,7 +2572,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_message_hint => 'Message';
 
   @override
-  String get group_chat_join_to_send => 'Join chat to send message.';
+  String get group_chat_join_to_send => 'Join chat to send message';
 
   @override
   String get group_chat_today => 'Today';
@@ -2603,10 +2584,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_empty_title => 'No messages yet';
 
   @override
-  String get group_chat_empty_body => 'Start the conversation with your group.';
+  String get group_chat_empty_body =>
+      'Start the conversation with your channel';
 
   @override
-  String get group_chat_load_failed => 'Messages couldn\'t be loaded.';
+  String get group_chat_load_failed => 'Messages couldn\'t be loaded';
 
   @override
   String get group_chat_retry => 'Retry';
@@ -2636,7 +2618,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_report_title => 'Why are you reporting this?';
 
   @override
-  String get group_chat_report_privacy => 'Your name stays private.';
+  String get group_chat_report_privacy => 'Your name stays private';
 
   @override
   String get group_chat_report_reason_harassment => 'Harassment or bullying';
@@ -2669,7 +2651,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_report_thanks => 'Thank you for the feedback';
 
   @override
-  String get group_chat_report_offline => 'You\'re offline — try again later';
+  String get group_chat_report_offline => 'You\'re offline. Try again later';
 
   @override
   String get group_chat_report_failed => 'Couldn\'t send report';
@@ -2693,8 +2675,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'These messages will be removed from the chat for everyone.',
-      one: 'This message will be removed from the chat for everyone.',
+      other: 'These messages will be removed from the chat for everyone',
+      one: 'This message will be removed from the chat for everyone',
     );
     return '$_temp0';
   }
@@ -2704,8 +2686,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count messages couldn\'t be deleted.',
-      one: 'The message couldn\'t be deleted.',
+      other: '$count messages couldn\'t be deleted',
+      one: 'The message couldn\'t be deleted',
     );
     return '$_temp0';
   }
@@ -2719,7 +2701,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_message_deleted_by_sender => 'This message was deleted';
 
   @override
-  String get group_chat_reaction_failed => 'Your reaction couldn\'t be saved.';
+  String get group_chat_reaction_failed => 'Your reaction couldn\'t be saved';
 
   @override
   String group_chat_reactions_count(int count) {
@@ -2740,7 +2722,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_chat_reply_parent_gone =>
-      'That message is no longer available, so the quote was removed. Send again to post your message.';
+      'That message is no longer available, so the quote was removed. Send again to post your message';
 
   @override
   String get group_tab_posts => 'Posts';
@@ -2753,11 +2735,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_posts_empty_message =>
-      'Share your first update with your community.';
+      'Share your first update on your channel';
 
   @override
-  String get group_posts_load_error =>
-      'Unable to load posts. Please try again.';
+  String get group_posts_load_error => 'Unable to load posts. Please try again';
 
   @override
   String get group_post_button => 'Post';
@@ -2781,7 +2762,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_post_discard_title => 'Discard post?';
 
   @override
-  String get group_post_discard_message => 'You\'ll lose what you\'ve written.';
+  String get group_post_discard_message => 'You\'ll lose what you\'ve written';
 
   @override
   String get group_post_keep_editing => 'Keep editing';
@@ -2794,7 +2775,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_post_add_link_hint =>
-      'Paste a link and we\'ll show a preview.';
+      'Paste a link and we\'ll show a preview';
 
   @override
   String get group_post_link_field_hint => 'Link';
@@ -2810,24 +2791,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_post_preview_failed_message =>
-      'You can still attach it as a link.';
+      'You can still attach it as a link';
 
   @override
   String get group_post_invalid_link =>
-      'Enter a valid link, for example https://example.com';
+      'Enter a valid link, for example: https://example.com';
 
   @override
   String group_post_photo_limit(int count) {
-    return 'You can add up to $count photos.';
+    return 'You can add up to $count photos';
   }
 
   @override
   String get group_post_upload_error =>
-      'Unable to upload photos. Please try again.';
+      'Unable to upload photos. Please try again';
 
   @override
   String get group_post_publish_error =>
-      'Unable to publish your post. Please try again.';
+      'Unable to publish your post. Please try again';
 
   @override
   String get group_post_published => 'Your post is live.';
@@ -2837,11 +2818,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_post_delete_message =>
-      'This post will be permanently removed.';
+      'This post will be permanently removed';
 
   @override
   String get group_post_delete_failed =>
-      'Unable to delete the post. Please try again.';
+      'Unable to delete post. Please try again';
 
   @override
   String get edit => 'Edit';
@@ -2851,10 +2832,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_post_update_error =>
-      'Unable to save your changes. Please try again.';
+      'Unable to save your changes. Please try again';
 
   @override
-  String get group_post_updated => 'Your changes are saved.';
+  String get group_post_updated => 'Your changes are saved';
 
   @override
   String get practice_collection_already_added =>
@@ -2893,8 +2874,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count requests',
       one: '1 request',
+      other: '$count requests',
     );
     return '$_temp0';
   }
@@ -2910,14 +2891,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_add => 'Add a prayer request';
 
   @override
-  String get event_prayer_hint => 'How can we pray for you today?';
+  String get event_prayer_hint => 'How can we pray for you today';
 
   @override
-  String get event_prayer_load_failed => 'Prayer requests couldn\'t be loaded.';
+  String get event_prayer_load_failed => 'Prayer requests couldn\'t be loaded';
 
   @override
-  String get event_prayer_closed =>
-      'Prayer requests are closed for this event.';
+  String get event_prayer_closed => 'Prayer requests are closed for this event';
 
   @override
   String get event_prayer_pray => 'Pray';
@@ -2927,6 +2907,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_prayer_new_request => 'New prayer request';
+
+  @override
+  String get event_prayer_edit_request => 'Edit prayer request';
+
+  @override
+  String get event_prayer_delete_title => 'Delete prayer request?';
+
+  @override
+  String get event_prayer_delete_body =>
+      'It will be removed for everyone in this event.';
+
+  @override
+  String get event_prayer_delete_failed =>
+      'The prayer request couldn\'t be deleted.';
 
   @override
   String get event_prayer_choose_intention => 'Choose an intention';
@@ -2985,4 +2979,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => 'Feedback';
+
+  @override
+  String get feedback_hint =>
+      'Tell us what\'s working, what isn\'t, or what you\'d like to see...';
+
+  @override
+  String get feedback_images => 'Images';
+
+  @override
+  String get feedback_add_image => 'Add image';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'You can attach up to $count images';
+  }
+
+  @override
+  String get feedback_send => 'Send';
+
+  @override
+  String get feedback_sent => 'Thank you! Your feedback has been sent';
+
+  @override
+  String get feedback_error_offline =>
+      'You\'re offline. Please try again later';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'Too many requests. Please wait a moment and try again';
+
+  @override
+  String get feedback_error_too_large =>
+      'Images are too large. Remove one and try again';
+
+  @override
+  String get feedback_error_failed =>
+      'Couldn\'t send feedback. Please try again';
+
+  @override
+  String get feedback_error_unavailable =>
+      'Feedback is not available right now';
 }

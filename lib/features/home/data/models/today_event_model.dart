@@ -35,8 +35,21 @@ class TodayEventMetadataModel {
 class TodayEventModel {
   final String id;
   final TodayEventMetadataModel metadata;
+  final DateTime? startDate;
+  final DateTime? endDate;
+  final String? timezone;
+  final String? startTime;
+  final String? endTime;
 
-  TodayEventModel({required this.id, required this.metadata});
+  TodayEventModel({
+    required this.id,
+    required this.metadata,
+    this.startDate,
+    this.endDate,
+    this.timezone,
+    this.startTime,
+    this.endTime,
+  });
 
   factory TodayEventModel.fromJson(Map<String, dynamic> json) {
     return TodayEventModel(
@@ -44,11 +57,24 @@ class TodayEventModel {
       metadata: TodayEventMetadataModel.fromJson(
         json['metadata'] as Map<String, dynamic>? ?? const {},
       ),
+      startDate: _parseDate(json['start_date']),
+      endDate: _parseDate(json['end_date']),
+      timezone: json['timezone'] as String?,
+      startTime: json['start_time'] as String?,
+      endTime: json['end_time'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'metadata': metadata.toJson()};
+    return {
+      'id': id,
+      'metadata': metadata.toJson(),
+      'start_date': startDate?.toIso8601String(),
+      'end_date': endDate?.toIso8601String(),
+      'timezone': timezone,
+      'start_time': startTime,
+      'end_time': endTime,
+    };
   }
 
   TodayEvent toEntity() {
@@ -56,7 +82,17 @@ class TodayEventModel {
       id: id,
       name: metadata.name,
       description: metadata.description,
+      startDate: startDate,
+      endDate: endDate,
+      timezone: timezone,
+      startTime: startTime,
+      endTime: endTime,
     );
+  }
+
+  static DateTime? _parseDate(Object? value) {
+    if (value is String && value.isNotEmpty) return DateTime.tryParse(value);
+    return null;
   }
 }
 
