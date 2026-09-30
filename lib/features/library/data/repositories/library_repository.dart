@@ -172,21 +172,12 @@ class LibraryRepository {
     });
   }
 
-  /// The marks that touch [spanStart]..[spanEnd]. The page still opens when
-  /// they fail or take longer than [yigchungTimeout]; a slow fetch keeps
-  /// going so later pages get them.
-  Future<List<LibraryLineSpan>> _yigchungsWithin(
-    String editionId, {
-    required int spanStart,
-    required int spanEnd,
-  }) async {
+  /// [editionId]'s marks, or none when they fail; never throws.
+  Future<List<LibraryLineSpan>> _yigchungsOrNone(String editionId) async {
     try {
-      final all = await getYigchungs(editionId).timeout(yigchungTimeout);
-      return all
-          .where((y) => y.end > spanStart && y.start < spanEnd)
-          .toList(growable: false);
+      return await getYigchungs(editionId);
     } catch (e) {
-      _logger.warning('Yigchungs for $editionId unavailable', e);
+      _logger.warning('Yigchungs for $editionId failed', e);
       return const [];
     }
   }
@@ -291,17 +282,27 @@ class LibraryRepository {
 
     final spanStart = page.first.spanStart!;
     final spanEnd = page.last.spanEnd!;
-    final yigchungsFuture = _yigchungsWithin(
-      editionId,
-      spanStart: spanStart,
-      spanEnd: spanEnd,
-    );
+    // Marks load alongside the content and get [yigchungTimeout] in all, so
+    // ones that land while the content is still loading are kept. A slow
+    // fetch keeps going so later pages get them.
+    final clock = Stopwatch()..start();
+    final yigchungsFuture = _yigchungsOrNone(editionId);
     final content = await _datasource.fetchEditionContent(
       editionId,
       spanStart: spanStart,
       spanEnd: spanEnd,
     );
-    final yigchungs = await yigchungsFuture;
+    final left = yigchungTimeout - clock.elapsed;
+    final yigchungs = await yigchungsFuture.timeout(
+      left.isNegative ? Duration.zero : left,
+      onTimeout: () {
+        _logger.warning('Yigchungs for $editionId are slow; page opens bare');
+        return const [];
+      },
+    );
+    final marks = yigchungs
+        .where((y) => y.end > spanStart && y.start < spanEnd)
+        .toList(growable: false);
     final numbers = segmentNumbers(segments);
     return LibraryContentWindow(
       editionId: editionId,
@@ -321,7 +322,7 @@ class LibraryRepository {
               content,
               segments[i].lines,
               spanStart: spanStart,
-              yigchungs: yigchungs,
+              yigchungs: marks,
             ),
             spanStart: segments[i].spanStart!,
             spanEnd: segments[i].spanEnd!,
