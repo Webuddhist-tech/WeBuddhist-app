@@ -248,6 +248,9 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get home_share_support => '您的支持有助於我們的社群成長。';
+
+  @override
   String get no_feature_content => '尚無精選內容';
 
   @override
@@ -2847,4 +2850,42 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => '提交意見回饋';
+
+  @override
+  String get feedback_hint => '告訴我們哪些功能好用、哪些需要改進，或您希望看到什麼';
+
+  @override
+  String get feedback_images => '圖片';
+
+  @override
+  String get feedback_add_image => '新增圖片';
+
+  @override
+  String feedback_image_limit(int count) {
+    return '最多可附加 $count 張圖片';
+  }
+
+  @override
+  String get feedback_send => '傳送';
+
+  @override
+  String get feedback_sent => '謝謝！您的意見回饋已送出';
+
+  @override
+  String get feedback_error_offline => '您目前離線，請稍後再試';
+
+  @override
+  String get feedback_error_rate_limited => '請求過於頻繁，請稍候再試';
+
+  @override
+  String get feedback_error_too_large => '圖片太大，請移除一張後再試';
+
+  @override
+  String get feedback_error_failed => '無法傳送意見回饋，請再試一次';
+
+  @override
+  String get feedback_error_unavailable => '目前無法使用意見回饋';
 }

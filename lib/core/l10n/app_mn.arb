@@ -114,6 +114,7 @@
       }
     }
   },
+  "home_share_support": "Таны дэмжлэг манай хамт олныг өсгөхөд тусална.",
   "no_feature_content": "Онцлох агуулга байхгүй байна",
   "nav_home": "Нүүр",
   "nav_explore": "Судлах",
@@ -1113,5 +1114,17 @@
       }
     }
   },
-  "event_prayer_request_button": "Залбирал хүсэх"
+  "event_prayer_request_button": "Залбирал хүсэх",
+  "feedback_title": "Санал хүсэлт илгээх",
+  "feedback_hint": "Юу сайн ажиллаж байгаа, юу болохгүй байгаа эсвэл юу харахыг хүсэж байгаагаа бидэнд хэлээрэй",
+  "feedback_images": "Зургууд",
+  "feedback_add_image": "Зураг нэмэх",
+  "feedback_image_limit": "Та хамгийн ихдээ {count} зураг хавсаргах боломжтой",
+  "feedback_send": "Илгээх",
+  "feedback_sent": "Баярлалаа! Таны санал хүсэлт илгээгдлээ",
+  "feedback_error_offline": "Та офлайн байна. Дараа дахин оролдоно уу",
+  "feedback_error_rate_limited": "Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу",
+  "feedback_error_too_large": "Зургууд хэт том байна. Нэгийг хасаад дахин оролдоно уу",
+  "feedback_error_failed": "Санал хүсэлт илгээж чадсангүй. Дахин оролдоно уу",
+  "feedback_error_unavailable": "Санал хүсэлт одоогоор боломжгүй байна"
 }

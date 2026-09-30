@@ -258,6 +258,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get home_share_support => 'Your support helps our community grow.';
+
+  @override
   String get no_feature_content => 'No featured content available';
 
   @override
@@ -2985,4 +2988,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => 'Feedback';
+
+  @override
+  String get feedback_hint =>
+      'Tell us what\'s working, what isn\'t, or what you\'d like to see...';
+
+  @override
+  String get feedback_images => 'Images';
+
+  @override
+  String get feedback_add_image => 'Add image';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'You can attach up to $count images';
+  }
+
+  @override
+  String get feedback_send => 'Send';
+
+  @override
+  String get feedback_sent => 'Thank you! Your feedback has been sent';
+
+  @override
+  String get feedback_error_offline =>
+      'You\'re offline. Please try again later';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'Too many requests. Please wait a moment and try again';
+
+  @override
+  String get feedback_error_too_large =>
+      'Images are too large. Remove one and try again';
+
+  @override
+  String get feedback_error_failed =>
+      'Couldn\'t send feedback. Please try again';
+
+  @override
+  String get feedback_error_unavailable =>
+      'Feedback is not available right now';
 }

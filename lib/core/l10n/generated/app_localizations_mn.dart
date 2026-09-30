@@ -259,6 +259,10 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
+  String get home_share_support =>
+      'Таны дэмжлэг манай хамт олныг өсгөхөд тусална.';
+
+  @override
   String get no_feature_content => 'Онцлох агуулга байхгүй байна';
 
   @override
@@ -3017,4 +3021,48 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => 'Санал хүсэлт илгээх';
+
+  @override
+  String get feedback_hint =>
+      'Юу сайн ажиллаж байгаа, юу болохгүй байгаа эсвэл юу харахыг хүсэж байгаагаа бидэнд хэлээрэй';
+
+  @override
+  String get feedback_images => 'Зургууд';
+
+  @override
+  String get feedback_add_image => 'Зураг нэмэх';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'Та хамгийн ихдээ $count зураг хавсаргах боломжтой';
+  }
+
+  @override
+  String get feedback_send => 'Илгээх';
+
+  @override
+  String get feedback_sent => 'Баярлалаа! Таны санал хүсэлт илгээгдлээ';
+
+  @override
+  String get feedback_error_offline =>
+      'Та офлайн байна. Дараа дахин оролдоно уу';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'Хэт олон хүсэлт илгээлээ. Түр хүлээгээд дахин оролдоно уу';
+
+  @override
+  String get feedback_error_too_large =>
+      'Зургууд хэт том байна. Нэгийг хасаад дахин оролдоно уу';
+
+  @override
+  String get feedback_error_failed =>
+      'Санал хүсэлт илгээж чадсангүй. Дахин оролдоно уу';
+
+  @override
+  String get feedback_error_unavailable =>
+      'Санал хүсэлт одоогоор боломжгүй байна';
 }

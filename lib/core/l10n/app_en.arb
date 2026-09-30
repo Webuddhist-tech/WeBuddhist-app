@@ -115,6 +115,7 @@
       }
     }
   },
+  "home_share_support": "Your support helps our community grow.",
   "no_feature_content": "No featured content available",
   "nav_home": "Home",
   "nav_explore": "Explore",
@@ -1481,5 +1482,24 @@
   "event_prayer_no_supporters": "No one is praying yet.",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
-  "recitation_live_session_ended": "The live session has ended"
+  "recitation_live_session_ended": "The live session has ended",
+  "feedback_title": "Feedback",
+  "feedback_hint": "Tell us what's working, what isn't, or what you'd like to see...",
+  "feedback_images": "Images",
+  "feedback_add_image": "Add image",
+  "feedback_image_limit": "You can attach up to {count} images",
+  "@feedback_image_limit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feedback_send": "Send",
+  "feedback_sent": "Thank you! Your feedback has been sent",
+  "feedback_error_offline": "You're offline. Please try again later",
+  "feedback_error_rate_limited": "Too many requests. Please wait a moment and try again",
+  "feedback_error_too_large": "Images are too large. Remove one and try again",
+  "feedback_error_failed": "Couldn't send feedback. Please try again",
+  "feedback_error_unavailable": "Feedback is not available right now"
 }

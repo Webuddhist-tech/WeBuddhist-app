@@ -550,6 +550,12 @@ abstract class AppLocalizations {
   /// **'Enjoying {appName}?'**
   String home_share_prompt(String appName);
 
+  /// No description provided for @home_share_support.
+  ///
+  /// In en, this message translates to:
+  /// **'Your support helps our community grow.'**
+  String get home_share_support;
+
   /// No description provided for @no_feature_content.
   ///
   /// In en, this message translates to:
@@ -5257,6 +5263,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The live session has ended'**
   String get recitation_live_session_ended;
+
+  /// No description provided for @feedback_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback'**
+  String get feedback_title;
+
+  /// No description provided for @feedback_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what\'s working, what isn\'t, or what you\'d like to see...'**
+  String get feedback_hint;
+
+  /// No description provided for @feedback_images.
+  ///
+  /// In en, this message translates to:
+  /// **'Images'**
+  String get feedback_images;
+
+  /// No description provided for @feedback_add_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get feedback_add_image;
+
+  /// No description provided for @feedback_image_limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You can attach up to {count} images'**
+  String feedback_image_limit(int count);
+
+  /// No description provided for @feedback_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get feedback_send;
+
+  /// No description provided for @feedback_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you! Your feedback has been sent'**
+  String get feedback_sent;
+
+  /// No description provided for @feedback_error_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Please try again later'**
+  String get feedback_error_offline;
+
+  /// No description provided for @feedback_error_rate_limited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Please wait a moment and try again'**
+  String get feedback_error_rate_limited;
+
+  /// No description provided for @feedback_error_too_large.
+  ///
+  /// In en, this message translates to:
+  /// **'Images are too large. Remove one and try again'**
+  String get feedback_error_too_large;
+
+  /// No description provided for @feedback_error_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send feedback. Please try again'**
+  String get feedback_error_failed;
+
+  /// No description provided for @feedback_error_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback is not available right now'**
+  String get feedback_error_unavailable;
 }
 
 class _AppLocalizationsDelegate

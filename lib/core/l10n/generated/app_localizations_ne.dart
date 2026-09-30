@@ -259,6 +259,10 @@ class AppLocalizationsNe extends AppLocalizations {
   }
 
   @override
+  String get home_share_support =>
+      'तपाईंको सहयोगले हाम्रो समुदाय बढ्न मद्दत गर्छ।';
+
+  @override
   String get no_feature_content => 'कुनै विशेष सामग्री उपलब्ध छैन';
 
   @override
@@ -3022,4 +3026,47 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get recitation_live_session_ended => 'The live session has ended';
+
+  @override
+  String get feedback_title => 'प्रतिक्रिया पठाउनुहोस्';
+
+  @override
+  String get feedback_hint =>
+      'के राम्रो छ, के छैन, वा तपाईं के हेर्न चाहनुहुन्छ हामीलाई बताउनुहोस्';
+
+  @override
+  String get feedback_images => 'तस्बिरहरू';
+
+  @override
+  String get feedback_add_image => 'तस्बिर थप्नुहोस्';
+
+  @override
+  String feedback_image_limit(int count) {
+    return 'तपाईं बढीमा $count वटा तस्बिर संलग्न गर्न सक्नुहुन्छ';
+  }
+
+  @override
+  String get feedback_send => 'पठाउनुहोस्';
+
+  @override
+  String get feedback_sent => 'धन्यवाद! तपाईंको प्रतिक्रिया पठाइयो';
+
+  @override
+  String get feedback_error_offline =>
+      'तपाईं अफलाइन हुनुहुन्छ। कृपया पछि फेरि प्रयास गर्नुहोस्';
+
+  @override
+  String get feedback_error_rate_limited =>
+      'धेरै अनुरोधहरू भए। कृपया केही समय पर्खेर फेरि प्रयास गर्नुहोस्';
+
+  @override
+  String get feedback_error_too_large =>
+      'तस्बिरहरू धेरै ठूला छन्। एउटा हटाएर फेरि प्रयास गर्नुहोस्';
+
+  @override
+  String get feedback_error_failed =>
+      'प्रतिक्रिया पठाउन सकिएन। कृपया फेरि प्रयास गर्नुहोस्';
+
+  @override
+  String get feedback_error_unavailable => 'प्रतिक्रिया अहिले उपलब्ध छैन';
 }

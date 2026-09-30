@@ -114,6 +114,7 @@
       }
     }
   },
+  "home_share_support": "आपका सहयोग हमारे समुदाय को बढ़ने में मदद करता है।",
   "no_feature_content": "कोई विशेष सामग्री उपलब्ध नहीं",
   "nav_home": "होम",
   "nav_explore": "एक्सप्लोर",
@@ -1113,5 +1114,17 @@
       }
     }
   },
-  "event_prayer_request_button": "प्रार्थना का अनुरोध करें"
+  "event_prayer_request_button": "प्रार्थना का अनुरोध करें",
+  "feedback_title": "फ़ीडबैक भेजें",
+  "feedback_hint": "हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे",
+  "feedback_images": "तस्वीरें",
+  "feedback_add_image": "तस्वीर जोड़ें",
+  "feedback_image_limit": "आप अधिकतम {count} तस्वीरें जोड़ सकते हैं",
+  "feedback_send": "भेजें",
+  "feedback_sent": "धन्यवाद! आपका फ़ीडबैक भेज दिया गया है",
+  "feedback_error_offline": "आप ऑफ़लाइन हैं। कृपया बाद में फिर से प्रयास करें",
+  "feedback_error_rate_limited": "बहुत अधिक अनुरोध। कृपया थोड़ी देर रुककर फिर से प्रयास करें",
+  "feedback_error_too_large": "तस्वीरें बहुत बड़ी हैं। एक हटाकर फिर से प्रयास करें",
+  "feedback_error_failed": "फ़ीडबैक नहीं भेजा जा सका। कृपया फिर से प्रयास करें",
+  "feedback_error_unavailable": "फ़ीडबैक अभी उपलब्ध नहीं है"
 }
