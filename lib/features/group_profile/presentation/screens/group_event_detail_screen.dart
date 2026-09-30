@@ -72,6 +72,10 @@ class GroupEventDetailScreen extends ConsumerStatefulWidget {
 class _GroupEventDetailScreenState
     extends ConsumerState<GroupEventDetailScreen> {
   _EventTab? _selectedTab;
+
+  /// Tab shown until the user picks one, fixed on first load so joining here
+  /// doesn't move them off what they're reading.
+  _EventTab? _openingTab;
   bool? _attendingOverride;
   GroupEventParticipationType? _participationOverride;
   GroupEventParticipationType? _pendingJoin;
@@ -209,12 +213,22 @@ class _GroupEventDetailScreenState
     final videos = _videoLinks(event);
     final groupAccumulator = event.groupAccumulator;
     final tabs = <_EventTab>[
-      if (videos.isNotEmpty) _EventTab.videos,
       if (groupAccumulator != null) _EventTab.accumulations,
       _EventTab.about,
+      if (videos.isNotEmpty) _EventTab.videos,
     ];
+    // Newcomers start on About; returning participants (`is_joined`, the same
+    // rows `participant_count` counts) go straight to the accumulation.
+    _openingTab ??=
+        event.isJoined && groupAccumulator != null
+            ? _EventTab.accumulations
+            : _EventTab.about;
     final selectedTab =
-        tabs.contains(_selectedTab) ? _selectedTab! : tabs.first;
+        tabs.contains(_selectedTab)
+            ? _selectedTab!
+            : tabs.contains(_openingTab)
+            ? _openingTab!
+            : _EventTab.about;
     final isPast = isGroupEventPast(event);
 
     return SingleChildScrollView(
@@ -254,8 +268,6 @@ class _GroupEventDetailScreenState
           ],
           const SizedBox(height: 16),
           _EventGroupRow(event: event, isDark: isDark),
-          const SizedBox(height: 16),
-          _EventInfoCard(event: event, isDark: isDark),
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
@@ -1099,6 +1111,9 @@ class _EventInfoCard extends ConsumerWidget {
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final iconColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final linkColor = isDark ? AppColors.blueDark : AppColors.blue;
     final dateText = _formatDateText(context, event);
     final recurrenceText = _formatRecurrenceText(context, event);
     final locationName = event.location?.name.trim() ?? '';
@@ -1123,12 +1138,12 @@ class _EventInfoCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _EventSectionLabel(text: context.l10n.connect_event_when),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           if (dateText != null)
             _EventInfoRow(
               icon: AppAssets.clock,
               text: dateText,
-              iconColor: secondaryColor,
+              iconColor: iconColor,
             )
           else
             Text(
@@ -1136,27 +1151,28 @@ class _EventInfoCard extends ConsumerWidget {
               style: TextStyle(fontSize: 14, color: secondaryColor),
             ),
           if (recurrenceText != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             _EventInfoRow(
               icon: AppAssets.repeat,
               text: recurrenceText,
-              iconColor: secondaryColor,
+              iconColor: iconColor,
             ),
           ],
           if (showLocation || showOnline) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _EventSectionLabel(text: context.l10n.connect_event_where),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
           ],
           if (showLocation)
             _EventInfoRow(
               icon: AppAssets.mapPin,
               text: locationName,
-              iconColor: secondaryColor,
+              iconColor: iconColor,
             ),
           if (showOnline) ...[
-            if (showLocation) const SizedBox(height: 12),
-            // Opens the meeting room straight from the row when there is one.
+            if (showLocation) const SizedBox(height: 8),
+            // Always link-coloured, per the design; opens the meeting room
+            // when the event has one.
             GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap:
@@ -1175,11 +1191,8 @@ class _EventInfoCard extends ConsumerWidget {
               child: _EventInfoRow(
                 icon: AppAssets.globe,
                 text: context.l10n.connect_online,
-                iconColor: secondaryColor,
-                textColor:
-                    meetingLink == null
-                        ? null
-                        : (isDark ? AppColors.blueDark : AppColors.blue),
+                iconColor: iconColor,
+                textColor: linkColor,
               ),
             ),
           ],
@@ -1996,28 +2009,34 @@ class _AboutPanel extends StatelessWidget {
         isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final description = event.description?.trim();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child:
-          description != null && description.isNotEmpty
-              ? PlanInlineMarkdownView(
-                content: description,
-                fontSize: getLocalizedFontSize(AppTextSize.body),
-              )
-              : Text(
-                context.l10n.connect_event_about_empty,
-                style: TextStyle(
-                  color:
-                      isDark
-                          ? AppColors.textTertiaryDark
-                          : AppColors.textSecondary,
-                ),
-              ),
+    return Column(
+      children: [
+        _EventInfoCard(event: event, isDark: isDark),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child:
+              description != null && description.isNotEmpty
+                  ? PlanInlineMarkdownView(
+                    content: description,
+                    fontSize: getLocalizedFontSize(AppTextSize.body),
+                  )
+                  : Text(
+                    context.l10n.connect_event_about_empty,
+                    style: TextStyle(
+                      color:
+                          isDark
+                              ? AppColors.textTertiaryDark
+                              : AppColors.textSecondary,
+                    ),
+                  ),
+        ),
+      ],
     );
   }
 }
