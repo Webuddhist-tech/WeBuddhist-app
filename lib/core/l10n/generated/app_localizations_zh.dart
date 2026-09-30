@@ -990,11 +990,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String connect_event_every_date(String date) {
-    return '輸入$date';
+    return '每年$date';
   }
 
   @override
-  String get connect_event_about_empty => 'No event details yet';
+  String get connect_event_about_empty => '尚無活動資訊';
 
   @override
   String get search_groups => '搜尋社群';

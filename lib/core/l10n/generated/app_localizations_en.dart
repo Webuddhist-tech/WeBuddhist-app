@@ -1044,7 +1044,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get connect_event_about_empty => '尚無活動資訊';
+  String get connect_event_about_empty => 'No event details yet';
 
   @override
   String get search_groups => 'Search channels';

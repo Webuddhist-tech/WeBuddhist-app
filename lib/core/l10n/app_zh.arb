@@ -959,7 +959,7 @@
   "connect_event_link_tap_to_join": "點擊進入",
   "connect_event_link_open": "打開連結",
   "connect_event_date_tba": "日期尚待公告",
-  "connect_event_about_empty": "No event details yet",
+  "connect_event_about_empty": "尚無活動資訊",
   "timer_notification_in_progress": "禪修進行中",
   "timer_notification_paused": "已暫停 · 剩餘 {time}",
   "@timer_notification_paused": {
@@ -1110,7 +1110,7 @@
     }
   },
   "connect_event_every_month": "每個月",
-  "connect_event_every_date": "輸入{date}",
+  "connect_event_every_date": "每年{date}",
   "@connect_event_every_date": {
     "placeholders": {
       "date": {

@@ -416,7 +416,7 @@
       }
     }
   },
-  "connect_event_about_empty": "尚無活動資訊",
+  "connect_event_about_empty": "No event details yet",
   "search_groups": "Search channels",
   "search_for_groups": "Search for channels",
   "no_groups_found": "No matching channels found",

@@ -1963,7 +1963,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_event_about_empty.
   ///
   /// In en, this message translates to:
-  /// **'尚無活動資訊'**
+  /// **'No event details yet'**
   String get connect_event_about_empty;
 
   /// No description provided for @search_groups.
