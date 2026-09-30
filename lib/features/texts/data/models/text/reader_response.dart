@@ -14,8 +14,8 @@ class ReaderResponse {
   final int totalSegments;
 
   /// True when something optional (the library's yigchung marks) did not
-  /// load. Stored with the page, so a saved partial page is refetched while
-  /// online but still opens offline.
+  /// load. Stored with the page, so a saved partial page opens at once and is
+  /// refreshed in the background while online.
   final bool isPartial;
 
   ReaderResponse({

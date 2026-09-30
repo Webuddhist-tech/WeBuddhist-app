@@ -71,35 +71,14 @@ class TextsRepository {
         );
 
         if (cacheResult.isHit && cacheResult.data != null) {
-          final cached = cacheResult.data!;
-          // Saved without its yigchung marks: try for the whole page while
-          // online, and keep the saved one (it stays for offline) if that fails.
-          if (cached.isPartial && isOnline) {
-            try {
-              return Right(
-                await _fetchAndCacheTextDetails(
-                  textId,
-                  contentId,
-                  versionId,
-                  segmentId,
-                  direction,
-                  language,
-                  size,
-                  cacheKey,
-                ),
-              );
-            } catch (e) {
-              _logger.warning('Refetch of partial page $textId failed', e);
-              return Right(cached);
-            }
-          }
-
           _logger.debug(
             'Text details cache hit for: $textId (offline: ${!isOnline})',
           );
 
-          // If stale and online, refresh in background
-          if (cacheResult.needsRefresh && isOnline) {
+          // If stale, or saved without its yigchung marks, and online,
+          // refresh in background; the saved page shows meanwhile.
+          if ((cacheResult.needsRefresh || cacheResult.data!.isPartial) &&
+              isOnline) {
             _refreshTextDetailsInBackground(
               textId,
               contentId,
@@ -203,6 +182,19 @@ class TextsRepository {
       language: language,
       size: size,
     );
+
+    // A page without its marks never replaces a live one that has them: a
+    // slower refresh finishing last would otherwise wipe them.
+    if (result.isPartial) {
+      final saved = _cacheService.get<ReaderResponse>(
+        key: cacheKey,
+        box: _cacheService.textContentBox,
+        fromJson: ReaderResponse.fromJson,
+      );
+      if (saved.isHit && saved.data != null && !saved.data!.isPartial) {
+        return saved.data!;
+      }
+    }
 
     // Cache the result
     await _cacheService.put<ReaderResponse>(
