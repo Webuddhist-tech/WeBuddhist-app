@@ -172,13 +172,13 @@ class LibraryRepository {
     });
   }
 
-  /// [editionId]'s marks, or none when they fail; never throws.
-  Future<List<LibraryLineSpan>> _yigchungsOrNone(String editionId) async {
+  /// [editionId]'s marks, or null when they fail; never throws.
+  Future<List<LibraryLineSpan>?> _yigchungsOrNull(String editionId) async {
     try {
       return await getYigchungs(editionId);
     } catch (e) {
       _logger.warning('Yigchungs for $editionId failed', e);
-      return const [];
+      return null;
     }
   }
 
@@ -286,7 +286,7 @@ class LibraryRepository {
     // ones that land while the content is still loading are kept. A slow
     // fetch keeps going so later pages get them.
     final clock = Stopwatch()..start();
-    final yigchungsFuture = _yigchungsOrNone(editionId);
+    final yigchungsFuture = _yigchungsOrNull(editionId);
     final content = await _datasource.fetchEditionContent(
       editionId,
       spanStart: spanStart,
@@ -297,10 +297,10 @@ class LibraryRepository {
       left.isNegative ? Duration.zero : left,
       onTimeout: () {
         _logger.warning('Yigchungs for $editionId are slow; page opens bare');
-        return const [];
+        return null;
       },
     );
-    final marks = yigchungs
+    final marks = (yigchungs ?? const <LibraryLineSpan>[])
         .where((y) => y.end > spanStart && y.start < spanEnd)
         .toList(growable: false);
     final numbers = segmentNumbers(segments);
@@ -331,6 +331,7 @@ class LibraryRepository {
       currentPosition: start + 1,
       lastPosition: end,
       totalSegments: total,
+      isPartial: yigchungs == null,
     );
   }
 

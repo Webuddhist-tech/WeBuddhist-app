@@ -187,7 +187,10 @@ class TextsRepository {
       box: _cacheService.textContentBox,
       data: result,
       toJson: (r) => r.toJson(),
-      ttl: CacheConfig.textContentTtl,
+      ttl:
+          result.isPartial
+              ? CacheConfig.textContentPartialTtl
+              : CacheConfig.textContentTtl,
       maxItems: CacheConfig.maxTextCacheItems,
     );
 

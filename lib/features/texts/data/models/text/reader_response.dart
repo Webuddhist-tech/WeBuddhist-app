@@ -13,6 +13,11 @@ class ReaderResponse {
   final int? lastSegmentPosition;
   final int totalSegments;
 
+  /// True when something optional (the library's yigchung marks) did not
+  /// load, so the page is cached only briefly. Not stored: a cached page
+  /// read back is whatever it is.
+  final bool isPartial;
+
   ReaderResponse({
     required this.textDetail,
     required this.content,
@@ -21,6 +26,7 @@ class ReaderResponse {
     required this.currentSegmentPosition,
     this.lastSegmentPosition,
     required this.totalSegments,
+    this.isPartial = false,
   });
 
   /// Whether segments exist after this page. Measured from its last segment,

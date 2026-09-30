@@ -317,6 +317,7 @@ void main() {
       final ds = _datasource(server);
       final response = await ds.fetchTextDetails(textId: 'E1');
 
+      expect(response.isPartial, isFalse);
       final segments = response.content.sections.single.segments;
       expect(
         segments.map((s) => s.content),
@@ -376,6 +377,17 @@ void main() {
 
       final segments = response.content.sections.single.segments;
       expect(segments.map((s) => s.content), ['a&lt;b', '&amp;cd', 'efg']);
+      expect(response.isPartial, isTrue);
+    });
+
+    test('a text with no yigchungs is a complete page', () async {
+      final server = withYigchungs((_) => jsonBody([]));
+
+      final response = await _datasource(server).fetchTextDetails(
+        textId: 'E1',
+      );
+
+      expect(response.isPartial, isFalse);
     });
   });
 

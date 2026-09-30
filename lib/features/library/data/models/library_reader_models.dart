@@ -51,12 +51,17 @@ class LibraryContentWindow {
   final int lastPosition;
   final int totalSegments;
 
+  /// True when the page opened without its yigchung marks (they were slow or
+  /// failed), so it should not be kept as long as a complete page.
+  final bool isPartial;
+
   const LibraryContentWindow({
     required this.editionId,
     required this.segments,
     required this.currentPosition,
     required this.lastPosition,
     required this.totalSegments,
+    this.isPartial = false,
   });
 }
 

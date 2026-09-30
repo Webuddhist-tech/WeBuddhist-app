@@ -124,6 +124,7 @@ void main() {
         size: 3,
       );
       expect(slow.segments.map((s) => s.html), ['abc', 'def', 'ghi']);
+      expect(slow.isPartial, isTrue);
 
       gate.complete();
       await repository.getYigchungs('e1');
@@ -137,6 +138,7 @@ void main() {
         '<span class="yigchung">def</span>',
         'ghi',
       ]);
+      expect(later.isPartial, isFalse);
       expect(server.count('/v2/editions/e1/yigchungs'), 1);
     });
 
@@ -181,6 +183,26 @@ void main() {
         '<span class="yigchung">def</span>',
         'ghi',
       ]);
+    });
+
+    test('a missing edition opens a complete page', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/segmentation/segments':
+            (_) => jsonBody(pageJson(threeVerses('s'))),
+        '/v2/editions/e1/content': (uri) {
+          final start = int.parse(uri.queryParameters['span_start']!);
+          final end = int.parse(uri.queryParameters['span_end']!);
+          return jsonBody('abcdefghi'.substring(start, end));
+        },
+      });
+
+      final window = await server.repository().loadWindow(
+        editionId: 'e1',
+        direction: 'next',
+        size: 3,
+      );
+
+      expect(window.isPartial, isFalse);
     });
 
     test('an empty list or a missing edition is no yigchungs', () async {
