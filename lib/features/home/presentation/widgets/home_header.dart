@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -85,18 +87,43 @@ class HomeTabAppBar extends ConsumerWidget implements PreferredSizeWidget {
 }
 
 /// Optional today-event banner shown below the home tab app bar.
-class HomeEventBanner extends ConsumerWidget {
+class HomeEventBanner extends ConsumerStatefulWidget {
   const HomeEventBanner({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeEventBanner> createState() => _HomeEventBannerState();
+}
+
+class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Re-evaluates the daily window while the screen stays open.
+    _ticker = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => setState(() {}),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
     final todayEvent = ref
         .watch(todayEventsFutureProvider)
         .maybeWhen(
           data:
               (eventsEither) => eventsEither.fold(
                 (_) => null,
-                (events) => events.isNotEmpty ? events.first : null,
+                (events) =>
+                    events.where((event) => event.isActiveAt(now)).firstOrNull,
               ),
           orElse: () => null,
         );
