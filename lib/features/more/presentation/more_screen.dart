@@ -13,6 +13,7 @@ import 'package:flutter_pecha/core/theme/theme_notifier.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/feedback/presentation/widgets/feedback_sheet.dart';
 import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -94,6 +95,13 @@ class MoreScreen extends ConsumerWidget {
               icon: AppAssets.legal,
               title: localizations.legal_title,
               onTap: () => context.push(AppRoutes.legal),
+            ),
+            _buildSettingsRow(
+              context,
+              icon: AppAssets.feedback,
+              title: localizations.settings_feedback_row,
+              onTap: () => FeedbackSheet.show(context),
+              showTrailingIcon: false,
             ),
             const SizedBox(height: 24),
 
@@ -213,6 +221,7 @@ class MoreScreen extends ConsumerWidget {
     required VoidCallback onTap,
     Widget? trailing,
     IconData? trailingIcon,
+    bool showTrailingIcon = true,
     bool isDestructive = false,
   }) {
     final color =
@@ -231,7 +240,7 @@ class MoreScreen extends ConsumerWidget {
             ).textTheme.bodyLarge?.copyWith(color: textColor),
           ),
         ),
-        if (trailing == null)
+        if (trailing == null && showTrailingIcon)
           Icon(
             trailingIcon ?? AppAssets.caretRight,
             size: 24,
