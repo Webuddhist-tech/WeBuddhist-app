@@ -4,9 +4,15 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 /// Small pill shown above the verse-of-the-day card when a festival or
 /// observance is happening today. A pulsing red dot marks it as live.
 class TodayEventBadge extends StatelessWidget {
-  const TodayEventBadge({super.key, required this.label, this.onTap});
+  const TodayEventBadge({
+    super.key,
+    required this.label,
+    this.isLive = true,
+    this.onTap,
+  });
 
   final String label;
+  final bool isLive;
   final VoidCallback? onTap;
 
   static String formatEventName(String name) {
@@ -35,8 +41,7 @@ class TodayEventBadge extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const _LiveDot(),
-                const SizedBox(width: 8),
+                if (isLive) ...[const _LiveDot(), const SizedBox(width: 8)],
                 Flexible(
                   child: Text(
                     formatEventName(label),

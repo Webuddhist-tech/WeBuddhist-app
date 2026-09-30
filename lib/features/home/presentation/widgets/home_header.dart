@@ -122,8 +122,7 @@ class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
           data:
               (eventsEither) => eventsEither.fold(
                 (_) => null,
-                (events) =>
-                    events.where((event) => event.isActiveAt(now)).firstOrNull,
+                (events) => events.isNotEmpty ? events.first : null,
               ),
           orElse: () => null,
         );
@@ -136,6 +135,7 @@ class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       child: TodayEventBadge(
         label: todayEvent.name,
+        isLive: todayEvent.isActiveAt(now),
         onTap:
             todayEvent.id.isEmpty
                 ? null
