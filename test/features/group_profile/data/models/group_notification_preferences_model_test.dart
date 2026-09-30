@@ -104,6 +104,16 @@ void main() {
       );
     });
 
+    test('a listed type without enabled falls back the same way', () {
+      expect(
+        _parse([
+          {'notification_type': 'CHAT_MESSAGE'},
+          {'notification_type': 'GROUP_POST'},
+        ]),
+        GroupNotificationPreferences.defaults,
+      );
+    });
+
     test('unrelated types do not affect either toggle', () {
       expect(
         _parse([

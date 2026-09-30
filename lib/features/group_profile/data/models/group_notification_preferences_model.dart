@@ -30,9 +30,11 @@ abstract final class GroupNotificationTypes {
 /// ```
 ///
 /// A toggle reads on only when every type behind it is enabled and not
-/// currently muted; a type the backend does not list falls back to that
-/// toggle's value in [GroupNotificationPreferences.defaults]. A tap writes
-/// every type behind the toggle to the same value.
+/// currently muted. A type the backend does not list, or lists without
+/// `enabled`, falls back to that toggle's value in
+/// [GroupNotificationPreferences.defaults], which mirrors the backend default
+/// for a member who never touched the toggle. A tap writes every type behind
+/// the toggle to the same value.
 class GroupNotificationPreferencesModel {
   final bool chat;
   final bool content;
@@ -47,18 +49,23 @@ class GroupNotificationPreferencesModel {
     DateTime? now,
   }) {
     final clock = now ?? DateTime.now().toUtc();
-    final delivering = <String, bool>{};
+    final byType = <String, Map<String, dynamic>>{};
     final entries = json['preferences'];
     if (entries is List) {
       for (final entry in entries.whereType<Map<String, dynamic>>()) {
         final type = entry['notification_type'] as String?;
         if (type == null) continue;
-        delivering[type] = _isDelivering(entry, clock);
+        byType[type] = entry;
       }
     }
     const defaults = GroupNotificationPreferences.defaults;
     bool allOn(List<String> types, {required bool fallback}) =>
-        types.every((type) => delivering[type] ?? fallback);
+        types.every((type) {
+          final entry = byType[type];
+          return entry == null
+              ? fallback
+              : _isDelivering(entry, clock, fallback: fallback);
+        });
     return GroupNotificationPreferencesModel(
       chat: allOn(GroupNotificationTypes.chat, fallback: defaults.chat),
       content: allOn(
@@ -70,8 +77,12 @@ class GroupNotificationPreferencesModel {
 
   /// Enabled and not under an active `muted_until`. A snooze set elsewhere
   /// would otherwise read as on while nothing arrives.
-  static bool _isDelivering(Map<String, dynamic> entry, DateTime now) {
-    final enabled = entry['enabled'] as bool? ?? true;
+  static bool _isDelivering(
+    Map<String, dynamic> entry,
+    DateTime now, {
+    required bool fallback,
+  }) {
+    final enabled = entry['enabled'] as bool? ?? fallback;
     if (!enabled) return false;
     final mutedRaw = entry['muted_until'];
     if (mutedRaw is! String || mutedRaw.isEmpty) return true;

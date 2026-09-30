@@ -3,7 +3,9 @@ import 'package:equatable/equatable.dart';
 /// A member's push-notification choices for one group.
 ///
 /// A fresh membership gets [defaults]: chat off, content on. Chat pushes only
-/// start once the member opts in.
+/// start once the member opts in. The backend owns delivery, so these must
+/// match its default for a member with no stored choice; the app only mirrors
+/// it (community-hub#339).
 ///
 /// - [chat] gates group chat message pushes.
 /// - [content] gates everything else the group sends: new posts, new events
