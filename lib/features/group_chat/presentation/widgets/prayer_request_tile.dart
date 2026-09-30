@@ -104,10 +104,10 @@ class PrayerRequestTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            Text(
-              request.body,
-              strutStyle: context.tibetanStrutStyle(14),
-              style: TextStyle(fontSize: 14, height: 1.4, color: textColor),
+            _CollapsibleBody(
+              text: request.body,
+              textColor: textColor,
+              linkColor: prayerAccentTextColor(accent, isDark),
             ),
             const SizedBox(height: 12),
             Divider(
@@ -169,6 +169,106 @@ class PrayerRequestTile extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Body clamped to a few lines with a show more / less toggle when longer.
+class _CollapsibleBody extends StatefulWidget {
+  const _CollapsibleBody({
+    required this.text,
+    required this.textColor,
+    required this.linkColor,
+  });
+
+  final String text;
+  final Color textColor;
+  final Color linkColor;
+
+  static const int _collapsedLines = 4;
+
+  @override
+  State<_CollapsibleBody> createState() => _CollapsibleBodyState();
+}
+
+class _CollapsibleBodyState extends State<_CollapsibleBody> {
+  bool _expanded = false;
+
+  @override
+  void didUpdateWidget(_CollapsibleBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) _expanded = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Measured in the font the Text below inherits from the theme (Inter,
+    // Noto Serif Tibetan, ...); a bare style would measure the platform font
+    // and misjudge where the lines break.
+    final defaults = DefaultTextStyle.of(context);
+    final style = defaults.style.merge(
+      TextStyle(fontSize: 14, height: 1.4, color: widget.textColor),
+    );
+    final strut = context.tibetanStrutStyle(14);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          strutStyle: strut,
+          maxLines: _CollapsibleBody._collapsedLines,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          textWidthBasis: defaults.textWidthBasis,
+          textHeightBehavior:
+              defaults.textHeightBehavior ??
+              DefaultTextHeightBehavior.maybeOf(context),
+          locale: Localizations.maybeLocaleOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        painter.dispose();
+
+        final body = Text(
+          widget.text,
+          maxLines: _expanded ? null : _CollapsibleBody._collapsedLines,
+          overflow: _expanded ? null : TextOverflow.ellipsis,
+          strutStyle: strut,
+          style: style,
+        );
+        if (!overflows) return body;
+
+        final toggleLabel =
+            _expanded ? context.l10n.show_less : context.l10n.show_more;
+        void toggle() => setState(() => _expanded = !_expanded);
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: toggle,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              body,
+              const SizedBox(height: 4),
+              Semantics(
+                button: true,
+                expanded: _expanded,
+                label: toggleLabel,
+                onTap: toggle,
+                excludeSemantics: true,
+                child: Text(
+                  toggleLabel,
+                  strutStyle: context.tibetanStrutStyle(13, compact: true),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: widget.linkColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
