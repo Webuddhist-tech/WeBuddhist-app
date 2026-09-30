@@ -38,7 +38,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_continue => 'Continue';
 
   @override
-  String get onboarding_first_question => 'Choose your language:';
+  String get onboarding_first_question => 'Choose your language';
+
+  @override
+  String get onboarding_language_subtitle =>
+      'This sets the language of the app';
 
   @override
   String get onboarding_choose_option => 'Choose at least one:';
@@ -48,7 +52,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_all_set_description =>
-      'Here\'s what\'s ready for your practice.';
+      'Here\'s what\'s waiting for you:';
+
+  @override
+  String get onboarding_all_set_practice_title => 'Practice';
+
+  @override
+  String get onboarding_all_set_practice_body =>
+      'Plans, chants, malas and meditation';
+
+  @override
+  String get onboarding_all_set_connect_title => 'Connect';
+
+  @override
+  String get onboarding_all_set_connect_body =>
+      'Groups, events, news feed and chat';
 
   @override
   String get onboarding_all_set_feature_practices =>
@@ -660,11 +678,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Which traditions\ndo you follow?';
 
   @override
-  String get onboarding_tradition_title => 'How do you follow the Buddha?';
+  String get onboarding_tradition_title =>
+      'How do you follow the Buddha\'s teachings?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'We\'ll show you the practices and texts of your path. You can change this anytime in the app settings.';
+      'Choose one or more traditions for your content. You can change this anytime in Settings.';
 
   @override
   String get onboarding_tradition_option_intro => 'Through:';

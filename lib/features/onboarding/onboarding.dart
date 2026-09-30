@@ -36,13 +36,15 @@ export 'presentation/providers/onboarding_datasource_providers.dart';
 
 // Presentation - Screens
 export 'presentation/screens/onboarding_wrapper.dart';
-export 'presentation/screens/onboarding_screen_language.dart';
 export 'presentation/screens/onboarding_screen_1.dart';
+export 'presentation/screens/onboarding_screen_language.dart';
 export 'presentation/screens/onboarding_screen_2.dart';
 export 'presentation/screens/onboarding_screen_5.dart';
 
 // Presentation - Widgets
 export 'presentation/widgets/onboarding_back_button.dart';
+export 'presentation/widgets/onboarding_choice_scaffold.dart';
+export 'presentation/widgets/onboarding_progress_bar.dart';
 export 'presentation/widgets/onboarding_checkbox_option.dart';
 export 'presentation/widgets/onboarding_continue_button.dart';
 export 'presentation/widgets/onboarding_radio_option.dart';

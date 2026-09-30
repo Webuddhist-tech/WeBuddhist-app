@@ -78,6 +78,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get onboarding_language_subtitle => TolgeeBridge.get(
+    localeName,
+    'onboarding_language_subtitle',
+    () => _fallback.onboarding_language_subtitle,
+  );
+
+  @override
   String get onboarding_choose_option => TolgeeBridge.get(
     localeName,
     'onboarding_choose_option',
@@ -96,6 +103,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'onboarding_all_set_description',
     () => _fallback.onboarding_all_set_description,
+  );
+
+  @override
+  String get onboarding_all_set_practice_title => TolgeeBridge.get(
+    localeName,
+    'onboarding_all_set_practice_title',
+    () => _fallback.onboarding_all_set_practice_title,
+  );
+
+  @override
+  String get onboarding_all_set_practice_body => TolgeeBridge.get(
+    localeName,
+    'onboarding_all_set_practice_body',
+    () => _fallback.onboarding_all_set_practice_body,
+  );
+
+  @override
+  String get onboarding_all_set_connect_title => TolgeeBridge.get(
+    localeName,
+    'onboarding_all_set_connect_title',
+    () => _fallback.onboarding_all_set_connect_title,
+  );
+
+  @override
+  String get onboarding_all_set_connect_body => TolgeeBridge.get(
+    localeName,
+    'onboarding_all_set_connect_body',
+    () => _fallback.onboarding_all_set_connect_body,
   );
 
   @override

@@ -39,7 +39,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get onboarding_continue => 'Үргэлжлүүлэх';
 
   @override
-  String get onboarding_first_question => 'Хэлээ сонгоно уу:';
+  String get onboarding_first_question => 'Хэлээ сонгоно уу';
+
+  @override
+  String get onboarding_language_subtitle => 'Энэ нь аппын хэлийг тохируулна';
 
   @override
   String get onboarding_choose_option => 'Дор хаяж нэгийг сонгоно уу:';
@@ -48,8 +51,21 @@ class AppLocalizationsMn extends AppLocalizations {
   String get onboarding_all_set => 'Бүх зүйл бэлэн боллоо';
 
   @override
-  String get onboarding_all_set_description =>
-      'Таны дадлагад бэлэн зүйлс энд байна.';
+  String get onboarding_all_set_description => 'Танд хүлээж буй зүйлс:';
+
+  @override
+  String get onboarding_all_set_practice_title => 'Дадлага';
+
+  @override
+  String get onboarding_all_set_practice_body =>
+      'Төлөвлөгөө, уншлага, эрхи, бясалгал';
+
+  @override
+  String get onboarding_all_set_connect_title => 'Холбогдох';
+
+  @override
+  String get onboarding_all_set_connect_body =>
+      'Бүлэг, арга хэмжээ, мэдээ, чат';
 
   @override
   String get onboarding_all_set_feature_practices =>
@@ -664,11 +680,11 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get onboarding_tradition_title =>
-      'Та Бурхан багшийг хэрхэн дагадаг вэ?';
+      'Та Бурхан багшийн сургаалийг хэрхэн дагадаг вэ?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'Бид танд өөрийн сонгосон замын дагуух бясалгал, практик болон судар бичгүүдийг харуулах болно. Та үүнийг аппликейшний тохиргоо хэсгээс хэдийд ч өөрчлөх боломжтой.';
+      'Агуулгадаа нэг буюу хэд хэдэн уламжлал сонгоно уу. Тохиргооноос хэзээ ч өөрчилж болно.';
 
   @override
   String get onboarding_tradition_option_intro => 'Дараах:';

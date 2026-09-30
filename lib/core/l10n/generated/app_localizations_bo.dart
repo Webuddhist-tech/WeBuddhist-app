@@ -41,14 +41,31 @@ class AppLocalizationsBo extends AppLocalizations {
   String get onboarding_first_question => 'ཁྱེད་ཀྱི་སྐད་ཡིག་འདེམས་རོགས།';
 
   @override
+  String get onboarding_language_subtitle =>
+      'འདིས་མཉེན་ཆས་ཀྱི་སྐད་ཡིག་སྒྲིག་འཇུག་བྱེད།';
+
+  @override
   String get onboarding_choose_option => 'ཉུང་མཐར་གཅིག་འདེམས་དགོས།';
 
   @override
   String get onboarding_all_set => 'ཁྱེད་ཀྱི་སྒྲིག་འཇུག་གྲུབ་ཟིན།';
 
   @override
-  String get onboarding_all_set_description =>
-      'ཁྱེད་ཀྱི་ཉམས་ལེན་ལ་གྲ་སྒྲིག་བྱས་ཟིན་པའི་དངོས་པོ་འདི་དག་ཡིན།';
+  String get onboarding_all_set_description => 'ཁྱེད་ལ་སྒུག་ཡོད་པ་འདི་ཡིན།';
+
+  @override
+  String get onboarding_all_set_practice_title => 'ཉམས་ལེན།';
+
+  @override
+  String get onboarding_all_set_practice_body =>
+      'འཆར་གཞི། ཞལ་འདོན། ཕྲེང་བ། སྒོམ་སྒྲུབ།';
+
+  @override
+  String get onboarding_all_set_connect_title => 'འབྲེལ་མཐུད།';
+
+  @override
+  String get onboarding_all_set_connect_body =>
+      'ཚོགས་པ། བྱེད་སྒོ། གསར་འགྱུར། གླེང་མོལ།';
 
   @override
   String get onboarding_all_set_feature_practices =>
@@ -667,11 +684,11 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get onboarding_tradition_title =>
-      'ཁྱེད་ཀྱིས་སངས་རྒྱས་ཀྱི་རྗེས་སུ་ཇི་ལྟར་འབྲང་ངམ།';
+      'ཁྱེད་ཀྱིས་སངས་རྒྱས་ཀྱི་བསྟན་པའི་རྗེས་སུ་ཇི་ལྟར་འབྲང་ངམ།';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'ང་ཚོས་ཁྱེད་ལ་འཚམ་པའི་ལམ་གྱི་ཉམས་ལེན་དང་གསུང་རབ་རྣམས་བསྟན་པར་བྱ། འདེམས་ཁ་འདི་ཉིད་མཉེན་ཆས་ཀྱི་སྒྲིག་བཀོད་ནང་ནས་ག་དུས་ཡིན་ཡང་སྒྱུར་བཅོས་གཏང་ཆོག';
+      'ནང་དོན་ཆེད་དུ་ལུགས་གཅིག་གམ་དུ་མ་འདེམས། སྒྲིག་བཀོད་ནང་ནས་ག་དུས་ཡིན་ཡང་སྒྱུར་ཆོག';
 
   @override
   String get onboarding_tradition_option_intro => 'བརྒྱུད་ནས།';

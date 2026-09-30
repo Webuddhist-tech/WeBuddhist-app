@@ -36,7 +36,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_continue => '下一步';
 
   @override
-  String get onboarding_first_question => '選擇您的語言：';
+  String get onboarding_first_question => '選擇您的語言';
+
+  @override
+  String get onboarding_language_subtitle => '這將設定應用程式的語言';
 
   @override
   String get onboarding_choose_option => '至少選擇一項';
@@ -45,7 +48,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_all_set => '一切就緒';
 
   @override
-  String get onboarding_all_set_description => '以下是為您的修行準備的內容。';
+  String get onboarding_all_set_description => '以下內容正等著您：';
+
+  @override
+  String get onboarding_all_set_practice_title => '修行';
+
+  @override
+  String get onboarding_all_set_practice_body => '計畫、持咒、念珠與禪修';
+
+  @override
+  String get onboarding_all_set_connect_title => '連結';
+
+  @override
+  String get onboarding_all_set_connect_body => '群組、活動、動態與聊天';
 
   @override
   String get onboarding_all_set_feature_practices => '持咒、累積、禪修和學習計畫供您選擇';
@@ -627,11 +642,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_traditions_question => '您跟隨哪些傳承？';
 
   @override
-  String get onboarding_tradition_title => '您如何追随佛陀的教导？';
+  String get onboarding_tradition_title => '您如何追隨佛陀的教導？';
 
   @override
-  String get onboarding_tradition_subtitle =>
-      '我们将为您展示您所选修行路径的实践与经典。您可以随时在应用设置中更改此设置。';
+  String get onboarding_tradition_subtitle => '為您的內容選擇一種或多種傳承。您可以隨時在設定中更改。';
 
   @override
   String get onboarding_tradition_option_intro => '通過：';

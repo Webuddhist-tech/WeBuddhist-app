@@ -163,8 +163,14 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_first_question.
   ///
   /// In en, this message translates to:
-  /// **'Choose your language:'**
+  /// **'Choose your language'**
   String get onboarding_first_question;
+
+  /// No description provided for @onboarding_language_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This sets the language of the app'**
+  String get onboarding_language_subtitle;
 
   /// No description provided for @onboarding_choose_option.
   ///
@@ -181,8 +187,32 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_all_set_description.
   ///
   /// In en, this message translates to:
-  /// **'Here\'s what\'s ready for your practice.'**
+  /// **'Here\'s what\'s waiting for you:'**
   String get onboarding_all_set_description;
+
+  /// No description provided for @onboarding_all_set_practice_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get onboarding_all_set_practice_title;
+
+  /// No description provided for @onboarding_all_set_practice_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans, chants, malas and meditation'**
+  String get onboarding_all_set_practice_body;
+
+  /// No description provided for @onboarding_all_set_connect_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get onboarding_all_set_connect_title;
+
+  /// No description provided for @onboarding_all_set_connect_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups, events, news feed and chat'**
+  String get onboarding_all_set_connect_body;
 
   /// No description provided for @onboarding_all_set_feature_practices.
   ///
@@ -1267,13 +1297,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_tradition_title.
   ///
   /// In en, this message translates to:
-  /// **'How do you follow the Buddha?'**
+  /// **'How do you follow the Buddha\'s teachings?'**
   String get onboarding_tradition_title;
 
   /// No description provided for @onboarding_tradition_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'We\'ll show you the practices and texts of your path. You can change this anytime in the app settings.'**
+  /// **'Choose one or more traditions for your content. You can change this anytime in Settings.'**
   String get onboarding_tradition_subtitle;
 
   /// No description provided for @onboarding_tradition_option_intro.

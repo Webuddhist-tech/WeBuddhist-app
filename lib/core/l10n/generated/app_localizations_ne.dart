@@ -39,7 +39,10 @@ class AppLocalizationsNe extends AppLocalizations {
   String get onboarding_continue => 'जारी राख्नुहोस्';
 
   @override
-  String get onboarding_first_question => 'आफ्नो भाषा छान्नुहोस्:';
+  String get onboarding_first_question => 'आफ्नो भाषा छान्नुहोस्';
+
+  @override
+  String get onboarding_language_subtitle => 'यसले एपको भाषा सेट गर्छ';
 
   @override
   String get onboarding_choose_option => 'कम्तीमा एउटा छान्नुहोस्:';
@@ -48,8 +51,20 @@ class AppLocalizationsNe extends AppLocalizations {
   String get onboarding_all_set => 'तपाईं पूर्ण रूपमा तयार हुनुभयो';
 
   @override
-  String get onboarding_all_set_description =>
-      'तपाईंको अभ्यासका लागि यो तयार छ।';
+  String get onboarding_all_set_description => 'तपाईंका लागि यो पर्खिरहेको छ:';
+
+  @override
+  String get onboarding_all_set_practice_title => 'अभ्यास';
+
+  @override
+  String get onboarding_all_set_practice_body => 'योजना, जप, माला र ध्यान';
+
+  @override
+  String get onboarding_all_set_connect_title => 'जोडिनुहोस्';
+
+  @override
+  String get onboarding_all_set_connect_body =>
+      'समूह, कार्यक्रम, समाचार र कुराकानी';
 
   @override
   String get onboarding_all_set_feature_practices =>
@@ -672,11 +687,11 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get onboarding_tradition_title =>
-      'तपाईं बुद्धको अनुसरण कसरी गर्नुहुन्छ?';
+      'तपाईं बुद्धका शिक्षाहरू कसरी पालना गर्नुहुन्छ?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'हामी तपाईंलाई तपाईंको मार्गका अभ्यासहरू र ग्रन्थहरू देखाउनेछौं। तपाईं यसलाई एप सेटिङमा जुनसुकै बेला परिवर्तन गर्न सक्नुहुन्छ।';
+      'आफ्नो सामग्रीका लागि एक वा बढी परम्परा छान्नुहोस्। तपाईं यसलाई सेटिङमा जुनसुकै बेला परिवर्तन गर्न सक्नुहुन्छ।';
 
   @override
   String get onboarding_tradition_option_intro => 'मार्फत:';

@@ -6,16 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The onboarding pages in the order the wrapper shows them.
 enum OnboardingStep {
-  language,
   welcome,
+  language,
   tradition,
-  howItWorks,
   finish;
 
-  String get key => switch (this) {
-    OnboardingStep.howItWorks => 'how_it_works',
-    _ => name,
-  };
+  String get key => name;
 }
 
 /// Product analytics for onboarding: one method per tracked action, so the
