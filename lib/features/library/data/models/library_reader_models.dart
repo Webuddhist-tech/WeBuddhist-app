@@ -15,6 +15,7 @@ String libraryLinesToHtml(List<String> lines) {
 
 /// A segment with its lines cut from the content and its reader number.
 /// [spanStart] and [spanEnd] place it in the edition for the table of contents.
+/// [html] carries the lines with yigchung marks; without it they are plain.
 class LibraryReaderSegment {
   final String id;
   final String reference;
@@ -23,6 +24,7 @@ class LibraryReaderSegment {
   final List<String> lines;
   final int spanStart;
   final int spanEnd;
+  final String? _html;
 
   const LibraryReaderSegment({
     required this.id,
@@ -32,9 +34,10 @@ class LibraryReaderSegment {
     required this.lines,
     required this.spanStart,
     required this.spanEnd,
-  });
+    String? html,
+  }) : _html = html;
 
-  String get html => libraryLinesToHtml(lines);
+  String get html => _html ?? libraryLinesToHtml(lines);
 }
 
 /// One page of an edition; [currentPosition] is 1-based like the old API.

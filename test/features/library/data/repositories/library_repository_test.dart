@@ -63,6 +63,46 @@ void main() {
     });
   });
 
+  group('LibraryRepository.getYigchungs', () {
+    test('returns the spans once per edition', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/yigchungs':
+            (_) => jsonBody([
+              {
+                'span': {'start': 0, 'end': 51},
+                'id': 'y1',
+                'edition_id': 'e1',
+                'text_id': 't1',
+              },
+              {
+                'span': {'start': 2917, 'end': 3084},
+                'id': 'y2',
+                'edition_id': 'e1',
+                'text_id': 't1',
+              },
+            ]),
+      });
+      final repository = server.repository();
+
+      final yigchungs = await repository.getYigchungs('e1');
+      await repository.getYigchungs('e1');
+
+      expect(yigchungs.map((y) => y.start), [0, 2917]);
+      expect(yigchungs.map((y) => y.end), [51, 3084]);
+      expect(server.count('/v2/editions/e1/yigchungs'), 1);
+    });
+
+    test('an empty list or a missing edition is no yigchungs', () async {
+      final server = LibraryTestServer({
+        '/v2/editions/e1/yigchungs': (_) => jsonBody([]),
+      });
+      final repository = server.repository();
+
+      expect(await repository.getYigchungs('e1'), isEmpty);
+      expect(await repository.getYigchungs('gone'), isEmpty);
+    });
+  });
+
   group('LibraryRepository.getEditionSegments', () {
     test('walks every page and drops segments without lines', () async {
       final server = LibraryTestServer({

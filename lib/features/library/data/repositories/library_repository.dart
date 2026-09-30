@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/library/data/models/library_search_result
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
+import 'package:flutter_pecha/features/library/data/models/library_yigchung.dart';
 import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
 
 /// Composes the library API calls into what the reader and chant list need.
@@ -41,6 +42,7 @@ class LibraryRepository {
   final Map<String, Future<LibrarySegmentResources>> _resources = {};
   final Map<String, Future<LibraryEdition>> _resolvedEditions = {};
   final Map<String, Future<List<LibraryTocSection>>> _tocs = {};
+  final Map<String, Future<List<LibraryLineSpan>>> _yigchungs = {};
   Future<Map<String, String>>? _languageNames;
 
   Future<LibraryTextPage> fetchChants({
@@ -150,6 +152,30 @@ class LibraryRepository {
     });
   }
 
+  /// Spans of [editionId]'s yigchung (small text) runs; empty when it has none.
+  Future<List<LibraryLineSpan>> getYigchungs(String editionId) {
+    return _memo(_yigchungs, editionId, capacity: segmentCacheSize, () async {
+      final List<LibraryYigchung> yigchungs;
+      try {
+        yigchungs = await _datasource.fetchYigchungs(editionId);
+      } catch (e) {
+        if (_isNotFound(e)) return const [];
+        rethrow;
+      }
+      return yigchungs.map((y) => y.span).toList(growable: false);
+    });
+  }
+
+  /// The text still reads when its yigchungs cannot be fetched.
+  Future<List<LibraryLineSpan>> _yigchungsOrNone(String editionId) async {
+    try {
+      return await getYigchungs(editionId);
+    } catch (e) {
+      _logger.warning('Yigchungs for $editionId failed', e);
+      return const [];
+    }
+  }
+
   /// Every version of [textId]'s work: the root first, then translations
   /// level by level. Translations chain (English of a Tibetan that is itself
   /// a translation of a Sanskrit root), so the walk goes up to the top and
@@ -249,11 +275,13 @@ class LibraryRepository {
     }
 
     final spanStart = page.first.spanStart!;
+    final yigchungsFuture = _yigchungsOrNone(editionId);
     final content = await _datasource.fetchEditionContent(
       editionId,
       spanStart: spanStart,
       spanEnd: page.last.spanEnd!,
     );
+    final yigchungs = await yigchungsFuture;
     final numbers = segmentNumbers(segments);
     return LibraryContentWindow(
       editionId: editionId,
@@ -268,6 +296,12 @@ class LibraryRepository {
               content,
               segments[i].lines,
               spanStart: spanStart,
+            ),
+            html: sliceLibraryHtml(
+              content,
+              segments[i].lines,
+              spanStart: spanStart,
+              yigchungs: yigchungs,
             ),
             spanStart: segments[i].spanStart!,
             spanEnd: segments[i].spanEnd!,
