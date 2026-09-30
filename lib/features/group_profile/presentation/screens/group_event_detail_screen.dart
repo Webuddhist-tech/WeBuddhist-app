@@ -262,12 +262,12 @@ class _GroupEventDetailScreenState
               ],
             ],
           ),
+          const SizedBox(height: 14),
+          _EventGroupRow(event: event, isDark: isDark),
           if (!isPast || (event.hasPuja && isAttending)) ...[
             const SizedBox(height: 14),
             _buildActionRow(event, isAttending, isDark, isPast: isPast),
           ],
-          const SizedBox(height: 16),
-          _EventGroupRow(event: event, isDark: isDark),
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
           _buildTabs(tabs, selectedTab, isDark),
@@ -1016,7 +1016,6 @@ class _EventGroupRow extends ConsumerWidget {
 
     final title = firstNonEmpty(group?.title, event.groupName);
     final avatarUrl = firstNonEmpty(group?.avatarUrl, event.groupAvatarUrl);
-    final subtitle = firstNonEmpty(group?.subTitle, group?.description);
     // Heading and card share one visibility so the label never stands alone.
     if (title.isEmpty) return const SizedBox.shrink();
 
@@ -1052,26 +1051,14 @@ class _EventGroupRow extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (subtitle.isNotEmpty)
-                      Text(
-                        subtitle,
-                        style: TextStyle(fontSize: 13, color: subtitleColor),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(
