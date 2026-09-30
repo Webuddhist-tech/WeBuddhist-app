@@ -378,6 +378,9 @@ void main() {
       final segments = response.content.sections.single.segments;
       expect(segments.map((s) => s.content), ['a&lt;b', '&amp;cd', 'efg']);
       expect(response.isPartial, isTrue);
+
+      // Saved pages keep the flag, so the reader knows to fetch them again.
+      expect(ReaderResponse.fromJson(response.toJson()).isPartial, isTrue);
     });
 
     test('a text with no yigchungs is a complete page', () async {
@@ -388,6 +391,7 @@ void main() {
       );
 
       expect(response.isPartial, isFalse);
+      expect(response.toJson().containsKey('is_partial'), isFalse);
     });
   });
 

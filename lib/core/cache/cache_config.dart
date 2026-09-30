@@ -29,10 +29,6 @@ class CacheConfig {
   /// TTL for text content - 48 hours (content rarely changes)
   static const Duration textContentTtl = Duration(hours: 48);
 
-  /// TTL for a page that opened without optional parts (yigchung marks), so
-  /// the next open soon after fetches it whole. Still served when offline.
-  static const Duration textContentPartialTtl = Duration(minutes: 5);
-
   // Cache size limits
   /// Maximum number of text contents to cache (LRU eviction after this)
   static const int maxTextCacheItems = 50;

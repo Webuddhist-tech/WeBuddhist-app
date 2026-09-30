@@ -52,7 +52,7 @@ class LibraryContentWindow {
   final int totalSegments;
 
   /// True when the page opened without its yigchung marks (they were slow or
-  /// failed), so it should not be kept as long as a complete page.
+  /// failed), so the reader fetches it again when it can.
   final bool isPartial;
 
   const LibraryContentWindow({

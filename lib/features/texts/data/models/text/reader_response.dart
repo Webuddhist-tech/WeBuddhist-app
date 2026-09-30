@@ -14,8 +14,8 @@ class ReaderResponse {
   final int totalSegments;
 
   /// True when something optional (the library's yigchung marks) did not
-  /// load, so the page is cached only briefly. Not stored: a cached page
-  /// read back is whatever it is.
+  /// load. Stored with the page, so a saved partial page is refetched while
+  /// online but still opens offline.
   final bool isPartial;
 
   ReaderResponse({
@@ -43,6 +43,7 @@ class ReaderResponse {
       currentSegmentPosition: json['current_segment_position'],
       lastSegmentPosition: json['last_segment_position'] as int?,
       totalSegments: json['total_segments'],
+      isPartial: json['is_partial'] as bool? ?? false,
     );
   }
 
@@ -56,6 +57,7 @@ class ReaderResponse {
       if (lastSegmentPosition != null)
         'last_segment_position': lastSegmentPosition,
       'total_segments': totalSegments,
+      if (isPartial) 'is_partial': true,
     };
   }
 }

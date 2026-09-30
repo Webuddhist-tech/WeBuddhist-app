@@ -71,6 +71,29 @@ class TextsRepository {
         );
 
         if (cacheResult.isHit && cacheResult.data != null) {
+          final cached = cacheResult.data!;
+          // Saved without its yigchung marks: try for the whole page while
+          // online, and keep the saved one (it stays for offline) if that fails.
+          if (cached.isPartial && isOnline) {
+            try {
+              return Right(
+                await _fetchAndCacheTextDetails(
+                  textId,
+                  contentId,
+                  versionId,
+                  segmentId,
+                  direction,
+                  language,
+                  size,
+                  cacheKey,
+                ),
+              );
+            } catch (e) {
+              _logger.warning('Refetch of partial page $textId failed', e);
+              return Right(cached);
+            }
+          }
+
           _logger.debug(
             'Text details cache hit for: $textId (offline: ${!isOnline})',
           );
@@ -187,10 +210,7 @@ class TextsRepository {
       box: _cacheService.textContentBox,
       data: result,
       toJson: (r) => r.toJson(),
-      ttl:
-          result.isPartial
-              ? CacheConfig.textContentPartialTtl
-              : CacheConfig.textContentTtl,
+      ttl: CacheConfig.textContentTtl,
       maxItems: CacheConfig.maxTextCacheItems,
     );
 
