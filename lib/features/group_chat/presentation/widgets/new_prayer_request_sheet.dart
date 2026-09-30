@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -21,7 +20,6 @@ class NewPrayerRequestSheet extends ConsumerStatefulWidget {
 
   final String eventId;
 
-  static const int maxBodyLength = 280;
   static const int _choicesPerRow = 5;
   static const double _minChoiceWidth = 64;
 
@@ -204,8 +202,6 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final hintColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final length = _bodyController.text.characters.length;
-
     return Container(
       decoration: BoxDecoration(
         color: prayerIntentionCardColor(_intention, isDark),
@@ -215,45 +211,27 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          TextField(
-            controller: _bodyController,
-            focusNode: _bodyFocusNode,
-            enabled: !_sending,
-            minLines: 4,
-            maxLines: 8,
-            keyboardType: TextInputType.multiline,
-            textInputAction: TextInputAction.newline,
-            textCapitalization: TextCapitalization.sentences,
-            inputFormatters: [
-              LengthLimitingTextInputFormatter(
-                NewPrayerRequestSheet.maxBodyLength,
-              ),
-            ],
-            style: TextStyle(fontSize: 15, height: 1.4, color: textColor),
-            decoration: InputDecoration(
-              hintText: context.l10n.event_prayer_hint,
-              hintStyle: TextStyle(
-                fontSize: 15,
-                height: 1.4,
-                color: hintColor,
-              ),
-              isDense: true,
-              filled: false,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-          ),
-          Text(
-            '$length / ${NewPrayerRequestSheet.maxBodyLength}',
-            style: TextStyle(fontSize: 11, color: hintColor),
-          ),
-        ],
+      child: TextField(
+        controller: _bodyController,
+        focusNode: _bodyFocusNode,
+        enabled: !_sending,
+        minLines: 4,
+        maxLines: 8,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
+        textCapitalization: TextCapitalization.sentences,
+        style: TextStyle(fontSize: 15, height: 1.4, color: textColor),
+        decoration: InputDecoration(
+          hintText: context.l10n.event_prayer_hint,
+          hintStyle: TextStyle(fontSize: 15, height: 1.4, color: hintColor),
+          isDense: true,
+          filled: false,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        ),
       ),
     );
   }
