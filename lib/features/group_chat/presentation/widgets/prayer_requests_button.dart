@@ -81,10 +81,13 @@ class _PrayerRequestsButtonState extends ConsumerState<PrayerRequestsButton> {
     // live count restarts from it. Deferred: providers can't change mid-build.
     final eventId = widget.eventId;
     final serverCount = widget.count;
+    final seen = ref.read(prayerRequestCountProvider(eventId));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final live = ref.read(prayerRequestCountProvider(eventId).notifier);
-      if (live.state != null) live.state = serverCount;
+      // It only moves while the sheet is open, and then it is the fresher
+      // of the two; a request that landed this frame must not be undone.
+      if (live.state != null && live.state == seen) live.state = serverCount;
     });
   }
 

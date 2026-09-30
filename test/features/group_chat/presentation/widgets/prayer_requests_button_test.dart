@@ -62,6 +62,20 @@ void main() {
     expect(find.text('9 requests'), findsOneWidget);
   });
 
+  testWidgets('a request landing with a server count is kept', (tester) async {
+    await tester.pumpWidget(_app(container, count: 3));
+    final live = container.read(prayerRequestCountProvider('e1').notifier);
+    live.state = 5;
+    await tester.pump();
+
+    // Runs before the chip's deferred update in the same frame, like a
+    // socket request arriving just as the event is fetched again.
+    tester.binding.addPostFrameCallback((_) => live.state = 6);
+    await tester.pumpWidget(_app(container, count: 4));
+    await tester.pump();
+    expect(find.text('6 requests'), findsOneWidget);
+  });
+
   testWidgets('leaving the screen drops the live count', (tester) async {
     await tester.pumpWidget(_app(container, count: 3));
     container.read(prayerRequestCountProvider('e1').notifier).state = 5;
