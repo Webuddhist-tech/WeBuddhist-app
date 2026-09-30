@@ -73,7 +73,59 @@ Future<void> _pump(
   );
 }
 
+Future<void> _pumpBody(
+  WidgetTester tester,
+  String body, {
+  TextStyle inherited = const TextStyle(),
+}) {
+  return tester.pumpWidget(
+    MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: DefaultTextStyle.merge(
+          style: inherited,
+          child: PrayerRequestTile(
+            request: _prayer(count: 0, prayedByMe: false).copyWith(body: body),
+            displayName: 'Tenzin',
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 void main() {
+  testWidgets('a short request has no show more', (tester) async {
+    await _pumpBody(tester, 'May all be well');
+    expect(find.text('Show more'), findsNothing);
+  });
+
+  testWidgets('a long request folds and unfolds', (tester) async {
+    await _pumpBody(tester, List.filled(12, 'Line of prayer').join('\n'));
+    expect(find.text('Show more'), findsOneWidget);
+
+    await tester.tap(find.text('Show more'));
+    await tester.pump();
+    expect(find.text('Show less'), findsOneWidget);
+
+    await tester.tap(find.text('Show less'));
+    await tester.pump();
+    expect(find.text('Show more'), findsOneWidget);
+  });
+
+  testWidgets('show more is measured in the inherited font', (tester) async {
+    // Fits one line in a bare style, but the spacing the theme passes down
+    // (standing in for a wider font) wraps it well past four.
+    await _pumpBody(
+      tester,
+      List.filled(24, 'om').join(' '),
+      inherited: const TextStyle(letterSpacing: 40),
+    );
+    expect(find.text('Show more'), findsOneWidget);
+  });
+
   testWidgets('nobody praying yet reads Pray with no count', (tester) async {
     await _pump(tester, count: 0, prayedByMe: false);
     expect(find.text('Pray'), findsOneWidget);

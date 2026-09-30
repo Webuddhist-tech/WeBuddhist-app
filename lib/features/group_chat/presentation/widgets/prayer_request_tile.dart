@@ -202,7 +202,13 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(fontSize: 14, height: 1.4, color: widget.textColor);
+    // Measured in the font the Text below inherits from the theme (Inter,
+    // Noto Serif Tibetan, ...); a bare style would measure the platform font
+    // and misjudge where the lines break.
+    final defaults = DefaultTextStyle.of(context);
+    final style = defaults.style.merge(
+      TextStyle(fontSize: 14, height: 1.4, color: widget.textColor),
+    );
     final strut = context.tibetanStrutStyle(14);
 
     return LayoutBuilder(
@@ -213,6 +219,11 @@ class _CollapsibleBodyState extends State<_CollapsibleBody> {
           maxLines: _CollapsibleBody._collapsedLines,
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
+          textWidthBasis: defaults.textWidthBasis,
+          textHeightBehavior:
+              defaults.textHeightBehavior ??
+              DefaultTextHeightBehavior.maybeOf(context),
+          locale: Localizations.maybeLocaleOf(context),
         )..layout(maxWidth: constraints.maxWidth);
         final overflows = painter.didExceedMaxLines;
         painter.dispose();
