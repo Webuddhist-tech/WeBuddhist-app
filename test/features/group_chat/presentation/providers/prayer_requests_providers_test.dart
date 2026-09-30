@@ -43,6 +43,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   final List<int> prayersSkips = [];
   final List<Map<String, String?>> updates = [];
   ChatMessageDTO? updateResponse;
+  final List<String> deleted = [];
+  Failure? deleteFailure;
   List<ChatPrayerUserDTO> supporters = const [];
 
   @override
@@ -216,7 +218,12 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, Unit>> deleteMessage(
     String roomId, {
     required String messageId,
-  }) async => const Right(unit);
+  }) async {
+    deleted.add('$roomId/$messageId');
+    final failure = deleteFailure;
+    if (failure != null) return Left(failure);
+    return const Right(unit);
+  }
 
   @override
   Future<Either<Failure, Unit>> deleteMessages(
@@ -386,6 +393,38 @@ void main() {
       final edited = _byId(notifier, 'a');
       expect(edited.body, 'Trimmed by server');
       expect(edited.intention, peace);
+    });
+
+    test('delete removes the row once the server agrees', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final result = await notifier.delete('a');
+
+      expect(result.isRight(), isTrue);
+      expect(repository.deleted, ['room-1/a']);
+      expect(notifier.state.requests.map((r) => r.id), ['b']);
+      expect(notifier.state.skip, 1);
+    });
+
+    test('a refused delete leaves the row in place', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a')])
+            ..deleteFailure = const ServerFailure('boom');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final result = await notifier.delete('a');
+
+      expect(result.isLeft(), isTrue);
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
     });
 
     test('appendLive ignores TEXT messages and duplicates', () async {

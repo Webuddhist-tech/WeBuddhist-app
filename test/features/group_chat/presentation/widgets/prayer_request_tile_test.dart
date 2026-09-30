@@ -47,6 +47,7 @@ Future<void> _pump(
   ChatPrayerIntentionDTO? intention,
   VoidCallback? onShowSupporters,
   VoidCallback? onEdit,
+  VoidCallback? onDelete,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -65,6 +66,7 @@ Future<void> _pump(
           isOwn: isOwn,
           onShowSupporters: onShowSupporters,
           onEdit: onEdit,
+          onDelete: onDelete,
         ),
       ),
     ),
@@ -143,7 +145,26 @@ void main() {
     expect(edited, isTrue);
   });
 
-  testWidgets('a request without onEdit has no menu', (tester) async {
+  testWidgets('my own request offers Delete from its menu', (tester) async {
+    var deleted = false;
+    await _pump(
+      tester,
+      count: 0,
+      prayedByMe: false,
+      isOwn: true,
+      onDelete: () => deleted = true,
+    );
+    await tester.tap(find.byIcon(AppAssets.dotsThree));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsNothing);
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(deleted, isTrue);
+  });
+
+  testWidgets('a request without onEdit or onDelete has no menu', (
+    tester,
+  ) async {
     await _pump(tester, count: 0, prayedByMe: false);
     expect(find.byIcon(AppAssets.dotsThree), findsNothing);
   });

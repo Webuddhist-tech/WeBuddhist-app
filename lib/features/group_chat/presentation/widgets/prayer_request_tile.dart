@@ -23,6 +23,7 @@ class PrayerRequestTile extends StatelessWidget {
     this.onTogglePrayer,
     this.onShowSupporters,
     this.onEdit,
+    this.onDelete,
   });
 
   final ChatMessageDTO request;
@@ -34,8 +35,9 @@ class PrayerRequestTile extends StatelessWidget {
   final VoidCallback? onTogglePrayer;
   final VoidCallback? onShowSupporters;
 
-  /// Shows the overflow menu with Edit when set.
+  /// Either one shows the overflow menu with the matching entry.
   final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +86,7 @@ class PrayerRequestTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (onEdit != null)
+                if (onEdit != null || onDelete != null)
                   ConnectActionMenu(
                     icon: AppAssets.dotsThree,
                     iconColor:
@@ -92,6 +94,7 @@ class PrayerRequestTile extends StatelessWidget {
                             ? AppColors.textTertiaryDark
                             : AppColors.textSecondary,
                     onEdit: onEdit,
+                    onDelete: onDelete,
                     style: IconButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(32, 32),

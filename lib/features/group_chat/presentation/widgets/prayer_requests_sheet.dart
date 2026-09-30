@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/group_c
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_delete_dialog.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_prompt.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
@@ -311,6 +312,23 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     }
   }
 
+  /// Confirms, then deletes one of the viewer's own requests. No success
+  /// toast: the card leaving the list already shows the delete landed.
+  Future<void> _deleteRequest(ChatMessageDTO request) async {
+    if (!await confirmChatMessageDelete(context)) return;
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final result = await _notifier.delete(request.id);
+    if (!mounted) return;
+    result.fold(
+      (_) => messenger.showSnackBar(
+        SnackBar(content: Text(l10n.group_chat_delete_failed(1))),
+      ),
+      (_) {},
+    );
+  }
+
   ChatPrayerUserDTO? _viewerAsSupporter() {
     final user = _providers.read(userProvider).user;
     final id = user?.id?.trim() ?? '';
@@ -506,6 +524,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           onEdit:
               isSelf && canEdit
                   ? () => unawaited(_openComposer(editing: request))
+                  : null,
+          onDelete:
+              isSelf && canEdit
+                  ? () => unawaited(_deleteRequest(request))
                   : null,
         );
       },

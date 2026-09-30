@@ -284,6 +284,21 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     });
   }
 
+  /// Deletes one of the viewer's own requests for everyone, then drops it
+  /// locally; the socket echo finds nothing left to remove.
+  Future<Either<Failure, Unit>> delete(String messageId) async {
+    final roomId = state.roomId;
+    if (roomId == null) {
+      return const Left(NotFoundFailure('Prayer request not found'));
+    }
+    final result = await _repository.deleteMessage(
+      roomId,
+      messageId: messageId,
+    );
+    if (mounted) result.fold((_) {}, (_) => applyDeletion(messageId));
+    return result;
+  }
+
   /// Inserts a prayer request that arrived over the socket or came back from
   /// a send. Anything else in the room is ignored here.
   void appendLive(ChatMessageDTO message) {
