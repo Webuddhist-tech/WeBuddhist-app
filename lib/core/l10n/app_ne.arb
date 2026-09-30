@@ -972,7 +972,7 @@
   "connect_event_tab_videos": "Videos",
   "connect_event_tab_links": "Links",
   "connect_event_tab_about": "About",
-  "connect_event_links_title": "More about this event",
+  "connect_event_links_title": "कार्यक्रमका थप विवरण",
   "connect_event_links_empty": "No links yet",
   "connect_event_link_tap_to_join": "Tap to join",
   "connect_event_link_open": "Open link",
@@ -1105,6 +1105,16 @@
   "event_prayer_closed": "यस कार्यक्रमका लागि प्रार्थना अनुरोध बन्द छ।",
   "event_prayer_pray": "प्रार्थना गर्नुहोस्",
   "event_prayer_praying": "प्रार्थना गर्दै",
+  "connect_event_organizer": "आयोजक",
+  "event_prayer_request_count": "{count, plural,\nother {{count} अनुरोध}\n=1 {1 अनुरोध}\none {1 अनुरोध}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_request_button": "प्रार्थना अनुरोध गर्नुहोस्",
   "feedback_title": "प्रतिक्रिया पठाउनुहोस्",
   "feedback_hint": "के राम्रो छ, के छैन, वा तपाईं के हेर्न चाहनुहुन्छ हामीलाई बताउनुहोस्",
   "feedback_images": "तस्बिरहरू",

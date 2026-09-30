@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
-import 'package:flutter_pecha/features/reader/data/datasource/reader_settings_remote_datasource.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_language_option.dart';
-import 'package:flutter_pecha/features/reader/data/models/reader_script_option.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.dart';
@@ -20,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../fakes/fake_local_storage.dart';
+import '../fakes/fake_reader_settings_datasource.dart';
 
 const _scope = ReaderSettingsScope(
   textId: 'text-1',
@@ -56,56 +55,6 @@ const _romanAndEnglish = ReaderInitialLayout(
   translationLanguage: 'en',
 );
 
-/// Languages and versions served from memory. A language missing from
-/// [versions] fails the way a network error would.
-class _FakeSettingsDatasource implements ReaderSettingsRemoteDatasource {
-  _FakeSettingsDatasource({required this.languages, required this.versions});
-
-  final List<ReaderLanguageOption> languages;
-  final Map<String, List<ReaderVersionDetail>> versions;
-
-  /// Languages whose versions were asked for, in order.
-  final List<String> versionRequests = [];
-
-  /// A language listed here answers only once its completer completes.
-  final Map<String, Completer<void>> gates = {};
-
-  @override
-  Future<ReaderLanguagesResponse> fetchLanguages({
-    required String textId,
-  }) async => ReaderLanguagesResponse(
-    textId: textId,
-    title: null,
-    availableLanguages: languages,
-  );
-
-  @override
-  Future<ReaderVersionsResponse> fetchVersions({
-    required String textId,
-    required String language,
-  }) async {
-    versionRequests.add(language);
-    await gates[language]?.future;
-    final found = versions[language];
-    if (found == null) throw StateError('versions for $language failed');
-    return ReaderVersionsResponse(
-      textId: textId,
-      language: language,
-      availableVersions: found,
-    );
-  }
-
-  @override
-  Future<ReaderScriptsResponse> fetchScripts({
-    required String textId,
-    required String language,
-  }) => throw UnimplementedError();
-
-  @override
-  Future<ReaderVersionDetail> fetchVersionInfo({required String versionId}) =>
-      throw UnimplementedError();
-}
-
 /// Keeps the scope's settings alive; its element doubles as the [WidgetRef]
 /// and [BuildContext] the fill helpers take.
 class _Host extends ConsumerWidget {
@@ -120,7 +69,7 @@ class _Host extends ConsumerWidget {
 
 Future<Element> _pumpHost(
   WidgetTester tester,
-  _FakeSettingsDatasource datasource,
+  FakeReaderSettingsDatasource datasource,
 ) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -171,7 +120,7 @@ void main() {
     testWidgets('moves on to the next candidate when the first has no version', (
       tester,
     ) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'hi': [], 'en': [_englishVersion]},
       );
@@ -188,7 +137,7 @@ void main() {
     testWidgets('a failed versions request is passed over the same way', (
       tester,
     ) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'en': [_englishVersion]},
       );
@@ -202,7 +151,7 @@ void main() {
         'unavailable', (tester) async {
       // Hindi has no version; English's request fails. English may exist,
       // so a stored "on" must not be held off.
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'hi': []},
       );
@@ -214,7 +163,7 @@ void main() {
     });
 
     testWidgets('an automatic fill is not the person\'s pick', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_english],
         versions: {'en': [_englishVersion]},
       );
@@ -230,7 +179,7 @@ void main() {
     });
 
     testWidgets('the last candidate stays marked unavailable', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'hi': [], 'en': []},
       );
@@ -250,7 +199,7 @@ void main() {
     testWidgets('skips the source language and languages the text lacks', (
       tester,
     ) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'en': [_englishVersion]},
       );
@@ -264,7 +213,7 @@ void main() {
     testWidgets('nothing offered is unavailable and leaves the slot alone', (
       tester,
     ) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'en': [_englishVersion]},
       );
@@ -276,7 +225,7 @@ void main() {
     });
 
     testWidgets('a pick made meanwhile is left alone', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {'hi': [], 'en': [_englishVersion]},
       );
@@ -308,7 +257,7 @@ void main() {
       'a pick made while the last lookup finds nothing is superseded, '
       'not unavailable',
       (tester) async {
-        final datasource = _FakeSettingsDatasource(
+        final datasource = FakeReaderSettingsDatasource(
           languages: [_hindi, _english],
           versions: {'hi': []},
         );
@@ -339,7 +288,7 @@ void main() {
 
   group('remembered translation edition', () {
     testWidgets('the edition picked for this text comes back', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_english],
         versions: {
           'en': [_englishVersion, _simpleEnglishVersion],
@@ -355,7 +304,7 @@ void main() {
 
     testWidgets('an edition the language no longer offers falls back to the '
         'first', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_english],
         versions: {
           'en': [_englishVersion, _simpleEnglishVersion],
@@ -368,8 +317,119 @@ void main() {
       expect(_secondaryOf(host).versionId, 'v-en');
     });
 
+    testWidgets('replaces the opened edition when it is in the same language', (
+      tester,
+    ) async {
+      // The Tara plan links v-en; the person picked the Simple English here.
+      final datasource = FakeReaderSettingsDatasource(
+        languages: [_english],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).openAsTranslation(
+        original: const ReaderSlotConfig(
+          languageCode: 'bo',
+          languageLabel: 'bo',
+          versionId: 'bo-root',
+        ),
+        translation: const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en',
+        ),
+      );
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-en-2');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(_secondaryOf(host).versionId, 'v-en-2');
+    });
+
+    testWidgets('the opened edition comes back before the first one', (
+      tester,
+    ) async {
+      final datasource = FakeReaderSettingsDatasource(
+        languages: [_english],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).openAsTranslation(
+        original: const ReaderSlotConfig(
+          languageCode: 'bo',
+          languageLabel: 'bo',
+          versionId: 'bo-root',
+        ),
+        translation: const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en-2',
+        ),
+      );
+      // Remembered, but no longer offered.
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-gone');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(_secondaryOf(host).versionId, 'v-en-2');
+      expect(datasource.versionRequests, ['en']);
+    });
+
+    testWidgets('a slot already holding the remembered edition is done', (
+      tester,
+    ) async {
+      final datasource = FakeReaderSettingsDatasource(
+        languages: [_english],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).fillSecondary(
+        const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en-2',
+        ),
+      );
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-en-2');
+
+      expect(await _fill(host, ['en']), SecondaryFillOutcome.filled);
+      expect(datasource.versionRequests, isEmpty);
+    });
+
+    testWidgets('a slot in the language stays when the remembered edition '
+        'is in another language', (tester) async {
+      final datasource = FakeReaderSettingsDatasource(
+        languages: [_english, _hindi],
+        versions: {
+          'en': [_englishVersion, _simpleEnglishVersion],
+          'hi': [_hindiVersion],
+        },
+      );
+      final host = await _pumpHost(tester, datasource);
+      _notifierOf(host).fillSecondary(
+        const ReaderSlotConfig(
+          languageCode: 'en',
+          languageLabel: 'English',
+          versionId: 'v-en-2',
+        ),
+      );
+      _eventStoreOf(host).setTranslationVersion('text-1', 'v-hi');
+      final generation = _notifierOf(host).secondaryResolveGeneration;
+
+      expect(await _fill(host, ['en', 'hi']), SecondaryFillOutcome.filled);
+      expect(_secondaryOf(host).versionId, 'v-en-2');
+      expect(
+        _notifierOf(host).secondaryResolveGeneration,
+        generation,
+        reason: 'the slot is not cleared and refilled, so nothing reloads',
+      );
+    });
+
     testWidgets('another text keeps its own pick', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_english],
         versions: {
           'en': [_englishVersion, _simpleEnglishVersion],
@@ -389,7 +449,7 @@ void main() {
       'is missing',
       (tester) async {
         // Chinese UI on the Tara praise, whose only translation is English.
-        final datasource = _FakeSettingsDatasource(
+        final datasource = FakeReaderSettingsDatasource(
           languages: [_english],
           versions: {'en': [_englishVersion]},
         );
@@ -410,7 +470,7 @@ void main() {
     testWidgets('the language picked last time in this context wins', (
       tester,
     ) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi, _english],
         versions: {
           'hi': [_hindiVersion],
@@ -428,7 +488,7 @@ void main() {
 
     testWidgets('after a failed lookup is held off, switching on again '
         'requests the versions afresh', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_english],
         versions: {},
       );
@@ -455,7 +515,7 @@ void main() {
     });
 
     testWidgets('nothing offered leaves the translation off', (tester) async {
-      final datasource = _FakeSettingsDatasource(
+      final datasource = FakeReaderSettingsDatasource(
         languages: [_hindi],
         versions: {'hi': [_hindiVersion]},
       );

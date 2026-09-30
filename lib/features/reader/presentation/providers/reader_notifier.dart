@@ -293,7 +293,11 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     _activeVersionId = root.id;
     // An adopted layout keeps whatever the user toggled on the other screen.
     if (!adopted) {
-      dual.openAsTranslation(original: _slot(root), translation: _slot(opened));
+      dual.openAsTranslation(
+        original: _slot(root),
+        translation: _slot(opened),
+        listLanguage: _params.language,
+      );
     }
     state = state.copyWith(
       openedTranslation: _textDetail(opened),
