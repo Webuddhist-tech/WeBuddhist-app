@@ -45,19 +45,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_all_set => '一切就緒';
 
   @override
-  String get onboarding_all_set_description => '以下是為您的修行準備的內容。';
+  String get onboarding_all_set_description => '以下是為您的修行準備的內容';
 
   @override
-  String get onboarding_all_set_feature_practices => '持咒、累積、禪修和學習計畫供您選擇';
+  String get onboarding_all_set_feature_practices => '持咒、計數、禪修和學習計畫供您選擇';
 
   @override
-  String get onboarding_all_set_feature_reminders => '溫和的日常提醒，隨時為您準備好';
+  String get onboarding_all_set_feature_reminders => '每日溫馨提醒，隨時等您準備好～';
 
   @override
   String get onboarding_begin_practice => '尋找您的第一項修持';
 
   @override
-  String get onboarding_2_title => '接下來，看看它是如何運作的。';
+  String get onboarding_2_title => '接下來，這個應用程式是這樣使用的:';
 
   @override
   String get onboarding_2_subtitle => '養成習慣的三個小步驟';
@@ -69,7 +69,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_2_step1_desc => '持咒、數念珠、設定禪坐計時器，或跟隨您傳承中的學習計畫。';
 
   @override
-  String get onboarding_2_step2_title => '融入您的日常生活';
+  String get onboarding_2_step2_title => '加入您的每日修持計畫';
 
   @override
   String get onboarding_2_step2_desc => '建立日常日程，我們會發送溫和的提醒，幫助您堅持。';
@@ -99,7 +99,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get home_meditationTitle => '禪修';
 
   @override
-  String get home_prayerTitle => '今日祈願';
+  String get home_prayerTitle => '今日祈願文';
 
   @override
   String get home_scripture => '導讀經典';
@@ -151,7 +151,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmark_texts => '經文';
 
   @override
-  String get bookmark_group_accumulation => 'Group accumulation';
+  String get bookmark_group_accumulation => 'Channel accumulations';
 
   @override
   String get mala_add_to_practice => '加入我的修持';
@@ -181,7 +181,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mala_reset_title => '重設此念珠？';
 
   @override
-  String get mala_reset_count_confirm => '目前的計數將歸零，但您的累積仍會保留在終身總數中。';
+  String get mala_reset_count_confirm => '目前的計數將歸零，但您累積的次數仍會保留在終身總數中。';
 
   @override
   String get mala_reset_confirm => '重設';
@@ -207,13 +207,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get mala_group_accumulations => '加入朗誦';
+  String get mala_group_accumulations => '加入持誦計數';
 
   @override
   String get mala_groups_section => 'Groups';
 
   @override
-  String get mala_group_untitled => 'Untitled group';
+  String get mala_group_untitled => '未取名群組';
 
   @override
   String get home_timer => '計時';
@@ -373,7 +373,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get english => '英文';
 
   @override
-  String get chinese => '白話中文';
+  String get chinese => '繁體中文';
 
   @override
   String get classicalChinese => '佛經文體';
@@ -505,10 +505,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get bookmarks_empty_chant_collections_title => '尚未收藏任何持誦收藏。';
+  String get bookmarks_empty_chant_collections_title => '尚無持誦計數書籤';
 
   @override
-  String get bookmarks_empty_chant_collections_subtitle => '收藏持誦收藏後會顯示在這裡。';
+  String get bookmarks_empty_chant_collections_subtitle => '將持誦計數加入書籤';
 
   @override
   String get notification_settings => '通知設定';
@@ -554,7 +554,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notification_recitation_subtitle_disabled => '持誦提醒已暫停。點此恢復。';
 
   @override
-  String get notification_practice_title => '念珠提醒';
+  String get notification_practice_title => '念珠修持提醒';
 
   @override
   String get notification_practice_subtitle_enabled => '每日念珠修持提醒';
@@ -576,7 +576,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get notification_battery_info_body =>
-      '部分 Android 手機會暫停背景應用程式以節省電池，這可能導致已排程的提醒延遲或取消。豁免應用程式可讓您的提醒準時可靠地發送。';
+      '部分 Android 手機會暫停背景應用程式以節省電池，這可能導致已排程的提醒延遲或取消。開啟應用程式可讓您的提醒準時可靠地發送。';
 
   @override
   String get notification_snack_permission_denied => '通知已被封鎖。請在「設定」中開啟';
@@ -708,7 +708,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get plans_empty_subtitle => '我們將持續添增修持課程，歡迎隨時回來瀏覽。';
 
   @override
-  String get find_plans_load_error => '無法載入計畫，\n請稍後再試';
+  String get find_plans_load_error => '無法載入計畫，\n請檢查你的網路連線後再試。';
 
   @override
   String get connect_coming_soon_subtitle => '在修行路上支持您前行的良師、社群、修持挑戰與相關活動';
@@ -747,10 +747,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_tab_practices => '修持計畫';
 
   @override
-  String get connect_tab_groups => 'Groups';
+  String get connect_tab_groups => '社群';
 
   @override
-  String get connect_segment_my => '為你';
+  String get connect_segment_my => '您的專區';
 
   @override
   String get connect_segment_discover => '探索';
@@ -789,7 +789,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_my_empty_feed_subtitle => '你加入的社群沒有新動態。其他社群今天有發文。';
 
   @override
-  String get connect_my_empty_events_subtitle => '你的社群都沒有安排活動。其他社群有開放給所有人的活動。';
+  String get connect_my_empty_events_subtitle => '你的社群尚無安排任何活動。其他社群有其他對外開放的活動。';
 
   @override
   String get connect_my_empty_posts_subtitle => '你的社群還沒有發文。看看其他社群在分享什麼。';
@@ -822,7 +822,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get connect_comment_hint => '你對這則有什麼想法？';
+  String get connect_comment_hint => '請問您對這則貼文有什麼想法？';
 
   @override
   String get connect_comment_reply_hint => '撰寫回覆…';
@@ -850,7 +850,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get connect_post_comments_empty => '還沒有留言。開始討論吧。';
+  String get connect_post_comments_empty => '還沒有留言。開始加入討論吧~';
 
   @override
   String get connect_caption_more => '更多';
@@ -874,19 +874,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_events_filter_all => '全部';
 
   @override
-  String get connect_events_filter_in_person => '實體';
+  String get connect_events_filter_in_person => '現場';
 
   @override
-  String get connect_events_filter_empty_online => '沒有線上活動';
+  String get connect_events_filter_empty_online => '尚無線上活動';
 
   @override
-  String get connect_events_filter_empty_in_person => '沒有實體活動';
+  String get connect_events_filter_empty_in_person => '尚無現場活動';
 
   @override
   String get connect_events_filter_hybrid => '混合';
 
   @override
-  String get connect_events_filter_empty_hybrid => '沒有混合活動';
+  String get connect_events_filter_empty_hybrid => '沒有合併的活動';
 
   @override
   String get connect_open => '開啟';
@@ -904,22 +904,22 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_attending => '已參加';
 
   @override
-  String get connect_event_join_in_person => 'Join in person';
+  String get connect_event_join_in_person => '現場參加';
 
   @override
-  String get connect_event_join_online => 'Join online';
+  String get connect_event_join_online => '線上參加';
 
   @override
   String get connect_event_enter => 'Enter';
 
   @override
-  String get connect_event_participation_prompt => 'How are you attending?';
+  String get connect_event_participation_prompt => '您會怎麼參加?';
 
   @override
-  String get connect_event_joining_in_person => 'Joining in person';
+  String get connect_event_joining_in_person => '正在現場';
 
   @override
-  String get connect_event_joining_online => 'Joining online';
+  String get connect_event_joining_online => '正在線上';
 
   @override
   String connect_event_participants_attending(int count) {
@@ -927,75 +927,74 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get connect_event_participants_empty => '尚無參與者';
+  String get connect_event_participants_empty => '尚無人參加';
 
   @override
-  String get connect_event_organizer => 'Organizer';
+  String get connect_event_organizer => '主辦單位';
 
   @override
-  String get connect_event_tab_videos => 'Videos';
+  String get connect_event_tab_videos => '影片';
 
   @override
-  String get connect_event_tab_links => 'Links';
+  String get connect_event_tab_links => '連結';
 
   @override
-  String get connect_event_tab_about => 'About';
+  String get connect_event_tab_about => '活動介紹';
 
   @override
-  String get connect_event_links_title => 'More about this event';
+  String get connect_event_links_title => '更多活動介紹';
 
   @override
-  String get connect_event_links_empty => 'No links yet';
+  String get connect_event_links_empty => '尚無連結';
 
   @override
-  String get connect_event_link_tap_to_join => 'Tap to join';
+  String get connect_event_link_tap_to_join => '點擊進入';
 
   @override
-  String get connect_event_link_open => 'Open link';
+  String get connect_event_link_open => '打開連結';
 
   @override
-  String get connect_event_date_tba => 'Date to be announced';
+  String get connect_event_date_tba => '日期尚待公告';
 
   @override
-  String get connect_event_when => 'When';
+  String get connect_event_when => '時間';
 
   @override
-  String get connect_event_where => 'Where';
+  String get connect_event_where => '地點';
 
   @override
-  String get connect_event_practices => 'Event practices';
+  String get connect_event_practices => '活動共修內容';
 
   @override
-  String get connect_event_tab_accumulations => 'Accumulations';
+  String get connect_event_tab_accumulations => '計數統計';
 
   @override
-  String get connect_event_tab_recitations => 'Recitations';
+  String get connect_event_tab_recitations => '持誦';
 
   @override
-  String get connect_event_add_recitations => 'Add recitations';
+  String get connect_event_add_recitations => '填入您的計數';
 
   @override
-  String get connect_event_add_recitations_message =>
-      'Add the number of recitations you did with the livestream or outside this app.';
+  String get connect_event_add_recitations_message => '加入您在直播或未使用APP時的持誦數量';
 
   @override
-  String get connect_event_every_day => 'Every day';
+  String get connect_event_every_day => '每天';
 
   @override
   String connect_event_every_weekday(String weekday) {
-    return 'Every $weekday';
+    return '每個$weekday';
   }
 
   @override
-  String get connect_event_every_month => 'Every month';
+  String get connect_event_every_month => '每個月';
 
   @override
   String connect_event_every_date(String date) {
-    return 'Every $date';
+    return '每年$date';
   }
 
   @override
-  String get connect_event_about_empty => 'No event details yet';
+  String get connect_event_about_empty => '尚無活動資訊';
 
   @override
   String get search_groups => '搜尋社群';
@@ -1150,7 +1149,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get share => '分享';
 
   @override
-  String get bookmark => '书签';
+  String get bookmark => '書籤';
 
   @override
   String get image => '圖片';
@@ -1185,7 +1184,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get routine_title => '日常修持';
 
   @override
-  String get bookmarks => '书签';
+  String get bookmarks => '書籤';
 
   @override
   String get routine_empty_title => '日常修持';
@@ -1616,7 +1615,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get about_description =>
-      '我們協助佛教徒透過每日的學習、修持與交流，減少惡行、增長善行，更深入地了解自己的心。並希望藉此，讓一切眾生皆能離苦得樂。';
+      '我們協助佛教徒透過每日的學習、修持與交流，減少惡行、增長善行，更深入了解自己的心。並希望藉此，讓一切眾生皆能離苦得樂。';
 
   @override
   String get about_social_website => '網頁';
@@ -1641,16 +1640,16 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get accumulations => '累積';
+  String get accumulations => '持誦計數';
 
   @override
-  String get accumulations_search => '搜索累積';
+  String get accumulations_search => '查詢計數結果';
 
   @override
-  String get accumulations_search_for => '尋找累積內容';
+  String get accumulations_search_for => '尋找計數內容';
 
   @override
-  String get accumulations_no_found => '尚無相關累積內容';
+  String get accumulations_no_found => '尚無計數紀錄';
 
   @override
   String get me_accumulation => '累積總數';
@@ -1718,10 +1717,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get following => '追蹤中';
 
   @override
-  String get calendar_title => '日历';
+  String get calendar_title => '日曆';
 
   @override
-  String get calendar_upcoming_events => '近期活动';
+  String get calendar_upcoming_events => '近期活動';
 
   @override
   String get calendar_day_short => '日';
@@ -1731,12 +1730,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String calendar_day_month(int day, int month) {
-    return '藏历$month月$day日';
+    return '藏曆$month月$day日';
   }
 
   @override
   String calendar_lunar_month(String ordinal) {
-    return '藏历$ordinal月';
+    return '藏曆$ordinal月';
   }
 
   @override
@@ -1805,18 +1804,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_notifications_master_off =>
-      'Notifications are turned off for the app.';
+      'Notifications are turned off for the app';
 
   @override
   String get group_notifications_open_settings => 'Turn on';
 
   @override
   String get group_notifications_update_failed =>
-      'Couldn\'t update notification settings. Try again.';
+      'Couldn\'t update notification settings. Try again';
 
   @override
   String get group_notifications_load_failed =>
-      'Couldn\'t load notification settings.';
+      'Couldn\'t load notification settings';
 
   @override
   String get group_chat_mute_notifications => '將聊天通知設為靜音';
@@ -1838,10 +1837,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this group.';
+      'You\'ll stop getting messages and updates from this group';
 
   @override
-  String get group_leave_failed => 'Couldn\'t leave the group. Try again.';
+  String get group_leave_failed => 'Couldn\'t leave the group. Try again';
 
   @override
   String get group_request_to_join => '申請加入';
@@ -2012,10 +2011,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_links_title => '連結';
 
   @override
-  String get group_about_description => '簡介';
+  String get group_about_description => '社群介紹';
 
   @override
-  String get group_about_empty => '尚無可用資訊';
+  String get group_about_empty => '尚無相關資訊';
 
   @override
   String group_and_more_links(int count) {
@@ -2031,20 +2030,19 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get group_change_practice_title => '改變小組實踐';
+  String get group_change_practice_title => '改變小組修持計畫';
 
   @override
-  String get group_change_practice_message => '您目前已與其他小組一起練習此計劃。您是否想更換練習小組？';
+  String get group_change_practice_message => '您目前已在其他小組一起練習此計劃。您是否想更換小組？';
 
   @override
-  String get group_join_to_contribute => '加入以貢獻';
+  String get group_join_to_contribute => '開始參與計數';
 
   @override
-  String get group_accumulator_join_error => '無法加入累積，請再試一次。';
+  String get group_accumulator_join_error => '無法加入計數統計，請再試一次';
 
   @override
-  String get group_accumulator_join_before_practice =>
-      'Join this accumulation before adding it to your practices';
+  String get group_accumulator_join_before_practice => '先加入本共修計數活動，再將它加入您的修持計畫';
 
   @override
   String group_accumulator_participants(int count) {
@@ -2058,35 +2056,35 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_accumulator_my_contributions => '我的貢獻';
 
   @override
-  String get group_accumulator_recited => '已誦讀';
+  String get group_accumulator_recited => '已持誦';
 
   @override
   String get group_accumulator_total => '總數';
 
   @override
-  String get group_accumulator_contributions_empty => '加入此累積以追蹤您的貢獻。';
+  String get group_accumulator_contributions_empty => '加入共修計數以追蹤您的貢獻';
 
   @override
-  String get group_accumulator_leaderboard_empty => '尚無誦念紀錄。';
+  String get group_accumulator_leaderboard_empty => '尚無持誦紀錄';
 
   @override
-  String get group_accumulator_recite_now => '立即誦念';
+  String get group_accumulator_recite_now => '立即持誦';
 
   @override
-  String get group_accumulator_chant_again => '再次誦念';
+  String get group_accumulator_chant_again => '再次持誦';
 
   @override
   String get group_accumulator_finish_session => '結束此次課誦';
 
   @override
-  String get group_accumulator_offline_recitation => '線下誦念';
+  String get group_accumulator_offline_recitation => '線下持誦';
 
   @override
-  String get group_accumulator_add_offline_chants_title => '新增線下誦念：';
+  String get group_accumulator_add_offline_chants_title => '新增線下持誦次數：';
 
   @override
   String get group_accumulator_add_offline_chants_message =>
-      '新增你在此應用程式之外完成的誦念次數。';
+      '新增你在未使用此應用程式時的持誦次數';
 
   @override
   String get group_accumulator_session_complete => '課誦完成！';
@@ -2102,7 +2100,7 @@ class AppLocalizationsZh extends AppLocalizations {
     String accumulation,
     String group,
   ) {
-    return '我在 WeBuddhist 上 $group 的累積活動「$accumulation」中完成了 $count 遍誦念，快來加入我吧！';
+    return '我在 WeBuddhist 上 $group 共修計數活動「$accumulation」中完成了 $count 遍的持誦，快來加入我吧！';
   }
 
   @override
@@ -2110,7 +2108,7 @@ class AppLocalizationsZh extends AppLocalizations {
     int count,
     String accumulation,
   ) {
-    return '我在 WeBuddhist 上的累積活動「$accumulation」中完成了 $count 遍誦念，快來加入我吧！';
+    return '我在 WeBuddhist 上的共修計數活動「$accumulation」中完成了 $count 遍的持誦，快來加入我吧！';
   }
 
   @override
@@ -2136,7 +2134,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_recitation_collection_dedication =>
-      'By this merit, may all beings\nbe free from suffering.';
+      'By this merit, may all beings\nbe free from suffering';
 
   @override
   String get share_this_quote => '分享这句话';
@@ -2243,30 +2241,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mala_mantra_label => '咒語';
 
   @override
-  String get bookmarks_empty_all_title => '尚無書籤。';
+  String get bookmarks_empty_all_title => '尚無書籤';
 
   @override
-  String get bookmarks_empty_all_subtitle => '將任何內容加入書籤即可儲存於此。';
+  String get bookmarks_empty_all_subtitle => '將任何內容加入書籤即可儲存於此';
 
   @override
-  String get bookmarks_empty_plans_title => '尚無已加書籤的計畫。';
+  String get bookmarks_empty_plans_title => '尚無已加書籤的修持計畫';
 
   @override
-  String get bookmarks_empty_plans_subtitle => '將計畫加入書籤即可儲存於此。';
+  String get bookmarks_empty_plans_subtitle => '將修持計畫加入書籤即可儲存於此';
 
   @override
-  String get bookmarks_empty_malas_title => '尚無已加書籤的念珠。';
+  String get bookmarks_empty_malas_title => '尚無已加書籤的念珠';
 
   @override
-  String get bookmarks_empty_malas_subtitle => '將念珠加入書籤即可儲存於此。';
+  String get bookmarks_empty_malas_subtitle => '將念珠加入書籤即可儲存於此';
 
   @override
-  String get bookmarks_empty_group_accumulations_title =>
-      'No group accumulations bookmarked yet.';
+  String get bookmarks_empty_group_accumulations_title => '尚無團體共修持誦計數書籤';
 
   @override
-  String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a group accumulation to save it here.';
+  String get bookmarks_empty_group_accumulations_subtitle => '將團體共修持誦計數加入書籤';
 
   @override
   String get bookmarks_empty_timers_title => '尚無已加書籤的計時器。';
@@ -2275,10 +2271,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmarks_empty_timers_subtitle => '將計時器加入書籤即可儲存於此。';
 
   @override
-  String get bookmarks_empty_texts_title => '尚無已加書籤的文本。';
+  String get bookmarks_empty_texts_title => '尚無已加書籤的文本';
 
   @override
-  String get bookmarks_empty_texts_subtitle => '將文本加入書籤即可儲存於此。';
+  String get bookmarks_empty_texts_subtitle => '將文本加入書籤即可儲存於此';
 
   @override
   String get bookmark_removed => '已移除書籤';
@@ -2403,7 +2399,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get link_invalid => '無效的網址';
 
   @override
-  String get author_no_plans => '尚未建立計畫';
+  String get author_no_plans => '尚未建立修持計畫';
 
   @override
   String get author_plans_load_error => '無法載入計畫';
@@ -2433,7 +2429,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get day_completion_share_message =>
-      '我刚在 WeBuddhist 上完成了一天的修行练习。加入我，一起培养每日修行的好习惯。';
+      '我剛在 WeBuddhist 上完成了今天的修持。加入我，一起培养每日修行的好習慣。';
 
   @override
   String group_accumulator_share_message(String accumulation, String group) {
@@ -2449,13 +2445,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_title => '聊天';
 
   @override
-  String get chats_title => '聊天';
+  String get chats_title => '聊天室';
 
   @override
-  String get chats_empty_title => '尚無聊天';
+  String get chats_empty_title => '尚無持誦';
 
   @override
-  String get chats_empty_body => '加入社群即可開始聊天。';
+  String get chats_empty_body => '加入社群以開始持誦';
 
   @override
   String get group_chat_inappropriate => '此訊息含有不允許的用語，因此無法發送。';
@@ -2506,7 +2502,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_copy => '複製';
 
   @override
-  String get group_chat_copied => '已複製訊息';
+  String get group_chat_copied => '訊息已複製';
 
   @override
   String get group_chat_report => '檢舉';
@@ -2733,63 +2729,63 @@ class AppLocalizationsZh extends AppLocalizations {
       'This accumulation is already in your practices';
 
   @override
-  String get event_live_badge => 'LIVE';
+  String get event_live_badge => '直播中';
 
   @override
-  String get event_live_audio => 'Live audio';
+  String get event_live_audio => '直播音訊';
 
   @override
-  String get event_live_video_mode => 'Video';
+  String get event_live_video_mode => '影片';
 
   @override
-  String get event_live_audio_mode => 'Audio';
+  String get event_live_audio_mode => '音訊';
 
   @override
-  String get event_live_go_live => 'Live';
+  String get event_live_go_live => '直播中';
 
   @override
-  String get event_puja_starts_in => 'Puja starts in';
+  String get event_puja_starts_in => '法會開始於';
 
   @override
-  String get event_puja_not_started => 'Puja not started yet';
+  String get event_puja_not_started => '法會尚未開始';
 
   @override
-  String get event_prayer_requests => '祈願請求';
+  String get event_prayer_requests => '迴向與祈願';
 
   @override
   String event_prayer_request_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count requests',
-      one: '1 request',
+      one: '1 個祈福請求',
+      other: '$count 個祈福請求',
     );
     return '$_temp0';
   }
 
   @override
-  String get event_prayer_empty_title => '尚無祈願請求';
+  String get event_prayer_empty_title => '尚無迴向祈願名單';
 
   @override
-  String get event_prayer_empty_body => '你和社群的請求會顯示在這裡';
+  String get event_prayer_empty_body => '您的迴向請求與您的社群會出現在這裡。';
 
   @override
-  String get event_prayer_add => '新增祈願請求';
+  String get event_prayer_add => '加入迴向名單';
 
   @override
-  String get event_prayer_hint => '今天我們能為你祈願什麼';
+  String get event_prayer_hint => '您希望迴向祈願什麼呢?';
 
   @override
-  String get event_prayer_load_failed => '無法載入祈願請求。';
+  String get event_prayer_load_failed => '無法加入迴向名單';
 
   @override
-  String get event_prayer_closed => '此活動的祈願請求已關閉。';
+  String get event_prayer_closed => '本活動的迴向名單已關閉';
 
   @override
-  String get event_prayer_pray => '祈願';
+  String get event_prayer_pray => '迴向';
 
   @override
-  String get event_prayer_praying => '祈願中';
+  String get event_prayer_praying => '正在迴向';
 
   @override
   String get event_prayer_new_request => 'New prayer request';
@@ -2802,7 +2798,7 @@ class AppLocalizationsZh extends AppLocalizations {
       'Intentions couldn\'t be loaded.';
 
   @override
-  String get event_prayer_request_button => 'Request prayer';
+  String get event_prayer_request_button => '申請迴向祈願';
 
   @override
   String get event_prayer_you => 'You';

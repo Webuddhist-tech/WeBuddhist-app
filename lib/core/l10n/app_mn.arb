@@ -971,7 +971,7 @@
   "connect_event_tab_videos": "Videos",
   "connect_event_tab_links": "Links",
   "connect_event_tab_about": "About",
-  "connect_event_links_title": "More about this event",
+  "connect_event_links_title": "Үйл явдлын дэлгэрэнгүй мэдээлэл",
   "connect_event_links_empty": "No links yet",
   "connect_event_link_tap_to_join": "Tap to join",
   "connect_event_link_open": "Open link",
@@ -1103,5 +1103,15 @@
   "event_prayer_load_failed": "Залбирлын хүсэлтийг ачаалж чадсангүй.",
   "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан.",
   "event_prayer_pray": "Залбирах",
-  "event_prayer_praying": "Залбирч байна"
+  "event_prayer_praying": "Залбирч байна",
+  "connect_event_organizer": "Зохион байгуулагч",
+  "event_prayer_request_count": "{count, plural,\nother {{count} хүсэлт}\n=1 {1 хүсэлт}\none {1 хүсэлт}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_request_button": "Залбирал хүсэх"
 }
