@@ -94,6 +94,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// Messages with a pray/un-pray round trip in flight.
   final Set<String> _toggling = {};
 
+  /// A loaded row was deleted while a page was being fetched, so that page
+  /// started one row late on the server and has to be read again.
+  bool _pageShifted = false;
+
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
 
   /// Resolves the room, then fetches its first page of prayer requests.
@@ -189,6 +193,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     );
     if (!mounted) return;
 
+    if (_pageShifted) {
+      _pageShifted = false;
+      state = state.copyWith(isLoadingMore: false);
+      // `skip` was already pulled back by the deletion, so this rereads
+      // from the row the shifted page missed. A failed page retries too.
+      return loadMore();
+    }
+
     result.fold(
       (failure) {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
@@ -275,13 +287,29 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       intention: intention.slug,
     );
     return result.map((updated) {
-      final message = current.copyWith(
-        body: updated?.body ?? body,
-        intention: updated?.intention ?? intention,
-      );
-      if (mounted) _update(messageId, (_) => message);
+      final newBody = updated?.body ?? body;
+      final newIntention = updated?.intention ?? intention;
+      // Patched onto whatever the row is now, not the copy from before the
+      // round trip: a prayer that landed meanwhile must survive the save.
+      var message = current.copyWith(body: newBody, intention: newIntention);
+      if (mounted) {
+        _update(messageId, (request) {
+          message = request.copyWith(body: newBody, intention: newIntention);
+          return message;
+        });
+      }
       return message;
     });
+  }
+
+  /// A `message_updated` broadcast: another device or member's edit.
+  void applyEdit(ChatMessageDTO message) {
+    if (!_isLive(message)) return;
+    _update(
+      message.id,
+      (request) =>
+          request.copyWith(body: message.body, intention: message.intention),
+    );
   }
 
   /// Deletes one of the viewer's own requests for everyone, then drops it
@@ -315,6 +343,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   void applyDeletion(String messageId) {
     if (!state.requests.any((request) => request.id == messageId)) return;
+    if (state.isLoadingMore) _pageShifted = true;
     state = state.copyWith(
       requests:
           state.requests.where((request) => request.id != messageId).toList(),

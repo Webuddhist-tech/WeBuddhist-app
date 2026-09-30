@@ -254,6 +254,9 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
         if (json.isEmpty) return;
         _notifier.appendLive(ChatMessageDTO.fromJson(json));
         unawaited(_markRoomRead());
+      case ChatLiveMessageUpdated(message: final json):
+        if (json.isEmpty) return;
+        _notifier.applyEdit(ChatMessageDTO.fromJson(json));
       case ChatLivePrayersUpdated(prayers: final updates):
         _notifier.applyPrayersUpdated(updates, viewerId: _viewerId);
       case ChatLiveMessageDeleted(messageId: final messageId):
