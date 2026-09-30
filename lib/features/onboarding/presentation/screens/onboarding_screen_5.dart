@@ -20,48 +20,55 @@ class OnboardingScreen5 extends StatelessWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-          child: Column(
-            children: [
-              Image.asset(AppAssets.weBuddhistLogo, height: 112),
-              const SizedBox(height: 28),
-              Text(
-                l10n.onboarding_all_set,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: onSurface,
-                  height: 1.2,
+          child: CustomScrollView(
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  children: [
+                    Image.asset(AppAssets.weBuddhistLogo, height: 112),
+                    const SizedBox(height: 28),
+                    Text(
+                      l10n.onboarding_all_set,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: onSurface,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.onboarding_all_set_description,
+                      textAlign: TextAlign.center,
+                      strutStyle: context.tibetanStrutStyle(15),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: onSurface.withValues(alpha: 0.55),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    _FeatureCard(
+                      icon: PhosphorIconsRegular.bell,
+                      title: l10n.onboarding_all_set_practice_title,
+                      body: l10n.onboarding_all_set_practice_body,
+                    ),
+                    const SizedBox(height: 12),
+                    _FeatureCard(
+                      icon: PhosphorIconsRegular.users,
+                      title: l10n.onboarding_all_set_connect_title,
+                      body: l10n.onboarding_all_set_connect_body,
+                    ),
+                    const Spacer(),
+                    _PillButton(
+                      label: l10n.onboarding_find_peace,
+                      onPressed: onComplete,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.onboarding_all_set_description,
-                textAlign: TextAlign.center,
-                strutStyle: context.tibetanStrutStyle(15),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
-                  color: onSurface.withValues(alpha: 0.55),
-                  height: 1.35,
-                ),
-              ),
-              const SizedBox(height: 28),
-              _FeatureCard(
-                icon: PhosphorIconsRegular.bell,
-                title: l10n.onboarding_all_set_practice_title,
-                body: l10n.onboarding_all_set_practice_body,
-              ),
-              const SizedBox(height: 12),
-              _FeatureCard(
-                icon: PhosphorIconsRegular.users,
-                title: l10n.onboarding_all_set_connect_title,
-                body: l10n.onboarding_all_set_connect_body,
-              ),
-              const Spacer(),
-              _PillButton(
-                label: l10n.onboarding_find_peace,
-                onPressed: onComplete,
               ),
             ],
           ),
