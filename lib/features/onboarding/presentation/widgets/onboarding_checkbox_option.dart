@@ -14,7 +14,9 @@ class OnboardingCheckboxOption extends StatelessWidget {
 
   final String label;
   final bool isChecked;
-  final VoidCallback onTap;
+
+  /// Null disables the row.
+  final VoidCallback? onTap;
 
   /// See [OnboardingOptionCard.bordered].
   final bool bordered;

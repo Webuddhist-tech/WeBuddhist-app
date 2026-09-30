@@ -90,6 +90,8 @@ class OnboardingScreenTradition extends ConsumerWidget {
 
     final l10n = context.l10n;
     final notifier = ref.read(traditionSelectionProvider.notifier);
+    // Choices stay fixed while saving so what is sent matches what is shown.
+    final isSaving = selectionState.isSaving;
 
     return Column(
       children: [
@@ -97,12 +99,12 @@ class OnboardingScreenTradition extends ConsumerWidget {
           OnboardingCheckboxOption(
             label: path.title,
             isChecked: selectionState.selectedCodes.contains(path.code),
-            onTap: () => notifier.toggleTradition(path.code),
+            onTap: isSaving ? null : () => notifier.toggleTradition(path.code),
           ),
         OnboardingCheckboxOption(
           label: l10n.onboarding_tradition_show_all_title,
           isChecked: selectionState.isAllSelected,
-          onTap: notifier.toggleAll,
+          onTap: isSaving ? null : notifier.toggleAll,
           bordered: false,
         ),
       ],

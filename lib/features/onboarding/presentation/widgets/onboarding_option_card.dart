@@ -14,7 +14,9 @@ class OnboardingOptionCard extends StatelessWidget {
 
   final Widget mark;
   final String label;
-  final VoidCallback onTap;
+
+  /// Null disables the row.
+  final VoidCallback? onTap;
 
   /// Choices use a bordered card. A trailing "select all" row is plain.
   final bool bordered;

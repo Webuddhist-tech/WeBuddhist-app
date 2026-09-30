@@ -20,8 +20,8 @@ class TraditionSelectionNotifier
   final OnboardingRemoteDatasource _remoteDatasource;
   final String _language;
 
-  /// Codes already saved by an earlier, partly failed submit. A retry skips
-  /// them so the backend never gets the same tradition twice.
+  /// Codes this flow has saved on the server. A retry after a partial
+  /// failure skips them, and removes any the user has since unchecked.
   final Set<String> _savedCodes = {};
 
   Future<void> loadPaths() async {
@@ -41,16 +41,19 @@ class TraditionSelectionNotifier
     }
   }
 
-  /// Checks [code] if unchecked, unchecks it otherwise.
+  /// Checks [code] if unchecked, unchecks it otherwise. Ignored while saving
+  /// so the saved set always matches what was checked on Continue.
   void toggleTradition(String code) {
+    if (state.isSaving) return;
     final codes = {...state.selectedCodes};
     if (!codes.remove(code)) codes.add(code);
     state = state.copyWith(selectedCodes: codes, clearError: true);
   }
 
   /// "Show me everything": checks every path, or clears them all when every
-  /// path is already checked.
+  /// path is already checked. Ignored while saving, like [toggleTradition].
   void toggleAll() {
+    if (state.isSaving) return;
     state = state.copyWith(
       selectedCodes:
           state.isAllSelected ? {} : {for (final p in state.paths) p.code},
@@ -58,16 +61,18 @@ class TraditionSelectionNotifier
     );
   }
 
-  /// Saves every checked tradition, one request each (the API takes one
-  /// tradition per call). Returns false if any request failed; the ones that
-  /// succeeded are kept and not re-sent on retry.
+  /// Makes the server match the checked traditions: saves each new one (the
+  /// API takes one tradition per call) and removes any this flow saved that
+  /// the user has since unchecked. Returns false if any request failed; what
+  /// succeeded is kept, so a retry only redoes what is left.
   Future<bool> submitSelection() async {
     if (!state.hasSelection || state.isSaving) return false;
 
     state = state.copyWith(isSaving: true, clearError: true);
+    final selected = state.selectedCodes;
 
-    var allSaved = true;
-    for (final code in state.selectedCodes.difference(_savedCodes)) {
+    var allSaved = await _removeUnchecked(selected);
+    for (final code in selected.difference(_savedCodes)) {
       try {
         await _remoteDatasource.saveUserTradition(
           SaveTraditionRequest(traditionCode: code),
@@ -84,5 +89,35 @@ class TraditionSelectionNotifier
       error: allSaved ? null : 'Failed to save tradition',
     );
     return allSaved;
+  }
+
+  /// Deletes traditions an earlier submit saved that are no longer in
+  /// [selected]. Only touches what this flow saved.
+  Future<bool> _removeUnchecked(Set<String> selected) async {
+    final unchecked = _savedCodes.difference(selected);
+    if (unchecked.isEmpty) return true;
+
+    final List<UserTradition> saved;
+    try {
+      // Deleting needs the server id, which the save call does not return.
+      saved = await _remoteDatasource.fetchUserTraditions(language: _language);
+    } catch (e, stackTrace) {
+      _logger.error('Failed to fetch user traditions', e, stackTrace);
+      return false;
+    }
+
+    var allRemoved = true;
+    for (final code in unchecked) {
+      try {
+        for (final tradition in saved.where((t) => t.traditionCode == code)) {
+          await _remoteDatasource.deleteUserTradition(tradition.id);
+        }
+        _savedCodes.remove(code);
+      } catch (e, stackTrace) {
+        _logger.error('Failed to remove user tradition $code', e, stackTrace);
+        allRemoved = false;
+      }
+    }
+    return allRemoved;
   }
 }
