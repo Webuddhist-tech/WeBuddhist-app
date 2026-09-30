@@ -20,6 +20,111 @@ const Map<String, String> tolgeeSyncLanguageTags = <String, String>{
   'ne': 'ne',
 };
 
+/// WeBuddhist API the `intentions` command reads. Override with
+/// WEBUDDHIST_API_BASE (no trailing slash) to run against staging.
+const String webuddhistApiBase = 'https://api.webuddhist.com/api/v1';
+
+/// Prefix of the Tolgee keys derived from a prayer intention's slug. Kept
+/// public so a Flutter test can verify parity with the app's lookup
+/// (`prayerIntentionKeyPrefix` in prayer_intention_l10n.dart).
+const String intentionKeyPrefix = 'prayer_intention_';
+
+/// Mirrors the app's rule: lowercase ASCII words only, else no key.
+final RegExp _intentionSlugPattern = RegExp(r'^[a-z0-9_-]+$');
+
+bool isValidIntentionSlug(String slug) => _intentionSlugPattern.hasMatch(slug);
+
+String intentionLabelKey(String slug) => '$intentionKeyPrefix${slug}_label';
+
+String intentionDescriptionKey(String slug) =>
+    '$intentionKeyPrefix${slug}_description';
+
+/// One intention as `GET /intentions` returns it.
+class PrayerIntention {
+  const PrayerIntention({
+    required this.slug,
+    required this.label,
+    required this.description,
+  });
+
+  final String slug;
+  final String label;
+  final String description;
+}
+
+/// Parses the intentions body: `{"intentions": [...]}` or a bare list.
+List<PrayerIntention> parseIntentions(Object? decoded) {
+  final Object? items =
+      decoded is Map<String, dynamic> ? decoded['intentions'] : decoded;
+  if (items is! List<dynamic>) {
+    throw const SyncException(
+      'Unexpected intentions response: expected {"intentions": [...]}.',
+    );
+  }
+  final List<PrayerIntention> intentions = <PrayerIntention>[];
+  for (final Object? item in items) {
+    if (item is! Map<String, dynamic>) {
+      throw const SyncException('Unexpected intention shape: not an object.');
+    }
+    final String slug = item['slug']?.toString().trim() ?? '';
+    if (slug.isEmpty) {
+      throw const SyncException('An intention has no slug.');
+    }
+    intentions.add(
+      PrayerIntention(
+        slug: slug,
+        label: item['label']?.toString().trim() ?? '',
+        description: item['description']?.toString().trim() ?? '',
+      ),
+    );
+  }
+  return intentions;
+}
+
+/// Keys Tolgee lacks for [intentions], each with its English seed. Skips
+/// unusable slugs and empty texts, and never touches keys that exist.
+Map<String, String> intentionKeysToCreate(
+  Set<String> existingNames,
+  List<PrayerIntention> intentions,
+) {
+  final Map<String, String> missing = <String, String>{};
+  for (final PrayerIntention intention in intentions) {
+    if (!isValidIntentionSlug(intention.slug)) {
+      continue;
+    }
+    final String labelKey = intentionLabelKey(intention.slug);
+    if (!existingNames.contains(labelKey) && intention.label.isNotEmpty) {
+      missing[labelKey] = intention.label;
+    }
+    final String descriptionKey = intentionDescriptionKey(intention.slug);
+    if (!existingNames.contains(descriptionKey) &&
+        intention.description.isNotEmpty) {
+      missing[descriptionKey] = intention.description;
+    }
+  }
+  return missing;
+}
+
+/// Tolgee `prayer_intention_*` keys no current intention accounts for, e.g.
+/// after an intention was removed or renamed. Reported, never deleted.
+Set<String> staleIntentionKeys(
+  Set<String> existingNames,
+  List<PrayerIntention> intentions,
+) {
+  final Set<String> live = <String>{
+    for (final PrayerIntention intention in intentions) ...<String>[
+      intentionLabelKey(intention.slug),
+      intentionDescriptionKey(intention.slug),
+    ],
+  };
+  return existingNames
+      .where(
+        (String name) =>
+            name.startsWith(intentionKeyPrefix) && !live.contains(name),
+      )
+      .toSet();
+}
+
 Future<void> main(List<String> arguments) async {
   try {
     if (arguments.isEmpty || arguments.contains('--help')) {
@@ -39,6 +144,9 @@ Future<void> main(List<String> arguments) async {
       case 'push':
         _validateFlags(flags, const <String>{'--dry-run'});
         await _runPush(root, dryRun: flags.contains('--dry-run'));
+      case 'intentions':
+        _validateFlags(flags, const <String>{'--dry-run'});
+        await _runIntentions(dryRun: flags.contains('--dry-run'));
       case 'doctor':
         _validateFlags(flags, const <String>{'--remote'});
         final bool healthy = await _runDoctor(
@@ -74,10 +182,21 @@ void _printUsage() {
 Usage:
   dart run tool/tolgee_sync.dart pull [--dry-run]
   dart run tool/tolgee_sync.dart push [--dry-run]
+  dart run tool/tolgee_sync.dart intentions [--dry-run]
   dart run tool/tolgee_sync.dart doctor [--remote]
 
+Commands:
+  pull        Refresh the bundled ARBs from Tolgee.
+  push        Create Tolgee keys for app_en.arb keys it lacks.
+  intentions  Create prayer_intention_{slug}_label / _description keys for
+              the intentions GET /intentions returns, seeded with the
+              backend English. Reports keys the API no longer backs.
+  doctor      Check ARB consistency; --remote also compares with Tolgee.
+
 Environment:
-  TOLGEE_SYNC_API_KEY  Required for pull, push, and doctor --remote.
+  TOLGEE_SYNC_API_KEY  Required for pull, push, intentions, and doctor --remote.
+  WEBUDDHIST_API_BASE  Optional API base for intentions
+                       (default $webuddhistApiBase).
 ''');
 }
 
@@ -202,6 +321,74 @@ Future<void> _runPush(Directory root, {required bool dryRun}) async {
   } finally {
     api.close();
   }
+}
+
+Future<void> _runIntentions({required bool dryRun}) async {
+  final TolgeeApi api = TolgeeApi.fromEnvironment();
+  try {
+    final Uri source = Uri.parse(
+      '${_webuddhistApiBaseFromEnvironment()}/intentions',
+    );
+    final List<PrayerIntention> intentions = parseIntentions(
+      await api.fetchPublicJson(source),
+    );
+    stdout.writeln('Intentions from $source: ${intentions.length}');
+    for (final PrayerIntention intention in intentions) {
+      if (!isValidIntentionSlug(intention.slug)) {
+        stderr.writeln(
+          '  skipping "${intention.slug}": a slug must be lowercase '
+          'ASCII letters, digits, "_" or "-".',
+        );
+      }
+    }
+
+    final int projectId = await api.resolveProjectId();
+    final Set<String> remoteNames = await api.fetchKeyNames(projectId);
+    final Map<String, String> missing = intentionKeysToCreate(
+      remoteNames,
+      intentions,
+    );
+    final Set<String> stale = staleIntentionKeys(remoteNames, intentions);
+
+    stdout.writeln('Tolgee project: $projectId');
+    stdout.writeln('Missing from Tolgee: ${missing.length}');
+    for (final String key in missing.keys) {
+      stdout.writeln('  + $key');
+    }
+    if (stale.isNotEmpty) {
+      stdout.writeln(
+        'Not backed by the API any more (left in place): ${stale.length}',
+      );
+      for (final String key in stale) {
+        stdout.writeln('  ? $key');
+      }
+    }
+    if (missing.isEmpty) {
+      stdout.writeln('Nothing to create.');
+      return;
+    }
+    if (dryRun) {
+      stdout.writeln('Dry run: no Tolgee keys were created.');
+      return;
+    }
+
+    await api.importKeys(projectId, missing);
+    stdout.writeln('Created ${missing.length} key(s).');
+    stdout.writeln('Translate them in Tolgee, then publish Content Delivery.');
+  } finally {
+    api.close();
+  }
+}
+
+String _webuddhistApiBaseFromEnvironment() {
+  String base = Platform.environment['WEBUDDHIST_API_BASE']?.trim() ?? '';
+  if (base.isEmpty) {
+    return webuddhistApiBase;
+  }
+  while (base.endsWith('/')) {
+    base = base.substring(0, base.length - 1);
+  }
+  return base;
 }
 
 Future<bool> _runDoctor(Directory root, {required bool remote}) async {
@@ -645,6 +832,19 @@ class TolgeeApi {
       );
       stdout.writeln('  imported ${chunk.length} key(s)');
     }
+  }
+
+  /// GETs a public JSON document (the WeBuddhist intentions list) without
+  /// sending the Tolgee key.
+  Future<Object?> fetchPublicJson(Uri uri) async {
+    final _HttpResult result = await _send('GET', uri, includeApiKey: false);
+    if (result.statusCode < 200 || result.statusCode >= 300) {
+      throw SyncException('GET $uri returned HTTP ${result.statusCode}.');
+    }
+    if (result.bytes.isEmpty) {
+      return null;
+    }
+    return jsonDecode(utf8.decode(result.bytes));
   }
 
   Future<void> checkCdn(String tag) async {
