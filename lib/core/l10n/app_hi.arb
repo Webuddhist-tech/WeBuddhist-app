@@ -971,7 +971,7 @@
   "connect_event_tab_videos": "Videos",
   "connect_event_tab_links": "Links",
   "connect_event_tab_about": "About",
-  "connect_event_links_title": "More about this event",
+  "connect_event_links_title": "इवेंट की ज़्यादा जानकारी",
   "connect_event_links_empty": "No links yet",
   "connect_event_link_tap_to_join": "Tap to join",
   "connect_event_link_open": "Open link",
@@ -1103,5 +1103,15 @@
   "event_prayer_load_failed": "प्रार्थना अनुरोध लोड नहीं हो सके।",
   "event_prayer_closed": "इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं।",
   "event_prayer_pray": "प्रार्थना करें",
-  "event_prayer_praying": "प्रार्थना कर रहे हैं"
+  "event_prayer_praying": "प्रार्थना कर रहे हैं",
+  "connect_event_organizer": "आयोजक",
+  "event_prayer_request_count": "{count, plural,\nother {{count} अनुरोध}\n=1 {1 अनुरोध}\none {1 अनुरोध}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_request_button": "प्रार्थना का अनुरोध करें"
 }
