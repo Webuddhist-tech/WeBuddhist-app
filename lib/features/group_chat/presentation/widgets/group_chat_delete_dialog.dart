@@ -11,13 +11,19 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 /// with what everyone else sees.
 ///
 /// Resolves true when the member confirms.
+///
+/// [title] and [body] replace the chat wording for callers deleting
+/// something other than a chat message.
 Future<bool> confirmChatMessageDelete(
   BuildContext context, {
   int count = 1,
+  String? title,
+  String? body,
 }) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (_) => _DeleteMessageDialog(count: count),
+    builder:
+        (_) => _DeleteMessageDialog(count: count, title: title, body: body),
   );
   return confirmed ?? false;
 }
@@ -25,9 +31,11 @@ Future<bool> confirmChatMessageDelete(
 /// Title, one line of body, then two stacked full-width outlined pills —
 /// Delete in red above Cancel — per the mock.
 class _DeleteMessageDialog extends StatelessWidget {
-  const _DeleteMessageDialog({required this.count});
+  const _DeleteMessageDialog({required this.count, this.title, this.body});
 
   final int count;
+  final String? title;
+  final String? body;
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +64,10 @@ class _DeleteMessageDialog extends StatelessWidget {
               container: true,
               header: true,
               child: Text(
-                count > 1
-                    ? l10n.group_chat_delete_title_many(count)
-                    : l10n.group_chat_delete_title,
+                title ??
+                    (count > 1
+                        ? l10n.group_chat_delete_title_many(count)
+                        : l10n.group_chat_delete_title),
                 strutStyle: context.tibetanStrutStyle(18, compact: true),
                 style: TextStyle(
                   fontSize: 18,
@@ -69,7 +78,7 @@ class _DeleteMessageDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.group_chat_delete_confirm_body(count),
+              body ?? l10n.group_chat_delete_confirm_body(count),
               strutStyle: context.tibetanStrutStyle(14),
               style: TextStyle(
                 fontSize: 14,

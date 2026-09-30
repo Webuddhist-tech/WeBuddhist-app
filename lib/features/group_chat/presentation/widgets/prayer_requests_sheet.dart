@@ -318,15 +318,19 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   /// Confirms, then deletes one of the viewer's own requests. No success
   /// toast: the card leaving the list already shows the delete landed.
   Future<void> _deleteRequest(ChatMessageDTO request) async {
-    if (!await confirmChatMessageDelete(context)) return;
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
+    final confirmed = await confirmChatMessageDelete(
+      context,
+      title: l10n.event_prayer_delete_title,
+      body: l10n.event_prayer_delete_body,
+    );
+    if (!confirmed || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
     final result = await _notifier.delete(request.id);
     if (!mounted) return;
     result.fold(
       (_) => messenger.showSnackBar(
-        SnackBar(content: Text(l10n.group_chat_delete_failed(1))),
+        SnackBar(content: Text(l10n.event_prayer_delete_failed)),
       ),
       (_) {},
     );
@@ -519,6 +523,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
               () => unawaited(
                 PrayerSupportersSheet.show(
                   context,
+                  eventId: widget.eventId,
                   request: request,
                   displayName: displayName,
                   isOwn: isSelf,

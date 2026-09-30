@@ -5174,6 +5174,24 @@ abstract class AppLocalizations {
   /// **'Edit prayer request'**
   String get event_prayer_edit_request;
 
+  /// No description provided for @event_prayer_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete prayer request?'**
+  String get event_prayer_delete_title;
+
+  /// No description provided for @event_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in this event.'**
+  String get event_prayer_delete_body;
+
+  /// No description provided for @event_prayer_delete_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The prayer request couldn\'t be deleted.'**
+  String get event_prayer_delete_failed;
+
   /// No description provided for @event_prayer_choose_intention.
   ///
   /// In en, this message translates to:

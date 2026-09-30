@@ -569,7 +569,13 @@ void main() {
         history: [_prayer('a'), _prayer('b')],
       );
       container = buildContainer();
-      int? count() => container.read(prayerRequestCountProvider('e1'));
+      // The chip's watch is what keeps the auto-disposed count alive.
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+      int? count() => countSub.read();
 
       expect(count(), isNull);
       final notifier = _keepAlive(container);

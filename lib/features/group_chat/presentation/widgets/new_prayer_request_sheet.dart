@@ -83,7 +83,17 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
   bool get _canSend =>
       !_sending &&
       _intention != null &&
-      _bodyController.text.trim().isNotEmpty;
+      _bodyController.text.trim().isNotEmpty &&
+      _hasChanges;
+
+  /// An untouched edit would still come back marked edited, so Save waits
+  /// for a change.
+  bool get _hasChanges {
+    final editing = widget.editing;
+    if (editing == null) return true;
+    return _bodyController.text.trim() != editing.body.trim() ||
+        _intention?.slug != editing.intention?.slug;
+  }
 
   Future<void> _send() async {
     final intention = _intention;

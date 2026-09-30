@@ -5755,6 +5755,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_prayer_delete_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_delete_title',
+    () => _fallback.event_prayer_delete_title,
+  );
+
+  @override
+  String get event_prayer_delete_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_delete_body',
+    () => _fallback.event_prayer_delete_body,
+  );
+
+  @override
+  String get event_prayer_delete_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_delete_failed',
+    () => _fallback.event_prayer_delete_failed,
+  );
+
+  @override
   String get event_prayer_choose_intention => TolgeeBridge.get(
     localeName,
     'event_prayer_choose_intention',

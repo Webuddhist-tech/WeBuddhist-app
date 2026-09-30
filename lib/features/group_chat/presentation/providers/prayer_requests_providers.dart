@@ -667,10 +667,10 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
 
 /// Live prayer-request count per event, kept by [PrayerRequestsNotifier] so
 /// the chip on the event screen moves with the sheet instead of waiting for
-/// the next event fetch. Null until the sheet has loaded once.
-final prayerRequestCountProvider = StateProvider.family<int?, String>(
-  (ref, eventId) => null,
-);
+/// the next event fetch. Null until the sheet has loaded once. Lives only
+/// while a chip watches it, so a later visit starts from the server count.
+final prayerRequestCountProvider = StateProvider.autoDispose
+    .family<int?, String>((ref, eventId) => null);
 
 final prayerSupportersProvider = StateNotifierProvider.autoDispose
     .family<PrayerSupportersNotifier, PrayerSupportersState, String>(

@@ -46,7 +46,7 @@ class PrayerRequestsIconButton extends ConsumerWidget {
 
 /// Chip that opens the event's prayer requests, under the live stream or in
 /// the app bar.
-class PrayerRequestsButton extends ConsumerWidget {
+class PrayerRequestsButton extends ConsumerStatefulWidget {
   const PrayerRequestsButton({
     super.key,
     required this.eventId,
@@ -68,23 +68,45 @@ class PrayerRequestsButton extends ConsumerWidget {
   final bool outlined;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PrayerRequestsButton> createState() =>
+      _PrayerRequestsButtonState();
+}
+
+class _PrayerRequestsButtonState extends ConsumerState<PrayerRequestsButton> {
+  @override
+  void didUpdateWidget(PrayerRequestsButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.count == widget.count) return;
+    // A fresh event fetch is newer than the count the sheet kept, so the
+    // live count restarts from it. Deferred: providers can't change mid-build.
+    final eventId = widget.eventId;
+    final serverCount = widget.count;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final live = ref.read(prayerRequestCountProvider(eventId).notifier);
+      if (live.state != null) live.state = serverCount;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final foreground =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final count = ref.watch(prayerRequestCountProvider(eventId)) ?? this.count;
+    final count =
+        ref.watch(prayerRequestCountProvider(widget.eventId)) ?? widget.count;
     final label =
         count > 0
             ? context.l10n.event_prayer_request_count(count)
             : context.l10n.event_prayer_requests;
 
     return Padding(
-      padding: padding,
+      padding: widget.padding,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Material(
           color:
-              outlined
+              widget.outlined
                   ? (isDark
                       ? AppColors.surfaceVariantDark
                       : AppColors.surfaceWhite)
@@ -92,7 +114,7 @@ class PrayerRequestsButton extends ConsumerWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
             side:
-                outlined
+                widget.outlined
                     ? BorderSide(
                       color: isDark ? AppColors.grey800 : AppColors.grey300,
                     )
@@ -100,7 +122,7 @@ class PrayerRequestsButton extends ConsumerWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: onTap,
+            onTap: widget.onTap,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(

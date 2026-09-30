@@ -2798,6 +2798,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_edit_request => 'Edit prayer request';
 
   @override
+  String get event_prayer_delete_title => 'Delete prayer request?';
+
+  @override
+  String get event_prayer_delete_body =>
+      'It will be removed for everyone in this event.';
+
+  @override
+  String get event_prayer_delete_failed =>
+      'The prayer request couldn\'t be deleted.';
+
+  @override
   String get event_prayer_choose_intention => 'Choose an intention';
 
   @override
