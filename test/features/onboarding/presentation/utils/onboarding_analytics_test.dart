@@ -24,19 +24,19 @@ void main() {
 
   test('stepViewed names the page by its wrapper index', () {
     analytics.stepViewed(stepIndex: 0);
-    analytics.stepViewed(stepIndex: 3);
+    analytics.stepViewed(stepIndex: 2);
 
     expect(service.eventNames, [
       AnalyticsEvents.onboardingStepViewed,
       AnalyticsEvents.onboardingStepViewed,
     ]);
     expect(service.events.first.properties, {
-      'step': 'language',
+      'step': 'welcome',
       'step_index': 0,
     });
     expect(service.events.last.properties, {
-      'step': 'how_it_works',
-      'step_index': 3,
+      'step': 'tradition',
+      'step_index': 2,
     });
   });
 

@@ -36,7 +36,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_continue => '下一步';
 
   @override
-  String get onboarding_first_question => '選擇您的語言：';
+  String get onboarding_first_question => '選擇您的語言';
+
+  @override
+  String get onboarding_language_subtitle => '這將設定應用程式的語言';
 
   @override
   String get onboarding_choose_option => '至少選擇一項';
@@ -45,40 +48,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_all_set => '一切就緒';
 
   @override
-  String get onboarding_all_set_description => '以下是為您的修行準備的內容';
+  String get onboarding_all_set_description => '以下內容正等著您：';
 
   @override
-  String get onboarding_all_set_feature_practices => '持咒、計數、禪修和學習計畫供您選擇';
+  String get onboarding_all_set_practice_title => '修行';
 
   @override
-  String get onboarding_all_set_feature_reminders => '每日溫馨提醒，隨時等您準備好～';
+  String get onboarding_all_set_practice_body => '計畫、持咒、念珠與禪修';
 
   @override
-  String get onboarding_begin_practice => '尋找您的第一項修持';
+  String get onboarding_all_set_connect_title => '連結';
 
   @override
-  String get onboarding_2_title => '接下來，這個應用程式是這樣使用的:';
-
-  @override
-  String get onboarding_2_subtitle => '養成習慣的三個小步驟';
-
-  @override
-  String get onboarding_2_step1_title => '選擇您的修持方式';
-
-  @override
-  String get onboarding_2_step1_desc => '持咒、數念珠、設定禪坐計時器，或跟隨您傳承中的學習計畫。';
-
-  @override
-  String get onboarding_2_step2_title => '加入您的每日修持計畫';
-
-  @override
-  String get onboarding_2_step2_desc => '建立日常日程，我們會發送溫和的提醒，幫助您堅持。';
-
-  @override
-  String get onboarding_2_step3_title => '每天修持幾分鐘';
-
-  @override
-  String get onboarding_2_step3_desc => '哪怕只是一刻也有意義。日復一日，您的修持會不斷成長。';
+  String get onboarding_all_set_connect_body => '群組、活動、動態與聊天';
 
   @override
   String get home_recitation => '持誦';
@@ -630,20 +612,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboarding_traditions_question => '您跟隨哪些傳承？';
 
   @override
-  String get onboarding_tradition_title => '您如何追随佛陀的教导？';
+  String get onboarding_tradition_title => '您如何追隨佛陀的教導？';
 
   @override
-  String get onboarding_tradition_subtitle =>
-      '我们将为您展示您所选修行路径的实践与经典。您可以随时在应用设置中更改此设置。';
+  String get onboarding_tradition_subtitle => '為您的內容選擇一種或多種傳承。您可以隨時在設定中更改。';
 
   @override
   String get onboarding_tradition_option_intro => '通過：';
 
   @override
   String get onboarding_tradition_show_all_title => '顯示所有內容';
-
-  @override
-  String get onboarding_tradition_show_all_description => '每條道路的實踐和經典';
 
   @override
   String get onboarding_skip_for_now => '暫時跳過';

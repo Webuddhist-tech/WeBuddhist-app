@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/features/onboarding/application/onboarding_provider.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_1.dart';
-import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_2.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_tradition.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_5.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/screens/onboarding_screen_language.dart';
@@ -12,11 +11,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Wrapper for onboarding screens with Riverpod state management.
 /// Page order:
-///   0 – Language selection
-///   1 – Welcome
+///   0 – Welcome
+///   1 – Language selection
 ///   2 – Tradition selection
-///   3 – How it works
-///   4 – Finish / "Begin Your Practice"
+///   3 – Finish / "You're all set"
 class OnboardingWrapper extends ConsumerStatefulWidget {
   const OnboardingWrapper({super.key});
 
@@ -41,13 +39,17 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
     super.dispose();
   }
 
-  void _nextPage() {
+  /// Advances only while [page] is still the current page, so a double tap
+  /// (or a callback that lands mid-animation) cannot skip the next step.
+  VoidCallback _nextFrom(int page) => () {
+    if (ref.read(onboardingProvider).currentPage != page) return;
     ref.read(onboardingProvider.notifier).goToNextPage();
-  }
+  };
 
-  void _previousPage() {
+  VoidCallback _previousFrom(int page) => () {
+    if (ref.read(onboardingProvider).currentPage != page) return;
     ref.read(onboardingProvider.notifier).goToPreviousPage();
-  }
+  };
 
   Future<void> _completeOnboarding() async {
     final completed =
@@ -95,13 +97,12 @@ class _OnboardingWrapperState extends ConsumerState<OnboardingWrapper> {
               }
             },
             children: [
-              OnboardingScreenLanguage(onNext: _nextPage),
-              OnboardingScreen1(onNext: _nextPage),
+              OnboardingScreen1(onNext: _nextFrom(0)),
+              OnboardingScreenLanguage(onNext: _nextFrom(1)),
               OnboardingScreenTradition(
-                onNext: _nextPage,
-                onBack: _previousPage,
+                onNext: _nextFrom(2),
+                onBack: _previousFrom(2),
               ),
-              OnboardingScreen2(onNext: _nextPage, onBack: _previousPage),
               OnboardingScreen5(onComplete: _completeOnboarding),
             ],
           ),
