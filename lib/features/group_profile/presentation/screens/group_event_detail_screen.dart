@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participation_dialog.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
@@ -58,10 +59,15 @@ class GroupEventDetailScreen extends ConsumerStatefulWidget {
   /// Set from a prayer-request notification tap.
   final bool openPrayerRequests;
 
+  /// Set by the home live pill. Opens the join-online screen or the live
+  /// text once this page is showing, so Back returns here.
+  final HomeLiveEventEntry? initialEntry;
+
   const GroupEventDetailScreen({
     super.key,
     required this.eventId,
     this.openPrayerRequests = false,
+    this.initialEntry,
   });
 
   @override
@@ -83,10 +89,19 @@ class _GroupEventDetailScreenState
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
   bool _didOpenPrayerRequests = false;
+  bool _didOpenInitialEntry = false;
 
   @override
   void initState() {
     super.initState();
+    final entry = widget.initialEntry;
+    if (entry != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _didOpenInitialEntry) return;
+        _didOpenInitialEntry = true;
+        unawaited(_openInitialEntry(entry));
+      });
+    }
     if (!widget.openPrayerRequests) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _didOpenPrayerRequests) return;
@@ -288,6 +303,23 @@ class _GroupEventDetailScreenState
         ],
       ),
     );
+  }
+
+  Future<void> _openInitialEntry(HomeLiveEventEntry entry) async {
+    switch (entry) {
+      case HomeLiveEventOnlineEntry(:final event):
+        await _enterPuja(event);
+      case HomeLiveEventInPersonEntry(
+        :final event,
+        :final liveTextId,
+        :final liveSegmentId,
+      ):
+        await _enterPuja(
+          event,
+          liveTextId: liveTextId,
+          liveSegmentId: liveSegmentId,
+        );
+    }
   }
 
   void _openPrayerRequests(String eventId) {
@@ -510,7 +542,11 @@ class _GroupEventDetailScreenState
   /// plan's day list, or previews the plan when the event has no series.
   /// Only online attendees get the live stream; a hybrid attendee who never
   /// picked is asked first, since the choice decides the layout.
-  Future<void> _enterPuja(GroupEvent event) async {
+  Future<void> _enterPuja(
+    GroupEvent event, {
+    String? liveTextId,
+    String? liveSegmentId,
+  }) async {
     if (_isOpeningPuja) return;
     final seriesId = event.series?.id ?? event.seriesId;
     final planId = event.plan?.id ?? event.planId;
@@ -542,11 +578,15 @@ class _GroupEventDetailScreenState
                 event,
                 seriesId,
                 showLiveStream: showLiveStream,
+                liveTextId: liveTextId,
+                liveSegmentId: liveSegmentId,
               )
               : await _openPlanPreview(
                 planId!,
                 eventId: event.id,
                 showLiveStream: showLiveStream,
+                liveTextId: liveTextId,
+                liveSegmentId: liveSegmentId,
               );
       // Only an opened practice counts; a missing plan or a failed series
       // enrollment leaves the user here.
@@ -593,6 +633,8 @@ class _GroupEventDetailScreenState
     String planId, {
     String? eventId,
     bool showLiveStream = false,
+    String? liveTextId,
+    String? liveSegmentId,
   }) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
     if (!mounted) return false;
@@ -607,6 +649,8 @@ class _GroupEventDetailScreenState
         'plan': plan,
         if (eventId != null) 'eventId': eventId,
         'showLiveStream': showLiveStream,
+        if (liveTextId != null) 'liveTextId': liveTextId,
+        if (liveSegmentId != null) 'liveSegmentId': liveSegmentId,
       },
     );
     return true;
@@ -616,6 +660,8 @@ class _GroupEventDetailScreenState
     GroupEvent event,
     String seriesId, {
     required bool showLiveStream,
+    String? liveTextId,
+    String? liveSegmentId,
   }) async {
     final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
     if (!mounted) return false;
@@ -661,6 +707,8 @@ class _GroupEventDetailScreenState
         'seriesId': seriesId,
         'eventId': event.id,
         'showLiveStream': showLiveStream,
+        if (liveTextId != null) 'liveTextId': liveTextId,
+        if (liveSegmentId != null) 'liveSegmentId': liveSegmentId,
       },
     );
     return true;

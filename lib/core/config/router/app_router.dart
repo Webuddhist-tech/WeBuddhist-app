@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_pract
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_accumulator_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_detail_screen.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/chats_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/group_chat_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
@@ -363,9 +364,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   final openPrayerRequests =
                       state.uri.queryParameters[AppRoutes.eventPrayersQuery] ==
                       '1';
+                  final entry =
+                      state.extra is HomeLiveEventEntry
+                          ? state.extra as HomeLiveEventEntry
+                          : null;
                   return GroupEventDetailScreen(
                     eventId: eventId,
                     openPrayerRequests: openPrayerRequests,
+                    initialEntry: entry,
                   );
                 },
               ),
@@ -576,6 +582,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final seriesId = extra?['seriesId'] as String?;
           final eventId = extra?['eventId'] as String?;
           final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
+          final liveTextId = extra?['liveTextId'] as String?;
+          final liveSegmentId = extra?['liveSegmentId'] as String?;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -586,6 +594,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             seriesId: seriesId,
             eventId: eventId,
             showLiveStream: showLiveStream,
+            liveTextId: liveTextId,
+            liveSegmentId: liveSegmentId,
           );
         },
       ),
@@ -599,6 +609,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final selectedDay = extra?['selectedDay'] as int?;
           final eventId = extra?['eventId'] as String?;
           final showLiveStream = extra?['showLiveStream'] as bool? ?? false;
+          final liveTextId = extra?['liveTextId'] as String?;
+          final liveSegmentId = extra?['liveSegmentId'] as String?;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -608,6 +620,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             initialDay: selectedDay,
             eventId: eventId,
             showLiveStream: showLiveStream,
+            liveTextId: liveTextId,
+            liveSegmentId: liveSegmentId,
           );
         },
       ),
@@ -634,6 +648,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final seriesId = extra?['seriesId'] as String?;
               final eventId = extra?['eventId'] as String?;
               final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
+              final liveTextId = extra?['liveTextId'] as String?;
+              final liveSegmentId = extra?['liveSegmentId'] as String?;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }
@@ -644,6 +660,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 seriesId: seriesId,
                 eventId: eventId,
                 showLiveStream: showLiveStream,
+                liveTextId: liveTextId,
+                liveSegmentId: liveSegmentId,
               );
             },
           ),
