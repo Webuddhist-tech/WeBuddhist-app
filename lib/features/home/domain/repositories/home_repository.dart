@@ -4,6 +4,7 @@ import 'package:flutter_pecha/features/home/domain/entities/routine_info.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/home/domain/entities/today_event.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day.dart';
+import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/featured_day_response.dart';
 import 'package:flutter_pecha/shared/domain/base_classes/repository.dart';
 
@@ -32,6 +33,19 @@ abstract class VerseOfDayRepositoryInterface extends Repository {
   Stream<Either<Failure, VerseOfDay>> watchVerseOfDay({
     required String language,
   });
+  Future<Either<Failure, VerseOfDayLikes>> getLikes(String verseId);
+  Future<Either<Failure, Unit>> likeVerse(String verseId);
+  Future<Either<Failure, Unit>> unlikeVerse(String verseId);
+  Future<Either<Failure, VerseOfDayCommentsPage>> getComments({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  });
+  Future<Either<Failure, VerseOfDayComment>> createComment({
+    required String verseId,
+    required String text,
+  });
+  Future<Either<Failure, Unit>> deleteComment(String commentId);
 }
 
 /// Today's events repository interface.

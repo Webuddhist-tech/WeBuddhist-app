@@ -4010,6 +4010,24 @@ abstract class AppLocalizations {
   /// **'Unable to share quote. Please try again'**
   String get verse_share_error;
 
+  /// No description provided for @verse_comments_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments · {count}'**
+  String verse_comments_title(int count);
+
+  /// No description provided for @verse_like_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update like. Please try again'**
+  String get verse_like_failed;
+
+  /// No description provided for @verse_comment_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to post comment. Please try again'**
+  String get verse_comment_failed;
+
   /// No description provided for @share_app_message.
   ///
   /// In en, this message translates to:

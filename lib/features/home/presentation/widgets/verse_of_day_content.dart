@@ -18,6 +18,7 @@ class VerseOfDayTypography {
     required this.attributionFontSize,
     this.useContentFontForAttribution = false,
     this.useGoogleJomolhari = false,
+    this.attributionFontWeight = FontWeight.w600,
   });
 
   final String? contentFont;
@@ -26,6 +27,7 @@ class VerseOfDayTypography {
   final double attributionFontSize;
   final bool useContentFontForAttribution;
   final bool useGoogleJomolhari;
+  final FontWeight attributionFontWeight;
 
   factory VerseOfDayTypography.fromLanguageCode(String languageCode) {
     return VerseOfDayTypography(
@@ -36,7 +38,8 @@ class VerseOfDayTypography {
     );
   }
 
-  /// Home card typography. Tibetan uses Google Jomolhari for verse and attribution.
+  /// Home card typography: author one step under the verse, bold, in the
+  /// sans system font. Tibetan uses Google Jomolhari for both.
   factory VerseOfDayTypography.forCard(
     String languageCode, {
     double? verseFontSize,
@@ -45,19 +48,20 @@ class VerseOfDayTypography {
     final base = VerseOfDayTypography.fromLanguageCode(languageCode);
     final isTibetan = AppFontConfig.isTibetanLanguage(languageCode);
 
-    if (!isTibetan) return base;
-
     return VerseOfDayTypography(
       contentFont: base.contentFont,
       systemFont: base.systemFont,
       verseFontSize: verseFontSize ?? base.verseFontSize,
-      attributionFontSize: attributionFontSize ?? base.attributionFontSize,
-      useContentFontForAttribution: true,
-      useGoogleJomolhari: true,
+      attributionFontSize:
+          attributionFontSize ?? getLocalizedFontSize(AppTextSize.body),
+      useContentFontForAttribution: isTibetan,
+      useGoogleJomolhari: isTibetan,
+      attributionFontWeight: FontWeight.w700,
     );
   }
 
-  /// Share preview typography. Larger sizes; Tibetan uses Google Jomolhari.
+  /// Share preview typography. Larger sizes, same sans author as the card;
+  /// Tibetan uses Google Jomolhari.
   factory VerseOfDayTypography.forShare(String languageCode) {
     final base = VerseOfDayTypography.fromLanguageCode(languageCode);
     final isTibetan = AppFontConfig.isTibetanLanguage(languageCode);
@@ -66,9 +70,10 @@ class VerseOfDayTypography {
       contentFont: base.contentFont,
       systemFont: base.systemFont,
       verseFontSize: getLocalizedFontSize(AppTextSize.title),
-      attributionFontSize: getLocalizedFontSize(AppTextSize.body),
-      useContentFontForAttribution: true,
+      attributionFontSize: getLocalizedFontSize(AppTextSize.bodyLarge),
+      useContentFontForAttribution: isTibetan,
       useGoogleJomolhari: isTibetan,
+      attributionFontWeight: FontWeight.w700,
     );
   }
 
@@ -98,7 +103,7 @@ class VerseOfDayTypography {
   }) {
     final baseStyle = TextStyle(
       fontSize: attributionFontSize,
-      fontWeight: FontWeight.w600,
+      fontWeight: attributionFontWeight,
       height:
           useGoogleJomolhari && useContentFontForAttribution
               ? getLineHeight(AppConfig.tibetanLanguageCode)
@@ -133,7 +138,10 @@ class VerseOfDayContent extends StatelessWidget {
     this.useContentFontForAttribution = false,
     this.textPadding = const EdgeInsets.fromLTRB(24, 24, 24, 16),
     this.brandingBottomPadding = 0,
-    this.footerAction,
+    this.textAlign = TextAlign.center,
+    this.attributionPrefix = '~ ',
+    this.attributionSpacing = 16,
+    this.footer,
   });
 
   final VerseOfDay verseOfDay;
@@ -145,7 +153,12 @@ class VerseOfDayContent extends StatelessWidget {
   final bool useContentFontForAttribution;
   final EdgeInsets textPadding;
   final double brandingBottomPadding;
-  final Widget? footerAction;
+  final TextAlign textAlign;
+  final String attributionPrefix;
+  final double attributionSpacing;
+
+  /// Row rendered under the attribution (likes, comments, share).
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -174,25 +187,27 @@ class VerseOfDayContent extends StatelessWidget {
             children: [
               Text(
                 verseText,
-                textAlign: TextAlign.center,
+                textAlign: textAlign,
                 strutStyle: verseStrutStyle,
                 style: typography.verseTextStyle(color: verseColor),
               ),
-              if (verseOfDay.groupTitle != null || footerAction != null) ...[
-                const SizedBox(height: 16),
-                _AttributionFooterRow(
-                  attribution:
-                      verseOfDay.groupTitle != null
-                          ? withTibetanLineBreakOpportunities(
-                            '~ ${verseOfDay.groupTitle}',
-                          )
-                          : null,
-                  typography: typography,
-                  attributionColor: attributionColor,
-                  useContentFontForAttribution: useContentFontForAttribution,
-                  attributionStrutStyle: attributionStrutStyle,
-                  footerAction: footerAction,
+              if (verseOfDay.groupTitle != null) ...[
+                SizedBox(height: attributionSpacing),
+                Text(
+                  withTibetanLineBreakOpportunities(
+                    '$attributionPrefix${verseOfDay.groupTitle}',
+                  ),
+                  textAlign: textAlign,
+                  strutStyle: attributionStrutStyle,
+                  style: typography.attributionTextStyle(
+                    color: attributionColor,
+                    useContentFontForAttribution: useContentFontForAttribution,
+                  ),
                 ),
+              ],
+              if (footer != null) ...[
+                const SizedBox(height: 4),
+                footer!,
               ],
               if (showBranding) ...[
                 const SizedBox(height: 16),
@@ -205,59 +220,6 @@ class VerseOfDayContent extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AttributionFooterRow extends StatelessWidget {
-  const _AttributionFooterRow({
-    required this.typography,
-    required this.attributionColor,
-    required this.useContentFontForAttribution,
-    this.attribution,
-    this.attributionStrutStyle,
-    this.footerAction,
-  });
-
-  final String? attribution;
-  final VerseOfDayTypography typography;
-  final Color attributionColor;
-  final bool useContentFontForAttribution;
-  final StrutStyle? attributionStrutStyle;
-  final Widget? footerAction;
-
-  TextStyle _attributionStyle(bool useContentFontForAttribution) =>
-      typography.attributionTextStyle(
-        color: attributionColor,
-        useContentFontForAttribution: useContentFontForAttribution,
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    if (footerAction == null) {
-      return Text(
-        attribution!,
-        textAlign: TextAlign.center,
-        strutStyle: attributionStrutStyle,
-        style: _attributionStyle(useContentFontForAttribution),
-      );
-    }
-
-    return SizedBox(
-      height: 32,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (attribution != null)
-            Text(
-              attribution!,
-              textAlign: TextAlign.center,
-              strutStyle: attributionStrutStyle,
-              style: _attributionStyle(useContentFontForAttribution),
-            ),
-          Positioned(right: 0, child: footerAction!),
-        ],
-      ),
     );
   }
 }
