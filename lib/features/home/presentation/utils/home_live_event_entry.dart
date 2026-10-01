@@ -1,5 +1,4 @@
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
-import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
 /// What the home live pill should open on top of the event page.
 ///
@@ -16,13 +15,15 @@ class HomeLiveEventOnlineEntry extends HomeLiveEventEntry {
   final GroupEvent event;
 }
 
-/// The text the live recitation is currently on, with segment highlighting.
+/// Today's plan, then the text the live recitation is on.
 class HomeLiveEventInPersonEntry extends HomeLiveEventEntry {
   const HomeLiveEventInPersonEntry({
-    required this.textId,
-    required this.navigationContext,
+    required this.event,
+    required this.liveTextId,
+    required this.liveSegmentId,
   });
 
-  final String textId;
-  final NavigationContext navigationContext;
+  final GroupEvent event;
+  final String liveTextId;
+  final String liveSegmentId;
 }

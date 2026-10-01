@@ -4,16 +4,7 @@ import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
-import 'package:flutter_pecha/features/home/domain/entities/series.dart';
-import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
-import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
-import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
-import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
-import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
-import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitation_live_client.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitation_live_peek.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
@@ -63,44 +54,10 @@ HomeLiveEventKind resolveHomeLiveEventKind({
       : HomeLiveEventKind.inPerson;
 }
 
-/// Reader context for [position]. When that text is in today's plan, the
-/// day's sequence is attached so the reader can follow the operator onto
-/// the next text. Otherwise the reader opens that text on its own.
-NavigationContext readerContextForLivePosition({
-  required String eventId,
-  required RecitationLivePosition position,
-  String? planId,
-  int? dayNumber,
-  String? dayAudioUrl,
-  List<PlanTextItem> items = const [],
-}) {
-  final index = items.indexWhere(
-    (item) => item.isSourceReference && item.textId == position.textId,
-  );
-  if (index < 0) {
-    return NavigationContext(
-      source: NavigationSource.normal,
-      eventId: eventId,
-      isOnlineAttendee: false,
-      targetSegmentId: position.segmentId,
-    );
-  }
-  return NavigationContext(
-    source: NavigationSource.plan,
-    planId: planId,
-    dayNumber: dayNumber,
-    targetSegmentId: position.segmentId,
-    planTextItems: items,
-    currentTextIndex: index,
-    dayAudioUrl: dayAudioUrl,
-    eventId: eventId,
-    isOnlineAttendee: false,
-  );
-}
-
 /// Opens the event page, or the event page with the live destination above
 /// it. Falls back to the event page when the attendee has not chosen, or
-/// when the live session has no current text.
+/// when the live session has no current text. An in-person attendee then
+/// opens today's plan, which opens the text live tracking is on.
 Future<void> openHomeLiveEvent(
   BuildContext context,
   WidgetRef ref,
@@ -152,13 +109,12 @@ Future<void> openHomeLiveEvent(
     case HomeLiveEventKind.online:
       context.push(path, extra: HomeLiveEventOnlineEntry(event));
     case HomeLiveEventKind.inPerson:
-      final navigationContext = await _readerContext(ref, event, position!);
-      if (!context.mounted) return;
       context.push(
         path,
         extra: HomeLiveEventInPersonEntry(
-          textId: position.textId,
-          navigationContext: navigationContext,
+          event: event,
+          liveTextId: position!.textId,
+          liveSegmentId: position.segmentId,
         ),
       );
   }
@@ -185,88 +141,4 @@ Future<RecitationLivePosition?> _currentLivePosition(
     client: RecitationLiveClient(),
     uri: uri,
   );
-}
-
-Future<NavigationContext> _readerContext(
-  WidgetRef ref,
-  GroupEvent event,
-  RecitationLivePosition position,
-) async {
-  final reading = await _loadTodayReading(ref, event);
-  return readerContextForLivePosition(
-    eventId: event.id,
-    position: position,
-    planId: reading?.planId,
-    dayNumber: reading?.dayNumber,
-    dayAudioUrl: reading?.dayAudioUrl,
-    items: reading?.items ?? const [],
-  );
-}
-
-class _TodayReading {
-  const _TodayReading({
-    required this.planId,
-    required this.dayNumber,
-    required this.items,
-    this.dayAudioUrl,
-  });
-
-  final String planId;
-  final int dayNumber;
-  final String? dayAudioUrl;
-  final List<PlanTextItem> items;
-}
-
-Future<_TodayReading?> _loadTodayReading(
-  WidgetRef ref,
-  GroupEvent event,
-) async {
-  try {
-    final plan = await _resolvePlan(ref, event);
-    if (plan == null || plan.totalDays < 1) return null;
-
-    final enrolled =
-        ref
-            .read(myPlansPaginatedProvider)
-            .plans
-            .where((item) => item.id == plan.id)
-            .firstOrNull;
-    final userPlan = enrolled ?? userPlanFromCatalogPlan(plan);
-    if (userPlan.totalDays < 1) return null;
-    final dayNumber = selectedDayForStart(
-      userPlan.effectiveStartDate,
-      userPlan.totalDays,
-    );
-    final either = await ref.read(
-      planDayContentFutureProvider(
-        PlanDaysParams(planId: plan.id, dayNumber: dayNumber),
-      ).future,
-    );
-    final day = either.fold((_) => null, (loaded) => loaded);
-    final tasks = day?.tasks;
-    if (day == null || tasks == null) return null;
-    return _TodayReading(
-      planId: plan.id,
-      dayNumber: dayNumber,
-      dayAudioUrl: day.audioUrl,
-      items: PlanSubtaskNavigation.fromPlanTasks(tasks),
-    );
-  } catch (_) {
-    return null;
-  }
-}
-
-Future<Plan?> _resolvePlan(WidgetRef ref, GroupEvent event) async {
-  final seriesId = event.series?.id ?? event.seriesId;
-  if (seriesId != null && seriesId.isNotEmpty) {
-    final either = await ref.read(seriesByIdProvider(seriesId).future);
-    return either.fold<Series?>(
-      (_) => null,
-      (series) => series,
-    )?.plans.firstOrNull;
-  }
-  final planId = event.plan?.id ?? event.planId;
-  if (planId == null || planId.isEmpty) return null;
-  final either = await ref.read(planByIdFutureProvider(planId).future);
-  return either.fold((_) => null, (plan) => plan);
 }

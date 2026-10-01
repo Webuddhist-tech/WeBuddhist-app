@@ -36,6 +36,7 @@ import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/live_tracked_plan_text.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_panel.dart';
@@ -65,6 +66,8 @@ class PlanDetails extends ConsumerStatefulWidget {
     this.seriesId,
     this.eventId,
     this.showLiveStream = true,
+    this.liveTextId,
+    this.liveSegmentId,
   });
   final UserPlansModel plan;
   final int selectedDay;
@@ -76,6 +79,10 @@ class PlanDetails extends ConsumerStatefulWidget {
 
   /// False for in-person attendees: plain cover, tasks open as routes.
   final bool showLiveStream;
+
+  /// When set, today's plan opens this live-tracked text once the day loads.
+  final String? liveTextId;
+  final String? liveSegmentId;
 
   @override
   ConsumerState<PlanDetails> createState() => _PlanDetailsState();
@@ -93,6 +100,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   bool _liveStreamSeen = false;
   final _embedded = PlanEmbeddedController();
   Timer? _dayViewedTimer;
+  bool _didOpenLiveText = false;
 
   @override
   void initState() {
@@ -694,6 +702,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                 (failure) => _buildDayContentError(),
                 (dayContent) {
                   final tasks = _applyOptimisticState(dayContent.tasks);
+                  _scheduleLiveTrackedText(tasks, dayContent.audioUrl);
                   return ActivityList(
                     language: language,
                     tasks: tasks,
@@ -1040,6 +1049,34 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
+  }
+
+  /// One shot: the home live pill lands on the text the recitation is on,
+  /// opened the same way as tapping that task. Back returns here.
+  void _scheduleLiveTrackedText(List<UserTasksDto> tasks, String? audioUrl) {
+    final liveTextId = widget.liveTextId;
+    if (liveTextId == null || liveTextId.isEmpty || _didOpenLiveText) return;
+    final items = PlanSubtaskNavigation.fromUserTasks(tasks);
+    if (items.isEmpty) return;
+    _didOpenLiveText = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        openLiveTrackedPlanText(
+          context: context,
+          ref: ref,
+          items: items,
+          liveTextId: liveTextId,
+          liveSegmentId: widget.liveSegmentId,
+          planId: widget.plan.id,
+          dayNumber: selectedDay,
+          dayAudioUrl: audioUrl,
+          eventId: widget.eventId,
+          isOnlineAttendee: false,
+          languages: [ref.read(contentLanguageProvider), widget.plan.language],
+        ),
+      );
+    });
   }
 
   void _startReading(

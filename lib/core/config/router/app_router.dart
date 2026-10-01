@@ -582,6 +582,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final seriesId = extra?['seriesId'] as String?;
           final eventId = extra?['eventId'] as String?;
           final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
+          final liveTextId = extra?['liveTextId'] as String?;
+          final liveSegmentId = extra?['liveSegmentId'] as String?;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -592,6 +594,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             seriesId: seriesId,
             eventId: eventId,
             showLiveStream: showLiveStream,
+            liveTextId: liveTextId,
+            liveSegmentId: liveSegmentId,
           );
         },
       ),
@@ -605,6 +609,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final selectedDay = extra?['selectedDay'] as int?;
           final eventId = extra?['eventId'] as String?;
           final showLiveStream = extra?['showLiveStream'] as bool? ?? false;
+          final liveTextId = extra?['liveTextId'] as String?;
+          final liveSegmentId = extra?['liveSegmentId'] as String?;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -614,6 +620,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             initialDay: selectedDay,
             eventId: eventId,
             showLiveStream: showLiveStream,
+            liveTextId: liveTextId,
+            liveSegmentId: liveSegmentId,
           );
         },
       ),
@@ -640,6 +648,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               final seriesId = extra?['seriesId'] as String?;
               final eventId = extra?['eventId'] as String?;
               final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
+              final liveTextId = extra?['liveTextId'] as String?;
+              final liveSegmentId = extra?['liveSegmentId'] as String?;
               if (plan == null) {
                 throw Exception('Missing required parameters');
               }
@@ -650,6 +660,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 seriesId: seriesId,
                 eventId: eventId,
                 showLiveStream: showLiveStream,
+                liveTextId: liveTextId,
+                liveSegmentId: liveSegmentId,
               );
             },
           ),

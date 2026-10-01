@@ -40,8 +40,6 @@ import 'package:flutter_pecha/features/mala/presentation/providers/group_accumul
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
-import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
-import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -312,18 +310,15 @@ class _GroupEventDetailScreenState
       case HomeLiveEventOnlineEntry(:final event):
         await _enterPuja(event);
       case HomeLiveEventInPersonEntry(
-        :final textId,
-        :final navigationContext,
+        :final event,
+        :final liveTextId,
+        :final liveSegmentId,
       ):
-        if (!mounted) return;
-        final current = navigationContext.currentItem;
-        final item =
-            current != null &&
-                    current.isSourceReference &&
-                    current.textId == textId
-                ? current
-                : PlanTextItem.sourceReference(textId: textId, title: '');
-        await PlanNavigator.push(context, item, navigationContext);
+        await _enterPuja(
+          event,
+          liveTextId: liveTextId,
+          liveSegmentId: liveSegmentId,
+        );
     }
   }
 
@@ -547,7 +542,11 @@ class _GroupEventDetailScreenState
   /// plan's day list, or previews the plan when the event has no series.
   /// Only online attendees get the live stream; a hybrid attendee who never
   /// picked is asked first, since the choice decides the layout.
-  Future<void> _enterPuja(GroupEvent event) async {
+  Future<void> _enterPuja(
+    GroupEvent event, {
+    String? liveTextId,
+    String? liveSegmentId,
+  }) async {
     if (_isOpeningPuja) return;
     final seriesId = event.series?.id ?? event.seriesId;
     final planId = event.plan?.id ?? event.planId;
@@ -579,11 +578,15 @@ class _GroupEventDetailScreenState
                 event,
                 seriesId,
                 showLiveStream: showLiveStream,
+                liveTextId: liveTextId,
+                liveSegmentId: liveSegmentId,
               )
               : await _openPlanPreview(
                 planId!,
                 eventId: event.id,
                 showLiveStream: showLiveStream,
+                liveTextId: liveTextId,
+                liveSegmentId: liveSegmentId,
               );
       // Only an opened practice counts; a missing plan or a failed series
       // enrollment leaves the user here.
@@ -630,6 +633,8 @@ class _GroupEventDetailScreenState
     String planId, {
     String? eventId,
     bool showLiveStream = false,
+    String? liveTextId,
+    String? liveSegmentId,
   }) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
     if (!mounted) return false;
@@ -644,6 +649,8 @@ class _GroupEventDetailScreenState
         'plan': plan,
         if (eventId != null) 'eventId': eventId,
         'showLiveStream': showLiveStream,
+        if (liveTextId != null) 'liveTextId': liveTextId,
+        if (liveSegmentId != null) 'liveSegmentId': liveSegmentId,
       },
     );
     return true;
@@ -653,6 +660,8 @@ class _GroupEventDetailScreenState
     GroupEvent event,
     String seriesId, {
     required bool showLiveStream,
+    String? liveTextId,
+    String? liveSegmentId,
   }) async {
     final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
     if (!mounted) return false;
@@ -698,6 +707,8 @@ class _GroupEventDetailScreenState
         'seriesId': seriesId,
         'eventId': event.id,
         'showLiveStream': showLiveStream,
+        if (liveTextId != null) 'liveTextId': liveTextId,
+        if (liveSegmentId != null) 'liveSegmentId': liveSegmentId,
       },
     );
     return true;
