@@ -59,7 +59,8 @@ class VerseOfDayLikesNotifier extends StateNotifier<VerseOfDayLikesState> {
 
   /// Optimistic toggle; returns the failure message when it had to revert.
   Future<String?> toggle() async {
-    if (state.isSubmitting) return null;
+    // Wait for the first load; its reply would overwrite the tap.
+    if (state.isSubmitting || !state.isLoaded) return null;
 
     final previous = state;
     final wasLiked = previous.likedByMe;
@@ -189,13 +190,19 @@ class VerseOfDayCommentsNotifier
         );
       },
       (page) {
+        // Keep comments posted while this request was in flight.
+        final fetched = page.comments.map((comment) => comment.id).toSet();
+        final posted =
+            state.comments
+                .where((comment) => !fetched.contains(comment.id))
+                .toList();
         state = state.copyWith(
-          comments: page.comments,
+          comments: [...posted, ...page.comments],
           isLoading: false,
           hasLoaded: true,
           hasMore: page.hasMore,
-          skip: page.comments.length,
-          total: page.total,
+          skip: page.comments.length + posted.length,
+          total: page.total + posted.length,
           clearError: true,
         );
       },
@@ -290,10 +297,14 @@ class VerseOfDayCommentsNotifier
   }
 }
 
+/// Re-created on login/logout so `ownCommentIds` never carries over accounts.
 final verseOfDayCommentsProvider = StateNotifierProvider.autoDispose
     .family<VerseOfDayCommentsNotifier, VerseOfDayCommentsState, String>((
       ref,
       verseId,
     ) {
+      ref.watch(
+        authProvider.select((state) => state.isLoggedIn && !state.isGuest),
+      );
       return VerseOfDayCommentsNotifier(ref: ref, verseId: verseId);
     });

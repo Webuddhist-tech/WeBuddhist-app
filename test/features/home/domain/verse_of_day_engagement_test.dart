@@ -1,7 +1,4 @@
-import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/home/data/models/verse_of_day_engagement_model.dart';
-import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
-import 'package:flutter_pecha/features/home/presentation/utils/verse_comment_utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -48,56 +45,6 @@ void main() {
       expect(page.comments.single.user.displayName, 'Pema');
       expect(page.comments.single.createdAt, isNotNull);
       expect(page.hasMore, isTrue);
-    });
-  });
-
-  group('isVerseCommentOwnedBy', () {
-    const comment = VerseOfDayComment(
-      id: 'c1',
-      verseId: 'v1',
-      user: VerseOfDayCommentUser(firstName: 'Karma', lastName: 'L'),
-      text: 'hi',
-    );
-
-    test('own when posted from this device', () {
-      expect(
-        isVerseCommentOwnedBy(
-          comment: comment,
-          currentUser: null,
-          ownCommentIds: const {'c1'},
-        ),
-        isTrue,
-      );
-    });
-
-    test('own when names match ignoring case', () {
-      expect(
-        isVerseCommentOwnedBy(
-          comment: comment,
-          currentUser: const User(firstName: 'karma', lastName: 'l'),
-          ownCommentIds: const {},
-        ),
-        isTrue,
-      );
-    });
-
-    test('not own when last name differs or user missing', () {
-      expect(
-        isVerseCommentOwnedBy(
-          comment: comment,
-          currentUser: const User(firstName: 'Karma', lastName: 'T'),
-          ownCommentIds: const {},
-        ),
-        isFalse,
-      );
-      expect(
-        isVerseCommentOwnedBy(
-          comment: comment,
-          currentUser: null,
-          ownCommentIds: const {},
-        ),
-        isFalse,
-      );
     });
   });
 }

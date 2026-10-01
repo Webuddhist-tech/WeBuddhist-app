@@ -5,14 +5,12 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
-import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
-import 'package:flutter_pecha/features/home/presentation/utils/verse_comment_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Comments on the verse of the day, with a composer at the bottom.
@@ -120,7 +118,6 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(verseOfDayCommentsProvider(widget.verseId));
-    final currentUser = ref.watch(userProvider).user;
 
     return DraggableScrollableSheet(
       initialChildSize: VerseCommentsSheet._initialSize,
@@ -153,7 +150,6 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
                       context,
                       isDark,
                       state,
-                      currentUser,
                       scrollController,
                     ),
                   ),
@@ -229,7 +225,6 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     BuildContext context,
     bool isDark,
     VerseOfDayCommentsState state,
-    User? currentUser,
     ScrollController scrollController,
   ) {
     if (state.isLoading && state.comments.isEmpty) {
@@ -270,11 +265,8 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
             (comment) => _VerseCommentTile(
               comment: comment,
               isDark: isDark,
-              isOwn: isVerseCommentOwnedBy(
-                comment: comment,
-                currentUser: currentUser,
-                ownCommentIds: state.ownCommentIds,
-              ),
+              // The API omits the author id; names aren't unique.
+              isOwn: state.ownCommentIds.contains(comment.id),
               onDelete: () => _confirmDelete(comment),
             ),
           ),
@@ -282,8 +274,47 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(child: CircularProgressIndicator()),
+          )
+        else if (state.error != null)
+          _LoadMoreError(
+            isDark: isDark,
+            onRetry:
+                () =>
+                    ref
+                        .read(
+                          verseOfDayCommentsProvider(widget.verseId).notifier,
+                        )
+                        .retry(),
           ),
       ],
+    );
+  }
+}
+
+class _LoadMoreError extends StatelessWidget {
+  const _LoadMoreError({required this.isDark, required this.onRetry});
+
+  final bool isDark;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Text(
+            context.l10n.unableToLoad,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color:
+                  isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
+            ),
+          ),
+          TextButton(onPressed: onRetry, child: Text(context.l10n.tryAgain)),
+        ],
+      ),
     );
   }
 }
