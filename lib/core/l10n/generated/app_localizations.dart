@@ -5126,6 +5126,12 @@ abstract class AppLocalizations {
   /// **'Praying'**
   String get event_prayer_praying;
 
+  /// No description provided for @event_prayer_my_count.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count}'**
+  String event_prayer_my_count(int count);
+
   /// No description provided for @event_prayer_new_request.
   ///
   /// In en, this message translates to:

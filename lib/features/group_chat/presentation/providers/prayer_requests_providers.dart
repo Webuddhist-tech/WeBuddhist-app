@@ -16,6 +16,60 @@ import 'package:fpdart/fpdart.dart';
 /// Where the event room stands: 404 on resolve means chat is switched off.
 enum PrayerRoomStatus { resolving, ready, closed, failed }
 
+/// How taps turn into pray calls: batched, at most ten prayers a second.
+class PrayerPacing {
+  const PrayerPacing({
+    this.batchWindow = const Duration(milliseconds: 300),
+    this.rateWindow = const Duration(seconds: 1),
+    this.retryAfter = const Duration(seconds: 1),
+  });
+
+  final Duration batchWindow;
+  final Duration rateWindow;
+  final Duration retryAfter;
+
+  static const int maxPrayersPerCall = 10;
+  static const int maxPrayersPerWindow = 10;
+  static const int maxRetries = 3;
+}
+
+final prayerPacingProvider = Provider<PrayerPacing>((_) => const PrayerPacing());
+
+/// The last server-confirmed prayer state of one request.
+class _PrayerSnapshot {
+  const _PrayerSnapshot({
+    required this.prayedByMe,
+    required this.prayerCount,
+    required this.myPrayerCount,
+    required this.recentPrayers,
+  });
+
+  _PrayerSnapshot.of(ChatMessageDTO request)
+    : this(
+        prayedByMe: request.prayedByMe,
+        prayerCount: request.prayerCount,
+        myPrayerCount: request.myPrayerCount,
+        recentPrayers: request.recentPrayers,
+      );
+
+  final bool prayedByMe;
+  final int prayerCount;
+  final int myPrayerCount;
+  final List<ChatPrayerUserDTO> recentPrayers;
+}
+
+/// Taps on one request that the server has not confirmed yet.
+class _PendingPrayers {
+  _PendingPrayers(this.confirmed);
+
+  _PrayerSnapshot confirmed;
+  int queued = 0;
+  int inFlight = 0;
+  int retries = 0;
+
+  int get outstanding => queued + inFlight;
+}
+
 class PrayerRequestsState extends Equatable {
   final PrayerRoomStatus roomStatus;
   final String? roomId;
@@ -91,14 +145,25 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   final String eventId;
   static const int _limit = 30;
 
-  /// Messages with a pray/un-pray round trip in flight.
-  final Set<String> _toggling = {};
+  /// Requests with taps queued or a pray call in flight.
+  final Map<String, _PendingPrayers> _pending = {};
+  Timer? _flushTimer;
+  DateTime? _windowStart;
+  int _windowSent = 0;
+  ChatPrayerUserDTO? _viewer;
 
   /// A loaded row was deleted while a page was being fetched, so that page
   /// started one row late on the server and has to be read again.
   bool _pageShifted = false;
 
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
+  PrayerPacing get _pacing => ref.read(prayerPacingProvider);
+
+  @override
+  void dispose() {
+    _flushTimer?.cancel();
+    super.dispose();
+  }
 
   /// Resolves the room, then fetches its first page of prayer requests.
   Future<void> load() async {
@@ -359,8 +424,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     required String viewerId,
   }) {
     for (final update in updates) {
-      // A round trip in flight already knows the answer; its response wins.
-      if (_toggling.contains(update.messageId)) continue;
+      // Outstanding taps already know the answer; their response wins.
+      if (_pending.containsKey(update.messageId)) continue;
       _update(
         update.messageId,
         (request) => request.copyWith(
@@ -378,90 +443,145 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     state = state.copyWith(roomStatus: PrayerRoomStatus.closed);
   }
 
-  /// Prays or takes a prayer back, optimistically. [viewer] joins or leaves
-  /// the avatar stack so the card matches the count straight away.
-  Future<void> togglePrayer(
-    String messageId, {
-    ChatPrayerUserDTO? viewer,
-  }) async {
-    final roomId = state.roomId;
-    if (roomId == null || _toggling.contains(messageId)) return;
+  /// Adds one prayer, shown at once. Taps are batched into one call with a
+  /// `count`, paced to the server's ten prayers a second. [viewer] joins the
+  /// avatar stack on the first one.
+  void pray(String messageId, {ChatPrayerUserDTO? viewer}) {
+    if (state.roomId == null) return;
     final current = _find(messageId);
     if (current == null) return;
+    if (viewer != null && viewer.userId.isNotEmpty) _viewer = viewer;
 
-    final wasPrayed = current.prayedByMe;
-    final delta = wasPrayed ? -1 : 1;
-    final previousStack = current.recentPrayers;
-    _toggling.add(messageId);
+    final pending = _pending.putIfAbsent(
+      messageId,
+      () => _PendingPrayers(_PrayerSnapshot.of(current)),
+    );
+    pending.queued += 1;
+    _render(messageId, pending);
+    _scheduleFlush(_pacing.batchWindow);
+  }
+
+  void _scheduleFlush(Duration delay) {
+    if (_flushTimer?.isActive ?? false) return;
+    _flushTimer = Timer(delay, _flush);
+  }
+
+  void _flush() {
+    _flushTimer = null;
+    if (!mounted) return;
+    final roomId = state.roomId;
+    if (roomId == null) return;
+
+    final now = DateTime.now();
+    final windowStart = _windowStart;
+    if (windowStart == null ||
+        now.difference(windowStart) >= _pacing.rateWindow) {
+      _windowStart = now;
+      _windowSent = 0;
+    }
+
+    var starved = false;
+    for (final messageId in _pending.keys.toList()) {
+      final pending = _pending[messageId]!;
+      if (pending.queued == 0 || pending.inFlight > 0) continue;
+      final budget = math.min(
+        PrayerPacing.maxPrayersPerCall,
+        PrayerPacing.maxPrayersPerWindow - _windowSent,
+      );
+      if (budget <= 0) {
+        starved = true;
+        break;
+      }
+      final count = math.min(pending.queued, budget);
+      pending.queued -= count;
+      pending.inFlight = count;
+      _windowSent += count;
+      unawaited(_send(roomId, messageId, pending, count));
+    }
+    if (starved) {
+      final elapsed = DateTime.now().difference(_windowStart!);
+      _scheduleFlush(_pacing.rateWindow - elapsed);
+    }
+  }
+
+  Future<void> _send(
+    String roomId,
+    String messageId,
+    _PendingPrayers pending,
+    int count,
+  ) async {
+    final result = await _repository.prayFor(
+      roomId,
+      messageIds: [messageId],
+      count: count,
+    );
+    if (!mounted) return;
+    pending.inFlight = 0;
+
+    var retry = false;
+    result.fold(
+      (failure) {
+        if (failure is RateLimitFailure &&
+            pending.retries < PrayerPacing.maxRetries) {
+          pending.retries += 1;
+          pending.queued += count;
+          retry = true;
+          return;
+        }
+        // Dropped on the floor: the row falls back to what the server holds.
+        pending.retries = 0;
+      },
+      (summaries) {
+        pending.retries = 0;
+        final summary =
+            summaries.where((s) => s.messageId == messageId).firstOrNull;
+        if (summary == null) {
+          // No longer a live request; nothing more to send for it.
+          pending.queued = 0;
+          return;
+        }
+        pending.confirmed = _PrayerSnapshot(
+          prayedByMe: summary.prayedByMe,
+          prayerCount: summary.prayerCount,
+          myPrayerCount:
+              summary.myPrayerCount ?? pending.confirmed.myPrayerCount + count,
+          recentPrayers:
+              summary.prayedByMe
+                  ? _stackWithViewer(pending.confirmed.recentPrayers, _viewer)
+                  : pending.confirmed.recentPrayers,
+        );
+      },
+    );
+
+    if (retry) {
+      _scheduleFlush(_pacing.retryAfter);
+      return;
+    }
+    _render(messageId, pending);
+    if (pending.outstanding == 0) {
+      _pending.remove(messageId);
+    } else {
+      _scheduleFlush(Duration.zero);
+    }
+  }
+
+  /// What the server confirmed plus every tap still on its way.
+  void _render(String messageId, _PendingPrayers pending) {
+    final confirmed = pending.confirmed;
+    final taps = pending.outstanding;
+    final joins = taps > 0 && !confirmed.prayedByMe;
     _update(
       messageId,
       (request) => request.copyWith(
-        prayedByMe: !wasPrayed,
-        prayerCount: _clampCount(request.prayerCount + delta),
-        recentPrayers: _stackWithViewer(
-          request.recentPrayers,
-          viewer,
-          praying: !wasPrayed,
-        ),
+        prayedByMe: confirmed.prayedByMe || taps > 0,
+        prayerCount: confirmed.prayerCount + (joins ? 1 : 0),
+        myPrayerCount: confirmed.myPrayerCount + taps,
+        recentPrayers:
+            joins
+                ? _stackWithViewer(confirmed.recentPrayers, _viewer)
+                : confirmed.recentPrayers,
       ),
     );
-
-    final result =
-        wasPrayed
-            ? (await _repository.removePrayer(
-              messageId,
-            )).map((summary) => [summary])
-            : await _repository.prayFor(roomId, messageIds: [messageId]);
-    _toggling.remove(messageId);
-    if (!mounted) return;
-
-    result.fold(
-      (_) => _update(
-        messageId,
-        (request) => request.copyWith(
-          prayedByMe: wasPrayed,
-          prayerCount: _clampCount(request.prayerCount - delta),
-          recentPrayers: previousStack,
-        ),
-      ),
-      (summaries) {
-        for (final summary in summaries) {
-          _update(
-            summary.messageId,
-            (request) => request.copyWith(
-              prayerCount: summary.prayerCount,
-              prayedByMe: summary.prayedByMe,
-            ),
-          );
-        }
-        if (wasPrayed) unawaited(_refillStack(messageId));
-      },
-    );
-  }
-
-  /// Leaving the stack can expose a gap: with more supporters than the
-  /// stack holds, the one who was pushed out is unknown here. Re-read the
-  /// newest few from the roster so the avatars match the count again.
-  Future<void> _refillStack(String messageId) async {
-    final current = _find(messageId);
-    if (current == null) return;
-    final wanted = math.min(_stackSize, current.prayerCount);
-    if (current.recentPrayers.length >= wanted) return;
-
-    final result = await _repository.listPrayers(
-      messageId,
-      skip: 0,
-      limit: _stackSize,
-    );
-    if (!mounted) return;
-    result.fold((_) {}, (page) {
-      _update(
-        messageId,
-        (request) => request.copyWith(
-          recentPrayers: page.prayers.take(_stackSize).toList(),
-        ),
-      );
-    });
   }
 
   static bool _isLive(ChatMessageDTO message) =>
@@ -474,12 +594,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   static List<ChatPrayerUserDTO> _stackWithViewer(
     List<ChatPrayerUserDTO> stack,
-    ChatPrayerUserDTO? viewer, {
-    required bool praying,
-  }) {
+    ChatPrayerUserDTO? viewer,
+  ) {
     if (viewer == null || viewer.userId.isEmpty) return stack;
     final others = stack.where((user) => user.userId != viewer.userId);
-    if (!praying) return others.toList();
     return [viewer, ...others].take(_stackSize).toList();
   }
 

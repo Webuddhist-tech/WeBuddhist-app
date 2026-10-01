@@ -141,22 +141,14 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
     String roomId, {
     required List<String> messageIds,
+    int count = 1,
   }) async {
     try {
-      return Right(await _remote.prayFor(roomId, messageIds: messageIds));
+      return Right(
+        await _remote.prayFor(roomId, messageIds: messageIds, count: count),
+      );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'prayFor'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
-    String messageId,
-  ) async {
-    try {
-      return Right(await _remote.removePrayer(messageId));
-    } catch (e) {
-      return Left(ExceptionMapper.map(e, context: 'removePrayer'));
     }
   }
 

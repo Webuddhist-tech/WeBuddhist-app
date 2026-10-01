@@ -37,9 +37,16 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   List<ChatMessageDTO> history;
   Failure? roomFailure;
   Failure? prayFailure;
+
+  /// Answers the next pray call only, then clears itself.
+  Failure? prayFailureOnce;
   final List<String?> listedTypes = [];
   final List<List<String>> prayed = [];
-  final List<String> unprayed = [];
+  final List<int> prayedCounts = [];
+  final Map<String, int> mine = {};
+
+  /// Awaited before a pray call is answered, to stage a race.
+  Completer<void>? prayGate;
   final List<String?> sentTypes = [];
   final List<String?> sentIntentions = [];
   final List<int> prayersSkips = [];
@@ -136,8 +143,17 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
     String roomId, {
     required List<String> messageIds,
+    int count = 1,
   }) async {
     prayed.add(messageIds);
+    prayedCounts.add(count);
+    final gate = prayGate;
+    if (gate != null) await gate.future;
+    final once = prayFailureOnce;
+    if (once != null) {
+      prayFailureOnce = null;
+      return Left(once);
+    }
     final failure = prayFailure;
     if (failure != null) return Left(failure);
     return Right([
@@ -146,25 +162,10 @@ class _FakeGroupChatRepository implements GroupChatRepository {
           messageId: id,
           prayerCount: 7,
           prayedByMe: true,
+          myPrayerCount: mine[id] = (mine[id] ?? 0) + count,
           created: true,
         ),
     ]);
-  }
-
-  @override
-  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
-    String messageId,
-  ) async {
-    unprayed.add(messageId);
-    final failure = prayFailure;
-    if (failure != null) return Left(failure);
-    return Right(
-      ChatPrayerSummaryDTO(
-        messageId: messageId,
-        prayerCount: 6,
-        prayedByMe: false,
-      ),
-    );
   }
 
   @override
@@ -264,11 +265,18 @@ PrayerRequestsNotifier _keepAlive(ProviderContainer container) {
   return container.read(prayerRequestsProvider('e1').notifier);
 }
 
-Future<void> _settle() async {
-  for (var i = 0; i < 5; i++) {
+Future<void> _settle({int ticks = 5}) async {
+  for (var i = 0; i < ticks; i++) {
     await Future<void>.delayed(Duration.zero);
   }
 }
+
+/// Pray calls are timer-driven; zero pacing lets them run under [_settle].
+const _instant = PrayerPacing(
+  batchWindow: Duration.zero,
+  rateWindow: Duration.zero,
+  retryAfter: Duration.zero,
+);
 
 ChatMessageDTO _byId(PrayerRequestsNotifier notifier, String id) {
   return notifier.state.requests.firstWhere((request) => request.id == id);
@@ -278,9 +286,12 @@ void main() {
   late _FakeGroupChatRepository repository;
   late ProviderContainer container;
 
-  ProviderContainer buildContainer() {
+  ProviderContainer buildContainer({PrayerPacing pacing = _instant}) {
     return ProviderContainer(
-      overrides: [groupChatRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        groupChatRepositoryProvider.overrideWithValue(repository),
+        prayerPacingProvider.overrideWithValue(pacing),
+      ],
     );
   }
 
@@ -540,28 +551,159 @@ void main() {
       expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
     });
 
-    test('togglePrayer is optimistic and adopts the server count', () async {
+    test('pray is optimistic and adopts the server counts', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
       container = buildContainer();
 
       final notifier = _keepAlive(container);
       await _settle();
 
-      final pending = notifier.togglePrayer('a');
+      notifier.pray('a');
       expect(_byId(notifier, 'a').prayedByMe, isTrue);
       expect(_byId(notifier, 'a').prayerCount, 4);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
 
-      await pending;
+      await _settle();
       expect(repository.prayed, [
         ['a'],
       ]);
+      expect(repository.prayedCounts, [1]);
       expect(_byId(notifier, 'a').prayerCount, 7);
       expect(_byId(notifier, 'a').prayedByMe, isTrue);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
+    });
 
-      await notifier.togglePrayer('a');
-      expect(repository.unprayed, ['a']);
+    test('praying again keeps the prayer and adds to my count', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a', count: 3, prayedByMe: true).copyWith(myPrayerCount: 2)],
+      )..mine['a'] = 2;
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      expect(_byId(notifier, 'a').prayedByMe, isTrue);
+      // Already counted among the people praying.
+      expect(_byId(notifier, 'a').prayerCount, 3);
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+    });
+
+    test('taps inside the batch window go out as one call with a count', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      notifier.pray('a');
+      notifier.pray('a');
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+      expect(_byId(notifier, 'a').prayerCount, 4);
+
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+      ]);
+      expect(repository.prayedCounts, [3]);
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+    });
+
+    test('more than ten taps are split into calls of at most ten', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      for (var i = 0; i < 25; i++) {
+        notifier.pray('a');
+      }
+      expect(_byId(notifier, 'a').myPrayerCount, 25);
+
+      await _settle(ticks: 20);
+      expect(repository.prayedCounts, [10, 10, 5]);
+      expect(_byId(notifier, 'a').myPrayerCount, 25);
+    });
+
+    test('taps that land during a call wait for it, then send together', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+
+      notifier.pray('a');
+      notifier.pray('a');
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+
+      repository.prayGate!.complete();
+      await _settle(ticks: 10);
+      expect(repository.prayedCounts, [1, 2]);
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+    });
+
+    test('a 429 sends the same taps again after the retry delay', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a', count: 3)])
+            ..prayFailureOnce = const RateLimitFailure('slow down');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      notifier.pray('a');
+      await _settle(ticks: 10);
+
+      expect(repository.prayedCounts, [2, 2]);
+      expect(_byId(notifier, 'a').myPrayerCount, 2);
+      expect(_byId(notifier, 'a').prayerCount, 7);
+    });
+
+    test('a 429 that never clears gives the taps up', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a', count: 3)])
+            ..prayFailure = const RateLimitFailure('slow down');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      await _settle(ticks: 20);
+
+      expect(repository.prayedCounts.length, PrayerPacing.maxRetries + 1);
       expect(_byId(notifier, 'a').prayedByMe, isFalse);
-      expect(_byId(notifier, 'a').prayerCount, 6);
+      expect(_byId(notifier, 'a').myPrayerCount, 0);
+      expect(_byId(notifier, 'a').prayerCount, 3);
+    });
+
+    test('an older server without my_prayer_count still counts taps', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      notifier.pray('a');
+      await _settle();
+      // The fake echoes a running total; a server that omits the field
+      // would leave it null and the local tally takes over.
+      expect(_byId(notifier, 'a').myPrayerCount, 2);
     });
 
     test('the live count follows loads, sends and deletions', () async {
@@ -589,33 +731,7 @@ void main() {
       expect(count(), 2);
     });
 
-    test('leaving a full stack re-reads it from the roster', () async {
-      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
-      const others = [
-        ChatPrayerUserDTO(userId: 'u2', name: 'Pema'),
-        ChatPrayerUserDTO(userId: 'u3', name: 'Sonam'),
-        ChatPrayerUserDTO(userId: 'u4', name: 'Karma'),
-      ];
-      repository =
-          _FakeGroupChatRepository(
-              history: [
-                _prayer('a', count: 4, prayedByMe: true).copyWith(
-                  recentPrayers: [me, others[0], others[1]],
-                ),
-              ],
-            )
-            ..supporters = others;
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-      await notifier.togglePrayer('a', viewer: me);
-      await _settle();
-
-      expect(_byId(notifier, 'a').recentPrayers, others);
-    });
-
-    test('togglePrayer moves the viewer in and out of the avatar stack', () async {
+    test('the first prayer puts the viewer in the avatar stack once', () async {
       const pema = ChatPrayerUserDTO(userId: 'u2', name: 'Pema');
       const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
       repository = _FakeGroupChatRepository(
@@ -628,13 +744,15 @@ void main() {
       final notifier = _keepAlive(container);
       await _settle();
 
-      final pending = notifier.togglePrayer('a', viewer: me);
+      notifier.pray('a', viewer: me);
       expect(_byId(notifier, 'a').recentPrayers, [me, pema]);
-      await pending;
+      await _settle();
       expect(_byId(notifier, 'a').recentPrayers, [me, pema]);
 
-      await notifier.togglePrayer('a', viewer: me);
-      expect(_byId(notifier, 'a').recentPrayers, [pema]);
+      notifier.pray('a', viewer: me);
+      await _settle();
+      expect(_byId(notifier, 'a').recentPrayers, [me, pema]);
+      expect(_byId(notifier, 'a').myPrayerCount, 2);
     });
 
     test('a failed pray restores the avatar stack too', () async {
@@ -645,7 +763,8 @@ void main() {
 
       final notifier = _keepAlive(container);
       await _settle();
-      await notifier.togglePrayer('a', viewer: me);
+      notifier.pray('a', viewer: me);
+      await _settle();
 
       expect(_byId(notifier, 'a').recentPrayers, isEmpty);
     });
@@ -657,10 +776,59 @@ void main() {
 
       final notifier = _keepAlive(container);
       await _settle();
-      await notifier.togglePrayer('a');
+      notifier.pray('a');
+      notifier.pray('a');
+      await _settle();
 
       expect(_byId(notifier, 'a').prayedByMe, isFalse);
       expect(_byId(notifier, 'a').prayerCount, 3);
+      expect(_byId(notifier, 'a').myPrayerCount, 0);
+    });
+
+    test('a failed batch keeps what the server already confirmed', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      notifier.pray('a');
+      await _settle();
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
+
+      repository.prayFailure = const ServerFailure('boom');
+      notifier.pray('a');
+      notifier.pray('a');
+      expect(_byId(notifier, 'a').myPrayerCount, 3);
+      await _settle();
+
+      expect(_byId(notifier, 'a').prayedByMe, isTrue);
+      expect(_byId(notifier, 'a').prayerCount, 7);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
+    });
+
+    test('a socket update waits while taps are outstanding', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      await _settle();
+      notifier.applyPrayersUpdated(const [
+        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 9, userIds: ['me']),
+      ], viewerId: 'me');
+      expect(_byId(notifier, 'a').prayerCount, 4);
+
+      repository.prayGate!.complete();
+      await _settle();
+      expect(_byId(notifier, 'a').prayerCount, 7);
+
+      notifier.applyPrayersUpdated(const [
+        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 9, userIds: ['me']),
+      ], viewerId: 'me');
+      expect(_byId(notifier, 'a').prayerCount, 9);
     });
 
     test('applyPrayersUpdated derives prayed_by_me from user_ids', () async {

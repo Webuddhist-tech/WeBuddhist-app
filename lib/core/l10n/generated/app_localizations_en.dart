@@ -2906,6 +2906,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_praying => 'Praying';
 
   @override
+  String event_prayer_my_count(int count) {
+    return '+$count';
+  }
+
+  @override
   String get event_prayer_new_request => 'New prayer request';
 
   @override
