@@ -120,6 +120,34 @@ void main() {
     });
   });
 
+  group('SecondaryReaderState.lacks', () {
+    final loaded = SecondaryReaderState(
+      loadedSegments: [_verse(2), _verse(4)],
+      contentBySegmentNumber: const {2: 'b', 4: 'd'},
+    );
+
+    test('a verse the loaded pages skip, or past where the translation '
+        'ends', () {
+      expect(loaded.lacks(3), isTrue);
+      expect(loaded.lacks(5), isTrue, reason: 'no pages left that way');
+      expect(loaded.lacks(1), isTrue);
+      expect(loaded.lacks(2), isFalse);
+    });
+
+    test('not while its page is on its way, after a failure, or before '
+        'anything loaded', () {
+      expect(loaded.copyWith(hasNextPage: true).lacks(5), isFalse);
+      expect(loaded.copyWith(isLoading: true).lacks(3), isFalse);
+      expect(loaded.copyWith(pagingFailed: true).lacks(3), isFalse);
+      expect(loaded.copyWith(errorMessage: 'offline').lacks(3), isFalse);
+      expect(
+        const SecondaryReaderState().lacks(3),
+        isFalse,
+        reason: 'the original shows rather than an empty page',
+      );
+    });
+  });
+
   group('secondaryInitialAnchor', () {
     final content = _content([_verse(1), _verse(2)]);
 
@@ -494,6 +522,61 @@ void main() {
       expect(state.contentBySegmentNumber, {1: 'Homage'});
       expect(state.isPending(1), isFalse);
       expect(fetches, hasLength(1), reason: 'the same request, once');
+    });
+
+    test('translated verses that share an original show together', () async {
+      Segment half(String id, String text) => Segment(
+        segmentId: id,
+        segmentNumber: 1,
+        translation: Translation(textId: 'E1', language: 'en', content: text),
+      );
+      ReaderResponse page(List<Segment> segments, {int position = 1}) =>
+          ReaderResponse(
+            textDetail: _translationPage().textDetail,
+            content: Toc(
+              id: 'E1',
+              textId: 'T1',
+              sections: [
+                Section(
+                  id: 'E1',
+                  sectionNumber: 1,
+                  segments: segments,
+                  sections: const [],
+                ),
+              ],
+            ),
+            size: 20,
+            paginationDirection: 'next',
+            currentSegmentPosition: position,
+            lastSegmentPosition: position + segments.length - 1,
+            totalSegments: 3,
+          );
+      final paged = ProviderContainer(
+        overrides: [
+          textDetailsFutureProvider.overrideWith(
+            (ref, params) async => Right<Failure, ReaderResponse>(
+              params.direction == 'previous'
+                  ? page([half('a', 'first')])
+                  : page([half('b', 'second'), half('c', 'third')], position: 2),
+            ),
+          ),
+        ],
+      );
+      addTearDown(paged.dispose);
+      final sub = paged.listen(secondaryReaderProvider(key), (_, __) {});
+      addTearDown(sub.close);
+      for (var i = 0; i < 10; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(paged.read(secondaryReaderProvider(key)).contentBySegmentNumber, {
+        1: 'second<br>third',
+      });
+
+      await paged.read(secondaryReaderProvider(key).notifier).loadPrevious();
+
+      expect(paged.read(secondaryReaderProvider(key)).contentBySegmentNumber, {
+        1: 'first<br>second<br>third',
+      });
     });
 
     test('otherwise the first page loads and every verse is pending', () async {

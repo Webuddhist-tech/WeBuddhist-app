@@ -237,6 +237,7 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       final mergedMap = _mergeSegmentContent(
         state.contentBySegmentNumber,
         dedupedNew,
+        before: true,
       );
 
       state = state.copyWith(
@@ -379,16 +380,25 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
       _mergeSegmentContent(const {}, segments);
 
   /// Returns a new map containing every entry of [existing] plus an entry
-  /// for each segment in [segments] whose content is non-empty. Prefers
-  /// `seg.translation.content` over `seg.content` when both are present.
+  /// for each segment in [segments] whose content is non-empty. Verses that
+  /// share a number (one original, several translated) are joined in reading
+  /// order; [before] puts the new ones first.
   Map<int, String> _mergeSegmentContent(
     Map<int, String> existing,
-    List<Segment> segments,
-  ) {
+    List<Segment> segments, {
+    bool before = false,
+  }) {
     final merged = Map<int, String>.from(existing);
-    for (final seg in segments) {
+    for (final seg in before ? segments.reversed : segments) {
       final content = _segmentContent(seg);
-      if (content != null) merged[seg.segmentNumber] = content;
+      if (content == null) continue;
+      final known = merged[seg.segmentNumber];
+      merged[seg.segmentNumber] =
+          known == null
+              ? content
+              : before
+              ? '$content<br>$known'
+              : '$known<br>$content';
     }
     return merged;
   }

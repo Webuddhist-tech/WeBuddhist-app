@@ -188,6 +188,42 @@ void main() {
       expect(response.currentSegmentPosition, 2);
     });
 
+    test("a companion is paired by the library's alignment", () async {
+      // Stored from the root E2 to the translation E1: b1-s1, b3-s2; b2 and
+      // s3 have no counterpart.
+      LibraryTestServer aligned() => LibraryTestServer({
+        ..._server().routes,
+        '/v2/editions/E2/alignments/E1':
+            (_) => jsonBody(
+              pageJson([alignmentJson('b1', 's1'), alignmentJson('b3', 's2')]),
+            ),
+      });
+
+      final root = await _datasource(aligned()).fetchTextDetails(
+        textId: 'E1',
+        versionId: 'E2',
+        direction: 'next',
+      );
+      final rootSegments = root.content.sections.single.segments;
+      expect(rootSegments.map((s) => s.segmentId), ['b1', 'b3']);
+      expect(rootSegments.map((s) => s.segmentNumber), [1, 2]);
+      expect(rootSegments.map((s) => s.translation?.content), ['ABC', 'GHI']);
+      expect(root.totalSegments, 2);
+
+      final translation = await _datasource(aligned()).fetchTextDetails(
+        textId: 'E2',
+        versionId: 'E1',
+        direction: 'next',
+      );
+      final translated = translation.content.sections.single.segments;
+      expect(translated.map((s) => s.segmentId), ['s1', 's2']);
+      expect(
+        translated.map((s) => s.segmentNumber),
+        [1, 3],
+        reason: 'verse 2 of the translation belongs under verse 3 of the root',
+      );
+    });
+
     test('a text id still resolves to its first edition', () async {
       final response = await _datasource(_server()).fetchTextDetails(
         textId: 'T1',
