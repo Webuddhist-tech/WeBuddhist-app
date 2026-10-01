@@ -2127,6 +2127,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get verse_share_error => '无法分享引文，请重试';
 
   @override
+  String verse_comments_title(int count) {
+    return 'Comments · $count';
+  }
+
+  @override
+  String get verse_like_failed => 'Unable to update like. Please try again';
+
+  @override
+  String get verse_comment_failed => 'Unable to post comment. Please try again';
+
+  @override
   String get share_app_message => '我一直在用这款应用培养每日佛法修行的习惯，觉得你也会喜欢。';
 
   @override

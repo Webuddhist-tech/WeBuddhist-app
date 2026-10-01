@@ -1094,6 +1094,16 @@
   "share_this_quote": "Share this quote",
   "shared_from": "Shared from",
   "verse_share_error": "Unable to share quote. Please try again",
+  "verse_comments_title": "Comments · {count}",
+  "@verse_comments_title": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "verse_like_failed": "Unable to update like. Please try again",
+  "verse_comment_failed": "Unable to post comment. Please try again",
   "share_app_message": "I've been using this app to build a daily Buddhist practice, and thought you'd love it.",
   "share_streak_message": "I've been building a daily practice habit and wanted to share it with you. It's easier to keep it up with a friend. Join me on WeBuddhist.",
   "share_chant_message": "I wanted to share this chant with you. You can practice it and find a whole library of other chants and texts on WeBuddhist.",

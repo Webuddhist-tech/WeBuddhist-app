@@ -2245,6 +2245,17 @@ class AppLocalizationsHi extends AppLocalizations {
       'उद्धरण शेयर नहीं हो सका। कृपया फिर से प्रयास करें';
 
   @override
+  String verse_comments_title(int count) {
+    return 'Comments · $count';
+  }
+
+  @override
+  String get verse_like_failed => 'Unable to update like. Please try again';
+
+  @override
+  String get verse_comment_failed => 'Unable to post comment. Please try again';
+
+  @override
   String get share_app_message =>
       'मैं इस ऐप का उपयोग दैनिक बौद्ध अभ्यास बनाने के लिए कर रहा हूँ, और मुझे लगा कि आपको यह पसंद आएगा।';
 
