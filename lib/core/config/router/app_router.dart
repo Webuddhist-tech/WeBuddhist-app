@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_pract
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_accumulator_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_detail_screen.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/chats_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/group_chat_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
@@ -363,9 +364,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   final openPrayerRequests =
                       state.uri.queryParameters[AppRoutes.eventPrayersQuery] ==
                       '1';
+                  final entry =
+                      state.extra is HomeLiveEventEntry
+                          ? state.extra as HomeLiveEventEntry
+                          : null;
                   return GroupEventDetailScreen(
                     eventId: eventId,
                     openPrayerRequests: openPrayerRequests,
+                    initialEntry: entry,
                   );
                 },
               ),

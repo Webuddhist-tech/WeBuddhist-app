@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participation_dialog.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
@@ -39,6 +40,8 @@ import 'package:flutter_pecha/features/mala/presentation/providers/group_accumul
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -58,10 +61,15 @@ class GroupEventDetailScreen extends ConsumerStatefulWidget {
   /// Set from a prayer-request notification tap.
   final bool openPrayerRequests;
 
+  /// Set by the home live pill. Opens the join-online screen or the live
+  /// text once this page is showing, so Back returns here.
+  final HomeLiveEventEntry? initialEntry;
+
   const GroupEventDetailScreen({
     super.key,
     required this.eventId,
     this.openPrayerRequests = false,
+    this.initialEntry,
   });
 
   @override
@@ -83,10 +91,19 @@ class _GroupEventDetailScreenState
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
   bool _didOpenPrayerRequests = false;
+  bool _didOpenInitialEntry = false;
 
   @override
   void initState() {
     super.initState();
+    final entry = widget.initialEntry;
+    if (entry != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _didOpenInitialEntry) return;
+        _didOpenInitialEntry = true;
+        unawaited(_openInitialEntry(entry));
+      });
+    }
     if (!widget.openPrayerRequests) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _didOpenPrayerRequests) return;
@@ -288,6 +305,26 @@ class _GroupEventDetailScreenState
         ],
       ),
     );
+  }
+
+  Future<void> _openInitialEntry(HomeLiveEventEntry entry) async {
+    switch (entry) {
+      case HomeLiveEventOnlineEntry(:final event):
+        await _enterPuja(event);
+      case HomeLiveEventInPersonEntry(
+        :final textId,
+        :final navigationContext,
+      ):
+        if (!mounted) return;
+        final current = navigationContext.currentItem;
+        final item =
+            current != null &&
+                    current.isSourceReference &&
+                    current.textId == textId
+                ? current
+                : PlanTextItem.sourceReference(textId: textId, title: '');
+        await PlanNavigator.push(context, item, navigationContext);
+    }
   }
 
   void _openPrayerRequests(String eventId) {
