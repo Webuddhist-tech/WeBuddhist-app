@@ -374,9 +374,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (positionChanged || followRequested) _maybeSwitchLiveText(position);
   }
 
-  /// The operator moved to another text of this sequence: go there. Texts
-  /// outside the sequence are left alone (the content reports out of sync),
-  /// so a stray id can never pull the user off their reading list.
+  /// The operator moved to another text of this sequence: go there, if that
+  /// text follows the recitation too. Texts outside the sequence are left
+  /// alone (the content reports out of sync), so a stray id can never pull
+  /// the user off their reading list.
   void _maybeSwitchLiveText(RecitationLivePosition position) {
     final navContext = widget.navigationContext;
     if (navContext == null || _isAdvancing) return;
@@ -401,7 +402,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (index < 0) return;
     final newContext = const NavigationService()
         .createNavigationContextForIndex(navContext, index);
-    if (newContext == null) return;
+    if (newContext == null || !newContext.isLiveRecitation) return;
 
     _isAdvancing = true;
     _audioController?.cancel();
