@@ -572,6 +572,29 @@ void main() {
       },
     );
 
+    test('an anchor past the last aligned verse lands on the nearest earlier '
+        'one', () async {
+      final repository = LibraryTestServer({
+        ...routes(),
+        '/v2/editions/e1/alignments/e2':
+            (_) => jsonBody(
+              pageJson([alignmentJson('p1', 't1'), alignmentJson('p2', 't2')]),
+            ),
+        '/v2/editions/e2/alignments/e1': (_) => jsonBody(pageJson([])),
+      }).repository();
+
+      final window = await repository.loadWindow(
+        editionId: 'e2',
+        primaryEditionId: 'e1',
+        anchorSegmentId: 'p4',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.id), ['t2']);
+      expect(window.currentPosition, 2);
+    });
+
     test('read from the translation side, the root is numbered like it', () async {
       final window = await LibraryTestServer(aligned()).repository().loadWindow(
         editionId: 'e1',

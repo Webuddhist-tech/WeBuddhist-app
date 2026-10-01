@@ -452,7 +452,8 @@ class LibraryRepository {
   }
 
   /// Index in [target] of [segmentId]'s counterpart: by the alignment, else
-  /// by verse number. [orNext] settles for the nearest later verse with one.
+  /// by verse number. [orNext] settles for the nearest later verse with one,
+  /// else the nearest earlier, so a late anchor stays near the verse.
   Future<int> _alignedIndex(
     String editionId,
     String segmentId,
@@ -466,15 +467,35 @@ class LibraryRepository {
     final aligned = await _alignedIds(editionId, targetEditionId);
     if (aligned.isEmpty) {
       final number = segmentNumbers(source)[sourceIndex];
-      return segmentNumbers(target).indexOf(number);
+      final numbers = segmentNumbers(target);
+      final exact = numbers.indexOf(number);
+      if (exact >= 0 || !orNext) return exact;
+      var next = -1;
+      var previous = -1;
+      for (var i = 0; i < numbers.length; i++) {
+        final n = numbers[i];
+        if (n > number && (next < 0 || n < numbers[next])) next = i;
+        if (n < number && (previous < 0 || n > numbers[previous])) previous = i;
+      }
+      return next >= 0 ? next : previous;
     }
     final indexOf = {for (var i = 0; i < target.length; i++) target[i].id: i};
-    final last = orNext ? source.length - 1 : sourceIndex;
-    for (var i = sourceIndex; i <= last; i++) {
+    int? at(int i) {
       for (final id in aligned[source[i].id] ?? const <String>[]) {
         final index = indexOf[id];
         if (index != null) return index;
       }
+      return null;
+    }
+    final last = orNext ? source.length - 1 : sourceIndex;
+    for (var i = sourceIndex; i <= last; i++) {
+      final index = at(i);
+      if (index != null) return index;
+    }
+    if (!orNext) return -1;
+    for (var i = sourceIndex - 1; i >= 0; i--) {
+      final index = at(i);
+      if (index != null) return index;
     }
     return -1;
   }
