@@ -844,6 +844,77 @@ void main() {
       expect(_byId(notifier, 'a').myPrayerCount, 1);
     });
 
+    test('a lost reply after the broadcast listed me keeps my count', () async {
+      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a', viewer: me);
+      notifier.pray('a', viewer: me);
+      await _settle();
+      notifier.applyPrayersUpdated(const [
+        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['me']),
+      ], viewerId: 'me');
+
+      repository.prayFailure = const NetworkFailure('dropped');
+      repository.prayGate!.complete();
+      await _settle();
+
+      expect(_byId(notifier, 'a').prayedByMe, isTrue);
+      expect(_byId(notifier, 'a').myPrayerCount, 2);
+      expect(_byId(notifier, 'a').prayerCount, 4);
+      expect(_byId(notifier, 'a').recentPrayers, [me]);
+    });
+
+    test('a lost reply with no broadcast still drops the taps', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      await _settle();
+      // Someone else prayed; the broadcast does not list the viewer.
+      notifier.applyPrayersUpdated(const [
+        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['u9']),
+      ], viewerId: 'me');
+
+      repository.prayFailure = const NetworkFailure('dropped');
+      repository.prayGate!.complete();
+      await _settle();
+
+      expect(_byId(notifier, 'a').prayedByMe, isFalse);
+      expect(_byId(notifier, 'a').myPrayerCount, 0);
+      expect(_byId(notifier, 'a').prayerCount, 4);
+    });
+
+    test('closing the sheet sends queued taps without waiting a window', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer(
+        pacing: const PrayerPacing(
+          batchWindow: Duration(seconds: 5),
+          rateWindow: Duration(seconds: 5),
+          retryAfter: Duration(seconds: 5),
+        ),
+      );
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      container.dispose();
+      await _settle();
+
+      // Nothing had gone out this window, so the drain did not sit it out.
+      expect(repository.prayedCounts, [1]);
+    });
+
     test('closing the sheet still sends the taps left in the queue', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
       container = buildContainer();
