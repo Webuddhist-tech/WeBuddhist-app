@@ -12,7 +12,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_inte
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_prayer_text.dart';
 
 /// One prayer request as a card tinted by its intention: who asked, what
-/// for, who is praying, and a pray toggle for everyone but the requester.
+/// for, how many are praying, and a pray button for everyone but the requester.
 class PrayerRequestTile extends StatelessWidget {
   const PrayerRequestTile({
     super.key,
@@ -20,7 +20,7 @@ class PrayerRequestTile extends StatelessWidget {
     required this.displayName,
     this.avatarUrl,
     this.isOwn = false,
-    this.onTogglePrayer,
+    this.onPray,
     this.onShowSupporters,
     this.onEdit,
     this.onDelete,
@@ -30,9 +30,13 @@ class PrayerRequestTile extends StatelessWidget {
   final String displayName;
   final String? avatarUrl;
 
-  /// The viewer's own request: named "You", no pray button.
+  /// The viewer's own request: named "You", no pray button, roster opens.
   final bool isOwn;
-  final VoidCallback? onTogglePrayer;
+
+  /// Every tap adds a prayer; there is no taking one back.
+  final VoidCallback? onPray;
+
+  /// Only the requester may see who is praying; ignored on others' cards.
   final VoidCallback? onShowSupporters;
 
   /// Either one shows the overflow menu with the matching entry.
@@ -142,7 +146,7 @@ class PrayerRequestTile extends StatelessWidget {
         accent: accent,
         cardColor: cardColor,
         isDark: isDark,
-        onTap: onShowSupporters,
+        onTap: isOwn ? onShowSupporters : null,
       );
     } else if (isOwn) {
       supporters = Text(
@@ -163,9 +167,10 @@ class PrayerRequestTile extends StatelessWidget {
           const SizedBox(width: 8),
           _PrayButton(
             prayedByMe: request.prayedByMe,
+            myPrayerCount: request.myPrayerCount,
             accent: accent,
             isDark: isDark,
-            onTap: onTogglePrayer,
+            onTap: onPray,
           ),
         ],
       ],
@@ -443,12 +448,14 @@ class _SupportersSummary extends StatelessWidget {
 class _PrayButton extends StatefulWidget {
   const _PrayButton({
     required this.prayedByMe,
+    required this.myPrayerCount,
     required this.accent,
     required this.isDark,
     required this.onTap,
   });
 
   final bool prayedByMe;
+  final int myPrayerCount;
   final Color accent;
   final bool isDark;
   final VoidCallback? onTap;
@@ -464,34 +471,30 @@ class _PrayButtonState extends State<_PrayButton> {
   Color get accent => widget.accent;
   bool get isDark => widget.isDark;
 
-  /// Praying (not un-praying) floats the mantra up from the tap.
+  /// Every tap floats the mantra up from where it landed.
   void _handleTap() {
-    if (!prayedByMe) {
-      final box = context.findRenderObject() as RenderBox?;
-      final origin =
-          _lastTap ??
-          (box == null
-              ? Offset.zero
-              : box.localToGlobal(box.size.center(Offset.zero)));
-      HapticFeedback.lightImpact();
-      showFloatingPrayerText(
-        context,
-        origin: origin,
-        text: prayerMantraForLocale(Localizations.localeOf(context)),
-        accent: accent,
-        isDark: isDark,
-      );
-    }
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        _lastTap ??
+        (box == null
+            ? Offset.zero
+            : box.localToGlobal(box.size.center(Offset.zero)));
+    HapticFeedback.lightImpact();
+    showFloatingPrayerText(
+      context,
+      origin: origin,
+      text: prayerMantraForLocale(Localizations.localeOf(context)),
+      accent: accent,
+      isDark: isDark,
+    );
     widget.onTap?.call();
   }
 
   @override
   Widget build(BuildContext context) {
     final onTap = widget.onTap;
-    final label =
-        prayedByMe
-            ? context.l10n.event_prayer_praying
-            : context.l10n.event_prayer_pray;
+    final label = context.l10n.event_prayer_pray;
+    final mine = widget.myPrayerCount;
     final idleBorder = isDark ? AppColors.cardBorderDark : AppColors.grey300;
     final background =
         prayedByMe
@@ -536,6 +539,18 @@ class _PrayButtonState extends State<_PrayButton> {
                   color: foreground,
                 ),
               ),
+              if (prayedByMe && mine > 0) ...[
+                const SizedBox(width: 5),
+                Text(
+                  context.l10n.event_prayer_my_count(mine),
+                  strutStyle: context.tibetanStrutStyle(12, compact: true),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: foreground.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

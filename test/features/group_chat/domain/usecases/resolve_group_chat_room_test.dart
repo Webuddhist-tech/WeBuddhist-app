@@ -138,12 +138,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
     String roomId, {
     required List<String> messageIds,
+    int count = 1,
   }) async => const Right([]);
-
-  @override
-  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(
-    String messageId,
-  ) async => const Left(NotFoundFailure('not used'));
 
   @override
   Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async =>

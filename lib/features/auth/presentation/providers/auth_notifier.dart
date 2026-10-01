@@ -26,6 +26,7 @@ import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/config/router/pending_route_provider.dart';
 import 'package:flutter_pecha/core/network/interceptors/cache_interceptor.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/providers/onboarding_datasource_providers.dart';
@@ -573,6 +574,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       _logger.warning('Mala flush on logout failed (ignored): $e');
     }
+    // Prayers tapped just before their sheet closed may still be going out.
+    await ref.read(pendingPrayerSendsProvider).settle();
     await pushUnregister;
 
     final logoutResult = await _localLogoutUseCase(const NoParams());

@@ -25,6 +25,7 @@ void main() {
         },
         'prayer_count': 12,
         'prayed_by_me': true,
+        'my_prayer_count': 5,
         'recent_prayers': [
           {'user_id': 'u2', 'name': 'Pema', 'avatar_url': 'https://a/p.png'},
         ],
@@ -35,6 +36,7 @@ void main() {
       expect(message.intention?.color, '#4A78C2');
       expect(message.prayerCount, 12);
       expect(message.prayedByMe, isTrue);
+      expect(message.myPrayerCount, 5);
       expect(message.recentPrayers, [
         const ChatPrayerUserDTO(
           userId: 'u2',
@@ -61,20 +63,32 @@ void main() {
       expect(json['message_type'], 'TEXT');
       expect(json.containsKey('prayer_count'), isFalse);
       expect(json.containsKey('prayed_by_me'), isFalse);
+      expect(json.containsKey('my_prayer_count'), isFalse);
       expect(json.containsKey('recent_prayers'), isFalse);
       expect(json.containsKey('intention'), isFalse);
     });
 
-    test('a who-prayed row keeps email and time', () {
+    test('a who-prayed row keeps email, time and count', () {
       final user = ChatPrayerUserDTO.fromJson({
         'user_id': 'u2',
         'email': 'pema@example.com',
         'name': 'Pema',
         'avatar_url': 'https://a/p.png',
         'created_at': '2026-09-11T10:04:00+00:00',
+        'prayer_count': 4,
+        'last_prayed_at': '2026-09-29T10:04:00+00:00',
       });
       expect(user.email, 'pema@example.com');
       expect(user.createdAt, '2026-09-11T10:04:00+00:00');
+      expect(user.prayerCount, 4);
+      expect(user.lastPrayedAt, '2026-09-29T10:04:00+00:00');
+      expect(ChatPrayerUserDTO.fromJson(user.toJson()), user);
+    });
+
+    test('an avatar-stack row without a count reads as zero', () {
+      final user = ChatPrayerUserDTO.fromJson({'user_id': 'u2', 'name': 'Pema'});
+      expect(user.prayerCount, 0);
+      expect(user.toJson().containsKey('prayer_count'), isFalse);
       expect(ChatPrayerUserDTO.fromJson(user.toJson()), user);
     });
 
@@ -91,10 +105,15 @@ void main() {
         'prayed_by_me': false,
       });
 
-      final updated = message.copyWith(prayerCount: 2, prayedByMe: true);
+      final updated = message.copyWith(
+        prayerCount: 2,
+        prayedByMe: true,
+        myPrayerCount: 3,
+      );
       expect(updated.isPrayerRequest, isTrue);
       expect(updated.prayerCount, 2);
       expect(updated.prayedByMe, isTrue);
+      expect(updated.myPrayerCount, 3);
       expect(updated.body, 'hello');
     });
 
@@ -103,9 +122,22 @@ void main() {
         'message_id': 'm1',
         'prayer_count': 4,
         'prayed_by_me': true,
+        'my_prayer_count': 2,
         'created': false,
       });
       expect(summary.created, isFalse);
+      expect(summary.myPrayerCount, 2);
+      expect(ChatPrayerSummaryDTO.fromJson(summary.toJson()), summary);
+    });
+
+    test('ChatPrayerSummaryDTO without my_prayer_count keeps it null', () {
+      final summary = ChatPrayerSummaryDTO.fromJson({
+        'message_id': 'm1',
+        'prayer_count': 4,
+        'prayed_by_me': true,
+      });
+      expect(summary.myPrayerCount, isNull);
+      expect(summary.toJson().containsKey('my_prayer_count'), isFalse);
       expect(ChatPrayerSummaryDTO.fromJson(summary.toJson()), summary);
     });
 

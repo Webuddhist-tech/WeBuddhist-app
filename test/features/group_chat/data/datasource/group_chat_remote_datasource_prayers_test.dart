@@ -201,7 +201,30 @@ void main() {
       expect(page.total, 1);
     });
 
-    test('prayFor posts the selected ids and reads the summaries', () async {
+    test('listPrayers reads each person\'s count', () async {
+      final ds = _datasource((options) async {
+        return _status(200, {
+          'message_id': 'a1',
+          'total': 1,
+          'skip': 0,
+          'limit': 20,
+          'prayers': [
+            {
+              'user_id': 'u2',
+              'name': 'Pema',
+              'prayer_count': 9,
+              'last_prayed_at': '2026-09-29T10:04:00+00:00',
+            },
+          ],
+        });
+      });
+
+      final page = await ds.listPrayers('a1');
+      expect(page.prayers.single.prayerCount, 9);
+      expect(page.prayers.single.lastPrayedAt, '2026-09-29T10:04:00+00:00');
+    });
+
+    test('prayFor posts the selected ids with a count and reads the summaries', () async {
       Object? sent;
       final ds = _datasource((options) async {
         sent = options.data;
@@ -213,6 +236,7 @@ void main() {
               'message_id': 'a1',
               'prayer_count': 12,
               'prayed_by_me': true,
+              'my_prayer_count': 3,
               'created': true,
             },
             {
@@ -225,30 +249,35 @@ void main() {
         });
       });
 
-      final prayers = await ds.prayFor('r1', messageIds: ['a1', 'b2', 'c3']);
+      final prayers = await ds.prayFor(
+        'r1',
+        messageIds: ['a1', 'b2', 'c3'],
+        count: 3,
+      );
 
       expect(sent, {
         'message_ids': ['a1', 'b2', 'c3'],
+        'count': 3,
       });
       expect(prayers.map((p) => p.messageId), ['a1', 'b2']);
       expect(prayers.first.created, isTrue);
+      expect(prayers.first.myPrayerCount, 3);
       expect(prayers.last.created, isFalse);
+      expect(prayers.last.myPrayerCount, isNull);
     });
 
-    test('removePrayer deletes the caller\'s own prayer', () async {
+    test('prayFor sends one prayer when no count is given', () async {
+      Object? sent;
       final ds = _datasource((options) async {
-        expect(options.method, 'DELETE');
-        expect(options.path, '/chat/messages/a1/prayers/me');
-        return _status(200, {
-          'message_id': 'a1',
-          'prayer_count': 11,
-          'prayed_by_me': false,
-        });
+        sent = options.data;
+        return _status(200, {'prayers': []});
       });
 
-      final summary = await ds.removePrayer('a1');
-      expect(summary.prayerCount, 11);
-      expect(summary.prayedByMe, isFalse);
+      await ds.prayFor('r1', messageIds: ['a1']);
+      expect(sent, {
+        'message_ids': ['a1'],
+        'count': 1,
+      });
     });
   });
 }
