@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intent
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -72,6 +73,103 @@ class _PendingPrayers {
 
   int get outstanding => queued + inFlight;
 }
+
+/// Taps on one request still to send after the sheet closed.
+class _Leftover {
+  _Leftover(this.left, this.notBefore);
+
+  int left;
+  int retries = 0;
+  DateTime? notBefore;
+}
+
+/// Sends the leftovers paced like the live flush: every ready request goes
+/// out in the same window, and a 429 holds back only its own request.
+class _Drain {
+  _Drain({
+    required this.repository,
+    required this.roomId,
+    required this.pacing,
+    required this.leftovers,
+    required this.windowStart,
+    required this.windowSent,
+  });
+
+  final GroupChatRepository repository;
+  final String roomId;
+  final PrayerPacing pacing;
+  final Map<String, _Leftover> leftovers;
+  DateTime? windowStart;
+  int windowSent;
+
+  Future<void> run() async {
+    while (leftovers.isNotEmpty) {
+      final now = DateTime.now();
+      var start = windowStart;
+      if (start == null || now.difference(start) >= pacing.rateWindow) {
+        start = windowStart = now;
+        windowSent = 0;
+      }
+      final windowEnd = start.add(pacing.rateWindow);
+
+      DateTime? wakeAt;
+      final calls = <Future<void>>[];
+      for (final entry in leftovers.entries.toList()) {
+        final leftover = entry.value;
+        final notBefore = leftover.notBefore;
+        if (notBefore != null && now.isBefore(notBefore)) {
+          wakeAt = _earliest(wakeAt, notBefore);
+          continue;
+        }
+        final budget = math.min(
+          PrayerPacing.maxPrayersPerCall,
+          PrayerPacing.maxPrayersPerWindow - windowSent,
+        );
+        if (budget <= 0) {
+          wakeAt = _earliest(wakeAt, windowEnd);
+          break;
+        }
+        final count = math.min(leftover.left, budget);
+        windowSent += count;
+        calls.add(_send(entry.key, leftover, count));
+      }
+      await Future.wait(calls);
+      if (leftovers.isEmpty) return;
+
+      // Whatever is left either waits on its deadline or on the window.
+      if (calls.isNotEmpty) wakeAt = _earliest(wakeAt, windowEnd);
+      final sleep = wakeAt!.difference(DateTime.now());
+      if (sleep > Duration.zero) await Future<void>.delayed(sleep);
+    }
+  }
+
+  Future<void> _send(String messageId, _Leftover leftover, int count) async {
+    final result = await repository.prayFor(
+      roomId,
+      messageIds: [messageId],
+      count: count,
+    );
+    result.fold(
+      (failure) {
+        if (failure is RateLimitFailure &&
+            leftover.retries < PrayerPacing.maxRetries) {
+          leftover.retries += 1;
+          leftover.notBefore = DateTime.now().add(pacing.retryAfter);
+          return;
+        }
+        leftovers.remove(messageId);
+      },
+      (_) {
+        leftover.retries = 0;
+        leftover.left -= count;
+        if (leftover.left == 0) leftovers.remove(messageId);
+      },
+    );
+  }
+}
+
+DateTime _earliest(DateTime? a, DateTime b) =>
+    a == null || b.isBefore(a) ? b : a;
 
 class PrayerRequestsState extends Equatable {
   final PrayerRoomStatus roomStatus;
@@ -142,6 +240,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   PrayerRequestsNotifier({required this.ref, required this.eventId})
     : _repository = ref.read(groupChatRepositoryProvider),
       _pacing = ref.read(prayerPacingProvider),
+      _sends = ref.read(pendingPrayerSendsProvider),
       super(const PrayerRequestsState()) {
     load();
   }
@@ -153,6 +252,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   // Held directly so queued taps can still go out after dispose.
   final GroupChatRepository _repository;
   final PrayerPacing _pacing;
+  final PendingPrayerSends _sends;
 
   /// Requests with taps queued or a pray call in flight.
   final Map<String, _PendingPrayers> _pending = {};
@@ -174,69 +274,26 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   /// The sheet closed with taps still waiting: they were shown as prayed,
-  /// so send them anyway, paced as before.
+  /// so send them anyway, paced as before. Sign-out waits on the send.
   void _drainOnDispose() {
     final roomId = state.roomId;
     final leftovers = {
       for (final entry in _pending.entries)
         if (entry.value.queued > 0)
-          entry.key: (
-            count: entry.value.queued,
-            notBefore: entry.value.notBefore,
-          ),
+          entry.key: _Leftover(entry.value.queued, entry.value.notBefore),
     };
     _pending.clear();
     if (roomId == null || leftovers.isEmpty) return;
-    // Only the rest of a second that already carried prayers is waited out,
-    // so the sends start before a sign-out straight after can cut them off.
-    final windowStart = _windowStart;
-    var wait = Duration.zero;
-    if (windowStart != null && _windowSent > 0) {
-      final remaining =
-          _pacing.rateWindow - DateTime.now().difference(windowStart);
-      if (remaining > Duration.zero) wait = remaining;
-    }
-    unawaited(_drain(_repository, roomId, leftovers, _pacing, wait));
-  }
-
-  static Future<void> _drain(
-    GroupChatRepository repository,
-    String roomId,
-    Map<String, ({int count, DateTime? notBefore})> leftovers,
-    PrayerPacing pacing,
-    Duration wait,
-  ) async {
-    if (wait > Duration.zero) await Future<void>.delayed(wait);
-    for (final entry in leftovers.entries) {
-      // A 429 before the close set a deadline; it still holds here.
-      final hold = entry.value.notBefore?.difference(DateTime.now());
-      if (hold != null && hold > Duration.zero) {
-        await Future<void>.delayed(hold);
-      }
-      var left = entry.value.count;
-      var retries = 0;
-      while (left > 0) {
-        final count = math.min(left, PrayerPacing.maxPrayersPerCall);
-        final result = await repository.prayFor(
-          roomId,
-          messageIds: [entry.key],
-          count: count,
-        );
-        final retry = result.fold(
-          (failure) =>
-              failure is RateLimitFailure &&
-              retries++ < PrayerPacing.maxRetries,
-          (_) => false,
-        );
-        if (!retry) {
-          if (result.isLeft()) break;
-          left -= count;
-        }
-        await Future<void>.delayed(
-          retry ? pacing.retryAfter : pacing.rateWindow,
-        );
-      }
-    }
+    _sends.add(
+      _Drain(
+        repository: _repository,
+        roomId: roomId,
+        pacing: _pacing,
+        leftovers: leftovers,
+        windowStart: _windowStart,
+        windowSent: _windowSent,
+      ).run(),
+    );
   }
 
   /// Resolves the room, then fetches its first page of prayer requests.
@@ -616,9 +673,6 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     }
     if (wakeAt != null) _scheduleFlush(wakeAt.difference(DateTime.now()));
   }
-
-  static DateTime _earliest(DateTime? a, DateTime b) =>
-      a == null || b.isBefore(a) ? b : a;
 
   Future<void> _send(
     String roomId,

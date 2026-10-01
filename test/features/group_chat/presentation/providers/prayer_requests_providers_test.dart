@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -958,6 +959,69 @@ void main() {
       await _settle();
 
       expect(repository.prayedCounts, [2]);
+    });
+
+    test('closing the sheet does not hold ready taps behind a retry', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a'), _prayer('b')])
+            ..prayFailureOnce = const RateLimitFailure('slow down');
+      container = buildContainer(
+        pacing: const PrayerPacing(
+          batchWindow: Duration.zero,
+          rateWindow: Duration.zero,
+          retryAfter: Duration(milliseconds: 200),
+        ),
+      );
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+      ]);
+
+      // b is still queued when the sheet closes; a waits on its deadline.
+      notifier.pray('b');
+      container.dispose();
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+        ['b'],
+      ]);
+
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+        ['b'],
+        ['a'],
+      ]);
+    });
+
+    test('sign-out can wait for the taps a closed sheet is still sending', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+      final sends = container.read(pendingPrayerSendsProvider);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      container.dispose();
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+
+      var settled = false;
+      unawaited(sends.settle().then((_) => settled = true));
+      await _settle();
+      expect(settled, isFalse);
+
+      repository.prayGate!.complete();
+      await _settle();
+      expect(settled, isTrue);
     });
 
     test('a rate-limited retry keeps its own deadline', () async {
