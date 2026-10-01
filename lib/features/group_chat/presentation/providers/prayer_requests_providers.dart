@@ -70,10 +70,6 @@ class _PendingPrayers {
   /// Set by a 429: nothing goes out for this request before then.
   DateTime? notBefore;
 
-  /// A broadcast listed the viewer while a call was in flight, so that call
-  /// landed even if its reply never comes back.
-  bool joinedDuringCall = false;
-
   int get outstanding => queued + inFlight;
 }
 
@@ -183,7 +179,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final roomId = state.roomId;
     final leftovers = {
       for (final entry in _pending.entries)
-        if (entry.value.queued > 0) entry.key: entry.value.queued,
+        if (entry.value.queued > 0)
+          entry.key: (
+            count: entry.value.queued,
+            notBefore: entry.value.notBefore,
+          ),
     };
     _pending.clear();
     if (roomId == null || leftovers.isEmpty) return;
@@ -202,13 +202,18 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   static Future<void> _drain(
     GroupChatRepository repository,
     String roomId,
-    Map<String, int> leftovers,
+    Map<String, ({int count, DateTime? notBefore})> leftovers,
     PrayerPacing pacing,
     Duration wait,
   ) async {
     if (wait > Duration.zero) await Future<void>.delayed(wait);
     for (final entry in leftovers.entries) {
-      var left = entry.value;
+      // A 429 before the close set a deadline; it still holds here.
+      final hold = entry.value.notBefore?.difference(DateTime.now());
+      if (hold != null && hold > Duration.zero) {
+        await Future<void>.delayed(hold);
+      }
+      var left = entry.value.count;
       var retries = 0;
       while (left > 0) {
         final count = math.min(left, PrayerPacing.maxPrayersPerCall);
@@ -523,9 +528,6 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final joined =
         confirmed.prayedByMe ||
         (viewerId.isNotEmpty && update.userIds.contains(viewerId));
-    if (joined && !confirmed.prayedByMe && pending.inFlight > 0) {
-      pending.joinedDuringCall = true;
-    }
     pending.confirmed = _PrayerSnapshot(
       prayedByMe: joined,
       prayerCount: math.max(update.prayerCount, confirmed.prayerCount),
@@ -631,8 +633,6 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     );
     if (!mounted) return;
     pending.inFlight = 0;
-    final joinedDuringCall = pending.joinedDuringCall;
-    pending.joinedDuringCall = false;
 
     var retry = false;
     result.fold(
@@ -646,18 +646,17 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           return;
         }
         pending.retries = 0;
-        if (joinedDuringCall) {
-          // The reply was lost, not the prayers: the broadcast proved they
-          // landed, so keep the count in step with the filled button.
-          final confirmed = pending.confirmed;
+        final confirmed = pending.confirmed;
+        if (confirmed.prayedByMe && confirmed.myPrayerCount == 0) {
+          // A broadcast listed the viewer, so at least one prayer is on the
+          // server, whichever device sent it. The failed taps stay uncounted.
           pending.confirmed = _PrayerSnapshot(
             prayedByMe: true,
             prayerCount: confirmed.prayerCount,
-            myPrayerCount: confirmed.myPrayerCount + count,
+            myPrayerCount: 1,
             recentPrayers: confirmed.recentPrayers,
           );
         }
-        // Otherwise the taps are dropped and the row falls back to the server.
       },
       (summaries) {
         pending.retries = 0;

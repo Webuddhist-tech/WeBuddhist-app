@@ -844,7 +844,7 @@ void main() {
       expect(_byId(notifier, 'a').myPrayerCount, 1);
     });
 
-    test('a lost reply after the broadcast listed me keeps my count', () async {
+    test('a failed call after the broadcast listed me shows one, not the batch', () async {
       const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
       repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
       container = buildContainer();
@@ -856,6 +856,7 @@ void main() {
       notifier.pray('a', viewer: me);
       notifier.pray('a', viewer: me);
       await _settle();
+      // Could be this call landing, or the same account on another device.
       notifier.applyPrayersUpdated(const [
         ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['me']),
       ], viewerId: 'me');
@@ -865,9 +866,37 @@ void main() {
       await _settle();
 
       expect(_byId(notifier, 'a').prayedByMe, isTrue);
-      expect(_byId(notifier, 'a').myPrayerCount, 2);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
       expect(_byId(notifier, 'a').prayerCount, 4);
       expect(_byId(notifier, 'a').recentPrayers, [me]);
+    });
+
+    test('closing the sheet keeps a rate-limited retry on its deadline', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a')])
+            ..prayFailureOnce = const RateLimitFailure('slow down');
+      container = buildContainer(
+        pacing: const PrayerPacing(
+          batchWindow: Duration.zero,
+          rateWindow: Duration.zero,
+          retryAfter: Duration(milliseconds: 80),
+        ),
+      );
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+
+      container.dispose();
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await _settle();
+      expect(repository.prayedCounts, [1, 1]);
     });
 
     test('a lost reply with no broadcast still drops the taps', () async {
