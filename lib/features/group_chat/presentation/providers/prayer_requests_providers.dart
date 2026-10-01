@@ -67,6 +67,9 @@ class _PendingPrayers {
   int inFlight = 0;
   int retries = 0;
 
+  /// Set by a 429: nothing goes out for this request before then.
+  DateTime? notBefore;
+
   int get outstanding => queued + inFlight;
 }
 
@@ -137,7 +140,9 @@ class PrayerRequestsState extends Equatable {
 /// The prayer requests of one event room.
 class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   PrayerRequestsNotifier({required this.ref, required this.eventId})
-    : super(const PrayerRequestsState()) {
+    : _repository = ref.read(groupChatRepositoryProvider),
+      _pacing = ref.read(prayerPacingProvider),
+      super(const PrayerRequestsState()) {
     load();
   }
 
@@ -145,9 +150,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   final String eventId;
   static const int _limit = 30;
 
+  // Held directly so queued taps can still go out after dispose.
+  final GroupChatRepository _repository;
+  final PrayerPacing _pacing;
+
   /// Requests with taps queued or a pray call in flight.
   final Map<String, _PendingPrayers> _pending = {};
   Timer? _flushTimer;
+  DateTime? _flushAt;
   DateTime? _windowStart;
   int _windowSent = 0;
   ChatPrayerUserDTO? _viewer;
@@ -156,13 +166,59 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// started one row late on the server and has to be read again.
   bool _pageShifted = false;
 
-  GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
-  PrayerPacing get _pacing => ref.read(prayerPacingProvider);
-
   @override
   void dispose() {
     _flushTimer?.cancel();
+    _drainOnDispose();
     super.dispose();
+  }
+
+  /// The sheet closed with taps still waiting: they were shown as prayed,
+  /// so send them anyway, paced as before.
+  void _drainOnDispose() {
+    final roomId = state.roomId;
+    final leftovers = {
+      for (final entry in _pending.entries)
+        if (entry.value.queued > 0) entry.key: entry.value.queued,
+    };
+    _pending.clear();
+    if (roomId == null || leftovers.isEmpty) return;
+    unawaited(_drain(_repository, roomId, leftovers, _pacing));
+  }
+
+  static Future<void> _drain(
+    GroupChatRepository repository,
+    String roomId,
+    Map<String, int> leftovers,
+    PrayerPacing pacing,
+  ) async {
+    // A call may still be in flight; let its second pass first.
+    await Future<void>.delayed(pacing.rateWindow);
+    for (final entry in leftovers.entries) {
+      var left = entry.value;
+      var retries = 0;
+      while (left > 0) {
+        final count = math.min(left, PrayerPacing.maxPrayersPerCall);
+        final result = await repository.prayFor(
+          roomId,
+          messageIds: [entry.key],
+          count: count,
+        );
+        final retry = result.fold(
+          (failure) =>
+              failure is RateLimitFailure &&
+              retries++ < PrayerPacing.maxRetries,
+          (_) => false,
+        );
+        if (!retry) {
+          if (result.isLeft()) break;
+          left -= count;
+        }
+        await Future<void>.delayed(
+          retry ? pacing.retryAfter : pacing.rateWindow,
+        );
+      }
+    }
   }
 
   /// Resolves the room, then fetches its first page of prayer requests.
@@ -424,8 +480,12 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     required String viewerId,
   }) {
     for (final update in updates) {
-      // Outstanding taps already know the answer; their response wins.
-      if (_pending.containsKey(update.messageId)) continue;
+      final pending = _pending[update.messageId];
+      if (pending != null) {
+        _mergeLive(update, pending, viewerId);
+        _render(update.messageId, pending);
+        continue;
+      }
       _update(
         update.messageId,
         (request) => request.copyWith(
@@ -437,6 +497,28 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         ),
       );
     }
+  }
+
+  /// Folds a broadcast into what the server confirmed so far. Nobody can
+  /// un-pray, so the people count only ever grows and the larger one wins.
+  void _mergeLive(
+    ChatLivePrayerUpdate update,
+    _PendingPrayers pending,
+    String viewerId,
+  ) {
+    final confirmed = pending.confirmed;
+    final joined =
+        confirmed.prayedByMe ||
+        (viewerId.isNotEmpty && update.userIds.contains(viewerId));
+    pending.confirmed = _PrayerSnapshot(
+      prayedByMe: joined,
+      prayerCount: math.max(update.prayerCount, confirmed.prayerCount),
+      myPrayerCount: confirmed.myPrayerCount,
+      recentPrayers:
+          joined && !confirmed.prayedByMe
+              ? _stackWithViewer(confirmed.recentPrayers, _viewer)
+              : confirmed.recentPrayers,
+    );
   }
 
   void markClosed() {
@@ -461,13 +543,23 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     _scheduleFlush(_pacing.batchWindow);
   }
 
+  /// An earlier flush already on the clock is kept; a later one is pulled in.
   void _scheduleFlush(Duration delay) {
-    if (_flushTimer?.isActive ?? false) return;
+    final at = DateTime.now().add(delay);
+    final current = _flushAt;
+    if ((_flushTimer?.isActive ?? false) &&
+        current != null &&
+        !at.isBefore(current)) {
+      return;
+    }
+    _flushTimer?.cancel();
+    _flushAt = at;
     _flushTimer = Timer(delay, _flush);
   }
 
   void _flush() {
     _flushTimer = null;
+    _flushAt = null;
     if (!mounted) return;
     final roomId = state.roomId;
     if (roomId == null) return;
@@ -480,16 +572,22 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       _windowSent = 0;
     }
 
-    var starved = false;
+    DateTime? wakeAt;
     for (final messageId in _pending.keys.toList()) {
       final pending = _pending[messageId]!;
       if (pending.queued == 0 || pending.inFlight > 0) continue;
+      final notBefore = pending.notBefore;
+      if (notBefore != null && now.isBefore(notBefore)) {
+        wakeAt = _earliest(wakeAt, notBefore);
+        continue;
+      }
+      pending.notBefore = null;
       final budget = math.min(
         PrayerPacing.maxPrayersPerCall,
         PrayerPacing.maxPrayersPerWindow - _windowSent,
       );
       if (budget <= 0) {
-        starved = true;
+        wakeAt = _earliest(wakeAt, _windowStart!.add(_pacing.rateWindow));
         break;
       }
       final count = math.min(pending.queued, budget);
@@ -498,11 +596,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       _windowSent += count;
       unawaited(_send(roomId, messageId, pending, count));
     }
-    if (starved) {
-      final elapsed = DateTime.now().difference(_windowStart!);
-      _scheduleFlush(_pacing.rateWindow - elapsed);
-    }
+    if (wakeAt != null) _scheduleFlush(wakeAt.difference(DateTime.now()));
   }
+
+  static DateTime _earliest(DateTime? a, DateTime b) =>
+      a == null || b.isBefore(a) ? b : a;
 
   Future<void> _send(
     String roomId,
@@ -525,6 +623,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
             pending.retries < PrayerPacing.maxRetries) {
           pending.retries += 1;
           pending.queued += count;
+          pending.notBefore = DateTime.now().add(_pacing.retryAfter);
           retry = true;
           return;
         }
@@ -542,7 +641,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         }
         pending.confirmed = _PrayerSnapshot(
           prayedByMe: summary.prayedByMe,
-          prayerCount: summary.prayerCount,
+          // A broadcast may already have passed this reply; keep the newer.
+          prayerCount: math.max(
+            summary.prayerCount,
+            pending.confirmed.prayerCount,
+          ),
           myPrayerCount:
               summary.myPrayerCount ?? pending.confirmed.myPrayerCount + count,
           recentPrayers:

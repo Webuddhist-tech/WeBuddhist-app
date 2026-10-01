@@ -806,7 +806,8 @@ void main() {
       expect(_byId(notifier, 'a').myPrayerCount, 1);
     });
 
-    test('a socket update waits while taps are outstanding', () async {
+    test('a socket update while taps are outstanding is merged, not lost', () async {
+      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
       repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
       container = buildContainer();
 
@@ -814,21 +815,88 @@ void main() {
       await _settle();
 
       repository.prayGate = Completer<void>();
-      notifier.pray('a');
+      notifier.pray('a', viewer: me);
       await _settle();
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 9, userIds: ['me']),
-      ], viewerId: 'me');
       expect(_byId(notifier, 'a').prayerCount, 4);
 
-      repository.prayGate!.complete();
-      await _settle();
-      expect(_byId(notifier, 'a').prayerCount, 7);
-
+      // Someone else prays: the broadcast does not yet list the viewer.
       notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 9, userIds: ['me']),
+        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['u9']),
+      ], viewerId: 'me');
+      expect(_byId(notifier, 'a').prayerCount, 5);
+      expect(_byId(notifier, 'a').prayedByMe, isTrue);
+
+      // The echo of the viewer's own prayer lands before the reply.
+      notifier.applyPrayersUpdated(const [
+        ChatLivePrayerUpdate(
+          messageId: 'a',
+          prayerCount: 9,
+          userIds: ['u9', 'me'],
+        ),
       ], viewerId: 'me');
       expect(_byId(notifier, 'a').prayerCount, 9);
+      expect(_byId(notifier, 'a').recentPrayers, [me]);
+
+      // The reply carries an older count; the newer broadcast wins.
+      repository.prayGate!.complete();
+      await _settle();
+      expect(_byId(notifier, 'a').prayerCount, 9);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
+    });
+
+    test('closing the sheet still sends the taps left in the queue', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      notifier.pray('a');
+      expect(repository.prayedCounts, isEmpty);
+      container.dispose();
+      await _settle();
+
+      expect(repository.prayedCounts, [2]);
+    });
+
+    test('a rate-limited retry keeps its own deadline', () async {
+      repository =
+          _FakeGroupChatRepository(history: [_prayer('a'), _prayer('b')])
+            ..prayFailureOnce = const RateLimitFailure('slow down');
+      container = buildContainer(
+        pacing: const PrayerPacing(
+          batchWindow: Duration.zero,
+          rateWindow: Duration.zero,
+          retryAfter: Duration(milliseconds: 80),
+        ),
+      );
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+      ]);
+
+      // A tap elsewhere flushes at once, but does not drag the retry along.
+      notifier.pray('b');
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+        ['b'],
+      ]);
+
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await _settle();
+      expect(repository.prayed, [
+        ['a'],
+        ['b'],
+        ['a'],
+      ]);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
     });
 
     test('applyPrayersUpdated derives prayed_by_me from user_ids', () async {
