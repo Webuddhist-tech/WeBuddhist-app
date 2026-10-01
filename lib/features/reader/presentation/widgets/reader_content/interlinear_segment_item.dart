@@ -16,11 +16,12 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Which lines a verse draws in the dual layout. "Translation only"
-/// ([showOriginal] false) still draws the original wherever there is no
-/// translation to show — failed to load, or no aligned line for this verse —
-/// so the page never turns into a column of placeholders. While the verse's
-/// translation is still on its way ([translationPending]) it draws the
-/// loading line instead, so the original does not flash in before it.
+/// ([showOriginal] false) still draws the original when the translation
+/// could not be loaded, so the page never turns into a column of
+/// placeholders; a verse the translation has no line for is left out before
+/// this (see `SecondaryReaderState.lacks`). While the verse's translation is
+/// still on its way ([translationPending]) it draws the loading line instead,
+/// so the original does not flash in before it.
 ({bool original, bool translation}) interlinearLayers({
   required bool showOriginal,
   required bool hasTranslation,
