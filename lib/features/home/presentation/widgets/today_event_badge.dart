@@ -8,11 +8,13 @@ class TodayEventBadge extends StatelessWidget {
     super.key,
     required this.label,
     this.isLive = true,
+    this.isBusy = false,
     this.onTap,
   });
 
   final String label;
   final bool isLive;
+  final bool isBusy;
   final VoidCallback? onTap;
 
   static String formatEventName(String name) {
@@ -41,7 +43,16 @@ class TodayEventBadge extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (isLive) ...[const _LiveDot(), const SizedBox(width: 8)],
+                if (isBusy) ...[
+                  const SizedBox.square(
+                    dimension: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 8),
+                ] else if (isLive) ...[
+                  const _LiveDot(),
+                  const SizedBox(width: 8),
+                ],
                 Flexible(
                   child: Text(
                     formatEventName(label),
