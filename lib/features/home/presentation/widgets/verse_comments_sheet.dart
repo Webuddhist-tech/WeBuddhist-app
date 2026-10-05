@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -11,6 +10,7 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_commen
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
+import 'package:flutter_pecha/features/home/presentation/widgets/verse_sheet_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Comments on the verse of the day, with a composer at the bottom.
@@ -114,6 +114,23 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     );
   }
 
+  Future<void> _toggleLike(VerseOfDayComment comment) async {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    final error = await ref
+        .read(verseOfDayCommentsProvider(widget.verseId).notifier)
+        .toggleCommentLike(comment.id);
+    if (error == null || !mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.verse_like_failed)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -141,7 +158,9 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
             shadowColor: Colors.black.withValues(alpha: 0.18),
             child: Column(
               children: [
-                _buildHeader(context, isDark, state.total),
+                VerseSheetHeader(
+                  title: context.l10n.verse_comments_title(state.total),
+                ),
                 Expanded(
                   child: MediaQuery.removeViewInsets(
                     context: context,
@@ -165,59 +184,6 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, bool isDark, int count) {
-    final titleColor =
-        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Semantics(
-          label: context.l10n.drag_to_resize,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 4),
-            child: Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.26),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 0, 16, 4),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(AppAssets.arrowLeft),
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              Expanded(
-                child: Text(
-                  context.l10n.verse_comments_title(count),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  strutStyle: context.tibetanStrutStyle(17, compact: true),
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: titleColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Divider(height: 1, color: Theme.of(context).dividerColor),
-      ],
     );
   }
 
@@ -267,6 +233,7 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
               isDark: isDark,
               // The API omits the author id; names aren't unique.
               isOwn: state.ownCommentIds.contains(comment.id),
+              onLike: () => _toggleLike(comment),
               onDelete: () => _confirmDelete(comment),
             ),
           ),
@@ -324,12 +291,14 @@ class _VerseCommentTile extends StatelessWidget {
     required this.comment,
     required this.isDark,
     required this.isOwn,
+    required this.onLike,
     required this.onDelete,
   });
 
   final VerseOfDayComment comment;
   final bool isDark;
   final bool isOwn;
+  final VoidCallback onLike;
   final VoidCallback onDelete;
 
   @override
@@ -344,7 +313,7 @@ class _VerseCommentTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CommentAvatar(
+          VerseUserAvatar(
             name: displayName,
             avatarUrl: comment.user.avatarUrl,
             isDark: isDark,
@@ -354,24 +323,54 @@ class _VerseCommentTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RichText(
-                  text: TextSpan(
-                    style: TextStyle(fontSize: 14, color: primary, height: 1.3),
-                    children: [
-                      TextSpan(
-                        text: displayName,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      if (relativeTime.isNotEmpty)
-                        TextSpan(
-                          text: ' · $relativeTime',
+                Row(
+                  children: [
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
                           style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: muted,
+                            fontSize: 14,
+                            color: primary,
+                            height: 1.3,
                           ),
+                          children: [
+                            TextSpan(
+                              text: displayName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (relativeTime.isNotEmpty)
+                              TextSpan(
+                                text: ' · $relativeTime',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: muted,
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _CommentLikeButton(
+                      isLiked: comment.likedByMe,
+                      likeCount: comment.likeCount,
+                      isDark: isDark,
+                      onTap: onLike,
+                    ),
+                    if (isOwn)
+                      ConnectActionMenu(
+                        iconSize: 18,
+                        iconColor: muted,
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(28, 22),
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onDelete: onDelete,
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -381,53 +380,57 @@ class _VerseCommentTile extends StatelessWidget {
               ],
             ),
           ),
-          if (isOwn)
-            ConnectActionMenu(
-              iconSize: 18,
-              iconColor: muted,
-              onDelete: onDelete,
-            ),
         ],
       ),
     );
   }
 }
 
-class _CommentAvatar extends StatelessWidget {
-  const _CommentAvatar({
-    required this.name,
-    required this.avatarUrl,
+class _CommentLikeButton extends StatelessWidget {
+  const _CommentLikeButton({
+    required this.isLiked,
+    required this.likeCount,
     required this.isDark,
+    required this.onTap,
   });
 
-  final String name;
-  final String? avatarUrl;
+  final bool isLiked;
+  final int likeCount;
   final bool isDark;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
-    final hasAvatar = avatarUrl != null && avatarUrl!.trim().isNotEmpty;
+    final defaultColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
 
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor:
-          isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      backgroundImage: hasAvatar ? avatarUrl!.cachedNetworkImageProvider : null,
-      child:
-          hasAvatar
-              ? null
-              : Text(
-                initial,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isLiked ? AppAssets.heartFill : AppAssets.heart,
+              size: 18,
+              color: isLiked ? AppColors.error : defaultColor,
+            ),
+            if (likeCount > 0) ...[
+              const SizedBox(width: 4),
+              Text(
+                '$likeCount',
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color:
-                      isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimary,
+                  fontWeight: FontWeight.w500,
+                  color: defaultColor,
                 ),
               ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -473,7 +476,7 @@ class _VerseCommentComposer extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          _CommentAvatar(
+          VerseUserAvatar(
             name: user?.firstName ?? user?.username ?? '',
             avatarUrl: user?.avatarUrl,
             isDark: isDark,

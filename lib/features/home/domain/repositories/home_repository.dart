@@ -36,6 +36,11 @@ abstract class VerseOfDayRepositoryInterface extends Repository {
   Future<Either<Failure, VerseOfDayLikes>> getLikes(String verseId);
   Future<Either<Failure, Unit>> likeVerse(String verseId);
   Future<Either<Failure, Unit>> unlikeVerse(String verseId);
+  Future<Either<Failure, VerseOfDayLikersPage>> getLikers({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  });
   Future<Either<Failure, VerseOfDayCommentsPage>> getComments({
     required String verseId,
     int skip = 0,
@@ -46,6 +51,8 @@ abstract class VerseOfDayRepositoryInterface extends Repository {
     required String text,
   });
   Future<Either<Failure, Unit>> deleteComment(String commentId);
+  Future<Either<Failure, Unit>> likeComment(String commentId);
+  Future<Either<Failure, Unit>> unlikeComment(String commentId);
 }
 
 /// Today's events repository interface.

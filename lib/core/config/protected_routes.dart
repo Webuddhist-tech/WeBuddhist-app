@@ -68,10 +68,12 @@ class ProtectedRoutes {
     '/groups/author/comments/{commentId}',
     '/groups/author/comments/{commentId}/likes',
 
-    // Verse of the day likes (GET sends token for `liked_by_me`) and
-    // comment delete.
+    // Verse of the day likes (GET sends token for `liked_by_me`), likers
+    // list, comment delete and comment likes.
     '/verse-of-day/{verseId}/likes',
+    '/verse-of-day/{verseId}/likes/users',
     '/verse-of-day/comments/{commentId}',
+    '/verse-of-day/comments/{commentId}/likes',
 
     // Group accumulators (group prayer accumulations)
     '/group-accumulators/',

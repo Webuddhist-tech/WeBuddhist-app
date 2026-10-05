@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
+import 'package:flutter_pecha/features/home/presentation/widgets/verse_likers_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Like and comment counts for the verse card, with the share action at the end.
@@ -36,6 +37,16 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
     ).showSnackBar(SnackBar(content: Text(context.l10n.verse_like_failed)));
   }
 
+  void _showLikers(BuildContext context, WidgetRef ref) {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    VerseLikersSheet.show(context, verseId: verseId);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -57,8 +68,13 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
           countColor: defaultColor,
           count: likes.isLoaded ? likes.likeCount : null,
           onTap: () => _toggleLike(context, ref),
+          onCountTap:
+              () =>
+                  likes.likeCount > 0
+                      ? _showLikers(context, ref)
+                      : _toggleLike(context, ref),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 10),
         _ActionButton(
           icon: AppAssets.chatCircle,
           iconColor: defaultColor,
@@ -80,6 +96,7 @@ class _ActionButton extends StatelessWidget {
     required this.countColor,
     required this.count,
     required this.onTap,
+    this.onCountTap,
   });
 
   final IconData icon;
@@ -88,31 +105,65 @@ class _ActionButton extends StatelessWidget {
   final int? count;
   final VoidCallback onTap;
 
+  /// When set, the count gets its own tap target beside the icon.
+  final VoidCallback? onCountTap;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: iconColor),
-            if (count != null) ...[
-              const SizedBox(width: 6),
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: countColor,
-                ),
+    final radius = BorderRadius.circular(20);
+    final iconWidget = Icon(icon, size: 22, color: iconColor);
+    final countLabel =
+        count == null
+            ? null
+            : Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: countColor,
               ),
+            );
+
+    if (onCountTap == null || countLabel == null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              if (countLabel != null) ...[
+                const SizedBox(width: 6),
+                countLabel,
+              ],
             ],
-          ],
+          ),
         ),
-      ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 3, 4),
+            child: iconWidget,
+          ),
+        ),
+        InkWell(
+          onTap: onCountTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(3, 4, 10, 4),
+            child: countLabel,
+          ),
+        ),
+      ],
     );
   }
 }

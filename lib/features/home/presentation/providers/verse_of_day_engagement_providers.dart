@@ -105,6 +105,70 @@ final verseOfDayLikesProvider = StateNotifierProvider.autoDispose
       return VerseOfDayLikesNotifier(ref: ref, verseId: verseId);
     });
 
+class VerseOfDayLikersState {
+  final List<VerseOfDayLiker> likers;
+  final bool isLoading;
+  final bool hasMore;
+  final String? error;
+
+  const VerseOfDayLikersState({
+    this.likers = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.error,
+  });
+}
+
+class VerseOfDayLikersNotifier extends StateNotifier<VerseOfDayLikersState> {
+  VerseOfDayLikersNotifier({required this.ref, required this.verseId})
+    : super(const VerseOfDayLikersState()) {
+    loadMore();
+  }
+
+  final Ref ref;
+  final String verseId;
+  static const int _limit = 20;
+  int _skip = 0;
+
+  /// Loads the first page, then the next one on each call.
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) return;
+
+    state = VerseOfDayLikersState(likers: state.likers, isLoading: true);
+
+    final result = await ref
+        .read(verseOfDayDomainRepositoryProvider)
+        .getLikers(verseId: verseId, skip: _skip, limit: _limit);
+    if (!mounted) return;
+
+    result.fold(
+      (failure) {
+        state = VerseOfDayLikersState(
+          likers: state.likers,
+          error: failure.message,
+        );
+      },
+      (page) {
+        _skip += page.likers.length;
+        final seen = state.likers.map((liker) => liker.userId).toSet();
+        final fresh = page.likers.where((liker) => !seen.contains(liker.userId));
+        state = VerseOfDayLikersState(
+          likers: [...state.likers, ...fresh],
+          hasMore: page.hasMore && page.likers.isNotEmpty,
+        );
+      },
+    );
+  }
+}
+
+final verseOfDayLikersProvider = StateNotifierProvider.autoDispose
+    .family<VerseOfDayLikersNotifier, VerseOfDayLikersState, String>((
+      ref,
+      verseId,
+    ) {
+      return VerseOfDayLikersNotifier(ref: ref, verseId: verseId);
+    });
+
 class VerseOfDayCommentsState {
   final List<VerseOfDayComment> comments;
   final bool isLoading;
@@ -170,6 +234,7 @@ class VerseOfDayCommentsNotifier
   final Ref ref;
   final String verseId;
   static const int _limit = 20;
+  final Set<String> _likingCommentIds = {};
 
   Future<void> loadInitial() async {
     if (state.isLoading) return;
@@ -286,6 +351,45 @@ class VerseOfDayCommentsNotifier
       );
       return true;
     });
+  }
+
+  /// Optimistic toggle; returns the failure message when it had to revert.
+  Future<String?> toggleCommentLike(String commentId) async {
+    final index = state.comments.indexWhere((c) => c.id == commentId);
+    if (index < 0 || !_likingCommentIds.add(commentId)) return null;
+
+    final previous = state.comments[index];
+    final wasLiked = previous.likedByMe;
+    _replaceComment(
+      previous.copyWith(
+        likedByMe: !wasLiked,
+        likeCount:
+            wasLiked
+                ? (previous.likeCount - 1).clamp(0, 1 << 31)
+                : previous.likeCount + 1,
+      ),
+    );
+
+    final repository = ref.read(verseOfDayDomainRepositoryProvider);
+    final result =
+        wasLiked
+            ? await repository.unlikeComment(commentId)
+            : await repository.likeComment(commentId);
+    _likingCommentIds.remove(commentId);
+    if (!mounted) return null;
+
+    return result.fold((failure) {
+      _replaceComment(previous);
+      return failure.message;
+    }, (_) => null);
+  }
+
+  void _replaceComment(VerseOfDayComment comment) {
+    state = state.copyWith(
+      comments: [
+        for (final c in state.comments) c.id == comment.id ? comment : c,
+      ],
+    );
   }
 
   void retry() {

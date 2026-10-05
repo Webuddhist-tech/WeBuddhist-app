@@ -13,6 +13,17 @@ void main() {
       expect(ProtectedRoutes.isProtected('/verse-of-day/comments/c1'), isTrue);
     });
 
+    test('verse likers list and comment likes are protected', () {
+      expect(
+        ProtectedRoutes.isProtected('/verse-of-day/v1/likes/users'),
+        isTrue,
+      );
+      expect(
+        ProtectedRoutes.isProtected('/verse-of-day/comments/c1/likes'),
+        isTrue,
+      );
+    });
+
     test('verse comments list is optional auth', () {
       expect(ProtectedRoutes.isOptional('/verse-of-day/v1/comments'), isTrue);
       expect(ProtectedRoutes.isProtected('/verse-of-day/v1/comments'), isFalse);

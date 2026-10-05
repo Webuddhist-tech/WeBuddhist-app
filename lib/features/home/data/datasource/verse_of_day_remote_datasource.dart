@@ -76,6 +76,29 @@ class VerseOfDayRemoteDatasource {
     }
   }
 
+  Future<VerseOfDayLikersPageModel> fetchLikers({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/verse-of-day/$verseId/likes/users',
+        queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
+      );
+      if (response.statusCode != 200) {
+        throw _statusToException(response.statusCode, 'Failed to load likers');
+      }
+      return VerseOfDayLikersPageModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchLikers', e);
+      throw _dioToException(e, 'Failed to load likers');
+    }
+  }
+
   Future<VerseOfDayCommentsPageModel> fetchComments({
     required String verseId,
     int skip = 0,
@@ -137,6 +160,37 @@ class VerseOfDayRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in deleteComment', e);
       throw _dioToException(e, 'Failed to delete comment');
+    }
+  }
+
+  Future<void> likeComment(String commentId) async {
+    try {
+      final response = await dio.post(
+        '/verse-of-day/comments/$commentId/likes',
+      );
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(response.statusCode, 'Failed to like comment');
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in likeComment', e);
+      throw _dioToException(e, 'Failed to like comment');
+    }
+  }
+
+  Future<void> unlikeComment(String commentId) async {
+    try {
+      final response = await dio.delete(
+        '/verse-of-day/comments/$commentId/likes',
+      );
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(
+          response.statusCode,
+          'Failed to unlike comment',
+        );
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in unlikeComment', e);
+      throw _dioToException(e, 'Failed to unlike comment');
     }
   }
 

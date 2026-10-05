@@ -39,6 +39,8 @@ class VerseOfDayCommentModel {
   final String text;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final int likeCount;
+  final bool likedByMe;
 
   const VerseOfDayCommentModel({
     required this.id,
@@ -49,6 +51,8 @@ class VerseOfDayCommentModel {
     required this.text,
     this.createdAt,
     this.updatedAt,
+    this.likeCount = 0,
+    this.likedByMe = false,
   });
 
   factory VerseOfDayCommentModel.fromJson(Map<String, dynamic> json) {
@@ -65,6 +69,8 @@ class VerseOfDayCommentModel {
       text: json['text'] as String? ?? '',
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
+      likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
+      likedByMe: json['liked_by_me'] as bool? ?? false,
     );
   }
 
@@ -80,13 +86,15 @@ class VerseOfDayCommentModel {
       text: text,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      likeCount: likeCount,
+      likedByMe: likedByMe,
     );
   }
+}
 
-  static DateTime? _parseDateTime(dynamic value) {
-    if (value is! String || value.isEmpty) return null;
-    return DateTime.tryParse(value);
-  }
+DateTime? _parseDateTime(dynamic value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }
 
 class VerseOfDayCommentsPageModel {
@@ -121,6 +129,83 @@ class VerseOfDayCommentsPageModel {
   VerseOfDayCommentsPage toEntity() {
     return VerseOfDayCommentsPage(
       comments: comments.map((comment) => comment.toEntity()).toList(),
+      skip: skip,
+      limit: limit,
+      total: total,
+    );
+  }
+}
+
+class VerseOfDayLikerModel {
+  final String userId;
+  final String firstName;
+  final String? lastName;
+  final String? avatarUrl;
+  final DateTime? createdAt;
+
+  const VerseOfDayLikerModel({
+    required this.userId,
+    required this.firstName,
+    this.lastName,
+    this.avatarUrl,
+    this.createdAt,
+  });
+
+  factory VerseOfDayLikerModel.fromJson(Map<String, dynamic> json) {
+    return VerseOfDayLikerModel(
+      userId: json['user_id'] as String? ?? '',
+      firstName: json['first_name'] as String? ?? '',
+      lastName: json['last_name'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      createdAt: _parseDateTime(json['created_at']),
+    );
+  }
+
+  VerseOfDayLiker toEntity() {
+    return VerseOfDayLiker(
+      userId: userId,
+      user: VerseOfDayCommentUser(
+        firstName: firstName,
+        lastName: lastName,
+        avatarUrl: avatarUrl,
+      ),
+      createdAt: createdAt,
+    );
+  }
+}
+
+class VerseOfDayLikersPageModel {
+  final List<VerseOfDayLikerModel> likers;
+  final int skip;
+  final int limit;
+  final int total;
+
+  const VerseOfDayLikersPageModel({
+    required this.likers,
+    required this.skip,
+    required this.limit,
+    required this.total,
+  });
+
+  factory VerseOfDayLikersPageModel.fromJson(Map<String, dynamic> json) {
+    final likesJson = json['likes'] as List<dynamic>? ?? const [];
+    final likers =
+        likesJson
+            .whereType<Map<String, dynamic>>()
+            .map(VerseOfDayLikerModel.fromJson)
+            .toList();
+
+    return VerseOfDayLikersPageModel(
+      likers: likers,
+      skip: (json['skip'] as num?)?.toInt() ?? 0,
+      limit: (json['limit'] as num?)?.toInt() ?? likers.length,
+      total: (json['total'] as num?)?.toInt() ?? likers.length,
+    );
+  }
+
+  VerseOfDayLikersPage toEntity() {
+    return VerseOfDayLikersPage(
+      likers: likers.map((liker) => liker.toEntity()).toList(),
       skip: skip,
       limit: limit,
       total: total,

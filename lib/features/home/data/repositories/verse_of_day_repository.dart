@@ -89,6 +89,24 @@ class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, VerseOfDayLikersPage>> getLikers({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final model = await remote.fetchLikers(
+        verseId: verseId,
+        skip: skip,
+        limit: limit,
+      );
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to load likers'));
+    }
+  }
+
+  @override
   Future<Either<Failure, VerseOfDayCommentsPage>> getComments({
     required String verseId,
     int skip = 0,
@@ -126,6 +144,26 @@ class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
       return const Right(unit);
     } catch (e) {
       return Left(_toFailure(e, 'Failed to delete comment'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> likeComment(String commentId) async {
+    try {
+      await remote.likeComment(commentId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to like comment'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> unlikeComment(String commentId) async {
+    try {
+      await remote.unlikeComment(commentId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to unlike comment'));
     }
   }
 

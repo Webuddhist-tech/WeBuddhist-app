@@ -36,6 +36,8 @@ void main() {
                 'user': {'first_name': 'Pema', 'last_name': null},
                 'text': 'ok',
                 'created_at': '2026-10-01T10:00:00Z',
+                'like_count': 2,
+                'liked_by_me': true,
               },
             ],
             'skip': 0,
@@ -44,7 +46,32 @@ void main() {
           }).toEntity();
       expect(page.comments.single.user.displayName, 'Pema');
       expect(page.comments.single.createdAt, isNotNull);
+      expect(page.comments.single.likeCount, 2);
+      expect(page.comments.single.likedByMe, isTrue);
       expect(page.hasMore, isTrue);
+    });
+  });
+
+  group('VerseOfDayLikersPageModel', () {
+    test('parses likers and pagination', () {
+      final page =
+          VerseOfDayLikersPageModel.fromJson({
+            'likes': [
+              {
+                'user_id': 'u1',
+                'first_name': 'Tenzin',
+                'last_name': 'Delek',
+                'avatar_url': 'https://example.com/a.webp',
+                'created_at': '2026-10-05T06:32:48.572677+00:00',
+              },
+            ],
+            'skip': 0,
+            'limit': 20,
+            'total': 1,
+          }).toEntity();
+      expect(page.likers.single.userId, 'u1');
+      expect(page.likers.single.user.displayName, 'Tenzin Delek');
+      expect(page.hasMore, isFalse);
     });
   });
 }

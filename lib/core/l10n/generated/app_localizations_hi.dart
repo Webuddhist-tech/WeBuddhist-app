@@ -2250,6 +2250,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String verse_likes_title(int count) {
+    return 'Likes · $count';
+  }
+
+  @override
   String get verse_like_failed => 'Unable to update like. Please try again';
 
   @override

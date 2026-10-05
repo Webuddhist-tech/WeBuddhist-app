@@ -1102,6 +1102,14 @@
       }
     }
   },
+  "verse_likes_title": "Likes · {count}",
+  "@verse_likes_title": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "verse_like_failed": "Unable to update like. Please try again",
   "verse_comment_failed": "Unable to post comment. Please try again",
   "share_app_message": "I've been using this app to build a daily Buddhist practice, and thought you'd love it.",

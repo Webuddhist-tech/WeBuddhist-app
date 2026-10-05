@@ -25,6 +25,9 @@ class _Repo implements VerseOfDayRepositoryInterface {
   final likes = Completer<Either<Failure, VerseOfDayLikes>>();
   var commentsReply = Completer<Either<Failure, VerseOfDayCommentsPage>>();
   int likeCalls = 0;
+  Either<Failure, Unit> commentLikeReply = const Right(unit);
+  final commentLikeCalls = <String>[];
+  final likersSkips = <int>[];
 
   @override
   Future<Either<Failure, VerseOfDayLikes>> getLikes(String verseId) =>
@@ -42,6 +45,40 @@ class _Repo implements VerseOfDayRepositoryInterface {
     int skip = 0,
     int limit = 20,
   }) => commentsReply.future;
+
+  @override
+  Future<Either<Failure, Unit>> likeComment(String commentId) async {
+    commentLikeCalls.add('like');
+    return commentLikeReply;
+  }
+
+  @override
+  Future<Either<Failure, Unit>> unlikeComment(String commentId) async {
+    commentLikeCalls.add('unlike');
+    return commentLikeReply;
+  }
+
+  @override
+  Future<Either<Failure, VerseOfDayLikersPage>> getLikers({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    likersSkips.add(skip);
+    return Right(
+      VerseOfDayLikersPage(
+        likers: [
+          VerseOfDayLiker(
+            userId: 'u$skip',
+            user: const VerseOfDayCommentUser(firstName: 'Pema'),
+          ),
+        ],
+        skip: skip,
+        limit: limit,
+        total: 2,
+      ),
+    );
+  }
 
   @override
   Future<Either<Failure, VerseOfDayComment>> createComment({
@@ -117,6 +154,47 @@ void main() {
     expect(state.comments.map((c) => c.id), ['new', 'old']);
     expect(state.total, 2);
     expect(state.skip, 2);
+  });
+
+  test('comment like toggles optimistically and unlikes on the next tap', () async {
+    final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayCommentsProvider('v1').notifier);
+    await notifier.submitComment('new');
+
+    final liking = notifier.toggleCommentLike('new');
+    expect(sub.read().comments.single.likedByMe, isTrue);
+    expect(sub.read().comments.single.likeCount, 1);
+    expect(await liking, isNull);
+
+    expect(await notifier.toggleCommentLike('new'), isNull);
+    expect(sub.read().comments.single.likedByMe, isFalse);
+    expect(sub.read().comments.single.likeCount, 0);
+    expect(repo.commentLikeCalls, ['like', 'unlike']);
+  });
+
+  test('failed comment like reverts and reports the failure', () async {
+    final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayCommentsProvider('v1').notifier);
+    await notifier.submitComment('new');
+    repo.commentLikeReply = const Left(ServerFailure('boom'));
+
+    expect(await notifier.toggleCommentLike('new'), 'boom');
+    expect(sub.read().comments.single.likedByMe, isFalse);
+    expect(sub.read().comments.single.likeCount, 0);
+  });
+
+  test('likers load page by page until the total is reached', () async {
+    final sub = container.listen(verseOfDayLikersProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayLikersProvider('v1').notifier);
+    await Future<void>.delayed(Duration.zero);
+    expect(sub.read().likers.map((l) => l.userId), ['u0']);
+    expect(sub.read().hasMore, isTrue);
+
+    await notifier.loadMore();
+    await notifier.loadMore();
+    expect(sub.read().likers.map((l) => l.userId), ['u0', 'u1']);
+    expect(sub.read().hasMore, isFalse);
+    expect(repo.likersSkips, [0, 1]);
   });
 
   test('own comment ids reset when the account changes', () async {

@@ -4016,6 +4016,12 @@ abstract class AppLocalizations {
   /// **'Comments · {count}'**
   String verse_comments_title(int count);
 
+  /// No description provided for @verse_likes_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes · {count}'**
+  String verse_likes_title(int count);
+
   /// No description provided for @verse_like_failed.
   ///
   /// In en, this message translates to:
