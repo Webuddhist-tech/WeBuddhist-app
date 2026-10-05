@@ -2013,6 +2013,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_member_admin => 'དོ་དམ་པ།';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return '$name ཕྱིར་འབུད།';
   }

@@ -14,6 +14,8 @@ abstract final class GroupMemberRole {
     return value;
   }
 
+  static bool isOwner(String? role) => normalize(role) == owner;
+
   /// `OWNER` and `ADMIN` both manage the group: they see admin controls and
   /// cannot be removed by another admin.
   static bool isAdminTier(String? role) {

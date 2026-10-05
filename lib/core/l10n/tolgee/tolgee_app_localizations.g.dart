@@ -3912,6 +3912,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_member_owner => TolgeeBridge.get(
+    localeName,
+    'group_member_owner',
+    () => _fallback.group_member_owner,
+  );
+
+  @override
   String group_remove_member(String name) => TolgeeBridge.format(
     localeName,
     'group_remove_member',

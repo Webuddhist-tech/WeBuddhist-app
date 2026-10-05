@@ -889,6 +889,7 @@
   "group_followers_load_error": "Unable to load followers. Please try again.",
   "group_members_empty": "No members yet",
   "group_member_admin": "Admin",
+  "group_member_owner": "Owner",
   "group_remove_member": "Remove {name}",
   "@group_remove_member": {
     "placeholders": {

@@ -1896,6 +1896,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_member_admin => '管理員';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return '移除 $name';
   }

@@ -17,8 +17,10 @@ class GroupMember {
     this.role,
   });
 
-  /// `OWNER` or `ADMIN`. Both get the admin badge and are never removable.
+  /// `OWNER` or `ADMIN`. Both get a role badge and are never removable.
   bool get isAdmin => GroupMemberRole.isAdminTier(role);
+
+  bool get isOwner => GroupMemberRole.isOwner(role);
 
   /// An admin can remove a regular member once the list includes their id.
   bool get canBeRemovedByAdmin => userId.trim().isNotEmpty && !isAdmin;

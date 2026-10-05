@@ -3634,6 +3634,12 @@ abstract class AppLocalizations {
   /// **'Admin'**
   String get group_member_admin;
 
+  /// No description provided for @group_member_owner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get group_member_owner;
+
   /// No description provided for @group_remove_member.
   ///
   /// In en, this message translates to:

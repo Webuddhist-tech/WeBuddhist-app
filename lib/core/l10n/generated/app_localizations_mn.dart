@@ -2009,6 +2009,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_member_admin => 'Админ';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return '$name-г хасах';
   }
