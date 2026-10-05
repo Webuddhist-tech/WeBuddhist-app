@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -9,9 +11,13 @@ import 'package:flutter_pecha/features/home/presentation/providers/series_provid
 import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/live_tracked_plan_text.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
+import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -35,6 +41,8 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
     this.initialDay,
     this.eventId,
     this.showLiveStream = false,
+    this.liveTextId,
+    this.liveSegmentId,
   });
 
   final Plan plan;
@@ -47,6 +55,10 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
   /// Online attendees watch the stream, so the reader must not follow the
   /// live recitation.
   final bool showLiveStream;
+
+  /// When set, the preview opens this live-tracked text once the day loads.
+  final String? liveTextId;
+  final String? liveSegmentId;
 
   /// When non-null, the day carousel opens on this day instead of computing
   /// a default from the plan start date. Used by deep links so the recipient
@@ -61,6 +73,7 @@ final _logger = AppLogger('PlanPreviewDetails');
 
 class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
   late int selectedDay;
+  bool _didOpenLiveText = false;
 
   @override
   void initState() {
@@ -284,18 +297,22 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
             data: (contentEither) {
               return contentEither.fold(
                 (failure) => _buildDayContentError(context),
-                (content) => PreviewActivityList(
-                  language: language,
-                  tasks: content.tasks ?? [],
-                  videos: content.videos,
-                  today: selectedDay,
-                  totalDays: widget.plan.totalDays,
-                  planId: widget.plan.id,
-                  dayNumber: selectedDay,
-                  dayAudioUrl: content.audioUrl,
-                  eventId: widget.eventId,
-                  isOnlineAttendee: widget.showLiveStream,
-                ),
+                (content) {
+                  final tasks = content.tasks ?? [];
+                  _scheduleLiveTrackedText(tasks, content.audioUrl);
+                  return PreviewActivityList(
+                    language: language,
+                    tasks: tasks,
+                    videos: content.videos,
+                    today: selectedDay,
+                    totalDays: widget.plan.totalDays,
+                    planId: widget.plan.id,
+                    dayNumber: selectedDay,
+                    dayAudioUrl: content.audioUrl,
+                    eventId: widget.eventId,
+                    isOnlineAttendee: widget.showLiveStream,
+                  );
+                },
               );
             },
             loading: () => const DayContentSkeleton(),
@@ -304,6 +321,34 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
         ],
       ),
     );
+  }
+
+  void _scheduleLiveTrackedText(
+    List<PlanTasksModel> tasks,
+    String? audioUrl,
+  ) {
+    final liveTextId = widget.liveTextId;
+    if (liveTextId == null || liveTextId.isEmpty || _didOpenLiveText) return;
+    final items = PlanSubtaskNavigation.fromPlanTasks(tasks);
+    _didOpenLiveText = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        openLiveTrackedPlanText(
+          context: context,
+          ref: ref,
+          items: items,
+          liveTextId: liveTextId,
+          liveSegmentId: widget.liveSegmentId,
+          planId: widget.plan.id,
+          dayNumber: selectedDay,
+          dayAudioUrl: audioUrl,
+          eventId: widget.eventId,
+          isOnlineAttendee: false,
+          languages: [ref.read(contentLanguageProvider), widget.plan.language],
+        ),
+      );
+    });
   }
 
   Widget _buildDayContentError(BuildContext context) {

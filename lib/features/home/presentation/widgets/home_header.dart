@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/streak_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/today_events_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_navigation.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/today_event_badge.dart';
 import 'package:flutter_pecha/features/more/presentation/providers/user_stats_provider.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/streak_share_sheet.dart';
@@ -96,6 +97,7 @@ class HomeEventBanner extends ConsumerStatefulWidget {
 
 class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
   Timer? _ticker;
+  bool _opening = false;
 
   @override
   void initState() {
@@ -136,14 +138,27 @@ class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
       child: TodayEventBadge(
         label: todayEvent.name,
         isLive: todayEvent.isActiveAt(now),
+        isBusy: _opening,
         onTap:
-            todayEvent.id.isEmpty
+            todayEvent.id.isEmpty || _opening
                 ? null
-                : () => context.push(
-                  '/home/events/${Uri.encodeComponent(todayEvent.id)}',
-                ),
+                : () => _openLiveEvent(todayEvent.id),
       ),
     );
+  }
+
+  /// Joined in-person attendees land on the text the live session is reading.
+  /// Joined online attendees land on the same screen as Join online. Anyone
+  /// who has not chosen, and any session that has not started, stays on the
+  /// event page. That page is pushed underneath so Back returns to it.
+  Future<void> _openLiveEvent(String eventId) async {
+    if (_opening) return;
+    setState(() => _opening = true);
+    try {
+      await openHomeLiveEvent(context, ref, eventId);
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
   }
 }
 

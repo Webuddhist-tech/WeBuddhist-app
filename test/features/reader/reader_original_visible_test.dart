@@ -97,7 +97,7 @@ void main() {
     });
 
     test('translation only falls back to the original when the translation '
-        'failed or is missing for the verse', () {
+        'could not be loaded', () {
       final layers = interlinearLayers(
         showOriginal: false,
         hasTranslation: false,

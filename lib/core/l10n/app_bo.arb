@@ -722,8 +722,8 @@
   },
   "group_invite": "གདན་ཞུ་བྱེད།",
   "group_request_to_join": "ཞུགས་པར་རེ་ཞུ།",
-  "group_request": "རེ་ཞུ།",
-  "group_request_sent": "རེ་ཞུ་བཏང་ཟིན།",
+  "group_request": "མཉམ་ཞུགས་རེ་ཞུ།",
+  "group_request_sent": "མཉམ་ཞུགས་རེ་ཞུ་བསྐུར་ཟིན།",
   "group_join_request_title": "ཞུགས་པར་རེ་ཞུ།",
   "group_join_request_message_label": "འཕྲིན་ཡིག (འདེམས་རུང་།)",
   "group_join_request_message_hint": "ཁྱེད་ཀྱིས་ཇི་ལྟར་ཉམས་ལེན་བྱེད་དམ། སུ་ཞིག་གིས་ཁྱེད་རང་གདན་འདྲེན་བྱས་སམ།",
@@ -900,7 +900,7 @@
   "connect_empty_discover_feed": "འཚོལ་རྒྱུ་གང་ཡང་མི་འདུག",
   "connect_empty_discover_groups": "འཚོལ་རྒྱུའི་ཚོགས་པ་མི་འདུག",
   "connect_empty_discover_practices": "འཚོལ་རྒྱུའི་ཉམས་ལེན་མི་འདུག",
-  "connect_all_groups": "བརྒྱུད་ལམ་ཡོངས།",
+  "connect_all_groups": "ཚོགས་པ་ཡོངས།",
   "connect_my_empty_feed_title": "ཁྱེད་ཀྱི་ཚོགས་པ་ཁག་ཁུ་སིམ་མེ་རེད་འདུག",
   "connect_my_empty_events_title": "འབྱུང་འགྱུར་གྱི་བྱེད་སྒོ་མི་འདུག",
   "connect_my_empty_posts_title": "ད་དུང་སྤེལ་བ་མི་འདུག",
@@ -955,7 +955,7 @@
   "connect_group_fallback_title": "བརྒྱུད་ལམ།",
   "connect_event_attend": "ཞུགས།",
   "connect_event_attending": "ཞུགས་ཟིན།",
-  "connect_event_participants_attending": "ཞུགས་མཁན་ {count}",
+  "connect_event_participants_attending": "མཉམ་ཞུགས་མཁན། {count}",
   "@connect_event_participants_attending": {
     "placeholders": {
       "count": {
@@ -1094,11 +1094,11 @@
   "event_prayer_requests": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།",
   "event_prayer_empty_title": "ད་བར་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུས་མི་འདུག",
   "event_prayer_empty_body": "ཁྱེད་ཀྱི་རེ་ཞུ་དང་ཁྱེད་ཀྱི་སྤྱི་ཚོགས་ཀྱི་རེ་ཞུ་འདིར་མངོན་རྒྱུ་རེད",
-  "event_prayer_add": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་ཁ་སྣོན།",
-  "event_prayer_hint": "དེ་རིང་ང་ཚོས་ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་ཇི་ལྟར་འདེབས་དགོས",
+  "event_prayer_add": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཅིག་ཞུ།",
+  "event_prayer_hint": "དེ་རིང་ང་ཚོས་ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་ཇི་ལྟར་འདེབས་དགོས།",
   "event_prayer_load_failed": "ཐུགས་སྨོན་སྐྱབས་ཞུ་ལེན་ཐུབ་མ་སོང་།",
   "event_prayer_closed": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་ས་སྒོ་བརྒྱབ་འདུག",
-  "event_prayer_pray": "སྨོན་ལམ་ཞུ།",
+  "event_prayer_pray": "སྨོན་ལམ་འདེབས།",
   "event_prayer_praying": "སྨོན་ལམ་འདེབས་བཞིན་པ",
   "bookmark_group_accumulation": "མཉམ་གསོག",
   "connect_event_joining_in_person": "ངོ་བཅར་ཞུ་བ།",
@@ -1115,7 +1115,7 @@
   "group_notifications_open_settings": "སྒོ་ཕྱེས།",
   "group_notifications_update_failed": "གསར་བརྡའི་སྒྲིག་འགོད་ཁ་གསོ་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་བརྡ་བྱོས།",
   "group_notifications_load_failed": "གསར་བརྡའི་སྒྲིག་འགོད་ལེན་ཐུབ་མ་སོང་།",
-  "event_prayer_request_count": "{count, plural,\nother {རེ་ཞུ་ {count}}\n=1 {རེ་ཞུ་ 1}\n}",
+  "event_prayer_request_count": "{count, plural,\nother {སྐྱབས་ཞུ། {count}}\n=1 {སྐྱབས་ཞུ། 1}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {
@@ -1200,7 +1200,7 @@
       }
     }
   },
-  "event_prayer_your_request": "ཁྱེད་ཀྱི་རེ་ཞུ",
+  "event_prayer_your_request": "ཁྱེད་ཀྱི་སྐྱབས་ཞུ།",
   "event_prayer_supporters_failed": "སྨོན་ལམ་རྒྱག་མཁན་སུ་ཡིན་མིན་འཇུག་ཐུབ་མ་སོང་།",
   "event_prayer_no_supporters": "ད་དུང་སུས་ཀྱང་སྨོན་ལམ་འདེབས་ཀྱི་མི་འདུག",
   "recitation_live_sync": "མཉམ་སྒྲིག",

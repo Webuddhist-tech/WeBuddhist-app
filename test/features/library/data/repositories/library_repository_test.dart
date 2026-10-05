@@ -16,6 +16,11 @@ LibrarySegment _segment(String id, String reference) => LibrarySegment(
   lines: const [LibraryLineSpan(start: 0, end: 1)],
 );
 
+String _slice(String content, Uri uri) => content.substring(
+  int.parse(uri.queryParameters['span_start']!),
+  int.parse(uri.queryParameters['span_end']!),
+);
+
 LibrarySegment _relatedSegment(List<List<int>> lines) => LibrarySegment(
   id: 'r1',
   type: 'verse',
@@ -393,7 +398,7 @@ void main() {
       final window = await s.repository().loadWindow(
         editionId: 'e2',
         anchorSegmentId: 's2',
-        anchorEditionId: 'e1',
+        primaryEditionId: 'e1',
         direction: 'next',
         size: 20,
       );
@@ -460,6 +465,206 @@ void main() {
     });
   });
 
+  group('LibraryRepository.loadWindow paired by alignment', () {
+    // Root e1 has verses 1-1..1-4; translation e2 skips 1-3 and opens with
+    // a preface the root does not have.
+    List<Map<String, dynamic>> root() => [
+      for (var i = 1; i <= 4; i++)
+        segmentJson('p$i', '1-$i', [
+          [(i - 1) * 3, i * 3],
+        ]),
+    ];
+    List<Map<String, dynamic>> translation() => [
+      segmentJson('t0', 'pre', [
+        [0, 3],
+      ]),
+      segmentJson('t1', '1-1', [
+        [3, 6],
+      ]),
+      segmentJson('t2', '1-2', [
+        [6, 9],
+      ]),
+      segmentJson('t4', '1-4', [
+        [9, 12],
+      ]),
+    ];
+    Map<String, ResponseBody Function(Uri)> routes() => {
+      '/v2/editions/e1/segmentation/segments':
+          (_) => jsonBody(pageJson(root())),
+      '/v2/editions/e2/segmentation/segments':
+          (_) => jsonBody(pageJson(translation())),
+      '/v2/editions/e1/content': (uri) => jsonBody(_slice('AAABBBCCCDDD', uri)),
+      '/v2/editions/e2/content': (uri) => jsonBody(_slice('xxxaaabbbddd', uri)),
+    };
+    // The library stores the pair from the root to the translation only.
+    Map<String, ResponseBody Function(Uri)> aligned() => {
+      ...routes(),
+      '/v2/editions/e1/alignments/e2':
+          (_) => jsonBody(
+            pageJson([
+              alignmentJson('p1', 't1'),
+              alignmentJson('p2', 't2'),
+              alignmentJson('p4', 't4'),
+            ]),
+          ),
+      '/v2/editions/e2/alignments/e1': (_) => jsonBody(pageJson([])),
+    };
+
+    test(
+      'a companion holds only the verses with a counterpart, numbered like it',
+      () async {
+        final s = LibraryTestServer(aligned());
+        final repository = s.repository();
+
+        final window = await repository.loadWindow(
+          editionId: 'e2',
+          primaryEditionId: 'e1',
+          direction: 'next',
+          size: 20,
+        );
+
+        expect(window.segments.map((x) => x.id), ['t1', 't2', 't4']);
+        expect(window.segments.map((x) => x.number), [1, 2, 4]);
+        expect(window.segments.map((x) => x.lines.single), [
+          'aaa',
+          'bbb',
+          'ddd',
+        ]);
+        expect(window.totalSegments, 3);
+
+        await repository.loadWindow(
+          editionId: 'e2',
+          primaryEditionId: 'e1',
+          anchorSegmentId: 't2',
+          direction: 'next',
+          size: 20,
+        );
+        expect(s.count('/v2/editions/e2/alignments/e1'), 1);
+        expect(s.count('/v2/editions/e1/alignments/e2'), 1);
+      },
+    );
+
+    test(
+      'an anchor from the primary lands on its counterpart, else the next '
+      'verse with one',
+      () async {
+        final repository = LibraryTestServer(aligned()).repository();
+
+        final exact = await repository.loadWindow(
+          editionId: 'e2',
+          primaryEditionId: 'e1',
+          anchorSegmentId: 'p2',
+          direction: 'next',
+          size: 20,
+        );
+        final skipped = await repository.loadWindow(
+          editionId: 'e2',
+          primaryEditionId: 'e1',
+          anchorSegmentId: 'p3',
+          direction: 'next',
+          size: 20,
+        );
+
+        expect(exact.segments.map((x) => x.id), ['t2', 't4']);
+        expect(exact.currentPosition, 2);
+        expect(skipped.segments.map((x) => x.id), ['t4']);
+        expect(skipped.currentPosition, 3);
+      },
+    );
+
+    test('an anchor past the last aligned verse lands on the nearest earlier '
+        'one', () async {
+      final repository = LibraryTestServer({
+        ...routes(),
+        '/v2/editions/e1/alignments/e2':
+            (_) => jsonBody(
+              pageJson([alignmentJson('p1', 't1'), alignmentJson('p2', 't2')]),
+            ),
+        '/v2/editions/e2/alignments/e1': (_) => jsonBody(pageJson([])),
+      }).repository();
+
+      final window = await repository.loadWindow(
+        editionId: 'e2',
+        primaryEditionId: 'e1',
+        anchorSegmentId: 'p4',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.id), ['t2']);
+      expect(window.currentPosition, 2);
+    });
+
+    test('read from the translation side, the root is numbered like it', () async {
+      final window = await LibraryTestServer(aligned()).repository().loadWindow(
+        editionId: 'e1',
+        primaryEditionId: 'e2',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.id), ['p1', 'p2', 'p4']);
+      expect(window.segments.map((x) => x.number), [2, 3, 4]);
+      expect(window.segments.map((x) => x.lines.single), ['AAA', 'BBB', 'DDD']);
+    });
+
+    test('a pair with no alignment is paired by verse number', () async {
+      final window = await LibraryTestServer(routes()).repository().loadWindow(
+        editionId: 'e2',
+        primaryEditionId: 'e1',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.id), ['t0', 't1', 't2', 't4']);
+      expect(window.segments.map((x) => x.number), [1, 2, 3, 4]);
+    });
+
+    test('an alignment naming none of the verses is ignored', () async {
+      final s = LibraryTestServer({
+        ...routes(),
+        '/v2/editions/e1/alignments/e2':
+            (_) => jsonBody(pageJson([alignmentJson('q1', 'u1')])),
+      });
+
+      final window = await s.repository().loadWindow(
+        editionId: 'e2',
+        primaryEditionId: 'e1',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.number), [1, 2, 3, 4]);
+    });
+
+    test('walks every page of the alignment', () async {
+      final s = LibraryTestServer({
+        ...routes(),
+        '/v2/editions/e1/alignments/e2': (uri) {
+          final offset = int.parse(uri.queryParameters['offset']!);
+          return jsonBody(
+            offset == 0
+                ? pageJson([
+                  alignmentJson('p1', 't1'),
+                  alignmentJson('p2', 't2'),
+                ], hasMore: true)
+                : pageJson([alignmentJson('p4', 't4')]),
+          );
+        },
+      });
+
+      final window = await s.repository(segmentPageSize: 2).loadWindow(
+        editionId: 'e2',
+        primaryEditionId: 'e1',
+        direction: 'next',
+        size: 20,
+      );
+
+      expect(window.segments.map((x) => x.number), [1, 2, 4]);
+      expect(s.count('/v2/editions/e1/alignments/e2'), 2);
+    });
+  });
+
   group('LibraryRepository.alignSegment', () {
     LibraryTestServer server() => LibraryTestServer({
       '/v2/editions/bo1': (_) => jsonBody({'id': 'bo1', 'text_id': 'tbo'}),
@@ -517,6 +722,23 @@ void main() {
 
       expect(aligned, 'bo2');
       expect(s.count('/v2/editions/bo1/segmentation/segments'), 0);
+    });
+
+    test('follows the alignment when the pair has one', () async {
+      final repository = LibraryTestServer({
+        ...server().routes,
+        '/v2/editions/bo1/alignments/en1':
+            (_) => jsonBody(
+              pageJson([alignmentJson('bo1', 'en1'), alignmentJson('bo2', 'en3')]),
+            ),
+      }).repository();
+
+      Future<String?> align(String id, String from, String to) => repository
+          .alignSegment(segmentId: id, sourceId: from, targetId: to);
+
+      expect(await align('bo2', 'bo1', 'en1'), 'en3');
+      expect(await align('bo3', 'bo1', 'en1'), isNull, reason: 'no counterpart');
+      expect(await align('en3', 'en1', 'bo1'), 'bo2', reason: 'stored one way');
     });
   });
 

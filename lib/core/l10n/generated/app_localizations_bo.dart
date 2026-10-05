@@ -819,7 +819,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_empty_discover_practices => 'འཚོལ་རྒྱུའི་ཉམས་ལེན་མི་འདུག';
 
   @override
-  String get connect_all_groups => 'བརྒྱུད་ལམ་ཡོངས།';
+  String get connect_all_groups => 'ཚོགས་པ་ཡོངས།';
 
   @override
   String get connect_my_empty_feed_title =>
@@ -982,7 +982,7 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String connect_event_participants_attending(int count) {
-    return 'ཞུགས་མཁན་ $count';
+    return 'མཉམ་ཞུགས་མཁན། $count';
   }
 
   @override
@@ -1937,26 +1937,26 @@ class AppLocalizationsBo extends AppLocalizations {
       'གླེང་མོལ་གསར་བརྡའི་སྒྲ་སྒོ་ཕྱེས་ཡོད།';
 
   @override
-  String get group_leave => 'Unsubscribe';
+  String get group_leave => 'Unjoin';
 
   @override
-  String get group_leave_confirm_title => 'Unsubscribe?';
+  String get group_leave_confirm_title => 'Unjoin?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this channel';
+      'You\'ll stop getting messages and updates from this space';
 
   @override
-  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
+  String get group_leave_failed => 'Couldn\'t unjoin. Try again';
 
   @override
   String get group_request_to_join => 'ཞུགས་པར་རེ་ཞུ།';
 
   @override
-  String get group_request => 'རེ་ཞུ།';
+  String get group_request => 'མཉམ་ཞུགས་རེ་ཞུ།';
 
   @override
-  String get group_request_sent => 'རེ་ཞུ་བཏང་ཟིན།';
+  String get group_request_sent => 'མཉམ་ཞུགས་རེ་ཞུ་བསྐུར་ཟིན།';
 
   @override
   String get group_join_request_title => 'ཞུགས་པར་རེ་ཞུ།';
@@ -2030,6 +2030,9 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get group_member_admin => 'དོ་དམ་པ།';
+
+  @override
+  String get group_member_owner => 'Owner';
 
   @override
   String group_remove_member(String name) {
@@ -2399,11 +2402,11 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No channel accumulations bookmarked yet';
+      'No space accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a channel accumulation to save it here';
+      'Bookmark one to save it here';
 
   @override
   String get bookmarks_empty_timers_title =>
@@ -2923,8 +2926,8 @@ class AppLocalizationsBo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      one: 'རེ་ཞུ་ 1',
-      other: 'རེ་ཞུ་ $count',
+      one: 'སྐྱབས་ཞུ། 1',
+      other: 'སྐྱབས་ཞུ། $count',
     );
     return '$_temp0';
   }
@@ -2938,11 +2941,11 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཁྱེད་ཀྱི་རེ་ཞུ་དང་ཁྱེད་ཀྱི་སྤྱི་ཚོགས་ཀྱི་རེ་ཞུ་འདིར་མངོན་རྒྱུ་རེད';
 
   @override
-  String get event_prayer_add => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་ཁ་སྣོན།';
+  String get event_prayer_add => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཅིག་ཞུ།';
 
   @override
   String get event_prayer_hint =>
-      'དེ་རིང་ང་ཚོས་ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་ཇི་ལྟར་འདེབས་དགོས';
+      'དེ་རིང་ང་ཚོས་ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་ཇི་ལྟར་འདེབས་དགོས།';
 
   @override
   String get event_prayer_load_failed => 'ཐུགས་སྨོན་སྐྱབས་ཞུ་ལེན་ཐུབ་མ་སོང་།';
@@ -2951,7 +2954,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_closed => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་ས་སྒོ་བརྒྱབ་འདུག';
 
   @override
-  String get event_prayer_pray => 'སྨོན་ལམ་ཞུ།';
+  String get event_prayer_pray => 'སྨོན་ལམ་འདེབས།';
 
   @override
   String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན་པ';
@@ -2976,7 +2979,7 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get event_prayer_delete_failed =>
-      'The prayer request couldn\'t be deleted.';
+      'The prayer request couldn\'t be deleted';
 
   @override
   String get event_prayer_choose_intention => 'སྨོན་ལམ་གྱི་དམིགས་ཡུལ་ཞིག་འདེམས';
@@ -3019,7 +3022,7 @@ class AppLocalizationsBo extends AppLocalizations {
   }
 
   @override
-  String get event_prayer_your_request => 'ཁྱེད་ཀྱི་རེ་ཞུ';
+  String get event_prayer_your_request => 'ཁྱེད་ཀྱི་སྐྱབས་ཞུ།';
 
   @override
   String get event_prayer_supporters_failed =>

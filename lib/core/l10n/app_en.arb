@@ -13,11 +13,11 @@
   "onboarding_language_subtitle": "This sets the language of the app",
   "onboarding_choose_option": "Choose at least one:",
   "onboarding_all_set": "You're all set",
-  "onboarding_all_set_description": "Here's what's ready for your practice",
+  "onboarding_all_set_description": "Here's what's waiting for you:",
   "onboarding_all_set_practice_title": "Practice",
   "onboarding_all_set_practice_body": "Plans, chants, malas and meditation",
   "onboarding_all_set_connect_title": "Connect",
-  "onboarding_all_set_connect_body": "Groups, events, news feed and chat",
+  "onboarding_all_set_connect_body": "Spaces, events, newsfeed and chat",
   "home_recitation": "recitations",
   "home_today": "Today",
   "home_good_morning": "Good morning",
@@ -54,7 +54,7 @@
   "bookmark_mala": "Malas",
   "bookmark_timers": "Timers",
   "bookmark_texts": "Texts",
-  "bookmark_group_accumulation": "Channel accumulations",
+  "bookmark_group_accumulation": "Space accumulations",
   "mala_add_to_practice": "Add to my practices",
   "mala_add_mala_round": "Add mala round",
   "mala_add_rounds_title": "Add mala rounds:",
@@ -91,7 +91,7 @@
   },
   "mala_group_accumulations": "Add recitation to",
   "mala_groups_section": "Groups",
-  "mala_group_untitled": "Untitled group",
+  "mala_group_untitled": "Untitled space",
   "mala_all_time_accumulation": "My all-time accumulation",
   "mala_personal_practice": "Personal practice",
   "mala_events_section": "Events",
@@ -230,7 +230,7 @@
     }
   },
   "bookmarks_empty_chant_collections_title": "No chant collections bookmarked yet",
-  "bookmarks_empty_chant_collections_subtitle": "Bookmark a chant collection to save it here",
+  "bookmarks_empty_chant_collections_subtitle": "Bookmark one to save it here",
   "notification_settings": "Notification settings",
   "notification_allow_title": "Allow notifications",
   "notification_allow_subtitle_enabled": "Notifications are enabled for this app",
@@ -249,7 +249,7 @@
   "notification_practice_subtitle_enabled": "Daily reminders for your mala practice",
   "notification_practice_subtitle_disabled": "Mala reminders are paused. Tap to resume",
   "notification_timer_title": "Timer reminders",
-  "notification_timer_subtitle_enabled": "Daily reminders for your timer sessions",
+  "notification_timer_subtitle_enabled": "Daily reminders for your timers",
   "notification_timer_subtitle_disabled": "Timer reminders are paused. Tap to resume",
   "notification_battery_info_title": "About background reminders",
   "notification_battery_info_body": "Some Android phones pause background apps to save battery, which can delay or cancel your scheduled reminders. Exempting the app keeps your reminders reliably on time.",
@@ -306,39 +306,39 @@
   "plans_empty_subtitle": "Our library is growing. Check back soon.",
   "find_plans_load_error": "Unable to load.\nCheck your connection and try again",
   "connect_coming_soon_subtitle": "Teachers, communities, challenges, and events to support you on the path",
-  "connect_subtitle": "Find channels and practice together",
-  "discover_groups": "Discover channels",
-  "my_groups": "My channels",
+  "connect_subtitle": "Find spaces and practice together",
+  "discover_groups": "Discover spaces",
+  "my_groups": "My spaces",
   "see_all": "See all",
-  "connect_groups_load_error": "Unable to load channels.\nCheck your connection and try again",
-  "connect_groups_empty_title": "No more channels",
-  "connect_groups_empty_subtitle": "Congrats, you're subscribed to all our channels! Check back soon. New ones are on the way",
+  "connect_groups_load_error": "Unable to load spaces.\nCheck your connection and try again",
+  "connect_groups_empty_title": "No more spaces",
+  "connect_groups_empty_subtitle": "Congrats, you've joined all our spaces! Check back soon. New ones are on the way...",
   "connect_tab_feed": "Feed",
   "connect_tab_events": "Events",
   "connect_tab_posts": "Posts",
   "connect_tab_practices": "Practices",
-  "connect_tab_groups": "Channels",
-  "connect_segment_my": "Your channels",
+  "connect_tab_groups": "Spaces",
+  "connect_segment_my": "Your spaces",
   "connect_segment_discover": "Discover",
   "connect_empty_discover_posts": "No posts to discover",
   "connect_empty_discover_events": "No events to discover",
   "connect_empty_discover_feed": "Nothing to discover",
-  "connect_empty_discover_groups": "No channels to discover",
+  "connect_empty_discover_groups": "No spaces to discover",
   "connect_empty_discover_practices": "No practices to discover",
-  "connect_all_groups": "All channels",
-  "connect_my_empty_feed_title": "Your channels have been quiet",
+  "connect_all_groups": "All spaces",
+  "connect_my_empty_feed_title": "Your spaces have been quiet",
   "connect_my_empty_events_title": "No upcoming events",
   "connect_my_empty_posts_title": "No posts yet",
-  "connect_my_empty_groups_title": "No channels yet",
-  "connect_my_empty_feed_subtitle": "Nothing new from your channels. Others are posting today",
-  "connect_my_empty_events_subtitle": "None of your channels have anything scheduled. Others have events open to everyone",
-  "connect_my_empty_posts_subtitle": "Your channels haven't posted anything. See what others are sharing",
-  "connect_my_empty_groups_subtitle": "You haven't subscribed to any channels yet. Discover some to practice with",
-  "connect_my_empty_feed_browse": "See what other channels are sharing",
+  "connect_my_empty_groups_title": "No spaces yet",
+  "connect_my_empty_feed_subtitle": "Nothing new from your spaces. Others are posting today",
+  "connect_my_empty_events_subtitle": "Nothing scheduled in your spaces right now. Others have events open to everyone",
+  "connect_my_empty_posts_subtitle": "Your spaces haven't posted anything. See what others are sharing",
+  "connect_my_empty_groups_subtitle": "You haven't joined any spaces yet. Discover some to practice with",
+  "connect_my_empty_feed_browse": "See what other spaces are sharing",
   "connect_my_empty_events_browse": "Browse open events",
   "connect_my_empty_posts_browse": "Browse other posts",
   "connect_my_empty_practices_title": "No practices yet",
-  "connect_my_empty_practices_subtitle": "Your channels haven't started any practices. See what others are offering",
+  "connect_my_empty_practices_subtitle": "Your spaces haven't started any practices. See what others are offering",
   "connect_my_empty_practices_browse": "Browse other practices",
   "connect_comment_replying_to": "Replying to @{handle}",
   "@connect_comment_replying_to": {
@@ -377,7 +377,7 @@
   "connect_events_filter_empty_hybrid": "No hybrid events",
   "connect_open": "Open",
   "connect_event_fallback_title": "Event",
-  "connect_group_fallback_title": "Channel",
+  "connect_group_fallback_title": "Space",
   "connect_event_attend": "Attend",
   "connect_event_attending": "Attending",
   "connect_event_join_in_person": "Join in person",
@@ -430,9 +430,9 @@
     }
   },
   "connect_event_about_empty": "No event details yet",
-  "search_groups": "Search channels",
-  "search_for_groups": "Search for channels",
-  "no_groups_found": "No matching channels found",
+  "search_groups": "Search spaces",
+  "search_for_groups": "Search for spaces",
+  "no_groups_found": "No matching spaces found",
   "explore_coming_soon_subtitle": "A curated space to discover practices, teachings, and community events",
   "learn_coming_soon_subtitle": "Your personal study plans, designed to fit into everyday life",
   "creator_featured_plan": "Featured plans",
@@ -846,8 +846,8 @@
   "moon_phase_waning_gibbous": "Waning gibbous",
   "moon_phase_last_quarter": "Last quarter",
   "moon_phase_waning_crescent": "Waning crescent",
-  "join": "Subscribe",
-  "joined": "Subscribed",
+  "join": "Join",
+  "joined": "Joined",
   "group_member": "member",
   "group_members": "members",
   "group_tab_members": "Members",
@@ -870,8 +870,8 @@
   },
   "group_invite": "Invite",
   "group_notifications_title": "Notifications",
-  "group_notifications_chat": "Channel chat",
-  "group_notifications_content": "Channel content",
+  "group_notifications_chat": "Space chat",
+  "group_notifications_content": "Space content",
   "group_notifications_master_off": "Notifications are turned off for the app",
   "group_notifications_open_settings": "Turn on",
   "group_notifications_update_failed": "Couldn't update notification settings. Try again",
@@ -880,20 +880,20 @@
   "group_chat_unmute_notifications": "Unmute chat notifications",
   "group_chat_notifications_muted": "Chat notifications muted",
   "group_chat_notifications_unmuted": "Chat notifications on",
-  "group_leave": "Unsubscribe",
-  "group_leave_confirm_title": "Unsubscribe?",
-  "group_leave_confirm_message": "You'll stop getting messages and updates from this channel",
-  "group_leave_failed": "Couldn't unsubscribe. Try again",
-  "group_request_to_join": "Request to subscribe",
-  "group_request": "Request",
+  "group_leave": "Unjoin",
+  "group_leave_confirm_title": "Unjoin?",
+  "group_leave_confirm_message": "You'll stop getting messages and updates from this space",
+  "group_leave_failed": "Couldn't unjoin. Try again",
+  "group_request_to_join": "Ask to join",
+  "group_request": "Ask to join",
   "group_request_sent": "Request sent",
-  "group_join_request_title": "Request to subscribe",
+  "group_join_request_title": "Ask to join",
   "group_join_request_message_label": "Message (optional)",
   "group_join_request_message_hint": "How do you practice, or who invited you?",
   "group_join_request_send": "Send request",
   "group_join_request_sent_snackbar": "Request sent. An admin will review it",
   "group_join_request_error": "Unable to send request. Please try again",
-  "group_join_requests_title": "Subscribe requests",
+  "group_join_requests_title": "Join requests",
   "group_join_requests_admit": "Admit",
   "group_join_requests_deny": "Deny",
   "group_join_requests_empty": "No pending requests",
@@ -901,13 +901,14 @@
   "group_join_requests_admit_error": "Unable to admit this request. Please try again",
   "group_join_requests_deny_error": "Unable to deny this request. Please try again",
   "group_members_only_title": "Members only",
-  "group_members_only_message": "Subscribe to see this channel's content",
+  "group_members_only_message": "Join this space to see its content",
   "group_join_request_waiting_title": "Waiting on an admin",
-  "group_join_request_waiting_message": "We'll notify you as soon as your request is reviewed",
+  "group_join_request_waiting_message": "We'll notify you when your request is reviewed",
   "group_members_load_error": "Unable to load members. Please try again",
   "group_followers_load_error": "Unable to load followers. Please try again.",
   "group_members_empty": "No members yet",
   "group_member_admin": "Admin",
+  "group_member_owner": "Owner",
   "group_remove_member": "Remove {name}",
   "@group_remove_member": {
     "placeholders": {
@@ -916,8 +917,8 @@
       }
     }
   },
-  "group_remove_member_title": "Remove from channel?",
-  "group_remove_member_message": "{name} will be removed from this channel and unable to resubscribe until the ban is lifted",
+  "group_remove_member_title": "Remove from space?",
+  "group_remove_member_message": "{name} will be removed from this space and unable to rejoin it until the ban is lifted",
   "@group_remove_member_message": {
     "placeholders": {
       "name": {
@@ -939,7 +940,7 @@
   "group_remove_member_reason_label": "Reason (optional)",
   "group_remove_member_reason_hint": "Something else...",
   "group_remove_member_action": "Remove",
-  "group_remove_member_success": "{name} was removed from the channel",
+  "group_remove_member_success": "{name} was removed from the space",
   "@group_remove_member_success": {
     "placeholders": {
       "name": {
@@ -948,7 +949,7 @@
     }
   },
   "group_remove_member_error": "Couldn't remove this member. Try again",
-  "group_join_banned_until": "You were removed from this channel and cannot resubscribe until {date}",
+  "group_join_banned_until": "You were removed from this space and can't rejoin until {date}",
   "@group_join_banned_until": {
     "placeholders": {
       "date": {
@@ -956,9 +957,9 @@
       }
     }
   },
-  "group_join_banned": "You were removed from this channel and cannot resubscribe until the ban is lifted",
-  "group_removed_title": "You've been removed from this channel",
-  "group_removed_message": "An admin from {group} removed you from this channel. You won't be able to view its posts, events and practices, or ask to resubscribe for {duration}.",
+  "group_join_banned": "You were removed from this space and can't rejoin until the ban is lifted",
+  "group_removed_title": "You've been removed from this space",
+  "group_removed_message": "An admin from {group} removed you from this space. You won't be able to view its posts, events and practices, or ask to rejoin for {duration}.",
   "@group_removed_message": {
     "placeholders": {
       "group": {
@@ -969,7 +970,7 @@
       }
     }
   },
-  "group_removed_message_no_date": "An admin from {group} removed you from this channel. You won't be able to view its posts, events and practices, or ask to resubscribe",
+  "group_removed_message_no_date": "An admin from {group} removed you from this space. You won't be able to view its posts, events and practices, or ask to rejoin",
   "@group_removed_message_no_date": {
     "placeholders": {
       "group": {
@@ -977,7 +978,7 @@
       }
     }
   },
-  "group_removed_rejoin_label": "You can request to resubscribe to this channel on",
+  "group_removed_rejoin_label": "You can ask to join to this space on",
   "group_removed_rejoin_value": "{date} · {remaining}",
   "@group_removed_rejoin_value": {
     "placeholders": {
@@ -1015,9 +1016,9 @@
       }
     }
   },
-  "group_change_practice_title": "Change practice channel",
-  "group_change_practice_message": "You are already practicing this plan with another channel. Would you like to change your practice channel?",
-  "group_join_to_contribute": "Subscribe to contribute",
+  "group_change_practice_title": "Change practice space",
+  "group_change_practice_message": "You are already practicing this plan with another space. Would you like to change your practice space?",
+  "group_join_to_contribute": "Join to contribute",
   "group_accumulator_join_error": "Unable to join accumulation. Please try again",
   "group_accumulator_join_before_practice": "Join this accumulation before adding it to your practices",
   "group_accumulator_participants": "{count} participants",
@@ -1131,7 +1132,7 @@
   "share_timer_message": "I wanted to share this meditation timer from WeBuddhist with you. It makes it easy to build a meditation practice.",
   "share_plan_message": "I'm following this Buddhist practice plan and wanted to share it with you. You can join me for free on WeBuddhist.",
   "share_plan_subject": "Join me on WeBuddhist",
-  "share_group_invite_message": "Join me on this channel. Let's practice together on WeBuddhist!",
+  "share_group_invite_message": "Join me in this space. Let's practice together on WeBuddhist!",
   "weekday_monday": "MON",
   "weekday_tuesday": "TUE",
   "weekday_wednesday": "WED",
@@ -1157,15 +1158,15 @@
   "bookmarks_empty_all_title": "Nothing bookmarked yet",
   "bookmarks_empty_all_subtitle": "Bookmark anything to save it here",
   "bookmarks_empty_plans_title": "No plans bookmarked yet",
-  "bookmarks_empty_plans_subtitle": "Bookmark a plan to save it here",
+  "bookmarks_empty_plans_subtitle": "Bookmark one to save it here",
   "bookmarks_empty_malas_title": "No malas bookmarked yet",
-  "bookmarks_empty_malas_subtitle": "Bookmark a mala to save it here",
-  "bookmarks_empty_group_accumulations_title": "No channel accumulations bookmarked yet",
-  "bookmarks_empty_group_accumulations_subtitle": "Bookmark a channel accumulation to save it here",
+  "bookmarks_empty_malas_subtitle": "Bookmark one to save it here",
+  "bookmarks_empty_group_accumulations_title": "No space accumulations bookmarked yet",
+  "bookmarks_empty_group_accumulations_subtitle": "Bookmark one to save it here",
   "bookmarks_empty_timers_title": "No timers bookmarked yet",
-  "bookmarks_empty_timers_subtitle": "Bookmark a timer to save it here",
+  "bookmarks_empty_timers_subtitle": "Bookmark one to save it here",
   "bookmarks_empty_texts_title": "No texts bookmarked yet",
-  "bookmarks_empty_texts_subtitle": "Bookmark a text to save it here",
+  "bookmarks_empty_texts_subtitle": "Bookmark one to save it here",
   "bookmark_removed": "Bookmark removed",
   "bookmark_remove_failed": "Failed to remove bookmark",
   "bookmark_saved": "Bookmark saved",
@@ -1310,7 +1311,7 @@
   "group_chat_title": "Chat",
   "chats_title": "Chats",
   "chats_empty_title": "No chats yet",
-  "chats_empty_body": "Subscribe to a channel to start chatting",
+  "chats_empty_body": "Join a space to start chatting",
   "group_chat_inappropriate": "This message couldn't be sent because it contains language that isn't allowed",
   "group_chat_not_a_member": "Only members can open this chat",
   "group_chat_open": "Chat",
@@ -1319,7 +1320,7 @@
   "group_chat_today": "Today",
   "group_chat_yesterday": "Yesterday",
   "group_chat_empty_title": "No messages yet",
-  "group_chat_empty_body": "Start the conversation with your channel",
+  "group_chat_empty_body": "Start the conversation with your space",
   "group_chat_load_failed": "Messages couldn't be loaded",
   "group_chat_retry": "Retry",
   "group_chat_unknown_sender": "Member",
@@ -1394,7 +1395,7 @@
   "group_tab_posts": "Posts",
   "group_tab_events": "Events",
   "group_posts_empty_title": "No posts yet",
-  "group_posts_empty_message": "Share your first update on your channel",
+  "group_posts_empty_message": "Share your space's first update",
   "group_posts_load_error": "Unable to load posts. Please try again",
   "group_post_button": "Post",
   "group_post_new_title": "New post",
@@ -1451,13 +1452,13 @@
     }
   },
   "event_prayer_empty_title": "No prayer requests yet",
-  "event_prayer_empty_body": "Your request and your community's will appear here",
+  "event_prayer_empty_body": "Your request and your space's requests will appear here",
   "event_prayer_add": "Add a prayer request",
-  "event_prayer_hint": "How can we pray for you today",
+  "event_prayer_hint": "How can we pray for you today?",
   "event_prayer_load_failed": "Prayer requests couldn't be loaded",
   "event_prayer_closed": "Prayer requests are closed for this event",
   "event_prayer_pray": "Pray",
-  "event_prayer_praying": "Praying",
+  "event_prayer_praying": "Prayed",
   "event_prayer_my_count": "+{count}",
   "@event_prayer_my_count": {
     "placeholders": {
@@ -1470,13 +1471,13 @@
   "event_prayer_edit_request": "Edit prayer request",
   "event_prayer_delete_title": "Delete prayer request?",
   "event_prayer_delete_body": "It will be removed for everyone in this event.",
-  "event_prayer_delete_failed": "The prayer request couldn't be deleted.",
+  "event_prayer_delete_failed": "The prayer request couldn't be deleted",
   "event_prayer_choose_intention": "Choose an intention",
-  "event_prayer_intentions_failed": "Intentions couldn't be loaded.",
+  "event_prayer_intentions_failed": "Intentions couldn't be loaded",
   "event_prayer_request_button": "Request prayer",
   "event_prayer_you": "You",
   "event_prayer_waiting_first": "Waiting for the first prayer...",
-  "event_prayer_more_praying": "+{count} more are praying",
+  "event_prayer_more_praying": "+{count} more prayed",
   "@event_prayer_more_praying": {
     "placeholders": {
       "count": {
@@ -1484,7 +1485,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {1 person is praying}\nother {{count} people are praying}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {1 person prayed}\nother {{count} people prayed}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1492,8 +1493,8 @@
       }
     }
   },
-  "event_prayer_praying_for_you": "Praying for you",
-  "event_prayer_praying_for": "Praying for {name}",
+  "event_prayer_praying_for_you": "Prayed for you",
+  "event_prayer_praying_for": "Prayed for {name}",
   "@event_prayer_praying_for": {
     "placeholders": {
       "name": {
@@ -1503,7 +1504,7 @@
   },
   "event_prayer_your_request": "Your request",
   "event_prayer_supporters_failed": "Couldn't load who is praying.",
-  "event_prayer_no_supporters": "No one is praying yet.",
+  "event_prayer_no_supporters": "No one is praying yet",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",
@@ -1522,7 +1523,7 @@
   "feedback_send": "Send",
   "feedback_sent": "Thank you! Your feedback has been sent",
   "feedback_error_offline": "You're offline. Please try again later",
-  "feedback_error_rate_limited": "Too many requests. Please wait a moment and try again",
+  "feedback_error_rate_limited": "Too many requests. Wait a moment and try again",
   "feedback_error_too_large": "Images are too large. Remove one and try again",
   "feedback_error_failed": "Couldn't send feedback. Please try again",
   "feedback_error_unavailable": "Feedback is not available right now"

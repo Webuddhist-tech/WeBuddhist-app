@@ -1170,7 +1170,7 @@
   "event_prayer_intentions_failed": "無法載入祈禱意向。",
   "event_prayer_you": "你",
   "event_prayer_waiting_first": "正在等待第一個祈禱⋯⋯",
-  "event_prayer_more_praying": "另有 +{count} 人正在禱告",
+  "event_prayer_more_praying": "另有 +{count} 人正在祈願迴向",
   "@event_prayer_more_praying": {
     "placeholders": {
       "count": {
@@ -1178,7 +1178,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\nother {# 人正在禱告}\n}",
+  "event_prayer_people_praying": "{count, plural,\nother {# 人正在祈願迴向}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1187,7 +1187,7 @@
     }
   },
   "event_prayer_praying_for_you": "為你迴向",
-  "event_prayer_praying_for": "為 {name} 禱告",
+  "event_prayer_praying_for": "為 {name} 祈願迴向",
   "@event_prayer_praying_for": {
     "placeholders": {
       "name": {
@@ -1196,7 +1196,7 @@
     }
   },
   "event_prayer_your_request": "您的請求",
-  "event_prayer_supporters_failed": "無法載入正在禱告的人",
+  "event_prayer_supporters_failed": "無法載入正在祈願迴向的人",
   "event_prayer_no_supporters": "目前還沒有人祈禱。",
   "recitation_live_sync": "同步",
   "recitation_live_label": "直播中",
