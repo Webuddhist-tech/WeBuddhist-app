@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class _FakeChannel implements WebSocketChannel {
-  _FakeChannel({this.closeNeverCompletes = false});
+  _FakeChannel({this.closeNeverCompletes = false, this.closeFails = false});
 
   final incoming = StreamController<dynamic>();
   bool sinkClosed = false;
@@ -15,6 +15,9 @@ class _FakeChannel implements WebSocketChannel {
   /// Mimics a socket whose connect is still pending: closing it waits on
   /// the OS connect timeout.
   final bool closeNeverCompletes;
+
+  /// Mimics a socket that errors while closing.
+  final bool closeFails;
 
   @override
   Stream<dynamic> get stream => incoming.stream;
@@ -37,6 +40,7 @@ class _FakeSink implements WebSocketSink {
   Future<void> close([int? closeCode, String? closeReason]) {
     channel.sinkClosed = true;
     if (channel.closeNeverCompletes) return Completer<void>().future;
+    if (channel.closeFails) return Future.error(StateError('close failed'));
     return Future.value();
   }
 
@@ -124,6 +128,18 @@ void main() {
     ).timeout(const Duration(seconds: 2), onTimeout: () => fail('hung'));
 
     expect(position, isNull);
+    expect(channel.sinkClosed, isTrue);
+  });
+
+  test('drops an error from closing the socket', () async {
+    final channel = _FakeChannel(closeFails: true);
+    final future = _peek(channel);
+    channel.incoming.add(_sessionInfo);
+    channel.incoming.add(_position);
+
+    expect((await future)?.textId, 't1');
+    // Let the unawaited close settle; an escaped error fails the test.
+    await Future<void>.delayed(Duration.zero);
     expect(channel.sinkClosed, isTrue);
   });
 }

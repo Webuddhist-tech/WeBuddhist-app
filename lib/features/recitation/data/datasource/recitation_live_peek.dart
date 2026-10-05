@@ -8,11 +8,12 @@ import 'package:flutter_pecha/features/recitation/data/models/recitation_live_po
 /// Null means the session has not started, has ended, or the socket was
 /// refused. A position that follows `session_info` is the snapshot of the
 /// room; if none arrives within [snapshotGrace], the session is treated as
-/// not started.
+/// not started. The server sends the snapshot right behind `session_info`,
+/// so the grace only has to cover one Redis read, not a round trip.
 Future<RecitationLivePosition?> peekRecitationLivePosition({
   required RecitationLiveClient client,
   required Uri uri,
-  Duration snapshotGrace = const Duration(seconds: 2),
+  Duration snapshotGrace = const Duration(milliseconds: 500),
   Duration timeout = const Duration(seconds: 6),
 }) async {
   final done = Completer<RecitationLivePosition?>();
@@ -54,6 +55,7 @@ Future<RecitationLivePosition?> peekRecitationLivePosition({
     await subscription?.cancel();
     // Not awaited: closing a socket whose connect is still pending waits on
     // the OS connect timeout, which would hold the caller well past [timeout].
-    unawaited(client.dispose());
+    // A late close error has nobody left to report to, so it is dropped.
+    client.dispose().ignore();
   }
 }
