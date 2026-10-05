@@ -46,18 +46,15 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
     final edition = await _library.resolveEdition(loadId);
     final tocFuture = _tableOfContents(edition.id);
     final text = await _library.getText(edition.textId);
-    // The parallel reader's first anchor is a primary segment id.
-    final anchorEdition =
-        isSecondary && segmentId != null
-            ? await _library.resolveEdition(textId)
-            : null;
+    // The parallel reader pairs the companion with the primary's verses.
+    final primary = isSecondary ? await _library.resolveEdition(textId) : null;
 
     final pageSize = size ?? TextDetailsConstants.defaultPageSize;
     final pageDirection = direction ?? 'next';
     final window = await _library.loadWindow(
       editionId: edition.id,
       anchorSegmentId: segmentId,
-      anchorEditionId: anchorEdition?.id,
+      primaryEditionId: primary?.id,
       direction: pageDirection,
       size: pageSize,
     );

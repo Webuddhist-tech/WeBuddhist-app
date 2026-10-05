@@ -1,3 +1,5 @@
+import 'package:flutter_pecha/features/library/data/models/library_page.dart';
+
 /// Code-point span of one line inside an edition's content; [end] is exclusive.
 class LibraryLineSpan {
   final int start;
@@ -61,8 +63,10 @@ class LibrarySegment {
   int get hashCode => id.hashCode;
 }
 
-class LibrarySegmentPage {
+class LibrarySegmentPage implements LibraryPage<LibrarySegment> {
+  @override
   final List<LibrarySegment> items;
+  @override
   final bool hasMore;
   final int offset;
   final int limit;

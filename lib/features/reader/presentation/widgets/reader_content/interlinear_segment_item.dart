@@ -16,11 +16,12 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Which lines a verse draws in the dual layout. "Translation only"
-/// ([showOriginal] false) still draws the original wherever there is no
-/// translation to show — failed to load, or no aligned line for this verse —
-/// so the page never turns into a column of placeholders. While the verse's
-/// translation is still on its way ([translationPending]) it draws the
-/// loading line instead, so the original does not flash in before it.
+/// ([showOriginal] false) still draws the original when the translation
+/// could not be loaded, so the page never turns into a column of
+/// placeholders; a verse the translation has no line for is left out before
+/// this (see `SecondaryReaderState.lacks`). While the verse's translation is
+/// still on its way ([translationPending]) it draws the loading line instead,
+/// so the original does not flash in before it.
 ({bool original, bool translation}) interlinearLayers({
   required bool showOriginal,
   required bool hasTranslation,
@@ -145,53 +146,51 @@ class InterlinearSegmentItem extends ConsumerWidget {
                 top: ReaderConstants.segmentVerticalPadding,
                 bottom: ReaderConstants.segmentVerticalPadding,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SegmentNumber(
                     label: segment.displayNumber,
                     fontSize: fontSize,
                     language: primaryLanguage,
                   ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (layers.original) ...[
-                          SegmentHtmlWidget(
-                            htmlContent: primary.html,
-                            segmentIndex: segment.segmentNumber,
-                            fontSize: fontSize,
-                            language: primary.fontLanguage,
-                            isSelected: isSelected,
-                            fontStyle: typeStyle.fontStyle,
-                            fontWeight: typeStyle.fontWeight,
-                          ),
-                          // Original and its translation belong together; the
-                          // larger gap goes between verses, below.
-                          if (layers.translation) const SizedBox(height: 6),
-                        ],
-                        if (layers.translation && secondary.isPlaceholder)
-                          _SecondaryPlaceholder(
-                            text: secondary.text,
-                            language: secondarySlot.languageCode,
-                            fontSize: fontSize,
-                            color: secondaryColor,
-                          )
-                        else if (layers.translation)
-                          SegmentHtmlWidget(
-                            htmlContent: secondary.text,
-                            segmentIndex: segment.segmentNumber,
-                            fontSize: fontSize,
-                            language: secondarySlot.languageCode,
-                            isSelected: isSelected,
-                            textColor: secondaryColor,
-                            fontStyle: typeStyle.fontStyle,
-                            fontWeight: typeStyle.fontWeight,
-                          ),
-                        const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (layers.original) ...[
+                        SegmentHtmlWidget(
+                          htmlContent: primary.html,
+                          segmentIndex: segment.segmentNumber,
+                          fontSize: fontSize,
+                          language: primary.fontLanguage,
+                          isSelected: isSelected,
+                          fontStyle: typeStyle.fontStyle,
+                          fontWeight: typeStyle.fontWeight,
+                        ),
+                        // Original and its translation belong together; the
+                        // larger gap goes between verses, below.
+                        if (layers.translation) const SizedBox(height: 6),
                       ],
-                    ),
+                      if (layers.translation && secondary.isPlaceholder)
+                        _SecondaryPlaceholder(
+                          text: secondary.text,
+                          language: secondarySlot.languageCode,
+                          fontSize: fontSize,
+                          color: secondaryColor,
+                        )
+                      else if (layers.translation)
+                        SegmentHtmlWidget(
+                          htmlContent: secondary.text,
+                          segmentIndex: segment.segmentNumber,
+                          fontSize: fontSize,
+                          language: secondarySlot.languageCode,
+                          isSelected: isSelected,
+                          textColor: secondaryColor,
+                          fontStyle: typeStyle.fontStyle,
+                          fontWeight: typeStyle.fontWeight,
+                        ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ],
               ),

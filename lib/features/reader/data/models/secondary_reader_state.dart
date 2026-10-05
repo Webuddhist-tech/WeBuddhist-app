@@ -121,6 +121,16 @@ class SecondaryReaderState {
     return false;
   }
 
+  /// True when the translation has been read around [segmentNumber] and has
+  /// no line for it, so a page showing only the translation leaves it out.
+  /// Never after a failure or before anything loaded: the original shows.
+  bool lacks(int segmentNumber) =>
+      loadedSegments.isNotEmpty &&
+      errorMessage == null &&
+      !pagingFailed &&
+      !isPending(segmentNumber) &&
+      !contentBySegmentNumber.containsKey(segmentNumber);
+
   /// True when the primary's verses [first]..[last] reach past what has
   /// loaded in a direction that still has pages, and nothing is in flight.
   bool needsToCover(int first, int last) {

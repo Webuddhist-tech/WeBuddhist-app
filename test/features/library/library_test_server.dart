@@ -112,6 +112,12 @@ Map<String, dynamic> textJson(
   'tag_ids': [],
 };
 
+/// One pair of an alignment page: segment [sourceId] to segment [targetId].
+Map<String, dynamic> alignmentJson(String sourceId, String targetId) => {
+  'source_segment': segmentJson(sourceId, null, const []),
+  'target_segment': segmentJson(targetId, null, const []),
+};
+
 Map<String, dynamic> pageJson(
   List<Map<String, dynamic>> items, {
   bool hasMore = false,

@@ -22,31 +22,26 @@ class SegmentSkeleton extends StatelessWidget {
           horizontal: ReaderConstants.segmentHorizontalPadding,
           vertical: ReaderConstants.segmentVerticalPadding,
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Segment number skeleton
-            if (showNumber) ...[
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: SizedBox(
-                  width: ReaderConstants.segmentNumberWidth,
-                  child: Bone.text(words: 1),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-            // Content lines skeleton
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: List.generate(
-                  lineCount,
-                  (index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Bone.text(words: index == lineCount - 1 ? 3 : 8),
+            // Segment number skeleton, centered above the content
+            if (showNumber)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 4),
+                  child: SizedBox(
+                    width: ReaderConstants.segmentNumberWidth,
+                    child: Bone.text(words: 1),
                   ),
                 ),
+              ),
+            // Content lines skeleton
+            ...List.generate(
+              lineCount,
+              (index) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Bone.text(words: index == lineCount - 1 ? 3 : 8),
               ),
             ),
           ],
