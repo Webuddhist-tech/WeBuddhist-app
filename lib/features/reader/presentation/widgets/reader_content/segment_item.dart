@@ -73,8 +73,8 @@ class SegmentItem extends ConsumerWidget {
                 top: ReaderConstants.segmentVerticalPadding,
                 bottom: ReaderConstants.segmentVerticalPadding,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SegmentNumber(
                     label: segment.displayNumber,
@@ -82,16 +82,14 @@ class SegmentItem extends ConsumerWidget {
                     language: language,
                   ),
                   // Segment content
-                  Expanded(
-                    child: SegmentHtmlWidget(
-                      htmlContent: primary.html,
-                      segmentIndex: segment.segmentNumber,
-                      fontSize: fontSize,
-                      language: primary.fontLanguage,
-                      isSelected: isSelected,
-                      fontStyle: typeStyle.fontStyle,
-                      fontWeight: typeStyle.fontWeight,
-                    ),
+                  SegmentHtmlWidget(
+                    htmlContent: primary.html,
+                    segmentIndex: segment.segmentNumber,
+                    fontSize: fontSize,
+                    language: primary.fontLanguage,
+                    isSelected: isSelected,
+                    fontStyle: typeStyle.fontStyle,
+                    fontWeight: typeStyle.fontWeight,
                   ),
                 ],
               ),

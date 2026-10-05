@@ -146,53 +146,51 @@ class InterlinearSegmentItem extends ConsumerWidget {
                 top: ReaderConstants.segmentVerticalPadding,
                 bottom: ReaderConstants.segmentVerticalPadding,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SegmentNumber(
                     label: segment.displayNumber,
                     fontSize: fontSize,
                     language: primaryLanguage,
                   ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (layers.original) ...[
-                          SegmentHtmlWidget(
-                            htmlContent: primary.html,
-                            segmentIndex: segment.segmentNumber,
-                            fontSize: fontSize,
-                            language: primary.fontLanguage,
-                            isSelected: isSelected,
-                            fontStyle: typeStyle.fontStyle,
-                            fontWeight: typeStyle.fontWeight,
-                          ),
-                          // Original and its translation belong together; the
-                          // larger gap goes between verses, below.
-                          if (layers.translation) const SizedBox(height: 6),
-                        ],
-                        if (layers.translation && secondary.isPlaceholder)
-                          _SecondaryPlaceholder(
-                            text: secondary.text,
-                            language: secondarySlot.languageCode,
-                            fontSize: fontSize,
-                            color: secondaryColor,
-                          )
-                        else if (layers.translation)
-                          SegmentHtmlWidget(
-                            htmlContent: secondary.text,
-                            segmentIndex: segment.segmentNumber,
-                            fontSize: fontSize,
-                            language: secondarySlot.languageCode,
-                            isSelected: isSelected,
-                            textColor: secondaryColor,
-                            fontStyle: typeStyle.fontStyle,
-                            fontWeight: typeStyle.fontWeight,
-                          ),
-                        const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (layers.original) ...[
+                        SegmentHtmlWidget(
+                          htmlContent: primary.html,
+                          segmentIndex: segment.segmentNumber,
+                          fontSize: fontSize,
+                          language: primary.fontLanguage,
+                          isSelected: isSelected,
+                          fontStyle: typeStyle.fontStyle,
+                          fontWeight: typeStyle.fontWeight,
+                        ),
+                        // Original and its translation belong together; the
+                        // larger gap goes between verses, below.
+                        if (layers.translation) const SizedBox(height: 6),
                       ],
-                    ),
+                      if (layers.translation && secondary.isPlaceholder)
+                        _SecondaryPlaceholder(
+                          text: secondary.text,
+                          language: secondarySlot.languageCode,
+                          fontSize: fontSize,
+                          color: secondaryColor,
+                        )
+                      else if (layers.translation)
+                        SegmentHtmlWidget(
+                          htmlContent: secondary.text,
+                          segmentIndex: segment.segmentNumber,
+                          fontSize: fontSize,
+                          language: secondarySlot.languageCode,
+                          isSelected: isSelected,
+                          textColor: secondaryColor,
+                          fontStyle: typeStyle.fontStyle,
+                          fontWeight: typeStyle.fontWeight,
+                        ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ],
               ),
