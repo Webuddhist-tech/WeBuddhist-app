@@ -1992,6 +1992,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_member_admin => 'Admin';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return 'Remove $name';
   }

@@ -195,7 +195,7 @@ class _GroupProfileMembersTabState
                     member: member,
                     isDark: widget.isDark,
                     lineHeight: widget.lineHeight,
-                    showAdminBadge: member.isAdmin,
+                    showRoleBadge: member.isAdmin,
                     onRemove:
                         canRemove && member.canBeRemovedByAdmin && !isSelf
                             ? () => _removeMember(member)
@@ -248,14 +248,14 @@ class _GroupMemberRow extends StatelessWidget {
   final GroupMember member;
   final bool isDark;
   final double? lineHeight;
-  final bool showAdminBadge;
+  final bool showRoleBadge;
   final VoidCallback? onRemove;
 
   const _GroupMemberRow({
     required this.member,
     required this.isDark,
     this.lineHeight,
-    this.showAdminBadge = false,
+    this.showRoleBadge = false,
     this.onRemove,
   });
 
@@ -324,9 +324,15 @@ class _GroupMemberRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (showAdminBadge) ...[
+              if (showRoleBadge) ...[
                 const SizedBox(width: 8),
-                _AdminBadge(isDark: isDark),
+                _RoleBadge(
+                  label:
+                      member.isOwner
+                          ? context.l10n.group_member_owner
+                          : context.l10n.group_member_admin,
+                  isDark: isDark,
+                ),
               ] else if (onRemove != null) ...[
                 const SizedBox(width: 8),
                 IconButton(
@@ -354,10 +360,11 @@ class _GroupMemberRow extends StatelessWidget {
   }
 }
 
-class _AdminBadge extends StatelessWidget {
+class _RoleBadge extends StatelessWidget {
+  final String label;
   final bool isDark;
 
-  const _AdminBadge({required this.isDark});
+  const _RoleBadge({required this.label, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -368,7 +375,7 @@ class _AdminBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        context.l10n.group_member_admin,
+        label,
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,

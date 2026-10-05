@@ -2018,6 +2018,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_member_admin => 'एडमिन';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return '$name लाई हटाउनुहोस्';
   }

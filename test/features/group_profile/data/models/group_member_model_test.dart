@@ -15,6 +15,7 @@ void main() {
     expect(member.userId, 'c9957b3d-43ea-4f37-bd60-a7dd37a10c6a');
     expect(member.username, 'pema');
     expect(member.isAdmin, isTrue);
+    expect(member.isOwner, isFalse);
     expect(member.canBeRemovedByAdmin, isFalse);
   });
 
@@ -27,6 +28,7 @@ void main() {
           'role': 'OWNER',
         }).toEntity();
 
+    expect(member.isOwner, isTrue);
     expect(member.isAdmin, isTrue);
     expect(member.canBeRemovedByAdmin, isFalse);
   });

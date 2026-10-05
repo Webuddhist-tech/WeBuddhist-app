@@ -2004,6 +2004,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_member_admin => 'एडमिन';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return '$name को हटाएँ';
   }
