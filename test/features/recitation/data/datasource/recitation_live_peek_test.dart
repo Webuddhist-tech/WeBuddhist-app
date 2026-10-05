@@ -7,8 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class _FakeChannel implements WebSocketChannel {
+  _FakeChannel({this.closeNeverCompletes = false});
+
   final incoming = StreamController<dynamic>();
   bool sinkClosed = false;
+
+  /// Mimics a socket whose connect is still pending: closing it waits on
+  /// the OS connect timeout.
+  final bool closeNeverCompletes;
 
   @override
   Stream<dynamic> get stream => incoming.stream;
@@ -28,8 +34,10 @@ class _FakeSink implements WebSocketSink {
   void add(dynamic data) {}
 
   @override
-  Future<void> close([int? closeCode, String? closeReason]) async {
+  Future<void> close([int? closeCode, String? closeReason]) {
     channel.sinkClosed = true;
+    if (channel.closeNeverCompletes) return Completer<void>().future;
+    return Future.value();
   }
 
   @override
@@ -105,6 +113,17 @@ void main() {
     );
 
     expect(await future, isNull);
+    expect(channel.sinkClosed, isTrue);
+  });
+
+  test('returns at the timeout even when closing the socket stalls', () async {
+    final channel = _FakeChannel(closeNeverCompletes: true);
+    final position = await _peek(
+      channel,
+      timeout: const Duration(milliseconds: 40),
+    ).timeout(const Duration(seconds: 2), onTimeout: () => fail('hung'));
+
+    expect(position, isNull);
     expect(channel.sinkClosed, isTrue);
   });
 }

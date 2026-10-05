@@ -330,7 +330,6 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
     final liveTextId = widget.liveTextId;
     if (liveTextId == null || liveTextId.isEmpty || _didOpenLiveText) return;
     final items = PlanSubtaskNavigation.fromPlanTasks(tasks);
-    if (items.isEmpty) return;
     _didOpenLiveText = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

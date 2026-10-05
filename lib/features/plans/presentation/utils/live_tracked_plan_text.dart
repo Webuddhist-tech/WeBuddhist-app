@@ -54,6 +54,10 @@ Future<Set<String>> liveTextEditionIds(
 /// does. The live segment is used when the plan item is that same edition;
 /// another language keeps the task's own first segment and live follow
 /// aligns the verse.
+///
+/// When the live text is not in this day (another day's text, or a flexible
+/// plan whose day differs from the event's), the text opens on its own, still
+/// following the live recitation, without the day's sequence.
 Future<void> openLiveTrackedPlanText({
   required BuildContext context,
   required WidgetRef ref,
@@ -67,7 +71,7 @@ Future<void> openLiveTrackedPlanText({
   required bool isOnlineAttendee,
   required List<String> languages,
 }) async {
-  if (items.isEmpty || liveTextId.isEmpty) return;
+  if (liveTextId.isEmpty) return;
   var index = planItemIndexForLiveEditions(
     items: items,
     liveTextId: liveTextId,
@@ -81,7 +85,22 @@ Future<void> openLiveTrackedPlanText({
       editionIds: editions,
     );
   }
-  if (index < 0) return;
+  if (index < 0) {
+    await PlanNavigator.push(
+      context,
+      PlanTextItem.sourceReference(textId: liveTextId, title: ''),
+      NavigationContext(
+        source: NavigationSource.normal,
+        targetSegmentId:
+            liveSegmentId != null && liveSegmentId.isNotEmpty
+                ? liveSegmentId
+                : null,
+        eventId: eventId,
+        isOnlineAttendee: isOnlineAttendee,
+      ),
+    );
+    return;
+  }
 
   final target = items[index];
   final sameEdition = target.textId == liveTextId;

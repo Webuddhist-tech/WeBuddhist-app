@@ -52,6 +52,8 @@ Future<RecitationLivePosition?> peekRecitationLivePosition({
   } finally {
     grace?.cancel();
     await subscription?.cancel();
-    await client.dispose();
+    // Not awaited: closing a socket whose connect is still pending waits on
+    // the OS connect timeout, which would hold the caller well past [timeout].
+    unawaited(client.dispose());
   }
 }
