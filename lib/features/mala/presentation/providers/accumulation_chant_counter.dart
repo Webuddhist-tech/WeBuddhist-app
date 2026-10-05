@@ -38,6 +38,17 @@ bool countChantIntoSelection(ProviderReader read, Mantra mantra) {
   return total != null;
 }
 
+/// True when chants for [mantra] go to [groupAccumulatorId] right now, rather
+/// than to personal practice or another accumulation.
+bool isChantTarget(
+  ProviderReader read,
+  Mantra mantra,
+  String groupAccumulatorId,
+) {
+  final selection = read(malaAccumulationSelectionProvider(mantra.presetId));
+  return selection.groupAccumulatorId == groupAccumulatorId;
+}
+
 /// Adds [count] chants made outside the app to the selected target. Returns
 /// false when the target ignored them.
 bool addOfflineChantsToSelection(

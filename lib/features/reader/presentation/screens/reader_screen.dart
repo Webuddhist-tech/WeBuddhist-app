@@ -111,6 +111,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Chants made in this visit, whichever target each one was counted into.
   int _chantSessionCount = 0;
 
+  /// Those counted into the accumulation this reader was opened from, which
+  /// is what its completion sheet reports.
+  int _chantOpenedCount = 0;
+
   /// True once the accumulation this reader was opened from is the selected
   /// target; until then the selection still holds its unloaded default.
   bool _chantSelectionReady = false;
@@ -221,7 +225,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (mantra == null) return;
 
     if (!countChantIntoSelection(ref.read, mantra)) return;
-    setState(() => _chantSessionCount++);
+    _tallyChants(mantra, 1);
+  }
+
+  /// Adds chants just counted into the selected target to this visit's tallies.
+  void _tallyChants(Mantra mantra, int count) {
+    final opened = _chantContext?.groupAccumulatorId;
+    final intoOpened =
+        opened != null && isChantTarget(ref.read, mantra, opened);
+    setState(() {
+      _chantSessionCount += count;
+      if (intoOpened) _chantOpenedCount += count;
+    });
   }
 
   /// False while the selected target cannot take a chant yet: the selection is
@@ -254,14 +269,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       );
       return;
     }
-    setState(() => _chantSessionCount += count);
+    _tallyChants(mantra, count);
   }
 
   Future<void> _finishChantSession() async {
     final ctx = _chantContext;
     int? finishedSessionCount;
     if (ctx != null) {
-      final sessionCount = _chantSessionCount;
+      final sessionCount = _chantOpenedCount;
       final success = await finishGroupAccumulatorSession(
         ref: ref,
         groupAccumulatorId: ctx.groupAccumulatorId!,

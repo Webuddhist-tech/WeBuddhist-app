@@ -393,7 +393,8 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
 
     await _refreshAfterPractice(detail);
 
-    if (sessionCount == null) return;
+    // Zero: every chant of the visit was switched to another target.
+    if (sessionCount == null || sessionCount <= 0) return;
 
     showGroupAccumulatorSessionCompleteSheet(
       context,

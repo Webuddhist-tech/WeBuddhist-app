@@ -143,6 +143,17 @@ void main() {
     expect(personalTotal(container), 1);
   });
 
+  test('only the selected accumulation is the chant target', () async {
+    final container = await openSession();
+
+    await selection(container).selectGroup(_eventAccumulation);
+    expect(isChantTarget(container.read, _mantra, _eventAccumulation), isTrue);
+    expect(isChantTarget(container.read, _mantra, 'ga-other'), isFalse);
+
+    await selection(container).selectPersonal();
+    expect(isChantTarget(container.read, _mantra, _eventAccumulation), isFalse);
+  });
+
   test('a chant is not counted while personal practice is seeding', () async {
     repository.detailGate = Completer();
     final container = await openSession();

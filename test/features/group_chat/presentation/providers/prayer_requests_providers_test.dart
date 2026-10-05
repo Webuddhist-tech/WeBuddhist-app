@@ -1024,6 +1024,92 @@ void main() {
       expect(settled, isTrue);
     });
 
+    test('a call still out when the sheet closes keeps its 429 retry', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayedCounts, [2]);
+
+      // The call is answered only after the sheet has closed.
+      container.dispose();
+      repository.prayFailureOnce = const RateLimitFailure('slow down');
+      repository.prayGate!.complete();
+      await _settle(ticks: 10);
+
+      expect(repository.prayedCounts, [2, 2]);
+      expect(repository.mine['a'], 2);
+    });
+
+    test('a retry after closing joins the taps queued behind it', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      await _settle();
+      // One call is out; this tap waits for it and is drained on close.
+      notifier.pray('a');
+      container.dispose();
+      await _settle();
+      expect(repository.prayedCounts, [1, 1]);
+
+      repository.prayFailureOnce = const RateLimitFailure('slow down');
+      repository.prayGate!.complete();
+      await _settle(ticks: 10);
+
+      // The first call was refused and went out again; both taps landed once.
+      expect(repository.prayedCounts, [1, 1, 1]);
+      expect(repository.mine['a'], 2);
+    });
+
+    test('sign-out waits for a call still out, and for its retry', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer(
+        pacing: const PrayerPacing(
+          batchWindow: Duration.zero,
+          rateWindow: Duration.zero,
+          retryAfter: Duration(milliseconds: 80),
+        ),
+      );
+      final sends = container.read(pendingPrayerSendsProvider);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayedCounts, [1]);
+      container.dispose();
+
+      var settled = false;
+      unawaited(sends.settle().then((_) => settled = true));
+      await _settle();
+      expect(settled, isFalse);
+
+      repository.prayFailureOnce = const RateLimitFailure('slow down');
+      repository.prayGate!.complete();
+      await _settle();
+      // The call is home, but its retry has yet to go out.
+      expect(repository.prayedCounts, [1]);
+      expect(settled, isFalse);
+
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await _settle();
+      expect(repository.prayedCounts, [1, 1]);
+      expect(settled, isTrue);
+    });
+
     test('a rate-limited retry keeps its own deadline', () async {
       repository =
           _FakeGroupChatRepository(history: [_prayer('a'), _prayer('b')])

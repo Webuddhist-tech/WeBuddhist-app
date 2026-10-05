@@ -60,7 +60,11 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
     }
 
     void openGroupSheet() {
-      if (groups.isEmpty) return;
+      // An empty list may be a request that failed. Personal practice is
+      // offered either way; asking again lets the sheet fill its rows in.
+      if (groups.isEmpty && !groupsAsync.isLoading) {
+        ref.invalidate(joinedAccumulatorGroupsProvider(presetId));
+      }
       GroupAccumulationsSheet.show(
         context,
         mantra: mantra,
@@ -87,7 +91,7 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
             borderRadius: BorderRadius.circular(999),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: groups.isNotEmpty ? openGroupSheet : null,
+              onTap: openGroupSheet,
               borderRadius: BorderRadius.circular(999),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
