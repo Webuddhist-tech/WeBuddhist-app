@@ -404,6 +404,43 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get mala_all_time_accumulation => TolgeeBridge.get(
+    localeName,
+    'mala_all_time_accumulation',
+    () => _fallback.mala_all_time_accumulation,
+  );
+
+  @override
+  String get mala_personal_practice => TolgeeBridge.get(
+    localeName,
+    'mala_personal_practice',
+    () => _fallback.mala_personal_practice,
+  );
+
+  @override
+  String get mala_events_section => TolgeeBridge.get(
+    localeName,
+    'mala_events_section',
+    () => _fallback.mala_events_section,
+  );
+
+  @override
+  String mala_my_total(String count) => TolgeeBridge.format(
+    localeName,
+    'mala_my_total',
+    <String, Object>{'count': count},
+    () => _fallback.mala_my_total(count),
+  );
+
+  @override
+  String mala_group_total(String count) => TolgeeBridge.format(
+    localeName,
+    'mala_group_total',
+    <String, Object>{'count': count},
+    () => _fallback.mala_group_total(count),
+  );
+
+  @override
   String get home_timer =>
       TolgeeBridge.get(localeName, 'home_timer', () => _fallback.home_timer);
 

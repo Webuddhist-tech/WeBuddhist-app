@@ -91,6 +91,25 @@
   "mala_group_accumulations": "加入持誦計數",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "未取名群組",
+  "mala_all_time_accumulation": "我的累計總數",
+  "mala_personal_practice": "個人修持",
+  "mala_events_section": "活動",
+  "mala_my_total": "我的總數：{count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "群組總數：{count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "計時",
   "preset_timers": "預設計時",
   "meditation_timer": "禪修計時",

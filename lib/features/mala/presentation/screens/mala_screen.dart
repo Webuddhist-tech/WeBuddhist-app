@@ -338,8 +338,8 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                   children: [
                     Expanded(
                       child: GroupAccumulationsBar(
-                        presetId: mantra.presetId,
-                        personalLifetimeCount: notifier.displayLifetimeCount,
+                        mantra: mantra,
+                        presetTitle: mantra.displayTitle(language),
                       ),
                     ),
                     const SizedBox(width: 12),

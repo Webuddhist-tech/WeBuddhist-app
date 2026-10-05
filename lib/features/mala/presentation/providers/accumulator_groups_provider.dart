@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
@@ -6,13 +7,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Joined group accumulators for the current preset
 /// (`GET /accumulators/{accumulator_id}/groups?joined_only=true`).
 ///
-/// Metadata only (title, image, membership, lifetime [AccumulatorGroup.userTotalCount]).
+/// Metadata only (titles, image, membership, lifetime
+/// [AccumulatorGroup.userTotalCount] and [AccumulatorGroup.groupTotalCount]).
 /// Active session counts for bead tapping use [joinedGroupUserCountsProvider].
 final joinedAccumulatorGroupsProvider = FutureProvider.autoDispose
     .family<List<AccumulatorGroup>, String>((ref, presetId) async {
+      // Re-fetches when the app language changes so group and event names are
+      // localized, as the catalogue is.
+      final language = ref.watch(localeProvider).languageCode;
       final result = await ref
           .watch(malaRepositoryProvider)
-          .getJoinedAccumulatorGroups(presetId);
+          .getJoinedAccumulatorGroups(presetId, language: language);
       return result.fold((_) => const [], (groups) => groups);
     });
 

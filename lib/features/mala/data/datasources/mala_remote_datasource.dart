@@ -56,14 +56,19 @@ class MalaRemoteDataSource {
   }
 
   /// `GET /accumulators/{accumulator_id}/groups` — groups using this preset.
+  /// [language] localizes each row's group name and event title.
   Future<List<AccumulatorGroupModel>> fetchAccumulatorGroups(
     String accumulatorId, {
     bool joinedOnly = false,
+    String? language,
   }) async {
     try {
       final response = await dio.get(
         '/accumulators/$accumulatorId/groups',
-        queryParameters: {'joined_only': joinedOnly},
+        queryParameters: {
+          'joined_only': joinedOnly,
+          if (language != null) 'language': language,
+        },
         options: Options(extra: {'no_cache': true}),
       );
       if (response.statusCode == 200) {

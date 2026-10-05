@@ -206,6 +206,25 @@ class AppLocalizationsMn extends AppLocalizations {
   String get mala_group_untitled => 'Untitled group';
 
   @override
+  String get mala_all_time_accumulation => 'Миний нийт хуримтлал';
+
+  @override
+  String get mala_personal_practice => 'Хувийн дадлага';
+
+  @override
+  String get mala_events_section => 'Арга хэмжээ';
+
+  @override
+  String mala_my_total(String count) {
+    return 'Миний нийт: $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'Бүлгийн нийт: $count';
+  }
+
+  @override
   String get home_timer => 'Цаг хэмжигч';
 
   @override

@@ -203,15 +203,16 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
   }
 
   /// Adds [count] offline recitations on top of the current session total.
-  void addCount({
+  /// Returns false when the add was ignored.
+  bool addCount({
     required String groupAccumulatorId,
     required List<AccumulatorGroup> groups,
     required int count,
   }) {
-    if (count <= 0) return;
+    if (count <= 0) return false;
 
     final userId = _userId;
-    if (userId == null || userId.isEmpty) return;
+    if (userId == null || userId.isEmpty) return false;
 
     _postResetGroupIds.remove(groupAccumulatorId);
     final current = countFor(groupAccumulatorId, groups);
@@ -219,6 +220,7 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
     state = {...state, groupAccumulatorId: newTotal};
     unawaited(_local.addGroupToTotal(userId, groupAccumulatorId, count));
     _sync.onTap(roundComplete: true);
+    return true;
   }
 
   /// Clears in-memory count after a successful reset DELETE. Hive is cleared

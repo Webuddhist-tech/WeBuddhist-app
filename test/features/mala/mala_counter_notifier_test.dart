@@ -275,6 +275,40 @@ void main() {
     notifier.dispose();
   });
 
+  test('addCount adds recitations made outside the app', () async {
+    when(getDetail(any)).thenAnswer(
+      (_) async => const Right(MalaCount(accumulatorId: 'acc-1', total: 10)),
+    );
+
+    final notifier = buildNotifier();
+    await Future.delayed(Duration.zero);
+
+    expect(notifier.addCount(5), isTrue);
+    expect(notifier.addCount(0), isFalse);
+    await Future.delayed(Duration.zero);
+
+    expect(notifier.state.total, 15);
+    expect(local.read(userId, 'chenrezig').total, 15);
+    verify(sync.onTap(roundComplete: true)).called(1);
+    notifier.dispose();
+  });
+
+  test('addRounds adds whole rounds of beads', () async {
+    when(getDetail(any)).thenAnswer(
+      (_) async => const Right(MalaCount(accumulatorId: 'acc-1', total: 3)),
+    );
+
+    final notifier = buildNotifier();
+    await Future.delayed(Duration.zero);
+
+    expect(notifier.addRounds(2), isTrue);
+    expect(notifier.addRounds(0), isFalse);
+
+    expect(notifier.state.total, 3 + 2 * kBeadsPerRound);
+    expect(notifier.state.rounds, 2);
+    notifier.dispose();
+  });
+
   test('seed ignores stale current_count when there is no active accumulator',
       () async {
     // Cleared session after reset — local is zero with no accumulator id.

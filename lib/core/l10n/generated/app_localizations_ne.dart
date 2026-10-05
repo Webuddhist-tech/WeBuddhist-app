@@ -205,6 +205,25 @@ class AppLocalizationsNe extends AppLocalizations {
   String get mala_group_untitled => 'Untitled group';
 
   @override
+  String get mala_all_time_accumulation => 'मेरो अहिलेसम्मको कुल संचय';
+
+  @override
+  String get mala_personal_practice => 'व्यक्तिगत अभ्यास';
+
+  @override
+  String get mala_events_section => 'कार्यक्रम';
+
+  @override
+  String mala_my_total(String count) {
+    return 'मेरो कुल: $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'समूहको कुल: $count';
+  }
+
+  @override
   String get home_timer => 'टाइमर';
 
   @override

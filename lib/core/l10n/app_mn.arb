@@ -91,6 +91,25 @@
   "mala_group_accumulations": "Уншлага нэмэх",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled group",
+  "mala_all_time_accumulation": "Миний нийт хуримтлал",
+  "mala_personal_practice": "Хувийн дадлага",
+  "mala_events_section": "Арга хэмжээ",
+  "mala_my_total": "Миний нийт: {count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "Бүлгийн нийт: {count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "Цаг хэмжигч",
   "preset_timers": "Бэлэн тохируулсан цаг",
   "meditation_timer": "Бясалгалын цаг хэмжигч",
