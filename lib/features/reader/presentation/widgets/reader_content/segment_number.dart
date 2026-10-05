@@ -25,9 +25,9 @@ class SegmentNumber extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(top: 8, bottom: 2),
       child: Text(
-        label,
+        label.replaceAll('-', '.'),
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: fontSize * ReaderConstants.segmentNumberFontScale,

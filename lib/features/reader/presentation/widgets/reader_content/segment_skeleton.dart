@@ -29,7 +29,7 @@ class SegmentSkeleton extends StatelessWidget {
             if (showNumber)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: 4),
+                  padding: EdgeInsets.only(top: 8, bottom: 2),
                   child: SizedBox(
                     width: ReaderConstants.segmentNumberWidth,
                     child: Bone.text(words: 1),
