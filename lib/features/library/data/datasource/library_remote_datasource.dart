@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/features/library/data/models/library_alignment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_edition.dart';
 import 'package:flutter_pecha/features/library/data/models/library_language.dart';
 import 'package:flutter_pecha/features/library/data/models/library_search_result.dart';
@@ -70,6 +71,21 @@ class LibraryRemoteDatasource {
       queryParameters: {'span_start': spanStart, 'span_end': spanEnd},
     );
     return _asContent(response.data, '/v2/editions/{id}/content');
+  }
+
+  Future<LibraryAlignmentPage> fetchAlignments(
+    String sourceEditionId,
+    String targetEditionId, {
+    int limit = 500,
+    int offset = 0,
+  }) async {
+    final response = await dio.get(
+      '/v2/editions/$sourceEditionId/alignments/$targetEditionId',
+      queryParameters: {'limit': limit, 'offset': offset},
+    );
+    return LibraryAlignmentPage.fromJson(
+      _asMap(response.data, '/v2/editions/{id}/alignments/{id}'),
+    );
   }
 
   Future<List<LibraryTableOfContents>> fetchTableOfContents(

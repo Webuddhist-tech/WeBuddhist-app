@@ -45,9 +45,8 @@ abstract class GroupChatRepository {
   Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
     String roomId, {
     required List<String> messageIds,
+    int count = 1,
   });
-
-  Future<Either<Failure, ChatPrayerSummaryDTO>> removePrayer(String messageId);
 
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {

@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/library/data/datasource/library_remote_datasource.dart';
+import 'package:flutter_pecha/features/library/data/models/library_alignment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_edition.dart';
+import 'package:flutter_pecha/features/library/data/models/library_page.dart';
 import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
 import 'package:flutter_pecha/features/library/data/models/library_search_result.dart';
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
@@ -47,6 +49,7 @@ class LibraryRepository {
   final Map<String, Future<LibraryEdition>> _resolvedEditions = {};
   final Map<String, Future<List<LibraryTocSection>>> _tocs = {};
   final Map<String, Future<List<LibraryLineSpan>>> _yigchungs = {};
+  final Map<String, Future<Map<String, List<String>>>> _alignments = {};
   Future<Map<String, String>>? _languageNames;
 
   Future<LibraryTextPage> fetchChants({
@@ -134,6 +137,7 @@ class LibraryRepository {
           limit: segmentPageSize,
           offset: offset,
         ),
+        (s) => s.id,
       );
       return all.where((s) => s.lines.isNotEmpty).toList(growable: false);
     });
@@ -169,6 +173,37 @@ class LibraryRepository {
       }
       return yigchungs.map((y) => y.span).toList(growable: false)
         ..sort((a, b) => a.start.compareTo(b.start));
+    });
+  }
+
+  /// Segment ids of [targetEditionId] aligned to each segment of
+  /// [sourceEditionId], in reading order; empty when the pair has none.
+  Future<Map<String, List<String>>> getAlignment(
+    String sourceEditionId,
+    String targetEditionId,
+  ) {
+    final key = '$sourceEditionId>$targetEditionId';
+    return _memo(_alignments, key, capacity: segmentCacheSize, () async {
+      final List<LibraryAlignment> pairs;
+      try {
+        pairs = await _fetchAllPages(
+          (offset) => _datasource.fetchAlignments(
+            sourceEditionId,
+            targetEditionId,
+            limit: segmentPageSize,
+            offset: offset,
+          ),
+          (pair) => '${pair.source.id}>${pair.target.id}',
+        );
+      } catch (e) {
+        if (_isNotFound(e)) return const {};
+        rethrow;
+      }
+      final targets = <String, List<String>>{};
+      for (final pair in pairs) {
+        targets.putIfAbsent(pair.source.id, () => []).add(pair.target.id);
+      }
+      return targets;
     });
   }
 
@@ -235,17 +270,31 @@ class LibraryRepository {
   }
 
   /// One page of [editionId]. `next` starts at the anchor (first page when
-  /// null); `previous` ends just before it. Positions are 1-based. An anchor
-  /// from [anchorEditionId] (the parallel reader's primary) is mapped across
-  /// by verse number.
+  /// null); `previous` ends just before it. Positions are 1-based. With
+  /// [primaryEditionId] (the parallel reader's primary) the page holds only
+  /// the verses aligned to it, numbered like it, and an anchor from it is
+  /// mapped across.
   Future<LibraryContentWindow> loadWindow({
     required String editionId,
     String? anchorSegmentId,
-    String? anchorEditionId,
+    String? primaryEditionId,
     required String direction,
     required int size,
   }) async {
-    final segments = await getEditionSegments(editionId);
+    var segments = await getEditionSegments(editionId);
+    List<int>? numbers;
+    if (primaryEditionId != null && primaryEditionId != editionId) {
+      final paired = await _alignedToPrimary(
+        editionId,
+        primaryEditionId,
+        segments,
+      );
+      if (paired != null) {
+        segments = paired.segments;
+        numbers = paired.numbers;
+      }
+    }
+    numbers ??= segmentNumbers(segments);
     final total = segments.length;
     var anchorIndex =
         anchorSegmentId == null
@@ -254,7 +303,7 @@ class LibraryRepository {
     if (anchorIndex < 0 && anchorSegmentId != null) {
       anchorIndex = await _foreignAnchorIndex(
         anchorSegmentId,
-        anchorEditionId: anchorEditionId,
+        anchorEditionId: primaryEditionId,
         target: segments,
         targetEditionId: editionId,
       );
@@ -303,7 +352,6 @@ class LibraryRepository {
     final marks = (yigchungs ?? const <LibraryLineSpan>[])
         .where((y) => y.end > spanStart && y.start < spanEnd)
         .toList(growable: false);
-    final numbers = segmentNumbers(segments);
     return LibraryContentWindow(
       editionId: editionId,
       segments: [
@@ -335,11 +383,11 @@ class LibraryRepository {
     );
   }
 
-  /// The id in [targetId]'s edition of the verse numbered like [segmentId] in
-  /// [sourceId]'s, the same alignment [loadWindow] gives the parallel reader.
+  /// The id in [targetId]'s edition of [segmentId]'s counterpart in
+  /// [sourceId]'s, paired the way [loadWindow] pairs the parallel reader.
   /// Both ids may be text or edition ids. Null when they are editions of
-  /// unrelated texts (verse numbers would match by accident) or the verse is
-  /// missing.
+  /// unrelated texts (verse numbers would match by accident) or the verse has
+  /// no counterpart.
   Future<String?> alignSegment({
     required String segmentId,
     required String sourceId,
@@ -353,7 +401,12 @@ class LibraryRepository {
       if (!family.any((t) => t.id == source.textId)) return null;
     }
     final segments = await getEditionSegments(target.id);
-    final index = await _alignedIndex(source.id, segmentId, segments);
+    final index = await _alignedIndex(
+      source.id,
+      segmentId,
+      target.id,
+      segments,
+    );
     return index < 0 ? null : segments[index].id;
   }
 
@@ -368,7 +421,13 @@ class LibraryRepository {
     required String targetEditionId,
   }) async {
     if (anchorEditionId != null && anchorEditionId != targetEditionId) {
-      final index = await _alignedIndex(anchorEditionId, segmentId, target);
+      final index = await _alignedIndex(
+        anchorEditionId,
+        segmentId,
+        targetEditionId,
+        target,
+        orNext: true,
+      );
       if (index >= 0) return index;
     }
     final String? sourceEditionId;
@@ -383,20 +442,111 @@ class LibraryRepository {
         sourceEditionId == anchorEditionId) {
       return -1;
     }
-    return _alignedIndex(sourceEditionId, segmentId, target);
+    return _alignedIndex(
+      sourceEditionId,
+      segmentId,
+      targetEditionId,
+      target,
+      orNext: true,
+    );
   }
 
-  /// Index in [target] of the verse numbered like [segmentId] in [editionId].
+  /// Index in [target] of [segmentId]'s counterpart: by the alignment, else
+  /// by verse number. [orNext] settles for the nearest later verse with one,
+  /// else the nearest earlier, so a late anchor stays near the verse.
   Future<int> _alignedIndex(
     String editionId,
     String segmentId,
-    List<LibrarySegment> target,
-  ) async {
+    String targetEditionId,
+    List<LibrarySegment> target, {
+    bool orNext = false,
+  }) async {
     final source = await getEditionSegments(editionId);
     final sourceIndex = source.indexWhere((s) => s.id == segmentId);
     if (sourceIndex < 0) return -1;
-    final number = segmentNumbers(source)[sourceIndex];
-    return segmentNumbers(target).indexOf(number);
+    final aligned = await _alignedIds(editionId, targetEditionId);
+    if (aligned.isEmpty) {
+      final number = segmentNumbers(source)[sourceIndex];
+      final numbers = segmentNumbers(target);
+      final exact = numbers.indexOf(number);
+      if (exact >= 0 || !orNext) return exact;
+      var next = -1;
+      var previous = -1;
+      for (var i = 0; i < numbers.length; i++) {
+        final n = numbers[i];
+        if (n > number && (next < 0 || n < numbers[next])) next = i;
+        if (n < number && (previous < 0 || n > numbers[previous])) previous = i;
+      }
+      return next >= 0 ? next : previous;
+    }
+    final indexOf = {for (var i = 0; i < target.length; i++) target[i].id: i};
+    int? at(int i) {
+      for (final id in aligned[source[i].id] ?? const <String>[]) {
+        final index = indexOf[id];
+        if (index != null) return index;
+      }
+      return null;
+    }
+    final last = orNext ? source.length - 1 : sourceIndex;
+    for (var i = sourceIndex; i <= last; i++) {
+      final index = at(i);
+      if (index != null) return index;
+    }
+    if (!orNext) return -1;
+    for (var i = sourceIndex - 1; i >= 0; i--) {
+      final index = at(i);
+      if (index != null) return index;
+    }
+    return -1;
+  }
+
+  /// Ids in [targetId] aligned to each segment of [sourceId]. The library
+  /// stores a pair one way round, so the reverse is read when that is it.
+  Future<Map<String, List<String>>> _alignedIds(
+    String sourceId,
+    String targetId,
+  ) async {
+    final forward = await getAlignment(sourceId, targetId);
+    if (forward.isNotEmpty) return forward;
+    final inverted = <String, List<String>>{};
+    for (final entry in (await getAlignment(targetId, sourceId)).entries) {
+      for (final id in entry.value) {
+        inverted.putIfAbsent(id, () => []).add(entry.key);
+      }
+    }
+    return inverted;
+  }
+
+  /// [segments] of [editionId] that have a counterpart in [primaryEditionId],
+  /// numbered like it (the first one when several). Null when the pair has
+  /// no alignment, or one naming none of the verses.
+  Future<({List<LibrarySegment> segments, List<int> numbers})?>
+  _alignedToPrimary(
+    String editionId,
+    String primaryEditionId,
+    List<LibrarySegment> segments,
+  ) async {
+    final counterparts = await _alignedIds(editionId, primaryEditionId);
+    if (counterparts.isEmpty) return null;
+    final primary = await getEditionSegments(primaryEditionId);
+    final primaryNumbers = segmentNumbers(primary);
+    final numberOf = {
+      for (var i = 0; i < primary.length; i++) primary[i].id: primaryNumbers[i],
+    };
+    final kept = <LibrarySegment>[];
+    final numbers = <int>[];
+    for (final segment in segments) {
+      int? number;
+      for (final id in counterparts[segment.id] ?? const <String>[]) {
+        final n = numberOf[id];
+        if (n != null && (number == null || n < number)) number = n;
+      }
+      if (number == null) continue;
+      kept.add(segment);
+      numbers.add(number);
+    }
+    if (kept.isEmpty) return null;
+    return (segments: kept, numbers: numbers);
   }
 
   /// Numeric references when unique across the edition, else positions.
@@ -426,6 +576,7 @@ class LibraryRepository {
           limit: relatedPageSize,
           offset: offset,
         ),
+        (s) => s.id,
       );
       final usable =
           related
@@ -679,15 +830,16 @@ class LibraryRepository {
 
   /// Stops on a page with nothing new, and after [maxPages], so a server
   /// that keeps saying `has_more` without advancing cannot loop it.
-  Future<List<LibrarySegment>> _fetchAllPages(
-    Future<LibrarySegmentPage> Function(int offset) fetchPage,
+  Future<List<T>> _fetchAllPages<T>(
+    Future<LibraryPage<T>> Function(int offset) fetchPage,
+    String Function(T item) keyOf,
   ) async {
-    final items = <LibrarySegment>[];
+    final items = <T>[];
     final seen = <String>{};
     var offset = 0;
     for (var i = 0; i < maxPages; i++) {
       final page = await fetchPage(offset);
-      final fresh = page.items.where((s) => seen.add(s.id)).toList();
+      final fresh = page.items.where((s) => seen.add(keyOf(s))).toList();
       items.addAll(fresh);
       if (!page.hasMore || fresh.isEmpty) return items;
       offset += page.items.length;

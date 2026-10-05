@@ -58,7 +58,8 @@ class CacheKeys {
   /// Generate key for text details (reader view with navigation).
   /// Versioned so entries cached before the library API (v2), table-of-contents
   /// headings (v3), segment types (v4), translations opened under their
-  /// original (v6) or yigchung marks (v7) are never served.
+  /// original (v6), yigchung marks (v7) or companions paired by the library's
+  /// alignment (v8) are never served.
   static String textDetails({
     required String textId,
     String? contentId,
@@ -68,7 +69,7 @@ class CacheKeys {
     String? language,
     int? size,
   }) => _textDetails(
-    'v7',
+    'v8',
     textId: textId,
     contentId: contentId,
     versionId: versionId,
@@ -89,7 +90,7 @@ class CacheKeys {
     String? language,
     int? size,
   }) => _textDetails(
-    'v6',
+    'v7',
     textId: textId,
     contentId: contentId,
     versionId: versionId,

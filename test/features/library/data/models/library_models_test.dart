@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/library/data/models/library_alignment.dart';
 import 'package:flutter_pecha/features/library/data/models/library_edition.dart';
 import 'package:flutter_pecha/features/library/data/models/library_reader_models.dart';
 import 'package:flutter_pecha/features/library/data/models/library_segment.dart';
@@ -133,6 +134,45 @@ void main() {
       expect(a, equals(b));
       expect(a.hashCode, b.hashCode);
     });
+  });
+
+  test('LibraryAlignmentPage parses the pairs and skips malformed ones', () {
+    final page = LibraryAlignmentPage.fromJson({
+      'items': [
+        {
+          'source_segment': {
+            'id': '59ETmX5S84LvstcM28WXY',
+            'type': 'verse',
+            'reference': '1-1',
+            'lines': [
+              {'start': 0, 'end': 26},
+            ],
+            'edition_id': 'CSltOB4nbWbB81lwGtCrO',
+          },
+          'target_segment': {
+            'id': '9j5CWIuKlBFG77GkI17tr',
+            'type': 'verse',
+            'reference': '1-1',
+            'lines': [
+              {'start': 0, 'end': 30},
+            ],
+            'edition_id': 'Zy1qLwjjwqZ6819190azQ',
+          },
+        },
+        {
+          'source_segment': {'id': 'alone'},
+        },
+      ],
+      'has_more': true,
+      'offset': 0,
+      'limit': 500,
+    });
+
+    expect(page.items.single.source.id, '59ETmX5S84LvstcM28WXY');
+    expect(page.items.single.target.id, '9j5CWIuKlBFG77GkI17tr');
+    expect(page.items.single.target.editionId, 'Zy1qLwjjwqZ6819190azQ');
+    expect(page.items.single.target.spanEnd, 30);
+    expect(page.hasMore, isTrue);
   });
 
   test('LibraryEdition parses the source', () {

@@ -512,23 +512,18 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           avatarUrl:
               request.senderAvatarUrl ?? (isSelf ? user?.avatarUrl : null),
           isOwn: isSelf,
-          onTogglePrayer:
-              () => unawaited(
-                _notifier.togglePrayer(
-                  request.id,
-                  viewer: _viewerAsSupporter(),
-                ),
-              ),
+          onPray:
+              () => _notifier.pray(request.id, viewer: _viewerAsSupporter()),
           onShowSupporters:
-              () => unawaited(
-                PrayerSupportersSheet.show(
-                  context,
-                  eventId: widget.eventId,
-                  request: request,
-                  displayName: displayName,
-                  isOwn: isSelf,
-                ),
-              ),
+              isSelf
+                  ? () => unawaited(
+                    PrayerSupportersSheet.show(
+                      context,
+                      eventId: widget.eventId,
+                      request: request,
+                    ),
+                  )
+                  : null,
           onEdit:
               isSelf && canEdit
                   ? () => unawaited(_openComposer(editing: request))

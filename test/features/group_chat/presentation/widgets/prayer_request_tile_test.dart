@@ -19,6 +19,7 @@ const _healing = ChatPrayerIntentionDTO(
 ChatMessageDTO _prayer({
   required int count,
   required bool prayedByMe,
+  int mine = 0,
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
 }) {
@@ -34,6 +35,7 @@ ChatMessageDTO _prayer({
     intention: intention,
     prayerCount: count,
     prayedByMe: prayedByMe,
+    myPrayerCount: mine,
     recentPrayers: recent,
   );
 }
@@ -42,9 +44,11 @@ Future<void> _pump(
   WidgetTester tester, {
   required int count,
   required bool prayedByMe,
+  int mine = 0,
   bool isOwn = false,
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
+  VoidCallback? onPray,
   VoidCallback? onShowSupporters,
   VoidCallback? onEdit,
   VoidCallback? onDelete,
@@ -59,11 +63,13 @@ Future<void> _pump(
           request: _prayer(
             count: count,
             prayedByMe: prayedByMe,
+            mine: mine,
             recent: recent,
             intention: intention,
           ),
           displayName: 'Tenzin',
           isOwn: isOwn,
+          onPray: onPray,
           onShowSupporters: onShowSupporters,
           onEdit: onEdit,
           onDelete: onDelete,
@@ -140,10 +146,20 @@ void main() {
     expect(find.text('3 people are praying'), findsOneWidget);
   });
 
-  testWidgets('once I pray the button reads Praying', (tester) async {
-    await _pump(tester, count: 1, prayedByMe: true);
-    expect(find.text('Praying'), findsOneWidget);
+  testWidgets('once I pray the button still reads Pray with my count', (
+    tester,
+  ) async {
+    await _pump(tester, count: 1, prayedByMe: true, mine: 3);
+    expect(find.text('Pray'), findsOneWidget);
+    expect(find.text('+3'), findsOneWidget);
+    expect(find.text('Praying'), findsNothing);
     expect(find.text('1 person is praying'), findsOneWidget);
+  });
+
+  testWidgets('a prayer with no count yet shows no badge', (tester) async {
+    await _pump(tester, count: 1, prayedByMe: true);
+    expect(find.text('Pray'), findsOneWidget);
+    expect(find.textContaining('+'), findsNothing);
   });
 
   testWidgets('the avatar stack counts the rest as more', (tester) async {
@@ -160,7 +176,25 @@ void main() {
     expect(find.text('+13 more are praying'), findsOneWidget);
   });
 
-  testWidgets('tapping the count opens the roster', (tester) async {
+  testWidgets('tapping the count on my own request opens the roster', (
+    tester,
+  ) async {
+    var opened = false;
+    await _pump(
+      tester,
+      count: 2,
+      prayedByMe: false,
+      isOwn: true,
+      onShowSupporters: () => opened = true,
+    );
+    expect(find.byIcon(AppAssets.caretRight), findsOneWidget);
+    await tester.tap(find.text('2 people are praying'));
+    expect(opened, isTrue);
+  });
+
+  testWidgets('the count on someone else\'s request is not tappable', (
+    tester,
+  ) async {
     var opened = false;
     await _pump(
       tester,
@@ -168,8 +202,10 @@ void main() {
       prayedByMe: false,
       onShowSupporters: () => opened = true,
     );
+    expect(find.text('2 people are praying'), findsOneWidget);
+    expect(find.byIcon(AppAssets.caretRight), findsNothing);
     await tester.tap(find.text('2 people are praying'));
-    expect(opened, isTrue);
+    expect(opened, isFalse);
   });
 
   testWidgets('my own request shows no pray button and waits', (
@@ -265,36 +301,34 @@ void main() {
   });
 
   testWidgets('praying floats the mantra up and fades it out', (tester) async {
-    var toggled = 0;
-    await tester.pumpWidget(
-      MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: PrayerRequestTile(
-            request: _prayer(count: 0, prayedByMe: false),
-            displayName: 'Tenzin',
-            onTogglePrayer: () => toggled++,
-          ),
-        ),
-      ),
-    );
+    var prayed = 0;
+    await _pump(tester, count: 0, prayedByMe: false, onPray: () => prayed++);
 
     await tester.tap(find.text('Pray'));
     await tester.pump();
-    expect(toggled, 1);
+    expect(prayed, 1);
     expect(find.text('Om Tare Tuttare Ture Soha'), findsOneWidget);
 
     await tester.pumpAndSettle();
     expect(find.text('Om Tare Tuttare Ture Soha'), findsNothing);
   });
 
-  testWidgets('taking a prayer back shows no mantra', (tester) async {
-    await _pump(tester, count: 1, prayedByMe: true);
-    await tester.tap(find.text('Praying'));
+  testWidgets('praying again adds another prayer and another mantra', (
+    tester,
+  ) async {
+    var prayed = 0;
+    await _pump(
+      tester,
+      count: 1,
+      prayedByMe: true,
+      mine: 1,
+      onPray: () => prayed++,
+    );
+    await tester.tap(find.text('Pray'));
     await tester.pump();
-    expect(find.text('Om Tare Tuttare Ture Soha'), findsNothing);
+    expect(prayed, 1);
+    expect(find.text('Om Tare Tuttare Ture Soha'), findsOneWidget);
+    await tester.pumpAndSettle();
   });
 
   test('the mantra follows the app language, English otherwise', () {

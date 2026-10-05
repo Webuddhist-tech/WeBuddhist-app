@@ -3912,6 +3912,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_member_owner => TolgeeBridge.get(
+    localeName,
+    'group_member_owner',
+    () => _fallback.group_member_owner,
+  );
+
+  @override
   String group_remove_member(String name) => TolgeeBridge.format(
     localeName,
     'group_remove_member',
@@ -5696,6 +5703,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_prayer_praying',
     () => _fallback.event_prayer_praying,
+  );
+
+  @override
+  String event_prayer_my_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_my_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_my_count(count),
   );
 
   @override

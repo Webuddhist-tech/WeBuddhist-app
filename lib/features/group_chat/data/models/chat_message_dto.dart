@@ -39,6 +39,9 @@ class ChatMessageDTO extends Equatable {
   final ChatPrayerIntentionDTO? intention;
   final int prayerCount;
   final bool prayedByMe;
+
+  /// The viewer's own prayers for this request.
+  final int myPrayerCount;
   final List<ChatPrayerUserDTO> recentPrayers;
 
   const ChatMessageDTO({
@@ -57,6 +60,7 @@ class ChatMessageDTO extends Equatable {
     this.intention,
     this.prayerCount = 0,
     this.prayedByMe = false,
+    this.myPrayerCount = 0,
     this.recentPrayers = const [],
   });
 
@@ -66,6 +70,7 @@ class ChatMessageDTO extends Equatable {
     final parentJson = json['parent'];
     final intentionJson = json['intention'];
     final prayerCount = json['prayer_count'];
+    final myPrayerCount = json['my_prayer_count'];
     return ChatMessageDTO(
       id: json['id'] as String? ?? '',
       roomId: json['room_id'] as String? ?? '',
@@ -93,6 +98,7 @@ class ChatMessageDTO extends Equatable {
               : null,
       prayerCount: prayerCount is num ? prayerCount.toInt() : 0,
       prayedByMe: json['prayed_by_me'] as bool? ?? false,
+      myPrayerCount: myPrayerCount is num ? myPrayerCount.toInt() : 0,
       recentPrayers:
           (json['recent_prayers'] as List<dynamic>?)
               ?.whereType<Map<String, dynamic>>()
@@ -115,6 +121,7 @@ class ChatMessageDTO extends Equatable {
     ChatPrayerIntentionDTO? intention,
     int? prayerCount,
     bool? prayedByMe,
+    int? myPrayerCount,
     List<ChatPrayerUserDTO>? recentPrayers,
   }) {
     return ChatMessageDTO(
@@ -133,6 +140,7 @@ class ChatMessageDTO extends Equatable {
       intention: intention ?? this.intention,
       prayerCount: prayerCount ?? this.prayerCount,
       prayedByMe: prayedByMe ?? this.prayedByMe,
+      myPrayerCount: myPrayerCount ?? this.myPrayerCount,
       recentPrayers: recentPrayers ?? this.recentPrayers,
     );
   }
@@ -155,6 +163,7 @@ class ChatMessageDTO extends Equatable {
         if (intention != null) 'intention': intention!.toJson(),
         'prayer_count': prayerCount,
         'prayed_by_me': prayedByMe,
+        'my_prayer_count': myPrayerCount,
         'recent_prayers': recentPrayers.map((user) => user.toJson()).toList(),
       },
     };
@@ -177,6 +186,7 @@ class ChatMessageDTO extends Equatable {
     intention,
     prayerCount,
     prayedByMe,
+    myPrayerCount,
     recentPrayers,
   ];
 }

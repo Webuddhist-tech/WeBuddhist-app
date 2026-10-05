@@ -52,7 +52,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_all_set_description =>
-      'Here\'s what\'s ready for your practice';
+      'Here\'s what\'s waiting for you:';
 
   @override
   String get onboarding_all_set_practice_title => 'Practice';
@@ -66,7 +66,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_all_set_connect_body =>
-      'Groups, events, news feed and chat';
+      'Spaces, events, newsfeed and chat';
 
   @override
   String get home_recitation => 'recitations';
@@ -139,7 +139,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookmark_texts => 'Texts';
 
   @override
-  String get bookmark_group_accumulation => 'Channel accumulations';
+  String get bookmark_group_accumulation => 'Space accumulations';
 
   @override
   String get mala_add_to_practice => 'Add to my practices';
@@ -203,7 +203,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_groups_section => 'Groups';
 
   @override
-  String get mala_group_untitled => 'Untitled group';
+  String get mala_group_untitled => 'Untitled space';
 
   @override
   String get home_timer => 'Timer';
@@ -506,7 +506,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bookmarks_empty_chant_collections_subtitle =>
-      'Bookmark a chant collection to save it here';
+      'Bookmark one to save it here';
 
   @override
   String get notification_settings => 'Notification settings';
@@ -575,7 +575,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notification_timer_subtitle_enabled =>
-      'Daily reminders for your timer sessions';
+      'Daily reminders for your timers';
 
   @override
   String get notification_timer_subtitle_disabled =>
@@ -732,27 +732,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Teachers, communities, challenges, and events to support you on the path';
 
   @override
-  String get connect_subtitle => 'Find channels and practice together';
+  String get connect_subtitle => 'Find spaces and practice together';
 
   @override
-  String get discover_groups => 'Discover channels';
+  String get discover_groups => 'Discover spaces';
 
   @override
-  String get my_groups => 'My channels';
+  String get my_groups => 'My spaces';
 
   @override
   String get see_all => 'See all';
 
   @override
   String get connect_groups_load_error =>
-      'Unable to load channels.\nCheck your connection and try again';
+      'Unable to load spaces.\nCheck your connection and try again';
 
   @override
-  String get connect_groups_empty_title => 'No more channels';
+  String get connect_groups_empty_title => 'No more spaces';
 
   @override
   String get connect_groups_empty_subtitle =>
-      'Congrats, you\'re subscribed to all our channels! Check back soon. New ones are on the way';
+      'Congrats, you\'ve joined all our spaces! Check back soon. New ones are on the way...';
 
   @override
   String get connect_tab_feed => 'Feed';
@@ -767,10 +767,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_tab_practices => 'Practices';
 
   @override
-  String get connect_tab_groups => 'Channels';
+  String get connect_tab_groups => 'Spaces';
 
   @override
-  String get connect_segment_my => 'Your channels';
+  String get connect_segment_my => 'Your spaces';
 
   @override
   String get connect_segment_discover => 'Discover';
@@ -785,16 +785,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_empty_discover_feed => 'Nothing to discover';
 
   @override
-  String get connect_empty_discover_groups => 'No channels to discover';
+  String get connect_empty_discover_groups => 'No spaces to discover';
 
   @override
   String get connect_empty_discover_practices => 'No practices to discover';
 
   @override
-  String get connect_all_groups => 'All channels';
+  String get connect_all_groups => 'All spaces';
 
   @override
-  String get connect_my_empty_feed_title => 'Your channels have been quiet';
+  String get connect_my_empty_feed_title => 'Your spaces have been quiet';
 
   @override
   String get connect_my_empty_events_title => 'No upcoming events';
@@ -803,27 +803,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_my_empty_posts_title => 'No posts yet';
 
   @override
-  String get connect_my_empty_groups_title => 'No channels yet';
+  String get connect_my_empty_groups_title => 'No spaces yet';
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'Nothing new from your channels. Others are posting today';
+      'Nothing new from your spaces. Others are posting today';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'None of your channels have anything scheduled. Others have events open to everyone';
+      'Nothing scheduled in your spaces right now. Others have events open to everyone';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'Your channels haven\'t posted anything. See what others are sharing';
+      'Your spaces haven\'t posted anything. See what others are sharing';
 
   @override
   String get connect_my_empty_groups_subtitle =>
-      'You haven\'t subscribed to any channels yet. Discover some to practice with';
+      'You haven\'t joined any spaces yet. Discover some to practice with';
 
   @override
   String get connect_my_empty_feed_browse =>
-      'See what other channels are sharing';
+      'See what other spaces are sharing';
 
   @override
   String get connect_my_empty_events_browse => 'Browse open events';
@@ -836,7 +836,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'Your channels haven\'t started any practices. See what others are offering';
+      'Your spaces haven\'t started any practices. See what others are offering';
 
   @override
   String get connect_my_empty_practices_browse => 'Browse other practices';
@@ -924,7 +924,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_fallback_title => 'Event';
 
   @override
-  String get connect_group_fallback_title => 'Channel';
+  String get connect_group_fallback_title => 'Space';
 
   @override
   String get connect_event_attend => 'Attend';
@@ -1027,13 +1027,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_about_empty => 'No event details yet';
 
   @override
-  String get search_groups => 'Search channels';
+  String get search_groups => 'Search spaces';
 
   @override
-  String get search_for_groups => 'Search for channels';
+  String get search_for_groups => 'Search for spaces';
 
   @override
-  String get no_groups_found => 'No matching channels found';
+  String get no_groups_found => 'No matching spaces found';
 
   @override
   String get explore_coming_soon_subtitle =>
@@ -1830,10 +1830,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moon_phase_waning_crescent => 'Waning crescent';
 
   @override
-  String get join => 'Subscribe';
+  String get join => 'Join';
 
   @override
-  String get joined => 'Subscribed';
+  String get joined => 'Joined';
 
   @override
   String get group_member => 'member';
@@ -1864,10 +1864,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_notifications_title => 'Notifications';
 
   @override
-  String get group_notifications_chat => 'Channel chat';
+  String get group_notifications_chat => 'Space chat';
 
   @override
-  String get group_notifications_content => 'Channel content';
+  String get group_notifications_content => 'Space content';
 
   @override
   String get group_notifications_master_off =>
@@ -1897,29 +1897,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'Chat notifications on';
 
   @override
-  String get group_leave => 'Unsubscribe';
+  String get group_leave => 'Unjoin';
 
   @override
-  String get group_leave_confirm_title => 'Unsubscribe?';
+  String get group_leave_confirm_title => 'Unjoin?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this channel';
+      'You\'ll stop getting messages and updates from this space';
 
   @override
-  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
+  String get group_leave_failed => 'Couldn\'t unjoin. Try again';
 
   @override
-  String get group_request_to_join => 'Request to subscribe';
+  String get group_request_to_join => 'Ask to join';
 
   @override
-  String get group_request => 'Request';
+  String get group_request => 'Ask to join';
 
   @override
   String get group_request_sent => 'Request sent';
 
   @override
-  String get group_join_request_title => 'Request to subscribe';
+  String get group_join_request_title => 'Ask to join';
 
   @override
   String get group_join_request_message_label => 'Message (optional)';
@@ -1940,7 +1940,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to send request. Please try again';
 
   @override
-  String get group_join_requests_title => 'Subscribe requests';
+  String get group_join_requests_title => 'Join requests';
 
   @override
   String get group_join_requests_admit => 'Admit';
@@ -1967,15 +1967,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_members_only_title => 'Members only';
 
   @override
-  String get group_members_only_message =>
-      'Subscribe to see this channel\'s content';
+  String get group_members_only_message => 'Join this space to see its content';
 
   @override
   String get group_join_request_waiting_title => 'Waiting on an admin';
 
   @override
   String get group_join_request_waiting_message =>
-      'We\'ll notify you as soon as your request is reviewed';
+      'We\'ll notify you when your request is reviewed';
 
   @override
   String get group_members_load_error =>
@@ -1992,16 +1991,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_member_admin => 'Admin';
 
   @override
+  String get group_member_owner => 'Owner';
+
+  @override
   String group_remove_member(String name) {
     return 'Remove $name';
   }
 
   @override
-  String get group_remove_member_title => 'Remove from channel?';
+  String get group_remove_member_title => 'Remove from space?';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name will be removed from this channel and unable to resubscribe until the ban is lifted';
+    return '$name will be removed from this space and unable to rejoin it until the ban is lifted';
   }
 
   @override
@@ -2029,7 +2031,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_remove_member_success(String name) {
-    return '$name was removed from the channel';
+    return '$name was removed from the space';
   }
 
   @override
@@ -2038,29 +2040,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String group_join_banned_until(String date) {
-    return 'You were removed from this channel and cannot resubscribe until $date';
+    return 'You were removed from this space and can\'t rejoin until $date';
   }
 
   @override
   String get group_join_banned =>
-      'You were removed from this channel and cannot resubscribe until the ban is lifted';
+      'You were removed from this space and can\'t rejoin until the ban is lifted';
 
   @override
-  String get group_removed_title => 'You\'ve been removed from this channel';
+  String get group_removed_title => 'You\'ve been removed from this space';
 
   @override
   String group_removed_message(String group, String duration) {
-    return 'An admin from $group removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe for $duration.';
+    return 'An admin from $group removed you from this space. You won\'t be able to view its posts, events and practices, or ask to rejoin for $duration.';
   }
 
   @override
   String group_removed_message_no_date(String group) {
-    return 'An admin from $group removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe';
+    return 'An admin from $group removed you from this space. You won\'t be able to view its posts, events and practices, or ask to rejoin';
   }
 
   @override
   String get group_removed_rejoin_label =>
-      'You can request to resubscribe to this channel on';
+      'You can ask to join to this space on';
 
   @override
   String group_removed_rejoin_value(String date, String remaining) {
@@ -2110,14 +2112,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get group_change_practice_title => 'Change practice channel';
+  String get group_change_practice_title => 'Change practice space';
 
   @override
   String get group_change_practice_message =>
-      'You are already practicing this plan with another channel. Would you like to change your practice channel?';
+      'You are already practicing this plan with another space. Would you like to change your practice space?';
 
   @override
-  String get group_join_to_contribute => 'Subscribe to contribute';
+  String get group_join_to_contribute => 'Join to contribute';
 
   @override
   String get group_accumulator_join_error =>
@@ -2277,7 +2279,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get share_group_invite_message =>
-      'Join me on this channel. Let\'s practice together on WeBuddhist!';
+      'Join me in this space. Let\'s practice together on WeBuddhist!';
 
   @override
   String get weekday_monday => 'MON';
@@ -2343,37 +2345,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookmarks_empty_plans_title => 'No plans bookmarked yet';
 
   @override
-  String get bookmarks_empty_plans_subtitle =>
-      'Bookmark a plan to save it here';
+  String get bookmarks_empty_plans_subtitle => 'Bookmark one to save it here';
 
   @override
   String get bookmarks_empty_malas_title => 'No malas bookmarked yet';
 
   @override
-  String get bookmarks_empty_malas_subtitle =>
-      'Bookmark a mala to save it here';
+  String get bookmarks_empty_malas_subtitle => 'Bookmark one to save it here';
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No channel accumulations bookmarked yet';
+      'No space accumulations bookmarked yet';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a channel accumulation to save it here';
+      'Bookmark one to save it here';
 
   @override
   String get bookmarks_empty_timers_title => 'No timers bookmarked yet';
 
   @override
-  String get bookmarks_empty_timers_subtitle =>
-      'Bookmark a timer to save it here';
+  String get bookmarks_empty_timers_subtitle => 'Bookmark one to save it here';
 
   @override
   String get bookmarks_empty_texts_title => 'No texts bookmarked yet';
 
   @override
-  String get bookmarks_empty_texts_subtitle =>
-      'Bookmark a text to save it here';
+  String get bookmarks_empty_texts_subtitle => 'Bookmark one to save it here';
 
   @override
   String get bookmark_removed => 'Bookmark removed';
@@ -2556,7 +2554,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chats_empty_title => 'No chats yet';
 
   @override
-  String get chats_empty_body => 'Subscribe to a channel to start chatting';
+  String get chats_empty_body => 'Join a space to start chatting';
 
   @override
   String get group_chat_inappropriate =>
@@ -2584,8 +2582,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_empty_title => 'No messages yet';
 
   @override
-  String get group_chat_empty_body =>
-      'Start the conversation with your channel';
+  String get group_chat_empty_body => 'Start the conversation with your space';
 
   @override
   String get group_chat_load_failed => 'Messages couldn\'t be loaded';
@@ -2734,8 +2731,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_posts_empty_title => 'No posts yet';
 
   @override
-  String get group_posts_empty_message =>
-      'Share your first update on your channel';
+  String get group_posts_empty_message => 'Share your space\'s first update';
 
   @override
   String get group_posts_load_error => 'Unable to load posts. Please try again';
@@ -2885,13 +2881,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_prayer_empty_body =>
-      'Your request and your community\'s will appear here';
+      'Your request and your space\'s requests will appear here';
 
   @override
   String get event_prayer_add => 'Add a prayer request';
 
   @override
-  String get event_prayer_hint => 'How can we pray for you today';
+  String get event_prayer_hint => 'How can we pray for you today?';
 
   @override
   String get event_prayer_load_failed => 'Prayer requests couldn\'t be loaded';
@@ -2903,7 +2899,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_pray => 'Pray';
 
   @override
-  String get event_prayer_praying => 'Praying';
+  String get event_prayer_praying => 'Prayed';
+
+  @override
+  String event_prayer_my_count(int count) {
+    return '+$count';
+  }
 
   @override
   String get event_prayer_new_request => 'New prayer request';
@@ -2920,14 +2921,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_prayer_delete_failed =>
-      'The prayer request couldn\'t be deleted.';
+      'The prayer request couldn\'t be deleted';
 
   @override
   String get event_prayer_choose_intention => 'Choose an intention';
 
   @override
-  String get event_prayer_intentions_failed =>
-      'Intentions couldn\'t be loaded.';
+  String get event_prayer_intentions_failed => 'Intentions couldn\'t be loaded';
 
   @override
   String get event_prayer_request_button => 'Request prayer';
@@ -2940,7 +2940,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String event_prayer_more_praying(int count) {
-    return '+$count more are praying';
+    return '+$count more prayed';
   }
 
   @override
@@ -2948,18 +2948,18 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count people are praying',
-      one: '1 person is praying',
+      other: '$count people prayed',
+      one: '1 person prayed',
     );
     return '$_temp0';
   }
 
   @override
-  String get event_prayer_praying_for_you => 'Praying for you';
+  String get event_prayer_praying_for_you => 'Prayed for you';
 
   @override
   String event_prayer_praying_for(String name) {
-    return 'Praying for $name';
+    return 'Prayed for $name';
   }
 
   @override
@@ -2969,7 +2969,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_supporters_failed => 'Couldn\'t load who is praying.';
 
   @override
-  String get event_prayer_no_supporters => 'No one is praying yet.';
+  String get event_prayer_no_supporters => 'No one is praying yet';
 
   @override
   String get recitation_live_sync => 'Sync';
@@ -3010,7 +3010,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedback_error_rate_limited =>
-      'Too many requests. Please wait a moment and try again';
+      'Too many requests. Wait a moment and try again';
 
   @override
   String get feedback_error_too_large =>

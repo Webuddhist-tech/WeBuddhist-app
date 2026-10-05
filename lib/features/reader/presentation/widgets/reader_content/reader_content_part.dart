@@ -997,23 +997,35 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   : secondaryState!.headingsBySegmentNumber[segment
                           .segmentNumber] ??
                       const <SecondaryHeading>[];
-          final verse = InterlinearSegmentItem(
-            segment: segment,
-            depth: depth,
-            primaryLanguage: widget.language,
-            scope: widget.params.settingsScope,
-            showPrimary: showOriginal,
-            secondarySlot: secondarySlot,
-            secondaryContentBySegmentNumber:
-                secondaryState?.contentBySegmentNumber,
-            secondaryIsLoading:
-                secondaryState?.isPending(segment.segmentNumber) ?? false,
-            isSelected: isSelected,
-            isHighlighted: isHighlighted,
-            highlightSource: state.highlightSource,
-            isLive: isLive,
-            onTap: () => onSegmentTap(segment),
-          );
+          // Translation only: a verse the translation has no line for is
+          // left out, unless the reader is being pointed at it.
+          final hidden =
+              !showOriginal &&
+              !isLive &&
+              !isSelected &&
+              !isHighlighted &&
+              (secondaryState?.lacks(segment.segmentNumber) ?? false);
+          final Widget verse =
+              hidden
+                  ? const SizedBox.shrink()
+                  : InterlinearSegmentItem(
+                    segment: segment,
+                    depth: depth,
+                    primaryLanguage: widget.language,
+                    scope: widget.params.settingsScope,
+                    showPrimary: showOriginal,
+                    secondarySlot: secondarySlot,
+                    secondaryContentBySegmentNumber:
+                        secondaryState?.contentBySegmentNumber,
+                    secondaryIsLoading:
+                        secondaryState?.isPending(segment.segmentNumber) ??
+                        false,
+                    isSelected: isSelected,
+                    isHighlighted: isHighlighted,
+                    highlightSource: state.highlightSource,
+                    isLive: isLive,
+                    onTap: () => onSegmentTap(segment),
+                  );
           if (headings.isEmpty) return verse;
           final firstVerse =
               previousItem == null ||
