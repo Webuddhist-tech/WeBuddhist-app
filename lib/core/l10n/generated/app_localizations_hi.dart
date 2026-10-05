@@ -38,10 +38,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get onboarding_continue => 'जारी रखें';
 
   @override
-  String get onboarding_first_question => 'अपनी भाषा चुनें:';
+  String get onboarding_first_question => 'अपनी भाषा चुनें';
 
   @override
-  String get onboarding_language_subtitle => 'यह ऐप की भाषा सेट करता है';
+  String get onboarding_language_subtitle => 'इससे ऐप की भाषा सेट होती है';
 
   @override
   String get onboarding_choose_option => 'कम से कम एक चुनें:';
@@ -51,20 +51,20 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get onboarding_all_set_description =>
-      'आपके अभ्यास के लिए यह तैयार है।';
+      'आपके लिए यह सब इंतज़ार कर रहा है:';
 
   @override
   String get onboarding_all_set_practice_title => 'अभ्यास';
 
   @override
-  String get onboarding_all_set_practice_body => 'योजनाएँ, जाप, माला और ध्यान';
+  String get onboarding_all_set_practice_body => 'योजनाएँ, पाठ, माला और ध्यान';
 
   @override
   String get onboarding_all_set_connect_title => 'जुड़ें';
 
   @override
   String get onboarding_all_set_connect_body =>
-      'समूह, कार्यक्रम, समाचार और चैट';
+      'स्पेस, कार्यक्रम, न्यूज़फ़ीड और चैट';
 
   @override
   String get home_recitation => 'पाठ';
@@ -137,7 +137,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get bookmark_texts => 'ग्रंथ';
 
   @override
-  String get bookmark_group_accumulation => 'Channel accumulations';
+  String get bookmark_group_accumulation => 'स्पेस संचय';
 
   @override
   String get mala_add_to_practice => 'मेरे अभ्यास में जोड़ें';
@@ -150,7 +150,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mala_add_rounds_message =>
-      'इस ऐप के बाहर किए गए माला राउंड की संख्या जोड़ें।';
+      'इस ऐप के बाहर किए गए माला राउंड की संख्या जोड़ें';
 
   @override
   String get mala_add_to_bookmark => 'बुकमार्क';
@@ -169,7 +169,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mala_reset_count_confirm =>
-      'आपकी वर्तमान गिनती शून्य हो जाएगी, लेकिन आपके संचय आपके जीवनभर के कुल में बने रहेंगे।';
+      'आपकी वर्तमान गिनती शून्य हो जाएगी, लेकिन आपके संचय आपके जीवनभर के कुल में बने रहेंगे';
 
   @override
   String get mala_reset_confirm => 'रीसेट करें';
@@ -201,7 +201,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get mala_groups_section => 'Groups';
 
   @override
-  String get mala_group_untitled => 'Untitled group';
+  String get mala_group_untitled => 'बिना शीर्षक वाला स्पेस';
 
   @override
   String get home_timer => 'टाइमर';
@@ -436,7 +436,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get my_recitation_collection_new_title => 'नया संग्रह';
 
   @override
-  String get my_recitation_collection_next => 'अगला';
+  String get my_recitation_collection_next => 'आगे';
 
   @override
   String get my_recitation_collection_create => 'बनाएँ';
@@ -460,7 +460,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get my_recitation_collection_add_to_collection => 'संग्रह में जोड़ें';
 
   @override
-  String get my_recitation_collection_edit => 'संग्रह संपादित करें';
+  String get my_recitation_collection_edit => 'संग्रह एडिट करें';
 
   @override
   String get my_recitation_collection_delete => 'संग्रह हटाएँ';
@@ -470,7 +470,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get my_recitation_collection_delete_message =>
-      'यह संग्रह स्थायी रूप से हटा दिया जाएगा.';
+      'यह संग्रह स्थायी रूप से हटा दिया जाएगा';
 
   @override
   String get my_recitation_collection_fallback_title => 'पाठ संग्रह';
@@ -495,20 +495,20 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count पाठ • मेरा',
-      one: '1 पाठ • मेरा',
-      zero: '0 पाठ • मेरा',
+      other: '$count पाठ • मैं',
+      one: '1 पाठ • मैं',
+      zero: '0 पाठ • मैं',
     );
     return '$_temp0';
   }
 
   @override
   String get bookmarks_empty_chant_collections_title =>
-      'अभी तक कोई पाठ संग्रह बुकमार्क नहीं है.';
+      'अभी तक कोई पाठ संग्रह बुकमार्क नहीं किया गया';
 
   @override
   String get bookmarks_empty_chant_collections_subtitle =>
-      'किसी पाठ संग्रह को यहाँ सेव करने के लिए बुकमार्क करें.';
+      'इसे यहाँ सहेजने के लिए किसी संग्रह को बुकमार्क करें';
 
   @override
   String get notification_settings => 'नोटिफिकेशन सेटिंग्स';
@@ -518,37 +518,37 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notification_allow_subtitle_enabled =>
-      'इस app के लिए नोटिफिकेशन चालू हैं';
+      'इस ऐप के लिए नोटिफिकेशन चालू हैं';
 
   @override
   String get notification_allow_subtitle_disabled =>
-      'अनुमति आवश्यक है। अनुमति देने के लिए सेटिंग्स में टैप करें।';
+      'अनुमति आवश्यक है। अनुमति देने के लिए सेटिंग्स में टैप करें';
 
   @override
   String get notification_allow_subtitle_paused =>
-      'रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें।';
+      'रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
 
   @override
-  String get notification_routine_title => 'रूटीन रिमाइंडर';
+  String get notification_routine_title => 'योजना रिमाइंडर';
 
   @override
   String get notification_routine_subtitle_enabled =>
-      'आपके अभ्यास ब्लॉक के लिए दैनिक रिमाइंडर';
+      'आपकी योजनाओं के लिए दैनिक रिमाइंडर';
 
   @override
   String get notification_routine_subtitle_disabled =>
-      'रूटीन रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें।';
+      'योजना रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
 
   @override
   String get notification_battery_title => 'बैकग्राउंड रिमाइंडर';
 
   @override
   String get notification_battery_subtitle_enabled =>
-      'आपके रिमाइंडर समय पर भेजे जाते हैं, भले ही app बंद हो।';
+      'आपके रिमाइंडर समय पर भेजे जाते हैं, भले ही ऐप बंद हो';
 
   @override
   String get notification_battery_subtitle_disabled =>
-      'कुछ Android फ़ोन बैटरी बचाने के लिए बैकग्राउंड apps रोक देते हैं, जिससे आपके रिमाइंडर देर से आ सकते हैं या छूट सकते हैं। इन्हें चालू रखने के लिए टैप करें।';
+      'कुछ Android फ़ोन बैटरी बचाने के लिए बैकग्राउंड ऐप्स रोक देते हैं, जिससे आपके रिमाइंडर देर से आ सकते हैं या छूट सकते हैं। इन्हें चालू रखने के लिए टैप करें।';
 
   @override
   String get notification_recitation_title => 'पाठ रिमाइंडर';
@@ -559,7 +559,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notification_recitation_subtitle_disabled =>
-      'पाठ रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें।';
+      'पाठ रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
 
   @override
   String get notification_practice_title => 'माला रिमाइंडर';
@@ -570,18 +570,18 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notification_practice_subtitle_disabled =>
-      'माला रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें।';
+      'माला रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
 
   @override
   String get notification_timer_title => 'टाइमर रिमाइंडर';
 
   @override
   String get notification_timer_subtitle_enabled =>
-      'आपके टाइमर सत्रों के लिए दैनिक रिमाइंडर';
+      'आपके टाइमर के लिए दैनिक रिमाइंडर';
 
   @override
   String get notification_timer_subtitle_disabled =>
-      'टाइमर रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें।';
+      'टाइमर रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
 
   @override
   String get notification_battery_info_title =>
@@ -589,7 +589,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notification_battery_info_body =>
-      'कुछ Android फ़ोन बैटरी बचाने के लिए बैकग्राउंड apps रोक देते हैं, जिससे आपके निर्धारित रिमाइंडर देर से आ सकते हैं या रद्द हो सकते हैं। app को छूट देने से आपके रिमाइंडर भरोसेमंद रूप से समय पर रहते हैं।';
+      'कुछ Android फ़ोन बैटरी बचाने के लिए बैकग्राउंड ऐप्स रोक देते हैं, जिससे आपके निर्धारित रिमाइंडर देर से आ सकते हैं या रद्द हो सकते हैं। ऐप को छूट देने से आपके रिमाइंडर भरोसेमंद रूप से समय पर रहते हैं।';
 
   @override
   String get notification_snack_permission_denied =>
@@ -597,11 +597,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notification_snack_disable_alarms_in_settings =>
-      'सेटिंग्स में अलार्म और रिमाइंडर बंद करें।';
+      'सेटिंग्स में अलार्म और रिमाइंडर बंद करें';
 
   @override
   String get notification_snack_battery_reenable =>
-      'सेटिंग्स → बैटरी में बैटरी ऑप्टिमाइज़ेशन पुनः चालू करें।';
+      'सेटिंग्स → बैटरी में बैटरी ऑप्टिमाइज़ेशन पुनः चालू करें';
 
   @override
   String get profile_default_bio => 'WeBuddhist में आपका स्वागत है';
@@ -629,7 +629,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get auth_drawer_subtitle =>
-      'किसी भी डिवाइस पर, जहाँ भी आप जाएँ, अपना अभ्यास जारी रखें।';
+      'किसी भी डिवाइस पर, जहाँ भी आप जाएँ, अपना अभ्यास जारी रखें';
 
   @override
   String get routine_delete_block_message =>
@@ -646,11 +646,12 @@ class AppLocalizationsHi extends AppLocalizations {
       'आप किन परंपराओं\nका पालन करते हैं?';
 
   @override
-  String get onboarding_tradition_title => 'आप बुद्ध का अनुसरण कैसे करते हैं?';
+  String get onboarding_tradition_title =>
+      'आप बुद्ध की शिक्षाओं का अनुसरण कैसे करते हैं?';
 
   @override
   String get onboarding_tradition_subtitle =>
-      'अपनी सामग्री के लिए एक या अधिक परंपराएँ चुनें। आप इसे सेटिंग्स में कभी भी बदल सकते हैं।';
+      'अपनी सामग्री के लिए एक या अधिक परंपराएँ चुनें। आप इसे कभी भी सेटिंग्स में बदल सकते हैं।';
 
   @override
   String get onboarding_tradition_option_intro => 'के माध्यम से:';
@@ -741,7 +742,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get discover_groups => 'समूह खोजें';
 
   @override
-  String get my_groups => 'मेरे समूह';
+  String get my_groups => 'मेरे स्पेस';
 
   @override
   String get see_all => 'सभी देखें';
@@ -755,7 +756,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_groups_empty_subtitle =>
-      'बधाई हो, आप हमारे सभी समूहों में शामिल हो चुके हैं! जल्द फिर देखें। नए समूह जल्द आ रहे हैं';
+      'बधाई हो, आप हमारे सभी स्पेस में शामिल हो चुके हैं! जल्द फिर देखें। नए स्पेस आ रहे हैं...';
 
   @override
   String get connect_tab_feed => 'फ़ीड';
@@ -770,10 +771,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_tab_practices => 'अभ्यास';
 
   @override
-  String get connect_tab_groups => 'Groups';
+  String get connect_tab_groups => 'स्पेस';
 
   @override
-  String get connect_segment_my => 'आपके लिए';
+  String get connect_segment_my => 'आपके स्पेस';
 
   @override
   String get connect_segment_discover => 'खोजें';
@@ -788,16 +789,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_empty_discover_feed => 'खोजने के लिए कुछ नहीं';
 
   @override
-  String get connect_empty_discover_groups => 'खोजने के लिए कोई समूह नहीं';
+  String get connect_empty_discover_groups => 'खोजने के लिए कोई स्पेस नहीं';
 
   @override
   String get connect_empty_discover_practices => 'खोजने के लिए कोई अभ्यास नहीं';
 
   @override
-  String get connect_all_groups => 'सभी समूह';
+  String get connect_all_groups => 'सभी स्पेस';
 
   @override
-  String get connect_my_empty_feed_title => 'आपके समूह शांत रहे हैं';
+  String get connect_my_empty_feed_title => 'आपके स्पेस शांत रहे हैं';
 
   @override
   String get connect_my_empty_events_title => 'कोई आगामी कार्यक्रम नहीं';
@@ -810,15 +811,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'आपके शामिल समूहों से कुछ नया नहीं है। अन्य समूह आज पोस्ट कर रहे हैं।';
+      'आपके स्पेस से कुछ नया नहीं है। अन्य आज पोस्ट कर रहे हैं';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'आपके किसी भी समूह ने कुछ निर्धारित नहीं किया है। अन्य समूहों में सभी के लिए खुले कार्यक्रम हैं।';
+      'अभी आपके स्पेस में कुछ भी निर्धारित नहीं है। अन्य के पास सभी के लिए खुले कार्यक्रम हैं';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'आपके समूहों ने कुछ भी पोस्ट नहीं किया है। देखें अन्य समूह क्या साझा कर रहे हैं।';
+      'आपके स्पेस ने कुछ भी पोस्ट नहीं किया है। देखें अन्य क्या साझा कर रहे हैं';
 
   @override
   String get connect_my_empty_groups_subtitle =>
@@ -826,7 +827,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_browse =>
-      'देखें अन्य समूह क्या साझा कर रहे हैं';
+      'देखें अन्य स्पेस क्या साझा कर रहे हैं';
 
   @override
   String get connect_my_empty_events_browse => 'खुले कार्यक्रम देखें';
@@ -839,7 +840,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'आपके समूहों ने कोई अभ्यास शुरू नहीं किया है। देखें अन्य समूह क्या पेश कर रहे हैं।';
+      'आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है। देखें अन्य क्या पेश कर रहे हैं';
 
   @override
   String get connect_my_empty_practices_browse => 'अन्य अभ्यास देखें';
@@ -863,7 +864,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_comment_delete_message =>
-      'यह टिप्पणी स्थायी रूप से हटा दी जाएगी।';
+      'यह टिप्पणी स्थायी रूप से हटा दी जाएगी';
 
   @override
   String get connect_comment_delete_failed => 'टिप्पणी हटाने में विफल';
@@ -881,7 +882,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_post_comments_empty =>
-      'अभी कोई टिप्पणी नहीं। बातचीत शुरू करें।';
+      'अभी कोई टिप्पणी नहीं। बातचीत शुरू करें';
 
   @override
   String get connect_caption_more => 'और';
@@ -928,7 +929,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_event_fallback_title => 'कार्यक्रम';
 
   @override
-  String get connect_group_fallback_title => 'समूह';
+  String get connect_group_fallback_title => 'स्पेस';
 
   @override
   String get connect_event_attend => 'शामिल हों';
@@ -957,7 +958,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String connect_event_participants_attending(int count) {
-    return '$count शामिल';
+    return '$count प्रतिभागी';
   }
 
   @override
@@ -1029,16 +1030,17 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get connect_event_about_empty => 'अभी कोई गतिविधि जानकारी नहीं है';
+  String get connect_event_about_empty =>
+      'अभी कार्यक्रम की कोई जानकारी नहीं है';
 
   @override
-  String get search_groups => 'समूह खोजें';
+  String get search_groups => 'स्पेस खोजें';
 
   @override
-  String get search_for_groups => 'समूहों की खोज करें';
+  String get search_for_groups => 'स्पेस की खोज करें';
 
   @override
-  String get no_groups_found => 'कोई मिलता-जुलता समूह नहीं मिला';
+  String get no_groups_found => 'कोई मिलता-जुलता स्पेस नहीं मिला';
 
   @override
   String get explore_coming_soon_subtitle =>
@@ -1258,13 +1260,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get routine_delete_block => 'ब्लॉक हटाएँ';
 
   @override
-  String get routine_session_title_hint => 'Title...';
+  String get routine_session_title_hint => 'शीर्षक...';
 
   @override
-  String get routine_expand_all => 'Expand all';
+  String get routine_expand_all => 'सभी खोलें';
 
   @override
-  String get routine_collapse_all => 'Collapse all';
+  String get routine_collapse_all => 'सभी बंद करें';
 
   @override
   String get routine_delete_time_block => 'टाइम ब्लॉक हटाएँ';
@@ -1425,7 +1427,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notFound =>
-      'यह अब उपलब्ध नहीं है। अपडेट करने के लिए अपनी दिनचर्या एडिट करें।';
+      'यह अब उपलब्ध नहीं है। अपडेट करने के लिए अपनी दिनचर्या एडिट करें';
 
   @override
   String get noTimeSlot =>
@@ -1549,7 +1551,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get force_update_message =>
-      'app का एक नया संस्करण उपलब्ध है। जारी रखने के लिए कृपया अपडेट करें';
+      'ऐप का एक नया संस्करण उपलब्ध है। जारी रखने के लिए कृपया अपडेट करें';
 
   @override
   String get force_update_button => 'अभी अपडेट करें';
@@ -1687,11 +1689,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get about_title => 'परिचय';
 
   @override
-  String get about_connect_with_us => 'हमसे जुड़ें';
+  String get about_connect_with_us => 'हमसे जुड़ें...';
 
   @override
   String get about_description =>
-      'हम बौद्धों को कम नुकसान करने, अधिक भला करने और अपने मन को बेहतर ढंग से जानने में मदद करते हैं — रोज़ सीखने, अभ्यास करने और जुड़ने के माध्यम से, ताकि सभी प्राणी दुख से मुक्त हों और स्थायी सुख पाएँ।';
+      'हम बौद्धों को रोज़ सीखने, अभ्यास करने और जुड़ने के माध्यम से कम नुकसान करने, अधिक भला करने और अपने मन को बेहतर ढंग से जानने में मदद करते हैं।';
 
   @override
   String get about_social_website => 'वेबसाइट';
@@ -1744,7 +1746,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get me_total_meditation_time => 'कुल ध्यान समय';
 
   @override
-  String get me_days_plan_practiced_suffix => 'कुल योजना दिवस पूरे किए';
+  String get me_days_plan_practiced_suffix => 'कुल पूरे किए गए योजना दिवस';
 
   @override
   String me_streak_share_message(int count, String appName) {
@@ -1873,59 +1875,58 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_invite => 'आमंत्रित करें';
 
   @override
-  String get group_notifications_title => 'Notifications';
+  String get group_notifications_title => 'नोटिफिकेशन';
 
   @override
-  String get group_notifications_chat => 'Channel chat';
+  String get group_notifications_chat => 'स्पेस चैट';
 
   @override
-  String get group_notifications_content => 'Channel content';
+  String get group_notifications_content => 'स्पेस सामग्री';
 
   @override
-  String get group_notifications_master_off =>
-      'Notifications are turned off for the app';
+  String get group_notifications_master_off => 'ऐप के लिए नोटिफिकेशन बंद हैं';
 
   @override
-  String get group_notifications_open_settings => 'Turn on';
+  String get group_notifications_open_settings => 'चालू करें';
 
   @override
   String get group_notifications_update_failed =>
-      'Couldn\'t update notification settings. Try again';
+      'नोटिफिकेशन सेटिंग्स अपडेट नहीं हो सकीं। पुनः प्रयास करें';
 
   @override
   String get group_notifications_load_failed =>
-      'Couldn\'t load notification settings';
+      'नोटिफिकेशन सेटिंग्स लोड नहीं हो सकीं';
 
   @override
-  String get group_chat_mute_notifications => 'चैट सूचनाएँ म्यूट करें';
+  String get group_chat_mute_notifications => 'चैट नोटिफिकेशन म्यूट करें';
 
   @override
-  String get group_chat_unmute_notifications => 'चैट सूचनाएँ अनम्यूट करें';
+  String get group_chat_unmute_notifications => 'चैट नोटिफिकेशन अनम्यूट करें';
 
   @override
-  String get group_chat_notifications_muted => 'चैट सूचनाएँ म्यूट की गईं';
+  String get group_chat_notifications_muted => 'चैट नोटिफिकेशन म्यूट किए गए';
 
   @override
-  String get group_chat_notifications_unmuted => 'चैट सूचनाएँ चालू हैं';
+  String get group_chat_notifications_unmuted => 'चैट नोटिफिकेशन चालू हैं';
 
   @override
-  String get group_leave => 'Unsubscribe';
+  String get group_leave => 'छोड़ें';
 
   @override
-  String get group_leave_confirm_title => 'Unsubscribe?';
+  String get group_leave_confirm_title => 'छोड़ें?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this channel';
+      'आपको इस स्पेस से संदेश और अपडेट मिलने बंद हो जाएँगे';
 
   @override
-  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
+  String get group_leave_failed => 'छोड़ा नहीं जा सका। पुनः प्रयास करें';
 
   @override
   String get group_request_to_join => 'शामिल होने का अनुरोध';
 
   @override
-  String get group_request => 'अनुरोध';
+  String get group_request => 'शामिल होने का अनुरोध';
 
   @override
   String get group_request_sent => 'अनुरोध भेजा गया';
@@ -1945,53 +1946,53 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_join_request_sent_snackbar =>
-      'अनुरोध भेजा गया — एक व्यवस्थापक इसकी समीक्षा करेगा।';
+      'अनुरोध भेजा गया। एक एडमिन इसकी समीक्षा करेगा';
 
   @override
   String get group_join_request_error =>
-      'अनुरोध भेजने में असमर्थ। कृपया पुनः प्रयास करें।';
+      'अनुरोध भेजने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
   String get group_join_requests_title => 'शामिल होने के अनुरोध';
 
   @override
-  String get group_join_requests_admit => 'स्वीकार करें';
+  String get group_join_requests_admit => 'स्वीकारें';
 
   @override
-  String get group_join_requests_deny => 'अस्वीकार करें';
+  String get group_join_requests_deny => 'अस्वीकारें';
 
   @override
   String get group_join_requests_empty => 'कोई लंबित अनुरोध नहीं';
 
   @override
   String get group_join_requests_load_error =>
-      'शामिल होने के अनुरोध लोड नहीं हो सके। कृपया पुनः प्रयास करें।';
+      'शामिल होने के अनुरोध लोड करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
   String get group_join_requests_admit_error =>
-      'इस अनुरोध को स्वीकार नहीं किया जा सका। कृपया पुनः प्रयास करें।';
+      'यह अनुरोध स्वीकार करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
   String get group_join_requests_deny_error =>
-      'इस अनुरोध को अस्वीकार नहीं किया जा सका। कृपया पुनः प्रयास करें।';
+      'यह अनुरोध अस्वीकार करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
-  String get group_members_only_title => 'केवल सदस्य';
+  String get group_members_only_title => 'केवल सदस्यों के लिए';
 
   @override
   String get group_members_only_message =>
-      'इस समूह के मंत्र, कार्यक्रम और पोस्ट देखने के लिए शामिल हों।';
+      'इसकी सामग्री देखने के लिए इस स्पेस में शामिल हों';
 
   @override
-  String get group_join_request_waiting_title => 'व्यवस्थापक की प्रतीक्षा';
+  String get group_join_request_waiting_title => 'एडमिन की प्रतीक्षा में';
 
   @override
   String get group_join_request_waiting_message =>
-      'आपके अनुरोध की समीक्षा होते ही हम आपको सूचित करेंगे।';
+      'आपके अनुरोध की समीक्षा होने पर हम आपको सूचित करेंगे';
 
   @override
   String get group_members_load_error =>
-      'सदस्य लोड नहीं हो सके। कृपया पुनः प्रयास करें।';
+      'सदस्य लोड नहीं हो सके। कृपया पुनः प्रयास करें';
 
   @override
   String get group_followers_load_error =>
@@ -2012,15 +2013,15 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get group_remove_member_title => 'समूह से हटाएँ?';
+  String get group_remove_member_title => 'स्पेस से हटाएँ?';
 
   @override
   String group_remove_member_message(String name) {
-    return '$name को समूह से हटा दिया जाएगा और प्रतिबंध समाप्त होने तक शामिल होने से रोका जाएगा';
+    return '$name को इस स्पेस से हटा दिया जाएगा और प्रतिबंध हटने तक वे फिर से शामिल नहीं हो पाएँगे';
   }
 
   @override
-  String get group_remove_member_blocked_for => 'प्रतिबंध अवधि :';
+  String get group_remove_member_blocked_for => 'प्रतिबंध अवधि:';
 
   @override
   String get group_remove_member_duration_day => '1 दिन';
@@ -2044,38 +2045,38 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String group_remove_member_success(String name) {
-    return '$name को समूह से हटा दिया गया।';
+    return '$name को स्पेस से हटा दिया गया';
   }
 
   @override
   String get group_remove_member_error =>
-      'इस सदस्य को हटाया नहीं जा सका। फिर से प्रयास करें।';
+      'इस सदस्य को हटाया नहीं जा सका। पुनः प्रयास करें';
 
   @override
   String group_join_banned_until(String date) {
-    return 'आपको इस समूह से हटा दिया गया था और आप $date तक फिर से शामिल नहीं हो सकते';
+    return 'आपको इस स्पेस से हटा दिया गया था और आप $date तक फिर से शामिल नहीं हो सकते';
   }
 
   @override
   String get group_join_banned =>
-      'आपको इस समूह से हटा दिया गया था और प्रतिबंध समाप्त होने तक आप फिर से शामिल नहीं हो सकते।';
+      'आपको इस स्पेस से हटा दिया गया था और प्रतिबंध हटने तक आप फिर से शामिल नहीं हो सकते';
 
   @override
-  String get group_removed_title => 'आपको इस समूह से हटा दिया गया है';
+  String get group_removed_title => 'आपको इस स्पेस से हटा दिया गया है';
 
   @override
   String group_removed_message(String group, String duration) {
-    return '$group के एक एडमिन ने आपको इस चैनल से हटा दिया है। आप इसकी पोस्ट, इवेंट और अभ्यास नहीं देख पाएँगे और $duration तक फिर से शामिल होने का अनुरोध भी नहीं कर पाएँगे।';
+    return '$group के एक एडमिन ने आपको इस स्पेस से हटा दिया है। आप इसकी पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और $duration तक फिर से शामिल होने का अनुरोध भी नहीं कर पाएँगे।';
   }
 
   @override
   String group_removed_message_no_date(String group) {
-    return '$group के एक एडमिन ने आपको इस चैनल से हटा दिया है। आप इसकी पोस्ट, इवेंट और अभ्यास नहीं देख पाएँगे और फिर से शामिल होने का अनुरोध भी नहीं कर पाएँगे।';
+    return '$group के एक एडमिन ने आपको इस स्पेस से हटा दिया है। आप इसकी पोस्ट, कार्यक्रम और अभ्यास नहीं देख पाएँगे और फिर से शामिल होने का अनुरोध भी नहीं कर पाएँगे';
   }
 
   @override
   String get group_removed_rejoin_label =>
-      'आप इस दिन इस समूह में फिर से शामिल होने का अनुरोध कर सकते हैं';
+      'आप इस स्पेस में शामिल होने का अनुरोध इस तारीख को कर सकते हैं';
 
   @override
   String group_removed_rejoin_value(String date, String remaining) {
@@ -2083,15 +2084,15 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get group_removed_day_left => '1 दिन शेष';
+  String get group_removed_day_left => '1 दिन बाकी';
 
   @override
   String group_removed_days_left(int count) {
-    return '$count दिन शेष';
+    return '$count दिन बाकी';
   }
 
   @override
-  String get group_removed_last_day => 'एक दिन से कम शेष';
+  String get group_removed_last_day => 'एक दिन से कम बाकी';
 
   @override
   String get group_followers_empty => 'अभी कोई अनुयायी नहीं';
@@ -2125,22 +2126,22 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get group_change_practice_title => 'अभ्यास समूह बदलें';
+  String get group_change_practice_title => 'अभ्यास स्पेस बदलें';
 
   @override
   String get group_change_practice_message =>
-      'आप पहले से ही किसी दूसरे समूह के साथ इस योजना का अभ्यास कर रहे हैं। क्या आप अपना अभ्यास समूह बदलना चाहेंगे?';
+      'आप पहले से ही किसी दूसरे स्पेस के साथ इस योजना का अभ्यास कर रहे हैं। क्या आप अपना अभ्यास स्पेस बदलना चाहेंगे?';
 
   @override
   String get group_join_to_contribute => 'योगदान के लिए शामिल हों';
 
   @override
   String get group_accumulator_join_error =>
-      'संचय में शामिल होने में असमर्थ। कृपया पुनः प्रयास करें।';
+      'संचय में शामिल होने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
   String get group_accumulator_join_before_practice =>
-      'Join this accumulation before adding it to your practices';
+      'इसे अपने अभ्यास में जोड़ने से पहले इस संचय में शामिल हों';
 
   @override
   String group_accumulator_participants(int count) {
@@ -2161,10 +2162,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_accumulator_contributions_empty =>
-      'अपने योगदान को ट्रैक करने के लिए इस संचय में शामिल हों।';
+      'अपने योगदान को ट्रैक करने के लिए इस संचय में शामिल हों';
 
   @override
-  String get group_accumulator_leaderboard_empty => 'अभी कोई जाप नहीं।';
+  String get group_accumulator_leaderboard_empty => 'अभी कोई जाप नहीं';
 
   @override
   String get group_accumulator_recite_now => 'अभी जाप करें';
@@ -2184,7 +2185,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_accumulator_add_offline_chants_message =>
-      'इस ऐप के बाहर किए गए जापों की संख्या जोड़ें।';
+      'इस ऐप के बाहर किए गए जापों की संख्या जोड़ें';
 
   @override
   String get group_accumulator_session_complete => 'सत्र पूरा हुआ!';
@@ -2200,7 +2201,7 @@ class AppLocalizationsHi extends AppLocalizations {
     String accumulation,
     String group,
   ) {
-    return 'मैंने WeBuddhist पर $group के सामूहिक संचय \"$accumulation\" में $count जाप पूरे किए। आप भी मेरे साथ जुड़ें!';
+    return 'मैंने WeBuddhist पर $group स्पेस के संचय \"$accumulation\" में $count जाप पूरे किए। आप भी मेरे साथ जुड़ें!';
   }
 
   @override
@@ -2208,7 +2209,7 @@ class AppLocalizationsHi extends AppLocalizations {
     int count,
     String accumulation,
   ) {
-    return 'मैंने WeBuddhist पर सामूहिक संचय \"$accumulation\" में $count जाप पूरे किए। आप भी मेरे साथ जुड़ें!';
+    return 'मैंने WeBuddhist पर \"$accumulation\" संचय में $count जाप पूरे किए। आप भी मेरे साथ जुड़ें!';
   }
 
   @override
@@ -2220,12 +2221,12 @@ class AppLocalizationsHi extends AppLocalizations {
     String collection,
     String group,
   ) {
-    return 'Check out \"$collection\", a recitation collection by $group on WeBuddhist. Join us in practice!';
+    return 'WeBuddhist पर $group स्पेस का पाठ संग्रह \"$collection\" देखें। अभ्यास में हमारे साथ जुड़ें!';
   }
 
   @override
   String group_recitation_collection_share_message_no_group(String collection) {
-    return 'Check out the recitation collection \"$collection\" on WeBuddhist. Join us in practice!';
+    return 'WeBuddhist पर पाठ संग्रह \"$collection\" देखें। अभ्यास में हमारे साथ जुड़ें!';
   }
 
   @override
@@ -2293,7 +2294,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get share_group_invite_message =>
-      'मैं चाहता हूँ कि आप हमारे समूह में शामिल हों। WeBuddhist पर एक साथ अभ्यास करते हैं।';
+      'इस स्पेस में मेरे साथ जुड़ें। चलिए WeBuddhist पर एक साथ अभ्यास करें!';
 
   @override
   String get weekday_monday => 'सोम';
@@ -2350,51 +2351,51 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get bookmarks_empty_all_title =>
-      'अभी तक कुछ भी बुकमार्क नहीं किया गया।';
+      'अभी तक कुछ भी बुकमार्क नहीं किया गया';
 
   @override
   String get bookmarks_empty_all_subtitle =>
-      'इसे यहाँ सहेजने के लिए किसी भी चीज़ को बुकमार्क करें।';
+      'इसे यहाँ सहेजने के लिए किसी भी चीज़ को बुकमार्क करें';
 
   @override
   String get bookmarks_empty_plans_title =>
-      'अभी तक कोई योजना बुकमार्क नहीं की गई।';
+      'अभी तक कोई योजना बुकमार्क नहीं की गई';
 
   @override
   String get bookmarks_empty_plans_subtitle =>
-      'इसे यहाँ सहेजने के लिए किसी योजना को बुकमार्क करें।';
+      'इसे यहाँ सहेजने के लिए किसी योजना को बुकमार्क करें';
 
   @override
   String get bookmarks_empty_malas_title =>
-      'अभी तक कोई माला बुकमार्क नहीं की गई।';
+      'अभी तक कोई माला बुकमार्क नहीं की गई';
 
   @override
   String get bookmarks_empty_malas_subtitle =>
-      'इसे यहाँ सहेजने के लिए किसी माला को बुकमार्क करें।';
+      'इसे यहाँ सहेजने के लिए किसी माला को बुकमार्क करें';
 
   @override
   String get bookmarks_empty_group_accumulations_title =>
-      'No channel accumulations bookmarked yet';
+      'अभी तक कोई स्पेस संचय बुकमार्क नहीं किया गया';
 
   @override
   String get bookmarks_empty_group_accumulations_subtitle =>
-      'Bookmark a channel accumulation to save it here';
+      'इसे यहाँ सहेजने के लिए किसी संचय को बुकमार्क करें';
 
   @override
   String get bookmarks_empty_timers_title =>
-      'अभी तक कोई टाइमर बुकमार्क नहीं किया गया।';
+      'अभी तक कोई टाइमर बुकमार्क नहीं किया गया';
 
   @override
   String get bookmarks_empty_timers_subtitle =>
-      'इसे यहाँ सहेजने के लिए किसी टाइमर को बुकमार्क करें।';
+      'इसे यहाँ सहेजने के लिए किसी टाइमर को बुकमार्क करें';
 
   @override
   String get bookmarks_empty_texts_title =>
-      'अभी तक कोई पाठ बुकमार्क नहीं किया गया।';
+      'अभी तक कोई पाठ बुकमार्क नहीं किया गया';
 
   @override
   String get bookmarks_empty_texts_subtitle =>
-      'इसे यहाँ सहेजने के लिए किसी पाठ को बुकमार्क करें।';
+      'इसे यहाँ सहेजने के लिए किसी पाठ को बुकमार्क करें';
 
   @override
   String get bookmark_removed => 'बुकमार्क हटाया गया';
@@ -2413,18 +2414,18 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get webview_timeout_error =>
-      'पेज लोड होने में बहुत समय लगा। कृपया अपना इंटरनेट कनेक्शन जांचें।';
+      'पेज लोड होने में बहुत समय लगा। कृपया अपना इंटरनेट कनेक्शन जांचें';
 
   @override
   String get webview_load_failed => 'पेज लोड करने में विफल';
 
   @override
   String get privacy_policy_load_error =>
-      'गोपनीयता नीति पेज लोड करने में असमर्थ।';
+      'गोपनीयता नीति पेज लोड करने में असमर्थ';
 
   @override
   String get terms_of_service_load_error =>
-      'सेवा की शर्तें पेज लोड करने में असमर्थ।';
+      'सेवा की शर्तें पेज लोड करने में असमर्थ';
 
   @override
   String get series_enroll_error => 'श्रृंखला में नामांकन विफल';
@@ -2454,7 +2455,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get session_plans_load_error =>
-      'योजनाएँ लोड करने में असमर्थ।\nकृपया बाद में पुनः प्रयास करें।';
+      'योजनाएँ लोड करने में असमर्थ।\nकृपया बाद में पुनः प्रयास करें';
 
   @override
   String get session_chants_load_error => 'जाप लोड करने में असमर्थ';
@@ -2516,7 +2517,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get author_details_load_error =>
-      'लेखक विवरण लोड करने में असमर्थ।\nकृपया पुनः प्रयास करें।';
+      'लेखक विवरण लोड करने में असमर्थ।\nकृपया पुनः प्रयास करें';
 
   @override
   String get link_cannot_open => 'यह लिंक नहीं खोल सकते';
@@ -2559,12 +2560,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String group_accumulator_share_message(String accumulation, String group) {
-    return 'मैं WeBuddhist पर $group के सामूहिक संचय \"$accumulation\" में भाग ले रहा हूँ। आप भी मेरे साथ जुड़ें!';
+    return 'मैं WeBuddhist पर $group स्पेस के संचय \"$accumulation\" में भाग ले रहा हूँ। आप भी मेरे साथ जुड़ें!';
   }
 
   @override
   String group_accumulator_share_message_no_group(String accumulation) {
-    return 'मैं WeBuddhist पर सामूहिक संचय \"$accumulation\" में भाग ले रहा हूँ। आप भी मेरे साथ जुड़ें!';
+    return 'मैं WeBuddhist पर \"$accumulation\" संचय में भाग ले रहा हूँ। आप भी मेरे साथ जुड़ें!';
   }
 
   @override
@@ -2578,14 +2579,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get chats_empty_body =>
-      'बातचीत शुरू करने के लिए किसी समुदाय से जुड़ें।';
+      'चैट शुरू करने के लिए किसी स्पेस में शामिल हों';
 
   @override
   String get group_chat_inappropriate =>
-      'यह संदेश नहीं भेजा जा सका क्योंकि इसमें अनुचित भाषा है।';
+      'यह संदेश नहीं भेजा जा सका क्योंकि इसमें ऐसी भाषा है जिसकी अनुमति नहीं है';
 
   @override
-  String get group_chat_not_a_member => 'केवल सदस्य इस चैट को खोल सकते हैं।';
+  String get group_chat_not_a_member => 'केवल सदस्य ही यह चैट खोल सकते हैं';
 
   @override
   String get group_chat_open => 'चैट';
@@ -2603,13 +2604,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_yesterday => 'कल';
 
   @override
-  String get group_chat_empty_title => 'अभी तक कोई संदेश नहीं';
+  String get group_chat_empty_title => 'अभी कोई संदेश नहीं';
 
   @override
-  String get group_chat_empty_body => 'अपने समूह के साथ बातचीत शुरू करें।';
+  String get group_chat_empty_body => 'अपने स्पेस के साथ बातचीत शुरू करें';
 
   @override
-  String get group_chat_load_failed => 'संदेश लोड नहीं हो सके।';
+  String get group_chat_load_failed => 'संदेश लोड नहीं हो सके';
 
   @override
   String get group_chat_retry => 'पुनः प्रयास करें';
@@ -2624,7 +2625,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_reacted => 'प्रतिक्रिया दी';
 
   @override
-  String get group_chat_reply => 'उत्तर दें';
+  String get group_chat_reply => 'जवाब दें';
 
   @override
   String get group_chat_copy => 'कॉपी करें';
@@ -2636,16 +2637,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_report => 'रिपोर्ट करें';
 
   @override
-  String get group_chat_report_title => 'आप इसकी रिपोर्ट क्यों कर रहे हैं?';
+  String get group_chat_report_title => 'आप इसे रिपोर्ट क्यों कर रहे हैं?';
 
   @override
-  String get group_chat_report_privacy => 'आपका नाम गुप्त रहेगा।';
+  String get group_chat_report_privacy => 'आपका नाम गोपनीय रहेगा';
 
   @override
   String get group_chat_report_reason_harassment => 'उत्पीड़न या धमकाना';
 
   @override
-  String get group_chat_report_reason_hate => 'घृणित या हानिकारक भाषा';
+  String get group_chat_report_reason_hate => 'नफ़रत भरी या हानिकारक भाषा';
 
   @override
   String get group_chat_report_reason_sexual => 'यौन या अश्लील सामग्री';
@@ -2654,13 +2655,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_report_reason_spam => 'स्पैम या धोखाधड़ी';
 
   @override
-  String get group_chat_report_reason_off_topic => 'विषय से हटकर या बाधक';
+  String get group_chat_report_reason_off_topic =>
+      'विषय से हटकर या बाधा डालने वाला';
 
   @override
   String get group_chat_report_reason_other => 'कुछ और';
 
   @override
-  String get group_chat_report_note_title => 'टिप्पणी जोड़ें';
+  String get group_chat_report_note_title => 'नोट जोड़ें';
 
   @override
   String get group_chat_report_note_hint => 'कुछ और...';
@@ -2673,13 +2675,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_chat_report_offline =>
-      'आप ऑफ़लाइन हैं — बाद में पुनः प्रयास करें';
+      'आप ऑफ़लाइन हैं। बाद में पुनः प्रयास करें';
 
   @override
   String get group_chat_report_failed => 'रिपोर्ट नहीं भेजी जा सकी';
 
   @override
-  String get group_chat_report_retry => 'पुनः प्रयास करें';
+  String get group_chat_report_retry => 'पुनः प्रयास';
 
   @override
   String get group_chat_delete => 'हटाएँ';
@@ -2697,8 +2699,8 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'ये संदेश चैट से सभी के लिए हटा दिए जाएंगे।',
-      one: 'यह संदेश चैट से सभी के लिए हटा दिया जाएगा।',
+      other: 'ये संदेश सभी के लिए चैट से हटा दिए जाएँगे',
+      one: 'यह संदेश सभी के लिए चैट से हटा दिया जाएगा',
     );
     return '$_temp0';
   }
@@ -2708,8 +2710,8 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count संदेश हटाए नहीं जा सके।',
-      one: 'संदेश हटाया नहीं जा सका।',
+      other: '$count संदेश हटाए नहीं जा सके',
+      one: 'संदेश हटाया नहीं जा सका',
     );
     return '$_temp0';
   }
@@ -2723,8 +2725,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_message_deleted_by_sender => 'यह संदेश हटा दिया गया';
 
   @override
-  String get group_chat_reaction_failed =>
-      'आपकी प्रतिक्रिया सहेजी नहीं जा सकी।';
+  String get group_chat_reaction_failed => 'आपकी प्रतिक्रिया सहेजी नहीं जा सकी';
 
   @override
   String group_chat_reactions_count(int count) {
@@ -2745,7 +2746,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_chat_reply_parent_gone =>
-      'वह संदेश अब उपलब्ध नहीं है, इसलिए उद्धरण हटा दिया गया। अपना संदेश भेजने के लिए फिर से भेजें।';
+      'वह संदेश अब उपलब्ध नहीं है, इसलिए उद्धरण हटा दिया गया। अपना संदेश पोस्ट करने के लिए फिर से भेजें';
 
   @override
   String get group_tab_posts => 'पोस्ट';
@@ -2757,12 +2758,11 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_posts_empty_title => 'अभी कोई पोस्ट नहीं';
 
   @override
-  String get group_posts_empty_message =>
-      'अपने समुदाय के साथ अपना पहला अपडेट साझा करें।';
+  String get group_posts_empty_message => 'अपने स्पेस का पहला अपडेट साझा करें';
 
   @override
   String get group_posts_load_error =>
-      'पोस्ट लोड नहीं हो सकीं। कृपया फिर से प्रयास करें।';
+      'पोस्ट लोड करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
   String get group_post_button => 'पोस्ट करें';
@@ -2771,10 +2771,10 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_post_new_title => 'नई पोस्ट';
 
   @override
-  String get group_post_posting_to => 'यहाँ पोस्ट हो रही है:';
+  String get group_post_posting_to => 'यहाँ पोस्ट कर रहे हैं:';
 
   @override
-  String get group_post_caption_hint => 'क्या नया है?';
+  String get group_post_caption_hint => 'नया क्या है?';
 
   @override
   String get group_post_photos => 'फ़ोटो';
@@ -2783,23 +2783,23 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_post_link => 'लिंक';
 
   @override
-  String get group_post_discard_title => 'पोस्ट हटाएँ?';
+  String get group_post_discard_title => 'पोस्ट रद्द करें?';
 
   @override
-  String get group_post_discard_message => 'आपने जो लिखा है वह खो जाएगा।';
+  String get group_post_discard_message => 'आपने जो लिखा है वह खो जाएगा';
 
   @override
-  String get group_post_keep_editing => 'संपादन जारी रखें';
+  String get group_post_keep_editing => 'एडिट जारी रखें';
 
   @override
-  String get group_post_discard => 'हटाएँ';
+  String get group_post_discard => 'रद्द करें';
 
   @override
   String get group_post_add_link_title => 'लिंक जोड़ें';
 
   @override
   String get group_post_add_link_hint =>
-      'लिंक पेस्ट करें और हम पूर्वावलोकन दिखाएँगे।';
+      'लिंक पेस्ट करें और हम उसका प्रीव्यू दिखाएँगे';
 
   @override
   String get group_post_link_field_hint => 'लिंक';
@@ -2811,63 +2811,62 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_post_attach_as_link => 'लिंक के रूप में जोड़ें';
 
   @override
-  String get group_post_preview_failed_title => 'पूर्वावलोकन लोड नहीं हो सका';
+  String get group_post_preview_failed_title => 'प्रीव्यू लोड नहीं हो सका';
 
   @override
   String get group_post_preview_failed_message =>
-      'आप इसे फिर भी लिंक के रूप में जोड़ सकते हैं।';
+      'आप फिर भी इसे लिंक के रूप में जोड़ सकते हैं';
 
   @override
   String get group_post_invalid_link =>
-      'एक मान्य लिंक दर्ज करें, जैसे https://example.com';
+      'एक मान्य लिंक दर्ज करें, उदाहरण: https://example.com';
 
   @override
   String group_post_photo_limit(int count) {
-    return 'आप अधिकतम $count फ़ोटो जोड़ सकते हैं।';
+    return 'आप अधिकतम $count फ़ोटो जोड़ सकते हैं';
   }
 
   @override
   String get group_post_upload_error =>
-      'फ़ोटो अपलोड नहीं हो सकीं। कृपया फिर से प्रयास करें।';
+      'फ़ोटो अपलोड करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
   String get group_post_publish_error =>
-      'आपकी पोस्ट प्रकाशित नहीं हो सकी। कृपया फिर से प्रयास करें।';
+      'आपकी पोस्ट प्रकाशित करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
-  String get group_post_published => 'आपकी पोस्ट प्रकाशित हो गई।';
+  String get group_post_published => 'आपकी पोस्ट प्रकाशित हो गई है।';
 
   @override
   String get group_post_delete_title => 'पोस्ट हटाएँ?';
 
   @override
-  String get group_post_delete_message =>
-      'यह पोस्ट स्थायी रूप से हटा दी जाएगी।';
+  String get group_post_delete_message => 'यह पोस्ट स्थायी रूप से हटा दी जाएगी';
 
   @override
   String get group_post_delete_failed =>
-      'पोस्ट हटाई नहीं जा सकी। कृपया फिर से प्रयास करें।';
+      'पोस्ट हटाने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
-  String get edit => 'संपादित करें';
+  String get edit => 'एडिट करें';
 
   @override
-  String get group_post_edit_title => 'पोस्ट संपादित करें';
+  String get group_post_edit_title => 'पोस्ट एडिट करें';
 
   @override
   String get group_post_update_error =>
-      'आपके बदलाव सहेजे नहीं जा सके। कृपया फिर से प्रयास करें।';
+      'आपके बदलाव सहेजने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
-  String get group_post_updated => 'आपके बदलाव सहेज लिए गए।';
+  String get group_post_updated => 'आपके बदलाव सहेज लिए गए';
 
   @override
   String get practice_collection_already_added =>
-      'This collection is already in your practices';
+      'यह संग्रह पहले से आपके अभ्यास में है';
 
   @override
   String get practice_group_accumulator_already_added =>
-      'This accumulation is already in your practices';
+      'यह संचय पहले से आपके अभ्यास में है';
 
   @override
   String get event_live_badge => 'लाइव';
@@ -2909,13 +2908,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_prayer_empty_body =>
-      'आपका अनुरोध और आपके समुदाय के अनुरोध यहाँ दिखाई देंगे';
+      'आपका अनुरोध और आपके स्पेस के अनुरोध यहाँ दिखाई देंगे';
 
   @override
   String get event_prayer_add => 'प्रार्थना अनुरोध जोड़ें';
 
   @override
-  String get event_prayer_hint => 'आज हम आपके लिए कैसे प्रार्थना कर सकते हैं';
+  String get event_prayer_hint => 'आज हम आपके लिए कैसे प्रार्थना कर सकते हैं?';
 
   @override
   String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड नहीं किए जा सके';
@@ -2928,7 +2927,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_prayer_pray => 'प्रार्थना करें';
 
   @override
-  String get event_prayer_praying => 'प्रार्थना करना';
+  String get event_prayer_praying => 'प्रार्थना की';
 
   @override
   String event_prayer_my_count(int count) {
@@ -2950,14 +2949,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_prayer_delete_failed =>
-      'The prayer request couldn\'t be deleted.';
+      'The prayer request couldn\'t be deleted';
 
   @override
   String get event_prayer_choose_intention => 'प्रार्थना का उद्देश्य चुनें';
 
   @override
   String get event_prayer_intentions_failed =>
-      'प्रार्थना के उद्देश्य लोड नहीं किए जा सके।';
+      'प्रार्थना के उद्देश्य लोड नहीं किए जा सके';
 
   @override
   String get event_prayer_request_button => 'प्रार्थना का अनुरोध करें';
@@ -2970,7 +2969,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String event_prayer_more_praying(int count) {
-    return '+$count और प्रार्थना कर रहे हैं';
+    return '+$count और ने प्रार्थना की';
   }
 
   @override
@@ -2978,18 +2977,18 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '',
-      one: '# व्यक्ति प्रार्थना कर रहा है',
+      other: '$count लोगों ने प्रार्थना की',
+      one: '1 व्यक्ति ने प्रार्थना की',
     );
     return '$_temp0';
   }
 
   @override
-  String get event_prayer_praying_for_you => 'आपके लिए प्रार्थना कर रहे हैं';
+  String get event_prayer_praying_for_you => 'आपके लिए प्रार्थना की गई';
 
   @override
   String event_prayer_praying_for(String name) {
-    return '$name के लिए प्रार्थना कर रहे हैं';
+    return '$name के लिए प्रार्थना की गई';
   }
 
   @override
@@ -3001,7 +3000,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_prayer_no_supporters =>
-      'अभी तक कोई प्रार्थना नहीं कर रहा है।';
+      'अभी तक किसी ने प्रार्थना नहीं की है';
 
   @override
   String get recitation_live_sync => 'सिंक';
@@ -3013,21 +3012,21 @@ class AppLocalizationsHi extends AppLocalizations {
   String get recitation_live_session_ended => 'लाइव सत्र समाप्त हो गया है';
 
   @override
-  String get feedback_title => 'फ़ीडबैक भेजें';
+  String get feedback_title => 'फ़ीडबैक';
 
   @override
   String get feedback_hint =>
-      'हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे';
+      'हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे...';
 
   @override
-  String get feedback_images => 'तस्वीरें';
+  String get feedback_images => 'चित्र';
 
   @override
-  String get feedback_add_image => 'तस्वीर जोड़ें';
+  String get feedback_add_image => 'चित्र जोड़ें';
 
   @override
   String feedback_image_limit(int count) {
-    return 'आप अधिकतम $count तस्वीरें जोड़ सकते हैं';
+    return 'आप अधिकतम $count चित्र जोड़ सकते हैं';
   }
 
   @override
@@ -3038,19 +3037,19 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedback_error_offline =>
-      'आप ऑफ़लाइन हैं। कृपया बाद में फिर से प्रयास करें';
+      'आप ऑफ़लाइन हैं। कृपया बाद में पुनः प्रयास करें';
 
   @override
   String get feedback_error_rate_limited =>
-      'बहुत अधिक अनुरोध। कृपया थोड़ी देर रुककर फिर से प्रयास करें';
+      'बहुत अधिक अनुरोध। थोड़ी देर रुककर पुनः प्रयास करें';
 
   @override
   String get feedback_error_too_large =>
-      'तस्वीरें बहुत बड़ी हैं। एक हटाकर फिर से प्रयास करें';
+      'चित्र बहुत बड़े हैं। एक हटाकर पुनः प्रयास करें';
 
   @override
   String get feedback_error_failed =>
-      'फ़ीडबैक नहीं भेजा जा सका। कृपया फिर से प्रयास करें';
+      'फ़ीडबैक नहीं भेजा जा सका। कृपया पुनः प्रयास करें';
 
   @override
   String get feedback_error_unavailable => 'फ़ीडबैक अभी उपलब्ध नहीं है';

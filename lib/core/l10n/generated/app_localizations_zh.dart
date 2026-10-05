@@ -133,7 +133,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmark_texts => '經文';
 
   @override
-  String get bookmark_group_accumulation => 'Channel accumulations';
+  String get bookmark_group_accumulation => 'Space accumulations';
 
   @override
   String get mala_add_to_practice => '加入我的修持';
@@ -1778,10 +1778,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_notifications_title => 'Notifications';
 
   @override
-  String get group_notifications_chat => 'Channel chat';
+  String get group_notifications_chat => 'Space chat';
 
   @override
-  String get group_notifications_content => 'Channel content';
+  String get group_notifications_content => 'Space content';
 
   @override
   String get group_notifications_master_off =>
@@ -1811,17 +1811,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_notifications_unmuted => '聊天通知已開啟';
 
   @override
-  String get group_leave => 'Unsubscribe';
+  String get group_leave => 'Unjoin';
 
   @override
-  String get group_leave_confirm_title => 'Unsubscribe?';
+  String get group_leave_confirm_title => 'Unjoin?';
 
   @override
   String get group_leave_confirm_message =>
-      'You\'ll stop getting messages and updates from this channel';
+      'You\'ll stop getting messages and updates from this space';
 
   @override
-  String get group_leave_failed => 'Couldn\'t unsubscribe. Try again';
+  String get group_leave_failed => 'Couldn\'t unjoin. Try again';
 
   @override
   String get group_request_to_join => '申請加入';
@@ -2791,7 +2791,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get event_prayer_delete_failed =>
-      'The prayer request couldn\'t be deleted.';
+      'The prayer request couldn\'t be deleted';
 
   @override
   String get event_prayer_choose_intention => '選擇一個意向';
@@ -2810,7 +2810,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String event_prayer_more_praying(int count) {
-    return '另有 +$count 人正在禱告';
+    return '另有 +$count 人正在祈願迴向';
   }
 
   @override
@@ -2818,7 +2818,7 @@ class AppLocalizationsZh extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '# 人正在禱告',
+      other: '# 人正在祈願迴向',
     );
     return '$_temp0';
   }
@@ -2828,14 +2828,14 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String event_prayer_praying_for(String name) {
-    return '為 $name 禱告';
+    return '為 $name 祈願迴向';
   }
 
   @override
   String get event_prayer_your_request => '您的請求';
 
   @override
-  String get event_prayer_supporters_failed => '無法載入正在禱告的人';
+  String get event_prayer_supporters_failed => '無法載入正在祈願迴向的人';
 
   @override
   String get event_prayer_no_supporters => '目前還沒有人祈禱。';

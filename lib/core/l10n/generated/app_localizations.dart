@@ -187,7 +187,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_all_set_description.
   ///
   /// In en, this message translates to:
-  /// **'Here\'s what\'s ready for your practice'**
+  /// **'Here\'s what\'s waiting for you:'**
   String get onboarding_all_set_description;
 
   /// No description provided for @onboarding_all_set_practice_title.
@@ -211,7 +211,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboarding_all_set_connect_body.
   ///
   /// In en, this message translates to:
-  /// **'Groups, events, news feed and chat'**
+  /// **'Spaces, events, newsfeed and chat'**
   String get onboarding_all_set_connect_body;
 
   /// No description provided for @home_recitation.
@@ -349,7 +349,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmark_group_accumulation.
   ///
   /// In en, this message translates to:
-  /// **'Channel accumulations'**
+  /// **'Space accumulations'**
   String get bookmark_group_accumulation;
 
   /// No description provided for @mala_add_to_practice.
@@ -451,7 +451,7 @@ abstract class AppLocalizations {
   /// No description provided for @mala_group_untitled.
   ///
   /// In en, this message translates to:
-  /// **'Untitled group'**
+  /// **'Untitled space'**
   String get mala_group_untitled;
 
   /// No description provided for @home_timer.
@@ -1003,7 +1003,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmarks_empty_chant_collections_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a chant collection to save it here'**
+  /// **'Bookmark one to save it here'**
   String get bookmarks_empty_chant_collections_subtitle;
 
   /// No description provided for @notification_settings.
@@ -1117,7 +1117,7 @@ abstract class AppLocalizations {
   /// No description provided for @notification_timer_subtitle_enabled.
   ///
   /// In en, this message translates to:
-  /// **'Daily reminders for your timer sessions'**
+  /// **'Daily reminders for your timers'**
   String get notification_timer_subtitle_enabled;
 
   /// No description provided for @notification_timer_subtitle_disabled.
@@ -1399,19 +1399,19 @@ abstract class AppLocalizations {
   /// No description provided for @connect_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Find channels and practice together'**
+  /// **'Find spaces and practice together'**
   String get connect_subtitle;
 
   /// No description provided for @discover_groups.
   ///
   /// In en, this message translates to:
-  /// **'Discover channels'**
+  /// **'Discover spaces'**
   String get discover_groups;
 
   /// No description provided for @my_groups.
   ///
   /// In en, this message translates to:
-  /// **'My channels'**
+  /// **'My spaces'**
   String get my_groups;
 
   /// No description provided for @see_all.
@@ -1423,19 +1423,19 @@ abstract class AppLocalizations {
   /// No description provided for @connect_groups_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Unable to load channels.\nCheck your connection and try again'**
+  /// **'Unable to load spaces.\nCheck your connection and try again'**
   String get connect_groups_load_error;
 
   /// No description provided for @connect_groups_empty_title.
   ///
   /// In en, this message translates to:
-  /// **'No more channels'**
+  /// **'No more spaces'**
   String get connect_groups_empty_title;
 
   /// No description provided for @connect_groups_empty_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Congrats, you\'re subscribed to all our channels! Check back soon. New ones are on the way'**
+  /// **'Congrats, you\'ve joined all our spaces! Check back soon. New ones are on the way...'**
   String get connect_groups_empty_subtitle;
 
   /// No description provided for @connect_tab_feed.
@@ -1465,13 +1465,13 @@ abstract class AppLocalizations {
   /// No description provided for @connect_tab_groups.
   ///
   /// In en, this message translates to:
-  /// **'Channels'**
+  /// **'Spaces'**
   String get connect_tab_groups;
 
   /// No description provided for @connect_segment_my.
   ///
   /// In en, this message translates to:
-  /// **'Your channels'**
+  /// **'Your spaces'**
   String get connect_segment_my;
 
   /// No description provided for @connect_segment_discover.
@@ -1501,7 +1501,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_empty_discover_groups.
   ///
   /// In en, this message translates to:
-  /// **'No channels to discover'**
+  /// **'No spaces to discover'**
   String get connect_empty_discover_groups;
 
   /// No description provided for @connect_empty_discover_practices.
@@ -1513,13 +1513,13 @@ abstract class AppLocalizations {
   /// No description provided for @connect_all_groups.
   ///
   /// In en, this message translates to:
-  /// **'All channels'**
+  /// **'All spaces'**
   String get connect_all_groups;
 
   /// No description provided for @connect_my_empty_feed_title.
   ///
   /// In en, this message translates to:
-  /// **'Your channels have been quiet'**
+  /// **'Your spaces have been quiet'**
   String get connect_my_empty_feed_title;
 
   /// No description provided for @connect_my_empty_events_title.
@@ -1537,37 +1537,37 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_groups_title.
   ///
   /// In en, this message translates to:
-  /// **'No channels yet'**
+  /// **'No spaces yet'**
   String get connect_my_empty_groups_title;
 
   /// No description provided for @connect_my_empty_feed_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing new from your channels. Others are posting today'**
+  /// **'Nothing new from your spaces. Others are posting today'**
   String get connect_my_empty_feed_subtitle;
 
   /// No description provided for @connect_my_empty_events_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'None of your channels have anything scheduled. Others have events open to everyone'**
+  /// **'Nothing scheduled in your spaces right now. Others have events open to everyone'**
   String get connect_my_empty_events_subtitle;
 
   /// No description provided for @connect_my_empty_posts_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your channels haven\'t posted anything. See what others are sharing'**
+  /// **'Your spaces haven\'t posted anything. See what others are sharing'**
   String get connect_my_empty_posts_subtitle;
 
   /// No description provided for @connect_my_empty_groups_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'You haven\'t subscribed to any channels yet. Discover some to practice with'**
+  /// **'You haven\'t joined any spaces yet. Discover some to practice with'**
   String get connect_my_empty_groups_subtitle;
 
   /// No description provided for @connect_my_empty_feed_browse.
   ///
   /// In en, this message translates to:
-  /// **'See what other channels are sharing'**
+  /// **'See what other spaces are sharing'**
   String get connect_my_empty_feed_browse;
 
   /// No description provided for @connect_my_empty_events_browse.
@@ -1591,7 +1591,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_practices_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your channels haven\'t started any practices. See what others are offering'**
+  /// **'Your spaces haven\'t started any practices. See what others are offering'**
   String get connect_my_empty_practices_subtitle;
 
   /// No description provided for @connect_my_empty_practices_browse.
@@ -1741,7 +1741,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_group_fallback_title.
   ///
   /// In en, this message translates to:
-  /// **'Channel'**
+  /// **'Space'**
   String get connect_group_fallback_title;
 
   /// No description provided for @connect_event_attend.
@@ -1933,19 +1933,19 @@ abstract class AppLocalizations {
   /// No description provided for @search_groups.
   ///
   /// In en, this message translates to:
-  /// **'Search channels'**
+  /// **'Search spaces'**
   String get search_groups;
 
   /// No description provided for @search_for_groups.
   ///
   /// In en, this message translates to:
-  /// **'Search for channels'**
+  /// **'Search for spaces'**
   String get search_for_groups;
 
   /// No description provided for @no_groups_found.
   ///
   /// In en, this message translates to:
-  /// **'No matching channels found'**
+  /// **'No matching spaces found'**
   String get no_groups_found;
 
   /// No description provided for @explore_coming_soon_subtitle.
@@ -3349,13 +3349,13 @@ abstract class AppLocalizations {
   /// No description provided for @join.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe'**
+  /// **'Join'**
   String get join;
 
   /// No description provided for @joined.
   ///
   /// In en, this message translates to:
-  /// **'Subscribed'**
+  /// **'Joined'**
   String get joined;
 
   /// No description provided for @group_member.
@@ -3409,13 +3409,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_notifications_chat.
   ///
   /// In en, this message translates to:
-  /// **'Channel chat'**
+  /// **'Space chat'**
   String get group_notifications_chat;
 
   /// No description provided for @group_notifications_content.
   ///
   /// In en, this message translates to:
-  /// **'Channel content'**
+  /// **'Space content'**
   String get group_notifications_content;
 
   /// No description provided for @group_notifications_master_off.
@@ -3469,37 +3469,37 @@ abstract class AppLocalizations {
   /// No description provided for @group_leave.
   ///
   /// In en, this message translates to:
-  /// **'Unsubscribe'**
+  /// **'Unjoin'**
   String get group_leave;
 
   /// No description provided for @group_leave_confirm_title.
   ///
   /// In en, this message translates to:
-  /// **'Unsubscribe?'**
+  /// **'Unjoin?'**
   String get group_leave_confirm_title;
 
   /// No description provided for @group_leave_confirm_message.
   ///
   /// In en, this message translates to:
-  /// **'You\'ll stop getting messages and updates from this channel'**
+  /// **'You\'ll stop getting messages and updates from this space'**
   String get group_leave_confirm_message;
 
   /// No description provided for @group_leave_failed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t unsubscribe. Try again'**
+  /// **'Couldn\'t unjoin. Try again'**
   String get group_leave_failed;
 
   /// No description provided for @group_request_to_join.
   ///
   /// In en, this message translates to:
-  /// **'Request to subscribe'**
+  /// **'Ask to join'**
   String get group_request_to_join;
 
   /// No description provided for @group_request.
   ///
   /// In en, this message translates to:
-  /// **'Request'**
+  /// **'Ask to join'**
   String get group_request;
 
   /// No description provided for @group_request_sent.
@@ -3511,7 +3511,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_request_title.
   ///
   /// In en, this message translates to:
-  /// **'Request to subscribe'**
+  /// **'Ask to join'**
   String get group_join_request_title;
 
   /// No description provided for @group_join_request_message_label.
@@ -3547,7 +3547,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_requests_title.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe requests'**
+  /// **'Join requests'**
   String get group_join_requests_title;
 
   /// No description provided for @group_join_requests_admit.
@@ -3595,7 +3595,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_members_only_message.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe to see this channel\'s content'**
+  /// **'Join this space to see its content'**
   String get group_members_only_message;
 
   /// No description provided for @group_join_request_waiting_title.
@@ -3607,7 +3607,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_request_waiting_message.
   ///
   /// In en, this message translates to:
-  /// **'We\'ll notify you as soon as your request is reviewed'**
+  /// **'We\'ll notify you when your request is reviewed'**
   String get group_join_request_waiting_message;
 
   /// No description provided for @group_members_load_error.
@@ -3649,13 +3649,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_remove_member_title.
   ///
   /// In en, this message translates to:
-  /// **'Remove from channel?'**
+  /// **'Remove from space?'**
   String get group_remove_member_title;
 
   /// No description provided for @group_remove_member_message.
   ///
   /// In en, this message translates to:
-  /// **'{name} will be removed from this channel and unable to resubscribe until the ban is lifted'**
+  /// **'{name} will be removed from this space and unable to rejoin it until the ban is lifted'**
   String group_remove_member_message(String name);
 
   /// No description provided for @group_remove_member_blocked_for.
@@ -3703,7 +3703,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_remove_member_success.
   ///
   /// In en, this message translates to:
-  /// **'{name} was removed from the channel'**
+  /// **'{name} was removed from the space'**
   String group_remove_member_success(String name);
 
   /// No description provided for @group_remove_member_error.
@@ -3715,37 +3715,37 @@ abstract class AppLocalizations {
   /// No description provided for @group_join_banned_until.
   ///
   /// In en, this message translates to:
-  /// **'You were removed from this channel and cannot resubscribe until {date}'**
+  /// **'You were removed from this space and can\'t rejoin until {date}'**
   String group_join_banned_until(String date);
 
   /// No description provided for @group_join_banned.
   ///
   /// In en, this message translates to:
-  /// **'You were removed from this channel and cannot resubscribe until the ban is lifted'**
+  /// **'You were removed from this space and can\'t rejoin until the ban is lifted'**
   String get group_join_banned;
 
   /// No description provided for @group_removed_title.
   ///
   /// In en, this message translates to:
-  /// **'You\'ve been removed from this channel'**
+  /// **'You\'ve been removed from this space'**
   String get group_removed_title;
 
   /// No description provided for @group_removed_message.
   ///
   /// In en, this message translates to:
-  /// **'An admin from {group} removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe for {duration}.'**
+  /// **'An admin from {group} removed you from this space. You won\'t be able to view its posts, events and practices, or ask to rejoin for {duration}.'**
   String group_removed_message(String group, String duration);
 
   /// No description provided for @group_removed_message_no_date.
   ///
   /// In en, this message translates to:
-  /// **'An admin from {group} removed you from this channel. You won\'t be able to view its posts, events and practices, or ask to resubscribe'**
+  /// **'An admin from {group} removed you from this space. You won\'t be able to view its posts, events and practices, or ask to rejoin'**
   String group_removed_message_no_date(String group);
 
   /// No description provided for @group_removed_rejoin_label.
   ///
   /// In en, this message translates to:
-  /// **'You can request to resubscribe to this channel on'**
+  /// **'You can ask to join to this space on'**
   String get group_removed_rejoin_label;
 
   /// No description provided for @group_removed_rejoin_value.
@@ -3829,19 +3829,19 @@ abstract class AppLocalizations {
   /// No description provided for @group_change_practice_title.
   ///
   /// In en, this message translates to:
-  /// **'Change practice channel'**
+  /// **'Change practice space'**
   String get group_change_practice_title;
 
   /// No description provided for @group_change_practice_message.
   ///
   /// In en, this message translates to:
-  /// **'You are already practicing this plan with another channel. Would you like to change your practice channel?'**
+  /// **'You are already practicing this plan with another space. Would you like to change your practice space?'**
   String get group_change_practice_message;
 
   /// No description provided for @group_join_to_contribute.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe to contribute'**
+  /// **'Join to contribute'**
   String get group_join_to_contribute;
 
   /// No description provided for @group_accumulator_join_error.
@@ -4085,7 +4085,7 @@ abstract class AppLocalizations {
   /// No description provided for @share_group_invite_message.
   ///
   /// In en, this message translates to:
-  /// **'Join me on this channel. Let\'s practice together on WeBuddhist!'**
+  /// **'Join me in this space. Let\'s practice together on WeBuddhist!'**
   String get share_group_invite_message;
 
   /// No description provided for @weekday_monday.
@@ -4199,7 +4199,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmarks_empty_plans_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a plan to save it here'**
+  /// **'Bookmark one to save it here'**
   String get bookmarks_empty_plans_subtitle;
 
   /// No description provided for @bookmarks_empty_malas_title.
@@ -4211,19 +4211,19 @@ abstract class AppLocalizations {
   /// No description provided for @bookmarks_empty_malas_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a mala to save it here'**
+  /// **'Bookmark one to save it here'**
   String get bookmarks_empty_malas_subtitle;
 
   /// No description provided for @bookmarks_empty_group_accumulations_title.
   ///
   /// In en, this message translates to:
-  /// **'No channel accumulations bookmarked yet'**
+  /// **'No space accumulations bookmarked yet'**
   String get bookmarks_empty_group_accumulations_title;
 
   /// No description provided for @bookmarks_empty_group_accumulations_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a channel accumulation to save it here'**
+  /// **'Bookmark one to save it here'**
   String get bookmarks_empty_group_accumulations_subtitle;
 
   /// No description provided for @bookmarks_empty_timers_title.
@@ -4235,7 +4235,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmarks_empty_timers_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a timer to save it here'**
+  /// **'Bookmark one to save it here'**
   String get bookmarks_empty_timers_subtitle;
 
   /// No description provided for @bookmarks_empty_texts_title.
@@ -4247,7 +4247,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmarks_empty_texts_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Bookmark a text to save it here'**
+  /// **'Bookmark one to save it here'**
   String get bookmarks_empty_texts_subtitle;
 
   /// No description provided for @bookmark_removed.
@@ -4541,7 +4541,7 @@ abstract class AppLocalizations {
   /// No description provided for @chats_empty_body.
   ///
   /// In en, this message translates to:
-  /// **'Subscribe to a channel to start chatting'**
+  /// **'Join a space to start chatting'**
   String get chats_empty_body;
 
   /// No description provided for @group_chat_inappropriate.
@@ -4595,7 +4595,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_empty_body.
   ///
   /// In en, this message translates to:
-  /// **'Start the conversation with your channel'**
+  /// **'Start the conversation with your space'**
   String get group_chat_empty_body;
 
   /// No description provided for @group_chat_load_failed.
@@ -4835,7 +4835,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_posts_empty_message.
   ///
   /// In en, this message translates to:
-  /// **'Share your first update on your channel'**
+  /// **'Share your space\'s first update'**
   String get group_posts_empty_message;
 
   /// No description provided for @group_posts_load_error.
@@ -5093,7 +5093,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_empty_body.
   ///
   /// In en, this message translates to:
-  /// **'Your request and your community\'s will appear here'**
+  /// **'Your request and your space\'s requests will appear here'**
   String get event_prayer_empty_body;
 
   /// No description provided for @event_prayer_add.
@@ -5105,7 +5105,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'How can we pray for you today'**
+  /// **'How can we pray for you today?'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_load_failed.
@@ -5129,7 +5129,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_praying.
   ///
   /// In en, this message translates to:
-  /// **'Praying'**
+  /// **'Prayed'**
   String get event_prayer_praying;
 
   /// No description provided for @event_prayer_my_count.
@@ -5165,7 +5165,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'The prayer request couldn\'t be deleted.'**
+  /// **'The prayer request couldn\'t be deleted'**
   String get event_prayer_delete_failed;
 
   /// No description provided for @event_prayer_choose_intention.
@@ -5177,7 +5177,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_intentions_failed.
   ///
   /// In en, this message translates to:
-  /// **'Intentions couldn\'t be loaded.'**
+  /// **'Intentions couldn\'t be loaded'**
   String get event_prayer_intentions_failed;
 
   /// No description provided for @event_prayer_request_button.
@@ -5201,25 +5201,25 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_more_praying.
   ///
   /// In en, this message translates to:
-  /// **'+{count} more are praying'**
+  /// **'+{count} more prayed'**
   String event_prayer_more_praying(int count);
 
   /// No description provided for @event_prayer_people_praying.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural,\n=1 {1 person is praying}\nother {{count} people are praying}\n}'**
+  /// **'{count, plural,\n=1 {1 person prayed}\nother {{count} people prayed}\n}'**
   String event_prayer_people_praying(int count);
 
   /// No description provided for @event_prayer_praying_for_you.
   ///
   /// In en, this message translates to:
-  /// **'Praying for you'**
+  /// **'Prayed for you'**
   String get event_prayer_praying_for_you;
 
   /// No description provided for @event_prayer_praying_for.
   ///
   /// In en, this message translates to:
-  /// **'Praying for {name}'**
+  /// **'Prayed for {name}'**
   String event_prayer_praying_for(String name);
 
   /// No description provided for @event_prayer_your_request.
@@ -5237,7 +5237,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_no_supporters.
   ///
   /// In en, this message translates to:
-  /// **'No one is praying yet.'**
+  /// **'No one is praying yet'**
   String get event_prayer_no_supporters;
 
   /// No description provided for @recitation_live_sync.
@@ -5309,7 +5309,7 @@ abstract class AppLocalizations {
   /// No description provided for @feedback_error_rate_limited.
   ///
   /// In en, this message translates to:
-  /// **'Too many requests. Please wait a moment and try again'**
+  /// **'Too many requests. Wait a moment and try again'**
   String get feedback_error_rate_limited;
 
   /// No description provided for @feedback_error_too_large.
