@@ -36,8 +36,8 @@ class VerseOfDayTypography {
     );
   }
 
-  /// Home card typography: source one step under the verse, in the sans
-  /// system font. Tibetan uses Google Jomolhari for both.
+  /// Home card typography: attribution one step under the verse, in the
+  /// sans system font. Tibetan uses Google Jomolhari for both.
   factory VerseOfDayTypography.forCard(
     String languageCode, {
     double? verseFontSize,
@@ -57,7 +57,7 @@ class VerseOfDayTypography {
     );
   }
 
-  /// Share preview typography. Larger sizes, same sans source as the card;
+  /// Share preview typography. Larger sizes, same sans attribution as the card;
   /// Tibetan uses Google Jomolhari.
   factory VerseOfDayTypography.forShare(String languageCode) {
     final base = VerseOfDayTypography.fromLanguageCode(languageCode);
@@ -96,10 +96,11 @@ class VerseOfDayTypography {
   TextStyle attributionTextStyle({
     required Color color,
     required bool useContentFontForAttribution,
+    FontWeight fontWeight = FontWeight.w700,
   }) {
     final baseStyle = TextStyle(
       fontSize: attributionFontSize,
-      fontWeight: FontWeight.w400,
+      fontWeight: fontWeight,
       height:
           useGoogleJomolhari && useContentFontForAttribution
               ? getLineHeight(AppConfig.tibetanLanguageCode)
@@ -121,7 +122,7 @@ class VerseOfDayTypography {
   }
 }
 
-/// Shared verse image, quote, source, and optional WeBuddhist branding.
+/// Shared verse image, quote, attribution, and optional WeBuddhist branding.
 class VerseOfDayContent extends StatelessWidget {
   const VerseOfDayContent({
     super.key,
@@ -129,6 +130,7 @@ class VerseOfDayContent extends StatelessWidget {
     required this.typography,
     required this.verseColor,
     required this.attributionColor,
+    required this.sourceColor,
     this.imageAspectRatio = 1.65,
     this.showBranding = false,
     this.useContentFontForAttribution = false,
@@ -143,6 +145,7 @@ class VerseOfDayContent extends StatelessWidget {
   final VerseOfDayTypography typography;
   final Color verseColor;
   final Color attributionColor;
+  final Color sourceColor;
   final double imageAspectRatio;
   final bool showBranding;
   final bool useContentFontForAttribution;
@@ -151,7 +154,7 @@ class VerseOfDayContent extends StatelessWidget {
   final TextAlign textAlign;
   final double attributionSpacing;
 
-  /// Row rendered under the source (likes, comments, share).
+  /// Row rendered under the attribution (likes, comments, share).
   final Widget? footer;
 
   @override
@@ -161,6 +164,8 @@ class VerseOfDayContent extends StatelessWidget {
     final attributionStrutStyle = context.tibetanStrutStyle(
       typography.attributionFontSize,
     );
+    final hasGroupTitle = verseOfDay.groupTitle.isNotEmpty;
+    final hasSource = verseOfDay.source.isNotEmpty;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -185,23 +190,23 @@ class VerseOfDayContent extends StatelessWidget {
                 strutStyle: verseStrutStyle,
                 style: typography.verseTextStyle(color: verseColor),
               ),
-              if (verseOfDay.source.isNotEmpty) ...[
+              if (hasGroupTitle || hasSource) ...[
                 SizedBox(height: attributionSpacing),
-                Row(
-                  mainAxisAlignment:
+                // Falls onto two lines when both don't fit side by side.
+                Wrap(
+                  alignment:
                       textAlign == TextAlign.center
-                          ? MainAxisAlignment.center
-                          : MainAxisAlignment.start,
+                          ? WrapAlignment.center
+                          : WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 4,
                   children: [
-                    Icon(
-                      AppAssets.bookOpen,
-                      size: typography.attributionFontSize + 4,
-                      color: attributionColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        withTibetanLineBreakOpportunities(verseOfDay.source),
+                    if (hasGroupTitle)
+                      Text(
+                        withTibetanLineBreakOpportunities(
+                          verseOfDay.groupTitle,
+                        ),
                         strutStyle: attributionStrutStyle,
                         style: typography.attributionTextStyle(
                           color: attributionColor,
@@ -209,7 +214,32 @@ class VerseOfDayContent extends StatelessWidget {
                               useContentFontForAttribution,
                         ),
                       ),
-                    ),
+                    if (hasSource)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            AppAssets.bookOpen,
+                            size: typography.attributionFontSize + 4,
+                            color: sourceColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              withTibetanLineBreakOpportunities(
+                                verseOfDay.source,
+                              ),
+                              strutStyle: attributionStrutStyle,
+                              style: typography.attributionTextStyle(
+                                color: sourceColor,
+                                useContentFontForAttribution:
+                                    useContentFontForAttribution,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ],

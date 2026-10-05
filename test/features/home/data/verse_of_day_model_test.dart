@@ -18,16 +18,16 @@ void main() {
     },
   };
 
-  test('parses source and keeps it through a cache round trip', () {
+  test('parses source and group title and keeps them through a cache round trip', () {
     final model = VerseOfDayModel.fromJson(
       payload(source: 'Pratītyasamutpādahṛdaya'),
     );
+    final cached = VerseOfDayModel.fromJson(model.toJson()).toEntity();
 
     expect(model.toEntity().source, 'Pratītyasamutpādahṛdaya');
-    expect(
-      VerseOfDayModel.fromJson(model.toJson()).toEntity().source,
-      'Pratītyasamutpādahṛdaya',
-    );
+    expect(model.toEntity().groupTitle, 'Buddha');
+    expect(cached.source, 'Pratītyasamutpādahṛdaya');
+    expect(cached.groupTitle, 'Buddha');
   });
 
   test('missing source yields an empty source', () {

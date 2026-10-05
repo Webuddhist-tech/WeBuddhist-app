@@ -6,6 +6,7 @@ class VerseOfDay extends Equatable {
   final String imageUrl;
   final String date;
   final String source;
+  final String groupTitle;
 
   const VerseOfDay({
     required this.id,
@@ -13,8 +14,9 @@ class VerseOfDay extends Equatable {
     required this.imageUrl,
     required this.date,
     this.source = '',
+    this.groupTitle = '',
   });
 
   @override
-  List<Object?> get props => [id, verse, imageUrl, date, source];
+  List<Object?> get props => [id, verse, imageUrl, date, source, groupTitle];
 }

@@ -8,6 +8,7 @@ class VerseOfDayModel {
   final String refType;
   final String date;
   final String source;
+  final String groupTitle;
 
   VerseOfDayModel({
     required this.id,
@@ -17,10 +18,14 @@ class VerseOfDayModel {
     required this.refType,
     required this.date,
     this.source = '',
+    this.groupTitle = '',
   });
 
   factory VerseOfDayModel.fromJson(Map<String, dynamic> json) {
     final vodJson = json['verse_of_day'] as Map<String, dynamic>? ?? json;
+    final groups =
+        (vodJson['group_info'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>();
 
     return VerseOfDayModel(
       id: (vodJson['id'] as String?) ?? '',
@@ -30,6 +35,8 @@ class VerseOfDayModel {
       refType: (vodJson['ref_type'] as String?) ?? '',
       date: (vodJson['date'] as String?) ?? '',
       source: (vodJson['source'] as String?) ?? '',
+      groupTitle:
+          groups.isEmpty ? '' : (groups.first['title'] as String?) ?? '',
     );
   }
 
@@ -42,6 +49,9 @@ class VerseOfDayModel {
       'ref_type': refType,
       'date': date,
       'source': source,
+      'group_info': [
+        if (groupTitle.isNotEmpty) {'title': groupTitle},
+      ],
     };
   }
 
@@ -52,6 +62,7 @@ class VerseOfDayModel {
       imageUrl: imageUrl,
       date: date,
       source: source,
+      groupTitle: groupTitle,
     );
   }
 }
