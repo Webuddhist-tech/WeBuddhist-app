@@ -1072,6 +1072,63 @@ void main() {
       expect(repository.mine['a'], 2);
     });
 
+    test('a failed drain call keeps the retry of a call still out', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer(
+        pacing: const PrayerPacing(
+          batchWindow: Duration.zero,
+          rateWindow: Duration.zero,
+          retryAfter: Duration(milliseconds: 80),
+        ),
+      );
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a');
+      notifier.pray('a');
+      await _settle();
+      expect(repository.prayedCounts, [2]);
+      // Two taps are out; this one waits for them and is drained on close.
+      notifier.pray('a');
+      container.dispose();
+      await _settle();
+      expect(repository.prayedCounts, [2, 1]);
+
+      // The call that was out is refused, then the drain's own call is lost.
+      repository.prayFailureOnce = const RateLimitFailure('slow down');
+      repository.prayFailure = const NetworkFailure('dropped');
+      repository.prayGate!.complete();
+      await _settle();
+      repository.prayFailure = null;
+
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await _settle();
+      // Only the refused taps go out again.
+      expect(repository.prayedCounts, [2, 1, 2]);
+      expect(repository.mine['a'], 2);
+    });
+
+    test('a failed drain call still sends the taps it did not carry', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      for (var i = 0; i < 12; i++) {
+        notifier.pray('a');
+      }
+      repository.prayFailureOnce = const NetworkFailure('dropped');
+      container.dispose();
+      await _settle(ticks: 10);
+
+      // The first ten are lost with their call; the other two were never sent.
+      expect(repository.prayedCounts, [10, 2]);
+      expect(repository.mine['a'], 2);
+    });
+
     test('sign-out waits for a call still out, and for its retry', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a')]);
       container = buildContainer(

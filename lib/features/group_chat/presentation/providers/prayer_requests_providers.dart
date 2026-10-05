@@ -184,7 +184,11 @@ class _Drain {
           leftover.notBefore = DateTime.now().add(pacing.retryAfter);
           return;
         }
-        leftovers.remove(messageId);
+        // Only this call's taps are given up. The rest, which may include a
+        // retry handed over meanwhile, still goes out.
+        leftover.retries = 0;
+        leftover.left -= count;
+        if (leftover.left == 0) leftovers.remove(messageId);
       },
       (_) {
         leftover.retries = 0;
