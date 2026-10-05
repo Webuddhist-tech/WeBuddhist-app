@@ -2769,6 +2769,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_praying => '正在迴向';
 
   @override
+  String event_prayer_my_count(int count) {
+    return '+$count';
+  }
+
+  @override
   String get event_prayer_new_request => '新增迴向祈願';
 
   @override

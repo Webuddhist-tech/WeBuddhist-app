@@ -262,33 +262,20 @@ class GroupChatRemoteDatasource {
     }
   }
 
-  /// Prays for one or more requests. Idempotent; ids that are no longer live
-  /// prayer requests are skipped and absent from the result.
+  /// Adds [count] prayers (1–10) to each request. Ids that are no longer
+  /// live prayer requests are skipped and absent from the result.
   Future<List<ChatPrayerSummaryDTO>> prayFor(
     String roomId, {
     required List<String> messageIds,
+    int count = 1,
   }) async {
     try {
       final response = await _dio.post(
         '/chat/rooms/$roomId/prayers',
-        data: {'message_ids': messageIds},
+        data: {'message_ids': messageIds, 'count': count},
       );
       final data = response.data as Map<String, dynamic>;
       return _readPrayers(data['prayers']);
-    } on DioException catch (e) {
-      throw _unwrap(e);
-    }
-  }
-
-  /// Takes the caller's prayer back. Idempotent.
-  Future<ChatPrayerSummaryDTO> removePrayer(String messageId) async {
-    try {
-      final response = await _dio.delete(
-        '/chat/messages/$messageId/prayers/me',
-      );
-      return ChatPrayerSummaryDTO.fromJson(
-        response.data as Map<String, dynamic>,
-      );
     } on DioException catch (e) {
       throw _unwrap(e);
     }

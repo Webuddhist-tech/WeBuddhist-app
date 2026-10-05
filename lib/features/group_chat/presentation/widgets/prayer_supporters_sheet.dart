@@ -13,14 +13,12 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_inte
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Everyone praying for one request, under the request itself.
+/// Who is praying for one of the viewer's own requests, and how many times.
 class PrayerSupportersSheet extends ConsumerStatefulWidget {
   const PrayerSupportersSheet({
     super.key,
     required this.eventId,
     required this.request,
-    required this.displayName,
-    required this.isOwn,
   });
 
   final String eventId;
@@ -28,15 +26,11 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
   /// The request as it was when opened; an edit made while the sheet is up
   /// is picked up from the event's request list.
   final ChatMessageDTO request;
-  final String displayName;
-  final bool isOwn;
 
   static Future<void> show(
     BuildContext context, {
     required String eventId,
     required ChatMessageDTO request,
-    required String displayName,
-    required bool isOwn,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -45,12 +39,7 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder:
-          (_) => PrayerSupportersSheet(
-            eventId: eventId,
-            request: request,
-            displayName: displayName,
-            isOwn: isOwn,
-          ),
+          (_) => PrayerSupportersSheet(eventId: eventId, request: request),
     );
   }
 
@@ -132,10 +121,7 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
   Widget _buildHeader(BuildContext context, bool isDark) {
     final titleColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final title =
-        widget.isOwn
-            ? context.l10n.event_prayer_praying_for_you
-            : context.l10n.event_prayer_praying_for(widget.displayName);
+    final title = context.l10n.event_prayer_praying_for_you;
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
@@ -215,10 +201,7 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
             children: [
               _RequestCard(
                 request: request,
-                title:
-                    widget.isOwn
-                        ? context.l10n.event_prayer_your_request
-                        : widget.displayName,
+                title: context.l10n.event_prayer_your_request,
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
@@ -347,6 +330,9 @@ class _SupporterRow extends StatelessWidget {
         context.l10n.group_chat_unknown_sender;
     // Same neutral grey as the stack on the card, not a per-person colour.
     final accent = prayerIntentionColor(null, isDark);
+    final textColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final times = supporter.prayerCount;
 
     return Container(
       decoration: BoxDecoration(
@@ -374,11 +360,21 @@ class _SupporterRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color:
-                    isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                color: textColor,
               ),
             ),
           ),
+          if (times > 0) ...[
+            const SizedBox(width: 12),
+            Text(
+              '$times',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -2945,6 +2945,11 @@ class AppLocalizationsNe extends AppLocalizations {
   String get event_prayer_praying => 'प्रार्थना गर्दै';
 
   @override
+  String event_prayer_my_count(int count) {
+    return '+$count';
+  }
+
+  @override
   String get event_prayer_new_request => 'नयाँ प्रार्थना अनुरोध';
 
   @override

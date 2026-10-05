@@ -2938,6 +2938,11 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_praying => 'སྨོན་ལམ་འདེབས་བཞིན་པ';
 
   @override
+  String event_prayer_my_count(int count) {
+    return '+$count';
+  }
+
+  @override
   String get event_prayer_new_request => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་གསར་པ།';
 
   @override
