@@ -51,10 +51,9 @@ class _VerseOfDayCardState extends ConsumerState<VerseOfDayCard> {
           verseColor: colorScheme.onSurface,
           attributionColor:
               colorScheme.brightness == Brightness.dark
-                  ? AppColors.accentGold
-                  : AppColors.accentGoldDark,
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
           textAlign: TextAlign.start,
-          attributionPrefix: '',
           attributionSpacing: 10,
           textPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           footer: VerseOfDayEngagementBar(

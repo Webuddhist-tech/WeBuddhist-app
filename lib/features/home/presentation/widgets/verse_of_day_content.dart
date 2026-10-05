@@ -18,7 +18,6 @@ class VerseOfDayTypography {
     required this.attributionFontSize,
     this.useContentFontForAttribution = false,
     this.useGoogleJomolhari = false,
-    this.attributionFontWeight = FontWeight.w600,
   });
 
   final String? contentFont;
@@ -27,7 +26,6 @@ class VerseOfDayTypography {
   final double attributionFontSize;
   final bool useContentFontForAttribution;
   final bool useGoogleJomolhari;
-  final FontWeight attributionFontWeight;
 
   factory VerseOfDayTypography.fromLanguageCode(String languageCode) {
     return VerseOfDayTypography(
@@ -38,8 +36,8 @@ class VerseOfDayTypography {
     );
   }
 
-  /// Home card typography: author one step under the verse, bold, in the
-  /// sans system font. Tibetan uses Google Jomolhari for both.
+  /// Home card typography: source one step under the verse, in the sans
+  /// system font. Tibetan uses Google Jomolhari for both.
   factory VerseOfDayTypography.forCard(
     String languageCode, {
     double? verseFontSize,
@@ -56,11 +54,10 @@ class VerseOfDayTypography {
           attributionFontSize ?? getLocalizedFontSize(AppTextSize.body),
       useContentFontForAttribution: isTibetan,
       useGoogleJomolhari: isTibetan,
-      attributionFontWeight: FontWeight.w700,
     );
   }
 
-  /// Share preview typography. Larger sizes, same sans author as the card;
+  /// Share preview typography. Larger sizes, same sans source as the card;
   /// Tibetan uses Google Jomolhari.
   factory VerseOfDayTypography.forShare(String languageCode) {
     final base = VerseOfDayTypography.fromLanguageCode(languageCode);
@@ -73,7 +70,6 @@ class VerseOfDayTypography {
       attributionFontSize: getLocalizedFontSize(AppTextSize.bodyLarge),
       useContentFontForAttribution: isTibetan,
       useGoogleJomolhari: isTibetan,
-      attributionFontWeight: FontWeight.w700,
     );
   }
 
@@ -103,7 +99,7 @@ class VerseOfDayTypography {
   }) {
     final baseStyle = TextStyle(
       fontSize: attributionFontSize,
-      fontWeight: attributionFontWeight,
+      fontWeight: FontWeight.w400,
       height:
           useGoogleJomolhari && useContentFontForAttribution
               ? getLineHeight(AppConfig.tibetanLanguageCode)
@@ -125,7 +121,7 @@ class VerseOfDayTypography {
   }
 }
 
-/// Shared verse image, quote, attribution, and optional WeBuddhist branding.
+/// Shared verse image, quote, source, and optional WeBuddhist branding.
 class VerseOfDayContent extends StatelessWidget {
   const VerseOfDayContent({
     super.key,
@@ -139,7 +135,6 @@ class VerseOfDayContent extends StatelessWidget {
     this.textPadding = const EdgeInsets.fromLTRB(24, 24, 24, 16),
     this.brandingBottomPadding = 0,
     this.textAlign = TextAlign.center,
-    this.attributionPrefix = '~ ',
     this.attributionSpacing = 16,
     this.footer,
   });
@@ -154,10 +149,9 @@ class VerseOfDayContent extends StatelessWidget {
   final EdgeInsets textPadding;
   final double brandingBottomPadding;
   final TextAlign textAlign;
-  final String attributionPrefix;
   final double attributionSpacing;
 
-  /// Row rendered under the attribution (likes, comments, share).
+  /// Row rendered under the source (likes, comments, share).
   final Widget? footer;
 
   @override
@@ -191,18 +185,32 @@ class VerseOfDayContent extends StatelessWidget {
                 strutStyle: verseStrutStyle,
                 style: typography.verseTextStyle(color: verseColor),
               ),
-              if (verseOfDay.groupTitle != null) ...[
+              if (verseOfDay.source.isNotEmpty) ...[
                 SizedBox(height: attributionSpacing),
-                Text(
-                  withTibetanLineBreakOpportunities(
-                    '$attributionPrefix${verseOfDay.groupTitle}',
-                  ),
-                  textAlign: textAlign,
-                  strutStyle: attributionStrutStyle,
-                  style: typography.attributionTextStyle(
-                    color: attributionColor,
-                    useContentFontForAttribution: useContentFontForAttribution,
-                  ),
+                Row(
+                  mainAxisAlignment:
+                      textAlign == TextAlign.center
+                          ? MainAxisAlignment.center
+                          : MainAxisAlignment.start,
+                  children: [
+                    Icon(
+                      AppAssets.bookOpen,
+                      size: typography.attributionFontSize + 4,
+                      color: attributionColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        withTibetanLineBreakOpportunities(verseOfDay.source),
+                        strutStyle: attributionStrutStyle,
+                        style: typography.attributionTextStyle(
+                          color: attributionColor,
+                          useContentFontForAttribution:
+                              useContentFontForAttribution,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
               if (footer != null) ...[
