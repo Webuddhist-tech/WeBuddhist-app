@@ -19,8 +19,10 @@ class AppConfig {
   static const String englishContentFont = 'Source Serif 4';
   static const String chineseSystemFont = 'Noto Sans Traditional Chinese';
   static const String chineseContentFont = 'Noto Serif Traditional Chinese';
-  static const String tibetanSystemFont = 'Noto Serif Tibetan';
-  static const String tibetanContentFont = 'BabelStoneTibetan';
+  // Bundled builds of Noto Serif Tibetan / BabelStone Tibetan with vertical
+  // metrics fitted to Tibetan ink (assets/fonts/README.md).
+  static const String tibetanSystemFont = 'NotoSerifTibetanWB';
+  static const String tibetanContentFont = 'WBTibetanContent';
 
   // Language configuration
   static const String tibetanLanguageCode = 'bo';
