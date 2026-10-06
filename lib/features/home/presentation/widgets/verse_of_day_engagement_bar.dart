@@ -53,12 +53,12 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
     final defaultColor =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
     final likes = ref.watch(verseOfDayLikesProvider(verseId));
-    final commentsLoaded = ref.watch(
-      verseOfDayCommentsProvider(verseId).select((state) => state.hasLoaded),
-    );
     final commentCount = ref.watch(
       verseOfDayCommentsProvider(verseId).select((state) => state.total),
     );
+    // Like Instagram, a count shows only once there is at least one.
+    final likeCount =
+        likes.isLoaded && likes.likeCount > 0 ? likes.likeCount : null;
 
     return Row(
       children: [
@@ -66,20 +66,16 @@ class VerseOfDayEngagementBar extends ConsumerWidget {
           icon: likes.likedByMe ? AppAssets.heartFill : AppAssets.heart,
           iconColor: likes.likedByMe ? AppColors.error : defaultColor,
           countColor: defaultColor,
-          count: likes.isLoaded ? likes.likeCount : null,
+          count: likeCount,
           onTap: () => _toggleLike(context, ref),
-          onCountTap:
-              () =>
-                  likes.likeCount > 0
-                      ? _showLikers(context, ref)
-                      : _toggleLike(context, ref),
+          onCountTap: () => _showLikers(context, ref),
         ),
         const SizedBox(width: 10),
         _ActionButton(
           icon: AppAssets.chatCircle,
           iconColor: defaultColor,
           countColor: defaultColor,
-          count: commentsLoaded ? commentCount : null,
+          count: commentCount > 0 ? commentCount : null,
           onTap: onCommentTap,
         ),
         const Spacer(),
@@ -105,7 +101,8 @@ class _ActionButton extends StatelessWidget {
   final int? count;
   final VoidCallback onTap;
 
-  /// When set, the count gets its own tap target beside the icon.
+  /// When set, the count gets its own tap target beside the icon. Null
+  /// [count] hides the number (still loading, failed, or zero).
   final VoidCallback? onCountTap;
 
   @override

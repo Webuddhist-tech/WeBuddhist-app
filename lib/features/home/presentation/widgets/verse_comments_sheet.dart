@@ -43,6 +43,20 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
   ScrollController? _scrollController;
 
   @override
+  void initState() {
+    super.initState();
+    // The card keeps this provider alive, so reload on open to pick up
+    // comments from others. Deferred: providers can't change mid-build.
+    // A first load still in flight makes this a no-op.
+    Future.microtask(() {
+      if (!mounted) return;
+      ref
+          .read(verseOfDayCommentsProvider(widget.verseId).notifier)
+          .loadInitial();
+    });
+  }
+
+  @override
   void dispose() {
     _scrollController?.removeListener(_onScroll);
     _controller.dispose();

@@ -22,7 +22,7 @@ class _Auth extends StateNotifier<AuthState> implements AuthNotifier {
 }
 
 class _Repo implements VerseOfDayRepositoryInterface {
-  final likes = Completer<Either<Failure, VerseOfDayLikes>>();
+  var likes = Completer<Either<Failure, VerseOfDayLikes>>();
   var commentsReply = Completer<Either<Failure, VerseOfDayCommentsPage>>();
   int likeCalls = 0;
   Either<Failure, Unit> commentLikeReply = const Right(unit);
@@ -38,6 +38,10 @@ class _Repo implements VerseOfDayRepositoryInterface {
     likeCalls++;
     return const Right(unit);
   }
+
+  @override
+  Future<Either<Failure, Unit>> deleteComment(String commentId) async =>
+      const Right(unit);
 
   @override
   Future<Either<Failure, VerseOfDayCommentsPage>> getComments({
@@ -132,6 +136,107 @@ void main() {
     expect(sub.read().likedByMe, isTrue);
     expect(sub.read().likeCount, 4);
   });
+
+  test('failed likes load hides the count and a tap retries it', () async {
+    final sub = container.listen(verseOfDayLikesProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayLikesProvider('v1').notifier);
+
+    repo.likes.complete(const Left(NetworkFailure('offline')));
+    await Future<void>.delayed(Duration.zero);
+    expect(sub.read().isLoaded, isFalse);
+
+    repo.likes = Completer();
+    final tap = notifier.toggle();
+    repo.likes.complete(
+      const Right(
+        VerseOfDayLikes(verseId: 'v1', likeCount: 4, likedByMe: false),
+      ),
+    );
+    expect(await tap, isNull);
+    expect(repo.likeCalls, 1);
+    expect(sub.read().likedByMe, isTrue);
+    expect(sub.read().likeCount, 5);
+  });
+
+  test('a tap on a failed load that turns out liked sends nothing', () async {
+    final sub = container.listen(verseOfDayLikesProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayLikesProvider('v1').notifier);
+    repo.likes.complete(const Left(NetworkFailure('offline')));
+    await Future<void>.delayed(Duration.zero);
+
+    repo.likes =
+        Completer()..complete(
+          const Right(
+            VerseOfDayLikes(verseId: 'v1', likeCount: 4, likedByMe: true),
+          ),
+        );
+    expect(await notifier.toggle(), isNull);
+    expect(repo.likeCalls, 0);
+    expect(sub.read().likedByMe, isTrue);
+    expect(sub.read().likeCount, 4);
+  });
+
+  test('a refresh that started before a tap does not undo it', () async {
+    final sub = container.listen(verseOfDayLikesProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayLikesProvider('v1').notifier);
+    repo.likes.complete(
+      const Right(
+        VerseOfDayLikes(verseId: 'v1', likeCount: 4, likedByMe: false),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    repo.likes = Completer();
+    final refresh = notifier.load();
+    await notifier.toggle();
+    repo.likes.complete(
+      const Right(
+        VerseOfDayLikes(verseId: 'v1', likeCount: 4, likedByMe: false),
+      ),
+    );
+    await refresh;
+    expect(sub.read().likedByMe, isTrue);
+    expect(sub.read().likeCount, 5);
+  });
+
+  test(
+    'refresh replaces the list but keeps new posts and drops deletes',
+    () async {
+      final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
+      final notifier = container.read(
+        verseOfDayCommentsProvider('v1').notifier,
+      );
+      repo.commentsReply.complete(
+        Right(
+          VerseOfDayCommentsPage(
+            comments: [_comment('a'), _comment('b')],
+            skip: 0,
+            limit: 20,
+            total: 2,
+          ),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      repo.commentsReply = Completer();
+      final refresh = notifier.loadInitial();
+      await notifier.deleteComment('b');
+      await notifier.submitComment('new');
+      repo.commentsReply.complete(
+        Right(
+          VerseOfDayCommentsPage(
+            comments: [_comment('c'), _comment('a'), _comment('b')],
+            skip: 0,
+            limit: 20,
+            total: 3,
+          ),
+        ),
+      );
+      await refresh;
+
+      expect(sub.read().comments.map((c) => c.id), ['new', 'c', 'a']);
+    },
+  );
 
   test('comment posted during the first load survives its reply', () async {
     final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});

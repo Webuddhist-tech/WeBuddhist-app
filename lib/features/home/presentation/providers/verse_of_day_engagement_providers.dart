@@ -39,29 +39,51 @@ class VerseOfDayLikesNotifier extends StateNotifier<VerseOfDayLikesState> {
 
   final Ref ref;
   final String verseId;
+  bool _isLoading = false;
 
-  Future<void> load() async {
+  /// Bumped on every toggle so a reply that started earlier can't undo it.
+  int _toggleCount = 0;
+
+  /// Fetches the count. A failed load leaves [VerseOfDayLikesState.isLoaded]
+  /// false so the card hides the count instead of showing a made-up 0.
+  Future<bool> load() async {
+    if (_isLoading) return false;
+    _isLoading = true;
+    final toggleCount = _toggleCount;
+
     final result = await ref
         .read(verseOfDayDomainRepositoryProvider)
         .getLikes(verseId);
-    if (!mounted) return;
+    _isLoading = false;
+    if (!mounted) return false;
 
-    result.fold(
-      (_) => state = state.copyWith(isLoaded: true),
-      (likes) =>
-          state = state.copyWith(
-            likeCount: likes.likeCount,
-            likedByMe: likes.likedByMe,
-            isLoaded: true,
-          ),
-    );
+    return result.fold((_) => false, (likes) {
+      if (toggleCount == _toggleCount && !state.isSubmitting) {
+        state = state.copyWith(
+          likeCount: likes.likeCount,
+          likedByMe: likes.likedByMe,
+          isLoaded: true,
+        );
+      }
+      return true;
+    });
   }
 
   /// Optimistic toggle; returns the failure message when it had to revert.
   Future<String?> toggle() async {
-    // Wait for the first load; its reply would overwrite the tap.
-    if (state.isSubmitting || !state.isLoaded) return null;
+    if (state.isSubmitting) return null;
 
+    if (!state.isLoaded) {
+      // The first load is still running; its reply would overwrite the tap.
+      if (_isLoading) return null;
+      // The first load failed: retry it so the tap acts on the real state.
+      if (!await load()) return 'Failed to load likes';
+      if (!mounted) return null;
+      // The tap meant "like"; the reload shows it is liked already.
+      if (state.likedByMe) return null;
+    }
+
+    _toggleCount++;
     final previous = state;
     final wasLiked = previous.likedByMe;
     state = previous.copyWith(
@@ -236,9 +258,15 @@ class VerseOfDayCommentsNotifier
   static const int _limit = 20;
   final Set<String> _likingCommentIds = {};
 
-  Future<void> loadInitial() async {
-    if (state.isLoading) return;
+  /// Deleted here; a reply that started before the delete may still list them.
+  final Set<String> _deletedCommentIds = {};
 
+  /// Loads the first page. When comments are already shown this is a refresh:
+  /// the first page replaces the list and pagination starts over.
+  Future<void> loadInitial() async {
+    if (state.isLoading || state.isLoadingMore) return;
+
+    final shownBefore = state.comments.map((comment) => comment.id).toSet();
     state = state.copyWith(isLoading: true, clearError: true);
 
     final result = await ref
@@ -251,18 +279,34 @@ class VerseOfDayCommentsNotifier
         state = state.copyWith(
           isLoading: false,
           hasLoaded: true,
-          error: failure.message,
+          // A failed refresh keeps the comments already on screen.
+          error: state.comments.isEmpty ? failure.message : null,
         );
       },
       (page) {
-        // Keep comments posted while this request was in flight.
         final fetched = page.comments.map((comment) => comment.id).toSet();
+        // Keep comments posted while this request was in flight.
         final posted =
             state.comments
-                .where((comment) => !fetched.contains(comment.id))
+                .where(
+                  (comment) =>
+                      !shownBefore.contains(comment.id) &&
+                      !fetched.contains(comment.id),
+                )
                 .toList();
+        final current = {
+          for (final comment in state.comments) comment.id: comment,
+        };
+        final comments = [
+          for (final comment in page.comments)
+            if (!_deletedCommentIds.contains(comment.id))
+              // A like still in flight keeps its optimistic state.
+              _likingCommentIds.contains(comment.id)
+                  ? current[comment.id] ?? comment
+                  : comment,
+        ];
         state = state.copyWith(
-          comments: [...posted, ...page.comments],
+          comments: [...posted, ...comments],
           isLoading: false,
           hasLoaded: true,
           hasMore: page.hasMore,
@@ -289,7 +333,10 @@ class VerseOfDayCommentsNotifier
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
-        final seen = state.comments.map((comment) => comment.id).toSet();
+        final seen = {
+          ...state.comments.map((comment) => comment.id),
+          ..._deletedCommentIds,
+        };
         final fresh =
             page.comments.where((comment) => !seen.contains(comment.id));
         state = state.copyWith(
@@ -341,6 +388,7 @@ class VerseOfDayCommentsNotifier
     if (!mounted) return false;
 
     return result.fold((_) => false, (_) {
+      _deletedCommentIds.add(commentId);
       final remaining =
           state.comments.where((comment) => comment.id != commentId).toList();
       final removed = state.comments.length - remaining.length;
