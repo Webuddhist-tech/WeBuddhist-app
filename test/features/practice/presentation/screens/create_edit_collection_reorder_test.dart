@@ -180,10 +180,7 @@ void main() {
 
       expect(popped, isFalse, reason: 'must not report a successful save');
       expect(repository.patches, isEmpty);
-      expect(
-        find.text('Something went wrong. Please try again'),
-        findsOneWidget,
-      );
+      expect(find.text('Failed to reorder chants'), findsOneWidget);
 
       // Let the snackbar's timer run out before the test ends.
       await tester.pump(const Duration(seconds: 5));

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
@@ -239,7 +240,15 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
       setState(() => _likeState.revert(wasLiked));
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(result.errorMessage!)));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasLiked
+                ? context.l10n.connect_failed_unlike_post_error
+                : context.l10n.connect_failed_like_post_error,
+          ),
+        ),
+      );
       return;
     }
 

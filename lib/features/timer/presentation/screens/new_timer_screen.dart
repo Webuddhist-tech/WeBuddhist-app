@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/ambient_sound.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
@@ -103,6 +105,11 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   String get _timerName =>
       _didChangeDuration ? '$_durationMinutes minutes' : widget.timer!.name;
 
+  String _failureMessage(Failure failure) =>
+      failure is ValidationFailure && _durationMs <= 0
+          ? context.l10n.timer_duration_must_be_greater_than_error
+          : failure.message;
+
   Future<PresetTimer?> _createTimer() async {
     setState(() => _isSubmitting = true);
     final useCase = ref.read(createUserTimerUseCaseProvider);
@@ -119,7 +126,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
 
     return result.fold((failure) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(failure.message)),
+        SnackBar(content: Text(_failureMessage(failure))),
       );
       return null;
     }, (timer) => timer);
@@ -148,7 +155,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     result.fold((failure) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(failure.message)));
+      ).showSnackBar(SnackBar(content: Text(_failureMessage(failure))));
     }, (_) => context.pop());
   }
 
@@ -178,14 +185,16 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
                   _SettingsRow(
-                    label: 'DURATION',
+                    label: context.l10n.timer_duration_label,
                     value: '$_durationMinutes min',
                     onTap: _pickDuration,
                   ),
                   const SizedBox(height: 12),
                   _SettingsRow(
-                    label: 'AMBIENT SOUND',
-                    value: ambientSoundName ?? 'Default (no sound)',
+                    label: context.l10n.timer_ambient_sound_label,
+                    value:
+                        ambientSoundName ??
+                        context.l10n.timer_ambient_sound_none,
                     leadingIcon: AppAssets.timerAmbientSound,
                     onTap: _pickAmbientSound,
                   ),
@@ -223,7 +232,9 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
                                 ),
                               )
                               : Text(
-                                _isEditing ? 'Save changes' : 'Begin session',
+                                _isEditing
+                                    ? context.l10n.timer_save_changes
+                                    : context.l10n.timer_begin_session,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -259,7 +270,9 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
           Expanded(
             child: Center(
               child: Text(
-                _isEditing ? 'Edit timer' : 'New timer',
+                _isEditing
+                    ? context.l10n.timer_edit_title
+                    : context.l10n.timer_new_title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -288,11 +301,11 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
                           minimumSize: Size.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text(
-                          'Save',
+                        child: Text(
+                          context.l10n.save,
                           maxLines: 1,
                           softWrap: false,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),

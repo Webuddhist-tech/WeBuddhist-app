@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 
 /// Drag-handle + title row shared by the New Timer bottom sheets.
 ///
@@ -49,7 +50,7 @@ class TimerSheetHeader extends StatelessWidget {
                 TextButton(
                   onPressed: onDone,
                   child: Text(
-                    'Done',
+                    context.l10n.done,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,

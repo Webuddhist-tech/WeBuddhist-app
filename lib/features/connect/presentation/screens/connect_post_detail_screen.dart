@@ -215,7 +215,15 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
       setState(() => _likeState.revert(wasLiked));
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(result.errorMessage!)));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasLiked
+                ? context.l10n.connect_failed_unlike_post_error
+                : context.l10n.connect_failed_like_post_error,
+          ),
+        ),
+      );
       return;
     }
 
