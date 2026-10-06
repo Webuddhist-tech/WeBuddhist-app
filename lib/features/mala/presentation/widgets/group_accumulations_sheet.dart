@@ -3,50 +3,55 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
-import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_accumulation_selection.dart';
+import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
+import 'package:flutter_pecha/features/mala/presentation/utils/accumulation_sheet_display.dart';
 import 'package:flutter_pecha/features/mala/presentation/utils/mala_analytics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-/// Bottom sheet for choosing personal vs group accumulation on the mala screen.
+/// Bottom sheet for choosing where recitations are added: personal practice or
+/// one of the joined accumulations. Opened from the mala screen and from the
+/// reader's chant bar.
 ///
-/// Group row counts show lifetime totals from
-/// `GET /accumulators/{presetId}/groups` (`user_total_count`), plus any unsynced
-/// local taps via [GroupAccumulationCountsNotifier.displayLifetimeCount]. The
-/// personal row shows lifetime `total_counted` from
-/// `GET /accumulators/{parent_id}` via [MalaCounterNotifier.displayLifetimeCount].
-/// The on-screen mala counter uses session counts instead; those reset to 0 on
-/// DELETE while lifetime totals here do not.
-class GroupAccumulationsSheet extends ConsumerStatefulWidget {
+/// Every count is a lifetime total. Accumulation rows show
+/// `user_total_count` and `group_total_count` from
+/// `GET /accumulators/{presetId}/groups`, plus any unsynced local taps via
+/// [GroupAccumulationCountsNotifier.displayLifetimeCount]. The personal row
+/// shows `total_counted` from `GET /accumulators/{parent_id}` via
+/// [MalaCounterNotifier.displayLifetimeCount]. The header adds them up. The
+/// on-screen mala counter uses session counts instead; those reset to 0 on
+/// DELETE while the totals here do not.
+class GroupAccumulationsSheet extends ConsumerWidget {
   const GroupAccumulationsSheet({
     super.key,
-    required this.presetId,
+    required this.mantra,
+    required this.presetTitle,
     required this.groups,
-    required this.personalLifetimeCount,
-    this.showPersonalRow = true,
   });
 
-  final String presetId;
-  final List<AccumulatorGroup> groups;
-  final int personalLifetimeCount;
+  /// Keys the personal counter. The reader passes a bare
+  /// `Mantra(presetId: …)`: a recitation is not in the mala catalogue.
+  final Mantra mantra;
 
-  /// When false (e.g. group chant reader), only group rows are shown.
-  final bool showPersonalRow;
+  /// Mantra or chant name shown in the header.
+  final String presetTitle;
+  final List<AccumulatorGroup> groups;
+
+  String get presetId => mantra.presetId;
 
   static Future<void> show(
     BuildContext context, {
-    required String presetId,
+    required Mantra mantra,
+    required String presetTitle,
     required List<AccumulatorGroup> groups,
-    required int personalLifetimeCount,
-    bool showPersonalRow = true,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -55,53 +60,71 @@ class GroupAccumulationsSheet extends ConsumerStatefulWidget {
       useRootNavigator: true,
       builder:
           (_) => GroupAccumulationsSheet(
-            presetId: presetId,
+            mantra: mantra,
+            presetTitle: presetTitle,
             groups: groups,
-            personalLifetimeCount: personalLifetimeCount,
-            showPersonalRow: showPersonalRow,
           ),
     );
   }
 
   @override
-  ConsumerState<GroupAccumulationsSheet> createState() =>
-      _GroupAccumulationsSheetState();
-}
-
-class _GroupAccumulationsSheetState
-    extends ConsumerState<GroupAccumulationsSheet> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureUserLoaded());
-  }
-
-  void _ensureUserLoaded() {
-    final userState = ref.read(userProvider);
-    if (userState.user == null && !userState.isLoading) {
-      ref.read(userProvider.notifier).refreshUser();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final user = ref.watch(userProvider).user;
-    final selection = ref.watch(
-      malaAccumulationSelectionProvider(widget.presetId),
-    );
-    final accentColor = isDark ? AppColors.blueDark : AppColors.blue;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10n;
+    final selection = ref.watch(malaAccumulationSelectionProvider(presetId));
+    // Watching keeps the personal counter alive while the sheet is open and
+    // repaints once its lifetime total has loaded.
+    ref.watch(malaCounterProvider(mantra));
+    final personalLifetimeCount =
+        ref.read(malaCounterProvider(mantra).notifier).displayLifetimeCount;
     final dividerColor = isDark ? AppColors.cardBorderDark : AppColors.grey300;
-    final locale = intlFormatLocaleOf(context);
-    ref.watch(groupAccumulationCountsProvider(widget.presetId));
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    ref.watch(groupAccumulationCountsProvider(presetId));
     final groups =
-        ref
-            .watch(joinedAccumulatorGroupsProvider(widget.presetId))
-            .valueOrNull ??
-        widget.groups;
+        ref.watch(joinedAccumulatorGroupsProvider(presetId)).valueOrNull ??
+        this.groups;
     final countsNotifier = ref.read(
-      groupAccumulationCountsProvider(widget.presetId).notifier,
+      groupAccumulationCountsProvider(presetId).notifier,
     );
+    final myTotals = {
+      for (final group in groups)
+        group.groupAccumulatorId: countsNotifier.displayLifetimeCount(
+          group.groupAccumulatorId,
+          group.userTotalCount,
+        ),
+    };
+    final sections = splitAccumulationSections(groups);
+    final allTime = allTimeAccumulation(
+      personalLifetime: personalLifetimeCount,
+      myGroupLifetimes: myTotals.values,
+    );
+
+    Widget accumulationRow(AccumulatorGroup group) {
+      final myTotal = myTotals[group.groupAccumulatorId] ?? 0;
+      final groupTotal = groupTotalWithUnsynced(
+        apiGroupTotal: group.groupTotalCount,
+        apiMyTotal: group.userTotalCount,
+        displayMyTotal: myTotal,
+      );
+      return _AccumulationRow(
+        isSelected: selection.groupAccumulatorId == group.groupAccumulatorId,
+        onTap:
+            () => _select(
+              ref,
+              MalaAccumulationSelection.group(group.groupAccumulatorId),
+              groups,
+            ),
+        leading: _GroupAvatar(group: group),
+        title: accumulationRowTitle(group) ?? l10n.mala_group_untitled,
+        subtitle: accumulationRowSubtitle(group),
+        totals:
+            '${l10n.mala_my_total(_formatCount(context, myTotal))}'
+            '  |  '
+            '${l10n.mala_group_total(_formatCount(context, groupTotal))}',
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -124,85 +147,74 @@ class _GroupAccumulationsSheetState
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.25),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              if (widget.showPersonalRow) ...[
-                _SelectableAccumulationRow(
-                  isSelected: selection.isPersonal,
-                  accentColor: accentColor,
-                  onTap:
-                      () => _select(
-                        const MalaAccumulationSelection.personal(),
-                        groups,
-                      ),
-                  leading: _UserAvatar(avatarUrl: user?.avatarUrl),
-                  title: user != null ? _userDisplayName(user) : '—',
-                  formattedCount: NumberFormat.decimalPattern(
-                    locale,
-                  ).format(widget.personalLifetimeCount),
-                ),
-                const SizedBox(height: 12),
-                Divider(height: 1, thickness: 1, color: dividerColor),
-              ],
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text(
-                  context.l10n.mala_group_accumulations,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              _SheetHeader(
+                title: presetTitle,
+                caption: l10n.mala_all_time_accumulation,
+                formattedTotal: _formatCount(context, allTime),
+                captionColor: secondaryColor,
               ),
+              Divider(height: 1, thickness: 1, color: dividerColor),
               Flexible(
-                child: ListView.separated(
+                child: ListView(
                   shrinkWrap: true,
-                  padding: const EdgeInsets.only(bottom: 8),
-                  itemCount: groups.length,
-                  separatorBuilder:
-                      (_, __) => Divider(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Text(
+                        l10n.mala_group_accumulations,
+                        strutStyle: context.tibetanStrutStyle(15),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    _AccumulationRow(
+                      isSelected: selection.isPersonal,
+                      onTap:
+                          () => _select(
+                            ref,
+                            const MalaAccumulationSelection.personal(),
+                            groups,
+                          ),
+                      leading: const _PersonalAvatar(),
+                      title: l10n.mala_personal_practice,
+                      trailingCount: _formatCount(
+                        context,
+                        personalLifetimeCount,
+                      ),
+                    ),
+                    if (groups.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Divider(
                         height: 1,
                         thickness: 1,
                         indent: 20,
                         endIndent: 20,
                         color: dividerColor,
                       ),
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    final isSelected =
-                        selection.groupAccumulatorId ==
-                        group.groupAccumulatorId;
-
-                    return _SelectableAccumulationRow(
-                      isSelected: isSelected,
-                      accentColor: accentColor,
-                      onTap:
-                          () => _select(
-                            MalaAccumulationSelection.group(
-                              group.groupAccumulatorId,
-                            ),
-                            groups,
-                          ),
-                      leading: _GroupAvatar(group: group),
-                      title:
-                          group.title?.trim().isNotEmpty == true
-                              ? group.title!.trim()
-                              : context.l10n.mala_group_untitled,
-                      formattedCount: NumberFormat.decimalPattern(
-                        locale,
-                      ).format(
-                        countsNotifier.displayLifetimeCount(
-                          group.groupAccumulatorId,
-                          group.userTotalCount,
-                        ),
+                    ],
+                    if (sections.events.isNotEmpty) ...[
+                      _SectionLabel(
+                        label: l10n.mala_events_section,
+                        color: secondaryColor,
                       ),
-                    );
-                  },
+                      ...sections.events.map(accumulationRow),
+                    ],
+                    if (sections.groups.isNotEmpty) ...[
+                      _SectionLabel(
+                        label: l10n.mala_groups_section,
+                        color: secondaryColor,
+                      ),
+                      ...sections.groups.map(accumulationRow),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -213,8 +225,12 @@ class _GroupAccumulationsSheetState
   }
 
   /// Applies [next] and reports the change once it is the live selection.
-  void _select(MalaAccumulationSelection next, List<AccumulatorGroup> groups) {
-    final provider = malaAccumulationSelectionProvider(widget.presetId);
+  void _select(
+    WidgetRef ref,
+    MalaAccumulationSelection next,
+    List<AccumulatorGroup> groups,
+  ) {
+    final provider = malaAccumulationSelectionProvider(presetId);
     final previous = ref.read(provider);
     final groupAccumulatorId = next.groupAccumulatorId;
     if (groupAccumulatorId == null) {
@@ -235,71 +251,235 @@ class _GroupAccumulationsSheetState
         );
   }
 
-  String _userDisplayName(User user) {
-    final parts =
-        [
-          user.firstName,
-          user.lastName,
-        ].whereType<String>().where((name) => name.isNotEmpty).toList();
-    if (parts.isNotEmpty) return parts.join(' ');
-    return user.displayName;
+  static String _formatCount(BuildContext context, int value) {
+    final formatted = NumberFormat.decimalPattern(
+      intlFormatLocaleOf(context),
+    ).format(value);
+    return context.isTibetanLocale ? toTibetanDigits(formatted) : formatted;
   }
 }
 
-class _SelectableAccumulationRow extends StatelessWidget {
-  const _SelectableAccumulationRow({
-    required this.isSelected,
-    required this.accentColor,
-    required this.onTap,
-    required this.leading,
+class _SheetHeader extends StatelessWidget {
+  const _SheetHeader({
     required this.title,
-    required this.formattedCount,
+    required this.caption,
+    required this.formattedTotal,
+    required this.captionColor,
   });
 
-  final bool isSelected;
-  final Color accentColor;
-  final VoidCallback onTap;
-  final Widget leading;
   final String title;
-  final String formattedCount;
+  final String caption;
+  final String formattedTotal;
+  final Color captionColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final nameColor = isSelected ? accentColor : theme.colorScheme.onSurface;
-    final countColor = isSelected ? accentColor : theme.colorScheme.onSurface;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              leading,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   title,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: nameColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  strutStyle: context.tibetanStrutStyle(18),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                formattedCount,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: countColor,
-                  fontWeight: FontWeight.w700,
+                const SizedBox(height: 2),
+                Text(
+                  caption,
+                  strutStyle: context.tibetanStrutStyle(12),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 12,
+                    color: captionColor,
+                  ),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            formattedTotal,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+      child: Text(
+        label,
+        strutStyle: context.tibetanStrutStyle(14),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+/// One selectable target. The selected row is drawn as a bordered card with a
+/// check; the others sit flat on the sheet.
+class _AccumulationRow extends StatelessWidget {
+  const _AccumulationRow({
+    required this.isSelected,
+    required this.onTap,
+    required this.leading,
+    required this.title,
+    this.subtitle,
+    this.trailingCount,
+    this.totals,
+  });
+
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Widget leading;
+  final String title;
+
+  /// Owning group's name, under the title.
+  final String? subtitle;
+
+  /// Count beside the title, for the personal row.
+  final String? trailingCount;
+
+  /// "My total | Group total" line, for accumulation rows.
+  final String? totals;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor =
+        isDark ? AppColors.chipBackgroundDark : AppColors.surfaceWhite;
+    final borderColor = isDark ? AppColors.grey900 : AppColors.grey300;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final onSurface = theme.colorScheme.onSurface;
+    final hasDetails = subtitle != null || totals != null;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Semantics(
+        button: true,
+        selected: isSelected,
+        child: Material(
+          color: isSelected ? cardColor : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isSelected ? borderColor : Colors.transparent,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                crossAxisAlignment:
+                    hasDetails
+                        ? CrossAxisAlignment.start
+                        : CrossAxisAlignment.center,
+                children: [
+                  leading,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                strutStyle: context.tibetanStrutStyle(16),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: onSurface,
+                                ),
+                              ),
+                            ),
+                            if (trailingCount != null) ...[
+                              const SizedBox(width: 12),
+                              Text(
+                                trailingCount!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontSize: 14,
+                                  color: onSurface,
+                                ),
+                              ),
+                            ],
+                            if (isSelected) ...[
+                              const SizedBox(width: 10),
+                              Icon(
+                                AppAssets.check,
+                                size: 20,
+                                color:
+                                    isDark
+                                        ? AppColors.successDark
+                                        : AppColors.success,
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (subtitle != null)
+                          Text(
+                            subtitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            strutStyle: context.tibetanStrutStyle(12),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 12,
+                              color: secondaryColor,
+                            ),
+                          ),
+                        if (totals != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            totals!,
+                            textAlign: TextAlign.end,
+                            strutStyle: context.tibetanStrutStyle(13),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: 13,
+                              color: onSurface,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -307,37 +487,26 @@ class _SelectableAccumulationRow extends StatelessWidget {
   }
 }
 
-class _UserAvatar extends StatelessWidget {
-  const _UserAvatar({this.avatarUrl});
+class _PersonalAvatar extends StatelessWidget {
+  const _PersonalAvatar();
 
-  final String? avatarUrl;
-
-  static const _size = 40.0;
+  static const _size = 48.0;
 
   @override
   Widget build(BuildContext context) {
-    final fallbackColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return ClipOval(
-      child: SizedBox(
-        width: _size,
-        height: _size,
-        child:
-            avatarUrl != null && avatarUrl!.isNotEmpty
-                ? CachedNetworkImageWidget(
-                  imageUrl: avatarUrl,
-                  width: _size,
-                  height: _size,
-                  fit: BoxFit.cover,
-                )
-                : ColoredBox(
-                  color: fallbackColor,
-                  child: Icon(
-                    AppAssets.profile,
-                    size: 22,
-                    color: AppColors.grey600,
-                  ),
-                ),
+    return Container(
+      width: _size,
+      height: _size,
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.grey900 : AppColors.grey100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        AppAssets.profile,
+        size: 24,
+        color: isDark ? AppColors.textTertiaryDark : AppColors.grey800,
       ),
     );
   }
@@ -348,13 +517,12 @@ class _GroupAvatar extends StatelessWidget {
 
   final AccumulatorGroup group;
 
-  static const _size = 40.0;
+  static const _size = 48.0;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final placeholderColor =
-        isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
+    final placeholderColor = isDark ? AppColors.grey900 : AppColors.grey100;
 
     return ClipOval(
       child: SizedBox(
@@ -372,7 +540,7 @@ class _GroupAvatar extends StatelessWidget {
                   color: placeholderColor,
                   child: Icon(
                     AppAssets.usersThree,
-                    size: 22,
+                    size: 24,
                     color: isDark ? AppColors.grey500 : AppColors.grey600,
                   ),
                 ),

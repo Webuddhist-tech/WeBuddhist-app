@@ -206,6 +206,25 @@ class AppLocalizationsBo extends AppLocalizations {
   String get mala_group_untitled => 'Untitled group';
 
   @override
+  String get mala_all_time_accumulation => 'ངའི་བསགས་གྲངས་ཁྱོན་བསྡོམས།';
+
+  @override
+  String get mala_personal_practice => 'སྒེར་གྱི་ཉམས་ལེན།';
+
+  @override
+  String get mala_events_section => 'བྱེད་སྒོ།';
+
+  @override
+  String mala_my_total(String count) {
+    return 'ངའི་ཁྱོན་བསྡོམས། $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'ཚོགས་པའི་ཁྱོན་བསྡོམས། $count';
+  }
+
+  @override
   String get home_timer => 'སྒོམ་ཡུན།';
 
   @override

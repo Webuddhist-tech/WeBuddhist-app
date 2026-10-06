@@ -454,6 +454,36 @@ abstract class AppLocalizations {
   /// **'Untitled space'**
   String get mala_group_untitled;
 
+  /// No description provided for @mala_all_time_accumulation.
+  ///
+  /// In en, this message translates to:
+  /// **'My all-time accumulation'**
+  String get mala_all_time_accumulation;
+
+  /// No description provided for @mala_personal_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal practice'**
+  String get mala_personal_practice;
+
+  /// No description provided for @mala_events_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get mala_events_section;
+
+  /// No description provided for @mala_my_total.
+  ///
+  /// In en, this message translates to:
+  /// **'My total: {count}'**
+  String mala_my_total(String count);
+
+  /// No description provided for @mala_group_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Group total: {count}'**
+  String mala_group_total(String count);
+
   /// No description provided for @home_timer.
   ///
   /// In en, this message translates to:

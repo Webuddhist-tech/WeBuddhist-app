@@ -204,6 +204,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get mala_group_untitled => 'बिना शीर्षक वाला स्पेस';
 
   @override
+  String get mala_all_time_accumulation => 'मेरा अब तक का कुल संचय';
+
+  @override
+  String get mala_personal_practice => 'व्यक्तिगत अभ्यास';
+
+  @override
+  String get mala_events_section => 'कार्यक्रम';
+
+  @override
+  String mala_my_total(String count) {
+    return 'मेरा कुल: $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'समूह का कुल: $count';
+  }
+
+  @override
   String get home_timer => 'टाइमर';
 
   @override

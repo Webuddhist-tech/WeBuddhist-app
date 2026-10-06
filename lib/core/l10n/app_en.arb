@@ -92,6 +92,25 @@
   "mala_group_accumulations": "Add recitation to",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled space",
+  "mala_all_time_accumulation": "My all-time accumulation",
+  "mala_personal_practice": "Personal practice",
+  "mala_events_section": "Events",
+  "mala_my_total": "My total: {count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "Group total: {count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "Timer",
   "preset_timers": "Preset timers",
   "meditation_timer": "Meditation timer",

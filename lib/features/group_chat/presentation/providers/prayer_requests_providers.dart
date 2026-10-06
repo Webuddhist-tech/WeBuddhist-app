@@ -90,6 +90,7 @@ class _Drain {
     required this.repository,
     required this.roomId,
     required this.pacing,
+    required this.sends,
     required this.leftovers,
     required this.windowStart,
     required this.windowSent,
@@ -98,48 +99,74 @@ class _Drain {
   final GroupChatRepository repository;
   final String roomId;
   final PrayerPacing pacing;
+  final PendingPrayerSends sends;
   final Map<String, _Leftover> leftovers;
   DateTime? windowStart;
   int windowSent;
+  bool _running = false;
 
-  Future<void> run() async {
-    while (leftovers.isNotEmpty) {
-      final now = DateTime.now();
-      var start = windowStart;
-      if (start == null || now.difference(start) >= pacing.rateWindow) {
-        start = windowStart = now;
-        windowSent = 0;
-      }
-      final windowEnd = start.add(pacing.rateWindow);
+  /// Sends until nothing is left, unless that is already under way. Sign-out
+  /// waits on it.
+  void start() {
+    if (_running || leftovers.isEmpty) return;
+    _running = true;
+    sends.add(_run());
+  }
 
-      DateTime? wakeAt;
-      final calls = <Future<void>>[];
-      for (final entry in leftovers.entries.toList()) {
-        final leftover = entry.value;
-        final notBefore = leftover.notBefore;
-        if (notBefore != null && now.isBefore(notBefore)) {
-          wakeAt = _earliest(wakeAt, notBefore);
-          continue;
+  /// Takes back the taps of a call that was still out when the sheet closed
+  /// and came home rate limited.
+  void retry(String messageId, int count, {required int retries}) {
+    final leftover = leftovers.putIfAbsent(messageId, () => _Leftover(0, null));
+    leftover.left += count;
+    leftover.retries = math.max(leftover.retries, retries);
+    leftover.notBefore = DateTime.now().add(pacing.retryAfter);
+    start();
+  }
+
+  Future<void> _run() async {
+    // Cleared in the same turn the loop gives up, so a late [retry] either
+    // finds the loop still looking or starts it again; never neither.
+    try {
+      while (leftovers.isNotEmpty) {
+        final now = DateTime.now();
+        var start = windowStart;
+        if (start == null || now.difference(start) >= pacing.rateWindow) {
+          start = windowStart = now;
+          windowSent = 0;
         }
-        final budget = math.min(
-          PrayerPacing.maxPrayersPerCall,
-          PrayerPacing.maxPrayersPerWindow - windowSent,
-        );
-        if (budget <= 0) {
-          wakeAt = _earliest(wakeAt, windowEnd);
-          break;
-        }
-        final count = math.min(leftover.left, budget);
-        windowSent += count;
-        calls.add(_send(entry.key, leftover, count));
-      }
-      await Future.wait(calls);
-      if (leftovers.isEmpty) return;
+        final windowEnd = start.add(pacing.rateWindow);
 
-      // Whatever is left either waits on its deadline or on the window.
-      if (calls.isNotEmpty) wakeAt = _earliest(wakeAt, windowEnd);
-      final sleep = wakeAt!.difference(DateTime.now());
-      if (sleep > Duration.zero) await Future<void>.delayed(sleep);
+        DateTime? wakeAt;
+        final calls = <Future<void>>[];
+        for (final entry in leftovers.entries.toList()) {
+          final leftover = entry.value;
+          final notBefore = leftover.notBefore;
+          if (notBefore != null && now.isBefore(notBefore)) {
+            wakeAt = _earliest(wakeAt, notBefore);
+            continue;
+          }
+          final budget = math.min(
+            PrayerPacing.maxPrayersPerCall,
+            PrayerPacing.maxPrayersPerWindow - windowSent,
+          );
+          if (budget <= 0) {
+            wakeAt = _earliest(wakeAt, windowEnd);
+            break;
+          }
+          final count = math.min(leftover.left, budget);
+          windowSent += count;
+          calls.add(_send(entry.key, leftover, count));
+        }
+        await Future.wait(calls);
+        if (leftovers.isEmpty) return;
+
+        // Whatever is left either waits on its deadline or on the window.
+        if (calls.isNotEmpty) wakeAt = _earliest(wakeAt, windowEnd);
+        final sleep = wakeAt!.difference(DateTime.now());
+        if (sleep > Duration.zero) await Future<void>.delayed(sleep);
+      }
+    } finally {
+      _running = false;
     }
   }
 
@@ -157,7 +184,11 @@ class _Drain {
           leftover.notBefore = DateTime.now().add(pacing.retryAfter);
           return;
         }
-        leftovers.remove(messageId);
+        // Only this call's taps are given up. The rest, which may include a
+        // retry handed over meanwhile, still goes out.
+        leftover.retries = 0;
+        leftover.left -= count;
+        if (leftover.left == 0) leftovers.remove(messageId);
       },
       (_) {
         leftover.retries = 0;
@@ -260,6 +291,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   DateTime? _flushAt;
   DateTime? _windowStart;
   int _windowSent = 0;
+
+  /// Set on dispose: sends what the closed sheet still owes.
+  _Drain? _drain;
   ChatPrayerUserDTO? _viewer;
 
   /// A loaded row was deleted while a page was being fetched, so that page
@@ -274,7 +308,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   /// The sheet closed with taps still waiting: they were shown as prayed,
-  /// so send them anyway, paced as before. Sign-out waits on the send.
+  /// so send them anyway, paced as before. Sign-out waits on the send. The
+  /// drain is kept for the calls still out, which may yet need a retry.
   void _drainOnDispose() {
     final roomId = state.roomId;
     final leftovers = {
@@ -283,17 +318,16 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           entry.key: _Leftover(entry.value.queued, entry.value.notBefore),
     };
     _pending.clear();
-    if (roomId == null || leftovers.isEmpty) return;
-    _sends.add(
-      _Drain(
-        repository: _repository,
-        roomId: roomId,
-        pacing: _pacing,
-        leftovers: leftovers,
-        windowStart: _windowStart,
-        windowSent: _windowSent,
-      ).run(),
-    );
+    if (roomId == null) return;
+    _drain = _Drain(
+      repository: _repository,
+      roomId: roomId,
+      pacing: _pacing,
+      sends: _sends,
+      leftovers: leftovers,
+      windowStart: _windowStart,
+      windowSent: _windowSent,
+    )..start();
   }
 
   /// Resolves the room, then fetches its first page of prayer requests.
@@ -669,7 +703,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       pending.queued -= count;
       pending.inFlight = count;
       _windowSent += count;
-      unawaited(_send(roomId, messageId, pending, count));
+      _sends.add(_send(roomId, messageId, pending, count));
     }
     if (wakeAt != null) _scheduleFlush(wakeAt.difference(DateTime.now()));
   }
@@ -685,7 +719,15 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       messageIds: [messageId],
       count: count,
     );
-    if (!mounted) return;
+    if (!mounted) {
+      // The sheet closed mid-call. These taps were shown as prayed too, so a
+      // 429 is retried by the drain like the queued ones.
+      final limited = result.fold((f) => f is RateLimitFailure, (_) => false);
+      if (limited && pending.retries < PrayerPacing.maxRetries) {
+        _drain?.retry(messageId, count, retries: pending.retries + 1);
+      }
+      return;
+    }
     pending.inFlight = 0;
 
     var retry = false;

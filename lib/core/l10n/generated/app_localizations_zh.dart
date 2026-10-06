@@ -198,6 +198,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mala_group_untitled => '未取名群組';
 
   @override
+  String get mala_all_time_accumulation => '我的累計總數';
+
+  @override
+  String get mala_personal_practice => '個人修持';
+
+  @override
+  String get mala_events_section => '活動';
+
+  @override
+  String mala_my_total(String count) {
+    return '我的總數：$count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return '群組總數：$count';
+  }
+
+  @override
   String get home_timer => '計時';
 
   @override

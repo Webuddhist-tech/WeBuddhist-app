@@ -206,6 +206,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_group_untitled => 'Untitled space';
 
   @override
+  String get mala_all_time_accumulation => 'My all-time accumulation';
+
+  @override
+  String get mala_personal_practice => 'Personal practice';
+
+  @override
+  String get mala_events_section => 'Events';
+
+  @override
+  String mala_my_total(String count) {
+    return 'My total: $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'Group total: $count';
+  }
+
+  @override
   String get home_timer => 'Timer';
 
   @override

@@ -113,12 +113,14 @@ class MalaRepositoryImpl implements MalaRepository {
 
   @override
   Future<Either<Failure, List<AccumulatorGroup>>> getJoinedAccumulatorGroups(
-    String accumulatorId,
-  ) async {
+    String accumulatorId, {
+    String? language,
+  }) async {
     try {
       final groups = await remote.fetchAccumulatorGroups(
         accumulatorId,
         joinedOnly: true,
+        language: language,
       );
       return Right(groups.map((group) => group.toEntity()).toList());
     } on AppException catch (e) {

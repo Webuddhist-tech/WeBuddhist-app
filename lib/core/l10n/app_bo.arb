@@ -91,6 +91,25 @@
   "mala_group_accumulations": "ཞལ་འདོན་ཁ་སྣོན།",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled group",
+  "mala_all_time_accumulation": "ངའི་བསགས་གྲངས་ཁྱོན་བསྡོམས།",
+  "mala_personal_practice": "སྒེར་གྱི་ཉམས་ལེན།",
+  "mala_events_section": "བྱེད་སྒོ།",
+  "mala_my_total": "ངའི་ཁྱོན་བསྡོམས། {count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "ཚོགས་པའི་ཁྱོན་བསྡོམས། {count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "སྒོམ་ཡུན།",
   "preset_timers": "སྔོན་སྒྲིག་དུས་ཚོད།",
   "meditation_timer": "སྒོམ་ཐུན།",
