@@ -202,7 +202,8 @@ class VerseOfDayCommentsState {
   final int skip;
   final int total;
 
-  /// Ids of comments posted from this device; the API omits the author id.
+  /// Ids of comments posted from this device while this list was alive:
+  /// the fallback for a comment the API sent without an author id.
   final Set<String> ownCommentIds;
 
   const VerseOfDayCommentsState({

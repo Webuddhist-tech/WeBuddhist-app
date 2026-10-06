@@ -77,7 +77,7 @@ void main() {
           _video('a', videoId: 'aaaaaaaaaaa', order: 2),
         ],
         dayNumber: 1,
-        excludeVideoId: 'lllllllllll',
+        excludeVideoIds: const ['lllllllllll'],
       );
 
       // The remaining recording is Session 1, not Session 2.

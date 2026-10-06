@@ -33,6 +33,7 @@ class VerseOfDayLikesModel {
 class VerseOfDayCommentModel {
   final String id;
   final String verseId;
+  final String userId;
   final String firstName;
   final String? lastName;
   final String? avatarUrl;
@@ -45,6 +46,7 @@ class VerseOfDayCommentModel {
   const VerseOfDayCommentModel({
     required this.id,
     required this.verseId,
+    this.userId = '',
     required this.firstName,
     this.lastName,
     this.avatarUrl,
@@ -63,6 +65,7 @@ class VerseOfDayCommentModel {
     return VerseOfDayCommentModel(
       id: json['id'] as String? ?? '',
       verseId: json['verse_id'] as String? ?? '',
+      userId: json['user_id'] as String? ?? '',
       firstName: userJson['first_name'] as String? ?? '',
       lastName: userJson['last_name'] as String?,
       avatarUrl: userJson['avatar_url'] as String?,
@@ -78,6 +81,7 @@ class VerseOfDayCommentModel {
     return VerseOfDayComment(
       id: id,
       verseId: verseId,
+      userId: userId,
       user: VerseOfDayCommentUser(
         firstName: firstName,
         lastName: lastName,

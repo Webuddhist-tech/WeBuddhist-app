@@ -41,6 +41,9 @@ class VerseOfDayCommentUser extends Equatable {
 class VerseOfDayComment extends Equatable {
   final String id;
   final String verseId;
+
+  /// The author's account id; empty when the API did not send one.
+  final String userId;
   final VerseOfDayCommentUser user;
   final String text;
   final DateTime? createdAt;
@@ -51,6 +54,7 @@ class VerseOfDayComment extends Equatable {
   const VerseOfDayComment({
     required this.id,
     required this.verseId,
+    this.userId = '',
     required this.user,
     required this.text,
     this.createdAt,
@@ -63,6 +67,7 @@ class VerseOfDayComment extends Equatable {
     return VerseOfDayComment(
       id: id,
       verseId: verseId,
+      userId: userId,
       user: user,
       text: text,
       createdAt: createdAt,
@@ -76,6 +81,7 @@ class VerseOfDayComment extends Equatable {
   List<Object?> get props => [
     id,
     verseId,
+    userId,
     user,
     text,
     createdAt,

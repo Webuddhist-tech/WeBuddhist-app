@@ -101,7 +101,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   bool _isSharing = false;
   late String _liveLanguage;
   bool _liveAudioOnly = false;
-  bool _liveStreamSeen = false;
+
+  /// YouTube ids of the streams seen live, by language. They keep the page
+  /// live and stay out of the Replays menu until their own language says
+  /// the link is gone.
+  final Map<String, String> _liveStreams = {};
 
   /// Recording picked from the Replays menu; null plays the live stream.
   EventReplay? _replay;
@@ -207,7 +211,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     _listenForDayCompletion();
     final live = _liveStatus();
-    final replays = _dayReplays(live);
+    // Until the event has loaded, nothing says which of today's videos is
+    // the live stream, so the menu waits rather than offer it as a replay.
+    final replays =
+        live == _LiveStatus.loading ? const <EventReplay>[] : _dayReplays();
     // Live wins while it is on; a recording is then opt-in from the menu.
     // Once the stream is gone, a past day plays its own first session.
     final replay =
@@ -267,27 +274,31 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
   bool get _hasEventHeader => widget.eventId != null && widget.showLiveStream;
 
-  /// Sticky once a stream was seen, so a language without one keeps the
-  /// toggles reachable. A failed request is `failed`, never `none`, so a
-  /// network blip cannot hide an active stream.
+  /// Sticky per language once a stream was seen, so a language without one
+  /// keeps the toggles reachable. A failed request is `failed`, never
+  /// `none`, so a network blip cannot hide an active stream. Only a
+  /// successful answer with no stream, in a language that had one, lets
+  /// the page leave the live state: that stream really is over.
   _LiveStatus _liveStatus() {
     if (!_hasEventHeader) return _LiveStatus.none;
     final eventAsync = ref.watch(groupEventInLanguageProvider(_liveKey));
     final either = eventAsync.valueOrNull;
     if (either == null) {
-      if (_liveStreamSeen) return _LiveStatus.live;
+      if (_liveStreams.isNotEmpty) return _LiveStatus.live;
       return eventAsync.hasError ? _LiveStatus.failed : _LiveStatus.loading;
     }
     final status = either.fold(
       (failure) =>
           failure is NotFoundFailure ? _LiveStatus.none : _LiveStatus.failed,
-      (event) =>
-          GroupEventLiveUtils.videoIdOf(event) != null
-              ? _LiveStatus.live
-              : _LiveStatus.none,
+      (event) {
+        final videoId = GroupEventLiveUtils.videoIdOf(event);
+        if (videoId == null) return _LiveStatus.none;
+        _liveStreams[_liveLanguage] = videoId;
+        return _LiveStatus.live;
+      },
     );
-    if (status == _LiveStatus.live) _liveStreamSeen = true;
-    return _liveStreamSeen ? _LiveStatus.live : status;
+    if (status == _LiveStatus.none) _liveStreams.remove(_liveLanguage);
+    return _liveStreams.isNotEmpty ? _LiveStatus.live : status;
   }
 
   void _retryLiveEvent() {
@@ -303,8 +314,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   }
 
   /// The selected day's recordings (issue #869 copies the event's YouTube
-  /// links onto the day), minus the stream that is live right now.
-  List<EventReplay> _dayReplays(_LiveStatus live) {
+  /// links onto the day), minus the streams that are live right now.
+  List<EventReplay> _dayReplays() {
     if (!_hasEventHeader) return const [];
     final videos = ref
         .watch(
@@ -315,14 +326,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         .valueOrNull
         ?.fold((_) => null, (day) => day.videos);
     if (videos == null || videos.isEmpty) return const [];
-    final event = _liveEvent();
     return EventReplays.of(
       videos,
       dayNumber: selectedDay,
-      excludeVideoId:
-          live == _LiveStatus.live && event != null
-              ? GroupEventLiveUtils.videoIdOf(event)
-              : null,
+      excludeVideoIds: _liveStreams.values,
     );
   }
 
@@ -567,11 +574,12 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         },
       ),
       // An event page shows no plan title; the header names the event. The
-      // online attendee gets the day's Replays menu in its place.
+      // online attendee gets the day's Replays menu in its place, once the
+      // stream has loaded and can be told apart from the recordings.
       title:
           !isEvent
               ? Text(widget.plan.title, style: TextStyle(fontSize: 20))
-              : _hasEventHeader
+              : _hasEventHeader && live != _LiveStatus.loading
               ? GroupEventReplaysMenu(
                 replays: replays,
                 selected: replay,

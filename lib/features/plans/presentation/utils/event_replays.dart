@@ -46,13 +46,13 @@ abstract final class EventReplays {
   }
 
   /// The day's recordings in display order, numbered from 1. Videos with
-  /// no playable id are dropped, as is [excludeVideoId] (the stream that is
-  /// live right now: the sync puts it on today's day too, and it would
-  /// otherwise list itself as a replay).
+  /// no playable id are dropped, as are [excludeVideoIds] (the streams that
+  /// are live right now: the sync puts today's on today's day too, and it
+  /// would otherwise list itself as a replay).
   static List<EventReplay> of(
     List<PlanVideoModel> videos, {
     required int dayNumber,
-    String? excludeVideoId,
+    Iterable<String> excludeVideoIds = const [],
   }) {
     final sorted = List<PlanVideoModel>.from(videos)..sort((a, b) {
       final byOrder = a.displayOrder.compareTo(b.displayOrder);
@@ -61,7 +61,7 @@ abstract final class EventReplays {
     final replays = <EventReplay>[];
     for (final video in sorted) {
       final id = videoIdOf(video);
-      if (id == null || id == excludeVideoId) continue;
+      if (id == null || excludeVideoIds.contains(id)) continue;
       replays.add(
         EventReplay(
           video: video,

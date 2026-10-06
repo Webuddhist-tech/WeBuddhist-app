@@ -771,5 +771,96 @@ void main() {
       expect(find.byType(GroupEventLanguageToggle), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('the menu waits for the stream before listing recordings', (
+      tester,
+    ) async {
+      final stream = Completer<Either<Failure, GroupEvent>>();
+      await _pumpLiveEventDetails(
+        tester,
+        stream: stream,
+        videos: [
+          // The sync copied today's live link onto today's day as well.
+          _video('live', _liveVideoId, 1),
+          _video('v1', _session1Id, 2),
+        ],
+      );
+      await _settle(tester);
+
+      // Nothing to pick from until the event says which link is live;
+      // otherwise today's copy of it could be picked as a recording.
+      expect(find.byType(GroupEventReplaysMenu), findsNothing);
+      expect(replaysTrigger, findsNothing);
+
+      stream.complete(Right(_liveEvent()));
+      await _settle(tester);
+
+      expect(player(tester).videoId, _liveVideoId);
+      expect(player(tester).isReplay, isFalse);
+      await openReplays(tester);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsNothing);
+    });
+
+    testWidgets('a stream whose link is gone yields to the first recording', (
+      tester,
+    ) async {
+      var fetches = 0;
+      final now = DateTime.now();
+      await _pumpLiveEventDetails(
+        tester,
+        // The English stream is on at first; every later answer, in any
+        // language, says the link has been taken down.
+        fetch: () async {
+          fetches++;
+          return Right(
+            fetches == 1
+                ? _liveEvent()
+                : GroupEvent(
+                  id: 'event-1',
+                  groupId: 'group-1',
+                  startDate: now.subtract(const Duration(hours: 1)),
+                ),
+          );
+        },
+        videos: [
+          _video('v1', _session1Id, 1),
+          _video('live', _liveVideoId, 2),
+        ],
+      );
+      await _settle(tester);
+      expect(player(tester).videoId, _liveVideoId);
+      expect(player(tester).isReplay, isFalse);
+
+      // No Tibetan stream: the page stays live so the toggles stay
+      // reachable, and the English stream is still kept out of the list.
+      // A language switch fetches on the next frame and renders the answer
+      // on the one after, so settle twice.
+      await tester.tap(find.text('བོད'));
+      await _settle(tester);
+      await _settle(tester);
+      expect(fetches, 2);
+      expect(find.byType(GroupEventLanguageToggle), findsOneWidget);
+      await openReplays(tester);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsNothing);
+      await tester.tapAt(const Offset(20, 820));
+      await _settle(tester);
+      await _settle(tester);
+
+      // Back in English the link is gone for good: the day's first
+      // recording plays, and the stream that ended joins the list.
+      await tester.tap(find.text('En'));
+      await _settle(tester);
+      await _settle(tester);
+      expect(fetches, 3);
+      expect(player(tester).videoId, _session1Id);
+      expect(player(tester).isReplay, isTrue);
+      expect(find.byType(GroupEventLanguageToggle), findsNothing);
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+      await openReplays(tester);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsOneWidget);
+    });
   });
 }

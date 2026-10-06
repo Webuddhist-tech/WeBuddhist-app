@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_commen
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/verse_comment_utils.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_sheet_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -222,6 +223,10 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
       );
     }
 
+    // Names aren't unique, so ownership goes by account id; it survives
+    // leaving Home and restarting, which the local posted-here mark does not.
+    final currentUserId = ref.watch(userProvider).user?.id;
+
     return ListView(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -245,8 +250,11 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
             (comment) => _VerseCommentTile(
               comment: comment,
               isDark: isDark,
-              // The API omits the author id; names aren't unique.
-              isOwn: state.ownCommentIds.contains(comment.id),
+              isOwn: isVerseCommentOwned(
+                comment,
+                currentUserId: currentUserId,
+                ownCommentIds: state.ownCommentIds,
+              ),
               onLike: () => _toggleLike(comment),
               onDelete: () => _confirmDelete(comment),
             ),
