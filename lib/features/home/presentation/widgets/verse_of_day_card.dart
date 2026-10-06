@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_comments_sheet.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_content.dart';
@@ -47,18 +46,9 @@ class _VerseOfDayCardState extends ConsumerState<VerseOfDayCard> {
         child: VerseOfDayContent(
           verseOfDay: widget.verseOfDay,
           typography: typography,
-          useContentFontForAttribution: typography.useContentFontForAttribution,
           verseColor: colorScheme.onSurface,
-          attributionColor:
-              colorScheme.brightness == Brightness.dark
-                  ? AppColors.accentGold
-                  : AppColors.accentGoldDark,
-          sourceColor:
-              colorScheme.brightness == Brightness.dark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondary,
+          showAttribution: false,
           textAlign: TextAlign.start,
-          attributionSpacing: 16,
           textPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           footer: VerseOfDayEngagementBar(
             verseId: widget.verseOfDay.id,
