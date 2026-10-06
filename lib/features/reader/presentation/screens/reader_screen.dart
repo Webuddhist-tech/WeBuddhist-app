@@ -240,14 +240,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   /// False while the selected target cannot take a chant yet: the selection is
-  /// still loading, or personal practice was just picked and is seeding. The
+  /// still loading, personal practice was just picked and is seeding, or a
+  /// group was picked whose session count has not come from the server. The
   /// personal counter is only created once it is the target.
   bool _watchChantTargetReady(Mantra mantra) {
     if (!_chantSelectionReady) return false;
-    final selection = ref.watch(
-      malaAccumulationSelectionProvider(mantra.presetId),
-    );
-    if (!selection.isPersonal) return true;
+    final presetId = mantra.presetId;
+    final selection = ref.watch(malaAccumulationSelectionProvider(presetId));
+    final groupAccumulatorId = selection.groupAccumulatorId;
+    if (groupAccumulatorId != null) {
+      ref.watch(groupAccumulationCountsProvider(presetId));
+      return ref
+          .read(groupAccumulationCountsProvider(presetId).notifier)
+          .hasServerCount(groupAccumulatorId);
+    }
     return !ref.watch(malaCounterProvider(mantra)).isSeeding;
   }
 

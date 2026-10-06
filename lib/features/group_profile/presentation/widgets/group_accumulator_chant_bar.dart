@@ -64,6 +64,16 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
       // offered either way; asking again lets the sheet fill its rows in.
       if (groups.isEmpty && !groupsAsync.isLoading) {
         ref.invalidate(joinedAccumulatorGroupsProvider(presetId));
+      } else if (!ref.read(joinedGroupUserCountsProvider(presetId)).isLoading &&
+          groups.any(
+            (group) =>
+                !ref
+                    .read(groupAccumulationCountsProvider(presetId).notifier)
+                    .hasServerCount(group.groupAccumulatorId),
+          )) {
+        // A count that failed to load keeps its group from taking chants;
+        // asking again lets it come in.
+        ref.invalidate(joinedGroupUserCountsProvider(presetId));
       }
       GroupAccumulationsSheet.show(
         context,

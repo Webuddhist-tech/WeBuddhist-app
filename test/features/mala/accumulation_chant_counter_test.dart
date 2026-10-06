@@ -97,8 +97,21 @@ void main() {
   MalaAccumulationSelectionNotifier selection(ProviderContainer container) =>
       container.read(malaAccumulationSelectionProvider(_presetId).notifier);
 
+  /// The server's session count for [groupAccumulatorId], as the reader merges
+  /// it once the group's detail has loaded.
+  Future<void> serverCount(
+    ProviderContainer container,
+    String groupAccumulatorId,
+    int count,
+  ) async {
+    await container
+        .read(groupAccumulationCountsProvider(_presetId).notifier)
+        .mergeFromServerCounts({groupAccumulatorId: count});
+  }
+
   test('a chant goes to the selected accumulation, not to personal', () async {
     final container = await openSession();
+    await serverCount(container, _eventAccumulation, 0);
     await selection(container).selectGroup(_eventAccumulation);
 
     final counted = countChantIntoSelection(container.read, _mantra);
@@ -127,6 +140,7 @@ void main() {
 
   test('switching target leaves earlier chants where they were made', () async {
     final container = await openSession();
+    await serverCount(container, _eventAccumulation, 0);
 
     await selection(container).selectGroup(_eventAccumulation);
     countChantIntoSelection(container.read, _mantra);
@@ -175,6 +189,7 @@ void main() {
 
   test('offline chants are added to the selected accumulation', () async {
     final container = await openSession();
+    await serverCount(container, _eventAccumulation, 0);
     await selection(container).selectGroup(_eventAccumulation);
 
     final added = addOfflineChantsToSelection(container.read, _mantra, 7);
@@ -197,17 +212,52 @@ void main() {
     expect(eventTotal(container), 0);
   });
 
-  test('offline chants are refused while personal practice is seeding', () async {
-    repository.detailGate = Completer();
+  test(
+    'offline chants are refused while personal practice is seeding',
+    () async {
+      repository.detailGate = Completer();
+      final container = await openSession();
+      await selection(container).selectPersonal();
+
+      final added = addOfflineChantsToSelection(container.read, _mantra, 5);
+
+      expect(added, isFalse);
+      expect(personalTotal(container), 0);
+
+      repository.detailGate!.complete(const Right(MalaCount(total: 0)));
+      await settle();
+    },
+  );
+
+  test('a group takes no chant until its server count has loaded', () async {
     final container = await openSession();
-    await selection(container).selectPersonal();
+    await selection(container).selectGroup(_eventAccumulation);
 
-    final added = addOfflineChantsToSelection(container.read, _mantra, 5);
+    // Counted now, it would build on 0 and post a count the server ignores.
+    expect(countChantIntoSelection(container.read, _mantra), isFalse);
+    expect(addOfflineChantsToSelection(container.read, _mantra, 100), isFalse);
+    expect(eventTotal(container), 0);
+    expect(local.readGroup(_userId, _eventAccumulation).total, 0);
 
-    expect(added, isFalse);
-    expect(personalTotal(container), 0);
+    await serverCount(container, _eventAccumulation, 500);
 
-    repository.detailGate!.complete(const Right(MalaCount(total: 0)));
+    expect(countChantIntoSelection(container.read, _mantra), isTrue);
+    expect(addOfflineChantsToSelection(container.read, _mantra, 100), isTrue);
     await settle();
+    expect(eventTotal(container), 601);
+    expect(local.readGroup(_userId, _eventAccumulation).total, 601);
+  });
+
+  test('the server count marks only its own group as loaded', () async {
+    final container = await openSession();
+    final counts = container.read(
+      groupAccumulationCountsProvider(_presetId).notifier,
+    );
+    expect(counts.hasServerCount(_eventAccumulation), isFalse);
+
+    await serverCount(container, _eventAccumulation, 0);
+
+    expect(counts.hasServerCount(_eventAccumulation), isTrue);
+    expect(counts.hasServerCount('ga-other'), isFalse);
   });
 }

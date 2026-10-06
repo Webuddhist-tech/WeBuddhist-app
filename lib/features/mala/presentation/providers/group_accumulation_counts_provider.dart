@@ -48,7 +48,18 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
   /// GET confirms 0.
   final Set<String> _postResetGroupIds = {};
 
+  /// Groups whose session count the server has given this notifier (or that
+  /// were reset to zero here). Until then [countFor] may only know a local
+  /// value that misses the user's chants from other devices.
+  final Set<String> _serverCountIds = {};
+
   bool get isResetting => _isResetting;
+
+  /// True once [groupAccumulatorId]'s session count has come from the server,
+  /// so a chant counted now builds on the real total. The server ignores a
+  /// lower `current_count`, so chants counted on a stale base would be lost.
+  bool hasServerCount(String groupAccumulatorId) =>
+      _serverCountIds.contains(groupAccumulatorId);
 
   Future<void> _init() async {
     _userId = await _currentUserId();
@@ -116,6 +127,8 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
         next[id] = reconciled.total;
         changed = true;
       }
+      // A first server count is news to watchers even at an unchanged total.
+      if (_serverCountIds.add(id)) changed = true;
       if (reconciled.isDirty) hasDirtyTail = true;
     }
 
@@ -227,6 +240,7 @@ class GroupAccumulationCountsNotifier extends StateNotifier<Map<String, int>> {
   /// separately by [MalaSyncManager.resetGroupAccumulator].
   void _markLocalCountResetAfterDelete(String groupAccumulatorId) {
     _postResetGroupIds.add(groupAccumulatorId);
+    _serverCountIds.add(groupAccumulatorId);
     state = {...state, groupAccumulatorId: 0};
   }
 

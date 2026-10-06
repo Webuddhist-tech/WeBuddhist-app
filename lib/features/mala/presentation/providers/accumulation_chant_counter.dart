@@ -13,7 +13,8 @@ typedef ProviderReader = T Function<T>(ProviderListenable<T> provider);
 /// accumulation. Chants already counted stay where they were made.
 ///
 /// Returns false when the target ignored it (personal counter still seeding,
-/// or no signed-in user), so the caller does not tally it.
+/// group count not yet loaded, or no signed-in user), so the caller does not
+/// tally it.
 bool countChantIntoSelection(ProviderReader read, Mantra mantra) {
   final presetId = mantra.presetId;
   final selection = read(malaAccumulationSelectionProvider(presetId));
@@ -27,7 +28,9 @@ bool countChantIntoSelection(ProviderReader read, Mantra mantra) {
       vibrationEnabled: settings.vibrationEnabled,
     );
   } else {
-    total = read(groupAccumulationCountsProvider(presetId).notifier).increment(
+    final counts = read(groupAccumulationCountsProvider(presetId).notifier);
+    if (!counts.hasServerCount(groupAccumulatorId)) return false;
+    total = counts.increment(
       groupAccumulatorId: groupAccumulatorId,
       groups: const [],
       soundEnabled: settings.soundEnabled,
@@ -63,7 +66,9 @@ bool addOfflineChantsToSelection(
   if (groupAccumulatorId == null) {
     return read(malaCounterProvider(mantra).notifier).addCount(count);
   }
-  return read(groupAccumulationCountsProvider(presetId).notifier).addCount(
+  final counts = read(groupAccumulationCountsProvider(presetId).notifier);
+  if (!counts.hasServerCount(groupAccumulatorId)) return false;
+  return counts.addCount(
     groupAccumulatorId: groupAccumulatorId,
     groups: const [],
     count: count,

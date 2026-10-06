@@ -24,7 +24,9 @@ final joinedAccumulatorGroupsProvider = FutureProvider.autoDispose
 /// Per-group user session counts keyed by [AccumulatorGroup.groupAccumulatorId].
 ///
 /// Uses [GroupAccumulatorRepositoryInterface.getGroupAccumulator] →
-/// `GroupAccumulatorDetail.user.totalCount`.
+/// `GroupAccumulatorDetail.user.totalCount`. A group whose detail failed to
+/// load is left out rather than reported as 0: merged, a 0 would replace the
+/// real count and the next chants would be posted below it and dropped.
 final joinedGroupUserCountsProvider = FutureProvider.autoDispose
     .family<Map<String, int>, String>((ref, presetId) async {
       final groups = await ref.watch(
@@ -38,12 +40,14 @@ final joinedGroupUserCountsProvider = FutureProvider.autoDispose
           final result = await repository.getGroupAccumulator(
             group.groupAccumulatorId,
           );
-          final count = result.fold(
-            (_) => 0,
-            (detail) => detail.user?.totalCount ?? 0,
+          return result.fold(
+            (_) => null,
+            (detail) => MapEntry(
+              group.groupAccumulatorId,
+              detail.user?.totalCount ?? 0,
+            ),
           );
-          return MapEntry(group.groupAccumulatorId, count);
         }),
       );
-      return Map.fromEntries(entries);
+      return Map.fromEntries(entries.nonNulls);
     });
