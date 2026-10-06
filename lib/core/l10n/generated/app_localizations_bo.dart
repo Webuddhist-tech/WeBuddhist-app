@@ -2258,6 +2258,22 @@ class AppLocalizationsBo extends AppLocalizations {
       'ལེགས་བཤད་སྤེལ་ཐུབ་མ་སོང་། བསྐྱར་དུ་ཚོད་ལྟ་བྱོས།';
 
   @override
+  String verse_comments_title(int count) {
+    return 'Comments · $count';
+  }
+
+  @override
+  String verse_likes_title(int count) {
+    return 'Likes · $count';
+  }
+
+  @override
+  String get verse_like_failed => 'Unable to update like. Please try again';
+
+  @override
+  String get verse_comment_failed => 'Unable to post comment. Please try again';
+
+  @override
   String get share_app_message =>
       'ངས་ཉིན་རེའི་ནང་ཆོས་ཉམས་ལེན་རྒྱུད་ལ་འཇགས་པར་མཉེན་ཆས་འདི་བཀོལ་སྤྱོད་བྱེད་ཀྱི་ཡོད། ཁྱེད་རང་ཡང་འདི་ལ་དགའ་པོ་ཡོང་གི་རེད་བསམ་གྱི་འདུག';
 

@@ -2259,6 +2259,22 @@ class AppLocalizationsNe extends AppLocalizations {
       'उद्धरण साझा गर्न सकिएन। कृपया फेरि प्रयास गर्नुहोस्';
 
   @override
+  String verse_comments_title(int count) {
+    return 'Comments · $count';
+  }
+
+  @override
+  String verse_likes_title(int count) {
+    return 'Likes · $count';
+  }
+
+  @override
+  String get verse_like_failed => 'Unable to update like. Please try again';
+
+  @override
+  String get verse_comment_failed => 'Unable to post comment. Please try again';
+
+  @override
   String get share_app_message =>
       'म यो एप प्रयोग गरेर दैनिक बौद्ध अभ्यास निर्माण गर्दैछु, र मलाई लाग्यो तपाईंलाई पनि यो मन पर्नेछ।';
 

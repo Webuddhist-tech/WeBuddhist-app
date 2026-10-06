@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_local_datasource.dart';
 import 'package:flutter_pecha/features/home/data/datasource/verse_of_day_remote_datasource.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day.dart';
+import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
 import 'package:flutter_pecha/features/home/domain/repositories/home_repository.dart';
 
 class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
@@ -57,6 +58,115 @@ class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
     }
   }
 
+  @override
+  Future<Either<Failure, VerseOfDayLikes>> getLikes(String verseId) async {
+    try {
+      final model = await remote.fetchLikes(verseId);
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to load likes'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> likeVerse(String verseId) async {
+    try {
+      await remote.likeVerse(verseId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to like verse'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> unlikeVerse(String verseId) async {
+    try {
+      await remote.unlikeVerse(verseId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to unlike verse'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, VerseOfDayLikersPage>> getLikers({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final model = await remote.fetchLikers(
+        verseId: verseId,
+        skip: skip,
+        limit: limit,
+      );
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to load likers'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, VerseOfDayCommentsPage>> getComments({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final model = await remote.fetchComments(
+        verseId: verseId,
+        skip: skip,
+        limit: limit,
+      );
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to load comments'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, VerseOfDayComment>> createComment({
+    required String verseId,
+    required String text,
+  }) async {
+    try {
+      final model = await remote.createComment(verseId: verseId, text: text);
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to post comment'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteComment(String commentId) async {
+    try {
+      await remote.deleteComment(commentId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to delete comment'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> likeComment(String commentId) async {
+    try {
+      await remote.likeComment(commentId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to like comment'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> unlikeComment(String commentId) async {
+    try {
+      await remote.unlikeComment(commentId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to unlike comment'));
+    }
+  }
+
   Future<void> _refresh(String language) async {
     final model = await remote.fetchVerseOfDay(language: language);
     await local.saveVerseOfDay(language, model);
@@ -66,6 +176,9 @@ class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
     if (error is ServerException) return ServerFailure(error.message);
     if (error is NetworkException) return NetworkFailure(error.message);
     if (error is NotFoundException) return NotFoundFailure(error.message);
+    if (error is AuthenticationException) {
+      return AuthenticationFailure(error.message);
+    }
     if (error is RateLimitException) return RateLimitFailure(error.message);
     return UnknownFailure('$fallback: $error');
   }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/home/data/models/verse_of_day_engagement_model.dart';
 import 'package:flutter_pecha/features/home/data/models/verse_of_day_model.dart';
 
 /// Remote source for [GET /verse-of-day/today](https://api.webuddhist.com/api/v1/doc#/Verse%20of%20Day/get_verse_of_day_today_endpoint_verse_of_day_today_get).
@@ -34,6 +35,167 @@ class VerseOfDayRemoteDatasource {
       throw _dioToException(e, 'Failed to load verse of day');
     }
   }
+
+  Future<VerseOfDayLikesModel> fetchLikes(String verseId) async {
+    try {
+      final response = await dio.get(
+        '/verse-of-day/$verseId/likes',
+        options: Options(extra: {'no_cache': true}),
+      );
+      if (response.statusCode != 200) {
+        throw _statusToException(response.statusCode, 'Failed to load likes');
+      }
+      return VerseOfDayLikesModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchLikes', e);
+      throw _dioToException(e, 'Failed to load likes');
+    }
+  }
+
+  Future<void> likeVerse(String verseId) async {
+    try {
+      final response = await dio.post('/verse-of-day/$verseId/likes');
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(response.statusCode, 'Failed to like verse');
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in likeVerse', e);
+      throw _dioToException(e, 'Failed to like verse');
+    }
+  }
+
+  Future<void> unlikeVerse(String verseId) async {
+    try {
+      final response = await dio.delete('/verse-of-day/$verseId/likes');
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(response.statusCode, 'Failed to unlike verse');
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in unlikeVerse', e);
+      throw _dioToException(e, 'Failed to unlike verse');
+    }
+  }
+
+  Future<VerseOfDayLikersPageModel> fetchLikers({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/verse-of-day/$verseId/likes/users',
+        queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
+      );
+      if (response.statusCode != 200) {
+        throw _statusToException(response.statusCode, 'Failed to load likers');
+      }
+      return VerseOfDayLikersPageModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchLikers', e);
+      throw _dioToException(e, 'Failed to load likers');
+    }
+  }
+
+  Future<VerseOfDayCommentsPageModel> fetchComments({
+    required String verseId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/verse-of-day/$verseId/comments',
+        queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
+      );
+      if (response.statusCode != 200) {
+        throw _statusToException(
+          response.statusCode,
+          'Failed to load comments',
+        );
+      }
+      return VerseOfDayCommentsPageModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchComments', e);
+      throw _dioToException(e, 'Failed to load comments');
+    }
+  }
+
+  Future<VerseOfDayCommentModel> createComment({
+    required String verseId,
+    required String text,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/verse-of-day/$verseId/comments',
+        data: {'text': text},
+      );
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(response.statusCode, 'Failed to post comment');
+      }
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw const ServerException('Failed to parse created comment');
+      }
+      return VerseOfDayCommentModel.fromJson(data);
+    } on DioException catch (e) {
+      _logger.error('Dio error in createComment', e);
+      throw _dioToException(e, 'Failed to post comment');
+    }
+  }
+
+  Future<void> deleteComment(String commentId) async {
+    try {
+      final response = await dio.delete('/verse-of-day/comments/$commentId');
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(
+          response.statusCode,
+          'Failed to delete comment',
+        );
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in deleteComment', e);
+      throw _dioToException(e, 'Failed to delete comment');
+    }
+  }
+
+  Future<void> likeComment(String commentId) async {
+    try {
+      final response = await dio.post(
+        '/verse-of-day/comments/$commentId/likes',
+      );
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(response.statusCode, 'Failed to like comment');
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in likeComment', e);
+      throw _dioToException(e, 'Failed to like comment');
+    }
+  }
+
+  Future<void> unlikeComment(String commentId) async {
+    try {
+      final response = await dio.delete(
+        '/verse-of-day/comments/$commentId/likes',
+      );
+      if (!_isSuccess(response.statusCode)) {
+        throw _statusToException(
+          response.statusCode,
+          'Failed to unlike comment',
+        );
+      }
+    } on DioException catch (e) {
+      _logger.error('Dio error in unlikeComment', e);
+      throw _dioToException(e, 'Failed to unlike comment');
+    }
+  }
+
+  bool _isSuccess(int? statusCode) =>
+      statusCode == 200 || statusCode == 201 || statusCode == 204;
 
   Exception _statusToException(int? statusCode, String label) {
     if (statusCode == 401) {

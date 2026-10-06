@@ -2253,6 +2253,22 @@ class AppLocalizationsMn extends AppLocalizations {
       'Ишлэлийг хуваалцах боломжгүй. Дахин оролдоно уу';
 
   @override
+  String verse_comments_title(int count) {
+    return 'Comments · $count';
+  }
+
+  @override
+  String verse_likes_title(int count) {
+    return 'Likes · $count';
+  }
+
+  @override
+  String get verse_like_failed => 'Unable to update like. Please try again';
+
+  @override
+  String get verse_comment_failed => 'Unable to post comment. Please try again';
+
+  @override
   String get share_app_message =>
       'Би өдөр тутмын Буддын дадлага хийхийн тулд энэ аппыг ашиглаж байна, та ч дуртай болно гэж бодлоо.';
 

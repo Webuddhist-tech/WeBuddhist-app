@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day.dart';
+import 'package:flutter_pecha/features/home/presentation/widgets/verse_comments_sheet.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_content.dart';
+import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_engagement_bar.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_share_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -46,31 +49,49 @@ class _VerseOfDayCardState extends ConsumerState<VerseOfDayCard> {
           typography: typography,
           useContentFontForAttribution: typography.useContentFontForAttribution,
           verseColor: colorScheme.onSurface,
-          attributionColor: colorScheme.onSurfaceVariant,
-          footerAction: GestureDetector(
-            key: _shareIconKey,
-            onTap: _isSharing ? null : _onShareTap,
-            behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              width: 32,
-              height: 32,
-              child:
-                  _isSharing
-                      ? Center(
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.onSurfaceVariant,
+          attributionColor:
+              colorScheme.brightness == Brightness.dark
+                  ? AppColors.accentGold
+                  : AppColors.accentGoldDark,
+          sourceColor:
+              colorScheme.brightness == Brightness.dark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
+          textAlign: TextAlign.start,
+          attributionSpacing: 16,
+          textPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          footer: VerseOfDayEngagementBar(
+            verseId: widget.verseOfDay.id,
+            onCommentTap:
+                () => VerseCommentsSheet.show(
+                  context,
+                  verseId: widget.verseOfDay.id,
+                ),
+            trailing: GestureDetector(
+              key: _shareIconKey,
+              onTap: _isSharing ? null : _onShareTap,
+              behavior: HitTestBehavior.opaque,
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child:
+                    _isSharing
+                        ? Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
+                        )
+                        : Icon(
+                          AppAssets.readerShare,
+                          color: colorScheme.onSurfaceVariant,
+                          size: 22,
                         ),
-                      )
-                      : Icon(
-                        AppAssets.readerShare,
-                        color: colorScheme.onSurfaceVariant,
-                        size: 22,
-                      ),
+              ),
             ),
           ),
         ),

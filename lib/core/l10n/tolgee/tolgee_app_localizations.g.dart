@@ -4391,6 +4391,36 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String verse_comments_title(int count) => TolgeeBridge.format(
+    localeName,
+    'verse_comments_title',
+    <String, Object>{'count': count},
+    () => _fallback.verse_comments_title(count),
+  );
+
+  @override
+  String verse_likes_title(int count) => TolgeeBridge.format(
+    localeName,
+    'verse_likes_title',
+    <String, Object>{'count': count},
+    () => _fallback.verse_likes_title(count),
+  );
+
+  @override
+  String get verse_like_failed => TolgeeBridge.get(
+    localeName,
+    'verse_like_failed',
+    () => _fallback.verse_like_failed,
+  );
+
+  @override
+  String get verse_comment_failed => TolgeeBridge.get(
+    localeName,
+    'verse_comment_failed',
+    () => _fallback.verse_comment_failed,
+  );
+
+  @override
   String get share_app_message => TolgeeBridge.get(
     localeName,
     'share_app_message',

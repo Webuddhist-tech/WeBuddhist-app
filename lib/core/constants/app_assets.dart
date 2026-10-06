@@ -168,6 +168,7 @@ class AppAssets {
   static const IconData usersThree = PhosphorIconsRegular.usersThree;
   static const IconData usercard = PhosphorIconsRegular.users;
   static const IconData bookOpenText = PhosphorIconsRegular.bookOpenText;
+  static const IconData bookOpen = PhosphorIconsRegular.bookOpen;
   static const IconData calendarDots = PhosphorIconsRegular.calendarDots;
   static const IconData mapPin = PhosphorIconsRegular.mapPin;
   static const IconData videoCamera = PhosphorIconsRegular.videoCamera;
