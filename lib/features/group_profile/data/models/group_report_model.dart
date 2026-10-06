@@ -59,37 +59,46 @@ class GroupReportModel {
 
 class GroupReportsPageModel {
   final List<GroupReportModel> reports;
+
+  /// Reports on the wire, counting those dropped for an unknown kind.
+  final int received;
   final int skip;
   final int limit;
   final int total;
 
   GroupReportsPageModel({
     required this.reports,
+    required this.received,
     required this.skip,
     required this.limit,
     required this.total,
   });
 
   factory GroupReportsPageModel.fromJson(Map<String, dynamic> json) {
-    final reports =
+    final raw =
         (json['reports'] as List<dynamic>?)
             ?.whereType<Map<String, dynamic>>()
+            .toList() ??
+        const <Map<String, dynamic>>[];
+    final reports =
+        raw
             .map(GroupReportModel.fromJson)
             .whereType<GroupReportModel>()
-            .toList() ??
-        const <GroupReportModel>[];
+            .toList();
 
     return GroupReportsPageModel(
       reports: reports,
+      received: raw.length,
       skip: (json['skip'] as num?)?.toInt() ?? 0,
       limit: (json['limit'] as num?)?.toInt() ?? 0,
-      total: (json['total'] as num?)?.toInt() ?? reports.length,
+      total: (json['total'] as num?)?.toInt() ?? raw.length,
     );
   }
 
   GroupReportsPage toEntity() {
     return GroupReportsPage(
       reports: reports.map((report) => report.toEntity()).toList(),
+      received: received,
       skip: skip,
       limit: limit,
       total: total,

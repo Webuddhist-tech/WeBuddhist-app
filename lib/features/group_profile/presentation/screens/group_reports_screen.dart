@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_report_reason_label.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -627,7 +628,9 @@ class _CardActionButton extends StatelessWidget {
       onPressed: onPressed,
       style: TextButton.styleFrom(
         foregroundColor: color,
-        disabledForegroundColor: color,
+        // View and delete are not wired up yet. Dimmed so an admin can tell
+        // the button is inert instead of tapping a control that does nothing.
+        disabledForegroundColor: color.withValues(alpha: 0.38),
       ),
       child: Text(
         label,
@@ -709,7 +712,12 @@ class _ReporterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final name = report.reporter?.displayName ?? '';
-    final description = report.description;
+    // Reports made off a fixed reason carry no description, and the reason is
+    // then the only word on why this was filed.
+    final detail =
+        report.description.isNotEmpty
+            ? report.description
+            : groupReportReasonLabel(context.l10n, report.reason);
 
     return Padding(
       padding: const EdgeInsets.only(left: 8, bottom: 12),
@@ -732,10 +740,10 @@ class _ReporterRow extends StatelessWidget {
                   createdAt: report.createdAt,
                   isDark: isDark,
                 ),
-                if (description.isNotEmpty) ...[
+                if (detail.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    description,
+                    detail,
                     strutStyle: context.tibetanStrutStyle(13, compact: true),
                     style: TextStyle(
                       fontSize: 13,

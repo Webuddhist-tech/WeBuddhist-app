@@ -81,6 +81,7 @@ GroupReport _report(
   String? messageId,
   required String reporter,
   required String description,
+  String reason = '',
   required String content,
 }) {
   return GroupReport(
@@ -89,6 +90,7 @@ GroupReport _report(
     postId: postId,
     commentId: commentId,
     messageId: messageId,
+    reason: reason,
     description: description,
     contentText: content,
     reporter: GroupReportUser(id: 'u-$id', firstname: reporter),
@@ -182,6 +184,47 @@ void main() {
     expect(find.text('Thank you for moving it'), findsNothing);
     expect(find.text('Comments'), findsNothing);
     expect(find.text('You do not belong here.'), findsOneWidget);
+  });
+
+  testWidgets('falls back to the reason when no description was written', (
+    tester,
+  ) async {
+    final repository = _FakeRepository([
+      _report(
+        'r1',
+        kind: GroupReportKind.chatMessage,
+        messageId: 'm1',
+        reporter: 'Pema',
+        reason: 'HARASSMENT',
+        description: '',
+        content: 'You do not belong here.',
+      ),
+    ]);
+    await _pumpScreen(tester, repository);
+
+    await tester.tap(find.text('1 report'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Harassment or bullying'), findsOneWidget);
+  });
+
+  testWidgets('the deferred card actions read as disabled', (tester) async {
+    final repository = _FakeRepository(_sampleReports());
+    await _pumpScreen(tester, repository);
+
+    final button = tester.widget<TextButton>(
+      find.ancestor(
+        of: find.text('Delete comment'),
+        matching: find.byType(TextButton),
+      ),
+    );
+    final foreground = button.style!.foregroundColor!;
+
+    expect(button.onPressed, isNull);
+    expect(
+      foreground.resolve({WidgetState.disabled})!.a,
+      lessThan(foreground.resolve({})!.a),
+    );
   });
 
   testWidgets('draws a divider only between different subsections', (
