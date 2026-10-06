@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -23,6 +25,9 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   final List<bool?> resolvedFilters = [];
   final List<String> resolvedReportIds = [];
 
+  /// When set, [resolveGroupReport] waits on it before recording the id.
+  Future<void>? pendingResolve;
+
   @override
   Future<Either<Failure, GroupReportsPage>> getGroupReports(
     String groupId, {
@@ -47,6 +52,8 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
     String groupId, {
     required String reportId,
   }) async {
+    final pending = pendingResolve;
+    if (pending != null) await pending;
     resolvedReportIds.add(reportId);
     reports = [
       for (final report in reports)
@@ -183,6 +190,40 @@ void main() {
     expect(repository.resolvedFilters.length, greaterThan(loadsBefore));
     expect(find.text('Thank you for moving it'), findsNothing);
     expect(find.text('Comments'), findsNothing);
+    expect(find.text('You do not belong here.'), findsOneWidget);
+  });
+
+  testWidgets('a second dismiss is ignored while the first is resolving', (
+    tester,
+  ) async {
+    final repository = _FakeRepository(_sampleReports());
+    final gate = Completer<void>();
+    repository.pendingResolve = gate.future;
+    await _pumpScreen(tester, repository);
+
+    final dismiss = tester
+        .widgetList<IconButton>(
+          find.widgetWithIcon(IconButton, AppAssets.x),
+        )
+        .toList();
+    expect(dismiss, hasLength(2));
+
+    dismiss[0].onPressed!();
+    dismiss[1].onPressed!();
+    await tester.pump();
+
+    expect(find.text('Something went wrong. Please try again'), findsNothing);
+    for (final button in tester.widgetList<IconButton>(
+      find.widgetWithIcon(IconButton, AppAssets.x),
+    )) {
+      expect(button.onPressed, isNull);
+    }
+
+    gate.complete();
+    await tester.pumpAndSettle();
+
+    expect(repository.resolvedReportIds, unorderedEquals(['r1', 'r3']));
+    expect(find.text('Something went wrong. Please try again'), findsNothing);
     expect(find.text('You do not belong here.'), findsOneWidget);
   });
 

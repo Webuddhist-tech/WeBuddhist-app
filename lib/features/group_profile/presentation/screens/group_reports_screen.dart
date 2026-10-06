@@ -52,8 +52,12 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
   }
 
   Future<void> _resolve(GroupReportedItem item) async {
+    // One resolve reloads the queue. A second tap before that finishes is
+    // ignored: the notifier would return false without trying the request,
+    // and the screen would show an error for an item it never sent.
+    if (_resolvingItemKeys.isNotEmpty) return;
     final key = _itemKey(item);
-    if (!_resolvingItemKeys.add(key)) return;
+    _resolvingItemKeys.add(key);
     setState(() {});
 
     final resolved = await ref
@@ -213,9 +217,7 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
             isExpanded: _expandedItemKeys.contains(_itemKey(item)),
             onToggleExpanded: () => _toggleExpanded(item),
             onDismiss:
-                _resolvingItemKeys.contains(_itemKey(item))
-                    ? null
-                    : () => _resolve(item),
+                _resolvingItemKeys.isNotEmpty ? null : () => _resolve(item),
           ),
         );
       }
@@ -315,7 +317,7 @@ class _ReportedItemTile extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onToggleExpanded;
 
-  /// Resolves the item's reports; null while that is in flight.
+  /// Resolves the item's reports; null while any item is resolving.
   final VoidCallback? onDismiss;
 
   const _ReportedItemTile({
