@@ -50,7 +50,7 @@ class _MembersRepository extends Fake
     implements GroupProfileRepositoryInterface {
   _MembersRepository(this.members);
 
-  final List<GroupMember> members;
+  List<GroupMember> members;
   final List<int> memberSkips = [];
 
   @override
@@ -167,6 +167,25 @@ void main() {
     expect(repository.resolvedReportIds, unorderedEquals(['r1', 'r2']));
   });
 
+  test('dismissing an item does not page through a long queue', () async {
+    final repository = _LongQueueRepository();
+    final notifier = GroupReportsNotifier(
+      repository: repository,
+      groupId: 'g1',
+    );
+
+    await notifier.loadInitial();
+    final item = notifier.state.items.single;
+    expect(await notifier.resolveItem(item), isTrue);
+
+    // Initial page, a bounded look ahead, then the reload. Not one request
+    // per 20 reports of the 5000 still on the server.
+    expect(repository.skips, isNot(contains(40)));
+    expect(repository.skips.length, lessThanOrEqualTo(6));
+    expect(repository.resolvedReportIds, contains('r1'));
+    expect(repository.resolvedReportIds, contains('r-later-20'));
+  });
+
   test('an id the member list does not hold is looked for once', () async {
     final repository = _MembersRepository(const [
       GroupMember(userId: 'm1', username: 'mei', fullname: 'Mei Lin'),
@@ -191,4 +210,77 @@ void main() {
 
     expect(repository.memberSkips, [0]);
   });
+
+  test('a rejoined member is looked up after membership changes', () async {
+    final repository = _MembersRepository(const [
+      GroupMember(userId: 'm1', username: 'mei', fullname: 'Mei Lin'),
+    ]);
+    final cache = GroupMemberAvatarCache();
+
+    final first = GroupReportAvatarsNotifier(
+      repository: repository,
+      groupId: 'g1',
+      cache: cache,
+    );
+    await first.resolve({'back'});
+    expect(cache.absent, contains('back'));
+    expect(repository.memberSkips, [0]);
+
+    repository.members = const [
+      GroupMember(
+        userId: 'back',
+        username: 'mei',
+        fullname: 'Mei Lin',
+        avatarUrl: 'https://example.com/mei.png',
+      ),
+    ];
+    expect(cache.syncMembershipEpoch(1), isTrue);
+
+    final second = GroupReportAvatarsNotifier(
+      repository: repository,
+      groupId: 'g1',
+      cache: cache,
+    );
+    await second.resolve({'back'});
+
+    expect(second.state['back'], 'https://example.com/mei.png');
+    expect(repository.memberSkips, [0, 0]);
+  });
+}
+
+/// A queue of 5000 whose every page carries one more report on comment c1.
+class _LongQueueRepository extends Fake
+    implements GroupProfileRepositoryInterface {
+  final List<int> skips = [];
+  final List<String> resolvedReportIds = [];
+
+  @override
+  Future<Either<Failure, GroupReportsPage>> getGroupReports(
+    String groupId, {
+    GroupReportKind? kind,
+    bool? resolved,
+    required int skip,
+    required int limit,
+  }) async {
+    skips.add(skip);
+    final id = skip == 0 ? 'r1' : 'r-later-$skip';
+    return Right(
+      GroupReportsPage(
+        reports: [_report(id)],
+        received: limit,
+        skip: skip,
+        limit: limit,
+        total: 5000,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> resolveGroupReport(
+    String groupId, {
+    required String reportId,
+  }) async {
+    resolvedReportIds.add(reportId);
+    return const Right(null);
+  }
 }

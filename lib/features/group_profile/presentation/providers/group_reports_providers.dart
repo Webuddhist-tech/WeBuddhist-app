@@ -59,6 +59,13 @@ class GroupReportsState {
   }
 }
 
+class _ItemReportScan {
+  final List<GroupReport> reports;
+  final bool failed;
+
+  const _ItemReportScan({required this.reports, required this.failed});
+}
+
 /// The unresolved moderation queue of one group, for its admins.
 class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   GroupReportsNotifier({
@@ -71,7 +78,14 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
   static const int _limit = 20;
+
+  /// How far past the loaded queue one dismiss reads, looking for more
+  /// reports against the same item. A few larger pages, not the rest of a
+  /// long queue twenty reports at a time.
+  static const int _resolveScanLimit = 100;
+  static const int _resolveScanMaxPages = 4;
   int _requestGeneration = 0;
+  bool _resolving = false;
 
   /// What the next page asks the server to skip. Counted from what the pages
   /// held on the wire, not from the reports kept: a dropped kind still took
@@ -80,7 +94,7 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   int _serverOffset = 0;
 
   Future<void> loadInitial() async {
-    if (state.isLoading) return;
+    if (_resolving || state.isLoading) return;
 
     final generation = ++_requestGeneration;
     state = state.copyWith(
@@ -121,7 +135,12 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (_resolving ||
+        state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading) {
+      return;
+    }
 
     final generation = _requestGeneration;
     state = state.copyWith(isLoadingMore: true, clearError: true);
@@ -152,70 +171,115 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
     );
   }
 
-  /// Loads the pages still to come, so every report against an item is known
-  /// before it is resolved. Gives up on a failure or on a page that does not
-  /// move the offset, rather than asking again for what it already has.
-  Future<void> _loadRemaining() async {
-    while (mounted && state.hasMore) {
-      final offsetBefore = _serverOffset;
-      await loadMore();
-      if (!mounted || state.error != null) return;
-      if (_serverOffset == offsetBefore) return;
-    }
+  bool _sameTarget(GroupReport report, GroupReportedItem item) {
+    return report.kind == item.kind && report.targetId == item.targetId;
   }
 
-  /// Resolves every report filed against [item], then reloads the queue.
-  /// Returns false when any of them could not be resolved.
+  /// Reports against [item] from the loaded queue, plus a bounded look ahead.
   ///
-  /// Reports against the same content can sit on pages not loaded yet, so the
-  /// rest of the queue is pulled in first; resolving only what is on screen
-  /// would bring the item straight back on the reload.
-  Future<bool> resolveItem(GroupReportedItem item) async {
-    await _loadRemaining();
-    if (!mounted) return false;
-
-    final reports = [
+  /// Later pages can hold more reports on the same post, comment, or message.
+  /// Those are collected here and resolved with the ones already on screen.
+  /// The look ahead stops after [_resolveScanMaxPages], at the end of the
+  /// queue, or when a page does not move the offset. A failed page request
+  /// still returns the matches already found.
+  Future<_ItemReportScan?> _reportsForItem(
+    GroupReportedItem item,
+    int generation,
+  ) async {
+    final reports = <GroupReport>[
       for (final report in state.reports)
-        if (report.kind == item.kind && report.targetId == item.targetId)
-          report,
+        if (_sameTarget(report, item)) report,
     ];
-    // Nothing of the item is on the queue any more; the reload below says so.
-    if (reports.isEmpty) {
-      state = state.copyWith(isLoading: false, isLoadingMore: false);
-      await loadInitial();
-      return true;
-    }
+    final seen = <String>{for (final report in reports) report.id};
 
-    final results = await Future.wait([
-      for (final report in reports)
-        _repository.resolveGroupReport(_groupId, reportId: report.id),
-    ]);
-    if (!mounted) return false;
+    var skip = _serverOffset;
+    var total = state.total;
+    var hasMore = state.hasMore;
+    var pages = 0;
 
-    final resolvedIds = <String>{
-      for (var i = 0; i < reports.length; i++)
-        if (results[i].isRight()) reports[i].id,
-    };
-    if (resolvedIds.isNotEmpty) {
-      final remaining = [
-        for (final report in state.reports)
-          if (!resolvedIds.contains(report.id)) report,
-      ];
-      state = state.copyWith(
-        reports: remaining,
-        total: (state.total - (state.reports.length - remaining.length)).clamp(
-          0,
-          state.total,
-        ),
+    while (hasMore && pages < _resolveScanMaxPages) {
+      final result = await _repository.getGroupReports(
+        _groupId,
+        resolved: false,
+        skip: skip,
+        limit: _resolveScanLimit,
       );
+      if (!mounted || generation != _requestGeneration) return null;
+
+      final page = result.fold<GroupReportsPage?>((_) => null, (page) => page);
+      if (page == null) {
+        return _ItemReportScan(reports: reports, failed: true);
+      }
+
+      pages++;
+      for (final report in page.reports) {
+        if (_sameTarget(report, item) && seen.add(report.id)) {
+          reports.add(report);
+        }
+      }
+      if (page.received == 0) break;
+      skip += page.received;
+      total = page.total;
+      hasMore = skip < total;
     }
+    return _ItemReportScan(reports: reports, failed: false);
+  }
 
-    // A load already in flight predates the resolution; let the reload
-    // below supersede it instead of being skipped by its guard.
-    state = state.copyWith(isLoading: false, isLoadingMore: false);
-    await loadInitial();
+  /// Resolves every report filed against [item] that is already loaded or
+  /// found in the bounded look ahead, then reloads the queue. Returns false
+  /// when any of them could not be resolved or the look ahead failed.
+  Future<bool> resolveItem(GroupReportedItem item) async {
+    if (_resolving) return false;
+    _resolving = true;
+    final generation = ++_requestGeneration;
 
-    return resolvedIds.length == reports.length;
+    try {
+      final scan = await _reportsForItem(item, generation);
+      if (!mounted || generation != _requestGeneration || scan == null) {
+        return false;
+      }
+
+      final reports = scan.reports;
+      // Nothing of the item is on the queue any more; the reload below says so.
+      if (reports.isEmpty) {
+        state = state.copyWith(isLoading: false, isLoadingMore: false);
+        _resolving = false;
+        await loadInitial();
+        return !scan.failed;
+      }
+
+      final results = await Future.wait([
+        for (final report in reports)
+          _repository.resolveGroupReport(_groupId, reportId: report.id),
+      ]);
+      if (!mounted || generation != _requestGeneration) return false;
+
+      final resolvedIds = <String>{
+        for (var i = 0; i < reports.length; i++)
+          if (results[i].isRight()) reports[i].id,
+      };
+      if (resolvedIds.isNotEmpty) {
+        final remaining = [
+          for (final report in state.reports)
+            if (!resolvedIds.contains(report.id)) report,
+        ];
+        state = state.copyWith(
+          reports: remaining,
+          total: (state.total - (state.reports.length - remaining.length))
+              .clamp(0, state.total),
+        );
+      }
+
+      // A load already in flight predates the resolution; let the reload
+      // below supersede it instead of being skipped by its guard.
+      state = state.copyWith(isLoading: false, isLoadingMore: false);
+      _resolving = false;
+      await loadInitial();
+
+      return !scan.failed && resolvedIds.length == reports.length;
+    } finally {
+      _resolving = false;
+    }
   }
 
   void retry() {
@@ -261,15 +325,33 @@ Set<String> reportUserIds(Iterable<GroupReport> reports) {
 
 /// What paging the member list of one group has already established, kept
 /// past the reports screen so reopening the queue does not scan the whole
-/// list again for ids it has been shown not to hold.
+/// list again for ids it has been shown not to hold. Absences are dropped
+/// when [membershipEpoch] moves on, so a reporter who rejoins is looked up
+/// again.
 class GroupMemberAvatarCache {
   /// Avatar urls found so far, keyed by user id.
   final Map<String, String> avatars = {};
 
   /// Ids a complete pass over the member list did not contain — a reporter
-  /// who has since left, say. An id here is never looked for again, so one
-  /// who rejoins keeps the fallback initial until the app restarts.
+  /// who has since left, say. Cleared when membership changes.
   final Set<String> absent = {};
+
+  /// [groupMembershipEpochProvider] value [absent] was last synced to.
+  int membershipEpoch = 0;
+
+  /// Bumped when [absent] is cleared, so a member scan already in flight
+  /// does not write those ids back.
+  int absenceGeneration = 0;
+
+  /// Returns true when [epoch] is newer and remembered absences were dropped.
+  bool syncMembershipEpoch(int epoch) {
+    if (epoch == membershipEpoch) return false;
+    membershipEpoch = epoch;
+    if (absent.isEmpty) return false;
+    absent.clear();
+    absenceGeneration++;
+    return true;
+  }
 }
 
 final groupMemberAvatarCacheProvider =
@@ -334,12 +416,21 @@ class GroupReportAvatarsNotifier extends StateNotifier<Map<String, String>> {
         _exhausted = false;
       }
 
+      final generation = _cache.absenceGeneration;
       final result = await _repository.getGroupMembers(
         _groupId,
         skip: _nextSkip,
         limit: _pageSize,
       );
       if (!mounted) return;
+      // Membership changed while this page was in flight. Drop the pass so
+      // its absences are not written back, and start the next pass at the
+      // top — the person who just joined may sit on an earlier page.
+      if (generation != _cache.absenceGeneration) {
+        _nextSkip = 0;
+        _exhausted = false;
+        return;
+      }
 
       final page = result.fold<GroupMembersPage?>((_) => null, (page) => page);
       // A failed page leaves the ids unseen, so the next queue refresh
@@ -369,20 +460,27 @@ class GroupReportAvatarsNotifier extends StateNotifier<Map<String, String>> {
   }
 }
 
-final groupReportAvatarsProvider = StateNotifierProvider.autoDispose
-    .family<GroupReportAvatarsNotifier, Map<String, String>, String>((
-      ref,
-      groupId,
-    ) {
-      final notifier = GroupReportAvatarsNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
-        groupId: groupId,
-        cache: ref.watch(groupMemberAvatarCacheProvider(groupId)),
-      );
-      ref.listen(
-        groupReportsProvider(groupId).select((state) => state.reports),
-        (_, reports) => notifier.resolve(reportUserIds(reports)),
-        fireImmediately: true,
-      );
-      return notifier;
-    });
+final groupReportAvatarsProvider = StateNotifierProvider.autoDispose.family<
+  GroupReportAvatarsNotifier,
+  Map<String, String>,
+  String
+>((ref, groupId) {
+  final cache = ref.watch(groupMemberAvatarCacheProvider(groupId));
+  final notifier = GroupReportAvatarsNotifier(
+    repository: ref.watch(groupProfileRepositoryProvider),
+    groupId: groupId,
+    cache: cache,
+  );
+  cache.syncMembershipEpoch(ref.read(groupMembershipEpochProvider(groupId)));
+  ref.listen(groupMembershipEpochProvider(groupId), (previous, next) {
+    if (cache.syncMembershipEpoch(next)) {
+      notifier.resolve(const {});
+    }
+  });
+  ref.listen(
+    groupReportsProvider(groupId).select((state) => state.reports),
+    (_, reports) => notifier.resolve(reportUserIds(reports)),
+    fireImmediately: true,
+  );
+  return notifier;
+});
