@@ -261,10 +261,17 @@ class VerseOfDayCommentsNotifier
   /// Deleted here; a reply that started before the delete may still list them.
   final Set<String> _deletedCommentIds = {};
 
+  /// A refresh asked for while an older page was loading; runs once it lands.
+  bool _refreshPending = false;
+
   /// Loads the first page. When comments are already shown this is a refresh:
   /// the first page replaces the list and pagination starts over.
   Future<void> loadInitial() async {
-    if (state.isLoading || state.isLoadingMore) return;
+    if (state.isLoading) return;
+    if (state.isLoadingMore) {
+      _refreshPending = true;
+      return;
+    }
 
     final shownBefore = state.comments.map((comment) => comment.id).toSet();
     state = state.copyWith(isLoading: true, clearError: true);
@@ -305,13 +312,15 @@ class VerseOfDayCommentsNotifier
                   ? current[comment.id] ?? comment
                   : comment,
         ];
+        // Comments deleted after the server built this reply are gone now.
+        final deleted = page.comments.length - comments.length;
         state = state.copyWith(
           comments: [...posted, ...comments],
           isLoading: false,
           hasLoaded: true,
           hasMore: page.hasMore,
-          skip: page.comments.length + posted.length,
-          total: page.total + posted.length,
+          skip: comments.length + posted.length,
+          total: page.total - deleted + posted.length,
           clearError: true,
         );
       },
@@ -349,6 +358,11 @@ class VerseOfDayCommentsNotifier
         );
       },
     );
+
+    if (_refreshPending) {
+      _refreshPending = false;
+      loadInitial();
+    }
   }
 
   /// Returns the failure message, or null when the comment was posted.

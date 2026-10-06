@@ -235,8 +235,62 @@ void main() {
       await refresh;
 
       expect(sub.read().comments.map((c) => c.id), ['new', 'c', 'a']);
+      // The deleted comment is not counted and the next page starts after
+      // the three comments the server still has.
+      expect(sub.read().total, 3);
+      expect(sub.read().skip, 3);
     },
   );
+
+  test('refresh asked for during an older-page load runs after it', () async {
+    final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayCommentsProvider('v1').notifier);
+    repo.commentsReply.complete(
+      Right(
+        VerseOfDayCommentsPage(
+          comments: [_comment('a')],
+          skip: 0,
+          limit: 1,
+          total: 2,
+        ),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    final olderPage = Completer<Either<Failure, VerseOfDayCommentsPage>>();
+    repo.commentsReply = olderPage;
+    final loadingMore = notifier.loadMore();
+    await notifier.loadInitial();
+
+    final refreshReply = Completer<Either<Failure, VerseOfDayCommentsPage>>();
+    repo.commentsReply = refreshReply;
+    olderPage.complete(
+      Right(
+        VerseOfDayCommentsPage(
+          comments: [_comment('b')],
+          skip: 1,
+          limit: 1,
+          total: 2,
+        ),
+      ),
+    );
+    await loadingMore;
+    expect(sub.read().isLoading, isTrue);
+
+    refreshReply.complete(
+      Right(
+        VerseOfDayCommentsPage(
+          comments: [_comment('n'), _comment('a'), _comment('b')],
+          skip: 0,
+          limit: 20,
+          total: 3,
+        ),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(sub.read().comments.map((c) => c.id), ['n', 'a', 'b']);
+    expect(sub.read().total, 3);
+  });
 
   test('comment posted during the first load survives its reply', () async {
     final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
