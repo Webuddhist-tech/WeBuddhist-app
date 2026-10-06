@@ -99,7 +99,9 @@ class BookmarkCard extends StatelessWidget {
   /// when the group deleted the collection), otherwise the plan/series schedule.
   String? _secondaryLabel(BuildContext context) {
     if (bookmark.type == BookmarkItemType.groupAccumulator) {
-      return bookmark.isOrphaned ? 'No longer available' : null;
+      return bookmark.isOrphaned
+          ? context.l10n.my_recitation_collection_unavailable
+          : null;
     }
     if (bookmark.type == BookmarkItemType.groupRecitationCollection ||
         bookmark.type == BookmarkItemType.recitationCollection) {

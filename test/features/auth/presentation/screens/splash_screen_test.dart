@@ -1,29 +1,30 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_taglines.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('randomSplashTagline picks from the tagline list', () {
-    final seen = <String>{};
+  test('randomSplashTaglineIndex picks from the tagline list', () {
+    final seen = <int>{};
     for (var i = 0; i < 200; i++) {
-      seen.add(randomSplashTagline(Random(i)));
+      seen.add(randomSplashTaglineIndex(Random(i)));
     }
-    expect(seen, isNotEmpty);
-    expect(splashTaglines, containsAll(seen));
+    expect(seen, everyElement(inInclusiveRange(0, splashTaglines.length - 1)));
     expect(seen.length, greaterThan(1));
   });
 
   testWidgets('shows logo and a tagline, animating in', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: SplashScreen(tagline: 'We Buddhists learn daily.'),
+        home: SplashScreen(tagline: 'We Buddhists learn daily'),
       ),
     );
 
-    final text = find.text('We Buddhists learn daily.');
+    final text = find.text('We Buddhists learn daily');
     expect(text, findsOneWidget);
     expect(find.byType(Image), findsOneWidget);
 
@@ -41,9 +42,20 @@ void main() {
   testWidgets('picks a tagline from the list when none is given', (
     tester,
   ) async {
-    await tester.pumpWidget(const MaterialApp(home: SplashScreen()));
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SplashScreen(),
+      ),
+    );
+    await tester.pump();
+    final l10n = AppLocalizationsEn();
     final text = tester.widget<Text>(find.byType(Text));
-    expect(splashTaglines, contains(text.data));
+    expect(
+      splashTaglines.map((tagline) => tagline(l10n)),
+      contains(text.data),
+    );
     await tester.pump(const Duration(seconds: 2));
   });
 

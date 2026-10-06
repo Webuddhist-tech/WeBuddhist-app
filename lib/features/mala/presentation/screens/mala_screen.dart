@@ -131,7 +131,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                 (either) => either.fold(
                   (failure) => _MalaAppBarScaffold(
                     child: _ErrorView(
-                      message: failure.message,
+                      message: context.l10n.mala_failed_load_catalogue_error,
                       onRetry: () => ref.invalidate(malaCatalogueProvider),
                     ),
                   ),
