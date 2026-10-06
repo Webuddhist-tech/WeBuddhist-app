@@ -127,26 +127,40 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     );
   }
 
+  /// Whether [comment] is [ancestorId] or a reply somewhere under it.
+  bool _isInThread(VerseOfDayComment comment, String ancestorId) {
+    final byId = {
+      for (final c
+          in ref.read(verseOfDayCommentsProvider(widget.verseId)).comments)
+        c.id: c,
+    };
+    final visited = <String>{};
+    VerseOfDayComment? current = comment;
+    while (current != null && visited.add(current.id)) {
+      if (current.id == ancestorId) return true;
+      current = byId[current.parentCommentId];
+    }
+    return false;
+  }
+
   Future<void> _confirmDelete(VerseOfDayComment comment) async {
+    var removesReplyTarget = false;
     final success = await showDestructiveConfirmationDialog(
       context,
       title: context.l10n.connect_comment_delete_title,
       message: context.l10n.connect_comment_delete_message,
-      onConfirmed:
-          () => ref
-              .read(verseOfDayCommentsProvider(widget.verseId).notifier)
-              .deleteComment(comment.id),
+      onConfirmed: () {
+        // Deleting a parent takes its replies, so the target may go with it.
+        final target = _replyTarget;
+        removesReplyTarget = target != null && _isInThread(target, comment.id);
+        return ref
+            .read(verseOfDayCommentsProvider(widget.verseId).notifier)
+            .deleteComment(comment.id);
+      },
     );
 
     if (!mounted) return;
-    // Deleting a parent takes its replies, so the target may be gone too.
-    final target = _replyTarget;
-    if (success == true &&
-        target != null &&
-        !ref
-            .read(verseOfDayCommentsProvider(widget.verseId))
-            .comments
-            .any((c) => c.id == target.id)) {
+    if (success == true && removesReplyTarget) {
       setState(() => _replyTarget = null);
     }
     if (success != false) return;
