@@ -862,5 +862,39 @@ void main() {
       expect(find.text('Day 1 · Session 1'), findsOneWidget);
       expect(find.text('Day 1 · Session 2'), findsOneWidget);
     });
+
+    testWidgets('before the event starts, today keeps its countdown', (
+      tester,
+    ) async {
+      final startsAt = DateTime.now().add(const Duration(hours: 2));
+      await _pumpLiveEventDetails(
+        tester,
+        fetch:
+            () async => Right(
+              GroupEvent(
+                id: 'event-1',
+                groupId: 'group-1',
+                startDate: startsAt,
+              ),
+            ),
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      // Recordings do not pre-empt the countdown; they wait in the menu.
+      expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
+      expect(find.text('Puja starts in'), findsOneWidget);
+      expect(find.byType(GroupEventLivePlayer), findsNothing);
+      expect(replaysTrigger, findsOneWidget);
+
+      await openReplays(tester);
+      await pick(tester, 'Day 1 · Session 2');
+
+      expect(player(tester).videoId, _session2Id);
+      expect(player(tester).isReplay, isTrue);
+      expect(find.byType(GroupEventNotStartedCard), findsNothing);
+      // Nothing live to go back to.
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+    });
   });
 }

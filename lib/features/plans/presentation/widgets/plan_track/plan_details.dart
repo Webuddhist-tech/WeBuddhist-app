@@ -158,6 +158,16 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   int get _todayDayNumber =>
       PlanUtils.daysBetween(widget.startDate, DateTime.now()) + 1;
 
+  /// Whether the selected day's sessions can already have happened: any
+  /// past day, or today once the event's start has passed (or is unknown).
+  bool get _dayHasBegun {
+    final today = _todayDayNumber;
+    if (selectedDay < today) return true;
+    if (selectedDay > today) return false;
+    final start = _liveEvent()?.startDate;
+    return start == null || !DateTime.now().isBefore(start);
+  }
+
   /// The loaded completion status, or null while it is still loading.
   Map<int, bool>? _completionStatus() =>
       ref
@@ -216,10 +226,14 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     final replays =
         live == _LiveStatus.loading ? const <EventReplay>[] : _dayReplays();
     // Live wins while it is on; a recording is then opt-in from the menu.
-    // Once the stream is gone, a past day plays its own first session.
+    // Once the stream is gone, a past day plays its own first session, and
+    // so does today after the event has begun. Before it begins the
+    // countdown keeps the slot; recordings wait in the menu.
     final replay =
         _replay ??
-        (live == _LiveStatus.none && replays.isNotEmpty ? replays.first : null);
+        (live == _LiveStatus.none && replays.isNotEmpty && _dayHasBegun
+            ? replays.first
+            : null);
     // Only the live layout hosts the embedded panel, so a task opened
     // while the stream was still loading stays put even if the request
     // then fails or finds no stream; the plain layout takes over once the

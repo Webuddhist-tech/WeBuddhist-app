@@ -406,7 +406,7 @@ JSON.stringify((function () {
     final videoId = value.metaData.videoId;
     if (value.isReady && videoId.isNotEmpty && videoId != _probedVideoId) {
       _probedVideoId = videoId;
-      _probeIsLive();
+      _probeIsLive(videoId);
     }
     if (_switching &&
         value.isReady &&
@@ -451,7 +451,10 @@ JSON.stringify((function () {
       }
       return;
     }
+    // Forget the old video's live check, including one still in flight: its
+    // answer must not reach the video that is about to play.
     _probedIsLive = null;
+    _probedVideoId = '';
     if (isReady) {
       // load() swaps the stream in place and autoplays it.
       _beginSwitch();
@@ -462,7 +465,6 @@ JSON.stringify((function () {
     setState(() {
       _controller = _createController(widget.videoId);
       _playerGeneration++;
-      _probedVideoId = '';
       _isReady = false;
       _playerState = PlayerState.unknown;
     });
@@ -530,8 +532,9 @@ JSON.stringify((function () {
   }
 
   // YouTube's video data carries an undocumented `isLive`; fall back to the
-  // label when it is absent.
-  Future<void> _probeIsLive() async {
+  // label when it is absent. The answer is for [videoId] and is dropped if
+  // another video took over while it was on its way.
+  Future<void> _probeIsLive(String videoId) async {
     final webView = _controller.value.webViewController;
     if (webView == null) return;
     bool? isLive;
@@ -544,7 +547,7 @@ JSON.stringify((function () {
         isLive = data['isLive'] as bool;
       }
     } catch (_) {}
-    if (!mounted) return;
+    if (!mounted || videoId != _probedVideoId) return;
     setState(() => _probedIsLive = isLive);
     _syncLivePolling();
   }
