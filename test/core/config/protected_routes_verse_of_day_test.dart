@@ -27,6 +27,10 @@ void main() {
     test('verse comments list is optional auth', () {
       expect(ProtectedRoutes.isOptional('/verse-of-day/v1/comments'), isTrue);
       expect(ProtectedRoutes.isProtected('/verse-of-day/v1/comments'), isFalse);
+      expect(
+        ProtectedRoutes.isOptional('/verse-of-day/v1/comments/c1'),
+        isTrue,
+      );
     });
 
     test('users/me/language is protected via /users/me/ prefix', () {

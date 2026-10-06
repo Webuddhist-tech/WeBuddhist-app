@@ -36,8 +36,7 @@ class VerseOfDayTypography {
     );
   }
 
-  /// Home card typography: attribution one step under the verse, in the
-  /// sans system font. Tibetan uses Google Jomolhari for both.
+  /// Home card typography. Tibetan uses Google Jomolhari.
   factory VerseOfDayTypography.forCard(
     String languageCode, {
     double? verseFontSize,
@@ -129,8 +128,9 @@ class VerseOfDayContent extends StatelessWidget {
     required this.verseOfDay,
     required this.typography,
     required this.verseColor,
-    required this.attributionColor,
-    required this.sourceColor,
+    this.attributionColor,
+    this.sourceColor,
+    this.showAttribution = true,
     this.imageAspectRatio = 1.65,
     this.showBranding = false,
     this.useContentFontForAttribution = false,
@@ -144,8 +144,11 @@ class VerseOfDayContent extends StatelessWidget {
   final VerseOfDay verseOfDay;
   final VerseOfDayTypography typography;
   final Color verseColor;
-  final Color attributionColor;
-  final Color sourceColor;
+  final Color? attributionColor;
+  final Color? sourceColor;
+
+  /// Group name and source under the verse; off on the home card.
+  final bool showAttribution;
   final double imageAspectRatio;
   final bool showBranding;
   final bool useContentFontForAttribution;
@@ -154,7 +157,7 @@ class VerseOfDayContent extends StatelessWidget {
   final TextAlign textAlign;
   final double attributionSpacing;
 
-  /// Row rendered under the attribution (likes, comments, share).
+  /// Row rendered under the verse (likes, comments, share).
   final Widget? footer;
 
   @override
@@ -166,6 +169,7 @@ class VerseOfDayContent extends StatelessWidget {
     );
     final hasGroupTitle = verseOfDay.groupTitle.isNotEmpty;
     final hasSource = verseOfDay.source.isNotEmpty;
+    final sourceFontSize = typography.attributionFontSize - 2;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -190,17 +194,13 @@ class VerseOfDayContent extends StatelessWidget {
                 strutStyle: verseStrutStyle,
                 style: typography.verseTextStyle(color: verseColor),
               ),
-              if (hasGroupTitle || hasSource) ...[
+              if (showAttribution && (hasGroupTitle || hasSource)) ...[
                 SizedBox(height: attributionSpacing),
-                // Falls onto two lines when both don't fit side by side.
-                Wrap(
-                  alignment:
+                Column(
+                  crossAxisAlignment:
                       textAlign == TextAlign.center
-                          ? WrapAlignment.center
-                          : WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 12,
-                  runSpacing: 4,
+                          ? CrossAxisAlignment.center
+                          : CrossAxisAlignment.start,
                   children: [
                     if (hasGroupTitle)
                       Text(
@@ -209,19 +209,20 @@ class VerseOfDayContent extends StatelessWidget {
                         ),
                         strutStyle: attributionStrutStyle,
                         style: typography.attributionTextStyle(
-                          color: attributionColor,
+                          color: attributionColor ?? verseColor,
                           useContentFontForAttribution:
                               useContentFontForAttribution,
                         ),
                       ),
+                    if (hasGroupTitle && hasSource) const SizedBox(height: 6),
                     if (hasSource)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             AppAssets.bookOpen,
-                            size: typography.attributionFontSize + 4,
-                            color: sourceColor,
+                            size: sourceFontSize + 4,
+                            color: sourceColor ?? verseColor,
                           ),
                           const SizedBox(width: 6),
                           Flexible(
@@ -230,12 +231,14 @@ class VerseOfDayContent extends StatelessWidget {
                                 verseOfDay.source,
                               ),
                               strutStyle: attributionStrutStyle,
-                              style: typography.attributionTextStyle(
-                                color: sourceColor,
-                                useContentFontForAttribution:
-                                    useContentFontForAttribution,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: typography
+                                  .attributionTextStyle(
+                                    color: sourceColor ?? verseColor,
+                                    useContentFontForAttribution:
+                                        useContentFontForAttribution,
+                                    fontWeight: FontWeight.w400,
+                                  )
+                                  .copyWith(fontSize: sourceFontSize),
                             ),
                           ),
                         ],

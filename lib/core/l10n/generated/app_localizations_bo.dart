@@ -2293,6 +2293,11 @@ class AppLocalizationsBo extends AppLocalizations {
   String get verse_comment_failed => 'Unable to post comment. Please try again';
 
   @override
+  String verse_comment_replying_to(String name) {
+    return 'Replying to $name';
+  }
+
+  @override
   String get share_app_message =>
       'ངས་ཉིན་རེའི་ནང་ཆོས་ཉམས་ལེན་རྒྱུད་ལ་འཇགས་པར་མཉེན་ཆས་འདི་བཀོལ་སྤྱོད་བྱེད་ཀྱི་ཡོད། ཁྱེད་རང་ཡང་འདི་ལ་དགའ་པོ་ཡོང་གི་རེད་བསམ་གྱི་འདུག';
 

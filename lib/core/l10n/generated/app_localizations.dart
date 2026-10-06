@@ -4070,6 +4070,12 @@ abstract class AppLocalizations {
   /// **'Unable to post comment. Please try again'**
   String get verse_comment_failed;
 
+  /// No description provided for @verse_comment_replying_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {name}'**
+  String verse_comment_replying_to(String name);
+
   /// No description provided for @share_app_message.
   ///
   /// In en, this message translates to:
