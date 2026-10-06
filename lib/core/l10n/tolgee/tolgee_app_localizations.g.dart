@@ -5651,6 +5651,41 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_replays => TolgeeBridge.get(
+    localeName,
+    'event_replays',
+    () => _fallback.event_replays,
+  );
+
+  @override
+  String event_replay_session(String day, String session) =>
+      TolgeeBridge.format(localeName, 'event_replay_session', <String, Object>{
+        'day': day,
+        'session': session,
+      }, () => _fallback.event_replay_session(day, session));
+
+  @override
+  String get event_replay_recording => TolgeeBridge.get(
+    localeName,
+    'event_replay_recording',
+    () => _fallback.event_replay_recording,
+  );
+
+  @override
+  String get event_replay_back_to_live => TolgeeBridge.get(
+    localeName,
+    'event_replay_back_to_live',
+    () => _fallback.event_replay_back_to_live,
+  );
+
+  @override
+  String get event_replays_empty => TolgeeBridge.get(
+    localeName,
+    'event_replays_empty',
+    () => _fallback.event_replays_empty,
+  );
+
+  @override
   String get event_puja_starts_in => TolgeeBridge.get(
     localeName,
     'event_puja_starts_in',

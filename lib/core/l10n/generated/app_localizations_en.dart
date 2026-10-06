@@ -2873,6 +2873,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_live_go_live => 'Live';
 
   @override
+  String get event_replays => 'Replays';
+
+  @override
+  String event_replay_session(String day, String session) {
+    return 'Day $day · Session $session';
+  }
+
+  @override
+  String get event_replay_recording => 'Recording';
+
+  @override
+  String get event_replay_back_to_live => 'Back to live';
+
+  @override
+  String get event_replays_empty => 'No recordings yet';
+
+  @override
   String get event_puja_starts_in => 'Puja starts in';
 
   @override

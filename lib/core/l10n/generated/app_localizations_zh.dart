@@ -2744,6 +2744,23 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_live_go_live => '直播中';
 
   @override
+  String get event_replays => '回放';
+
+  @override
+  String event_replay_session(String day, String session) {
+    return '第 $day 天 · 第 $session 場';
+  }
+
+  @override
+  String get event_replay_recording => '錄影';
+
+  @override
+  String get event_replay_back_to_live => '返回直播';
+
+  @override
+  String get event_replays_empty => '尚無錄影';
+
+  @override
   String get event_puja_starts_in => '法會開始於';
 
   @override

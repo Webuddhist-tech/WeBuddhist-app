@@ -20,7 +20,8 @@ class PlanVideoModel {
     return PlanVideoModel(
       id: json['id'] as String,
       url: json['url'] as String,
-      videoId: json['video_id'] as String,
+      // Nullable on the API; EventReplays falls back to parsing the URL.
+      videoId: json['video_id'] as String? ?? '',
       title: json['title'] as String?,
       displayOrder: json['display_order'] as int? ?? 0,
     );

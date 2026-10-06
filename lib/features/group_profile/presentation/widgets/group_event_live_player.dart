@@ -34,8 +34,17 @@ class GroupEventLiveStream {
   });
 }
 
+/// A recording of one of the event's sessions, played in the stream's slot.
+class GroupEventReplay {
+  final String videoId;
+  final String title;
+
+  const GroupEventReplay({required this.videoId, required this.title});
+}
+
 /// Event stream in the selected language; a "not started" card when there is
-/// none, counting down to the event's start.
+/// none, counting down to the event's start. A [replay] takes the slot
+/// instead of either.
 class GroupEventLiveHeader extends ConsumerStatefulWidget {
   final String eventId;
   final String language;
@@ -45,6 +54,9 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
   /// Cover art behind the "not started" card.
   final Widget? notStartedBackground;
 
+  /// Recording to play instead of the live stream.
+  final GroupEventReplay? replay;
+
   const GroupEventLiveHeader({
     super.key,
     required this.eventId,
@@ -52,6 +64,7 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
     required this.audioOnly,
     required this.fallbackTitle,
     this.notStartedBackground,
+    this.replay,
   });
 
   @override
@@ -138,14 +151,27 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     });
 
     final stream = _stream;
+    final replay = widget.replay;
     final fetching = eventAsync.isLoading && !eventAsync.hasValue;
     final startsAt = _startsAt;
+    // Keep asking for the stream link while a replay plays: once it turns
+    // up, the page returns to the live stream on its own.
     _syncRetry(
       waiting: stream == null && !fetching && _inLiveWindow(DateTime.now()),
     );
 
     final Widget child;
-    if (stream != null) {
+    if (replay != null) {
+      child = GroupEventLivePlayer(
+        videoId: replay.videoId,
+        eventId: widget.eventId,
+        groupId: _groupId,
+        isLive: false,
+        isReplay: true,
+        subtitle: replay.title,
+        audioOnly: widget.audioOnly,
+      );
+    } else if (stream != null) {
       child = GroupEventLivePlayer(
         videoId: stream.videoId,
         eventId: widget.eventId,
@@ -253,6 +279,9 @@ class GroupEventLivePlayer extends StatefulWidget {
   /// True while the next language's stream is being fetched.
   final bool isSwitching;
 
+  /// A recording rather than the event's stream: live analytics stay off.
+  final bool isReplay;
+
   const GroupEventLivePlayer({
     super.key,
     required this.videoId,
@@ -262,6 +291,7 @@ class GroupEventLivePlayer extends StatefulWidget {
     required this.isLive,
     required this.subtitle,
     this.isSwitching = false,
+    this.isReplay = false,
   });
 
   @override
@@ -304,7 +334,7 @@ JSON.stringify((function () {
   final _fullscreenTick = ValueNotifier<int>(0);
   bool _fullscreen = false;
   Route<void>? _fullscreenRoute;
-  late final GroupEventLivePlaybackTracker _tracker;
+  late GroupEventLivePlaybackTracker _tracker;
 
   bool get _isLiveStream => _probedIsLive ?? widget.isLive;
 
@@ -317,7 +347,14 @@ JSON.stringify((function () {
   @override
   void initState() {
     super.initState();
-    _tracker = GroupEventLivePlaybackTracker(
+    _tracker = _newTracker();
+    _controller = _createController(widget.videoId);
+    _switchTimeout = Timer(_switchTimeoutDuration, _endSwitch);
+    unawaited(_setAudioSessionActive(true));
+  }
+
+  GroupEventLivePlaybackTracker _newTracker() {
+    return GroupEventLivePlaybackTracker(
       analytics: ProviderScope.containerOf(
         context,
         listen: false,
@@ -325,9 +362,6 @@ JSON.stringify((function () {
       eventId: widget.eventId,
       groupId: widget.groupId,
     );
-    _controller = _createController(widget.videoId);
-    _switchTimeout = Timer(_switchTimeoutDuration, _endSwitch);
-    unawaited(_setAudioSessionActive(true));
   }
 
   // The fullscreen route builds outside this subtree, so nudge it as well.
@@ -386,12 +420,17 @@ JSON.stringify((function () {
       _playerState = value.playerState;
     });
     _syncLivePolling();
-    _tracker.onPlayerState(value.playerState);
+    if (!widget.isReplay) _tracker.onPlayerState(value.playerState);
   }
 
   @override
   void didUpdateWidget(GroupEventLivePlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.isReplay != oldWidget.isReplay) {
+      // Live time stops at the replay; the stream counts anew on return.
+      _tracker.end();
+      if (!widget.isReplay) _tracker = _newTracker();
+    }
     if (_fullscreenRoute != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _fullscreenRoute != null) _fullscreenTick.value++;

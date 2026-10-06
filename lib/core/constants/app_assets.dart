@@ -136,6 +136,8 @@ class AppAssets {
   static const IconData vibrate = PhosphorIconsRegular.vibrate;
   static const IconData arrowCounterClockwise =
       PhosphorIconsRegular.arrowCounterClockwise;
+  static const IconData clockCounterClockwise =
+      PhosphorIconsRegular.clockCounterClockwise;
 
   // ========== NOTIFICATION ICONS ==========
   static const IconData bell = PhosphorIconsRegular.bell;

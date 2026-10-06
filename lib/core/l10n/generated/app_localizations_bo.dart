@@ -2910,6 +2910,23 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_live_go_live => 'ཐད་གཏོང་།';
 
   @override
+  String get event_replays => 'བསྐྱར་སྟོན།';
+
+  @override
+  String event_replay_session(String day, String session) {
+    return 'ཉིན་ $day · ཐེངས་ $session';
+  }
+
+  @override
+  String get event_replay_recording => 'བརྙན་ཕབ།';
+
+  @override
+  String get event_replay_back_to_live => 'ཐད་གཏོང་ལ་ལོག';
+
+  @override
+  String get event_replays_empty => 'ད་དུང་བརྙན་ཕབ་མེད།';
+
+  @override
   String get event_puja_starts_in => 'པཱུ་ཛ་འགོ་འཛུགས་པར་དུས་ཚོད།';
 
   @override

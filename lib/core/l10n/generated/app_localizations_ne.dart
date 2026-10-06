@@ -2913,6 +2913,23 @@ class AppLocalizationsNe extends AppLocalizations {
   String get event_live_go_live => 'लाइभ';
 
   @override
+  String get event_replays => 'रिप्ले';
+
+  @override
+  String event_replay_session(String day, String session) {
+    return 'दिन $day · सत्र $session';
+  }
+
+  @override
+  String get event_replay_recording => 'रेकर्डिङ';
+
+  @override
+  String get event_replay_back_to_live => 'लाइभमा फर्कनुहोस्';
+
+  @override
+  String get event_replays_empty => 'अहिलेसम्म कुनै रेकर्डिङ छैन';
+
+  @override
   String get event_puja_starts_in => 'पूजा सुरु हुन बाँकी';
 
   @override

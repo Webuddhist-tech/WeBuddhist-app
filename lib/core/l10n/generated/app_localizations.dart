@@ -5084,6 +5084,36 @@ abstract class AppLocalizations {
   /// **'Live'**
   String get event_live_go_live;
 
+  /// No description provided for @event_replays.
+  ///
+  /// In en, this message translates to:
+  /// **'Replays'**
+  String get event_replays;
+
+  /// No description provided for @event_replay_session.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} · Session {session}'**
+  String event_replay_session(String day, String session);
+
+  /// No description provided for @event_replay_recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get event_replay_recording;
+
+  /// No description provided for @event_replay_back_to_live.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to live'**
+  String get event_replay_back_to_live;
+
+  /// No description provided for @event_replays_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recordings yet'**
+  String get event_replays_empty;
+
   /// No description provided for @event_puja_starts_in.
   ///
   /// In en, this message translates to:
