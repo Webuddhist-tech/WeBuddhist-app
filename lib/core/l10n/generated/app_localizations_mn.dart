@@ -1981,6 +1981,50 @@ class AppLocalizationsMn extends AppLocalizations {
       'Энэ хүсэлтээс татгалзаж чадсангүй. Дахин оролдоно уу';
 
   @override
+  String get group_reports_title => 'Гомдол';
+
+  @override
+  String get group_reports_section_posts => 'Нийтлэлүүд';
+
+  @override
+  String get group_reports_section_comments => 'Сэтгэгдлүүд';
+
+  @override
+  String get group_reports_section_messages => 'Мессежүүд';
+
+  @override
+  String group_reports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count гомдол',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_reports_view_post => 'Нийтлэл харах';
+
+  @override
+  String get group_reports_view_message => 'Мессеж харах';
+
+  @override
+  String get group_reports_delete_post => 'Нийтлэл устгах';
+
+  @override
+  String get group_reports_delete_comment => 'Сэтгэгдэл устгах';
+
+  @override
+  String get group_reports_delete_message => 'Мессеж устгах';
+
+  @override
+  String get group_reports_empty => 'Хянах гомдол алга';
+
+  @override
+  String get group_reports_load_error =>
+      'Гомдлуудыг ачаалж чадсангүй. Дахин оролдоно уу';
+
+  @override
   String get group_members_only_title => 'Зөвхөн гишүүдэд';
 
   @override

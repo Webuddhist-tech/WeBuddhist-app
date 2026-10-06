@@ -3586,6 +3586,78 @@ abstract class AppLocalizations {
   /// **'Unable to deny this request. Please try again'**
   String get group_join_requests_deny_error;
 
+  /// No description provided for @group_reports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get group_reports_title;
+
+  /// No description provided for @group_reports_section_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get group_reports_section_posts;
+
+  /// No description provided for @group_reports_section_comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get group_reports_section_comments;
+
+  /// No description provided for @group_reports_section_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get group_reports_section_messages;
+
+  /// No description provided for @group_reports_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 report}\nother {{count} reports}\n}'**
+  String group_reports_count(int count);
+
+  /// No description provided for @group_reports_view_post.
+  ///
+  /// In en, this message translates to:
+  /// **'View post'**
+  String get group_reports_view_post;
+
+  /// No description provided for @group_reports_view_message.
+  ///
+  /// In en, this message translates to:
+  /// **'View message'**
+  String get group_reports_view_message;
+
+  /// No description provided for @group_reports_delete_post.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete post'**
+  String get group_reports_delete_post;
+
+  /// No description provided for @group_reports_delete_comment.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment'**
+  String get group_reports_delete_comment;
+
+  /// No description provided for @group_reports_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message'**
+  String get group_reports_delete_message;
+
+  /// No description provided for @group_reports_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports to review'**
+  String get group_reports_empty;
+
+  /// No description provided for @group_reports_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load reports. Please try again'**
+  String get group_reports_load_error;
+
   /// No description provided for @group_members_only_title.
   ///
   /// In en, this message translates to:

@@ -1964,6 +1964,51 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to deny this request. Please try again';
 
   @override
+  String get group_reports_title => 'Reports';
+
+  @override
+  String get group_reports_section_posts => 'Posts';
+
+  @override
+  String get group_reports_section_comments => 'Comments';
+
+  @override
+  String get group_reports_section_messages => 'Messages';
+
+  @override
+  String group_reports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reports',
+      one: '1 report',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_reports_view_post => 'View post';
+
+  @override
+  String get group_reports_view_message => 'View message';
+
+  @override
+  String get group_reports_delete_post => 'Delete post';
+
+  @override
+  String get group_reports_delete_comment => 'Delete comment';
+
+  @override
+  String get group_reports_delete_message => 'Delete message';
+
+  @override
+  String get group_reports_empty => 'No reports to review';
+
+  @override
+  String get group_reports_load_error =>
+      'Unable to load reports. Please try again';
+
+  @override
   String get group_members_only_title => 'Members only';
 
   @override

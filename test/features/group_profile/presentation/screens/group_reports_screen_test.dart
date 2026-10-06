@@ -1,0 +1,304 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_member.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/screens/group_reports_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+
+class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  _FakeRepository(this.reports, {this.members = const []});
+
+  List<GroupReport> reports;
+  final List<GroupMember> members;
+  final List<bool?> resolvedFilters = [];
+  final List<String> resolvedReportIds = [];
+
+  @override
+  Future<Either<Failure, GroupReportsPage>> getGroupReports(
+    String groupId, {
+    GroupReportKind? kind,
+    bool? resolved,
+    required int skip,
+    required int limit,
+  }) async {
+    resolvedFilters.add(resolved);
+    return Right(
+      GroupReportsPage(
+        reports: reports,
+        skip: 0,
+        limit: 20,
+        total: reports.length,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> resolveGroupReport(
+    String groupId, {
+    required String reportId,
+  }) async {
+    resolvedReportIds.add(reportId);
+    reports = [
+      for (final report in reports)
+        if (report.id != reportId) report,
+    ];
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, GroupMembersPage>> getGroupMembers(
+    String groupId, {
+    required int skip,
+    required int limit,
+  }) async {
+    final page = members.skip(skip).take(limit).toList();
+    return Right(
+      GroupMembersPage(
+        members: page,
+        skip: skip,
+        limit: limit,
+        totalMembers: members.length,
+      ),
+    );
+  }
+}
+
+GroupReport _report(
+  String id, {
+  required GroupReportKind kind,
+  String? postId,
+  String? commentId,
+  String? messageId,
+  required String reporter,
+  required String description,
+  required String content,
+}) {
+  return GroupReport(
+    id: id,
+    kind: kind,
+    postId: postId,
+    commentId: commentId,
+    messageId: messageId,
+    description: description,
+    contentText: content,
+    reporter: GroupReportUser(id: 'u-$id', firstname: reporter),
+    reportedUser: const GroupReportUser(id: 'author', firstname: 'Mei Lin'),
+  );
+}
+
+List<GroupReport> _sampleReports() => [
+  _report(
+    'r1',
+    kind: GroupReportKind.comment,
+    commentId: 'c1',
+    reporter: 'Tai Lang',
+    description: 'False information',
+    content: 'Thank you for moving it',
+  ),
+  _report(
+    'r2',
+    kind: GroupReportKind.chatMessage,
+    messageId: 'm1',
+    reporter: 'Pema',
+    description: 'Off-topic or disruptive',
+    content: 'You do not belong here.',
+  ),
+  _report(
+    'r3',
+    kind: GroupReportKind.comment,
+    commentId: 'c1',
+    reporter: 'Shifu',
+    description: 'Spam',
+    content: 'Thank you for moving it',
+  ),
+];
+
+Future<void> _pumpScreen(
+  WidgetTester tester,
+  _FakeRepository repository,
+) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [groupProfileRepositoryProvider.overrideWithValue(repository)],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const GroupReportsScreen(groupId: 'g1'),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  testWidgets('groups reports per item and expands to show each reporter', (
+    tester,
+  ) async {
+    final repository = _FakeRepository(_sampleReports());
+    await _pumpScreen(tester, repository);
+
+    expect(repository.resolvedFilters, everyElement(isFalse));
+    expect(find.text('Comments'), findsOneWidget);
+    expect(find.text('Messages'), findsOneWidget);
+    expect(find.text('Posts'), findsNothing);
+    expect(find.text('Thank you for moving it'), findsOneWidget);
+    expect(find.text('Delete comment'), findsOneWidget);
+    expect(find.text('Delete message'), findsOneWidget);
+    expect(find.text('2 reports'), findsOneWidget);
+    expect(find.text('1 report'), findsOneWidget);
+    expect(find.text('False information'), findsNothing);
+
+    await tester.tap(find.text('2 reports'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('False information'), findsOneWidget);
+    expect(find.text('Spam'), findsOneWidget);
+    expect(find.text('Off-topic or disruptive'), findsNothing);
+  });
+
+  testWidgets('the cross resolves every report on the item and refreshes', (
+    tester,
+  ) async {
+    final repository = _FakeRepository(_sampleReports());
+    await _pumpScreen(tester, repository);
+    final loadsBefore = repository.resolvedFilters.length;
+
+    await tester.tap(find.byIcon(AppAssets.x).first);
+    await tester.pumpAndSettle();
+
+    expect(repository.resolvedReportIds, unorderedEquals(['r1', 'r3']));
+    expect(repository.resolvedFilters.length, greaterThan(loadsBefore));
+    expect(find.text('Thank you for moving it'), findsNothing);
+    expect(find.text('Comments'), findsNothing);
+    expect(find.text('You do not belong here.'), findsOneWidget);
+  });
+
+  testWidgets('draws a divider only between different subsections', (
+    tester,
+  ) async {
+    final repository = _FakeRepository([
+      _report(
+        'p1',
+        kind: GroupReportKind.post,
+        postId: 'post-1',
+        reporter: 'Tai Lang',
+        description: 'Spam',
+        content: 'First post',
+      ),
+      _report(
+        'p2',
+        kind: GroupReportKind.post,
+        postId: 'post-2',
+        reporter: 'Pema',
+        description: 'Spam',
+        content: 'Second post',
+      ),
+      _report(
+        'm1',
+        kind: GroupReportKind.chatMessage,
+        messageId: 'message-1',
+        reporter: 'Shifu',
+        description: 'Off-topic',
+        content: 'A message',
+      ),
+    ]);
+    await _pumpScreen(tester, repository);
+
+    expect(find.text('First post'), findsOneWidget);
+    expect(find.text('Second post'), findsOneWidget);
+    expect(find.byType(Divider), findsOneWidget);
+  });
+
+  testWidgets('shows the member avatar for the reported user', (tester) async {
+    final repository = _FakeRepository(
+      [
+        _report(
+          'p1',
+          kind: GroupReportKind.post,
+          postId: 'post-1',
+          reporter: 'Tai Lang',
+          description: 'Spam',
+          content: 'First post',
+        ),
+      ],
+      members: const [
+        GroupMember(
+          userId: 'author',
+          username: 'mei',
+          fullname: 'Mei Lin',
+          avatarUrl: 'https://example.com/mei.png',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          groupProfileRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const GroupReportsScreen(groupId: 'g1'),
+        ),
+      ),
+    );
+    for (
+      var i = 0;
+      i < 10 && find.byType(CachedNetworkImageWidget).evaluate().isEmpty;
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    expect(find.byType(CachedNetworkImageWidget), findsOneWidget);
+    expect(
+      tester
+          .widget<CachedNetworkImageWidget>(
+            find.byType(CachedNetworkImageWidget),
+          )
+          .imageUrl,
+      'https://example.com/mei.png',
+    );
+  });
+
+  test('loads avatars for reporter and reported user ids', () async {
+    final repository = _FakeRepository(
+      const [],
+      members: const [
+        GroupMember(
+          userId: 'author',
+          username: 'mei',
+          fullname: 'Mei Lin',
+          avatarUrl: 'https://example.com/mei.png',
+        ),
+        GroupMember(
+          userId: 'u-r1',
+          username: 'tai',
+          fullname: 'Tai Lang',
+          avatarUrl: '  ',
+        ),
+      ],
+    );
+    final notifier = GroupReportAvatarsNotifier(
+      repository: repository,
+      groupId: 'g1',
+    );
+    await notifier.resolve({'author', 'u-r1', 'missing'});
+
+    expect(notifier.state['author'], 'https://example.com/mei.png');
+    expect(notifier.state.containsKey('u-r1'), isFalse);
+    expect(notifier.state.containsKey('missing'), isFalse);
+  });
+}

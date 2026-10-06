@@ -74,6 +74,10 @@ class ProtectedRoutes {
     // CMS author routes: group post create + media upload.
     '/cms/',
 
+    // Group moderation queue (admin only).
+    '/groups/{groupId}/reports',
+    '/groups/{groupId}/reports/{reportId}/resolve',
+
     // Plans (public endpoints but may need auth for user-specific data)
     '/plans/{planId}',
     '/plans/{planId}/days/{dayNumber}',
