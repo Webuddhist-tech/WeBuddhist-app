@@ -139,7 +139,14 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     );
 
     if (!mounted) return;
-    if (success == true && _replyTarget?.id == comment.id) {
+    // Deleting a parent takes its replies, so the target may be gone too.
+    final target = _replyTarget;
+    if (success == true &&
+        target != null &&
+        !ref
+            .read(verseOfDayCommentsProvider(widget.verseId))
+            .comments
+            .any((c) => c.id == target.id)) {
       setState(() => _replyTarget = null);
     }
     if (success != false) return;
