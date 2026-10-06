@@ -2250,6 +2250,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verse_comment_failed => 'Unable to post comment. Please try again';
 
   @override
+  String verse_comment_replying_to(String name) {
+    return 'Replying to $name';
+  }
+
+  @override
   String get share_app_message =>
       'I\'ve been using this app to build a daily Buddhist practice, and thought you\'d love it.';
 

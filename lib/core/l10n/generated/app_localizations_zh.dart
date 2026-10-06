@@ -2146,6 +2146,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get verse_comment_failed => 'Unable to post comment. Please try again';
 
   @override
+  String verse_comment_replying_to(String name) {
+    return 'Replying to $name';
+  }
+
+  @override
   String get share_app_message => '我一直在用这款应用培养每日佛法修行的习惯，觉得你也会喜欢。';
 
   @override

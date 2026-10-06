@@ -4421,6 +4421,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String verse_comment_replying_to(String name) => TolgeeBridge.format(
+    localeName,
+    'verse_comment_replying_to',
+    <String, Object>{'name': name},
+    () => _fallback.verse_comment_replying_to(name),
+  );
+
+  @override
   String get share_app_message => TolgeeBridge.get(
     localeName,
     'share_app_message',

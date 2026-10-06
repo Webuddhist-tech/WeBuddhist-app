@@ -46,9 +46,14 @@ abstract class VerseOfDayRepositoryInterface extends Repository {
     int skip = 0,
     int limit = 20,
   });
+  Future<Either<Failure, VerseOfDayComment>> getComment({
+    required String verseId,
+    required String commentId,
+  });
   Future<Either<Failure, VerseOfDayComment>> createComment({
     required String verseId,
     required String text,
+    String? parentCommentId,
   });
   Future<Either<Failure, Unit>> deleteComment(String commentId);
   Future<Either<Failure, Unit>> likeComment(String commentId);

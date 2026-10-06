@@ -28,6 +28,9 @@ class _Repo implements VerseOfDayRepositoryInterface {
   Either<Failure, Unit> commentLikeReply = const Right(unit);
   final commentLikeCalls = <String>[];
   final likersSkips = <int>[];
+  final postedParentIds = <String?>[];
+  final parents = <String, VerseOfDayComment>{};
+  final parentFetches = <String>[];
 
   @override
   Future<Either<Failure, VerseOfDayLikes>> getLikes(String verseId) =>
@@ -88,16 +91,33 @@ class _Repo implements VerseOfDayRepositoryInterface {
   Future<Either<Failure, VerseOfDayComment>> createComment({
     required String verseId,
     required String text,
-  }) async => Right(_comment('new', text));
+    String? parentCommentId,
+  }) async {
+    postedParentIds.add(parentCommentId);
+    return Right(_comment('new', text, parentCommentId));
+  }
+
+  @override
+  Future<Either<Failure, VerseOfDayComment>> getComment({
+    required String verseId,
+    required String commentId,
+  }) async {
+    parentFetches.add(commentId);
+    final parent = parents[commentId];
+    return parent == null
+        ? const Left(NotFoundFailure('gone'))
+        : Right(parent);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-VerseOfDayComment _comment(String id, [String text = 'hi']) =>
+VerseOfDayComment _comment(String id, [String text = 'hi', String? parent]) =>
     VerseOfDayComment(
       id: id,
       verseId: 'v1',
+      parentCommentId: parent,
       user: const VerseOfDayCommentUser(firstName: 'Pema'),
       text: text,
     );
@@ -356,16 +376,53 @@ void main() {
     expect(repo.likersSkips, [0, 1]);
   });
 
-  test('own comment ids reset when the account changes', () async {
+  test('reply is posted with its parent id', () async {
     final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
-    await container
-        .read(verseOfDayCommentsProvider('v1').notifier)
-        .submitComment('new');
-    expect(sub.read().ownCommentIds, {'new'});
+    final notifier = container.read(verseOfDayCommentsProvider('v1').notifier);
 
-    repo.commentsReply = Completer();
-    auth.signOut();
+    await notifier.submitComment('new', parentCommentId: 'p1');
+    expect(repo.postedParentIds, ['p1']);
+    expect(sub.read().comments.single.parentCommentId, 'p1');
+  });
+
+  test('parent missing from the page is fetched and not counted in skip', () async {
+    final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
+    repo.parents['p1'] = _comment('p1');
+    repo.commentsReply.complete(
+      Right(
+        VerseOfDayCommentsPage(
+          comments: [_comment('r1', 'hi', 'p1')],
+          skip: 0,
+          limit: 20,
+          total: 5,
+        ),
+      ),
+    );
     await Future<void>.delayed(Duration.zero);
-    expect(sub.read().ownCommentIds, isEmpty);
+
+    expect(sub.read().comments.map((c) => c.id), ['r1', 'p1']);
+    expect(sub.read().skip, 1);
+    expect(repo.parentFetches, ['p1']);
+  });
+
+  test('deleting a comment removes its replies too', () async {
+    final sub = container.listen(verseOfDayCommentsProvider('v1'), (_, _) {});
+    final notifier = container.read(verseOfDayCommentsProvider('v1').notifier);
+    repo.commentsReply.complete(
+      Right(
+        VerseOfDayCommentsPage(
+          comments: [_comment('r1', 'hi', 'c1'), _comment('c2'), _comment('c1')],
+          skip: 0,
+          limit: 20,
+          total: 3,
+        ),
+      ),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.deleteComment('c1');
+    expect(sub.read().comments.map((c) => c.id), ['c2']);
+    expect(sub.read().total, 1);
+    expect(sub.read().skip, 1);
   });
 }

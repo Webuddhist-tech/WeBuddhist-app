@@ -125,14 +125,38 @@ class VerseOfDayRemoteDatasource {
     }
   }
 
+  Future<VerseOfDayCommentModel> fetchComment({
+    required String verseId,
+    required String commentId,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/verse-of-day/$verseId/comments/$commentId',
+        options: Options(extra: {'no_cache': true}),
+      );
+      final data = response.data;
+      if (response.statusCode != 200 || data is! Map<String, dynamic>) {
+        throw _statusToException(response.statusCode, 'Failed to load comment');
+      }
+      return VerseOfDayCommentModel.fromJson(data);
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchComment', e);
+      throw _dioToException(e, 'Failed to load comment');
+    }
+  }
+
   Future<VerseOfDayCommentModel> createComment({
     required String verseId,
     required String text,
+    String? parentCommentId,
   }) async {
     try {
       final response = await dio.post(
         '/verse-of-day/$verseId/comments',
-        data: {'text': text},
+        data: {
+          'text': text,
+          if (parentCommentId != null) 'parent_comment_id': parentCommentId,
+        },
       );
       if (!_isSuccess(response.statusCode)) {
         throw _statusToException(response.statusCode, 'Failed to post comment');

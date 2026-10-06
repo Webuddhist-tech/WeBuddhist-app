@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_commen
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day_engagement.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/verse_comment_threading.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_sheet_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -41,6 +42,7 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   ScrollController? _scrollController;
+  VerseOfDayComment? _replyTarget;
 
   @override
   void initState() {
@@ -79,6 +81,17 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     }
   }
 
+  void _startReply(VerseOfDayComment comment) {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    setState(() => _replyTarget = comment);
+    _focusNode.requestFocus();
+  }
+
   Future<void> _submit() async {
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
@@ -89,9 +102,10 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
+    final replyTarget = _replyTarget;
     final error = await ref
         .read(verseOfDayCommentsProvider(widget.verseId).notifier)
-        .submitComment(text);
+        .submitComment(text, parentCommentId: replyTarget?.id);
     if (!mounted) return;
 
     if (error != null) {
@@ -103,6 +117,9 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
 
     _controller.clear();
     _focusNode.unfocus();
+    setState(() => _replyTarget = null);
+    // A reply lands under its parent, not at the top.
+    if (replyTarget != null) return;
     _scrollController?.animateTo(
       0,
       duration: const Duration(milliseconds: 200),
@@ -121,7 +138,11 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
               .deleteComment(comment.id),
     );
 
-    if (!mounted || success != false) return;
+    if (!mounted) return;
+    if (success == true && _replyTarget?.id == comment.id) {
+      setState(() => _replyTarget = null);
+    }
+    if (success != false) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.l10n.connect_comment_delete_failed)),
@@ -187,11 +208,18 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
                     ),
                   ),
                 ),
+                if (_replyTarget != null)
+                  _ReplyingToBanner(
+                    name: _replyTarget!.user.displayName,
+                    isDark: isDark,
+                    onClear: () => setState(() => _replyTarget = null),
+                  ),
                 _VerseCommentComposer(
                   controller: _controller,
                   focusNode: _focusNode,
                   isSubmitting: state.isSubmitting,
                   onSubmit: _submit,
+                  isReplying: _replyTarget != null,
                 ),
               ],
             ),
@@ -222,6 +250,10 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
       );
     }
 
+    final currentUserId = ref.watch(
+      userProvider.select((state) => state.user?.id),
+    );
+
     return ListView(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -241,16 +273,18 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
             ),
           )
         else
-          ...state.comments.map(
-            (comment) => _VerseCommentTile(
-              comment: comment,
+          for (final item in threadVerseComments(state.comments))
+            _VerseCommentTile(
+              comment: item.comment,
               isDark: isDark,
-              // The API omits the author id; names aren't unique.
-              isOwn: state.ownCommentIds.contains(comment.id),
-              onLike: () => _toggleLike(comment),
-              onDelete: () => _confirmDelete(comment),
+              isReply: item.isReply,
+              isOwn:
+                  currentUserId != null &&
+                  item.comment.userId == currentUserId,
+              onLike: () => _toggleLike(item.comment),
+              onReply: () => _startReply(item.comment),
+              onDelete: () => _confirmDelete(item.comment),
             ),
-          ),
         if (state.isLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -304,15 +338,19 @@ class _VerseCommentTile extends StatelessWidget {
   const _VerseCommentTile({
     required this.comment,
     required this.isDark,
+    required this.isReply,
     required this.isOwn,
     required this.onLike,
+    required this.onReply,
     required this.onDelete,
   });
 
   final VerseOfDayComment comment;
   final bool isDark;
+  final bool isReply;
   final bool isOwn;
   final VoidCallback onLike;
+  final VoidCallback onReply;
   final VoidCallback onDelete;
 
   @override
@@ -323,7 +361,7 @@ class _VerseCommentTile extends StatelessWidget {
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(left: isReply ? 42 : 0, bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -391,6 +429,23 @@ class _VerseCommentTile extends StatelessWidget {
                   comment.text,
                   style: TextStyle(fontSize: 14, height: 1.45, color: primary),
                 ),
+                const SizedBox(height: 4),
+                TextButton(
+                  onPressed: onReply,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: muted,
+                  ),
+                  child: Text(
+                    context.l10n.connect_comment_reply,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -449,6 +504,49 @@ class _CommentLikeButton extends StatelessWidget {
   }
 }
 
+class _ReplyingToBanner extends StatelessWidget {
+  const _ReplyingToBanner({
+    required this.name,
+    required this.isDark,
+    required this.onClear,
+  });
+
+  final String name;
+  final bool isDark;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              context.l10n.verse_comment_replying_to(name),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                color:
+                    isDark
+                        ? AppColors.textTertiaryDark
+                        : AppColors.textSecondary,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(AppAssets.x, size: 18),
+            onPressed: onClear,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Current user's avatar beside a rounded field; the send button appears
 /// once there is text, as in the Connect composer.
 class _VerseCommentComposer extends ConsumerWidget {
@@ -457,12 +555,14 @@ class _VerseCommentComposer extends ConsumerWidget {
     required this.focusNode,
     required this.isSubmitting,
     required this.onSubmit,
+    required this.isReplying,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isSubmitting;
   final VoidCallback onSubmit;
+  final bool isReplying;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -511,7 +611,10 @@ class _VerseCommentComposer extends ConsumerWidget {
                     isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
               ),
               decoration: InputDecoration(
-                hintText: context.l10n.connect_comment_hint,
+                hintText:
+                    isReplying
+                        ? context.l10n.connect_comment_reply_hint
+                        : context.l10n.connect_comment_hint,
                 hintStyle: TextStyle(
                   fontSize: 15,
                   height: 1.2,
