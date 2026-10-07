@@ -473,6 +473,92 @@ void main() {
       expect(countSub.read(), 3);
     });
 
+    test('a send outside the intention in view is counted once', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a', intention: _healing)],
+      );
+      container = buildContainer();
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(intention: _healing),
+      );
+
+      notifier.appendLive(_prayer('x', intention: _peace));
+      // The socket echo of the same request.
+      notifier.appendLive(_prayer('x', intention: _peace));
+      expect(countSub.read(), 2);
+      expect(notifier.state.total, 1);
+
+      notifier.applyDeletion('x');
+      expect(countSub.read(), 1);
+      expect(notifier.state.total, 1);
+    });
+
+    test('under oldest a live request waits for its page', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.oldest),
+      );
+      expect(notifier.state.requests.length, 30);
+
+      repository.history = [...history, _prayer('new')];
+      notifier.appendLive(_prayer('new'));
+      notifier.appendLive(_prayer('new'));
+      expect(notifier.state.requests.length, 30);
+      expect(notifier.state.skip, 30);
+      expect(notifier.state.total, 36);
+
+      await notifier.loadMore();
+      expect(repository.listedSkips.last, 30);
+      expect(notifier.state.requests.last.id, 'new');
+      expect(notifier.state.requests.length, 36);
+      expect(notifier.state.hasMore, isFalse);
+
+      notifier.appendLive(_prayer('later'));
+      expect(notifier.state.requests.last.id, 'later');
+      expect(notifier.state.skip, 37);
+    });
+
+    test('a filter change clears a shifted page from before it', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.listGate = Completer<void>();
+      final pending = notifier.loadMore();
+      await _settle();
+      await notifier.delete('m0');
+      final gate = repository.listGate!;
+      repository.listGate = null;
+      final refilter = notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.oldest),
+      );
+      gate.complete();
+      await pending;
+      await refilter;
+      await _settle();
+      expect(notifier.state.requests.length, 30);
+
+      await notifier.loadMore();
+      expect(repository.listedSkips, [0, 30, 0, 30]);
+      expect(notifier.state.requests.length, 34);
+    });
+
     test('an edit that leaves the intention in view drops the row', () async {
       repository = _FakeGroupChatRepository(
         history: [

@@ -61,61 +61,82 @@ class PrayerSortSheet extends ConsumerWidget {
     final selected =
         catalog.where((item) => item.slug == selectedSlug).firstOrNull ??
         current.intention;
+    final failed = intentions.hasError && catalog.isEmpty;
+    final topInset = MediaQuery.viewPaddingOf(context).top;
+    final maxHeight = MediaQuery.sizeOf(context).height - topInset - 24;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(context, isDark),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final sort in _sorts)
-                    _SortRow(
-                      icon: _iconFor(sort),
-                      label: prayerSortLabel(l10n, sort),
-                      selected: !current.byIntention && current.sort == sort,
-                      isDark: isDark,
-                      onTap:
-                          () => Navigator.of(
-                            context,
-                          ).pop(current.withSort(sort)),
-                    ),
-                  _SortRow(
-                    icon: AppAssets.smiley,
-                    label: l10n.event_prayer_sort_by_intention,
-                    subtitle: selected?.localizedLabel(context),
-                    selected: current.byIntention,
-                    isDark: isDark,
-                    onTap:
-                        selected == null
-                            ? null
-                            : () => Navigator.of(
-                              context,
-                            ).pop(current.withIntention(selected)),
-                    trailing: _IntentionDots(
-                      intentions: catalog,
-                      selectedSlug: selected?.slug,
-                      loading: intentions.isLoading,
-                      isDark: isDark,
-                      onPick:
-                          (intention) => Navigator.of(
-                            context,
-                          ).pop(current.withIntention(intention)),
-                    ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHeader(context, isDark),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final sort in _sorts)
+                        _SortRow(
+                          icon: _iconFor(sort),
+                          label: prayerSortLabel(l10n, sort),
+                          selected:
+                              !current.byIntention && current.sort == sort,
+                          isDark: isDark,
+                          onTap:
+                              () => Navigator.of(
+                                context,
+                              ).pop(current.withSort(sort)),
+                        ),
+                      _SortRow(
+                        icon: AppAssets.smiley,
+                        label: l10n.event_prayer_sort_by_intention,
+                        subtitle:
+                            failed
+                                ? l10n.event_prayer_intentions_failed
+                                : selected?.localizedLabel(context),
+                        selected: current.byIntention,
+                        isDark: isDark,
+                        onTap:
+                            selected == null
+                                ? null
+                                : () => Navigator.of(
+                                  context,
+                                ).pop(current.withIntention(selected)),
+                        trailing:
+                            failed
+                                ? TextButton(
+                                  onPressed:
+                                      () => ref.invalidate(
+                                        prayerIntentionsProvider,
+                                      ),
+                                  child: Text(l10n.group_chat_retry),
+                                )
+                                : _IntentionDots(
+                                  intentions: catalog,
+                                  selectedSlug: selected?.slug,
+                                  loading: intentions.isLoading,
+                                  isDark: isDark,
+                                  onPick:
+                                      (intention) => Navigator.of(
+                                        context,
+                                      ).pop(current.withIntention(intention)),
+                                ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

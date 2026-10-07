@@ -317,6 +317,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// filter is dropped when it lands.
   int _listGeneration = 0;
 
+  /// Live requests counted but not in the list: outside the intention in
+  /// view (false) or waiting at the end of a sort still paging (true, so in
+  /// [PrayerRequestsState.total]). Dedupes the REST reply against the echo.
+  final Map<String, bool> _unlisted = {};
+
   @override
   void dispose() {
     _flushTimer?.cancel();
@@ -404,6 +409,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   Future<void> _loadFirstPage(String roomId) async {
     final generation = ++_listGeneration;
+    _pageShifted = false;
+    _unlisted.clear();
     final filter = state.filter;
     final result = await _repository.listMessages(
       roomId,
@@ -495,6 +502,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
                   (message) => _isLive(message) && !known.contains(message.id),
                 )
                 .toList();
+        for (final message in fresh) {
+          _unlisted.remove(message.id);
+        }
         final requests = [...state.requests, ...fresh];
         state = state.copyWith(
           requests: requests,
@@ -627,23 +637,50 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (message.id.isEmpty || !_isLive(message)) return;
     if (state.roomId != null && message.roomId != state.roomId) return;
     if (state.requests.any((existing) => existing.id == message.id)) return;
+    if (_unlisted.containsKey(message.id)) return;
     if (!state.filter.matches(message.intention)) {
+      _unlisted[message.id] = false;
       _shiftCount(1, inList: false);
       return;
     }
+    if (_sortsNewLast && state.hasMore) {
+      // Belongs after rows not loaded yet; a later page brings it.
+      _unlisted[message.id] = true;
+      _shiftCount(1);
+      return;
+    }
     state = state.copyWith(
-      requests: [message, ...state.requests],
+      requests:
+          _sortsNewLast
+              ? [...state.requests, message]
+              : [message, ...state.requests],
       skip: state.skip + 1,
       hasLoaded: true,
     );
     _shiftCount(1);
   }
 
+  /// A request with no prayers yet lands at the end under these; under the
+  /// others it comes first, with newest or fewest prayers.
+  bool get _sortsNewLast {
+    final filter = state.filter;
+    if (filter.byIntention) return false;
+    return filter.sort == PrayerSort.oldest ||
+        filter.sort == PrayerSort.mostPrayed;
+  }
+
   void applyDeletion(String messageId) => _dropRow(messageId, inRoom: true);
 
-  /// Takes a loaded row out of the list. [inRoom] says the request is gone
-  /// from the room, not only from the filter in view.
+  /// Takes a request out of the list, or out of the ones counted but not
+  /// listed. [inRoom] says it is gone from the room, not only from the
+  /// filter in view.
   void _dropRow(String messageId, {required bool inRoom}) {
+    final counted = _unlisted.remove(messageId);
+    if (counted != null) {
+      if (counted) state = state.copyWith(total: _clampCount(state.total - 1));
+      if (inRoom) _shiftCount(-1, inList: false);
+      return;
+    }
     if (!state.requests.any((request) => request.id == messageId)) return;
     if (state.isLoadingMore) _pageShifted = true;
     state = state.copyWith(
