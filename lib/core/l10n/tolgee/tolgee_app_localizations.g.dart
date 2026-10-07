@@ -3893,6 +3893,91 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_reports_title => TolgeeBridge.get(
+    localeName,
+    'group_reports_title',
+    () => _fallback.group_reports_title,
+  );
+
+  @override
+  String get group_reports_section_posts => TolgeeBridge.get(
+    localeName,
+    'group_reports_section_posts',
+    () => _fallback.group_reports_section_posts,
+  );
+
+  @override
+  String get group_reports_section_comments => TolgeeBridge.get(
+    localeName,
+    'group_reports_section_comments',
+    () => _fallback.group_reports_section_comments,
+  );
+
+  @override
+  String get group_reports_section_messages => TolgeeBridge.get(
+    localeName,
+    'group_reports_section_messages',
+    () => _fallback.group_reports_section_messages,
+  );
+
+  @override
+  String group_reports_count(int count) => TolgeeBridge.format(
+    localeName,
+    'group_reports_count',
+    <String, Object>{'count': count},
+    () => _fallback.group_reports_count(count),
+  );
+
+  @override
+  String get group_reports_view_post => TolgeeBridge.get(
+    localeName,
+    'group_reports_view_post',
+    () => _fallback.group_reports_view_post,
+  );
+
+  @override
+  String get group_reports_view_message => TolgeeBridge.get(
+    localeName,
+    'group_reports_view_message',
+    () => _fallback.group_reports_view_message,
+  );
+
+  @override
+  String get group_reports_delete_post => TolgeeBridge.get(
+    localeName,
+    'group_reports_delete_post',
+    () => _fallback.group_reports_delete_post,
+  );
+
+  @override
+  String get group_reports_delete_comment => TolgeeBridge.get(
+    localeName,
+    'group_reports_delete_comment',
+    () => _fallback.group_reports_delete_comment,
+  );
+
+  @override
+  String get group_reports_delete_message => TolgeeBridge.get(
+    localeName,
+    'group_reports_delete_message',
+    () => _fallback.group_reports_delete_message,
+  );
+
+  @override
+  String get group_reports_empty => TolgeeBridge.get(
+    localeName,
+    'group_reports_empty',
+    () => _fallback.group_reports_empty,
+  );
+
+  @override
+  String get group_reports_load_error => TolgeeBridge.get(
+    localeName,
+    'group_reports_load_error',
+    () => _fallback.group_reports_load_error,
+  );
+
+  @override
   String get group_members_only_title => TolgeeBridge.get(
     localeName,
     'group_members_only_title',
@@ -4067,12 +4152,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) =>
-      TolgeeBridge.format(
-        localeName,
-        'group_removed_message',
-        <String, Object>{'group': group, 'duration': duration},
-        () => _fallback.group_removed_message(group, duration),
-      );
+      TolgeeBridge.format(localeName, 'group_removed_message', <String, Object>{
+        'group': group,
+        'duration': duration,
+      }, () => _fallback.group_removed_message(group, duration));
 
   @override
   String group_removed_message_no_date(String group) => TolgeeBridge.format(

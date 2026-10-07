@@ -737,6 +737,25 @@
   "group_join_requests_load_error": "無法載入加入申請，請再試一次。",
   "group_join_requests_admit_error": "無法核准此申請，請再試一次。",
   "group_join_requests_deny_error": "無法拒絕此申請，請再試一次。",
+  "group_reports_title": "檢舉",
+  "group_reports_section_posts": "貼文",
+  "group_reports_section_comments": "留言",
+  "group_reports_section_messages": "訊息",
+  "group_reports_count": "{count, plural,\nother {{count} 則檢舉}\n}",
+  "@group_reports_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_reports_view_post": "查看貼文",
+  "group_reports_view_message": "查看訊息",
+  "group_reports_delete_post": "刪除貼文",
+  "group_reports_delete_comment": "刪除留言",
+  "group_reports_delete_message": "刪除訊息",
+  "group_reports_empty": "沒有待審核的檢舉",
+  "group_reports_load_error": "無法載入檢舉，請再試一次。",
   "group_members_only_title": "僅限成員",
   "group_members_only_message": "加入後即可查看此群組的誦經、活動和貼文。",
   "group_join_request_waiting_title": "等待管理員審核",

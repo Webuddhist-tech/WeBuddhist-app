@@ -754,6 +754,25 @@
   "group_join_requests_load_error": "सामेल हुने अनुरोधहरू लोड गर्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्",
   "group_join_requests_admit_error": "यो अनुरोध स्वीकार गर्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्",
   "group_join_requests_deny_error": "यो अनुरोध अस्वीकार गर्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्",
+  "group_reports_title": "रिपोर्टहरू",
+  "group_reports_section_posts": "पोस्टहरू",
+  "group_reports_section_comments": "टिप्पणीहरू",
+  "group_reports_section_messages": "सन्देशहरू",
+  "group_reports_count": "{count, plural,\n=1 {1 रिपोर्ट}\nother {{count} रिपोर्टहरू}\n}",
+  "@group_reports_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_reports_view_post": "पोस्ट हेर्नुहोस्",
+  "group_reports_view_message": "सन्देश हेर्नुहोस्",
+  "group_reports_delete_post": "पोस्ट मेट्नुहोस्",
+  "group_reports_delete_comment": "टिप्पणी मेट्नुहोस्",
+  "group_reports_delete_message": "सन्देश मेट्नुहोस्",
+  "group_reports_empty": "समीक्षा गर्नुपर्ने कुनै रिपोर्ट छैन",
+  "group_reports_load_error": "रिपोर्टहरू लोड गर्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्",
   "group_members_only_title": "सदस्यहरूका लागि मात्र",
   "group_members_only_message": "यसको सामग्री हेर्न यो स्पेसमा सामेल हुनुहोस्",
   "group_join_request_waiting_title": "प्रशासकको प्रतीक्षामा",

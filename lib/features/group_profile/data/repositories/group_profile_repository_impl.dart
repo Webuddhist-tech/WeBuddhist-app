@@ -10,6 +10,8 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_membe
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 
 class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
@@ -540,6 +542,61 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
       return Left(RateLimitFailure(e.message));
     } catch (e) {
       return Left(UnknownFailure('Failed to load join requests: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, GroupReportsPage>> getGroupReports(
+    String groupId, {
+    GroupReportKind? kind,
+    bool? resolved,
+    required int skip,
+    required int limit,
+  }) async {
+    try {
+      final model = await remote.fetchGroupReports(
+        groupId,
+        kind: kind,
+        resolved: resolved,
+        skip: skip,
+        limit: limit,
+      );
+      return Right(model.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to load reports: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> resolveGroupReport(
+    String groupId, {
+    required String reportId,
+  }) async {
+    try {
+      await remote.resolveGroupReport(groupId, reportId: reportId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to resolve report: $e'));
     }
   }
 

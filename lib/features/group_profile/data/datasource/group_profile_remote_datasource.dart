@@ -7,8 +7,10 @@ import 'package:flutter_pecha/features/group_profile/data/models/group_member_mo
 import 'package:flutter_pecha/features/group_profile/data/models/group_notification_preferences_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_report_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
 
 /// Marker carried by the failure raised when a chant completion is rejected
 /// because the user only follows the group instead of having joined it.
@@ -706,6 +708,68 @@ class GroupProfileRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in ${decision}GroupJoinRequest', e);
       throw _dioToException(e, 'Failed to $decision join request');
+    }
+  }
+
+  /// `GET /groups/{groupId}/reports`, newest first.
+  ///
+  /// Group owner/admin only. Leave [kind] null to get chat message, post,
+  /// and comment reports together.
+  Future<GroupReportsPageModel> fetchGroupReports(
+    String groupId, {
+    GroupReportKind? kind,
+    bool? resolved,
+    required int skip,
+    required int limit,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/groups/$groupId/reports',
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+          if (kind != null) 'kind': kind.apiValue,
+          if (resolved != null) 'resolved': resolved,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode == 200) {
+        return GroupReportsPageModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      }
+
+      _logger.error(
+        'Failed to load group reports $groupId: ${response.statusCode}',
+      );
+      throw _statusToException(response.statusCode, 'Failed to load reports');
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchGroupReports', e);
+      throw _dioToException(e, 'Failed to load reports');
+    }
+  }
+
+  /// `PATCH /groups/{groupId}/reports/{reportId}/resolve`.
+  ///
+  /// Group owner/admin only. Resolving an already resolved report is a no-op.
+  Future<void> resolveGroupReport(
+    String groupId, {
+    required String reportId,
+  }) async {
+    try {
+      final response = await dio.patch(
+        '/groups/$groupId/reports/$reportId/resolve',
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode >= 200 && statusCode < 300) return;
+
+      _logger.error('Failed to resolve report $reportId: $statusCode');
+      throw _statusToException(response.statusCode, 'Failed to resolve report');
+    } on DioException catch (e) {
+      _logger.error('Dio error in resolveGroupReport', e);
+      throw _dioToException(e, 'Failed to resolve report');
     }
   }
 

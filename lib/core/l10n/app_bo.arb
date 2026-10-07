@@ -737,6 +737,25 @@
   "group_join_requests_load_error": "ཞུགས་པའི་རེ་ཞུ་སྟོན་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
   "group_join_requests_admit_error": "རེ་ཞུ་འདི་དང་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
   "group_join_requests_deny_error": "རེ་ཞུ་འདི་དགག་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
+  "group_reports_title": "སྙན་ཞུ།",
+  "group_reports_section_posts": "འགྲེམས་སྟོན།",
+  "group_reports_section_comments": "བསམ་ཚུལ།",
+  "group_reports_section_messages": "འཕྲིན།",
+  "group_reports_count": "{count, plural,\nother {སྙན་ཞུ་ {count}}\n}",
+  "@group_reports_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_reports_view_post": "འགྲེམས་སྟོན་ལ་ལྟ།",
+  "group_reports_view_message": "འཕྲིན་ལ་ལྟ།",
+  "group_reports_delete_post": "འགྲེམས་སྟོན་སུབས།",
+  "group_reports_delete_comment": "བསམ་ཚུལ་སུབས།",
+  "group_reports_delete_message": "འཕྲིན་སུབས།",
+  "group_reports_empty": "བརྟག་དཔྱད་བྱ་རྒྱུའི་སྙན་ཞུ་མེད།",
+  "group_reports_load_error": "སྙན་ཞུ་ཕབ་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
   "group_members_only_title": "ཚོགས་མི་ཁོ་ན།",
   "group_members_only_message": "ཚོགས་པ་འདིའི་བཟླས་བརྗོད་དང་བྱེད་སྒོ། སྤེལ་ཡིག་བལྟ་ཆེད་ཞུགས་རོགས།",
   "group_join_request_waiting_title": "དོ་དམ་པའི་བརྡར་སྒུག",

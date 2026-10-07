@@ -1891,6 +1891,49 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_join_requests_deny_error => '無法拒絕此申請，請再試一次。';
 
   @override
+  String get group_reports_title => '檢舉';
+
+  @override
+  String get group_reports_section_posts => '貼文';
+
+  @override
+  String get group_reports_section_comments => '留言';
+
+  @override
+  String get group_reports_section_messages => '訊息';
+
+  @override
+  String group_reports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 則檢舉',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_reports_view_post => '查看貼文';
+
+  @override
+  String get group_reports_view_message => '查看訊息';
+
+  @override
+  String get group_reports_delete_post => '刪除貼文';
+
+  @override
+  String get group_reports_delete_comment => '刪除留言';
+
+  @override
+  String get group_reports_delete_message => '刪除訊息';
+
+  @override
+  String get group_reports_empty => '沒有待審核的檢舉';
+
+  @override
+  String get group_reports_load_error => '無法載入檢舉，請再試一次。';
+
+  @override
   String get group_members_only_title => '僅限成員';
 
   @override

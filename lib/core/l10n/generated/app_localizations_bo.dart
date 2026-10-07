@@ -2004,6 +2004,50 @@ class AppLocalizationsBo extends AppLocalizations {
       'རེ་ཞུ་འདི་དགག་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
+  String get group_reports_title => 'སྙན་ཞུ།';
+
+  @override
+  String get group_reports_section_posts => 'འགྲེམས་སྟོན།';
+
+  @override
+  String get group_reports_section_comments => 'བསམ་ཚུལ།';
+
+  @override
+  String get group_reports_section_messages => 'འཕྲིན།';
+
+  @override
+  String group_reports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'སྙན་ཞུ་ $count',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_reports_view_post => 'འགྲེམས་སྟོན་ལ་ལྟ།';
+
+  @override
+  String get group_reports_view_message => 'འཕྲིན་ལ་ལྟ།';
+
+  @override
+  String get group_reports_delete_post => 'འགྲེམས་སྟོན་སུབས།';
+
+  @override
+  String get group_reports_delete_comment => 'བསམ་ཚུལ་སུབས།';
+
+  @override
+  String get group_reports_delete_message => 'འཕྲིན་སུབས།';
+
+  @override
+  String get group_reports_empty => 'བརྟག་དཔྱད་བྱ་རྒྱུའི་སྙན་ཞུ་མེད།';
+
+  @override
+  String get group_reports_load_error =>
+      'སྙན་ཞུ་ཕབ་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
+
+  @override
   String get group_members_only_title => 'ཚོགས་མི་ཁོ་ན།';
 
   @override

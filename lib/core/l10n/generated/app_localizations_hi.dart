@@ -1996,6 +1996,51 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह अनुरोध अस्वीकार करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
+  String get group_reports_title => 'रिपोर्ट';
+
+  @override
+  String get group_reports_section_posts => 'पोस्ट';
+
+  @override
+  String get group_reports_section_comments => 'टिप्पणियाँ';
+
+  @override
+  String get group_reports_section_messages => 'संदेश';
+
+  @override
+  String group_reports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count रिपोर्ट',
+      one: '1 रिपोर्ट',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_reports_view_post => 'पोस्ट देखें';
+
+  @override
+  String get group_reports_view_message => 'संदेश देखें';
+
+  @override
+  String get group_reports_delete_post => 'पोस्ट हटाएँ';
+
+  @override
+  String get group_reports_delete_comment => 'टिप्पणी हटाएँ';
+
+  @override
+  String get group_reports_delete_message => 'संदेश हटाएँ';
+
+  @override
+  String get group_reports_empty => 'समीक्षा के लिए कोई रिपोर्ट नहीं';
+
+  @override
+  String get group_reports_load_error =>
+      'रिपोर्ट लोड करने में असमर्थ। कृपया पुनः प्रयास करें';
+
+  @override
   String get group_members_only_title => 'केवल सदस्यों के लिए';
 
   @override
