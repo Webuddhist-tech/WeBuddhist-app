@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
+import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/group_accumulations_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,19 +16,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// request resolves. The pill is shown only when
 /// `GET /accumulators/{presetId}/groups?joined_only=true` returns groups.
 ///
-/// Tapping opens [GroupAccumulationsSheet], which shows lifetime
-/// [AccumulatorGroup.userTotalCount] per group and personal `total_counted`.
+/// Tapping opens [GroupAccumulationsSheet], which shows lifetime totals per
+/// accumulation and personal `total_counted`.
 /// The mala counter above uses session counts when a group is selected.
 class GroupAccumulationsBar extends ConsumerWidget {
   const GroupAccumulationsBar({
     super.key,
-    required this.presetId,
-    required this.personalLifetimeCount,
+    required this.mantra,
+    required this.presetTitle,
   });
 
-  final String presetId;
-  /// Personal lifetime total (`MalaCounterNotifier.displayLifetimeCount`).
-  final int personalLifetimeCount;
+  final Mantra mantra;
+
+  /// Mantra name shown in the sheet's header.
+  final String presetTitle;
 
   static const barHeight = 40.0;
   static const _avatarSize = 28.0;
@@ -35,7 +37,9 @@ class GroupAccumulationsBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final groupsAsync = ref.watch(joinedAccumulatorGroupsProvider(presetId));
+    final groupsAsync = ref.watch(
+      joinedAccumulatorGroupsProvider(mantra.presetId),
+    );
 
     return SizedBox(
       height: barHeight,
@@ -43,9 +47,9 @@ class GroupAccumulationsBar extends ConsumerWidget {
         data: (groups) {
           if (groups.isEmpty) return const SizedBox.shrink();
           return _GroupAccumulationsBarContent(
-            presetId: presetId,
+            mantra: mantra,
+            presetTitle: presetTitle,
             groups: groups,
-            personalLifetimeCount: personalLifetimeCount,
             avatarSize: _avatarSize,
             avatarOverlap: _avatarOverlap,
           );
@@ -59,16 +63,16 @@ class GroupAccumulationsBar extends ConsumerWidget {
 
 class _GroupAccumulationsBarContent extends ConsumerWidget {
   const _GroupAccumulationsBarContent({
-    required this.presetId,
+    required this.mantra,
+    required this.presetTitle,
     required this.groups,
-    required this.personalLifetimeCount,
     required this.avatarSize,
     required this.avatarOverlap,
   });
 
-  final String presetId;
+  final Mantra mantra;
+  final String presetTitle;
   final List<AccumulatorGroup> groups;
-  final int personalLifetimeCount;
   final double avatarSize;
   final double avatarOverlap;
 
@@ -93,9 +97,9 @@ class _GroupAccumulationsBarContent extends ConsumerWidget {
           onTap:
               () => GroupAccumulationsSheet.show(
                 context,
-                presetId: presetId,
+                mantra: mantra,
+                presetTitle: presetTitle,
                 groups: groups,
-                personalLifetimeCount: personalLifetimeCount,
               ),
           child: Container(
             height: GroupAccumulationsBar.barHeight,

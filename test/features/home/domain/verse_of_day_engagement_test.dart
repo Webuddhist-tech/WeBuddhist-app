@@ -33,6 +33,8 @@ void main() {
               {
                 'id': 'c1',
                 'verse_id': 'v1',
+                'user_id': 'u1',
+                'parent_comment_id': 'c0',
                 'user': {'first_name': 'Pema', 'last_name': null},
                 'text': 'ok',
                 'created_at': '2026-10-01T10:00:00Z',
@@ -46,6 +48,8 @@ void main() {
           }).toEntity();
       expect(page.comments.single.user.displayName, 'Pema');
       expect(page.comments.single.createdAt, isNotNull);
+      expect(page.comments.single.userId, 'u1');
+      expect(page.comments.single.parentCommentId, 'c0');
       expect(page.comments.single.likeCount, 2);
       expect(page.comments.single.likedByMe, isTrue);
       expect(page.hasMore, isTrue);

@@ -125,12 +125,33 @@ class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, VerseOfDayComment>> getComment({
+    required String verseId,
+    required String commentId,
+  }) async {
+    try {
+      final model = await remote.fetchComment(
+        verseId: verseId,
+        commentId: commentId,
+      );
+      return Right(model.toEntity());
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to load comment'));
+    }
+  }
+
+  @override
   Future<Either<Failure, VerseOfDayComment>> createComment({
     required String verseId,
     required String text,
+    String? parentCommentId,
   }) async {
     try {
-      final model = await remote.createComment(verseId: verseId, text: text);
+      final model = await remote.createComment(
+        verseId: verseId,
+        text: text,
+        parentCommentId: parentCommentId,
+      );
       return Right(model.toEntity());
     } catch (e) {
       return Left(_toFailure(e, 'Failed to post comment'));

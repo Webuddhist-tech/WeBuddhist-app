@@ -92,6 +92,25 @@
   "mala_group_accumulations": "Add recitation to",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Untitled space",
+  "mala_all_time_accumulation": "My all-time accumulation",
+  "mala_personal_practice": "Personal practice",
+  "mala_events_section": "Events",
+  "mala_my_total": "My total: {count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "Group total: {count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "Timer",
   "preset_timers": "Preset timers",
   "meditation_timer": "Meditation timer",
@@ -1113,6 +1132,14 @@
   },
   "verse_like_failed": "Unable to update like. Please try again",
   "verse_comment_failed": "Unable to post comment. Please try again",
+  "verse_comment_replying_to": "Replying to {name}",
+  "@verse_comment_replying_to": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "share_app_message": "I've been using this app to build a daily Buddhist practice, and thought you'd love it.",
   "share_streak_message": "I've been building a daily practice habit and wanted to share it with you. It's easier to keep it up with a friend. Join me on WeBuddhist.",
   "share_chant_message": "I wanted to share this chant with you. You can practice it and find a whole library of other chants and texts on WeBuddhist.",
@@ -1540,5 +1567,35 @@
   "feedback_error_rate_limited": "Too many requests. Wait a moment and try again",
   "feedback_error_too_large": "Images are too large. Remove one and try again",
   "feedback_error_failed": "Couldn't send feedback. Please try again",
-  "feedback_error_unavailable": "Feedback is not available right now"
+  "feedback_error_unavailable": "Feedback is not available right now",
+  "connect_failed_load_discover_groups_error": "Failed to load discover groups",
+  "connect_failed_like_post_error": "Failed to like post",
+  "connect_failed_unlike_post_error": "Failed to unlike post",
+  "connect_failed_like_comment_error": "Failed to like comment",
+  "connect_failed_unlike_comment_error": "Failed to unlike comment",
+  "group_events_load_error": "Unable to load events. Please try again.",
+  "group_events_empty": "No events yet",
+  "mala_failed_load_catalogue_error": "Failed to load catalogue",
+  "chant_collection_reload_error": "Failed to reload collection to reorder",
+  "chant_collection_reorder_error": "Failed to reorder chants",
+  "timer_duration_label": "DURATION",
+  "timer_ambient_sound_label": "AMBIENT SOUND",
+  "timer_begin_session": "Begin session",
+  "timer_save_changes": "Save changes",
+  "timer_new_title": "New timer",
+  "timer_edit_title": "Edit timer",
+  "timer_your_timers": "Your timers",
+  "timer_custom_timer": "Custom timer",
+  "timer_ambient_sounds_title": "Ambient sounds",
+  "timer_ambient_sound_none": "Default (no sound)",
+  "timer_ambient_sounds_load_error": "Failed to load ambient sounds",
+  "timer_volume_label": "VOLUME",
+  "timer_duration_title": "Duration",
+  "timer_edit": "Edit timer",
+  "timer_delete": "Delete timer",
+  "timer_delete_title": "Delete timer?",
+  "timer_delete_message": "This timer will be removed from your timers.",
+  "timer_duration_must_be_greater_than_error": "Duration must be greater than 0",
+  "splash_tagline_1": "We Buddhists learn daily",
+  "splash_tagline_2": "We Buddhists practice daily"
 }

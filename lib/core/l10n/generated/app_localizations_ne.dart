@@ -205,6 +205,25 @@ class AppLocalizationsNe extends AppLocalizations {
   String get mala_group_untitled => 'शीर्षकविहीन स्पेस';
 
   @override
+  String get mala_all_time_accumulation => 'मेरो अहिलेसम्मको कुल संचय';
+
+  @override
+  String get mala_personal_practice => 'व्यक्तिगत अभ्यास';
+
+  @override
+  String get mala_events_section => 'कार्यक्रम';
+
+  @override
+  String mala_my_total(String count) {
+    return 'मेरो कुल: $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'समूहको कुल: $count';
+  }
+
+  @override
   String get home_timer => 'टाइमर';
 
   @override
@@ -2275,6 +2294,11 @@ class AppLocalizationsNe extends AppLocalizations {
   String get verse_comment_failed => 'Unable to post comment. Please try again';
 
   @override
+  String verse_comment_replying_to(String name) {
+    return 'Replying to $name';
+  }
+
+  @override
   String get share_app_message =>
       'म यो एप प्रयोग गरेर दैनिक बौद्ध अभ्यास निर्माण गर्दैछु, र मलाई लाग्यो तपाईंलाई पनि यो मन पर्नेछ।';
 
@@ -3102,4 +3126,99 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get feedback_error_unavailable => 'प्रतिक्रिया अहिले उपलब्ध छैन';
+
+  @override
+  String get connect_failed_load_discover_groups_error =>
+      'Failed to load discover groups';
+
+  @override
+  String get connect_failed_like_post_error => 'Failed to like post';
+
+  @override
+  String get connect_failed_unlike_post_error => 'Failed to unlike post';
+
+  @override
+  String get connect_failed_like_comment_error => 'Failed to like comment';
+
+  @override
+  String get connect_failed_unlike_comment_error => 'Failed to unlike comment';
+
+  @override
+  String get group_events_load_error =>
+      'Unable to load events. Please try again.';
+
+  @override
+  String get group_events_empty => 'No events yet';
+
+  @override
+  String get mala_failed_load_catalogue_error => 'Failed to load catalogue';
+
+  @override
+  String get chant_collection_reload_error =>
+      'Failed to reload collection to reorder';
+
+  @override
+  String get chant_collection_reorder_error => 'Failed to reorder chants';
+
+  @override
+  String get timer_duration_label => 'DURATION';
+
+  @override
+  String get timer_ambient_sound_label => 'AMBIENT SOUND';
+
+  @override
+  String get timer_begin_session => 'Begin session';
+
+  @override
+  String get timer_save_changes => 'Save changes';
+
+  @override
+  String get timer_new_title => 'New timer';
+
+  @override
+  String get timer_edit_title => 'Edit timer';
+
+  @override
+  String get timer_your_timers => 'Your timers';
+
+  @override
+  String get timer_custom_timer => 'Custom timer';
+
+  @override
+  String get timer_ambient_sounds_title => 'Ambient sounds';
+
+  @override
+  String get timer_ambient_sound_none => 'Default (no sound)';
+
+  @override
+  String get timer_ambient_sounds_load_error => 'Failed to load ambient sounds';
+
+  @override
+  String get timer_volume_label => 'VOLUME';
+
+  @override
+  String get timer_duration_title => 'Duration';
+
+  @override
+  String get timer_edit => 'Edit timer';
+
+  @override
+  String get timer_delete => 'Delete timer';
+
+  @override
+  String get timer_delete_title => 'Delete timer?';
+
+  @override
+  String get timer_delete_message =>
+      'This timer will be removed from your timers.';
+
+  @override
+  String get timer_duration_must_be_greater_than_error =>
+      'Duration must be greater than 0';
+
+  @override
+  String get splash_tagline_1 => 'We Buddhists learn daily';
+
+  @override
+  String get splash_tagline_2 => 'We Buddhists practice daily';
 }

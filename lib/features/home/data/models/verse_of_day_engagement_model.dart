@@ -34,6 +34,7 @@ class VerseOfDayCommentModel {
   final String id;
   final String verseId;
   final String userId;
+  final String? parentCommentId;
   final String firstName;
   final String? lastName;
   final String? avatarUrl;
@@ -47,6 +48,7 @@ class VerseOfDayCommentModel {
     required this.id,
     required this.verseId,
     this.userId = '',
+    this.parentCommentId,
     required this.firstName,
     this.lastName,
     this.avatarUrl,
@@ -61,11 +63,13 @@ class VerseOfDayCommentModel {
     final user = json['user'];
     final userJson =
         user is Map<String, dynamic> ? user : const <String, dynamic>{};
+    final parentId = json['parent_comment_id'] as String?;
 
     return VerseOfDayCommentModel(
       id: json['id'] as String? ?? '',
       verseId: json['verse_id'] as String? ?? '',
       userId: json['user_id'] as String? ?? '',
+      parentCommentId: parentId == null || parentId.isEmpty ? null : parentId,
       firstName: userJson['first_name'] as String? ?? '',
       lastName: userJson['last_name'] as String?,
       avatarUrl: userJson['avatar_url'] as String?,
@@ -82,6 +86,7 @@ class VerseOfDayCommentModel {
       id: id,
       verseId: verseId,
       userId: userId,
+      parentCommentId: parentCommentId,
       user: VerseOfDayCommentUser(
         firstName: firstName,
         lastName: lastName,

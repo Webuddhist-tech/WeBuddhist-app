@@ -404,6 +404,43 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get mala_all_time_accumulation => TolgeeBridge.get(
+    localeName,
+    'mala_all_time_accumulation',
+    () => _fallback.mala_all_time_accumulation,
+  );
+
+  @override
+  String get mala_personal_practice => TolgeeBridge.get(
+    localeName,
+    'mala_personal_practice',
+    () => _fallback.mala_personal_practice,
+  );
+
+  @override
+  String get mala_events_section => TolgeeBridge.get(
+    localeName,
+    'mala_events_section',
+    () => _fallback.mala_events_section,
+  );
+
+  @override
+  String mala_my_total(String count) => TolgeeBridge.format(
+    localeName,
+    'mala_my_total',
+    <String, Object>{'count': count},
+    () => _fallback.mala_my_total(count),
+  );
+
+  @override
+  String mala_group_total(String count) => TolgeeBridge.format(
+    localeName,
+    'mala_group_total',
+    <String, Object>{'count': count},
+    () => _fallback.mala_group_total(count),
+  );
+
+  @override
   String get home_timer =>
       TolgeeBridge.get(localeName, 'home_timer', () => _fallback.home_timer);
 
@@ -4421,6 +4458,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String verse_comment_replying_to(String name) => TolgeeBridge.format(
+    localeName,
+    'verse_comment_replying_to',
+    <String, Object>{'name': name},
+    () => _fallback.verse_comment_replying_to(name),
+  );
+
+  @override
   String get share_app_message => TolgeeBridge.get(
     localeName,
     'share_app_message',
@@ -6004,5 +6049,212 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'feedback_error_unavailable',
     () => _fallback.feedback_error_unavailable,
+  );
+
+  @override
+  String get connect_failed_load_discover_groups_error => TolgeeBridge.get(
+    localeName,
+    'connect_failed_load_discover_groups_error',
+    () => _fallback.connect_failed_load_discover_groups_error,
+  );
+
+  @override
+  String get connect_failed_like_post_error => TolgeeBridge.get(
+    localeName,
+    'connect_failed_like_post_error',
+    () => _fallback.connect_failed_like_post_error,
+  );
+
+  @override
+  String get connect_failed_unlike_post_error => TolgeeBridge.get(
+    localeName,
+    'connect_failed_unlike_post_error',
+    () => _fallback.connect_failed_unlike_post_error,
+  );
+
+  @override
+  String get connect_failed_like_comment_error => TolgeeBridge.get(
+    localeName,
+    'connect_failed_like_comment_error',
+    () => _fallback.connect_failed_like_comment_error,
+  );
+
+  @override
+  String get connect_failed_unlike_comment_error => TolgeeBridge.get(
+    localeName,
+    'connect_failed_unlike_comment_error',
+    () => _fallback.connect_failed_unlike_comment_error,
+  );
+
+  @override
+  String get group_events_load_error => TolgeeBridge.get(
+    localeName,
+    'group_events_load_error',
+    () => _fallback.group_events_load_error,
+  );
+
+  @override
+  String get group_events_empty => TolgeeBridge.get(
+    localeName,
+    'group_events_empty',
+    () => _fallback.group_events_empty,
+  );
+
+  @override
+  String get mala_failed_load_catalogue_error => TolgeeBridge.get(
+    localeName,
+    'mala_failed_load_catalogue_error',
+    () => _fallback.mala_failed_load_catalogue_error,
+  );
+
+  @override
+  String get chant_collection_reload_error => TolgeeBridge.get(
+    localeName,
+    'chant_collection_reload_error',
+    () => _fallback.chant_collection_reload_error,
+  );
+
+  @override
+  String get chant_collection_reorder_error => TolgeeBridge.get(
+    localeName,
+    'chant_collection_reorder_error',
+    () => _fallback.chant_collection_reorder_error,
+  );
+
+  @override
+  String get timer_duration_label => TolgeeBridge.get(
+    localeName,
+    'timer_duration_label',
+    () => _fallback.timer_duration_label,
+  );
+
+  @override
+  String get timer_ambient_sound_label => TolgeeBridge.get(
+    localeName,
+    'timer_ambient_sound_label',
+    () => _fallback.timer_ambient_sound_label,
+  );
+
+  @override
+  String get timer_begin_session => TolgeeBridge.get(
+    localeName,
+    'timer_begin_session',
+    () => _fallback.timer_begin_session,
+  );
+
+  @override
+  String get timer_save_changes => TolgeeBridge.get(
+    localeName,
+    'timer_save_changes',
+    () => _fallback.timer_save_changes,
+  );
+
+  @override
+  String get timer_new_title => TolgeeBridge.get(
+    localeName,
+    'timer_new_title',
+    () => _fallback.timer_new_title,
+  );
+
+  @override
+  String get timer_edit_title => TolgeeBridge.get(
+    localeName,
+    'timer_edit_title',
+    () => _fallback.timer_edit_title,
+  );
+
+  @override
+  String get timer_your_timers => TolgeeBridge.get(
+    localeName,
+    'timer_your_timers',
+    () => _fallback.timer_your_timers,
+  );
+
+  @override
+  String get timer_custom_timer => TolgeeBridge.get(
+    localeName,
+    'timer_custom_timer',
+    () => _fallback.timer_custom_timer,
+  );
+
+  @override
+  String get timer_ambient_sounds_title => TolgeeBridge.get(
+    localeName,
+    'timer_ambient_sounds_title',
+    () => _fallback.timer_ambient_sounds_title,
+  );
+
+  @override
+  String get timer_ambient_sound_none => TolgeeBridge.get(
+    localeName,
+    'timer_ambient_sound_none',
+    () => _fallback.timer_ambient_sound_none,
+  );
+
+  @override
+  String get timer_ambient_sounds_load_error => TolgeeBridge.get(
+    localeName,
+    'timer_ambient_sounds_load_error',
+    () => _fallback.timer_ambient_sounds_load_error,
+  );
+
+  @override
+  String get timer_volume_label => TolgeeBridge.get(
+    localeName,
+    'timer_volume_label',
+    () => _fallback.timer_volume_label,
+  );
+
+  @override
+  String get timer_duration_title => TolgeeBridge.get(
+    localeName,
+    'timer_duration_title',
+    () => _fallback.timer_duration_title,
+  );
+
+  @override
+  String get timer_edit =>
+      TolgeeBridge.get(localeName, 'timer_edit', () => _fallback.timer_edit);
+
+  @override
+  String get timer_delete => TolgeeBridge.get(
+    localeName,
+    'timer_delete',
+    () => _fallback.timer_delete,
+  );
+
+  @override
+  String get timer_delete_title => TolgeeBridge.get(
+    localeName,
+    'timer_delete_title',
+    () => _fallback.timer_delete_title,
+  );
+
+  @override
+  String get timer_delete_message => TolgeeBridge.get(
+    localeName,
+    'timer_delete_message',
+    () => _fallback.timer_delete_message,
+  );
+
+  @override
+  String get timer_duration_must_be_greater_than_error => TolgeeBridge.get(
+    localeName,
+    'timer_duration_must_be_greater_than_error',
+    () => _fallback.timer_duration_must_be_greater_than_error,
+  );
+
+  @override
+  String get splash_tagline_1 => TolgeeBridge.get(
+    localeName,
+    'splash_tagline_1',
+    () => _fallback.splash_tagline_1,
+  );
+
+  @override
+  String get splash_tagline_2 => TolgeeBridge.get(
+    localeName,
+    'splash_tagline_2',
+    () => _fallback.splash_tagline_2,
   );
 }

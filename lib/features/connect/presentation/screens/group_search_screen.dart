@@ -165,7 +165,7 @@ class _GroupSearchScreenState extends ConsumerState<GroupSearchScreen> {
 
     if (searchState.error != null && searchState.results.isEmpty) {
       return _ErrorSearchState(
-        message: searchState.error!,
+        message: context.l10n.connect_failed_load_discover_groups_error,
         onRetry: () => ref.read(groupSearchProvider.notifier).retry(),
       );
     }

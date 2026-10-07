@@ -56,7 +56,7 @@ class VerseSharePreview extends StatelessWidget {
                   verseOfDay: verseOfDay,
                   typography: typography,
                   verseColor: Colors.black87,
-                  attributionColor: AppColors.accentGoldDark,
+                  attributionColor: AppColors.textSecondary,
                   sourceColor: AppColors.textSecondary,
                   imageAspectRatio: 1.15,
                   useContentFontForAttribution:

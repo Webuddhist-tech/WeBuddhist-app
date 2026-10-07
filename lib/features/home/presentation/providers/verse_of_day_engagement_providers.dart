@@ -202,10 +202,6 @@ class VerseOfDayCommentsState {
   final int skip;
   final int total;
 
-  /// Ids of comments posted from this device while this list was alive:
-  /// the fallback for a comment the API sent without an author id.
-  final Set<String> ownCommentIds;
-
   const VerseOfDayCommentsState({
     this.comments = const [],
     this.isLoading = false,
@@ -216,7 +212,6 @@ class VerseOfDayCommentsState {
     this.hasMore = true,
     this.skip = 0,
     this.total = 0,
-    this.ownCommentIds = const {},
   });
 
   VerseOfDayCommentsState copyWith({
@@ -229,7 +224,6 @@ class VerseOfDayCommentsState {
     bool? hasMore,
     int? skip,
     int? total,
-    Set<String>? ownCommentIds,
     bool clearError = false,
   }) {
     return VerseOfDayCommentsState(
@@ -242,7 +236,6 @@ class VerseOfDayCommentsState {
       hasMore: hasMore ?? this.hasMore,
       skip: skip ?? this.skip,
       total: total ?? this.total,
-      ownCommentIds: ownCommentIds ?? this.ownCommentIds,
     );
   }
 }
@@ -262,6 +255,12 @@ class VerseOfDayCommentsNotifier
   /// Deleted here; a reply that started before the delete may still list them.
   final Set<String> _deletedCommentIds = {};
 
+  /// Parents fetched on their own, ahead of the page that lists them.
+  final Set<String> _extraParentIds = {};
+
+  /// Parents that couldn't be fetched; not retried until the next refresh.
+  final Set<String> _unavailableParentIds = {};
+
   /// A refresh asked for while an older page was loading; runs once it lands.
   bool _refreshPending = false;
 
@@ -280,6 +279,12 @@ class VerseOfDayCommentsNotifier
     final result = await ref
         .read(verseOfDayDomainRepositoryProvider)
         .getComments(verseId: verseId, skip: 0, limit: _limit);
+    if (!mounted) return;
+
+    _unavailableParentIds.clear();
+    final parents = await _fetchMissingParents(
+      result.fold((_) => const [], (page) => page.comments),
+    );
     if (!mounted) return;
 
     result.fold(
@@ -315,8 +320,19 @@ class VerseOfDayCommentsNotifier
         ];
         // Comments deleted after the server built this reply are gone now.
         final deleted = page.comments.length - comments.length;
+        final extras =
+            parents
+                .where(
+                  (parent) =>
+                      !fetched.contains(parent.id) &&
+                      !_deletedCommentIds.contains(parent.id),
+                )
+                .toList();
+        _extraParentIds
+          ..clear()
+          ..addAll(extras.map((parent) => parent.id));
         state = state.copyWith(
-          comments: [...posted, ...comments],
+          comments: [...posted, ...comments, ...extras],
           isLoading: false,
           hasLoaded: true,
           hasMore: page.hasMore,
@@ -338,6 +354,12 @@ class VerseOfDayCommentsNotifier
         .getComments(verseId: verseId, skip: state.skip, limit: _limit);
     if (!mounted) return;
 
+    final parents = await _fetchMissingParents(
+      result.fold((_) => const [], (page) => page.comments),
+      known: state.comments.map((comment) => comment.id).toSet(),
+    );
+    if (!mounted) return;
+
     result.fold(
       (failure) {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
@@ -347,8 +369,18 @@ class VerseOfDayCommentsNotifier
           ...state.comments.map((comment) => comment.id),
           ..._deletedCommentIds,
         };
-        final fresh =
-            page.comments.where((comment) => !seen.contains(comment.id));
+        final fresh = <VerseOfDayComment>[
+          for (final comment in [...page.comments, ...parents])
+            if (seen.add(comment.id)) comment,
+        ];
+        // Parents fetched earlier are now part of the paged list.
+        _extraParentIds
+          ..removeAll(page.comments.map((comment) => comment.id))
+          ..addAll(
+            parents
+                .where((parent) => fresh.contains(parent))
+                .map((parent) => parent.id),
+          );
         state = state.copyWith(
           comments: [...state.comments, ...fresh],
           isLoadingMore: false,
@@ -366,8 +398,53 @@ class VerseOfDayCommentsNotifier
     }
   }
 
+  /// Replies are listed before their older parents; fetches the parents not
+  /// paged in yet so the replies can sit under them.
+  Future<List<VerseOfDayComment>> _fetchMissingParents(
+    List<VerseOfDayComment> comments, {
+    Set<String> known = const {},
+  }) async {
+    final repository = ref.read(verseOfDayDomainRepositoryProvider);
+    final have = {...known, for (final comment in comments) comment.id};
+    final parents = <VerseOfDayComment>[];
+    var pending = comments;
+
+    while (true) {
+      final missing =
+          pending
+              .map((comment) => comment.parentCommentId)
+              .whereType<String>()
+              .where(
+                (id) =>
+                    !have.contains(id) &&
+                    !_deletedCommentIds.contains(id) &&
+                    !_unavailableParentIds.contains(id),
+              )
+              .toSet()
+              .toList();
+      if (missing.isEmpty) return parents;
+
+      final results = await Future.wait(
+        missing.map(
+          (id) => repository.getComment(verseId: verseId, commentId: id),
+        ),
+      );
+      if (!mounted) return parents;
+
+      have.addAll(missing);
+      pending = [];
+      for (var i = 0; i < missing.length; i++) {
+        results[i].fold(
+          (_) => _unavailableParentIds.add(missing[i]),
+          pending.add,
+        );
+      }
+      parents.addAll(pending);
+    }
+  }
+
   /// Returns the failure message, or null when the comment was posted.
-  Future<String?> submitComment(String text) async {
+  Future<String?> submitComment(String text, {String? parentCommentId}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || state.isSubmitting) return null;
 
@@ -375,7 +452,11 @@ class VerseOfDayCommentsNotifier
 
     final result = await ref
         .read(verseOfDayDomainRepositoryProvider)
-        .createComment(verseId: verseId, text: trimmed);
+        .createComment(
+          verseId: verseId,
+          text: trimmed,
+          parentCommentId: parentCommentId,
+        );
     if (!mounted) return null;
 
     return result.fold(
@@ -389,7 +470,6 @@ class VerseOfDayCommentsNotifier
           isSubmitting: false,
           skip: state.skip + 1,
           total: state.total + 1,
-          ownCommentIds: {...state.ownCommentIds, comment.id},
         );
         return null;
       },
@@ -403,13 +483,28 @@ class VerseOfDayCommentsNotifier
     if (!mounted) return false;
 
     return result.fold((_) => false, (_) {
-      _deletedCommentIds.add(commentId);
+      // Replies go with their parent.
+      final removedIds = {commentId};
+      var grew = true;
+      while (grew) {
+        grew = false;
+        for (final comment in state.comments) {
+          if (removedIds.contains(comment.parentCommentId) &&
+              removedIds.add(comment.id)) {
+            grew = true;
+          }
+        }
+      }
+      _deletedCommentIds.addAll(removedIds);
       final remaining =
-          state.comments.where((comment) => comment.id != commentId).toList();
+          state.comments
+              .where((comment) => !removedIds.contains(comment.id))
+              .toList();
       final removed = state.comments.length - remaining.length;
+      final unpaged = removedIds.where(_extraParentIds.remove).length;
       state = state.copyWith(
         comments: remaining,
-        skip: (state.skip - removed).clamp(0, 1 << 31),
+        skip: (state.skip - (removed - unpaged)).clamp(0, 1 << 31),
         total: (state.total - removed).clamp(0, 1 << 31),
       );
       return true;
@@ -464,7 +559,7 @@ class VerseOfDayCommentsNotifier
   }
 }
 
-/// Re-created on login/logout so `ownCommentIds` never carries over accounts.
+/// Re-created on login/logout so `liked_by_me` reflects the current user.
 final verseOfDayCommentsProvider = StateNotifierProvider.autoDispose
     .family<VerseOfDayCommentsNotifier, VerseOfDayCommentsState, String>((
       ref,

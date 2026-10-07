@@ -41,9 +41,8 @@ class VerseOfDayCommentUser extends Equatable {
 class VerseOfDayComment extends Equatable {
   final String id;
   final String verseId;
-
-  /// The author's account id; empty when the API did not send one.
   final String userId;
+  final String? parentCommentId;
   final VerseOfDayCommentUser user;
   final String text;
   final DateTime? createdAt;
@@ -55,6 +54,7 @@ class VerseOfDayComment extends Equatable {
     required this.id,
     required this.verseId,
     this.userId = '',
+    this.parentCommentId,
     required this.user,
     required this.text,
     this.createdAt,
@@ -68,6 +68,7 @@ class VerseOfDayComment extends Equatable {
       id: id,
       verseId: verseId,
       userId: userId,
+      parentCommentId: parentCommentId,
       user: user,
       text: text,
       createdAt: createdAt,
@@ -82,6 +83,7 @@ class VerseOfDayComment extends Equatable {
     id,
     verseId,
     userId,
+    parentCommentId,
     user,
     text,
     createdAt,

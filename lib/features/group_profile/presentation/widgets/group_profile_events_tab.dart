@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
@@ -35,7 +36,7 @@ class GroupProfileEventsTab extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: ErrorStateWidget(
                 error: failure,
-                customMessage: 'Unable to load events. Please try again.',
+                customMessage: context.l10n.group_events_load_error,
                 onRetry: () => ref.invalidate(groupEventsProvider(groupId)),
               ),
             ),
@@ -49,7 +50,7 @@ class GroupProfileEventsTab extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
                     sliver: SliverToBoxAdapter(
                       child: Text(
-                        'No events yet',
+                        context.l10n.group_events_empty,
                         style: TextStyle(
                           fontSize: 15,
                           color:
@@ -107,7 +108,7 @@ class GroupProfileEventsTab extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: ErrorStateWidget(
                 error: error,
-                customMessage: 'Unable to load events. Please try again.',
+                customMessage: context.l10n.group_events_load_error,
                 onRetry: () => ref.invalidate(groupEventsProvider(groupId)),
               ),
             ),

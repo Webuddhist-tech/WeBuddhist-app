@@ -1,19 +1,14 @@
 import 'dart:math';
 
+import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+
 /// Taglines shown on the splash screen; one is picked at random per launch.
-const List<String> splashTaglines = [
-  'We Buddhists learn daily.',
-  'We Buddhists practice daily.',
-  'We Buddhists connect daily.',
-  'We Buddhists do a little less harm every day.',
-  'We Buddhists do a little more good every day.',
-  'We Buddhists know our minds a little better every day.',
-  'We Buddhists know that everything changes.',
-  'We Buddhists know that nothing is 100% perfect and satisfactory.',
-  'We Buddhists know that things are our own projections, not the way they look.',
+final List<String Function(AppLocalizations)> splashTaglines = [
+  (l10n) => l10n.splash_tagline_1,
+  (l10n) => l10n.splash_tagline_2,
 ];
 
-String randomSplashTagline([Random? random]) {
+int randomSplashTaglineIndex([Random? random]) {
   final rng = random ?? Random();
-  return splashTaglines[rng.nextInt(splashTaglines.length)];
+  return rng.nextInt(splashTaglines.length);
 }

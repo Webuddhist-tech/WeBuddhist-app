@@ -100,6 +100,7 @@ class AppColors {
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color error = Color(0xFFD32F2F);
   static const Color success = Color(0xFF008000);
+  static const Color successDark = Color(0xFF4ADE80); // on dark surfaces
   static const Color warning = Color(0xFFFFA500);
   static const Color info = Color(0xFF0000FF);
   static const Color danger = Color(0xFFD32F2F);

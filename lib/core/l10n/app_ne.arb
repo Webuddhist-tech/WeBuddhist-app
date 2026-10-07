@@ -91,6 +91,25 @@
   "mala_group_accumulations": "पाठ थप्नुहोस्",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "शीर्षकविहीन स्पेस",
+  "mala_all_time_accumulation": "मेरो अहिलेसम्मको कुल संचय",
+  "mala_personal_practice": "व्यक्तिगत अभ्यास",
+  "mala_events_section": "कार्यक्रम",
+  "mala_my_total": "मेरो कुल: {count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "समूहको कुल: {count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "टाइमर",
   "preset_timers": "पूर्वनिर्धारित टाइमरहरू",
   "meditation_timer": "ध्यान टाइमर",

@@ -454,6 +454,36 @@ abstract class AppLocalizations {
   /// **'Untitled space'**
   String get mala_group_untitled;
 
+  /// No description provided for @mala_all_time_accumulation.
+  ///
+  /// In en, this message translates to:
+  /// **'My all-time accumulation'**
+  String get mala_all_time_accumulation;
+
+  /// No description provided for @mala_personal_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal practice'**
+  String get mala_personal_practice;
+
+  /// No description provided for @mala_events_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get mala_events_section;
+
+  /// No description provided for @mala_my_total.
+  ///
+  /// In en, this message translates to:
+  /// **'My total: {count}'**
+  String mala_my_total(String count);
+
+  /// No description provided for @mala_group_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Group total: {count}'**
+  String mala_group_total(String count);
+
   /// No description provided for @home_timer.
   ///
   /// In en, this message translates to:
@@ -4040,6 +4070,12 @@ abstract class AppLocalizations {
   /// **'Unable to post comment. Please try again'**
   String get verse_comment_failed;
 
+  /// No description provided for @verse_comment_replying_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {name}'**
+  String verse_comment_replying_to(String name);
+
   /// No description provided for @share_app_message.
   ///
   /// In en, this message translates to:
@@ -5383,6 +5419,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Feedback is not available right now'**
   String get feedback_error_unavailable;
+
+  /// No description provided for @connect_failed_load_discover_groups_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load discover groups'**
+  String get connect_failed_load_discover_groups_error;
+
+  /// No description provided for @connect_failed_like_post_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to like post'**
+  String get connect_failed_like_post_error;
+
+  /// No description provided for @connect_failed_unlike_post_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unlike post'**
+  String get connect_failed_unlike_post_error;
+
+  /// No description provided for @connect_failed_like_comment_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to like comment'**
+  String get connect_failed_like_comment_error;
+
+  /// No description provided for @connect_failed_unlike_comment_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unlike comment'**
+  String get connect_failed_unlike_comment_error;
+
+  /// No description provided for @group_events_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load events. Please try again.'**
+  String get group_events_load_error;
+
+  /// No description provided for @group_events_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events yet'**
+  String get group_events_empty;
+
+  /// No description provided for @mala_failed_load_catalogue_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load catalogue'**
+  String get mala_failed_load_catalogue_error;
+
+  /// No description provided for @chant_collection_reload_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reload collection to reorder'**
+  String get chant_collection_reload_error;
+
+  /// No description provided for @chant_collection_reorder_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reorder chants'**
+  String get chant_collection_reorder_error;
+
+  /// No description provided for @timer_duration_label.
+  ///
+  /// In en, this message translates to:
+  /// **'DURATION'**
+  String get timer_duration_label;
+
+  /// No description provided for @timer_ambient_sound_label.
+  ///
+  /// In en, this message translates to:
+  /// **'AMBIENT SOUND'**
+  String get timer_ambient_sound_label;
+
+  /// No description provided for @timer_begin_session.
+  ///
+  /// In en, this message translates to:
+  /// **'Begin session'**
+  String get timer_begin_session;
+
+  /// No description provided for @timer_save_changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get timer_save_changes;
+
+  /// No description provided for @timer_new_title.
+  ///
+  /// In en, this message translates to:
+  /// **'New timer'**
+  String get timer_new_title;
+
+  /// No description provided for @timer_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit timer'**
+  String get timer_edit_title;
+
+  /// No description provided for @timer_your_timers.
+  ///
+  /// In en, this message translates to:
+  /// **'Your timers'**
+  String get timer_your_timers;
+
+  /// No description provided for @timer_custom_timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom timer'**
+  String get timer_custom_timer;
+
+  /// No description provided for @timer_ambient_sounds_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambient sounds'**
+  String get timer_ambient_sounds_title;
+
+  /// No description provided for @timer_ambient_sound_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (no sound)'**
+  String get timer_ambient_sound_none;
+
+  /// No description provided for @timer_ambient_sounds_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load ambient sounds'**
+  String get timer_ambient_sounds_load_error;
+
+  /// No description provided for @timer_volume_label.
+  ///
+  /// In en, this message translates to:
+  /// **'VOLUME'**
+  String get timer_volume_label;
+
+  /// No description provided for @timer_duration_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get timer_duration_title;
+
+  /// No description provided for @timer_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit timer'**
+  String get timer_edit;
+
+  /// No description provided for @timer_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete timer'**
+  String get timer_delete;
+
+  /// No description provided for @timer_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete timer?'**
+  String get timer_delete_title;
+
+  /// No description provided for @timer_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This timer will be removed from your timers.'**
+  String get timer_delete_message;
+
+  /// No description provided for @timer_duration_must_be_greater_than_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration must be greater than 0'**
+  String get timer_duration_must_be_greater_than_error;
+
+  /// No description provided for @splash_tagline_1.
+  ///
+  /// In en, this message translates to:
+  /// **'We Buddhists learn daily'**
+  String get splash_tagline_1;
+
+  /// No description provided for @splash_tagline_2.
+  ///
+  /// In en, this message translates to:
+  /// **'We Buddhists practice daily'**
+  String get splash_tagline_2;
 }
 
 class _AppLocalizationsDelegate

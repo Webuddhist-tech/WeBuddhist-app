@@ -4,30 +4,31 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
+import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/group_accumulations_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Fixed bottom bar for a group accumulation chant session in the reader.
 ///
-/// Shows the group session count pill (left), the chant title in its script
-/// (centre), and opens a groups-only [GroupAccumulationsSheet] when the pill
-/// is tapped.
+/// Shows the session count pill (left) and the chant title in its script
+/// (centre). The pill carries the avatar of the target chants are being added
+/// to and opens [GroupAccumulationsSheet] to switch it.
 class GroupAccumulatorChantBar extends ConsumerWidget {
   const GroupAccumulatorChantBar({
     super.key,
-    required this.presetId,
-    required this.groupAccumulatorId,
+    required this.mantra,
     required this.sessionCount,
     required this.chantTitle,
     this.chantTitleFontFamily,
   });
 
-  final String presetId;
-  final String groupAccumulatorId;
+  /// The chant's preset, as the key the personal counter is held under.
+  final Mantra mantra;
 
-  /// Active group session count for this chant (not personal).
+  /// Chants made in this reader visit, whichever target they went to.
   final int sessionCount;
   final String chantTitle;
   final String? chantTitleFontFamily;
@@ -45,25 +46,40 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
     final titleFontSize =
         Theme.of(context).textTheme.titleMedium?.fontSize ?? 16;
 
+    final presetId = mantra.presetId;
     ref.watch(groupAccumulationCountsProvider(presetId));
     final groupsAsync = ref.watch(joinedAccumulatorGroupsProvider(presetId));
     final groups = groupsAsync.valueOrNull ?? const <AccumulatorGroup>[];
+    final selection = ref.watch(malaAccumulationSelectionProvider(presetId));
     AccumulatorGroup? activeGroup;
     for (final group in groups) {
-      if (group.groupAccumulatorId == groupAccumulatorId) {
+      if (group.groupAccumulatorId == selection.groupAccumulatorId) {
         activeGroup = group;
         break;
       }
     }
 
     void openGroupSheet() {
-      if (groups.isEmpty) return;
+      // An empty list may be a request that failed. Personal practice is
+      // offered either way; asking again lets the sheet fill its rows in.
+      if (groups.isEmpty && !groupsAsync.isLoading) {
+        ref.invalidate(joinedAccumulatorGroupsProvider(presetId));
+      } else if (!ref.read(joinedGroupUserCountsProvider(presetId)).isLoading &&
+          groups.any(
+            (group) =>
+                !ref
+                    .read(groupAccumulationCountsProvider(presetId).notifier)
+                    .hasServerCount(group.groupAccumulatorId),
+          )) {
+        // A count that failed to load keeps its group from taking chants;
+        // asking again lets it come in.
+        ref.invalidate(joinedGroupUserCountsProvider(presetId));
+      }
       GroupAccumulationsSheet.show(
         context,
-        presetId: presetId,
+        mantra: mantra,
+        presetTitle: chantTitle,
         groups: groups,
-        personalLifetimeCount: 0,
-        showPersonalRow: false,
       );
     }
 
@@ -85,7 +101,7 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
             borderRadius: BorderRadius.circular(999),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: groups.isNotEmpty ? openGroupSheet : null,
+              onTap: openGroupSheet,
               borderRadius: BorderRadius.circular(999),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
@@ -101,7 +117,10 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _GroupSessionAvatar(group: activeGroup),
+                    _GroupSessionAvatar(
+                      group: activeGroup,
+                      isPersonal: selection.isPersonal,
+                    ),
                     Icon(
                       AppAssets.caretRight2,
                       size: 20,
@@ -160,9 +179,12 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
 }
 
 class _GroupSessionAvatar extends StatelessWidget {
-  const _GroupSessionAvatar({required this.group});
+  const _GroupSessionAvatar({required this.group, this.isPersonal = false});
 
   final AccumulatorGroup? group;
+
+  /// Chants are going to personal practice, which has no image of its own.
+  final bool isPersonal;
   static const _size = 24.0;
 
   @override
@@ -189,7 +211,7 @@ class _GroupSessionAvatar extends StatelessWidget {
                 fit: BoxFit.cover,
               )
               : Icon(
-                AppAssets.bookOpenText,
+                isPersonal ? AppAssets.profile : AppAssets.bookOpenText,
                 size: _size * 0.55,
                 color: isDark ? AppColors.grey500 : AppColors.grey600,
               ),

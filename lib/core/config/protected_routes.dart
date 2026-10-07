@@ -96,6 +96,7 @@ class ProtectedRoutes {
     '/verse-of-day/today',
     // Verse comments: public list; POST needs the token when logged in.
     '/verse-of-day/{verseId}/comments',
+    '/verse-of-day/{verseId}/comments/{commentId}',
     // Series list/detail: sends auth when logged in so the response includes
     // user-enriched fields like `progress` and `partner`.
     '/series',
