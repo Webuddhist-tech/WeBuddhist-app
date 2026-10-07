@@ -153,9 +153,7 @@ class _IntentionChip extends StatelessWidget {
 
     return Material(
       color: prayerIntentionCardColor(intention, isDark),
-      shape: StadiumBorder(
-        side: BorderSide(color: prayerIntentionBorderColor(intention, isDark)),
-      ),
+      shape: StadiumBorder(side: prayerIntentionCardBorder(intention, isDark)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onClear,
