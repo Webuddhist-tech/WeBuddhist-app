@@ -4,8 +4,6 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/connect/data/models/connect_feed_model.dart';
 import 'package:flutter_pecha/features/connect/data/models/connect_post_comment_model.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
-import 'package:flutter_pecha/features/connect/data/models/connect_post_model.dart';
-import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
@@ -86,37 +84,6 @@ class ConnectRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in fetchMyGroups', e);
       throw _dioToException(e, 'Failed to load my groups');
-    }
-  }
-
-  Future<ConnectPostsPage> fetchConnectPosts({
-    required bool includeUnfollowed,
-    int skip = 0,
-    int limit = 20,
-  }) async {
-    try {
-      final queryParameters = <String, dynamic>{'skip': skip, 'limit': limit};
-      if (includeUnfollowed) {
-        queryParameters['include_unfollowed'] = true;
-      }
-
-      final response = await dio.get(
-        '/groups/author/posts',
-        queryParameters: queryParameters,
-        options: Options(extra: {'no_cache': true}),
-      );
-
-      if (response.statusCode != 200) {
-        _logger.error('Failed to load connect posts: ${response.statusCode}');
-        throw _statusToException(response.statusCode, 'Failed to load posts');
-      }
-
-      return ConnectPostsPageModel.fromJson(
-        response.data as Map<String, dynamic>,
-      ).toEntity();
-    } on DioException catch (e) {
-      _logger.error('Dio error in fetchConnectPosts', e);
-      throw _dioToException(e, 'Failed to load posts');
     }
   }
 

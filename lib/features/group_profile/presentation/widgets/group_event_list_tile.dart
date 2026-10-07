@@ -41,7 +41,7 @@ class GroupEventListTile extends StatelessWidget {
     final chips = _buildChips(context);
 
     return Material(
-      color: isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
         child: Padding(

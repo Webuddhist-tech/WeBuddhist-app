@@ -125,7 +125,6 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
       return ConnectPostCard(
         post: item.post!,
         includeUnfollowed: includeUnfollowed,
-        syncFeedProvider: true,
       );
     }
 
