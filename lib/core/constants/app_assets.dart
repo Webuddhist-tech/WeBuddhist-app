@@ -109,6 +109,9 @@ class AppAssets {
   static const IconData arrowCircleUp = PhosphorIconsFill.arrowCircleUp;
   static const IconData handsPraying = PhosphorIconsRegular.handsPraying;
   static const IconData handsPrayingFill = PhosphorIconsFill.handsPraying;
+  static const IconData sliders = PhosphorIconsRegular.sliders;
+  static const IconData trendUp = PhosphorIconsRegular.trendUp;
+  static const IconData smiley = PhosphorIconsRegular.smiley;
   static const IconData arrowBendUpLeft = PhosphorIconsRegular.arrowBendUpLeft;
   static const IconData copy = PhosphorIconsRegular.copy;
 

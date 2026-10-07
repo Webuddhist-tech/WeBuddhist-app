@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
@@ -19,6 +20,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_prompt.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_filter_bar.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_sort_sheet.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_supporters_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -315,6 +318,18 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     }
   }
 
+  Future<void> _openSort(PrayerRequestsFilter current) async {
+    final picked = await PrayerSortSheet.show(context, current: current);
+    if (!mounted || picked == null) return;
+    await _applyFilter(picked);
+  }
+
+  Future<void> _applyFilter(PrayerRequestsFilter filter) async {
+    final list = _listController;
+    if (list != null && list.hasClients) list.jumpTo(0);
+    await _notifier.setFilter(filter);
+  }
+
   /// Confirms, then deletes one of the viewer's own requests. No success
   /// toast: the card leaving the list already shows the delete landed.
   Future<void> _deleteRequest(ChatMessageDTO request) async {
@@ -354,6 +369,9 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     _syncRoom(state);
 
     final canCompose = state.roomStatus == PrayerRoomStatus.ready;
+    // The filter row only makes sense once the room is open: a failed or
+    // closed room shows its notice alone.
+    final canFilter = canCompose;
 
     return DraggableScrollableSheet(
       controller: _sheetController,
@@ -413,6 +431,19 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                       onTap: () => unawaited(_openComposer()),
                     ),
                   ),
+                if (canFilter)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+                    child: PrayerRequestsFilterBar(
+                      filter: state.filter,
+                      total: state.total,
+                      onOpenSort: () => unawaited(_openSort(state.filter)),
+                      onClearIntention:
+                          () => unawaited(
+                            _applyFilter(state.filter.withoutIntention()),
+                          ),
+                    ),
+                  ),
                 Expanded(
                   child: _buildBody(context, state, isDark, scrollController),
                 ),
@@ -450,6 +481,12 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     } else if (!state.hasLoaded ||
         (state.isLoading && state.requests.isEmpty)) {
       placeholder = const Center(child: CircularProgressIndicator());
+    } else if (state.requests.isEmpty && state.filter.byIntention) {
+      placeholder = _Notice(
+        text: context.l10n.event_prayer_filter_empty_title,
+        detail: context.l10n.event_prayer_filter_empty_body,
+        color: mutedColor,
+      );
     } else if (state.requests.isEmpty) {
       placeholder = _EmptyState(
         isDark: isDark,
@@ -653,11 +690,13 @@ class _Notice extends StatelessWidget {
   const _Notice({
     required this.text,
     required this.color,
+    this.detail,
     this.actionLabel,
     this.onAction,
   });
 
   final String text;
+  final String? detail;
   final Color color;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -676,6 +715,15 @@ class _Notice extends StatelessWidget {
               strutStyle: context.tibetanStrutStyle(14),
               style: TextStyle(fontSize: 14, color: color),
             ),
+            if (detail != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                detail!,
+                textAlign: TextAlign.center,
+                strutStyle: context.tibetanStrutStyle(13),
+                style: TextStyle(fontSize: 13, color: color),
+              ),
+            ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 8),
               TextButton(onPressed: onAction, child: Text(actionLabel!)),

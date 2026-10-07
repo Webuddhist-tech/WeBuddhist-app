@@ -30,6 +30,8 @@ class _OneMessageRepository implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   }) async {
     return const Right(
       ChatMessagesPage(
