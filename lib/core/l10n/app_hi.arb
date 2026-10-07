@@ -401,7 +401,7 @@
   "image": "इमेज",
   "feedback": "फ़ीडबैक",
   "author": "लेखक",
-  "plans_created": "योजना बनाई गई",
+  "plans_created": "बनाई गई योजनाएँ",
   "ai_confirm": "पुष्टि करें",
   "search_no_results": "\"{query}\" के लिए कोई परिणाम नहीं मिला",
   "@search_no_results": {
@@ -885,15 +885,15 @@
   "bookmarks_empty_texts_title": "अभी तक कोई पाठ बुकमार्क नहीं किया गया",
   "bookmarks_empty_texts_subtitle": "इसे यहाँ सहेजने के लिए किसी पाठ को बुकमार्क करें",
   "bookmark_removed": "बुकमार्क हटाया गया",
-  "bookmark_remove_failed": "बुकमार्क हटाने में विफल",
+  "bookmark_remove_failed": "बुकमार्क हटाने में असमर्थ",
   "bookmark_saved": "बुकमार्क सहेजा गया",
-  "bookmark_save_failed": "बुकमार्क सहेजने में विफल",
+  "bookmark_save_failed": "बुकमार्क सहेजने में असमर्थ",
   "bookmarks_yesterday": "कल",
   "webview_timeout_error": "पेज लोड होने में बहुत समय लगा। कृपया अपना इंटरनेट कनेक्शन जांचें",
-  "webview_load_failed": "पेज लोड करने में विफल",
+  "webview_load_failed": "पेज लोड करने में असमर्थ",
   "privacy_policy_load_error": "गोपनीयता नीति पेज लोड करने में असमर्थ",
   "terms_of_service_load_error": "सेवा की शर्तें पेज लोड करने में असमर्थ",
-  "series_enroll_error": "श्रृंखला में नामांकन विफल",
+  "series_enroll_error": "श्रृंखला में नामांकन करने में असमर्थ",
   "series_share_message": "WeBuddhist पर {title} का अभ्यास करने में मेरे साथ जुड़ें।\n\n{url}",
   "player_back_10": "10 सेकंड पीछे",
   "player_pause": "रोकें",
@@ -937,19 +937,19 @@
   "connect_empty_discover_groups": "खोजने के लिए कोई स्पेस नहीं",
   "connect_empty_discover_practices": "खोजने के लिए कोई अभ्यास नहीं",
   "connect_all_groups": "सभी स्पेस",
-  "connect_my_empty_feed_title": "आपके स्पेस शांत रहे हैं",
+  "connect_my_empty_feed_title": "कोई नया अपडेट नहीं",
   "connect_my_empty_events_title": "कोई आगामी कार्यक्रम नहीं",
   "connect_my_empty_posts_title": "अभी कोई पोस्ट नहीं",
   "connect_my_empty_groups_title": "अभी कोई समूह नहीं",
-  "connect_my_empty_feed_subtitle": "आपके स्पेस से कुछ नया नहीं है। अन्य आज पोस्ट कर रहे हैं",
-  "connect_my_empty_events_subtitle": "अभी आपके स्पेस में कुछ भी निर्धारित नहीं है। अन्य के पास सभी के लिए खुले कार्यक्रम हैं",
-  "connect_my_empty_posts_subtitle": "आपके स्पेस ने कुछ भी पोस्ट नहीं किया है। देखें अन्य क्या साझा कर रहे हैं",
+  "connect_my_empty_feed_subtitle": "आपके स्पेस ने कुछ नया साझा नहीं किया है",
+  "connect_my_empty_events_subtitle": "आपके स्पेस ने कोई कार्यक्रम तय नहीं किया है",
+  "connect_my_empty_posts_subtitle": "आपके स्पेस ने कुछ भी पोस्ट नहीं किया है",
   "connect_my_empty_groups_subtitle": "आपने अभी तक कोई समूह नहीं जोड़ा है। साथ अभ्यास करने के लिए समुदाय खोजें।",
   "connect_my_empty_feed_browse": "देखें अन्य स्पेस क्या साझा कर रहे हैं",
   "connect_my_empty_events_browse": "खुले कार्यक्रम देखें",
   "connect_my_empty_posts_browse": "अन्य पोस्ट देखें",
   "connect_my_empty_practices_title": "अभी तक कोई अभ्यास नहीं",
-  "connect_my_empty_practices_subtitle": "आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है। देखें अन्य क्या पेश कर रहे हैं",
+  "connect_my_empty_practices_subtitle": "आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है",
   "connect_my_empty_practices_browse": "अन्य अभ्यास देखें",
   "connect_comment_replying_to": "@{handle} को उत्तर दे रहे हैं",
   "@connect_comment_replying_to": {
@@ -964,7 +964,7 @@
   "connect_comment_reply": "उत्तर दें",
   "connect_comment_delete_title": "टिप्पणी हटाएँ?",
   "connect_comment_delete_message": "यह टिप्पणी स्थायी रूप से हटा दी जाएगी",
-  "connect_comment_delete_failed": "टिप्पणी हटाने में विफल",
+  "connect_comment_delete_failed": "टिप्पणी हटाने में असमर्थ",
   "connect_post_comments_count": "{count, plural, =1 {1 टिप्पणी} other {{count} टिप्पणियाँ}}",
   "@connect_post_comments_count": {
     "placeholders": {
@@ -1216,7 +1216,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {1 व्यक्ति ने प्रार्थना की}\nother {{count} लोगों ने प्रार्थना की}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {{count} व्यक्ति ने प्रार्थना की}\nother {{count} लोगों ने प्रार्थना की}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1277,5 +1277,6 @@
   "bookmarks_empty_group_accumulations_title": "अभी तक कोई स्पेस संचय बुकमार्क नहीं किया गया",
   "bookmarks_empty_group_accumulations_subtitle": "इसे यहाँ सहेजने के लिए किसी संचय को बुकमार्क करें",
   "practice_collection_already_added": "यह संग्रह पहले से आपके अभ्यास में है",
-  "practice_group_accumulator_already_added": "यह संचय पहले से आपके अभ्यास में है"
+  "practice_group_accumulator_already_added": "यह संचय पहले से आपके अभ्यास में है",
+  "group_member_owner": "स्वामी"
 }

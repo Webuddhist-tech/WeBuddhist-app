@@ -817,7 +817,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_all_groups => 'सभी स्पेस';
 
   @override
-  String get connect_my_empty_feed_title => 'आपके स्पेस शांत रहे हैं';
+  String get connect_my_empty_feed_title => 'कोई नया अपडेट नहीं';
 
   @override
   String get connect_my_empty_events_title => 'कोई आगामी कार्यक्रम नहीं';
@@ -830,15 +830,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'आपके स्पेस से कुछ नया नहीं है। अन्य आज पोस्ट कर रहे हैं';
+      'आपके स्पेस ने कुछ नया साझा नहीं किया है';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'अभी आपके स्पेस में कुछ भी निर्धारित नहीं है। अन्य के पास सभी के लिए खुले कार्यक्रम हैं';
+      'आपके स्पेस ने कोई कार्यक्रम तय नहीं किया है';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'आपके स्पेस ने कुछ भी पोस्ट नहीं किया है। देखें अन्य क्या साझा कर रहे हैं';
+      'आपके स्पेस ने कुछ भी पोस्ट नहीं किया है';
 
   @override
   String get connect_my_empty_groups_subtitle =>
@@ -859,7 +859,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है। देखें अन्य क्या पेश कर रहे हैं';
+      'आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है';
 
   @override
   String get connect_my_empty_practices_browse => 'अन्य अभ्यास देखें';
@@ -886,7 +886,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह टिप्पणी स्थायी रूप से हटा दी जाएगी';
 
   @override
-  String get connect_comment_delete_failed => 'टिप्पणी हटाने में विफल';
+  String get connect_comment_delete_failed => 'टिप्पणी हटाने में असमर्थ';
 
   @override
   String connect_post_comments_count(int count) {
@@ -1231,7 +1231,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get author => 'लेखक';
 
   @override
-  String get plans_created => 'योजना बनाई गई';
+  String get plans_created => 'बनाई गई योजनाएँ';
 
   @override
   String get ai_confirm => 'पुष्टि करें';
@@ -2069,7 +2069,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_member_admin => 'एडमिन';
 
   @override
-  String get group_member_owner => 'Owner';
+  String get group_member_owner => 'स्वामी';
 
   @override
   String group_remove_member(String name) {
@@ -2486,13 +2486,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get bookmark_removed => 'बुकमार्क हटाया गया';
 
   @override
-  String get bookmark_remove_failed => 'बुकमार्क हटाने में विफल';
+  String get bookmark_remove_failed => 'बुकमार्क हटाने में असमर्थ';
 
   @override
   String get bookmark_saved => 'बुकमार्क सहेजा गया';
 
   @override
-  String get bookmark_save_failed => 'बुकमार्क सहेजने में विफल';
+  String get bookmark_save_failed => 'बुकमार्क सहेजने में असमर्थ';
 
   @override
   String get bookmarks_yesterday => 'कल';
@@ -2502,7 +2502,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'पेज लोड होने में बहुत समय लगा। कृपया अपना इंटरनेट कनेक्शन जांचें';
 
   @override
-  String get webview_load_failed => 'पेज लोड करने में विफल';
+  String get webview_load_failed => 'पेज लोड करने में असमर्थ';
 
   @override
   String get privacy_policy_load_error =>
@@ -2513,7 +2513,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'सेवा की शर्तें पेज लोड करने में असमर्थ';
 
   @override
-  String get series_enroll_error => 'श्रृंखला में नामांकन विफल';
+  String get series_enroll_error => 'श्रृंखला में नामांकन करने में असमर्थ';
 
   @override
   String series_share_message(String title, String url) {
@@ -3085,7 +3085,7 @@ class AppLocalizationsHi extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count लोगों ने प्रार्थना की',
-      one: '1 व्यक्ति ने प्रार्थना की',
+      one: '$count व्यक्ति ने प्रार्थना की',
     );
     return '$_temp0';
   }
@@ -3190,19 +3190,19 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_failed_load_discover_groups_error =>
-      'Failed to load discover groups';
+      'Unable to load spaces';
 
   @override
-  String get connect_failed_like_post_error => 'Failed to like post';
+  String get connect_failed_like_post_error => 'Unable to like post';
 
   @override
-  String get connect_failed_unlike_post_error => 'Failed to unlike post';
+  String get connect_failed_unlike_post_error => 'Unable to unlike post';
 
   @override
-  String get connect_failed_like_comment_error => 'Failed to like comment';
+  String get connect_failed_like_comment_error => 'Unable to like comment';
 
   @override
-  String get connect_failed_unlike_comment_error => 'Failed to unlike comment';
+  String get connect_failed_unlike_comment_error => 'Unable to unlike comment';
 
   @override
   String get group_events_load_error =>
@@ -3212,14 +3212,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_events_empty => 'No events yet';
 
   @override
-  String get mala_failed_load_catalogue_error => 'Failed to load catalogue';
+  String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override
   String get chant_collection_reload_error =>
-      'Failed to reload collection to reorder';
+      'Unable to reload collection to reorder';
 
   @override
-  String get chant_collection_reorder_error => 'Failed to reorder chants';
+  String get chant_collection_reorder_error => 'Unable to reorder chants';
 
   @override
   String get timer_duration_label => 'DURATION';
@@ -3252,7 +3252,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get timer_ambient_sound_none => 'Default (no sound)';
 
   @override
-  String get timer_ambient_sounds_load_error => 'Failed to load ambient sounds';
+  String get timer_ambient_sounds_load_error => 'Unable to load ambient sounds';
 
   @override
   String get timer_volume_label => 'VOLUME';
@@ -3278,7 +3278,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'Duration must be greater than 0';
 
   @override
-  String get splash_tagline_1 => 'We Buddhists learn daily';
+  String get splash_tagline_1 => 'We Buddhists practice together';
 
   @override
   String get splash_tagline_2 => 'We Buddhists practice daily';

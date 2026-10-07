@@ -1549,7 +1549,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_feed_title.
   ///
   /// In en, this message translates to:
-  /// **'Your spaces have been quiet'**
+  /// **'No new updates'**
   String get connect_my_empty_feed_title;
 
   /// No description provided for @connect_my_empty_events_title.
@@ -1573,19 +1573,19 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_feed_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing new from your spaces. Others are posting today'**
+  /// **'Your spaces haven\'t shared anything new'**
   String get connect_my_empty_feed_subtitle;
 
   /// No description provided for @connect_my_empty_events_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing scheduled in your spaces right now. Others have events open to everyone'**
+  /// **'Your spaces haven\'t scheduled any events'**
   String get connect_my_empty_events_subtitle;
 
   /// No description provided for @connect_my_empty_posts_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your spaces haven\'t posted anything. See what others are sharing'**
+  /// **'Your spaces haven\'t posted anything'**
   String get connect_my_empty_posts_subtitle;
 
   /// No description provided for @connect_my_empty_groups_subtitle.
@@ -1621,7 +1621,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_practices_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your spaces haven\'t started any practices. See what others are offering'**
+  /// **'Your spaces haven\'t started any practices'**
   String get connect_my_empty_practices_subtitle;
 
   /// No description provided for @connect_my_empty_practices_browse.
@@ -1669,7 +1669,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_comment_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to delete comment'**
+  /// **'Unable to delete comment'**
   String get connect_comment_delete_failed;
 
   /// No description provided for @connect_post_comments_count.
@@ -2071,7 +2071,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_versions_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load versions'**
+  /// **'Unable to load versions'**
   String get reader_versions_load_error;
 
   /// No description provided for @reader_scripts_load_error.
@@ -2083,7 +2083,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_languages_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load languages'**
+  /// **'Unable to load languages'**
   String get reader_languages_load_error;
 
   /// No description provided for @reader_no_versions_in_language.
@@ -2263,7 +2263,7 @@ abstract class AppLocalizations {
   /// No description provided for @plans_created.
   ///
   /// In en, this message translates to:
-  /// **'Plan created'**
+  /// **'Plans created'**
   String get plans_created;
 
   /// No description provided for @ai_confirm.
@@ -3205,7 +3205,7 @@ abstract class AppLocalizations {
   /// No description provided for @me_days_plan_practiced_suffix.
   ///
   /// In en, this message translates to:
-  /// **'Total plan days completed'**
+  /// **'total plan days completed'**
   String get me_days_plan_practiced_suffix;
 
   /// No description provided for @me_streak_share_message.
@@ -4391,7 +4391,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmark_remove_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to remove bookmark'**
+  /// **'Unable to remove bookmark'**
   String get bookmark_remove_failed;
 
   /// No description provided for @bookmark_saved.
@@ -4403,7 +4403,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmark_save_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to save bookmark'**
+  /// **'Unable to save bookmark'**
   String get bookmark_save_failed;
 
   /// No description provided for @bookmarks_yesterday.
@@ -4421,7 +4421,7 @@ abstract class AppLocalizations {
   /// No description provided for @webview_load_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load page'**
+  /// **'Unable to load page'**
   String get webview_load_failed;
 
   /// No description provided for @privacy_policy_load_error.
@@ -4439,7 +4439,7 @@ abstract class AppLocalizations {
   /// No description provided for @series_enroll_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to enroll in series'**
+  /// **'Unable to enroll in series'**
   String get series_enroll_error;
 
   /// No description provided for @series_share_message.
@@ -5375,7 +5375,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_people_praying.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural,\n=1 {1 person prayed}\nother {{count} people prayed}\n}'**
+  /// **'{count, plural,\n=1 {{count} person prayed}\nother {{count} people prayed}\n}'**
   String event_prayer_people_praying(int count);
 
   /// No description provided for @event_prayer_praying_for_you.
@@ -5555,31 +5555,31 @@ abstract class AppLocalizations {
   /// No description provided for @connect_failed_load_discover_groups_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load discover groups'**
+  /// **'Unable to load spaces'**
   String get connect_failed_load_discover_groups_error;
 
   /// No description provided for @connect_failed_like_post_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to like post'**
+  /// **'Unable to like post'**
   String get connect_failed_like_post_error;
 
   /// No description provided for @connect_failed_unlike_post_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to unlike post'**
+  /// **'Unable to unlike post'**
   String get connect_failed_unlike_post_error;
 
   /// No description provided for @connect_failed_like_comment_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to like comment'**
+  /// **'Unable to like comment'**
   String get connect_failed_like_comment_error;
 
   /// No description provided for @connect_failed_unlike_comment_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to unlike comment'**
+  /// **'Unable to unlike comment'**
   String get connect_failed_unlike_comment_error;
 
   /// No description provided for @group_events_load_error.
@@ -5597,19 +5597,19 @@ abstract class AppLocalizations {
   /// No description provided for @mala_failed_load_catalogue_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load catalogue'**
+  /// **'Unable to load catalogue'**
   String get mala_failed_load_catalogue_error;
 
   /// No description provided for @chant_collection_reload_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to reload collection to reorder'**
+  /// **'Unable to reload collection to reorder'**
   String get chant_collection_reload_error;
 
   /// No description provided for @chant_collection_reorder_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to reorder chants'**
+  /// **'Unable to reorder chants'**
   String get chant_collection_reorder_error;
 
   /// No description provided for @timer_duration_label.
@@ -5675,7 +5675,7 @@ abstract class AppLocalizations {
   /// No description provided for @timer_ambient_sounds_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load ambient sounds'**
+  /// **'Unable to load ambient sounds'**
   String get timer_ambient_sounds_load_error;
 
   /// No description provided for @timer_volume_label.
@@ -5723,7 +5723,7 @@ abstract class AppLocalizations {
   /// No description provided for @splash_tagline_1.
   ///
   /// In en, this message translates to:
-  /// **'We Buddhists learn daily'**
+  /// **'We Buddhists practice together'**
   String get splash_tagline_1;
 
   /// No description provided for @splash_tagline_2.

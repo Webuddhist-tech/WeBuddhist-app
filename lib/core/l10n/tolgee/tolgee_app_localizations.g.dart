@@ -4152,10 +4152,12 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) =>
-      TolgeeBridge.format(localeName, 'group_removed_message', <String, Object>{
-        'group': group,
-        'duration': duration,
-      }, () => _fallback.group_removed_message(group, duration));
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_message',
+        <String, Object>{'group': group, 'duration': duration},
+        () => _fallback.group_removed_message(group, duration),
+      );
 
   @override
   String group_removed_message_no_date(String group) => TolgeeBridge.format(

@@ -401,7 +401,7 @@
   "image": "तस्बिर",
   "feedback": "प्रतिक्रिया",
   "author": "लेखक",
-  "plans_created": "योजना सिर्जना भयो",
+  "plans_created": "सिर्जना गरिएका योजनाहरू",
   "ai_confirm": "पुष्टि गर्नुहोस्",
   "search_no_results": "\"{query}\" का लागि कुनै परिणाम फेला परेन",
   "@search_no_results": {
@@ -885,15 +885,15 @@
   "bookmarks_empty_texts_title": "अहिलेसम्म कुनै पाठ बुकमार्क गरिएको छैन",
   "bookmarks_empty_texts_subtitle": "यहाँ सुरक्षित गर्न कुनै पाठ बुकमार्क गर्नुहोस्",
   "bookmark_removed": "बुकमार्क हटाइयो",
-  "bookmark_remove_failed": "बुकमार्क हटाउन असफल",
+  "bookmark_remove_failed": "बुकमार्क हटाउन असमर्थ",
   "bookmark_saved": "बुकमार्क सुरक्षित गरियो",
-  "bookmark_save_failed": "बुकमार्क सुरक्षित गर्न असफल",
+  "bookmark_save_failed": "बुकमार्क सुरक्षित गर्न असमर्थ",
   "bookmarks_yesterday": "हिजो",
   "webview_timeout_error": "पृष्ठ लोड हुन धेरै समय लाग्यो। कृपया आफ्नो इन्टरनेट जडान जाँच गर्नुहोस्",
-  "webview_load_failed": "पृष्ठ लोड गर्न असफल",
+  "webview_load_failed": "पृष्ठ लोड गर्न असमर्थ",
   "privacy_policy_load_error": "गोपनीयता नीति पृष्ठ लोड गर्न असमर्थ",
   "terms_of_service_load_error": "सेवाका सर्तहरूको पृष्ठ लोड गर्न असमर्थ",
-  "series_enroll_error": "शृङ्खलामा भर्ना गर्न असफल",
+  "series_enroll_error": "शृङ्खलामा भर्ना गर्न असमर्थ",
   "series_share_message": "WeBuddhist मा {title} अभ्यास गर्न मसँग सामेल हुनुहोस्।\n\n{url}",
   "player_back_10": "१० सेकेन्ड पछाडि",
   "player_pause": "पज गर्नुहोस्",
@@ -937,19 +937,19 @@
   "connect_empty_discover_groups": "अन्वेषण गर्न कुनै स्पेस छैन",
   "connect_empty_discover_practices": "अन्वेषण गर्न कुनै अभ्यास छैन",
   "connect_all_groups": "सबै स्पेस",
-  "connect_my_empty_feed_title": "तपाईंका स्पेसहरू शान्त छन्",
+  "connect_my_empty_feed_title": "कुनै नयाँ अपडेट छैन",
   "connect_my_empty_events_title": "कुनै आगामी कार्यक्रम छैन",
   "connect_my_empty_posts_title": "अहिलेसम्म कुनै पोस्ट छैन",
   "connect_my_empty_groups_title": "अहिलेसम्म कुनै समूह छैन",
-  "connect_my_empty_feed_subtitle": "तपाईंका स्पेसहरूबाट नयाँ केही छैन। अरूले आज पोस्ट गरिरहेका छन्",
-  "connect_my_empty_events_subtitle": "अहिले तपाईंका स्पेसहरूमा केही तालिकाबद्ध छैन। अरूका सबैका लागि खुला कार्यक्रमहरू छन्",
-  "connect_my_empty_posts_subtitle": "तपाईंका स्पेसहरूले केही पोस्ट गरेका छैनन्। अरूले के साझा गरिरहेका छन् हेर्नुहोस्",
+  "connect_my_empty_feed_subtitle": "तपाईंका स्पेसहरूले केही नयाँ साझा गरेका छैनन्",
+  "connect_my_empty_events_subtitle": "तपाईंका स्पेसहरूले कुनै कार्यक्रम तय गरेका छैनन्",
+  "connect_my_empty_posts_subtitle": "तपाईंका स्पेसहरूले केही पोस्ट गरेका छैनन्",
   "connect_my_empty_groups_subtitle": "तपाईं अहिलेसम्म कुनै समूहमा सामेल हुनुभएको छैन। सँगै अभ्यास गर्न समुदायहरू खोज्नुहोस्।",
   "connect_my_empty_feed_browse": "अन्य स्पेसहरूले के साझा गर्दैछन् हेर्नुहोस्",
   "connect_my_empty_events_browse": "खुला कार्यक्रमहरू हेर्नुहोस्",
   "connect_my_empty_posts_browse": "अन्य पोस्टहरू हेर्नुहोस्",
   "connect_my_empty_practices_title": "अहिलेसम्म कुनै अभ्यास छैन",
-  "connect_my_empty_practices_subtitle": "तपाईंका स्पेसहरूले कुनै अभ्यास सुरु गरेका छैनन्। अरूले के प्रस्ताव गरिरहेका छन् हेर्नुहोस्",
+  "connect_my_empty_practices_subtitle": "तपाईंका स्पेसहरूले कुनै अभ्यास सुरु गरेका छैनन्",
   "connect_my_empty_practices_browse": "अन्य अभ्यासहरू हेर्नुहोस्",
   "connect_comment_replying_to": "@{handle} लाई जवाफ दिँदै",
   "@connect_comment_replying_to": {
@@ -964,7 +964,7 @@
   "connect_comment_reply": "जवाफ दिनुहोस्",
   "connect_comment_delete_title": "टिप्पणी मेट्ने?",
   "connect_comment_delete_message": "यो टिप्पणी स्थायी रूपमा हटाइनेछ",
-  "connect_comment_delete_failed": "टिप्पणी मेट्न असफल",
+  "connect_comment_delete_failed": "टिप्पणी मेट्न असमर्थ",
   "connect_post_comments_count": "{count, plural, =1 {1 टिप्पणी} other {{count} टिप्पणीहरू}}",
   "@connect_post_comments_count": {
     "placeholders": {
@@ -1216,7 +1216,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {1 जनाले प्रार्थना गरे}\nother {{count} जनाले प्रार्थना गरे}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {{count} जनाले प्रार्थना गरे}\nother {{count} जनाले प्रार्थना गरे}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1277,5 +1277,6 @@
   "bookmarks_empty_group_accumulations_title": "अहिलेसम्म कुनै स्पेस संचय बुकमार्क गरिएको छैन",
   "bookmarks_empty_group_accumulations_subtitle": "यहाँ सुरक्षित गर्न कुनै संचय बुकमार्क गर्नुहोस्",
   "practice_collection_already_added": "यो संग्रह पहिले नै तपाईंको अभ्यासमा छ",
-  "practice_group_accumulator_already_added": "यो संचय पहिले नै तपाईंको अभ्यासमा छ"
+  "practice_group_accumulator_already_added": "यो संचय पहिले नै तपाईंको अभ्यासमा छ",
+  "group_member_owner": "मालिक"
 }

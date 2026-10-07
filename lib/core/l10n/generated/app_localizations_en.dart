@@ -813,7 +813,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_all_groups => 'All spaces';
 
   @override
-  String get connect_my_empty_feed_title => 'Your spaces have been quiet';
+  String get connect_my_empty_feed_title => 'No new updates';
 
   @override
   String get connect_my_empty_events_title => 'No upcoming events';
@@ -826,15 +826,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'Nothing new from your spaces. Others are posting today';
+      'Your spaces haven\'t shared anything new';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'Nothing scheduled in your spaces right now. Others have events open to everyone';
+      'Your spaces haven\'t scheduled any events';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'Your spaces haven\'t posted anything. See what others are sharing';
+      'Your spaces haven\'t posted anything';
 
   @override
   String get connect_my_empty_groups_subtitle =>
@@ -855,7 +855,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'Your spaces haven\'t started any practices. See what others are offering';
+      'Your spaces haven\'t started any practices';
 
   @override
   String get connect_my_empty_practices_browse => 'Browse other practices';
@@ -882,7 +882,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This comment will be permanently removed';
 
   @override
-  String get connect_comment_delete_failed => 'Failed to delete comment';
+  String get connect_comment_delete_failed => 'Unable to delete comment';
 
   @override
   String connect_post_comments_count(int count) {
@@ -1110,13 +1110,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get reader_versions_load_error => 'Failed to load versions';
+  String get reader_versions_load_error => 'Unable to load versions';
 
   @override
   String get reader_scripts_load_error => 'Failed to load scripts';
 
   @override
-  String get reader_languages_load_error => 'Failed to load languages';
+  String get reader_languages_load_error => 'Unable to load languages';
 
   @override
   String reader_no_versions_in_language(String language) {
@@ -1221,7 +1221,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get author => 'Author';
 
   @override
-  String get plans_created => 'Plan created';
+  String get plans_created => 'Plans created';
 
   @override
   String get ai_confirm => 'Confirm';
@@ -1751,7 +1751,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get me_total_meditation_time => 'Total meditation time';
 
   @override
-  String get me_days_plan_practiced_suffix => 'Total plan days completed';
+  String get me_days_plan_practiced_suffix => 'total plan days completed';
 
   @override
   String me_streak_share_message(int count, String appName) {
@@ -2462,13 +2462,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookmark_removed => 'Bookmark removed';
 
   @override
-  String get bookmark_remove_failed => 'Failed to remove bookmark';
+  String get bookmark_remove_failed => 'Unable to remove bookmark';
 
   @override
   String get bookmark_saved => 'Bookmark saved';
 
   @override
-  String get bookmark_save_failed => 'Failed to save bookmark';
+  String get bookmark_save_failed => 'Unable to save bookmark';
 
   @override
   String get bookmarks_yesterday => 'Yesterday';
@@ -2478,7 +2478,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Page took too long to load. Please check your internet connection';
 
   @override
-  String get webview_load_failed => 'Failed to load page';
+  String get webview_load_failed => 'Unable to load page';
 
   @override
   String get privacy_policy_load_error =>
@@ -2489,7 +2489,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load the terms of service page';
 
   @override
-  String get series_enroll_error => 'Failed to enroll in series';
+  String get series_enroll_error => 'Unable to enroll in series';
 
   @override
   String series_share_message(String title, String url) {
@@ -3056,7 +3056,7 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count people prayed',
-      one: '1 person prayed',
+      one: '$count person prayed',
     );
     return '$_temp0';
   }
@@ -3160,19 +3160,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_failed_load_discover_groups_error =>
-      'Failed to load discover groups';
+      'Unable to load spaces';
 
   @override
-  String get connect_failed_like_post_error => 'Failed to like post';
+  String get connect_failed_like_post_error => 'Unable to like post';
 
   @override
-  String get connect_failed_unlike_post_error => 'Failed to unlike post';
+  String get connect_failed_unlike_post_error => 'Unable to unlike post';
 
   @override
-  String get connect_failed_like_comment_error => 'Failed to like comment';
+  String get connect_failed_like_comment_error => 'Unable to like comment';
 
   @override
-  String get connect_failed_unlike_comment_error => 'Failed to unlike comment';
+  String get connect_failed_unlike_comment_error => 'Unable to unlike comment';
 
   @override
   String get group_events_load_error =>
@@ -3182,14 +3182,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_events_empty => 'No events yet';
 
   @override
-  String get mala_failed_load_catalogue_error => 'Failed to load catalogue';
+  String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override
   String get chant_collection_reload_error =>
-      'Failed to reload collection to reorder';
+      'Unable to reload collection to reorder';
 
   @override
-  String get chant_collection_reorder_error => 'Failed to reorder chants';
+  String get chant_collection_reorder_error => 'Unable to reorder chants';
 
   @override
   String get timer_duration_label => 'DURATION';
@@ -3222,7 +3222,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timer_ambient_sound_none => 'Default (no sound)';
 
   @override
-  String get timer_ambient_sounds_load_error => 'Failed to load ambient sounds';
+  String get timer_ambient_sounds_load_error => 'Unable to load ambient sounds';
 
   @override
   String get timer_volume_label => 'VOLUME';
@@ -3248,7 +3248,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Duration must be greater than 0';
 
   @override
-  String get splash_tagline_1 => 'We Buddhists learn daily';
+  String get splash_tagline_1 => 'We Buddhists practice together';
 
   @override
   String get splash_tagline_2 => 'We Buddhists practice daily';

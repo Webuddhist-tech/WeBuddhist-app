@@ -326,19 +326,19 @@
   "connect_empty_discover_groups": "No spaces to discover",
   "connect_empty_discover_practices": "No practices to discover",
   "connect_all_groups": "All spaces",
-  "connect_my_empty_feed_title": "Your spaces have been quiet",
+  "connect_my_empty_feed_title": "No new updates",
   "connect_my_empty_events_title": "No upcoming events",
   "connect_my_empty_posts_title": "No posts yet",
   "connect_my_empty_groups_title": "No spaces yet",
-  "connect_my_empty_feed_subtitle": "Nothing new from your spaces. Others are posting today",
-  "connect_my_empty_events_subtitle": "Nothing scheduled in your spaces right now. Others have events open to everyone",
-  "connect_my_empty_posts_subtitle": "Your spaces haven't posted anything. See what others are sharing",
+  "connect_my_empty_feed_subtitle": "Your spaces haven't shared anything new",
+  "connect_my_empty_events_subtitle": "Your spaces haven't scheduled any events",
+  "connect_my_empty_posts_subtitle": "Your spaces haven't posted anything",
   "connect_my_empty_groups_subtitle": "You haven't joined any spaces yet. Discover some to practice with",
   "connect_my_empty_feed_browse": "See what other spaces are sharing",
   "connect_my_empty_events_browse": "Browse open events",
   "connect_my_empty_posts_browse": "Browse other posts",
   "connect_my_empty_practices_title": "No practices yet",
-  "connect_my_empty_practices_subtitle": "Your spaces haven't started any practices. See what others are offering",
+  "connect_my_empty_practices_subtitle": "Your spaces haven't started any practices",
   "connect_my_empty_practices_browse": "Browse other practices",
   "connect_comment_replying_to": "Replying to @{handle}",
   "@connect_comment_replying_to": {
@@ -353,7 +353,7 @@
   "connect_comment_reply": "Reply",
   "connect_comment_delete_title": "Delete comment?",
   "connect_comment_delete_message": "This comment will be permanently removed",
-  "connect_comment_delete_failed": "Failed to delete comment",
+  "connect_comment_delete_failed": "Unable to delete comment",
   "connect_post_comments_count": "{count, plural, =1{1 comment} other{{count} comments}}",
   "@connect_post_comments_count": {
     "placeholders": {
@@ -462,9 +462,9 @@
       }
     }
   },
-  "reader_versions_load_error": "Failed to load versions",
+  "reader_versions_load_error": "Unable to load versions",
   "reader_scripts_load_error": "Failed to load scripts",
-  "reader_languages_load_error": "Failed to load languages",
+  "reader_languages_load_error": "Unable to load languages",
   "reader_no_versions_in_language": "No versions available in {language}",
   "@reader_no_versions_in_language": {
     "placeholders": {
@@ -529,7 +529,7 @@
   "image": "Image",
   "feedback": "Feedback",
   "author": "Author",
-  "plans_created": "Plan created",
+  "plans_created": "Plans created",
   "ai_confirm": "Confirm",
   "search_no_results": "No results found for \"{query}\"",
   "@search_no_results": {
@@ -783,7 +783,7 @@
   "me_minutes": "minutes",
   "me_hours": "hours",
   "me_total_meditation_time": "Total meditation time",
-  "me_days_plan_practiced_suffix": "Total plan days completed",
+  "me_days_plan_practiced_suffix": "total plan days completed",
   "me_streak_share_message": "I'm on a {count}-day streak on {appName}!",
   "@me_streak_share_message": {
     "placeholders": {
@@ -1213,15 +1213,15 @@
   "bookmarks_empty_texts_title": "No texts bookmarked yet",
   "bookmarks_empty_texts_subtitle": "Bookmark one to save it here",
   "bookmark_removed": "Bookmark removed",
-  "bookmark_remove_failed": "Failed to remove bookmark",
+  "bookmark_remove_failed": "Unable to remove bookmark",
   "bookmark_saved": "Bookmark saved",
-  "bookmark_save_failed": "Failed to save bookmark",
+  "bookmark_save_failed": "Unable to save bookmark",
   "bookmarks_yesterday": "Yesterday",
   "webview_timeout_error": "Page took too long to load. Please check your internet connection",
-  "webview_load_failed": "Failed to load page",
+  "webview_load_failed": "Unable to load page",
   "privacy_policy_load_error": "Unable to load the privacy policy page",
   "terms_of_service_load_error": "Unable to load the terms of service page",
-  "series_enroll_error": "Failed to enroll in series",
+  "series_enroll_error": "Unable to enroll in series",
   "series_share_message": "Join me in practicing {title} on WeBuddhist.\n\n{url}",
   "@series_share_message": {
     "placeholders": {
@@ -1553,7 +1553,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {1 person prayed}\nother {{count} people prayed}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {{count} person prayed}\nother {{count} people prayed}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1604,16 +1604,16 @@
   "feedback_error_too_large": "Images are too large. Remove one and try again",
   "feedback_error_failed": "Couldn't send feedback. Please try again",
   "feedback_error_unavailable": "Feedback is not available right now",
-  "connect_failed_load_discover_groups_error": "Failed to load discover groups",
-  "connect_failed_like_post_error": "Failed to like post",
-  "connect_failed_unlike_post_error": "Failed to unlike post",
-  "connect_failed_like_comment_error": "Failed to like comment",
-  "connect_failed_unlike_comment_error": "Failed to unlike comment",
+  "connect_failed_load_discover_groups_error": "Unable to load spaces",
+  "connect_failed_like_post_error": "Unable to like post",
+  "connect_failed_unlike_post_error": "Unable to unlike post",
+  "connect_failed_like_comment_error": "Unable to like comment",
+  "connect_failed_unlike_comment_error": "Unable to unlike comment",
   "group_events_load_error": "Unable to load events. Please try again.",
   "group_events_empty": "No events yet",
-  "mala_failed_load_catalogue_error": "Failed to load catalogue",
-  "chant_collection_reload_error": "Failed to reload collection to reorder",
-  "chant_collection_reorder_error": "Failed to reorder chants",
+  "mala_failed_load_catalogue_error": "Unable to load catalogue",
+  "chant_collection_reload_error": "Unable to reload collection to reorder",
+  "chant_collection_reorder_error": "Unable to reorder chants",
   "timer_duration_label": "DURATION",
   "timer_ambient_sound_label": "AMBIENT SOUND",
   "timer_begin_session": "Begin session",
@@ -1624,7 +1624,7 @@
   "timer_custom_timer": "Custom timer",
   "timer_ambient_sounds_title": "Ambient sounds",
   "timer_ambient_sound_none": "Default (no sound)",
-  "timer_ambient_sounds_load_error": "Failed to load ambient sounds",
+  "timer_ambient_sounds_load_error": "Unable to load ambient sounds",
   "timer_volume_label": "VOLUME",
   "timer_duration_title": "Duration",
   "timer_edit": "Edit timer",
@@ -1632,6 +1632,6 @@
   "timer_delete_title": "Delete timer?",
   "timer_delete_message": "This timer will be removed from your timers.",
   "timer_duration_must_be_greater_than_error": "Duration must be greater than 0",
-  "splash_tagline_1": "We Buddhists learn daily",
+  "splash_tagline_1": "We Buddhists practice together",
   "splash_tagline_2": "We Buddhists practice daily"
 }

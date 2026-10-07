@@ -817,7 +817,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_all_groups => 'Бүх орон зай';
 
   @override
-  String get connect_my_empty_feed_title => 'Таны орон зайнууд чимээгүй байна';
+  String get connect_my_empty_feed_title => 'Шинэ мэдээ алга';
 
   @override
   String get connect_my_empty_events_title => 'Товлосон арга хэмжээ алга';
@@ -830,15 +830,15 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'Таны орон зайнуудаас шинэ зүйл алга. Бусад нь өнөөдөр нийтэлж байна';
+      'Таны орон зайнууд шинэ зүйл хуваалцаагүй байна';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'Таны орон зайнуудад одоогоор товлосон зүйл алга. Бусад орон зайнуудад бүх нийтэд нээлттэй арга хэмжээ бий';
+      'Таны орон зайнууд арга хэмжээ товлоогүй байна';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'Таны орон зайнууд юу ч нийтлээгүй байна. Бусад юу хуваалцаж байгааг үзээрэй';
+      'Таны орон зайнууд юу ч нийтлээгүй байна';
 
   @override
   String get connect_my_empty_groups_subtitle =>
@@ -859,7 +859,7 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'Таны орон зайнууд ямар ч дадлага эхлүүлээгүй байна. Бусад юу санал болгож байгааг үзээрэй';
+      'Таны орон зайнууд ямар ч дадлага эхлүүлээгүй байна';
 
   @override
   String get connect_my_empty_practices_browse => 'Бусад бясалгалыг үзэх';
@@ -1230,7 +1230,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get author => 'Зохиогч';
 
   @override
-  String get plans_created => 'Төлөвлөгөө үүсгэсэн';
+  String get plans_created => 'Үүсгэсэн төлөвлөгөөнүүд';
 
   @override
   String get ai_confirm => 'Баталгаажуулах';
@@ -1767,7 +1767,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get me_total_meditation_time => 'Нийт бясалгалын хугацаа';
 
   @override
-  String get me_days_plan_practiced_suffix => 'Нийт дуусгасан төлөвлөгөөт өдөр';
+  String get me_days_plan_practiced_suffix => 'нийт дуусгасан төлөвлөгөөт өдөр';
 
   @override
   String me_streak_share_message(int count, String appName) {
@@ -2072,7 +2072,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_member_admin => 'Админ';
 
   @override
-  String get group_member_owner => 'Owner';
+  String get group_member_owner => 'Эзэмшигч';
 
   @override
   String group_remove_member(String name) {
@@ -3095,7 +3095,7 @@ class AppLocalizationsMn extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count хүн залбирсан',
-      one: '1 хүн залбирсан',
+      one: '$count хүн залбирсан',
     );
     return '$_temp0';
   }
@@ -3200,19 +3200,19 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_failed_load_discover_groups_error =>
-      'Failed to load discover groups';
+      'Unable to load spaces';
 
   @override
-  String get connect_failed_like_post_error => 'Failed to like post';
+  String get connect_failed_like_post_error => 'Unable to like post';
 
   @override
-  String get connect_failed_unlike_post_error => 'Failed to unlike post';
+  String get connect_failed_unlike_post_error => 'Unable to unlike post';
 
   @override
-  String get connect_failed_like_comment_error => 'Failed to like comment';
+  String get connect_failed_like_comment_error => 'Unable to like comment';
 
   @override
-  String get connect_failed_unlike_comment_error => 'Failed to unlike comment';
+  String get connect_failed_unlike_comment_error => 'Unable to unlike comment';
 
   @override
   String get group_events_load_error =>
@@ -3222,14 +3222,14 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_events_empty => 'No events yet';
 
   @override
-  String get mala_failed_load_catalogue_error => 'Failed to load catalogue';
+  String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override
   String get chant_collection_reload_error =>
-      'Failed to reload collection to reorder';
+      'Unable to reload collection to reorder';
 
   @override
-  String get chant_collection_reorder_error => 'Failed to reorder chants';
+  String get chant_collection_reorder_error => 'Unable to reorder chants';
 
   @override
   String get timer_duration_label => 'DURATION';
@@ -3262,7 +3262,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get timer_ambient_sound_none => 'Default (no sound)';
 
   @override
-  String get timer_ambient_sounds_load_error => 'Failed to load ambient sounds';
+  String get timer_ambient_sounds_load_error => 'Unable to load ambient sounds';
 
   @override
   String get timer_volume_label => 'VOLUME';
@@ -3288,7 +3288,7 @@ class AppLocalizationsMn extends AppLocalizations {
       'Duration must be greater than 0';
 
   @override
-  String get splash_tagline_1 => 'We Buddhists learn daily';
+  String get splash_tagline_1 => 'We Buddhists practice together';
 
   @override
   String get splash_tagline_2 => 'We Buddhists practice daily';
