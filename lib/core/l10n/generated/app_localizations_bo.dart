@@ -2969,6 +2969,11 @@ class AppLocalizationsBo extends AppLocalizations {
       'དེ་རིང་ང་ཚོས་ཁྱེད་ཀྱི་ཆེད་དུ་སྨོན་ལམ་ཇི་ལྟར་འདེབས་དགོས།';
 
   @override
+  String event_prayer_hint_intention(String topics) {
+    return 'Share a prayer about $topics';
+  }
+
+  @override
   String get event_prayer_load_failed => 'ཐུགས་སྨོན་སྐྱབས་ཞུ་ལེན་ཐུབ་མ་སོང་།';
 
   @override

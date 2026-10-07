@@ -61,18 +61,6 @@ BorderSide prayerIntentionCardBorder(
 
 bool _isGrey(Color color) => HSLColor.fromColor(color).saturation < 0.05;
 
-/// Border to set a tinted card off from its surface.
-Color prayerIntentionBorderColor(
-  ChatPrayerIntentionDTO? intention,
-  bool isDark,
-) {
-  final base = parsePrayerIntentionColor(intention?.color);
-  if (base == null || _nearSurface(base, isDark)) {
-    return isDark ? AppColors.cardBorderDark : AppColors.grey300;
-  }
-  return base.withValues(alpha: isDark ? 0.5 : 0.3);
-}
-
 /// Text in the intention's colour on the sheet surface; falls back to the
 /// primary text colour when the accent would not contrast with it.
 Color prayerAccentTextColor(Color accent, bool isDark) {

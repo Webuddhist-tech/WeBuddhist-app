@@ -5753,6 +5753,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String event_prayer_hint_intention(String topics) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_hint_intention',
+    <String, Object>{'topics': topics},
+    () => _fallback.event_prayer_hint_intention(topics),
+  );
+
+  @override
   String get event_prayer_load_failed => TolgeeBridge.get(
     localeName,
     'event_prayer_load_failed',
