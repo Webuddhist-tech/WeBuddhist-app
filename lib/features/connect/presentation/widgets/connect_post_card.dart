@@ -61,6 +61,13 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
   );
 
   @override
+  void didUpdateWidget(ConnectPostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Feed cards have no keys, so a reorder can hand this state another post.
+    if (widget.post.id != oldWidget.post.id) _captionExpanded = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
