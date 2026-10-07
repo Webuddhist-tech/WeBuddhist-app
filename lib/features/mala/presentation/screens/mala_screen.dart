@@ -131,7 +131,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                 (either) => either.fold(
                   (failure) => _MalaAppBarScaffold(
                     child: _ErrorView(
-                      message: failure.message,
+                      message: context.l10n.mala_failed_load_catalogue_error,
                       onRetry: () => ref.invalidate(malaCatalogueProvider),
                     ),
                   ),
@@ -338,8 +338,8 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                   children: [
                     Expanded(
                       child: GroupAccumulationsBar(
-                        presetId: mantra.presetId,
-                        personalLifetimeCount: notifier.displayLifetimeCount,
+                        mantra: mantra,
+                        presetTitle: mantra.displayTitle(language),
                       ),
                     ),
                     const SizedBox(width: 12),

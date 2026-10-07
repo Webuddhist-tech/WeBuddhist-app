@@ -94,7 +94,10 @@ Future<bool> openGroupAccumulatorPractice(
   final practiced =
       (sessionCount ?? 0) > 0 ||
       await _countIncreased(ref, accumulatorId, countBefore);
-  if (sessionCount == null || !context.mounted) return practiced;
+  // Zero: every chant of the visit was switched to another target.
+  if (sessionCount == null || sessionCount <= 0 || !context.mounted) {
+    return practiced;
+  }
 
   showGroupAccumulatorSessionCompleteSheet(
     context,

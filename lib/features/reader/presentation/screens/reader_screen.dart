@@ -10,11 +10,11 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_of
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_bar.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_footer.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
+import 'package:flutter_pecha/features/mala/presentation/providers/accumulation_chant_counter.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/group_accumulation_counts_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
-import 'package:flutter_pecha/features/mala/presentation/providers/mala_settings_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
@@ -108,8 +108,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   bool _hasSeededInitialChantCount = false;
   bool _chantSessionFinished = false;
 
-  /// Absolute count already synced before this reader visit; UI shows the delta.
-  int _chantSessionBaseline = 0;
+  /// Chants made in this visit, whichever target each one was counted into.
+  int _chantSessionCount = 0;
+
+  /// Those counted into the accumulation this reader was opened from, which
+  /// is what its completion sheet reports.
+  int _chantOpenedCount = 0;
+
+  /// True once the accumulation this reader was opened from is the selected
+  /// target; until then the selection still holds its unloaded default.
+  bool _chantSelectionReady = false;
 
   NavigationContext? get _chantContext {
     final ctx = widget.navigationContext;
@@ -118,6 +126,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   }
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
+
+  /// The chant's preset as the key its counters are held under. A recitation
+  /// is not in the mala catalogue, so there is no fuller [Mantra] to use.
+  Mantra? get _chantMantra {
+    final presetId = _chantContext?.presetAccumulatorId;
+    return presetId == null ? null : Mantra(presetId: presetId);
+  }
 
   /// Set when the reader was opened from a group event.
   String? get _eventId {
@@ -177,9 +192,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     Future.microtask(() async {
       if (!mounted) return;
-      await ref
-          .read(malaAccumulationSelectionProvider(presetId).notifier)
-          .applyNavigationIntent(groupAccumulatorId);
+      final selection = ref.read(
+        malaAccumulationSelectionProvider(presetId).notifier,
+      );
+      await selection.applyNavigationIntent(groupAccumulatorId);
+      // Chants go to the selected target, so the opened accumulation has to
+      // be selected before the first one is counted.
+      await selection.loaded;
       if (!mounted) return;
       final countsNotifier = ref.read(
         groupAccumulationCountsProvider(presetId).notifier,
@@ -188,7 +207,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         groupAccumulatorId: sessionCount,
       });
       if (!mounted) return;
-      _chantSessionBaseline = countsNotifier.countFor(groupAccumulatorId);
+      setState(() => _chantSelectionReady = true);
       _seedInitialChantCountIfNeeded();
     });
   }
@@ -197,58 +216,73 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (_hasSeededInitialChantCount) return;
     _hasSeededInitialChantCount = true;
 
-    final ctx = _chantContext;
-    if (ctx == null) return;
-
-    _incrementGroupChantCount();
+    _countChant();
   }
 
-  void _incrementGroupChantCount() {
-    final ctx = _chantContext;
-    if (ctx == null) return;
+  /// Counts one chant into the target selected in the accumulation sheet.
+  void _countChant() {
+    final mantra = _chantMantra;
+    if (mantra == null) return;
 
-    final presetId = ctx.presetAccumulatorId!;
-    final groupAccumulatorId = ctx.groupAccumulatorId!;
-    final settings = ref.read(malaSettingsProvider);
-    ref
-        .read(groupAccumulationCountsProvider(presetId).notifier)
-        .increment(
-          groupAccumulatorId: groupAccumulatorId,
-          groups: const [],
-          soundEnabled: settings.soundEnabled,
-          vibrationEnabled: settings.vibrationEnabled,
-          beadsPerRound: kBeadsPerRound,
-        );
+    if (!countChantIntoSelection(ref.read, mantra)) return;
+    _tallyChants(mantra, 1);
+  }
+
+  /// Adds chants just counted into the selected target to this visit's tallies.
+  void _tallyChants(Mantra mantra, int count) {
+    final opened = _chantContext?.groupAccumulatorId;
+    final intoOpened =
+        opened != null && isChantTarget(ref.read, mantra, opened);
+    setState(() {
+      _chantSessionCount += count;
+      if (intoOpened) _chantOpenedCount += count;
+    });
+  }
+
+  /// False while the selected target cannot take a chant yet: the selection is
+  /// still loading, personal practice was just picked and is seeding, or a
+  /// group was picked whose session count has not come from the server. The
+  /// personal counter is only created once it is the target.
+  bool _watchChantTargetReady(Mantra mantra) {
+    if (!_chantSelectionReady) return false;
+    final presetId = mantra.presetId;
+    final selection = ref.watch(malaAccumulationSelectionProvider(presetId));
+    final groupAccumulatorId = selection.groupAccumulatorId;
+    if (groupAccumulatorId != null) {
+      ref.watch(groupAccumulationCountsProvider(presetId));
+      return ref
+          .read(groupAccumulationCountsProvider(presetId).notifier)
+          .hasServerCount(groupAccumulatorId);
+    }
+    return !ref.watch(malaCounterProvider(mantra)).isSeeding;
   }
 
   void _onChantAgain() {
     _scrollToTop?.call();
-    _incrementGroupChantCount();
+    _countChant();
   }
 
   Future<void> _addOfflineChantCount() async {
     final count = await showAddOfflineChantsDialog(context);
     if (count == null || count <= 0 || !mounted) return;
 
-    final ctx = _chantContext;
-    if (ctx == null) return;
+    final mantra = _chantMantra;
+    if (mantra == null) return;
 
-    ref
-        .read(
-          groupAccumulationCountsProvider(ctx.presetAccumulatorId!).notifier,
-        )
-        .addCount(
-          groupAccumulatorId: ctx.groupAccumulatorId!,
-          groups: const [],
-          count: count,
-        );
+    if (!addOfflineChantsToSelection(ref.read, mantra, count)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.something_went_wrong)),
+      );
+      return;
+    }
+    _tallyChants(mantra, count);
   }
 
   Future<void> _finishChantSession() async {
     final ctx = _chantContext;
     int? finishedSessionCount;
     if (ctx != null) {
-      final sessionCount = _groupChantSessionCount();
+      final sessionCount = _chantOpenedCount;
       final success = await finishGroupAccumulatorSession(
         ref: ref,
         groupAccumulatorId: ctx.groupAccumulatorId!,
@@ -268,22 +302,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (mounted && (_isEmbedded || context.canPop())) {
       PlanNavigator.pop(context, finishedSessionCount);
     }
-  }
-
-  int _groupChantSessionCount([Map<String, int>? counts]) {
-    final ctx = _chantContext;
-    if (ctx == null) return 0;
-    final presetId = ctx.presetAccumulatorId!;
-    final groupAccumulatorId = ctx.groupAccumulatorId!;
-    final notifier = ref.read(
-      groupAccumulationCountsProvider(presetId).notifier,
-    );
-    final absolute =
-        counts != null
-            ? counts[groupAccumulatorId] ??
-                notifier.countFor(groupAccumulatorId)
-            : notifier.countFor(groupAccumulatorId);
-    return (absolute - _chantSessionBaseline).clamp(0, absolute);
   }
 
   /// Create the audio controller when the reader was opened from a plan and the
@@ -493,7 +511,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     if (_isGroupAccumulatorChant) {
       final presetId = _chantContext!.presetAccumulatorId!;
+      // Held open for the whole visit: chants are counted on these notifiers.
       ref.watch(joinedAccumulatorGroupsProvider(presetId));
+      ref.watch(groupAccumulationCountsProvider(presetId));
+      ref.watch(malaAccumulationSelectionProvider(presetId));
       ref.listen(joinedGroupUserCountsProvider(presetId), (_, next) {
         next.whenData((counts) {
           ref
@@ -595,16 +616,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         !isPanelOpen && (_hasAudio || isActionBarVisible);
     final chantBarHeight =
         _isGroupAccumulatorChant ? GroupAccumulatorChantBar.barHeight : 0.0;
-    final chantSessionCount =
-        _isGroupAccumulatorChant
-            ? _groupChantSessionCount(
-              ref.watch(
-                groupAccumulationCountsProvider(
-                  _chantContext!.presetAccumulatorId!,
-                ),
-              ),
-            )
-            : 0;
+    final chantMantra = _chantMantra;
+    // Watched here rather than where the footer is built, so an open panel
+    // hiding the footer does not let go of the selected target's counter.
+    final isChantTargetReady =
+        chantMantra != null && _watchChantTargetReady(chantMantra);
     final contentBottomPadding =
         (isBottomOverlayVisible
             ? (_bottomOverlayHeight > 0
@@ -614,10 +630,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         chantBarHeight;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final chantFooter =
-        _isGroupAccumulatorChant && !isPanelOpen
+        chantMantra != null && !isPanelOpen
             ? GroupAccumulatorChantFooter(
               onChantAgain: _onChantAgain,
               onFinishSession: _finishChantSession,
+              isChantAgainEnabled: isChantTargetReady,
             )
             : null;
 
@@ -676,11 +693,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   ),
                 ),
               ),
-              if (_isGroupAccumulatorChant)
+              if (chantMantra != null)
                 GroupAccumulatorChantBar(
-                  presetId: _chantContext!.presetAccumulatorId!,
-                  groupAccumulatorId: _chantContext!.groupAccumulatorId!,
-                  sessionCount: chantSessionCount,
+                  mantra: chantMantra,
+                  sessionCount: _chantSessionCount,
                   chantTitle: state.openedText!.title,
                   chantTitleFontFamily: getFontFamily(
                     state.openedText!.language,

@@ -52,6 +52,8 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   }) async {
     try {
       return Right(
@@ -60,6 +62,8 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
           skip: skip,
           limit: limit,
           messageType: messageType,
+          sort: sort,
+          intention: intention,
         ),
       );
     } catch (e) {

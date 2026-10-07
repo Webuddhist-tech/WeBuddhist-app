@@ -8,6 +8,31 @@ void main() {
       expect(ProtectedRoutes.isProtected('/verse-of-day/today'), isFalse);
     });
 
+    test('verse likes and comment delete are protected', () {
+      expect(ProtectedRoutes.isProtected('/verse-of-day/v1/likes'), isTrue);
+      expect(ProtectedRoutes.isProtected('/verse-of-day/comments/c1'), isTrue);
+    });
+
+    test('verse likers list and comment likes are protected', () {
+      expect(
+        ProtectedRoutes.isProtected('/verse-of-day/v1/likes/users'),
+        isTrue,
+      );
+      expect(
+        ProtectedRoutes.isProtected('/verse-of-day/comments/c1/likes'),
+        isTrue,
+      );
+    });
+
+    test('verse comments list is optional auth', () {
+      expect(ProtectedRoutes.isOptional('/verse-of-day/v1/comments'), isTrue);
+      expect(ProtectedRoutes.isProtected('/verse-of-day/v1/comments'), isFalse);
+      expect(
+        ProtectedRoutes.isOptional('/verse-of-day/v1/comments/c1'),
+        isTrue,
+      );
+    });
+
     test('users/me/language is protected via /users/me/ prefix', () {
       expect(ProtectedRoutes.isProtected('/users/me/language'), isTrue);
     });

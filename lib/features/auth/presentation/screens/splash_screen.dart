@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_taglines.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen>
   static const _introDuration = Duration(milliseconds: 900);
   static const _pulseDuration = Duration(milliseconds: 1600);
 
-  late final String _tagline = widget.tagline ?? randomSplashTagline();
+  late final int _taglineIndex = randomSplashTaglineIndex();
 
   late final AnimationController _intro = AnimationController(
     vsync: this,
@@ -102,7 +103,8 @@ class _SplashScreenState extends State<SplashScreen>
                   child: SlideTransition(
                     position: _taglineOffset,
                     child: Text(
-                      _tagline,
+                      widget.tagline ??
+                          splashTaglines[_taglineIndex](context.l10n),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,

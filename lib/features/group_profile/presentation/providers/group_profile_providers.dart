@@ -701,6 +701,9 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
     _invalidateGroupProfile();
     _refreshGroupMembers();
     _invalidateConnectProviders();
+    if (incrementCount) {
+      noteGroupMembershipChanged(_ref, _key.groupId);
+    }
     if (connectGroup != null) {
       _addPendingJoinedGroup(connectGroup);
       _ref.read(discoverGroupsProvider.notifier).removeGroups({
@@ -734,6 +737,7 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
         _invalidateGroupProfile();
         _refreshGroupMembers();
         _invalidateConnectProviders();
+        noteGroupMembershipChanged(_ref, _key.groupId);
         if (connectGroup != null) {
           _removePendingJoinedGroup(connectGroup.id);
           _markPendingUnjoined(connectGroup.id);
@@ -1075,6 +1079,34 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
   }
 }
 
+/// Bumped when someone joins or leaves [groupId], and when a refresh comes
+/// back with a different membership size. The report avatar cache drops ids
+/// it had decided were gone, so a reporter who rejoins is looked up again.
+final groupMembershipEpochProvider = StateProvider.family<int, String>(
+  (ref, groupId) => 0,
+);
+
+void noteGroupMembershipChanged(Ref ref, String groupId) {
+  ref
+      .read(groupMembershipEpochProvider(groupId).notifier)
+      .update((epoch) => epoch + 1);
+}
+
+(int, int, int)? _membershipSize(
+  AsyncValue<Either<Failure, GroupProfile>> value,
+) {
+  final either = value.asData?.value;
+  if (either == null) return null;
+  return either.fold(
+    (_) => null,
+    (profile) => (
+      profile.memberCount,
+      profile.joinerCount,
+      profile.followerCount,
+    ),
+  );
+}
+
 /// True when the group profile header title has scrolled out of view.
 final groupProfileAppBarTitleVisibleProvider = StateProvider.autoDispose
     .family<bool, String>((ref, groupId) => false);
@@ -1092,7 +1124,10 @@ final groupMembersProvider = StateNotifierProvider.autoDispose
       return GroupMembersNotifier(
         repository: ref.watch(groupProfileRepositoryProvider),
         groupId: groupId,
-        onMemberRemoved: () => ref.invalidate(groupProfileProvider(groupId)),
+        onMemberRemoved: () {
+          ref.invalidate(groupProfileProvider(groupId));
+          noteGroupMembershipChanged(ref, groupId);
+        },
       );
     });
 
@@ -1156,12 +1191,14 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
   GroupJoinRequestsNotifier({
     required GroupProfileRepositoryInterface repository,
     required String groupId,
+    this.onMemberAdmitted,
   }) : _repository = repository,
        _groupId = groupId,
        super(const GroupJoinRequestsState());
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
+  final VoidCallback? onMemberAdmitted;
   static const int _limit = 20;
   int _requestGeneration = 0;
 
@@ -1231,6 +1268,7 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
         }
 
         _dropRequest(requestId);
+        onMemberAdmitted?.call();
         return true;
       },
     );
@@ -1354,6 +1392,7 @@ final groupJoinRequestsProvider = StateNotifierProvider.autoDispose
       final notifier = GroupJoinRequestsNotifier(
         repository: ref.watch(groupProfileRepositoryProvider),
         groupId: groupId,
+        onMemberAdmitted: () => noteGroupMembershipChanged(ref, groupId),
       );
       notifier.loadInitial();
       return notifier;
@@ -1689,6 +1728,7 @@ Future<void> refreshGroupProfilePage({
   required String groupId,
   required GroupType groupType,
 }) async {
+  final before = _membershipSize(ref.read(groupProfileProvider(groupId)));
   final followKey = GroupFollowKey(groupId: groupId, groupType: groupType);
   ref.invalidate(groupFollowProvider(followKey));
 
@@ -1717,4 +1757,10 @@ Future<void> refreshGroupProfilePage({
   refreshGroupPosts(ref, groupId);
 
   await Future.wait(refreshTasks);
+  final after = _membershipSize(ref.read(groupProfileProvider(groupId)));
+  if (before != null && after != null && before != after) {
+    ref
+        .read(groupMembershipEpochProvider(groupId).notifier)
+        .update((epoch) => epoch + 1);
+  }
 }

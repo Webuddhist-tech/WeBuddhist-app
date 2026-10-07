@@ -88,4 +88,23 @@ void main() {
       'link_type': 'meeting',
     });
   });
+
+  test('a picked replay carries its day, session and video', () {
+    analytics.eventReplayOpened(
+      eventId: 'e1',
+      groupId: 'g1',
+      dayNumber: 3,
+      session: 2,
+      videoId: 'dQw4w9WgXcQ',
+    );
+
+    expect(service.eventNames, [AnalyticsEvents.groupEventReplayOpened]);
+    expect(service.events.single.properties, {
+      'event_id': 'e1',
+      'group_id': 'g1',
+      'day_number': 3,
+      'session': 2,
+      'video_id': 'dQw4w9WgXcQ',
+    });
+  });
 }

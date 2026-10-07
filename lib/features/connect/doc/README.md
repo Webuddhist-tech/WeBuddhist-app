@@ -4,15 +4,13 @@
 
 ## Purpose
 
-Social hub tab: unified feed, group events, posts, practices, and group discovery from followed communities.
+Social hub tab: unified feed, group events, and group discovery from followed communities.
 
 ## User-facing functionality
 
-- Main nav **Connect** tab with 5 sub-tabs
-- **Feed** — merged posts, events, practices from followed groups
+- Main nav **Connect** tab with 3 sub-tabs
+- **Feed** — merged posts, events, practices from followed groups; posts carry likes and comments
 - **Events** — group events with attendance
-- **Posts** — likes and comments
-- **Practices** — group practice listings
 - **Groups** — discover, my groups, follow/unfollow
 - Group search, post detail with comment thread
 - Optimistic pending join/unjoin while API catches up
@@ -35,7 +33,7 @@ connect/
 |------|-------|
 | Tab host | `presentation/screens/connect_screen.dart` |
 | Feed | `connect_unified_feed_providers.dart`, `connect_feed_merge_utils.dart` |
-| Posts | `connect_posts_providers.dart`, `connect_post_like_actions.dart` |
+| Post likes/comments | `connect_post_like_actions.dart`, `connect_post_comments_providers.dart` |
 | Groups | `connect_providers.dart`, `discover_groups_screen.dart` |
 | Optimistic UI | `pendingJoinedGroupsProvider`, `pendingUnjoinedGroupIdsProvider` |
 | Barrel | `connect.dart` (screen only) |
@@ -50,7 +48,7 @@ connect/
 ## Data sources
 
 - **Remote only** via `ConnectRemoteDatasource`
-- Events/practices tabs delegate to **`GroupProfileRepositoryInterface`** (`getConnectEvents`, `getConnectPractices`)
+- Events tab and the feed's practice merge delegate to **`GroupProfileRepositoryInterface`** (`getConnectEvents`, `getConnectPractices`)
 
 ## Cross-feature dependencies
 

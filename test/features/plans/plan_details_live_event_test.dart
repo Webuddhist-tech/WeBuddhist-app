@@ -12,9 +12,11 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_player.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_toggles.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_not_started_card.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_replays_menu.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
+import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/response/user_plan_day_detail_response.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_plans_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.dart';
@@ -30,6 +32,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:intl/intl.dart';
+
+import '../group_profile/presentation/widgets/fake_in_app_webview_platform.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
   @override
@@ -91,9 +95,38 @@ UserPlansModel _makePlan() => UserPlansModel(
   tags: null,
 );
 
-UserPlanDayDetailResponse _makeDay() => UserPlanDayDetailResponse(
+const _liveVideoId = 'BNDTusn8TO8';
+const _session1Id = 'aaaaaaaaaaa';
+const _session2Id = 'bbbbbbbbbbb';
+
+/// An event whose stream is on, with its chat (so the prayer chip renders).
+GroupEvent _liveEvent() => GroupEvent(
+  id: 'event-1',
+  groupId: 'group-1',
+  chatEnabled: true,
+  youtube: const [
+    GroupEventLink(
+      id: 'y1',
+      type: 'youtube',
+      url: 'https://youtu.be/$_liveVideoId',
+      label: 'live',
+    ),
+  ],
+);
+
+PlanVideoModel _video(String id, String videoId, int order) => PlanVideoModel(
+  id: id,
+  url: 'https://youtu.be/$videoId',
+  videoId: videoId,
+  displayOrder: order,
+);
+
+UserPlanDayDetailResponse _makeDay({
+  List<PlanVideoModel> videos = const [],
+}) => UserPlanDayDetailResponse(
   id: 'day-1',
   dayNumber: 1,
+  videos: videos,
   tasks: [
     UserTasksDto(
       id: 'task-1',
@@ -128,12 +161,16 @@ Future<void> _pumpLiveEventDetails(
   Map<int, bool> completion = const {1: false},
   // Phone portrait: the pinned 16:9 stream must leave room for the list.
   Size viewSize = const Size(390, 844),
+  // Recordings of day 1, as the backend copies them onto the plan day.
+  List<PlanVideoModel> videos = const [],
 }) async {
   tester.view.physicalSize = viewSize;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
+  // A live stream or a replay mounts the YouTube player's WebView.
+  FakeInAppWebViewPlatform.install();
 
-  final day = _makeDay();
+  final day = _makeDay(videos: videos);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -476,5 +513,426 @@ void main() {
     expect(find.text('Day 1 of 21'), findsOneWidget);
     expect(find.byType(MissedDaysBadge), findsOneWidget);
     expect(find.text('3 missed days'), findsOneWidget);
+  });
+
+  GroupEventLivePlayer player(WidgetTester tester) =>
+      tester.widget<GroupEventLivePlayer>(find.byType(GroupEventLivePlayer));
+
+  // The trigger is a history icon until a recording is picked.
+  final replaysTrigger = find.byIcon(AppAssets.clockCounterClockwise);
+
+  // The popup's opening animation starts a frame after the tap, and the
+  // player's shimmer never settles, so pump twice instead of pumpAndSettle.
+  Future<void> openReplays(WidgetTester tester) async {
+    await tester.tap(replaysTrigger);
+    await _settle(tester);
+    await _settle(tester);
+  }
+
+  Future<void> pick(WidgetTester tester, String label) async {
+    await tester.tap(find.text(label));
+    await _settle(tester);
+    await _settle(tester);
+  }
+
+  group('replays', () {
+    final twoSessions = [
+      _video('v2', _session2Id, 2),
+      _video('v1', _session1Id, 1),
+    ];
+
+    testWidgets('the Replays menu lists the selected day\'s recordings', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async => Right(_liveEvent()),
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      // Live plays; the menu waits in the title slot, no way "back" yet.
+      expect(player(tester).videoId, _liveVideoId);
+      expect(player(tester).isReplay, isFalse);
+      expect(find.byType(GroupEventReplaysMenu), findsOneWidget);
+      expect(replaysTrigger, findsOneWidget);
+      expect(find.text('Replays'), findsNothing);
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+      // Prayer requests sit at the right margin even with nothing on the
+      // left.
+      final chip = tester.getRect(
+        find
+            .ancestor(
+              of: find.text('Prayer requests'),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(chip.right, 390 - 16);
+      // The recordings moved out of the shorts carousel (which hides itself
+      // when it is handed no videos).
+      expect(_activityList(tester).videos, isEmpty);
+
+      await openReplays(tester);
+
+      // The menu names itself; the sessions follow display order, not
+      // list order.
+      expect(find.text('Replays'), findsOneWidget);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsOneWidget);
+      expect(find.text('Recording'), findsNWidgets(2));
+      final first = tester.getTopLeft(find.text('Day 1 · Session 1'));
+      final second = tester.getTopLeft(find.text('Day 1 · Session 2'));
+      expect(first.dy, lessThan(second.dy));
+    });
+
+    testWidgets('a picked recording plays until "Back to live"', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async => Right(_liveEvent()),
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      await openReplays(tester);
+      await pick(tester, 'Day 1 · Session 1');
+
+      expect(player(tester).videoId, _session1Id);
+      expect(player(tester).isReplay, isTrue);
+      expect(player(tester).isLive, isFalse);
+      // The trigger stays the icon; the list is where the pick shows.
+      expect(replaysTrigger, findsOneWidget);
+      expect(find.byType(GroupEventBackToLivePill), findsOneWidget);
+      // One line under the player: the pill at the left margin, prayer
+      // requests flush with the right margin.
+      expect(find.text('Prayer requests'), findsOneWidget);
+      final pill = tester.getRect(find.byType(GroupEventBackToLivePill));
+      final chip = tester.getRect(
+        find
+            .ancestor(
+              of: find.text('Prayer requests'),
+              matching: find.byType(Material),
+            )
+            .first,
+      );
+      expect(pill.left, 16);
+      expect(chip.right, 390 - 16);
+      expect(chip.left, greaterThan(pill.right));
+      expect(chip.center.dy, closeTo(pill.center.dy, 1));
+      // Video / audio stays; the language switch belongs to the stream.
+      expect(find.byType(GroupEventMediaToggle), findsOneWidget);
+      expect(find.byType(GroupEventLanguageToggle), findsOneWidget);
+
+      // Reopened, the list checks the session that is playing.
+      await openReplays(tester);
+      final checkedRow =
+          find
+              .ancestor(
+                of: find.byIcon(AppAssets.check),
+                matching: find.byType(Row),
+              )
+              .first;
+      expect(
+        find.descendant(
+          of: checkedRow,
+          matching: find.text('Day 1 · Session 1'),
+        ),
+        findsOneWidget,
+      );
+      // Tap the barrier to close it again.
+      await tester.tapAt(const Offset(20, 820));
+      await _settle(tester);
+      await _settle(tester);
+      expect(find.text('Day 1 · Session 1'), findsNothing);
+
+      await pick(tester, 'Back to live');
+
+      expect(player(tester).videoId, _liveVideoId);
+      expect(player(tester).isReplay, isFalse);
+      expect(replaysTrigger, findsOneWidget);
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+      // Nothing checked once the stream is back.
+      await openReplays(tester);
+      expect(find.byIcon(AppAssets.check), findsNothing);
+      await tester.tapAt(const Offset(20, 820));
+      await _settle(tester);
+      await _settle(tester);
+    });
+
+    testWidgets('the stream that is live is not offered as a replay', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async => Right(_liveEvent()),
+        videos: [
+          // The sync copied today's live link onto today's day as well.
+          _video('live', _liveVideoId, 1),
+          _video('v1', _session1Id, 2),
+        ],
+      );
+      await _settle(tester);
+
+      await openReplays(tester);
+
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsNothing);
+    });
+
+    testWidgets('without a stream a day with recordings plays its first', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      await _pumpLiveEventDetails(
+        tester,
+        fetch:
+            () async => Right(
+              GroupEvent(
+                id: 'event-1',
+                groupId: 'group-1',
+                chatEnabled: true,
+                startDate: now.subtract(const Duration(days: 2)),
+                endDate: now.subtract(const Duration(days: 1)),
+              ),
+            ),
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      // The slot keeps a player, not the countdown or the cover image.
+      expect(player(tester).videoId, _session1Id);
+      expect(player(tester).isReplay, isTrue);
+      expect(find.byType(GroupEventNotStartedCard), findsNothing);
+      expect(find.byType(PlanCoverImage), findsNothing);
+      expect(replaysTrigger, findsOneWidget);
+      // Nothing live to go back to.
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+      // Audio mode still offered; no stream language to switch.
+      expect(find.byType(GroupEventMediaToggle), findsOneWidget);
+      expect(find.byType(GroupEventLanguageToggle), findsNothing);
+      // Prayer requests under the player only, not doubled in the bar.
+      expect(find.text('Prayer requests'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text('Prayer requests'),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('a day with no recordings says so in the menu', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async => Right(_liveEvent()),
+      );
+      await _settle(tester);
+
+      expect(replaysTrigger, findsOneWidget);
+      await openReplays(tester);
+
+      expect(find.text('No recordings yet'), findsOneWidget);
+      expect(find.text('Recording'), findsNothing);
+    });
+
+    testWidgets('an in-person attendee keeps the plain page, no menu', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        showLiveStream: false,
+        fetch: () async => Right(_liveEvent()),
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      expect(find.byType(GroupEventReplaysMenu), findsNothing);
+      expect(find.byType(GroupEventLivePlayer), findsNothing);
+      expect(find.byType(PlanCoverImage), findsOneWidget);
+      // Their recordings still come as the shorts carousel.
+      expect(_activityList(tester).videos, hasLength(2));
+    });
+
+    testWidgets('the menu and both pills fit a narrow phone', (tester) async {
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async => Right(_liveEvent()),
+        videos: twoSessions,
+        viewSize: const Size(360, 780),
+      );
+      await _settle(tester);
+
+      expect(replaysTrigger, findsOneWidget);
+      expect(find.byType(GroupEventMediaToggle), findsOneWidget);
+      expect(find.byType(GroupEventLanguageToggle), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the menu waits for the stream before listing recordings', (
+      tester,
+    ) async {
+      final stream = Completer<Either<Failure, GroupEvent>>();
+      await _pumpLiveEventDetails(
+        tester,
+        stream: stream,
+        videos: [
+          // The sync copied today's live link onto today's day as well.
+          _video('live', _liveVideoId, 1),
+          _video('v1', _session1Id, 2),
+        ],
+      );
+      await _settle(tester);
+
+      // Nothing to pick from until the event says which link is live;
+      // otherwise today's copy of it could be picked as a recording.
+      expect(find.byType(GroupEventReplaysMenu), findsNothing);
+      expect(replaysTrigger, findsNothing);
+
+      stream.complete(Right(_liveEvent()));
+      await _settle(tester);
+
+      expect(player(tester).videoId, _liveVideoId);
+      expect(player(tester).isReplay, isFalse);
+      await openReplays(tester);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsNothing);
+    });
+
+    testWidgets('a stream whose link is gone yields to the first recording', (
+      tester,
+    ) async {
+      var fetches = 0;
+      final now = DateTime.now();
+      await _pumpLiveEventDetails(
+        tester,
+        // The English stream is on at first; every later answer, in any
+        // language, says the link has been taken down.
+        fetch: () async {
+          fetches++;
+          return Right(
+            fetches == 1
+                ? _liveEvent()
+                : GroupEvent(
+                  id: 'event-1',
+                  groupId: 'group-1',
+                  startDate: now.subtract(const Duration(hours: 1)),
+                ),
+          );
+        },
+        videos: [
+          _video('v1', _session1Id, 1),
+          _video('live', _liveVideoId, 2),
+        ],
+      );
+      await _settle(tester);
+      expect(player(tester).videoId, _liveVideoId);
+      expect(player(tester).isReplay, isFalse);
+
+      // No Tibetan stream: the page stays live so the toggles stay
+      // reachable, and the English stream is still kept out of the list.
+      // A language switch fetches on the next frame and renders the answer
+      // on the one after, so settle twice.
+      await tester.tap(find.text('བོད'));
+      await _settle(tester);
+      await _settle(tester);
+      expect(fetches, 2);
+      expect(find.byType(GroupEventLanguageToggle), findsOneWidget);
+      await openReplays(tester);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsNothing);
+      await tester.tapAt(const Offset(20, 820));
+      await _settle(tester);
+      await _settle(tester);
+
+      // Back in English the link is gone for good: the day's first
+      // recording plays, and the stream that ended joins the list.
+      await tester.tap(find.text('En'));
+      await _settle(tester);
+      await _settle(tester);
+      expect(fetches, 3);
+      expect(player(tester).videoId, _session1Id);
+      expect(player(tester).isReplay, isTrue);
+      expect(find.byType(GroupEventLanguageToggle), findsNothing);
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+      await openReplays(tester);
+      expect(find.text('Day 1 · Session 1'), findsOneWidget);
+      expect(find.text('Day 1 · Session 2'), findsOneWidget);
+    });
+
+    testWidgets('before the event starts, today keeps its countdown', (
+      tester,
+    ) async {
+      final startsAt = DateTime.now().add(const Duration(hours: 2));
+      await _pumpLiveEventDetails(
+        tester,
+        fetch:
+            () async => Right(
+              GroupEvent(
+                id: 'event-1',
+                groupId: 'group-1',
+                startDate: startsAt,
+              ),
+            ),
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      // Recordings do not pre-empt the countdown; they wait in the menu.
+      expect(find.byType(GroupEventNotStartedCard), findsOneWidget);
+      expect(find.text('Puja starts in'), findsOneWidget);
+      expect(find.byType(GroupEventLivePlayer), findsNothing);
+      expect(replaysTrigger, findsOneWidget);
+
+      await openReplays(tester);
+      await pick(tester, 'Day 1 · Session 2');
+
+      expect(player(tester).videoId, _session2Id);
+      expect(player(tester).isReplay, isTrue);
+      expect(find.byType(GroupEventNotStartedCard), findsNothing);
+      // Nothing live to go back to.
+      expect(find.byType(GroupEventBackToLivePill), findsNothing);
+    });
+
+    testWidgets('a replay picked before the start still finds the stream', (
+      tester,
+    ) async {
+      final startsAt = DateTime.now().add(const Duration(minutes: 2));
+      var fetches = 0;
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async {
+          fetches++;
+          return Right(
+            fetches == 1
+                ? GroupEvent(
+                  id: 'event-1',
+                  groupId: 'group-1',
+                  startDate: startsAt,
+                )
+                : _liveEvent(),
+          );
+        },
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      // The replay takes the countdown card's place, and its start refresh.
+      await openReplays(tester);
+      await pick(tester, 'Day 1 · Session 2');
+      expect(find.byType(GroupEventNotStartedCard), findsNothing);
+      expect(fetches, 1);
+
+      await tester.pump(const Duration(minutes: 2));
+      await _settle(tester);
+
+      // Asked again at the start; the replay keeps playing, live one tap away.
+      expect(fetches, 2);
+      expect(player(tester).videoId, _session2Id);
+      expect(find.byType(GroupEventBackToLivePill), findsOneWidget);
+    });
   });
 }

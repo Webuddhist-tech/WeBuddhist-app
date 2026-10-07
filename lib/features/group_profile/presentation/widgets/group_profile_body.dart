@@ -21,10 +21,12 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_reports_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
@@ -101,6 +103,9 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
   }
 
   Future<void> _onRefresh(GroupProfile profile) {
+    if (ref.exists(groupReportsProvider(profile.id))) {
+      ref.read(groupReportsProvider(profile.id).notifier).loadInitial();
+    }
     return refreshGroupProfilePage(
       ref: ref,
       groupId: profile.id,
@@ -426,7 +431,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     final postsState = ref.watch(groupPostsProvider(profile.id));
     final permissionAsync = ref.watch(groupPostPermissionProvider(profile.id));
-    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
+    final showsAdminQueueRows = _showsAdminQueueRows(profile);
     final followState = _privateGroupFollowState(profile);
     final hasCreatePermission = permissionAsync.valueOrNull ?? false;
     final canPost = canPublishGroupPosts(
@@ -480,7 +485,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   isDark,
                   lineHeight,
                   orderedLinks,
-                  showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
+                  showsAdminQueueRows: showsAdminQueueRows,
                 ),
               ),
             ];
@@ -533,7 +538,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     List<GroupProfileSocialLink> orderedLinks,
   ) {
     final removal = watchActiveGroupRemovalNotice(ref, profile.id);
-    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
+    final showsAdminQueueRows = _showsAdminQueueRows(profile);
 
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
@@ -554,7 +559,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                 isDark,
                 lineHeight,
                 orderedLinks,
-                showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
+                showsAdminQueueRows: showsAdminQueueRows,
                 bottomSpacing: 0,
               ),
             ),
@@ -595,7 +600,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks,
   ) {
-    final showsAdminJoinRequestsRow = _showsAdminJoinRequestsRow(profile);
+    final showsAdminQueueRows = _showsAdminQueueRows(profile);
 
     return RefreshIndicator(
       onRefresh: () => _onRefresh(profile),
@@ -616,7 +621,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                 isDark,
                 lineHeight,
                 orderedLinks,
-                showsAdminJoinRequestsRow: showsAdminJoinRequestsRow,
+                showsAdminQueueRows: showsAdminQueueRows,
                 bottomSpacing: 0,
               ),
             ),
@@ -635,7 +640,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     bool isDark,
     double? lineHeight,
     List<GroupProfileSocialLink> orderedLinks, {
-    required bool showsAdminJoinRequestsRow,
+    required bool showsAdminQueueRows,
     double bottomSpacing = 24,
   }) {
     return Column(
@@ -651,27 +656,33 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         _buildProfileHeader(profile, isDark, lineHeight, orderedLinks),
         const SizedBox(height: 20),
         _GroupFollowButton(profile: profile, isDark: isDark),
-        SizedBox(height: showsAdminJoinRequestsRow ? 8 : bottomSpacing),
+        SizedBox(height: showsAdminQueueRows ? 8 : bottomSpacing),
       ],
     );
   }
 
-  /// Whether [GroupJoinRequestsRow] sits under the follow button.
+  /// Whether an admin queue row ([GroupReportsRow], [GroupJoinRequestsRow])
+  /// sits under the follow button. Private groups always show join
+  /// requests; public groups only show reports, and only when there are some.
   ///
   /// This watches a provider, so it must be called from `build` — resolve it
   /// there and pass the result down. Called from a sliver builder instead,
   /// the subscription is torn down and refetched on every rebuild, because
   /// `ConsumerStatefulElement` closes whatever is left in `_oldDependencies`
   /// as soon as `build` returns.
-  bool _showsAdminJoinRequestsRow(GroupProfile profile) {
-    if (!profile.isPrivateCommunity || _isContentRestricted(profile)) {
-      return false;
-    }
-    return ref
+  bool _showsAdminQueueRows(GroupProfile profile) {
+    if (_isContentRestricted(profile)) return false;
+    final isAdmin =
+        ref
             .watch(groupMyPermissionProvider(profile.id))
             .valueOrNull
             ?.isGroupAdmin ??
         false;
+    if (!isAdmin) return false;
+    if (profile.isPrivateCommunity) return true;
+    return ref.watch(
+      groupReportsProvider(profile.id).select((state) => state.total > 0),
+    );
   }
 
   Widget _buildRestrictedMessage(
@@ -1533,6 +1544,7 @@ class _GroupFollowButton extends ConsumerWidget {
             isLoading,
           ),
           if (isAdmin) ...[
+            GroupReportsRow(groupId: profile.id, isDark: isDark),
             const SizedBox(height: 8),
             GroupJoinRequestsRow(groupId: profile.id, isDark: isDark),
           ],
@@ -1562,24 +1574,35 @@ class _GroupFollowButton extends ConsumerWidget {
     };
     final isLoading = followState is GroupFollowLoading;
     final isPage = profile.groupType.isPage;
+    final isAdmin =
+        ref
+            .watch(groupMyPermissionProvider(profile.id))
+            .valueOrNull
+            ?.isGroupAdmin ??
+        false;
 
-    if (isFollowing && !isPage) {
-      return _buildJoinedActions(
-        context,
-        ref,
-        followKey,
-        isFollowing,
-        isLoading,
-      );
-    }
+    final actions =
+        isFollowing && !isPage
+            ? _buildJoinedActions(
+              context,
+              ref,
+              followKey,
+              isFollowing,
+              isLoading,
+            )
+            : _buildPrimaryFollowButton(
+              context,
+              ref,
+              followKey,
+              isFollowing,
+              isLoading,
+              isPage,
+            );
 
-    return _buildPrimaryFollowButton(
-      context,
-      ref,
-      followKey,
-      isFollowing,
-      isLoading,
-      isPage,
+    if (!isAdmin) return actions;
+
+    return Column(
+      children: [actions, GroupReportsRow(groupId: profile.id, isDark: isDark)],
     );
   }
 

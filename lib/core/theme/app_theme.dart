@@ -8,7 +8,7 @@
 // - Font weights: Light (300), Regular (400), Medium (500), Semi Bold (600), Bold (700), Extra Bold (800)
 // - Primary font: System default (Roboto on Android, SF Pro on iOS)
 // - Accent font: Serif fallback for special headings
-// - Tibetan: BabelStoneTibetan (local) for content and Noto Serif Tibetan for system UI
+// - Tibetan: WBTibetanContent (local) for content and NotoSerifTibetanWB (local) for system UI
 // - English: Inter for system UI and EB Garamond for content
 // - Chinese: Inter for system UI and EB Garamond for content
 
@@ -437,8 +437,19 @@ class AppTheme {
       FontType.system,
       brightness,
     );
+    // Google Fonts text themes carry their own family per style; a bundled
+    // system font is also set as the ThemeData default so widgets that
+    // build a bare TextStyle still pick it up.
+    final config = AppFontConfig.getConfig(locale?.languageCode);
+    final fontFamily =
+        config.systemFontIsGoogle
+            ? null
+            : AppFontConfig.getFontFamily(
+              locale?.languageCode,
+              FontType.system,
+            );
 
-    return _FontConfiguration(fontFamily: null, textTheme: textTheme);
+    return _FontConfiguration(fontFamily: fontFamily, textTheme: textTheme);
   }
 
   static TextStyle _buttonTextStyle(

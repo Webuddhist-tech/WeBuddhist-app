@@ -37,16 +37,6 @@ class TimerMoreBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
-  static const _editTimerLabel = 'Edit timer';
-  static const _deleteTimerLabel = 'Delete timer';
-  static const _deleteTimerTitle = 'Delete timer?';
-  // The backend soft-deletes (`deleted_at`) and keeps the row for a retention
-  // window, so this must not promise a permanent delete.
-  // `POST /timers/user/{id}/restore` exists but is not wired up yet — until it
-  // is, describe what the user actually sees rather than offering an undo.
-  static const _deleteTimerMessage =
-      'This timer will be removed from your timers.';
-
   bool _isBookmarking = false;
   bool _isSharing = false;
   bool _isDeleting = false;
@@ -103,9 +93,10 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
 
     final result = await showDestructiveConfirmationDialog(
       context,
-      title: _deleteTimerTitle,
-      message: _deleteTimerMessage,
-      confirmLabel: _deleteTimerLabel,
+      title: l10n.timer_delete_title,
+      // Backend soft-deletes, so the copy must not promise a permanent delete.
+      message: l10n.timer_delete_message,
+      confirmLabel: l10n.timer_delete,
       cancelLabel: l10n.cancel,
       barrierDismissible: false,
       onConfirmed: () async {
@@ -236,7 +227,10 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
                 AppAssets.pencilSimple,
                 color: theme.colorScheme.onSurface,
               ),
-              title: Text(_editTimerLabel, style: theme.textTheme.bodyLarge),
+              title: Text(
+                context.l10n.timer_edit,
+                style: theme.textTheme.bodyLarge,
+              ),
               onTap: () {
                 HapticFeedback.lightImpact();
                 _editTimer();
@@ -258,7 +252,7 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
                       )
                       : const Icon(AppAssets.trash, color: AppColors.danger),
               title: Text(
-                _deleteTimerLabel,
+                context.l10n.timer_delete,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: AppColors.danger,
                 ),

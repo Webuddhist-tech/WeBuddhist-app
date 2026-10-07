@@ -8,6 +8,8 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_membe
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 abstract class GroupProfileRepositoryInterface {
   Future<Either<Failure, GroupProfile>> getGroupProfile(
@@ -142,5 +144,20 @@ abstract class GroupProfileRepositoryInterface {
     GroupJoinRequestStatus status = GroupJoinRequestStatus.pending,
     required int skip,
     required int limit,
+  });
+
+  /// Admin moderation queue, newest first. All kinds when [kind] is null.
+  Future<Either<Failure, GroupReportsPage>> getGroupReports(
+    String groupId, {
+    GroupReportKind? kind,
+    bool? resolved,
+    required int skip,
+    required int limit,
+  });
+
+  /// Admin resolution of one report, dropping it out of the unresolved queue.
+  Future<Either<Failure, void>> resolveGroupReport(
+    String groupId, {
+    required String reportId,
   });
 }

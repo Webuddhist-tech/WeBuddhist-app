@@ -2,7 +2,10 @@
 // Defines system fonts (for UI) and content fonts (for backend texts)
 // for each supported language.
 
-// - Tibetan (bo): Noto Serif Tibetan for system UI and BabelStoneTibetan for content/source
+// - Tibetan (bo): bundled NotoSerifTibetanWB for system UI and WBTibetanContent
+//   (BabelStone Tibetan) for content/source. Both ship with vertical metrics
+//   fitted to Tibetan ink so `height:` boxes enclose vowel signs and stacks
+//   (see assets/fonts/README.md and FONT_SYSTEM_GUIDE.md).
 // - English (en): Inter for system UI and Source Serif 4 for content/source
 // - Chinese (zh): Noto Sans Traditional Chinese for system UI and Noto Serif Traditional Chinese for content
 import 'package:google_fonts/google_fonts.dart';
@@ -154,18 +157,19 @@ class AppFontConfig {
   }
 
   static const Map<String, LanguageFontConfig> _languageFonts = {
-    // Tibetan - Noto Serif Tibetan for UI, BabelStoneTibetan for content/source
+    // Tibetan - bundled NotoSerifTibetanWB for UI, WBTibetanContent for
+    // content/source (both local assets, see assets/fonts/README.md)
     AppConfig.tibetanLanguageCode: LanguageFontConfig(
       systemFont: AppConfig.tibetanSystemFont,
       contentFont: AppConfig.tibetanContentFont,
-      systemFontIsGoogle: true,
+      systemFontIsGoogle: false,
       contentFontIsGoogle: false,
     ),
 
     AppConfig.tibetanAdaptationLanguageCode: LanguageFontConfig(
       systemFont: AppConfig.tibetanSystemFont,
       contentFont: AppConfig.tibetanContentFont,
-      systemFontIsGoogle: true,
+      systemFontIsGoogle: false,
       contentFontIsGoogle: false,
     ),
 
@@ -235,9 +239,6 @@ class AppFontConfig {
       case AppConfig.englishContentFont:
         return GoogleFonts.sourceSerif4().fontFamily ??
             AppConfig.englishContentFont;
-      case AppConfig.tibetanSystemFont:
-        return GoogleFonts.notoSerifTibetan().fontFamily ??
-            AppConfig.tibetanSystemFont;
       case AppConfig.chineseSystemFont:
         return GoogleFonts.notoSansTc().fontFamily ??
             AppConfig.chineseSystemFont;
@@ -265,8 +266,11 @@ class AppFontConfig {
             : config.contentFontIsGoogle;
 
     if (!isGoogle) {
-      // For local fonts, return null to use fontFamily in ThemeData
-      return ThemeData(brightness: brightness).textTheme;
+      // Local (asset) font: stamp the family onto every theme style, the
+      // same way the GoogleFonts text themes do.
+      return ThemeData(brightness: brightness).textTheme.apply(
+        fontFamily: fontName,
+      );
     }
 
     // Use Google Fonts
@@ -285,8 +289,6 @@ class AppFontConfig {
         return GoogleFonts.interTextTheme(baseTextTheme);
       case AppConfig.englishContentFont:
         return GoogleFonts.sourceSerif4TextTheme(baseTextTheme);
-      case AppConfig.tibetanSystemFont:
-        return GoogleFonts.notoSerifTibetanTextTheme(baseTextTheme);
       case AppConfig.chineseSystemFont:
         return GoogleFonts.notoSansTcTextTheme(baseTextTheme);
       case AppConfig.chineseContentFont:
@@ -322,8 +324,6 @@ class AppFontConfig {
         return GoogleFonts.inter(textStyle: baseStyle);
       case AppConfig.englishContentFont:
         return GoogleFonts.sourceSerif4(textStyle: baseStyle);
-      case AppConfig.tibetanSystemFont:
-        return GoogleFonts.notoSerifTibetan(textStyle: baseStyle);
       case AppConfig.chineseSystemFont:
         return GoogleFonts.notoSansTc(textStyle: baseStyle);
       case AppConfig.chineseContentFont:

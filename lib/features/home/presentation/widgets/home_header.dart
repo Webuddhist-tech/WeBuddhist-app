@@ -30,6 +30,8 @@ class HomeTabAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String? firstName;
 
   static const double tibetanGreetingTopPadding = 6;
+  // Shorter than the default bar so the event badge sits closer to the greeting.
+  static const double _toolbarHeight = 44;
   static const double _actionsReserveWidth = 148;
   static const double _tibetanNameLineSpacing = 2;
 
@@ -39,7 +41,7 @@ class HomeTabAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }) {
     final isTwoLineTibetanGreeting = context.isTibetanLocale && hasName;
     if (!isTwoLineTibetanGreeting) {
-      return kToolbarHeight;
+      return _toolbarHeight;
     }
 
     final fontSize = getLocalizedFontSize(AppTextSize.body);
@@ -134,7 +136,7 @@ class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       child: TodayEventBadge(
         label: todayEvent.name,
         isLive: todayEvent.isActiveAt(now),

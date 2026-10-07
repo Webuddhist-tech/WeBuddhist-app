@@ -441,16 +441,19 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
 
   /// Adds completed mala rounds counted outside the app (monotonic). Returns
   /// false when the add was ignored.
-  bool addRounds(int rounds) {
-    if (rounds <= 0 || state.isSeeding || state.isResetting) return false;
+  bool addRounds(int rounds) => addCount(rounds * state.beadsPerRound);
+
+  /// Adds [count] recitations made outside the app (monotonic). Returns false
+  /// when the add was ignored.
+  bool addCount(int count) {
+    if (count <= 0 || state.isSeeding || state.isResetting) return false;
 
     final userId = _userId;
     if (userId == null || userId.isEmpty) return false;
 
-    final delta = rounds * state.beadsPerRound;
-    final newTotal = state.total + delta;
+    final newTotal = state.total + count;
     state = state.copyWith(total: newTotal);
-    unawaited(_local.addToTotal(userId, _presetId, delta));
+    unawaited(_local.addToTotal(userId, _presetId, count));
     _sync.onTap(roundComplete: true);
     return true;
   }

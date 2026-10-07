@@ -109,6 +109,9 @@ class AppAssets {
   static const IconData arrowCircleUp = PhosphorIconsFill.arrowCircleUp;
   static const IconData handsPraying = PhosphorIconsRegular.handsPraying;
   static const IconData handsPrayingFill = PhosphorIconsFill.handsPraying;
+  static const IconData sliders = PhosphorIconsRegular.sliders;
+  static const IconData trendUp = PhosphorIconsRegular.trendUp;
+  static const IconData smiley = PhosphorIconsRegular.smiley;
   static const IconData arrowBendUpLeft = PhosphorIconsRegular.arrowBendUpLeft;
   static const IconData copy = PhosphorIconsRegular.copy;
 
@@ -136,6 +139,8 @@ class AppAssets {
   static const IconData vibrate = PhosphorIconsRegular.vibrate;
   static const IconData arrowCounterClockwise =
       PhosphorIconsRegular.arrowCounterClockwise;
+  static const IconData clockCounterClockwise =
+      PhosphorIconsRegular.clockCounterClockwise;
 
   // ========== NOTIFICATION ICONS ==========
   static const IconData bell = PhosphorIconsRegular.bell;
@@ -168,6 +173,7 @@ class AppAssets {
   static const IconData usersThree = PhosphorIconsRegular.usersThree;
   static const IconData usercard = PhosphorIconsRegular.users;
   static const IconData bookOpenText = PhosphorIconsRegular.bookOpenText;
+  static const IconData bookOpen = PhosphorIconsRegular.bookOpen;
   static const IconData calendarDots = PhosphorIconsRegular.calendarDots;
   static const IconData mapPin = PhosphorIconsRegular.mapPin;
   static const IconData videoCamera = PhosphorIconsRegular.videoCamera;

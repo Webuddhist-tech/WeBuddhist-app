@@ -454,6 +454,36 @@ abstract class AppLocalizations {
   /// **'Untitled space'**
   String get mala_group_untitled;
 
+  /// No description provided for @mala_all_time_accumulation.
+  ///
+  /// In en, this message translates to:
+  /// **'My all-time accumulation'**
+  String get mala_all_time_accumulation;
+
+  /// No description provided for @mala_personal_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal practice'**
+  String get mala_personal_practice;
+
+  /// No description provided for @mala_events_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get mala_events_section;
+
+  /// No description provided for @mala_my_total.
+  ///
+  /// In en, this message translates to:
+  /// **'My total: {count}'**
+  String mala_my_total(String count);
+
+  /// No description provided for @mala_group_total.
+  ///
+  /// In en, this message translates to:
+  /// **'Group total: {count}'**
+  String mala_group_total(String count);
+
   /// No description provided for @home_timer.
   ///
   /// In en, this message translates to:
@@ -1519,7 +1549,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_feed_title.
   ///
   /// In en, this message translates to:
-  /// **'Your spaces have been quiet'**
+  /// **'No new updates'**
   String get connect_my_empty_feed_title;
 
   /// No description provided for @connect_my_empty_events_title.
@@ -1543,19 +1573,19 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_feed_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing new from your spaces. Others are posting today'**
+  /// **'Your spaces haven\'t shared anything new'**
   String get connect_my_empty_feed_subtitle;
 
   /// No description provided for @connect_my_empty_events_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Nothing scheduled in your spaces right now. Others have events open to everyone'**
+  /// **'Your spaces haven\'t scheduled any events'**
   String get connect_my_empty_events_subtitle;
 
   /// No description provided for @connect_my_empty_posts_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your spaces haven\'t posted anything. See what others are sharing'**
+  /// **'Your spaces haven\'t posted anything'**
   String get connect_my_empty_posts_subtitle;
 
   /// No description provided for @connect_my_empty_groups_subtitle.
@@ -1591,7 +1621,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_my_empty_practices_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your spaces haven\'t started any practices. See what others are offering'**
+  /// **'Your spaces haven\'t started any practices'**
   String get connect_my_empty_practices_subtitle;
 
   /// No description provided for @connect_my_empty_practices_browse.
@@ -1639,7 +1669,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_comment_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to delete comment'**
+  /// **'Unable to delete comment'**
   String get connect_comment_delete_failed;
 
   /// No description provided for @connect_post_comments_count.
@@ -2041,7 +2071,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_versions_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load versions'**
+  /// **'Unable to load versions'**
   String get reader_versions_load_error;
 
   /// No description provided for @reader_scripts_load_error.
@@ -2053,7 +2083,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_languages_load_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load languages'**
+  /// **'Unable to load languages'**
   String get reader_languages_load_error;
 
   /// No description provided for @reader_no_versions_in_language.
@@ -2233,7 +2263,7 @@ abstract class AppLocalizations {
   /// No description provided for @plans_created.
   ///
   /// In en, this message translates to:
-  /// **'Plan created'**
+  /// **'Plans created'**
   String get plans_created;
 
   /// No description provided for @ai_confirm.
@@ -3175,7 +3205,7 @@ abstract class AppLocalizations {
   /// No description provided for @me_days_plan_practiced_suffix.
   ///
   /// In en, this message translates to:
-  /// **'Total plan days completed'**
+  /// **'total plan days completed'**
   String get me_days_plan_practiced_suffix;
 
   /// No description provided for @me_streak_share_message.
@@ -3585,6 +3615,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unable to deny this request. Please try again'**
   String get group_join_requests_deny_error;
+
+  /// No description provided for @group_reports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get group_reports_title;
+
+  /// No description provided for @group_reports_section_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get group_reports_section_posts;
+
+  /// No description provided for @group_reports_section_comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get group_reports_section_comments;
+
+  /// No description provided for @group_reports_section_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get group_reports_section_messages;
+
+  /// No description provided for @group_reports_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 report}\nother {{count} reports}\n}'**
+  String group_reports_count(int count);
+
+  /// No description provided for @group_reports_view_post.
+  ///
+  /// In en, this message translates to:
+  /// **'View post'**
+  String get group_reports_view_post;
+
+  /// No description provided for @group_reports_view_message.
+  ///
+  /// In en, this message translates to:
+  /// **'View message'**
+  String get group_reports_view_message;
+
+  /// No description provided for @group_reports_delete_post.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete post'**
+  String get group_reports_delete_post;
+
+  /// No description provided for @group_reports_delete_comment.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment'**
+  String get group_reports_delete_comment;
+
+  /// No description provided for @group_reports_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message'**
+  String get group_reports_delete_message;
+
+  /// No description provided for @group_reports_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports to review'**
+  String get group_reports_empty;
+
+  /// No description provided for @group_reports_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load reports. Please try again'**
+  String get group_reports_load_error;
 
   /// No description provided for @group_members_only_title.
   ///
@@ -4016,6 +4118,36 @@ abstract class AppLocalizations {
   /// **'Unable to share quote. Please try again'**
   String get verse_share_error;
 
+  /// No description provided for @verse_comments_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments · {count}'**
+  String verse_comments_title(int count);
+
+  /// No description provided for @verse_likes_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes · {count}'**
+  String verse_likes_title(int count);
+
+  /// No description provided for @verse_like_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to update like. Please try again'**
+  String get verse_like_failed;
+
+  /// No description provided for @verse_comment_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to post comment. Please try again'**
+  String get verse_comment_failed;
+
+  /// No description provided for @verse_comment_replying_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {name}'**
+  String verse_comment_replying_to(String name);
+
   /// No description provided for @share_app_message.
   ///
   /// In en, this message translates to:
@@ -4259,7 +4391,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmark_remove_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to remove bookmark'**
+  /// **'Unable to remove bookmark'**
   String get bookmark_remove_failed;
 
   /// No description provided for @bookmark_saved.
@@ -4271,7 +4403,7 @@ abstract class AppLocalizations {
   /// No description provided for @bookmark_save_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to save bookmark'**
+  /// **'Unable to save bookmark'**
   String get bookmark_save_failed;
 
   /// No description provided for @bookmarks_yesterday.
@@ -4289,7 +4421,7 @@ abstract class AppLocalizations {
   /// No description provided for @webview_load_failed.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load page'**
+  /// **'Unable to load page'**
   String get webview_load_failed;
 
   /// No description provided for @privacy_policy_load_error.
@@ -4307,7 +4439,7 @@ abstract class AppLocalizations {
   /// No description provided for @series_enroll_error.
   ///
   /// In en, this message translates to:
-  /// **'Failed to enroll in series'**
+  /// **'Unable to enroll in series'**
   String get series_enroll_error;
 
   /// No description provided for @series_share_message.
@@ -5060,6 +5192,36 @@ abstract class AppLocalizations {
   /// **'Live'**
   String get event_live_go_live;
 
+  /// No description provided for @event_replays.
+  ///
+  /// In en, this message translates to:
+  /// **'Replays'**
+  String get event_replays;
+
+  /// No description provided for @event_replay_session.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} · Session {session}'**
+  String event_replay_session(String day, String session);
+
+  /// No description provided for @event_replay_recording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording'**
+  String get event_replay_recording;
+
+  /// No description provided for @event_replay_back_to_live.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to live'**
+  String get event_replay_back_to_live;
+
+  /// No description provided for @event_replays_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recordings yet'**
+  String get event_replays_empty;
+
   /// No description provided for @event_puja_starts_in.
   ///
   /// In en, this message translates to:
@@ -5107,6 +5269,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How can we pray for you today?'**
   String get event_prayer_hint;
+
+  /// No description provided for @event_prayer_hint_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a prayer about {topics}'**
+  String event_prayer_hint_intention(String topics);
 
   /// No description provided for @event_prayer_load_failed.
   ///
@@ -5207,7 +5375,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_people_praying.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural,\n=1 {1 person prayed}\nother {{count} people prayed}\n}'**
+  /// **'{count, plural,\n=1 {{count} person prayed}\nother {{count} people prayed}\n}'**
   String event_prayer_people_praying(int count);
 
   /// No description provided for @event_prayer_praying_for_you.
@@ -5239,6 +5407,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No one is praying yet'**
   String get event_prayer_no_supporters;
+
+  /// No description provided for @event_prayer_sort_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get event_prayer_sort_by;
+
+  /// No description provided for @event_prayer_sort_needs_prayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs prayers'**
+  String get event_prayer_sort_needs_prayers;
+
+  /// No description provided for @event_prayer_sort_most_prayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Most prayed'**
+  String get event_prayer_sort_most_prayed;
+
+  /// No description provided for @event_prayer_sort_newest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get event_prayer_sort_newest;
+
+  /// No description provided for @event_prayer_sort_oldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get event_prayer_sort_oldest;
+
+  /// No description provided for @event_prayer_sort_by_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'By intention'**
+  String get event_prayer_sort_by_intention;
+
+  /// No description provided for @event_prayer_clear_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear intention'**
+  String get event_prayer_clear_intention;
+
+  /// No description provided for @event_prayer_filter_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests match'**
+  String get event_prayer_filter_empty_title;
+
+  /// No description provided for @event_prayer_filter_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another sort or intention'**
+  String get event_prayer_filter_empty_body;
 
   /// No description provided for @recitation_live_sync.
   ///
@@ -5329,6 +5551,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Feedback is not available right now'**
   String get feedback_error_unavailable;
+
+  /// No description provided for @connect_failed_load_discover_groups_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load spaces'**
+  String get connect_failed_load_discover_groups_error;
+
+  /// No description provided for @connect_failed_like_post_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to like post'**
+  String get connect_failed_like_post_error;
+
+  /// No description provided for @connect_failed_unlike_post_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to unlike post'**
+  String get connect_failed_unlike_post_error;
+
+  /// No description provided for @connect_failed_like_comment_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to like comment'**
+  String get connect_failed_like_comment_error;
+
+  /// No description provided for @connect_failed_unlike_comment_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to unlike comment'**
+  String get connect_failed_unlike_comment_error;
+
+  /// No description provided for @group_events_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load events. Please try again.'**
+  String get group_events_load_error;
+
+  /// No description provided for @group_events_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events yet'**
+  String get group_events_empty;
+
+  /// No description provided for @mala_failed_load_catalogue_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load catalogue'**
+  String get mala_failed_load_catalogue_error;
+
+  /// No description provided for @chant_collection_reload_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reload collection to reorder'**
+  String get chant_collection_reload_error;
+
+  /// No description provided for @chant_collection_reorder_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reorder chants'**
+  String get chant_collection_reorder_error;
+
+  /// No description provided for @timer_duration_label.
+  ///
+  /// In en, this message translates to:
+  /// **'DURATION'**
+  String get timer_duration_label;
+
+  /// No description provided for @timer_ambient_sound_label.
+  ///
+  /// In en, this message translates to:
+  /// **'AMBIENT SOUND'**
+  String get timer_ambient_sound_label;
+
+  /// No description provided for @timer_begin_session.
+  ///
+  /// In en, this message translates to:
+  /// **'Begin session'**
+  String get timer_begin_session;
+
+  /// No description provided for @timer_save_changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get timer_save_changes;
+
+  /// No description provided for @timer_new_title.
+  ///
+  /// In en, this message translates to:
+  /// **'New timer'**
+  String get timer_new_title;
+
+  /// No description provided for @timer_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit timer'**
+  String get timer_edit_title;
+
+  /// No description provided for @timer_your_timers.
+  ///
+  /// In en, this message translates to:
+  /// **'Your timers'**
+  String get timer_your_timers;
+
+  /// No description provided for @timer_custom_timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom timer'**
+  String get timer_custom_timer;
+
+  /// No description provided for @timer_ambient_sounds_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambient sounds'**
+  String get timer_ambient_sounds_title;
+
+  /// No description provided for @timer_ambient_sound_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Default (no sound)'**
+  String get timer_ambient_sound_none;
+
+  /// No description provided for @timer_ambient_sounds_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load ambient sounds'**
+  String get timer_ambient_sounds_load_error;
+
+  /// No description provided for @timer_volume_label.
+  ///
+  /// In en, this message translates to:
+  /// **'VOLUME'**
+  String get timer_volume_label;
+
+  /// No description provided for @timer_duration_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get timer_duration_title;
+
+  /// No description provided for @timer_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit timer'**
+  String get timer_edit;
+
+  /// No description provided for @timer_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete timer'**
+  String get timer_delete;
+
+  /// No description provided for @timer_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete timer?'**
+  String get timer_delete_title;
+
+  /// No description provided for @timer_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This timer will be removed from your timers.'**
+  String get timer_delete_message;
+
+  /// No description provided for @timer_duration_must_be_greater_than_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration must be greater than 0'**
+  String get timer_duration_must_be_greater_than_error;
+
+  /// No description provided for @splash_tagline_1.
+  ///
+  /// In en, this message translates to:
+  /// **'We Buddhists practice together'**
+  String get splash_tagline_1;
+
+  /// No description provided for @splash_tagline_2.
+  ///
+  /// In en, this message translates to:
+  /// **'We Buddhists practice daily'**
+  String get splash_tagline_2;
 }
 
 class _AppLocalizationsDelegate

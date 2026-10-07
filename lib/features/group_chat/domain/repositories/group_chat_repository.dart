@@ -22,6 +22,8 @@ abstract class GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   });
 
   Future<Either<Failure, ChatMessageDTO>> sendGroupMessage(

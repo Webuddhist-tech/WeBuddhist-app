@@ -4,7 +4,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
-enum ConnectMyEmptyStateType { feed, events, posts, practices, groups }
+enum ConnectMyEmptyStateType { feed, events, groups }
 
 /// Empty state shown in Connect tabs when the My segment has no content.
 class ConnectMyEmptyState extends StatelessWidget {
@@ -86,25 +86,18 @@ class ConnectMyEmptyState extends StatelessWidget {
   String _title(AppLocalizations l10n) => switch (type) {
     ConnectMyEmptyStateType.feed => l10n.connect_my_empty_feed_title,
     ConnectMyEmptyStateType.events => l10n.connect_my_empty_events_title,
-    ConnectMyEmptyStateType.posts => l10n.connect_my_empty_posts_title,
-    ConnectMyEmptyStateType.practices => l10n.connect_my_empty_practices_title,
     ConnectMyEmptyStateType.groups => l10n.connect_my_empty_groups_title,
   };
 
   String _subtitle(AppLocalizations l10n) => switch (type) {
     ConnectMyEmptyStateType.feed => l10n.connect_my_empty_feed_subtitle,
     ConnectMyEmptyStateType.events => l10n.connect_my_empty_events_subtitle,
-    ConnectMyEmptyStateType.posts => l10n.connect_my_empty_posts_subtitle,
-    ConnectMyEmptyStateType.practices =>
-      l10n.connect_my_empty_practices_subtitle,
     ConnectMyEmptyStateType.groups => l10n.connect_my_empty_groups_subtitle,
   };
 
   String _browseLabel(AppLocalizations l10n) => switch (type) {
     ConnectMyEmptyStateType.feed => l10n.connect_my_empty_feed_browse,
     ConnectMyEmptyStateType.events => l10n.connect_my_empty_events_browse,
-    ConnectMyEmptyStateType.posts => l10n.connect_my_empty_posts_browse,
-    ConnectMyEmptyStateType.practices => l10n.connect_my_empty_practices_browse,
     ConnectMyEmptyStateType.groups => l10n.discover_groups,
   };
 }

@@ -91,6 +91,25 @@
   "mala_group_accumulations": "Уншлага нэмэх",
   "mala_groups_section": "Groups",
   "mala_group_untitled": "Нэргүй орон зай",
+  "mala_all_time_accumulation": "Миний нийт хуримтлал",
+  "mala_personal_practice": "Хувийн дадлага",
+  "mala_events_section": "Арга хэмжээ",
+  "mala_my_total": "Миний нийт: {count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "Бүлгийн нийт: {count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "home_timer": "Цаг хэмжигч",
   "preset_timers": "Бэлэн тохируулсан цаг",
   "meditation_timer": "Бясалгалын цаг хэмжигч",
@@ -382,7 +401,7 @@
   "image": "Зураг",
   "feedback": "Санал хүсэлт",
   "author": "Зохиогч",
-  "plans_created": "Төлөвлөгөө үүсгэсэн",
+  "plans_created": "Үүсгэсэн төлөвлөгөөнүүд",
   "ai_confirm": "Баталгаажуулах",
   "search_no_results": "\"{query}\"-д тохирох үр дүн олдсонгүй",
   "@search_no_results": {
@@ -633,7 +652,7 @@
   "me_minutes": "минут",
   "me_hours": "цаг",
   "me_total_meditation_time": "Нийт бясалгалын хугацаа",
-  "me_days_plan_practiced_suffix": "Нийт дуусгасан төлөвлөгөөт өдөр",
+  "me_days_plan_practiced_suffix": "нийт дуусгасан төлөвлөгөөт өдөр",
   "me_streak_share_message": "Би {appName} дээр {count} өдрийн дараалалтай байна!",
   "@me_streak_share_message": {
     "placeholders": {
@@ -735,6 +754,25 @@
   "group_join_requests_load_error": "Нэгдэх хүсэлтүүдийг ачаалж чадсангүй. Дахин оролдоно уу",
   "group_join_requests_admit_error": "Энэ хүсэлтийг зөвшөөрч чадсангүй. Дахин оролдоно уу",
   "group_join_requests_deny_error": "Энэ хүсэлтээс татгалзаж чадсангүй. Дахин оролдоно уу",
+  "group_reports_title": "Гомдол",
+  "group_reports_section_posts": "Нийтлэлүүд",
+  "group_reports_section_comments": "Сэтгэгдлүүд",
+  "group_reports_section_messages": "Мессежүүд",
+  "group_reports_count": "{count, plural,\nother {{count} гомдол}\n}",
+  "@group_reports_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_reports_view_post": "Нийтлэл харах",
+  "group_reports_view_message": "Мессеж харах",
+  "group_reports_delete_post": "Нийтлэл устгах",
+  "group_reports_delete_comment": "Сэтгэгдэл устгах",
+  "group_reports_delete_message": "Мессеж устгах",
+  "group_reports_empty": "Хянах гомдол алга",
+  "group_reports_load_error": "Гомдлуудыг ачаалж чадсангүй. Дахин оролдоно уу",
   "group_members_only_title": "Зөвхөн гишүүдэд",
   "group_members_only_message": "Агуулгыг үзэхийн тулд энэ орон зайд нэгдээрэй",
   "group_join_request_waiting_title": "Админы хариуг хүлээж байна",
@@ -899,19 +937,19 @@
   "connect_empty_discover_groups": "Судлах орон зай алга",
   "connect_empty_discover_practices": "Судлах бясалгал алга",
   "connect_all_groups": "Бүх орон зай",
-  "connect_my_empty_feed_title": "Таны орон зайнууд чимээгүй байна",
+  "connect_my_empty_feed_title": "Шинэ мэдээ алга",
   "connect_my_empty_events_title": "Товлосон арга хэмжээ алга",
   "connect_my_empty_posts_title": "Одоогоор нийтлэл алга",
   "connect_my_empty_groups_title": "Одоогоор бүлэг алга",
-  "connect_my_empty_feed_subtitle": "Таны орон зайнуудаас шинэ зүйл алга. Бусад нь өнөөдөр нийтэлж байна",
-  "connect_my_empty_events_subtitle": "Таны орон зайнуудад одоогоор товлосон зүйл алга. Бусад орон зайнуудад бүх нийтэд нээлттэй арга хэмжээ бий",
-  "connect_my_empty_posts_subtitle": "Таны орон зайнууд юу ч нийтлээгүй байна. Бусад юу хуваалцаж байгааг үзээрэй",
+  "connect_my_empty_feed_subtitle": "Таны орон зайнууд шинэ зүйл хуваалцаагүй байна",
+  "connect_my_empty_events_subtitle": "Таны орон зайнууд арга хэмжээ товлоогүй байна",
+  "connect_my_empty_posts_subtitle": "Таны орон зайнууд юу ч нийтлээгүй байна",
   "connect_my_empty_groups_subtitle": "Та одоогоор ямар ч бүлэгт нэгдээгүй байна. Хамтдаа дадлага хийх нийгэмлэгүүдийг судлаарай.",
   "connect_my_empty_feed_browse": "Бусад орон зайн хуваалцсаныг үзэх",
   "connect_my_empty_events_browse": "Нээлттэй арга хэмжээг үзэх",
   "connect_my_empty_posts_browse": "Бусад нийтлэлийг үзэх",
   "connect_my_empty_practices_title": "Одоогоор дадлага алга",
-  "connect_my_empty_practices_subtitle": "Таны орон зайнууд ямар ч дадлага эхлүүлээгүй байна. Бусад юу санал болгож байгааг үзээрэй",
+  "connect_my_empty_practices_subtitle": "Таны орон зайнууд ямар ч дадлага эхлүүлээгүй байна",
   "connect_my_empty_practices_browse": "Бусад бясалгалыг үзэх",
   "connect_comment_replying_to": "@{handle}-д хариулж байна",
   "@connect_comment_replying_to": {
@@ -1158,6 +1196,11 @@
   "event_live_video_mode": "Бичлэг",
   "event_live_audio_mode": "Аудио",
   "event_live_go_live": "Шууд",
+  "event_replays": "Дахин үзэх",
+  "event_replay_session": "{day}-р өдөр · {session}-р хэсэг",
+  "event_replay_recording": "Бичлэг",
+  "event_replay_back_to_live": "Шууд руу буцах",
+  "event_replays_empty": "Бичлэг хараахан алга",
   "event_puja_starts_in": "Пүжа эхлэхэд",
   "event_puja_not_started": "Пүжа хараахан эхлээгүй байна",
   "event_prayer_new_request": "Шинэ залбирлын хүсэлт",
@@ -1173,7 +1216,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {1 хүн залбирсан}\nother {{count} хүн залбирсан}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {{count} хүн залбирсан}\nother {{count} хүн залбирсан}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1234,5 +1277,6 @@
   "bookmarks_empty_group_accumulations_title": "Хараахан орон зайн хуримтлал хавчуургалаагүй байна",
   "bookmarks_empty_group_accumulations_subtitle": "Энд хадгалахын тулд хуримтлал хавчуургалаарай",
   "practice_collection_already_added": "Энэ цуглуулга таны дадлагад аль хэдийн байна",
-  "practice_group_accumulator_already_added": "Энэ хуримтлал таны дадлагад аль хэдийн байна"
+  "practice_group_accumulator_already_added": "Энэ хуримтлал таны дадлагад аль хэдийн байна",
+  "group_member_owner": "Эзэмшигч"
 }
