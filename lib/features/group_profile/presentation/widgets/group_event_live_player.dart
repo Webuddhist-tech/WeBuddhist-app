@@ -88,6 +88,11 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   DateTime? _endsAt;
   Timer? _retry;
 
+  /// Fires at the start, when the retry window opens. The header owns it,
+  /// not the countdown card, so a replay hiding the card still gets there.
+  Timer? _startCheck;
+  DateTime? _startCheckAt;
+
   GroupEventLanguageKey get _key => (
     eventId: widget.eventId,
     language: widget.language,
@@ -96,6 +101,7 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   @override
   void dispose() {
     _retry?.cancel();
+    _startCheck?.cancel();
     super.dispose();
   }
 
@@ -129,6 +135,24 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     });
   }
 
+  void _syncStartCheck({required bool waiting}) {
+    final start = _startsAt;
+    if (!waiting || start == null || !DateTime.now().isBefore(start)) {
+      _startCheck?.cancel();
+      _startCheck = null;
+      _startCheckAt = null;
+      return;
+    }
+    if (_startCheckAt == start) return;
+    _startCheck?.cancel();
+    _startCheckAt = start;
+    _startCheck = Timer(start.difference(DateTime.now()), () {
+      _startCheck = null;
+      _startCheckAt = null;
+      _refresh();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventAsync = ref.watch(groupEventInLanguageProvider(_key));
@@ -147,9 +171,9 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
     final startsAt = _startsAt;
     // Keep asking for the stream link while a replay plays: once it turns
     // up, the page returns to the live stream on its own.
-    _syncRetry(
-      waiting: stream == null && !fetching && _inLiveWindow(DateTime.now()),
-    );
+    final waiting = stream == null && !fetching;
+    _syncStartCheck(waiting: waiting);
+    _syncRetry(waiting: waiting && _inLiveWindow(DateTime.now()));
 
     final Widget child;
     if (replay != null) {
@@ -182,7 +206,6 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
       child = GroupEventNotStartedCard(
         startsAt: startsAt,
         background: widget.notStartedBackground,
-        onStarted: _refresh,
       );
     }
     return child;

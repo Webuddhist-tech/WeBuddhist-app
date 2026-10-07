@@ -896,5 +896,43 @@ void main() {
       // Nothing live to go back to.
       expect(find.byType(GroupEventBackToLivePill), findsNothing);
     });
+
+    testWidgets('a replay picked before the start still finds the stream', (
+      tester,
+    ) async {
+      final startsAt = DateTime.now().add(const Duration(minutes: 2));
+      var fetches = 0;
+      await _pumpLiveEventDetails(
+        tester,
+        fetch: () async {
+          fetches++;
+          return Right(
+            fetches == 1
+                ? GroupEvent(
+                  id: 'event-1',
+                  groupId: 'group-1',
+                  startDate: startsAt,
+                )
+                : _liveEvent(),
+          );
+        },
+        videos: twoSessions,
+      );
+      await _settle(tester);
+
+      // The replay takes the countdown card's place, and its start refresh.
+      await openReplays(tester);
+      await pick(tester, 'Day 1 · Session 2');
+      expect(find.byType(GroupEventNotStartedCard), findsNothing);
+      expect(fetches, 1);
+
+      await tester.pump(const Duration(minutes: 2));
+      await _settle(tester);
+
+      // Asked again at the start; the replay keeps playing, live one tap away.
+      expect(fetches, 2);
+      expect(player(tester).videoId, _session2Id);
+      expect(find.byType(GroupEventBackToLivePill), findsOneWidget);
+    });
   });
 }
