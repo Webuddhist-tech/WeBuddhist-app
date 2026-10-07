@@ -55,4 +55,61 @@ void main() {
       expect(GroupEventLiveUtils.videoIdOf(broken), isNull);
     });
   });
+
+  group('GroupEventLiveUtils.hasEnded', () {
+    final start = DateTime.utc(2026, 10, 5, 9);
+    final end = DateTime.utc(2026, 10, 7, 18);
+
+    test('ends at the end date, with the link still attached', () {
+      final event = GroupEvent(
+        id: 'e1',
+        groupId: 'g1',
+        startDate: start,
+        endDate: end,
+      );
+      expect(
+        GroupEventLiveUtils.hasEnded(
+          event,
+          end.subtract(const Duration(minutes: 1)),
+        ),
+        isFalse,
+      );
+      expect(GroupEventLiveUtils.hasEnded(event, end), isTrue);
+    });
+
+    test('with no usable end, ends the grace period after the start', () {
+      final noEnd = GroupEvent(id: 'e1', groupId: 'g1', startDate: start);
+      final sameEnd = GroupEvent(
+        id: 'e1',
+        groupId: 'g1',
+        startDate: start,
+        endDate: start,
+      );
+      final graceEnd = start.add(GroupEventLiveUtils.liveGrace);
+      for (final event in [noEnd, sameEnd]) {
+        expect(
+          GroupEventLiveUtils.hasEnded(
+            event,
+            graceEnd.subtract(const Duration(minutes: 1)),
+          ),
+          isFalse,
+        );
+        expect(GroupEventLiveUtils.hasEnded(event, graceEnd), isTrue);
+      }
+    });
+
+    test('a recurring event or one with no start never ends', () {
+      final recurring = GroupEvent(
+        id: 'e1',
+        groupId: 'g1',
+        startDate: start,
+        endDate: end,
+        isRecurring: true,
+      );
+      const undated = GroupEvent(id: 'e1', groupId: 'g1');
+      final later = end.add(const Duration(days: 30));
+      expect(GroupEventLiveUtils.hasEnded(recurring, later), isFalse);
+      expect(GroupEventLiveUtils.hasEnded(undated, later), isFalse);
+    });
+  });
 }

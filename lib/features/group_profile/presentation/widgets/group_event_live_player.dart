@@ -57,6 +57,10 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
   /// Recording to play instead of the live stream.
   final GroupEventReplay? replay;
 
+  /// False once the event is over: its link stays on the event, but the
+  /// stream is a recording by then, not something to show as live.
+  final bool showsStream;
+
   const GroupEventLiveHeader({
     super.key,
     required this.eventId,
@@ -65,6 +69,7 @@ class GroupEventLiveHeader extends ConsumerStatefulWidget {
     required this.fallbackTitle,
     this.notStartedBackground,
     this.replay,
+    this.showsStream = true,
   });
 
   @override
@@ -76,10 +81,6 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   // The stream link is often attached after the start time, so keep asking
   // while the event is on.
   static const _retryInterval = Duration(seconds: 30);
-
-  /// How long past its start an event is still polled when it has no end of
-  /// its own. One occurrence of a recurring event is bounded the same way.
-  static const _liveGrace = Duration(hours: 6);
 
   GroupEventLiveStream? _stream;
   String _groupId = '';
@@ -109,17 +110,7 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
   bool _inLiveWindow(DateTime now) {
     final start = _startsAt;
     if (start == null || now.isBefore(start)) return false;
-    return now.isBefore(_endsAt ?? start.add(_liveGrace));
-  }
-
-  /// When the event ends, or null to fall back to [_liveGrace]. A recurring
-  /// event's end date closes the whole series, not the occurrence on screen.
-  static DateTime? _liveEndOf(GroupEvent event) {
-    if (event.isRecurring) return null;
-    final start = event.startDate;
-    final end = event.endDate;
-    if (end == null || (start != null && !end.isAfter(start))) return null;
-    return end;
+    return now.isBefore(_endsAt ?? start.add(GroupEventLiveUtils.liveGrace));
   }
 
   void _syncRetry({required bool waiting}) {
@@ -147,10 +138,10 @@ class _GroupEventLiveHeaderState extends ConsumerState<GroupEventLiveHeader> {
       _stream = _resolve(event);
       _groupId = event.groupId;
       _startsAt = event.startDate;
-      _endsAt = _liveEndOf(event);
+      _endsAt = GroupEventLiveUtils.liveEndOf(event);
     });
 
-    final stream = _stream;
+    final stream = widget.showsStream ? _stream : null;
     final replay = widget.replay;
     final fetching = eventAsync.isLoading && !eventAsync.hasValue;
     final startsAt = _startsAt;

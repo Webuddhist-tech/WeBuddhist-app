@@ -108,7 +108,12 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   final Map<String, String> _liveStreams = {};
 
   /// Recording picked from the Replays menu; null plays the live stream.
+  /// It keeps playing across day changes until another is picked.
   EventReplay? _replay;
+
+  /// The day's own first session, played once the stream is over. Kept while
+  /// the next day loads so tapping through days does not swap the layout.
+  EventReplay? _autoReplay;
   final _embedded = PlanEmbeddedController();
   Timer? _dayViewedTimer;
   bool _didOpenLiveText = false;
@@ -176,11 +181,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           ?.fold((_) => null, (status) => status);
 
   void _selectDay(int day) {
-    // Each day has its own recordings; a picked one stays with its day.
-    setState(() {
-      selectedDay = day;
-      _replay = null;
-    });
+    // A picked recording keeps playing; changing day only changes the menu.
+    setState(() => selectedDay = day);
     _scheduleDayViewed();
   }
 
@@ -223,17 +225,21 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     final live = _liveStatus();
     // Until the event has loaded, nothing says which of today's videos is
     // the live stream, so the menu waits rather than offer it as a replay.
-    final replays =
-        live == _LiveStatus.loading ? const <EventReplay>[] : _dayReplays();
+    // A failed request offers Retry instead.
+    final dayReplays =
+        _knowsStream(live) ? _dayReplays() : const <EventReplay>[];
+    final replays = dayReplays ?? const <EventReplay>[];
     // Live wins while it is on; a recording is then opt-in from the menu.
     // Once the stream is gone, a past day plays its own first session, and
     // so does today after the event has begun. Before it begins the
     // countdown keeps the slot; recordings wait in the menu.
-    final replay =
-        _replay ??
-        (live == _LiveStatus.none && replays.isNotEmpty && _dayHasBegun
-            ? replays.first
-            : null);
+    if (live != _LiveStatus.none) {
+      _autoReplay = null;
+    } else if (dayReplays != null) {
+      _autoReplay =
+          dayReplays.isNotEmpty && _dayHasBegun ? dayReplays.first : null;
+    }
+    final replay = _replay ?? _autoReplay;
     // Only the live layout hosts the embedded panel, so a task opened
     // while the stream was still loading stays put even if the request
     // then fails or finds no stream; the plain layout takes over once the
@@ -288,11 +294,18 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
   bool get _hasEventHeader => widget.eventId != null && widget.showLiveStream;
 
+  /// Whether the live stream, if any, is known, so it can be told apart
+  /// from the day's recordings.
+  bool _knowsStream(_LiveStatus live) =>
+      live != _LiveStatus.loading && live != _LiveStatus.failed;
+
   /// Sticky per language once a stream was seen, so a language without one
   /// keeps the toggles reachable. A failed request is `failed`, never
   /// `none`, so a network blip cannot hide an active stream. Only a
   /// successful answer with no stream, in a language that had one, lets
-  /// the page leave the live state: that stream really is over.
+  /// the page leave the live state: that stream really is over. The link
+  /// stays on the event after it ends, so an event already over when the
+  /// page opens has no live stream; its link is one of the recordings.
   _LiveStatus _liveStatus() {
     if (!_hasEventHeader) return _LiveStatus.none;
     final eventAsync = ref.watch(groupEventInLanguageProvider(_liveKey));
@@ -307,6 +320,12 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       (event) {
         final videoId = GroupEventLiveUtils.videoIdOf(event);
         if (videoId == null) return _LiveStatus.none;
+        // One seen live earlier in this visit keeps playing past the end
+        // rather than restarting as a replay mid-session.
+        if (_liveStreams.isEmpty &&
+            GroupEventLiveUtils.hasEnded(event, DateTime.now())) {
+          return _LiveStatus.none;
+        }
         _liveStreams[_liveLanguage] = videoId;
         return _LiveStatus.live;
       },
@@ -328,17 +347,20 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   }
 
   /// The selected day's recordings (issue #869 copies the event's YouTube
-  /// links onto the day), minus the streams that are live right now.
-  List<EventReplay> _dayReplays() {
+  /// links onto the day), minus the streams that are live right now. Null
+  /// while the day is still loading.
+  List<EventReplay>? _dayReplays() {
     if (!_hasEventHeader) return const [];
-    final videos = ref
-        .watch(
-          userPlanDayContentFutureProvider(
-            PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
-          ),
-        )
-        .valueOrNull
-        ?.fold((_) => null, (day) => day.videos);
+    final day =
+        ref
+            .watch(
+              userPlanDayContentFutureProvider(
+                PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
+              ),
+            )
+            .valueOrNull;
+    if (day == null) return null;
+    final videos = day.fold((_) => null, (content) => content.videos);
     if (videos == null || videos.isEmpty) return const [];
     return EventReplays.of(
       videos,
@@ -376,7 +398,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(null),
+                _buildHeader(null, showsStream: false),
                 if (retryLive != null) _buildLiveEventError(retryLive),
                 // Room under the edge-to-edge event header.
                 if (widget.eventId != null) const SizedBox(height: 12),
@@ -421,7 +443,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     replay: replay,
                     primary: false,
                   ),
-                  _buildHeader(replay),
+                  _buildHeader(replay, showsStream: live != _LiveStatus.none),
                   // An open task carries prayer requests in its own header.
                   if (!_embedded.isOpen)
                     _buildUnderStreamRow(
@@ -593,7 +615,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       title:
           !isEvent
               ? Text(widget.plan.title, style: TextStyle(fontSize: 20))
-              : _hasEventHeader && live != _LiveStatus.loading
+              : _hasEventHeader && _knowsStream(live)
               ? GroupEventReplaysMenu(
                 replays: replays,
                 selected: replay,
@@ -633,7 +655,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
-  Widget _buildHeader(EventReplay? replay) {
+  /// [showsStream] false keeps an ended event's leftover link from playing
+  /// as live: the page has no stream then, only recordings.
+  Widget _buildHeader(EventReplay? replay, {bool showsStream = true}) {
     if (widget.eventId == null) {
       return PlanCoverImage(image: widget.plan.coverImage);
     }
@@ -650,6 +674,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       language: _liveLanguage,
       audioOnly: _audioOnly,
       fallbackTitle: widget.plan.title,
+      showsStream: showsStream,
       replay:
           replay == null
               ? null

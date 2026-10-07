@@ -60,6 +60,14 @@ void main() {
       );
     });
 
+    test('parses a live-stream url the sync copies onto the day', () {
+      final replays = EventReplays.of([
+        _video('a', url: 'https://www.youtube.com/live/dQw4w9WgXcQ?si=x'),
+      ], dayNumber: 1);
+
+      expect(replays.single.videoId, 'dQw4w9WgXcQ');
+    });
+
     test('drops videos with no playable id', () {
       final replays = EventReplays.of([
         _video('bad', url: 'https://example.com/not-youtube'),

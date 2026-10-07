@@ -1,8 +1,8 @@
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_link_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 /// One recording of an event day: a plan-day video with its session number.
 ///
@@ -38,11 +38,12 @@ class EventReplay {
 }
 
 abstract final class EventReplays {
-  /// YouTube id of a day video: the stored id, else parsed from its URL.
+  /// YouTube id of a day video: the stored id, else parsed from its URL,
+  /// including the `/live/` links a synced stream keeps.
   static String? videoIdOf(PlanVideoModel video) {
     final stored = video.videoId.trim();
     if (stored.isNotEmpty) return stored;
-    return YoutubePlayer.convertUrlToId(video.url.trim());
+    return ConnectPostLinkUtils.youtubeVideoId(video.url);
   }
 
   /// The day's recordings in display order, numbered from 1. Videos with
