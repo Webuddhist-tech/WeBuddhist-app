@@ -160,4 +160,10 @@ abstract class GroupProfileRepositoryInterface {
     String groupId, {
     required String reportId,
   });
+
+  /// Admin removal of any member's chat message in the group's room.
+  Future<Either<Failure, void>> deleteGroupChatMessage(
+    String groupId, {
+    required String messageId,
+  });
 }

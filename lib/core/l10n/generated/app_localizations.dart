@@ -3658,6 +3658,30 @@ abstract class AppLocalizations {
   /// **'Unable to load reports. Please try again'**
   String get group_reports_load_error;
 
+  /// No description provided for @group_reports_delete_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure?'**
+  String get group_reports_delete_confirm_title;
+
+  /// No description provided for @group_reports_delete_message_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This message will be permanently removed'**
+  String get group_reports_delete_message_confirm;
+
+  /// No description provided for @group_reports_message_removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Message has been removed'**
+  String get group_reports_message_removed;
+
+  /// No description provided for @group_reports_delete_message_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to delete message. Please try again'**
+  String get group_reports_delete_message_error;
+
   /// No description provided for @group_members_only_title.
   ///
   /// In en, this message translates to:
@@ -4675,6 +4699,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Messages couldn\'t be loaded'**
   String get group_chat_load_failed;
+
+  /// No description provided for @group_chat_message_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'This message is no longer in the chat'**
+  String get group_chat_message_not_found;
 
   /// No description provided for @group_chat_retry.
   ///

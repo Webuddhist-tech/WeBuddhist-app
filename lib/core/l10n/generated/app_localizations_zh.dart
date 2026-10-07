@@ -1915,6 +1915,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_reports_load_error => '無法載入檢舉，請再試一次。';
 
   @override
+  String get group_reports_delete_confirm_title => '你確定嗎？';
+
+  @override
+  String get group_reports_delete_message_confirm => '這則訊息將被永久刪除。';
+
+  @override
+  String get group_reports_message_removed => '訊息已移除';
+
+  @override
+  String get group_reports_delete_message_error => '無法刪除訊息，請再試一次。';
+
+  @override
   String get group_members_only_title => '僅限成員';
 
   @override
@@ -2509,6 +2521,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => '無法載入訊息。';
+
+  @override
+  String get group_chat_message_not_found => '此訊息已不在聊天中';
 
   @override
   String get group_chat_retry => '重試';

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/screens/group_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:go_router/go_router.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   _FakeRepository(this.reports, {this.members = const []});
@@ -25,6 +27,8 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   final List<GroupMember> members;
   final List<bool?> resolvedFilters = [];
   final List<String> resolvedReportIds = [];
+  final List<String> deletedMessageIds = [];
+  bool deleteFails = false;
 
   /// When set, [resolveGroupReport] waits on it before recording the id.
   Future<void>? pendingResolve;
@@ -60,6 +64,16 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
       for (final report in reports)
         if (report.id != reportId) report,
     ];
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteGroupChatMessage(
+    String groupId, {
+    required String messageId,
+  }) async {
+    if (deleteFails) return const Left(ServerFailure('Failed'));
+    deletedMessageIds.add(messageId);
     return const Right(null);
   }
 
@@ -145,6 +159,44 @@ Future<void> _pumpScreen(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: const GroupReportsScreen(groupId: 'g1'),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// The screen under a router, for the one action that leaves it. The chat route
+/// stands in for the real screen and reports where it was opened.
+Future<void> _pumpRoutedScreen(
+  WidgetTester tester,
+  _FakeRepository repository,
+) async {
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const GroupReportsScreen(groupId: 'g1'),
+      ),
+      GoRoute(
+        path: AppRoutes.groupChat,
+        builder:
+            (_, state) => Text(
+              'chat ${state.pathParameters['groupId']} '
+              '${state.uri.queryParameters[AppRoutes.chatMessageQuery]}',
+            ),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [groupProfileRepositoryProvider.overrideWithValue(repository)],
+      child: MaterialApp.router(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
       ),
     ),
   );
@@ -258,6 +310,70 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Harassment or bullying'), findsOneWidget);
+  });
+
+  testWidgets('delete message removes it and clears its reports', (
+    tester,
+  ) async {
+    final repository = _FakeRepository(_sampleReports());
+    await _pumpScreen(tester, repository);
+
+    await tester.tap(find.text('Delete message'));
+    await tester.pumpAndSettle();
+    expect(find.text('Are you sure?'), findsOneWidget);
+
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(repository.deletedMessageIds, ['m1']);
+    expect(repository.resolvedReportIds, ['r2']);
+    expect(find.text('Message has been removed'), findsOneWidget);
+    expect(find.text('You do not belong here.'), findsNothing);
+  });
+
+  testWidgets('cancelling the delete dialog leaves the message alone', (
+    tester,
+  ) async {
+    final repository = _FakeRepository(_sampleReports());
+    await _pumpScreen(tester, repository);
+
+    await tester.tap(find.text('Delete message'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(repository.deletedMessageIds, isEmpty);
+    expect(repository.resolvedReportIds, isEmpty);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('You do not belong here.'), findsOneWidget);
+  });
+
+  testWidgets('a failed delete says so and keeps the reports', (tester) async {
+    final repository = _FakeRepository(_sampleReports())..deleteFails = true;
+    await _pumpScreen(tester, repository);
+
+    await tester.tap(find.text('Delete message'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(repository.resolvedReportIds, isEmpty);
+    expect(
+      find.text('Unable to delete message. Please try again'),
+      findsOneWidget,
+    );
+    expect(find.text('You do not belong here.'), findsOneWidget);
+  });
+
+  testWidgets('view message opens the chat on the reported message', (
+    tester,
+  ) async {
+    await _pumpRoutedScreen(tester, _FakeRepository(_sampleReports()));
+
+    await tester.tap(find.text('View message'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('chat g1 m1'), findsOneWidget);
   });
 
   testWidgets('the deferred card actions read as disabled', (tester) async {

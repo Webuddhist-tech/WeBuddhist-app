@@ -2009,6 +2009,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load reports. Please try again';
 
   @override
+  String get group_reports_delete_confirm_title => 'Are you sure?';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'This message will be permanently removed';
+
+  @override
+  String get group_reports_message_removed => 'Message has been removed';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'Unable to delete message. Please try again';
+
+  @override
   String get group_members_only_title => 'Members only';
 
   @override
@@ -2631,6 +2645,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => 'Messages couldn\'t be loaded';
+
+  @override
+  String get group_chat_message_not_found =>
+      'This message is no longer in the chat';
 
   @override
   String get group_chat_retry => 'Retry';

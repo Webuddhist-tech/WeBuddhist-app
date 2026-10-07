@@ -44,10 +44,15 @@ class GroupChatThread extends ConsumerStatefulWidget {
     required this.groupId,
     required this.onReply,
     required this.onSelectionChanged,
+    this.targetMessageId,
   });
 
   final String roomId;
   final String groupId;
+
+  /// A message to open on instead of the newest one, chased down once the
+  /// first page is in. Reached from the reports queue's "View message".
+  final String? targetMessageId;
 
   /// Starts a reply in the composer, which the screen owns.
   final ValueChanged<ChatMessageDTO> onReply;
@@ -122,6 +127,16 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
 
   /// Distance from the reversed end at which the next page is requested.
   static const double _loadMoreThreshold = 320;
+
+  /// True from the frame the opening jump to [GroupChatThread.targetMessageId]
+  /// is scheduled until it settles. The jump walks back through pages over
+  /// several frames, and following the newest message meanwhile would drag the
+  /// thread straight back to the bottom.
+  bool _chasingTarget = false;
+
+  /// Set once the opening jump has been attempted, so neither a rebuild nor
+  /// the pages the jump itself loads start it again.
+  bool _targetJumpStarted = false;
 
   /// The viewer's backend user id — the id space chat's `sender_id` and
   /// reaction `user_ids` use. Read from the profile rather than passed in, so
@@ -233,11 +248,28 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     _hidePill();
     if (!follow) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _scrollToNewest();
+      // Checked here rather than above: this fires on the first page too, and
+      // whether that runs before or after the build that schedules the opening
+      // jump is not ordered. The flag is set during build, so by the time any
+      // post-frame callback runs it is already true.
+      if (mounted && !_chasingTarget) _scrollToNewest();
     });
   }
 
-  /// Scrolls to a quoted original.
+  /// Opens the thread on [messageId], and says so when it cannot be reached —
+  /// a message deleted outright, or older than the paging budget. The thread
+  /// is left on the newest messages in that case, which is where it already
+  /// sits.
+  Future<void> _jumpToTarget(String messageId) async {
+    final found = await _scrollToMessage(messageId);
+    _chasingTarget = false;
+    if (found || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.group_chat_message_not_found)),
+    );
+  }
+
+  /// Scrolls to a message, reporting whether it was reached.
   ///
   /// `ListView.builder` only keeps rows near the viewport alive, so a parent
   /// that is off screen has no context to scroll to yet — which is why tapping
@@ -245,28 +277,29 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   /// ones. Older messages sit at a larger offset in this reversed list, so the
   /// search walks that way a viewport at a time, building rows as it goes,
   /// until the target materialises and `ensureVisible` can place it exactly.
-  Future<void> _scrollToMessage(String messageId) async {
-    if (await _ensureMessageVisible(messageId)) return;
+  Future<bool> _scrollToMessage(String messageId) async {
+    if (await _ensureMessageVisible(messageId)) return true;
 
     // Older than the loaded window: page back until it appears, so a quote
     // still reaches its original however far up the thread it sits.
-    if (!await _loadUntilPresent(messageId)) return;
+    if (!await _loadUntilPresent(messageId)) return false;
 
     for (var attempt = 0; attempt < _maxScrollHops; attempt++) {
-      if (!mounted || !_scrollController.hasClients) return;
+      if (!mounted || !_scrollController.hasClients) return false;
       final position = _scrollController.position;
       final next = (position.pixels + position.viewportDimension * 0.85).clamp(
         0.0,
         position.maxScrollExtent,
       );
       // Already at the oldest loaded row: nowhere further to look.
-      if (next <= position.pixels) return;
+      if (next <= position.pixels) return false;
 
       _scrollController.jumpTo(next);
       await SchedulerBinding.instance.endOfFrame;
-      if (!mounted) return;
-      if (await _ensureMessageVisible(messageId)) return;
+      if (!mounted) return false;
+      if (await _ensureMessageVisible(messageId)) return true;
     }
+    return false;
   }
 
   /// Pages back until [messageId] is in the loaded window.
@@ -737,6 +770,8 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
       return _dismissKeyboardOnTap(const GroupChatEmptyState());
     }
 
+    _maybeStartTargetJump(state);
+
     final rows = buildChatThreadRows(state.messages);
 
     // The pill reacts on the live copy of its message, so the tinted circle
@@ -785,6 +820,26 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
         ),
       ),
     );
+  }
+
+  /// Starts the opening jump once, on the first build that has rows to jump
+  /// through. Flags are set here, during build, so the post-frame callbacks
+  /// that follow — this one and the first page's follow-the-newest — see them
+  /// whichever order they were registered in.
+  void _maybeStartTargetJump(GroupChatThreadState state) {
+    if (_targetJumpStarted || state.messages.isEmpty) return;
+    final target = widget.targetMessageId?.trim() ?? '';
+    if (target.isEmpty) return;
+
+    _targetJumpStarted = true;
+    _chasingTarget = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        _chasingTarget = false;
+        return;
+      }
+      unawaited(_jumpToTarget(target));
+    });
   }
 
   Widget _buildList(
