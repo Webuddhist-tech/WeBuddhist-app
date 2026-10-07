@@ -5198,6 +5198,12 @@ abstract class AppLocalizations {
   /// **'How can we pray for you today?'**
   String get event_prayer_hint;
 
+  /// No description provided for @event_prayer_hint_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a prayer about {topics}'**
+  String event_prayer_hint_intention(String topics);
+
   /// No description provided for @event_prayer_load_failed.
   ///
   /// In en, this message translates to:

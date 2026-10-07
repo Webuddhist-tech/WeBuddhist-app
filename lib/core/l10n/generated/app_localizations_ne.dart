@@ -2989,6 +2989,11 @@ class AppLocalizationsNe extends AppLocalizations {
       'आज हामी तपाईंको लागि कसरी प्रार्थना गर्न सक्छौं?';
 
   @override
+  String event_prayer_hint_intention(String topics) {
+    return 'Share a prayer about $topics';
+  }
+
+  @override
   String get event_prayer_load_failed => 'प्रार्थना अनुरोधहरू लोड गर्न सकिएन';
 
   @override

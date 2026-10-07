@@ -2984,6 +2984,11 @@ class AppLocalizationsMn extends AppLocalizations {
   String get event_prayer_hint => 'Өнөөдөр бид таны төлөө хэрхэн залбирах вэ?';
 
   @override
+  String event_prayer_hint_intention(String topics) {
+    return 'Share a prayer about $topics';
+  }
+
+  @override
   String get event_prayer_load_failed =>
       'Залбирлын хүсэлтүүдийг ачаалж чадсангүй';
 

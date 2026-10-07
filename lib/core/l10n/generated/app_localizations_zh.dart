@@ -2817,6 +2817,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_hint => '您希望迴向祈願什麼呢?';
 
   @override
+  String event_prayer_hint_intention(String topics) {
+    return 'Share a prayer about $topics';
+  }
+
+  @override
   String get event_prayer_load_failed => '無法加入迴向名單';
 
   @override
