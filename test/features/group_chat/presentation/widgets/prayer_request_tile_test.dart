@@ -182,7 +182,7 @@ void main() {
   ) async {
     await _pump(tester, count: 3, prayedByMe: false);
     expect(find.text('Pray'), findsOneWidget);
-    expect(find.text('3 people are praying'), findsOneWidget);
+    expect(find.text('3 people prayed'), findsOneWidget);
   });
 
   testWidgets('once I pray the button still reads Pray with my count', (
@@ -192,7 +192,7 @@ void main() {
     expect(find.text('Pray'), findsOneWidget);
     expect(find.text('+3'), findsOneWidget);
     expect(find.text('Praying'), findsNothing);
-    expect(find.text('1 person is praying'), findsOneWidget);
+    expect(find.text('1 person prayed'), findsOneWidget);
   });
 
   testWidgets('a prayer with no count yet shows no badge', (tester) async {
@@ -212,7 +212,7 @@ void main() {
         ChatPrayerUserDTO(userId: 'u4', name: 'Karma'),
       ],
     );
-    expect(find.text('+13 more are praying'), findsOneWidget);
+    expect(find.text('+13 more prayed'), findsOneWidget);
   });
 
   testWidgets('tapping the count on my own request opens the roster', (
@@ -227,7 +227,7 @@ void main() {
       onShowSupporters: () => opened = true,
     );
     expect(find.byIcon(AppAssets.caretRight), findsOneWidget);
-    await tester.tap(find.text('2 people are praying'));
+    await tester.tap(find.text('2 people prayed'));
     expect(opened, isTrue);
   });
 
@@ -241,9 +241,9 @@ void main() {
       prayedByMe: false,
       onShowSupporters: () => opened = true,
     );
-    expect(find.text('2 people are praying'), findsOneWidget);
+    expect(find.text('2 people prayed'), findsOneWidget);
     expect(find.byIcon(AppAssets.caretRight), findsNothing);
-    await tester.tap(find.text('2 people are praying'));
+    await tester.tap(find.text('2 people prayed'));
     expect(opened, isFalse);
   });
 
