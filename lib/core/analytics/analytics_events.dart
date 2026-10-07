@@ -33,6 +33,7 @@ abstract final class AnalyticsEvents {
   static const String groupEventLinkOpened = 'group_event_link_opened';
   static const String groupEventLiveOpened = 'group_event_live_opened';
   static const String groupEventLiveEnded = 'group_event_live_ended';
+  static const String groupEventReplayOpened = 'group_event_replay_opened';
   static const String groupAccumulatorViewed = 'group_accumulator_viewed';
 
   // Connect and groups (§5.11)
@@ -171,6 +172,8 @@ abstract final class AnalyticsProperties {
   static const String participation = 'participation';
   static const String target = 'target';
   static const String linkType = 'link_type';
+  static const String session = 'session';
+  static const String videoId = 'video_id';
 
   // Search
   static const String queryLength = 'query_length';

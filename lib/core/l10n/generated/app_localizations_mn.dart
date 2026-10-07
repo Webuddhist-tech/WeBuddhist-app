@@ -2934,6 +2934,23 @@ class AppLocalizationsMn extends AppLocalizations {
   String get event_live_go_live => 'Шууд';
 
   @override
+  String get event_replays => 'Дахин үзэх';
+
+  @override
+  String event_replay_session(String day, String session) {
+    return '$day-р өдөр · $session-р хэсэг';
+  }
+
+  @override
+  String get event_replay_recording => 'Бичлэг';
+
+  @override
+  String get event_replay_back_to_live => 'Шууд руу буцах';
+
+  @override
+  String get event_replays_empty => 'Бичлэг хараахан алга';
+
+  @override
   String get event_puja_starts_in => 'Пүжа эхлэхэд';
 
   @override

@@ -1466,6 +1466,21 @@
   "event_live_video_mode": "Video",
   "event_live_audio_mode": "Audio",
   "event_live_go_live": "Live",
+  "event_replays": "Replays",
+  "event_replay_session": "Day {day} · Session {session}",
+  "@event_replay_session": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "session": {
+        "type": "String"
+      }
+    }
+  },
+  "event_replay_recording": "Recording",
+  "event_replay_back_to_live": "Back to live",
+  "event_replays_empty": "No recordings yet",
   "event_puja_starts_in": "Puja starts in",
   "event_puja_not_started": "Puja not started yet",
   "event_prayer_requests": "Prayer requests",
