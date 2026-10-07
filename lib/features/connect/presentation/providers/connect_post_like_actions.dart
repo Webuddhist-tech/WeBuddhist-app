@@ -1,5 +1,4 @@
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
-import 'package:flutter_pecha/features/connect/presentation/providers/connect_posts_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
@@ -31,7 +30,6 @@ class ConnectPostLikeActions {
     required bool wasLiked,
     required int optimisticLikeCount,
     required bool includeUnfollowed,
-    bool syncFeed = false,
     String? groupId,
   }) async {
     final repository = ref.read(connectRepositoryProvider);
@@ -51,7 +49,6 @@ class ConnectPostLikeActions {
           ref,
           post: updatedPost,
           includeUnfollowed: includeUnfollowed,
-          syncFeed: syncFeed,
           groupId: groupId,
         );
         return ConnectPostLikeResult.success(updatedPost);
@@ -78,27 +75,21 @@ void syncPostToListProviders(
   Ref ref, {
   required ConnectPost post,
   required bool includeUnfollowed,
-  bool syncFeed = false,
   String? groupId,
 }) {
-  final postsProvider =
-      includeUnfollowed
-          ? discoverConnectPostsProvider
-          : myConnectPostsProvider;
-  ref.read(postsProvider.notifier).updatePost(post);
-
-  // Skip when the group profile is not on screen; reading would start a fetch.
-  if (groupId != null && ref.exists(groupPostsProvider(groupId))) {
-    ref.read(groupPostsProvider(groupId).notifier).updatePost(post);
-  }
-
-  if (!syncFeed) return;
-
+  // Only lists already on screen are touched; reading a dead autoDispose
+  // provider would create it for nothing.
   final feedProvider =
       includeUnfollowed
           ? discoverUnifiedConnectFeedProvider
           : myUnifiedConnectFeedProvider;
-  ref.read(feedProvider.notifier).updatePost(post);
+  if (ref.exists(feedProvider)) {
+    ref.read(feedProvider.notifier).updatePost(post);
+  }
+
+  if (groupId != null && ref.exists(groupPostsProvider(groupId))) {
+    ref.read(groupPostsProvider(groupId).notifier).updatePost(post);
+  }
 }
 
 final connectPostLikeActionsProvider = Provider<ConnectPostLikeActions>(

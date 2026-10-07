@@ -24,7 +24,6 @@ class ConnectPostCard extends ConsumerStatefulWidget {
     super.key,
     required this.post,
     this.includeUnfollowed = false,
-    this.syncFeedProvider = false,
     this.showGroupLink = true,
     this.groupId,
     this.onEdit,
@@ -33,7 +32,6 @@ class ConnectPostCard extends ConsumerStatefulWidget {
 
   final ConnectPost post;
   final bool includeUnfollowed;
-  final bool syncFeedProvider;
 
   /// False when the card is already shown inside the group's own profile.
   final bool showGroupLink;
@@ -50,7 +48,10 @@ class ConnectPostCard extends ConsumerStatefulWidget {
 }
 
 class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
+  static const _collapsedCaptionLines = 4;
+
   final ConnectOptimisticLikeState _likeState = ConnectOptimisticLikeState();
+  bool _captionExpanded = false;
 
   bool get _isLiked => _likeState.isLiked(widget.post.likedByMe);
 
@@ -58,6 +59,13 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     serverLikeCount: widget.post.likeCount,
     serverLikedByMe: widget.post.likedByMe,
   );
+
+  @override
+  void didUpdateWidget(ConnectPostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Feed cards have no keys, so a reorder can hand this state another post.
+    if (widget.post.id != oldWidget.post.id) _captionExpanded = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,100 +81,103 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
         post.links.where((link) => link.url.trim().isNotEmpty).toList();
     final timestamp = post.publishedAt ?? post.createdAt;
 
-    return Material(
-      color: isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite,
-      child: InkWell(
-        onTap: _openDetail,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ConnectFeedCardHeader(
-              groupName: post.groupName,
-              groupAvatarUrl: post.groupAvatarUrl,
-              groupId: widget.showGroupLink ? post.groupId : null,
-              timestamp: timestamp,
-              stackTimestamp: true,
-              trailing: _buildHeaderActions(post, isDark),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _toggleCaption,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ConnectFeedCardHeader(
+            groupName: post.groupName,
+            groupAvatarUrl: post.groupAvatarUrl,
+            groupId: widget.showGroupLink ? post.groupId : null,
+            timestamp: timestamp,
+            stackTimestamp: true,
+            trailing: _buildHeaderActions(post, isDark),
+          ),
+          if (caption.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                ConnectFeedCardLayout.horizontalPadding,
+                ConnectFeedCardLayout.bodyTopSpacing,
+                ConnectFeedCardLayout.horizontalPadding,
+                0,
+              ),
+              child: Text(
+                caption,
+                maxLines: _captionExpanded ? null : _collapsedCaptionLines,
+                overflow:
+                    _captionExpanded
+                        ? TextOverflow.visible
+                        : TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w400,
+                  height: 1.45,
+                ),
+              ),
             ),
-            if (caption.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  ConnectFeedCardLayout.horizontalPadding,
-                  ConnectFeedCardLayout.bodyTopSpacing,
-                  ConnectFeedCardLayout.horizontalPadding,
-                  0,
-                ),
-                child: Text(
-                  caption,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
-                    height: 1.45,
-                  ),
-                ),
+          if (imageMedia.isNotEmpty) ...[
+            const SizedBox(height: ConnectFeedCardLayout.bodyToMediaSpacing),
+            ConnectFeedCardMediaFrame(
+              bottomSpacing:
+                  links.isNotEmpty
+                      ? ConnectFeedCardLayout.bodyToMediaSpacing
+                      : ConnectFeedCardLayout.actionBarTopSpacing,
+              child: _PostMediaGallery(
+                postId: post.id,
+                media: imageMedia,
+                isDark: isDark,
+                onDoubleTapLike: _toggleLike,
               ),
-            if (imageMedia.isNotEmpty) ...[
-              const SizedBox(height: ConnectFeedCardLayout.bodyToMediaSpacing),
-              ConnectFeedCardMediaFrame(
-                bottomSpacing:
-                    links.isNotEmpty
-                        ? ConnectFeedCardLayout.bodyToMediaSpacing
-                        : ConnectFeedCardLayout.actionBarTopSpacing,
-                child: _PostMediaGallery(
-                  postId: post.id,
-                  media: imageMedia,
-                  isDark: isDark,
-                  onDoubleTapLike: _toggleLike,
-                ),
-              ),
-            ],
-            if (links.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  ConnectFeedCardLayout.horizontalPadding,
-                  imageMedia.isNotEmpty
-                      ? 0
-                      : ConnectFeedCardLayout.bodyToMediaSpacing,
-                  ConnectFeedCardLayout.horizontalPadding,
-                  ConnectFeedCardLayout.mediaBottomSpacing,
-                ),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < links.length; i++) ...[
-                      if (i > 0) const SizedBox(height: 8),
-                      ConnectPostLinkCard(
-                        url: links[i].url,
-                        label: links[i].label,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ConnectFeedActionBar(
-              actions: [
-                (
-                  icon: _isLiked ? AppAssets.heartFill : AppAssets.heart,
-                  iconColor:
-                      _isLiked
-                          ? AppColors.error
-                          : (isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondary),
-                  count: _likeCount,
-                  isLoading: _likeState.isSubmitting,
-                  onTap: _toggleLike,
-                ),
-                (
-                  icon: AppAssets.chatCircle,
-                  iconColor: null,
-                  count: post.commentCount,
-                  isLoading: false,
-                  onTap: _openDetail,
-                ),
-              ],
             ),
           ],
-        ),
+          if (links.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                ConnectFeedCardLayout.horizontalPadding,
+                imageMedia.isNotEmpty
+                    ? 0
+                    : ConnectFeedCardLayout.bodyToMediaSpacing,
+                ConnectFeedCardLayout.horizontalPadding,
+                ConnectFeedCardLayout.mediaBottomSpacing,
+              ),
+              child: Column(
+                children: [
+                  for (var i = 0; i < links.length; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    ConnectPostLinkCard(
+                      url: links[i].url,
+                      label: links[i].label,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ConnectFeedActionBar(
+            actions: [
+              (
+                icon: _isLiked ? AppAssets.heartFill : AppAssets.heart,
+                iconColor:
+                    _isLiked
+                        ? AppColors.error
+                        : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondary),
+                count: _likeCount,
+                isLoading: _likeState.isSubmitting,
+                onTap: _toggleLike,
+              ),
+              (
+                icon: AppAssets.chatCircle,
+                iconColor: null,
+                count: post.commentCount,
+                isLoading: false,
+                onTap: _openDetail,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -201,6 +212,10 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     );
   }
 
+  void _toggleCaption() {
+    setState(() => _captionExpanded = !_captionExpanded);
+  }
+
   void _openDetail() {
     ConnectPostDetailDrawer.show(
       context,
@@ -230,7 +245,6 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
           wasLiked: wasLiked,
           optimisticLikeCount: _likeCount,
           includeUnfollowed: widget.includeUnfollowed,
-          syncFeed: widget.syncFeedProvider,
           groupId: widget.groupId,
         );
 

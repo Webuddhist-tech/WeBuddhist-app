@@ -10,8 +10,6 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_analyt
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_events_tab.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_tab.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_groups_tab.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_posts_tab.dart';
-import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practices_tab.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/followed_groups_row.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_rooms_providers.dart';
 import 'package:flutter_pecha/shared/widgets/main_tab_app_bar.dart';
@@ -27,14 +25,14 @@ class ConnectScreen extends ConsumerStatefulWidget {
 
 class _ConnectScreenState extends ConsumerState<ConnectScreen>
     with SingleTickerProviderStateMixin {
-  static const _tabNames = ['feed', 'events', 'posts', 'practices', 'groups'];
+  static const _tabNames = ['feed', 'events', 'groups'];
   late TabController _tabController;
   int? _trackedTabIndex;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: _tabNames.length, vsync: this);
     _tabController.addListener(_onTabChanged);
     _trackTabViewed();
   }
@@ -141,12 +139,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
               myGroups: displayedMyGroups,
               isActive: activeTabIndex == 1,
             ),
-            ConnectPostsTab(isActive: activeTabIndex == 2),
-            ConnectPracticesTab(isActive: activeTabIndex == 3),
             ConnectGroupsTab(
               myGroups: displayedMyGroups,
               onRefresh: _onGroupsRefresh,
-              isActive: activeTabIndex == 4,
+              isActive: activeTabIndex == 2,
             ),
           ],
         ),
@@ -176,8 +172,6 @@ class _ConnectMainTabBar extends StatelessWidget {
     final labels = [
       context.l10n.connect_tab_feed,
       context.l10n.connect_tab_events,
-      context.l10n.connect_tab_posts,
-      context.l10n.connect_tab_practices,
       context.l10n.connect_tab_groups,
     ];
 
