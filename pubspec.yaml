@@ -209,10 +209,21 @@ flutter:
     - .env.prod
 
   fonts:
-    # Tibetan fonts
-    - family: BabelStoneTibetan
+    # Tibetan fonts. Both are WeBuddhist builds with rewritten vertical
+    # metrics (see assets/fonts/README.md) - do not swap in upstream files.
+    - family: NotoSerifTibetanWB
       fonts:
-        - asset: assets/fonts/BabelStoneTibetan.ttf
+        - asset: assets/fonts/NotoSerifTibetanWB-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/NotoSerifTibetanWB-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NotoSerifTibetanWB-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/NotoSerifTibetanWB-Bold.ttf
+          weight: 700
+    - family: WBTibetanContent
+      fonts:
+        - asset: assets/fonts/WBTibetanContent.ttf
           style: normal
 # To add assets to your application, add an assets section, like this:
 # assets:
