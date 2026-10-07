@@ -318,9 +318,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   int _listGeneration = 0;
 
   /// Live requests counted but not in the list: outside the intention in
-  /// view (null) or held because it ranks past the rows loaded so far (the
-  /// row, in [PrayerRequestsState.total]). Dedupes the REST reply against
-  /// the echo.
+  /// view (null) or held for the end of a sort still paging (the row, in
+  /// [PrayerRequestsState.total]). Dedupes the REST reply against the echo.
   final Map<String, ChatMessageDTO?> _unlisted = {};
 
   @override
@@ -427,7 +426,6 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       (failure) {
         state = state.copyWith(
           isLoading: false,
-          isLoadingMore: false,
           hasLoaded: true,
           error: failure.message,
         );
@@ -436,13 +434,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
         final hasMore = page.messages.length < page.total;
         final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
-        final requests = _withHeld([...page.messages.where(_isLive)], held);
+        final requests = [...page.messages.where(_isLive), ...held];
         state = state.copyWith(
           requests: requests,
           total: page.total + held.length,
           isLoading: false,
-          // A re-list drops any page still out, which would never clear it.
-          isLoadingMore: false,
           hasLoaded: true,
           hasMore: hasMore,
           skip: page.messages.length + held.length,
@@ -514,7 +510,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
             page.messages.isNotEmpty &&
             state.skip + page.messages.length < page.total;
         final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
-        final requests = _withHeld([...state.requests, ...fresh], held);
+        final requests = [...state.requests, ...fresh, ...held];
         state = state.copyWith(
           requests: requests,
           total: page.total + held.length,
@@ -528,18 +524,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   /// Re-reads the first page after a socket reconnect, merging by id.
-  /// Requests sent while the socket was down come first only when the list
-  /// is newest or fewest prayers first; for the other sorts, see below.
   Future<void> refreshLatest() async {
     final roomId = state.roomId;
     if (roomId == null) return;
-    final filter = state.filter;
-    if (!filter.byIntention && filter.sort == PrayerSort.mostPrayed) {
-      // New requests rank among the rows already loaded, and prayers made
-      // meanwhile moved rows between pages: only a fresh read places them.
-      return _loadFirstPage(roomId);
-    }
     final generation = _listGeneration;
+    final filter = state.filter;
     final result = await _repository.listMessages(
       roomId,
       skip: 0,
@@ -557,14 +546,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         (request) => !pageIds.contains(request.id),
       );
       final requests = [...page.messages.where(_isLive), ...kept];
-      final skip = state.skip + (requests.length - state.requests.length);
       state = state.copyWith(
         requests: requests,
         total: page.total,
-        skip: skip,
-        // Oldest first, new requests sit past the end of a list that was
-        // fully read; paging on fetches them.
-        hasMore: state.hasMore || page.total > skip,
+        skip: state.skip + (requests.length - state.requests.length),
       );
     });
   }
@@ -663,8 +648,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       _shiftCount(1, inList: false);
       return;
     }
-    final at = _positionIn(state.requests, message, hasMore: state.hasMore);
-    if (at == null) {
+    if (_sortsNewLast && state.hasMore) {
       // Belongs after rows not loaded yet; a later page brings it, or the
       // last page's reply lets it in.
       _unlisted[message.id] = message;
@@ -672,45 +656,23 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       return;
     }
     state = state.copyWith(
-      requests: [...state.requests]..insert(at, message),
+      requests:
+          _sortsNewLast
+              ? [...state.requests, message]
+              : [message, ...state.requests],
       skip: state.skip + 1,
       hasLoaded: true,
     );
     _shiftCount(1);
   }
 
-  /// Where [message] goes in [requests] under the sort in view, as the
-  /// server ranks it, or null when it belongs after rows not loaded yet.
-  /// A live request is newer than every row loaded, so it leads its ties.
-  int? _positionIn(
-    List<ChatMessageDTO> requests,
-    ChatMessageDTO message, {
-    required bool hasMore,
-  }) {
+  /// A request with no prayers yet lands at the end under these; under the
+  /// others it comes first, with newest or fewest prayers.
+  bool get _sortsNewLast {
     final filter = state.filter;
-    if (filter.byIntention) return 0;
-    final at = switch (filter.sort) {
-      PrayerSort.newest || PrayerSort.needsPrayers => 0,
-      PrayerSort.oldest => -1,
-      // People praying, most first, then newest: it heads the rows with
-      // no more prayers than it, often well inside the loaded ones.
-      PrayerSort.mostPrayed => requests.indexWhere(
-        (request) => request.prayerCount <= message.prayerCount,
-      ),
-    };
-    if (at >= 0) return at;
-    return hasMore ? null : requests.length;
-  }
-
-  /// [requests] with [held] let in, each where the sort puts it.
-  List<ChatMessageDTO> _withHeld(
-    List<ChatMessageDTO> requests,
-    List<ChatMessageDTO> held,
-  ) {
-    for (final row in held) {
-      requests.insert(_positionIn(requests, row, hasMore: false)!, row);
-    }
-    return requests;
+    if (filter.byIntention) return false;
+    return filter.sort == PrayerSort.oldest ||
+        filter.sort == PrayerSort.mostPrayed;
   }
 
   void applyDeletion(String messageId) => _dropRow(messageId, inRoom: true);
@@ -739,7 +701,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (inRoom) _shiftCount(-1, inList: false);
   }
 
-  /// Rows still held once paging is over. None of the pages brought
+  /// Rows held for the end once paging is over. None of the pages brought
   /// them, so they were created after the server read the last page and
   /// its total leaves them out.
   List<ChatMessageDTO> _takeHeld() {
@@ -1010,19 +972,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   ) {
     final held = _unlisted[messageId];
     if (held != null) {
-      final row = transform(held);
-      final at = _positionIn(state.requests, row, hasMore: state.hasMore);
-      if (at == null) {
-        _unlisted[messageId] = row;
-        return;
-      }
-      // Prayers ranked it among the rows already loaded, so no page will
-      // bring it, and the rows past them moved down one on the server.
-      _unlisted.remove(messageId);
-      state = state.copyWith(
-        requests: [...state.requests]..insert(at, row),
-        skip: state.skip + 1,
-      );
+      _unlisted[messageId] = transform(held);
       return;
     }
     var changed = false;

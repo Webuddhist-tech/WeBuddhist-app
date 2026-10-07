@@ -592,117 +592,13 @@ void main() {
       repository.history = [_prayer('new', count: 5), ...history];
       await notifier.refreshLatest();
       expect(notifier.state.requests.first.id, 'new');
-      expect(notifier.state.requests.length, 30);
+      expect(notifier.state.requests.length, 31);
       expect(notifier.state.total, 36);
 
       notifier.applyDeletion('new');
       expect(notifier.state.requests.any((r) => r.id == 'new'), isFalse);
       expect(notifier.state.total, 35);
-      expect(notifier.state.skip, 29);
-    });
-
-    test('under most prayed a live request heads the loaded rows with no prayers', () async {
-      final prayed = [for (var i = 0; i < 20; i++) _prayer('p$i', count: 1)];
-      final unprayed = [for (var i = 0; i < 20; i++) _prayer('z$i')];
-      repository = _FakeGroupChatRepository(history: [...prayed, ...unprayed]);
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-      await notifier.setFilter(
-        const PrayerRequestsFilter(sort: PrayerSort.mostPrayed),
-      );
-
-      // Ranked newest among the unprayed, as the server does.
-      repository.history = [...prayed, _prayer('new'), ...unprayed];
-      notifier.appendLive(_prayer('new'));
-      expect(notifier.state.requests[20].id, 'new');
-      expect(notifier.state.requests[19].id, 'p19');
-      expect(notifier.state.skip, 31);
-      expect(notifier.state.total, 41);
-
-      await notifier.loadMore();
-      expect(notifier.state.hasMore, isFalse);
-      expect(notifier.state.requests.length, 41);
-      expect(notifier.state.requests.where((r) => r.id == 'new').length, 1);
-      expect(notifier.state.total, 41);
-    });
-
-    test('a held request that gains prayers joins the loaded rows', () async {
-      final history = [for (var i = 0; i < 35; i++) _prayer('m$i', count: 1)];
-      repository = _FakeGroupChatRepository(history: history);
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-      await notifier.setFilter(
-        const PrayerRequestsFilter(sort: PrayerSort.mostPrayed),
-      );
-
-      notifier.appendLive(_prayer('new'));
-      expect(notifier.state.requests.length, 30);
-      expect(notifier.state.total, 36);
-
-      notifier.applyPrayersUpdated(
-        [ChatLivePrayerUpdate(messageId: 'new', prayerCount: 3, userIds: [])],
-        viewerId: 'u1',
-      );
-      expect(notifier.state.requests.first.id, 'new');
-      expect(notifier.state.requests.first.prayerCount, 3);
-      expect(notifier.state.skip, 31);
-
-      // The server ranks it first now, so the last page leaves it out.
-      repository.history = [_prayer('new', count: 3), ...history];
-      await notifier.loadMore();
-      expect(notifier.state.hasMore, isFalse);
-      expect(notifier.state.requests.length, 36);
-      expect(notifier.state.total, 36);
-    });
-
-    test('under oldest a reconnect pages on to requests sent while away', () async {
-      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
-      repository = _FakeGroupChatRepository(history: history);
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-      await notifier.setFilter(
-        const PrayerRequestsFilter(sort: PrayerSort.oldest),
-      );
-      await notifier.loadMore();
-      expect(notifier.state.hasMore, isFalse);
-
-      // Sent while the socket was down, so no live event brought them.
-      repository.history = [...history, _prayer('x1'), _prayer('x2')];
-      await notifier.refreshLatest();
-      expect(notifier.state.total, 37);
-      expect(notifier.state.hasMore, isTrue);
-
-      await notifier.loadMore();
-      expect(notifier.state.requests.map((r) => r.id).skip(35), ['x1', 'x2']);
-      expect(notifier.state.hasMore, isFalse);
-    });
-
-    test('a reconnect under most prayed lists again from the top', () async {
-      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
-      repository = _FakeGroupChatRepository(history: history);
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-      await notifier.setFilter(
-        const PrayerRequestsFilter(sort: PrayerSort.mostPrayed),
-      );
-      await notifier.loadMore();
-
-      repository.history = [_prayer('m34', count: 4), ...history.take(34)];
-      repository.listedSkips.clear();
-      await notifier.refreshLatest();
-      expect(repository.listedSkips, [0]);
-      expect(notifier.state.requests.first.id, 'm34');
-      expect(notifier.state.requests.length, 30);
-      expect(notifier.state.hasMore, isTrue);
-      expect(notifier.state.isLoadingMore, isFalse);
+      expect(notifier.state.skip, 30);
     });
 
     test('a filter change clears a shifted page from before it', () async {
