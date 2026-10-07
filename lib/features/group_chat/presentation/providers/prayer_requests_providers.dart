@@ -318,9 +318,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   int _listGeneration = 0;
 
   /// Live requests counted but not in the list: outside the intention in
-  /// view (false) or waiting at the end of a sort still paging (true, so in
+  /// view (null) or held for the end of a sort still paging (the row, in
   /// [PrayerRequestsState.total]). Dedupes the REST reply against the echo.
-  final Map<String, bool> _unlisted = {};
+  final Map<String, ChatMessageDTO?> _unlisted = {};
 
   @override
   void dispose() {
@@ -431,18 +431,21 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         );
       },
       (page) {
-        final requests = page.messages.where(_isLive).toList();
+        _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
+        final hasMore = page.messages.length < page.total;
+        final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
+        final requests = [...page.messages.where(_isLive), ...held];
         state = state.copyWith(
           requests: requests,
-          total: page.total,
+          total: page.total + held.length,
           isLoading: false,
           hasLoaded: true,
-          hasMore: page.messages.length < page.total,
-          skip: page.messages.length,
+          hasMore: hasMore,
+          skip: page.messages.length + held.length,
           clearError: true,
         );
         // Only an unfiltered total is the room's count.
-        if (!filter.byIntention) _publishCount(page.total);
+        if (!filter.byIntention) _publishCount(page.total + held.length);
       },
     );
   }
@@ -502,18 +505,18 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
                   (message) => _isLive(message) && !known.contains(message.id),
                 )
                 .toList();
-        for (final message in fresh) {
-          _unlisted.remove(message.id);
-        }
-        final requests = [...state.requests, ...fresh];
+        _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
+        final hasMore =
+            page.messages.isNotEmpty &&
+            state.skip + page.messages.length < page.total;
+        final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
+        final requests = [...state.requests, ...fresh, ...held];
         state = state.copyWith(
           requests: requests,
-          total: page.total,
+          total: page.total + held.length,
           isLoadingMore: false,
-          hasMore:
-              page.messages.isNotEmpty &&
-              state.skip + page.messages.length < page.total,
-          skip: state.skip + page.messages.length,
+          hasMore: hasMore,
+          skip: state.skip + page.messages.length + held.length,
           clearError: true,
         );
       },
@@ -537,6 +540,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (!mounted || generation != _listGeneration) return;
     result.fold((_) {}, (page) {
       final pageIds = page.messages.map((message) => message.id).toSet();
+      // A held row that gained prayers can be on the first page by now.
+      _unlisted.removeWhere((id, _) => pageIds.contains(id));
       final kept = state.requests.where(
         (request) => !pageIds.contains(request.id),
       );
@@ -639,13 +644,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (state.requests.any((existing) => existing.id == message.id)) return;
     if (_unlisted.containsKey(message.id)) return;
     if (!state.filter.matches(message.intention)) {
-      _unlisted[message.id] = false;
+      _unlisted[message.id] = null;
       _shiftCount(1, inList: false);
       return;
     }
     if (_sortsNewLast && state.hasMore) {
-      // Belongs after rows not loaded yet; a later page brings it.
-      _unlisted[message.id] = true;
+      // Belongs after rows not loaded yet; a later page brings it, or the
+      // last page's reply lets it in.
+      _unlisted[message.id] = message;
       _shiftCount(1);
       return;
     }
@@ -675,21 +681,36 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// listed. [inRoom] says it is gone from the room, not only from the
   /// filter in view.
   void _dropRow(String messageId, {required bool inRoom}) {
-    final counted = _unlisted.remove(messageId);
-    if (counted != null) {
-      if (counted) state = state.copyWith(total: _clampCount(state.total - 1));
-      if (inRoom) _shiftCount(-1, inList: false);
-      return;
+    final unlisted = _unlisted.containsKey(messageId);
+    final held = _unlisted.remove(messageId);
+    final listed = state.requests.any((request) => request.id == messageId);
+    if (!unlisted && !listed) return;
+    if (listed) {
+      if (state.isLoadingMore) _pageShifted = true;
+      state = state.copyWith(
+        requests:
+            state.requests
+                .where((request) => request.id != messageId)
+                .toList(),
+        skip: state.skip > 0 ? state.skip - 1 : 0,
+        total: _clampCount(state.total - 1),
+      );
+    } else if (held != null) {
+      state = state.copyWith(total: _clampCount(state.total - 1));
     }
-    if (!state.requests.any((request) => request.id == messageId)) return;
-    if (state.isLoadingMore) _pageShifted = true;
-    state = state.copyWith(
-      requests:
-          state.requests.where((request) => request.id != messageId).toList(),
-      skip: state.skip > 0 ? state.skip - 1 : 0,
-      total: _clampCount(state.total - 1),
-    );
     if (inRoom) _shiftCount(-1, inList: false);
+  }
+
+  /// Rows held for the end once paging is over. None of the pages brought
+  /// them, so they were created after the server read the last page and
+  /// its total leaves them out.
+  List<ChatMessageDTO> _takeHeld() {
+    final held = [
+      for (final row in _unlisted.values)
+        if (row != null) row,
+    ];
+    _unlisted.removeWhere((_, row) => row != null);
+    return held;
   }
 
   /// A `prayers_updated` broadcast. It carries no viewer-specific state, so
@@ -949,6 +970,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     String messageId,
     ChatMessageDTO Function(ChatMessageDTO request) transform,
   ) {
+    final held = _unlisted[messageId];
+    if (held != null) {
+      _unlisted[messageId] = transform(held);
+      return;
+    }
     var changed = false;
     final requests = [
       for (final request in state.requests)

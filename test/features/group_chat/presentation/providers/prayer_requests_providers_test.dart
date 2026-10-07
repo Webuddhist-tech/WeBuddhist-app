@@ -531,6 +531,76 @@ void main() {
       expect(notifier.state.skip, 37);
     });
 
+    test('a request held past the last page is let in when paging ends', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.oldest),
+      );
+
+      repository.listGate = Completer<void>();
+      final pending = notifier.loadMore();
+      await _settle();
+      // Created after the server read the page: the reply leaves it out.
+      notifier.appendLive(_prayer('new'));
+      notifier.applyPrayersUpdated(
+        [ChatLivePrayerUpdate(messageId: 'new', prayerCount: 2, userIds: [])],
+        viewerId: 'u1',
+      );
+      repository.listGate!.complete();
+      await pending;
+
+      expect(notifier.state.requests.map((r) => r.id).last, 'new');
+      expect(notifier.state.requests.last.prayerCount, 2);
+      expect(notifier.state.requests.length, 36);
+      expect(notifier.state.hasMore, isFalse);
+      expect(notifier.state.total, 36);
+      expect(notifier.state.skip, 36);
+      expect(countSub.read(), 36);
+
+      notifier.applyDeletion('new');
+      expect(notifier.state.requests.length, 35);
+      expect(notifier.state.total, 35);
+      expect(countSub.read(), 35);
+    });
+
+    test('a held request that reached the first page can still be deleted', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i', count: 1)];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.mostPrayed),
+      );
+
+      notifier.appendLive(_prayer('new'));
+      expect(notifier.state.requests.length, 30);
+      expect(notifier.state.total, 36);
+
+      // It gained prayers before the reconnect, so it leads the first page.
+      repository.history = [_prayer('new', count: 5), ...history];
+      await notifier.refreshLatest();
+      expect(notifier.state.requests.first.id, 'new');
+      expect(notifier.state.requests.length, 31);
+      expect(notifier.state.total, 36);
+
+      notifier.applyDeletion('new');
+      expect(notifier.state.requests.any((r) => r.id == 'new'), isFalse);
+      expect(notifier.state.total, 35);
+      expect(notifier.state.skip, 30);
+    });
+
     test('a filter change clears a shifted page from before it', () async {
       final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
       repository = _FakeGroupChatRepository(history: history);
