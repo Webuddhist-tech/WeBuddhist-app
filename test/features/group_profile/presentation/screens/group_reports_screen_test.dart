@@ -19,12 +19,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
-  _FakeRepository(this.reports, {this.members = const []});
+  _FakeRepository(this.reports, {this.members = const [], this.pageSize});
 
   List<GroupReport> reports;
   final List<GroupMember> members;
   final List<bool?> resolvedFilters = [];
   final List<String> resolvedReportIds = [];
+
+  /// When set, [getGroupReports] pages the queue instead of returning it all.
+  final int? pageSize;
+  final List<int> requestedSkips = [];
 
   /// When set, [resolveGroupReport] waits on it before recording the id.
   Future<void>? pendingResolve;
@@ -38,11 +42,14 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
     required int limit,
   }) async {
     resolvedFilters.add(resolved);
+    requestedSkips.add(skip);
+    final size = pageSize;
     return Right(
       GroupReportsPage(
-        reports: reports,
-        skip: 0,
-        limit: 20,
+        reports:
+            size == null ? reports : reports.skip(skip).take(size).toList(),
+        skip: size == null ? 0 : skip,
+        limit: size ?? 20,
         total: reports.length,
       ),
     );
@@ -177,6 +184,38 @@ void main() {
     expect(find.text('Off-topic or disruptive'), findsNothing);
   });
 
+  testWidgets('keeps paging when a full page collapses into one short card', (
+    tester,
+  ) async {
+    // A page's worth of reports on one post makes a single card, too short
+    // to scroll; the older message report sits on the next page.
+    final repository = _FakeRepository([
+      for (var i = 0; i < 20; i++)
+        _report(
+          'p$i',
+          kind: GroupReportKind.post,
+          postId: 'post-1',
+          reporter: 'Reporter $i',
+          description: 'Spam',
+          content: 'Buy now',
+        ),
+      _report(
+        'm1',
+        kind: GroupReportKind.chatMessage,
+        messageId: 'msg-1',
+        reporter: 'Pema',
+        description: 'Off-topic or disruptive',
+        content: 'You do not belong here.',
+      ),
+    ], pageSize: 20);
+    await _pumpScreen(tester, repository);
+
+    expect(repository.requestedSkips, containsAllInOrder([0, 20]));
+    expect(find.text('20 reports'), findsOneWidget);
+    expect(find.text('Messages'), findsOneWidget);
+    expect(find.text('You do not belong here.'), findsOneWidget);
+  });
+
   testWidgets('the cross resolves every report on the item and refreshes', (
     tester,
   ) async {
@@ -202,11 +241,12 @@ void main() {
     repository.pendingResolve = gate.future;
     await _pumpScreen(tester, repository);
 
-    final dismiss = tester
-        .widgetList<IconButton>(
-          find.widgetWithIcon(IconButton, AppAssets.x),
-        )
-        .toList();
+    final dismiss =
+        tester
+            .widgetList<IconButton>(
+              find.widgetWithIcon(IconButton, AppAssets.x),
+            )
+            .toList();
     expect(dismiss, hasLength(2));
     for (final icon in tester.widgetList<Icon>(find.byIcon(AppAssets.x))) {
       expect(icon.color, AppColors.textPrimary);

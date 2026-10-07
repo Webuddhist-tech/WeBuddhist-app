@@ -31,6 +31,7 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
 
   final Set<String> _expandedItemKeys = {};
   final Set<String> _resolvingItemKeys = {};
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -39,6 +40,12 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
       if (!mounted) return;
       ref.read(groupReportsProvider(widget.groupId).notifier).loadInitial();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   String _itemKey(GroupReportedItem item) =>
@@ -78,12 +85,32 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
     }
   }
 
+  static bool _isNearEnd(ScrollMetrics metrics) =>
+      metrics.pixels >= metrics.maxScrollExtent - 200;
+
   bool _onScrollLoadMore(ScrollNotification notification) {
-    if (notification.metrics.pixels >=
-        notification.metrics.maxScrollExtent - 200) {
+    if (_isNearEnd(notification.metrics)) {
       ref.read(groupReportsProvider(widget.groupId).notifier).loadMore();
     }
     return false;
+  }
+
+  /// Reports on the same item share one card, so a whole page can collapse
+  /// into a list too short to scroll, and scrolling is what asks for the next
+  /// page. Keeps paging until the list reaches past the screen or the queue
+  /// ends. Stops on an error; the footer offers the retry.
+  void _loadMoreIfShort() {
+    if (!mounted || !_scrollController.hasClients) return;
+    final state = ref.read(groupReportsProvider(widget.groupId));
+    if (!state.hasMore ||
+        state.isLoading ||
+        state.isLoadingMore ||
+        state.error != null) {
+      return;
+    }
+    if (_isNearEnd(_scrollController.position)) {
+      ref.read(groupReportsProvider(widget.groupId).notifier).loadMore();
+    }
   }
 
   String _sectionTitle(BuildContext context, GroupReportKind kind) {
@@ -237,11 +264,19 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
       children.add(_buildLoadMoreError(context, isDark));
     }
 
+    if (state.hasMore &&
+        !state.isLoading &&
+        !state.isLoadingMore &&
+        state.error == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadMoreIfShort());
+    }
+
     return RefreshIndicator(
       onRefresh: notifier.loadInitial,
       child: NotificationListener<ScrollNotification>(
         onNotification: _onScrollLoadMore,
         child: ListView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: 32),
           children: children,
