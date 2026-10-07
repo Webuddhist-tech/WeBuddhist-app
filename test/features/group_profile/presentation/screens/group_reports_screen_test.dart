@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
@@ -207,6 +208,9 @@ void main() {
         )
         .toList();
     expect(dismiss, hasLength(2));
+    for (final icon in tester.widgetList<Icon>(find.byIcon(AppAssets.x))) {
+      expect(icon.color, AppColors.textPrimary);
+    }
 
     dismiss[0].onPressed!();
     dismiss[1].onPressed!();
@@ -218,6 +222,9 @@ void main() {
     )) {
       expect(button.onPressed, isNull);
     }
+    for (final icon in tester.widgetList<Icon>(find.byIcon(AppAssets.x))) {
+      expect(icon.color, AppColors.grey400);
+    }
 
     gate.complete();
     await tester.pumpAndSettle();
@@ -225,6 +232,10 @@ void main() {
     expect(repository.resolvedReportIds, unorderedEquals(['r1', 'r3']));
     expect(find.text('Something went wrong. Please try again'), findsNothing);
     expect(find.text('You do not belong here.'), findsOneWidget);
+    expect(
+      tester.widget<Icon>(find.byIcon(AppAssets.x)).color,
+      AppColors.textPrimary,
+    );
   });
 
   testWidgets('falls back to the reason when no description was written', (

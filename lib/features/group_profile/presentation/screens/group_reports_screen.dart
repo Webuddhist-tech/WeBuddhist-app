@@ -527,7 +527,15 @@ class _DismissButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final enabledColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    // A null handler means a dismiss is already in flight. The icon stays
+    // visible so the row does not jump, but greyed so a tap that does
+    // nothing does not look available.
+    final color =
+        onPressed == null
+            ? (isDark ? AppColors.grey600 : AppColors.grey400)
+            : enabledColor;
     return SizedBox(
       width: 28,
       height: 28,
@@ -536,7 +544,6 @@ class _DismissButton extends StatelessWidget {
         iconSize: 18,
         onPressed: onPressed,
         icon: Icon(AppAssets.x, color: color),
-        disabledColor: color,
       ),
     );
   }
