@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intent
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
@@ -17,7 +18,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
-ChatMessageDTO _prayer(String id, {int count = 0, bool prayedByMe = false}) {
+ChatMessageDTO _prayer(
+  String id, {
+  int count = 0,
+  bool prayedByMe = false,
+  ChatPrayerIntentionDTO? intention,
+}) {
   return ChatMessageDTO(
     id: id,
     roomId: 'room-1',
@@ -27,10 +33,23 @@ ChatMessageDTO _prayer(String id, {int count = 0, bool prayedByMe = false}) {
     body: 'pray $id',
     createdAt: '2026-09-11T10:04:00+00:00',
     messageType: ChatMessageDTO.typePrayer,
+    intention: intention,
     prayerCount: count,
     prayedByMe: prayedByMe,
   );
 }
+
+const _healing = ChatPrayerIntentionDTO(
+  slug: 'healing',
+  label: 'Healing',
+  color: '#4A78C2',
+);
+
+const _peace = ChatPrayerIntentionDTO(
+  slug: 'peace',
+  label: 'Peace',
+  color: '#FFFFFF',
+);
 
 class _FakeGroupChatRepository implements GroupChatRepository {
   _FakeGroupChatRepository({this.history = const []});
@@ -42,6 +61,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   /// Answers the next pray call only, then clears itself.
   Failure? prayFailureOnce;
   final List<String?> listedTypes = [];
+  final List<String?> listedSorts = [];
+  final List<String?> listedIntentions = [];
   final List<List<String>> prayed = [];
   final List<int> prayedCounts = [];
   final Map<String, int> mine = {};
@@ -84,19 +105,27 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   }) async {
     listedTypes.add(messageType);
     listedSkips.add(skip);
+    listedSorts.add(sort);
+    listedIntentions.add(intention);
     final gate = listGate;
     if (gate != null) await gate.future;
-    final end = (skip + limit).clamp(0, history.length);
-    final start = skip.clamp(0, history.length);
+    final rows =
+        intention == null
+            ? history
+            : history.where((m) => m.intention?.slug == intention).toList();
+    final end = (skip + limit).clamp(0, rows.length);
+    final start = skip.clamp(0, rows.length);
     return Right(
       ChatMessagesPage(
-        messages: history.sublist(start, end),
+        messages: rows.sublist(start, end),
         skip: skip,
         limit: limit,
-        total: history.length,
+        total: rows.length,
       ),
     );
   }
@@ -313,6 +342,162 @@ void main() {
       expect(notifier.state.hasLoaded, isTrue);
       expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
       expect(repository.listedTypes, ['PRAYER']);
+    });
+
+    test('the first page is listed newest, with no intention', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      expect(repository.listedSorts, ['newest']);
+      expect(repository.listedIntentions, [null]);
+      expect(notifier.state.filter, PrayerRequestsFilter.initial);
+      expect(notifier.state.total, 1);
+    });
+
+    test('setFilter re-lists from the top under the new sort', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.loadMore();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.needsPrayers),
+      );
+
+      expect(repository.listedSorts.last, 'needs_prayers');
+      expect(repository.listedSkips.last, 0);
+      expect(notifier.state.filter.sort, PrayerSort.needsPrayers);
+      expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
+      expect(notifier.state.isLoading, isFalse);
+    });
+
+    test('an intention filter sends the slug and drops the sort', () async {
+      repository = _FakeGroupChatRepository(
+        history: [
+          _prayer('a', intention: _healing),
+          _prayer('b', intention: _peace),
+          _prayer('c', intention: _healing),
+        ],
+      );
+      container = buildContainer();
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(countSub.read(), 3);
+
+      await notifier.setFilter(
+        const PrayerRequestsFilter(
+          sort: PrayerSort.mostPrayed,
+          intention: _healing,
+        ),
+      );
+
+      expect(repository.listedSorts.last, isNull);
+      expect(repository.listedIntentions.last, 'healing');
+      expect(notifier.state.requests.map((r) => r.id), ['a', 'c']);
+      expect(notifier.state.total, 2);
+      // The room's own count is not the filtered one.
+      expect(countSub.read(), 3);
+
+      await notifier.setFilter(notifier.state.filter.withoutIntention());
+      expect(repository.listedSorts.last, 'most_prayed');
+      expect(repository.listedIntentions.last, isNull);
+      expect(notifier.state.requests.length, 3);
+    });
+
+    test('a page from an earlier filter is dropped when it lands', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a', intention: _healing)],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.listGate = Completer<void>();
+      final slow = notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.oldest),
+      );
+      await _settle();
+      final slowGate = repository.listGate!;
+      repository.listGate = null;
+      final fast = notifier.setFilter(
+        const PrayerRequestsFilter(intention: _peace),
+      );
+      await fast;
+      expect(notifier.state.requests, isEmpty);
+      expect(notifier.state.hasLoaded, isTrue);
+
+      slowGate.complete();
+      await slow;
+      expect(notifier.state.filter.intention, _peace);
+      expect(notifier.state.requests, isEmpty);
+    });
+
+    test('a live request outside the intention in view is counted, not shown', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a', intention: _healing)],
+      );
+      container = buildContainer();
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(intention: _healing),
+      );
+
+      notifier.appendLive(_prayer('x', intention: _peace));
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+      expect(notifier.state.total, 1);
+      expect(countSub.read(), 2);
+
+      notifier.appendLive(_prayer('y', intention: _healing));
+      expect(notifier.state.requests.map((r) => r.id), ['y', 'a']);
+      expect(notifier.state.total, 2);
+      expect(countSub.read(), 3);
+    });
+
+    test('an edit that leaves the intention in view drops the row', () async {
+      repository = _FakeGroupChatRepository(
+        history: [
+          _prayer('a', intention: _healing),
+          _prayer('b', intention: _healing),
+        ],
+      );
+      container = buildContainer();
+      final countSub = container.listen(
+        prayerRequestCountProvider('e1'),
+        (_, _) {},
+      );
+      addTearDown(countSub.close);
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(intention: _healing),
+      );
+
+      notifier.applyEdit(_prayer('a', intention: _peace));
+      expect(notifier.state.requests.map((r) => r.id), ['b']);
+      expect(notifier.state.total, 1);
+      // Still in the room, so its count stays.
+      expect(countSub.read(), 2);
     });
 
     test('a 404 on the room means prayer requests are closed', () async {

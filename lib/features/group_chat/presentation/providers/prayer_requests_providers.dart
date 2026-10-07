@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_rem
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
@@ -206,8 +207,12 @@ class PrayerRequestsState extends Equatable {
   final PrayerRoomStatus roomStatus;
   final String? roomId;
 
-  /// Newest-first, prayer requests only.
+  /// Prayer requests only, in the order of [filter].
   final List<ChatMessageDTO> requests;
+  final PrayerRequestsFilter filter;
+
+  /// How many requests match [filter] on the server.
+  final int total;
   final bool isLoading;
   final bool isLoadingMore;
   final bool hasLoaded;
@@ -219,6 +224,8 @@ class PrayerRequestsState extends Equatable {
     this.roomStatus = PrayerRoomStatus.resolving,
     this.roomId,
     this.requests = const [],
+    this.filter = PrayerRequestsFilter.initial,
+    this.total = 0,
     this.isLoading = false,
     this.isLoadingMore = false,
     this.hasLoaded = false,
@@ -231,6 +238,8 @@ class PrayerRequestsState extends Equatable {
     PrayerRoomStatus? roomStatus,
     String? roomId,
     List<ChatMessageDTO>? requests,
+    PrayerRequestsFilter? filter,
+    int? total,
     bool? isLoading,
     bool? isLoadingMore,
     bool? hasLoaded,
@@ -243,6 +252,8 @@ class PrayerRequestsState extends Equatable {
       roomStatus: roomStatus ?? this.roomStatus,
       roomId: roomId ?? this.roomId,
       requests: requests ?? this.requests,
+      filter: filter ?? this.filter,
+      total: total ?? this.total,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasLoaded: hasLoaded ?? this.hasLoaded,
@@ -257,6 +268,8 @@ class PrayerRequestsState extends Equatable {
     roomStatus,
     roomId,
     requests,
+    filter,
+    total,
     isLoading,
     isLoadingMore,
     hasLoaded,
@@ -299,6 +312,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// A loaded row was deleted while a page was being fetched, so that page
   /// started one row late on the server and has to be read again.
   bool _pageShifted = false;
+
+  /// Bumped on every first-page load, so a page fetched under an earlier
+  /// filter is dropped when it lands.
+  int _listGeneration = 0;
 
   @override
   void dispose() {
@@ -363,14 +380,40 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     return load();
   }
 
+  /// Re-lists under [filter] from the first page. A change while the room
+  /// is still resolving is kept and used once it is.
+  Future<void> setFilter(PrayerRequestsFilter filter) async {
+    if (filter == state.filter) return;
+    final roomId = state.roomId;
+    final canList =
+        roomId != null && state.roomStatus == PrayerRoomStatus.ready;
+    state = state.copyWith(
+      filter: filter,
+      requests: const [],
+      total: 0,
+      skip: 0,
+      hasMore: true,
+      hasLoaded: !canList,
+      isLoading: canList,
+      isLoadingMore: false,
+      clearError: true,
+    );
+    if (!canList) return;
+    await _loadFirstPage(roomId);
+  }
+
   Future<void> _loadFirstPage(String roomId) async {
+    final generation = ++_listGeneration;
+    final filter = state.filter;
     final result = await _repository.listMessages(
       roomId,
       skip: 0,
       limit: _limit,
       messageType: ChatMessageDTO.typePrayer,
+      sort: filter.sortParam,
+      intention: filter.intentionParam,
     );
-    if (!mounted) return;
+    if (!mounted || generation != _listGeneration) return;
 
     result.fold(
       (failure) {
@@ -384,13 +427,15 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         final requests = page.messages.where(_isLive).toList();
         state = state.copyWith(
           requests: requests,
+          total: page.total,
           isLoading: false,
           hasLoaded: true,
           hasMore: page.messages.length < page.total,
           skip: page.messages.length,
           clearError: true,
         );
-        _publishCount(page.total);
+        // Only an unfiltered total is the room's count.
+        if (!filter.byIntention) _publishCount(page.total);
       },
     );
   }
@@ -399,7 +444,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     ref.read(prayerRequestCountProvider(eventId).notifier).state = count;
   }
 
-  void _shiftCount(int delta) {
+  /// Moves the room's count on the event screen; [inList] moves the
+  /// filtered total shown above the list too.
+  void _shiftCount(int delta, {bool inList = true}) {
+    if (inList) state = state.copyWith(total: _clampCount(state.total + delta));
     final current = ref.read(prayerRequestCountProvider(eventId));
     if (current == null) return;
     _publishCount(_clampCount(current + delta));
@@ -415,13 +463,17 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     }
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
+    final generation = _listGeneration;
+    final filter = state.filter;
     final result = await _repository.listMessages(
       roomId,
       skip: state.skip,
       limit: _limit,
       messageType: ChatMessageDTO.typePrayer,
+      sort: filter.sortParam,
+      intention: filter.intentionParam,
     );
-    if (!mounted) return;
+    if (!mounted || generation != _listGeneration) return;
 
     if (_pageShifted) {
       _pageShifted = false;
@@ -446,6 +498,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         final requests = [...state.requests, ...fresh];
         state = state.copyWith(
           requests: requests,
+          total: page.total,
           isLoadingMore: false,
           hasMore:
               page.messages.isNotEmpty &&
@@ -457,17 +510,21 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     );
   }
 
-  /// Re-reads the newest page after a socket reconnect, merging by id.
+  /// Re-reads the first page after a socket reconnect, merging by id.
   Future<void> refreshLatest() async {
     final roomId = state.roomId;
     if (roomId == null) return;
+    final generation = _listGeneration;
+    final filter = state.filter;
     final result = await _repository.listMessages(
       roomId,
       skip: 0,
       limit: _limit,
       messageType: ChatMessageDTO.typePrayer,
+      sort: filter.sortParam,
+      intention: filter.intentionParam,
     );
-    if (!mounted) return;
+    if (!mounted || generation != _listGeneration) return;
     result.fold((_) {}, (page) {
       final pageIds = page.messages.map((message) => message.id).toSet();
       final kept = state.requests.where(
@@ -476,6 +533,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       final requests = [...page.messages.where(_isLive), ...kept];
       state = state.copyWith(
         requests: requests,
+        total: page.total,
         skip: state.skip + (requests.length - state.requests.length),
       );
     });
@@ -532,9 +590,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     });
   }
 
-  /// A `message_updated` broadcast: another device or member's edit.
+  /// A `message_updated` broadcast: another device or member's edit. One
+  /// that moves the request out of the intention in view drops it.
   void applyEdit(ChatMessageDTO message) {
     if (!_isLive(message)) return;
+    if (!state.filter.matches(message.intention)) {
+      _dropRow(message.id, inRoom: false);
+      return;
+    }
     _update(
       message.id,
       (request) =>
@@ -558,11 +621,16 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   /// Inserts a prayer request that arrived over the socket or came back from
-  /// a send. Anything else in the room is ignored here.
+  /// a send. Anything else in the room is ignored here. One outside the
+  /// intention in view still counts for the room, but is not shown.
   void appendLive(ChatMessageDTO message) {
     if (message.id.isEmpty || !_isLive(message)) return;
     if (state.roomId != null && message.roomId != state.roomId) return;
     if (state.requests.any((existing) => existing.id == message.id)) return;
+    if (!state.filter.matches(message.intention)) {
+      _shiftCount(1, inList: false);
+      return;
+    }
     state = state.copyWith(
       requests: [message, ...state.requests],
       skip: state.skip + 1,
@@ -571,15 +639,20 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     _shiftCount(1);
   }
 
-  void applyDeletion(String messageId) {
+  void applyDeletion(String messageId) => _dropRow(messageId, inRoom: true);
+
+  /// Takes a loaded row out of the list. [inRoom] says the request is gone
+  /// from the room, not only from the filter in view.
+  void _dropRow(String messageId, {required bool inRoom}) {
     if (!state.requests.any((request) => request.id == messageId)) return;
     if (state.isLoadingMore) _pageShifted = true;
     state = state.copyWith(
       requests:
           state.requests.where((request) => request.id != messageId).toList(),
       skip: state.skip > 0 ? state.skip - 1 : 0,
+      total: _clampCount(state.total - 1),
     );
-    _shiftCount(-1);
+    if (inRoom) _shiftCount(-1, inList: false);
   }
 
   /// A `prayers_updated` broadcast. It carries no viewer-specific state, so

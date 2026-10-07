@@ -5704,10 +5704,12 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String event_replay_session(String day, String session) =>
-      TolgeeBridge.format(localeName, 'event_replay_session', <String, Object>{
-        'day': day,
-        'session': session,
-      }, () => _fallback.event_replay_session(day, session));
+      TolgeeBridge.format(
+        localeName,
+        'event_replay_session',
+        <String, Object>{'day': day, 'session': session},
+        () => _fallback.event_replay_session(day, session),
+      );
 
   @override
   String get event_replay_recording => TolgeeBridge.get(
@@ -5943,6 +5945,69 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_prayer_no_supporters',
     () => _fallback.event_prayer_no_supporters,
+  );
+
+  @override
+  String get event_prayer_sort_by => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_by',
+    () => _fallback.event_prayer_sort_by,
+  );
+
+  @override
+  String get event_prayer_sort_needs_prayers => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_needs_prayers',
+    () => _fallback.event_prayer_sort_needs_prayers,
+  );
+
+  @override
+  String get event_prayer_sort_most_prayed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_most_prayed',
+    () => _fallback.event_prayer_sort_most_prayed,
+  );
+
+  @override
+  String get event_prayer_sort_newest => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_newest',
+    () => _fallback.event_prayer_sort_newest,
+  );
+
+  @override
+  String get event_prayer_sort_oldest => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_oldest',
+    () => _fallback.event_prayer_sort_oldest,
+  );
+
+  @override
+  String get event_prayer_sort_by_intention => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_by_intention',
+    () => _fallback.event_prayer_sort_by_intention,
+  );
+
+  @override
+  String get event_prayer_clear_intention => TolgeeBridge.get(
+    localeName,
+    'event_prayer_clear_intention',
+    () => _fallback.event_prayer_clear_intention,
+  );
+
+  @override
+  String get event_prayer_filter_empty_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_filter_empty_title',
+    () => _fallback.event_prayer_filter_empty_title,
+  );
+
+  @override
+  String get event_prayer_filter_empty_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_filter_empty_body',
+    () => _fallback.event_prayer_filter_empty_body,
   );
 
   @override

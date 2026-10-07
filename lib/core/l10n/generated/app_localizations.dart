@@ -5330,6 +5330,60 @@ abstract class AppLocalizations {
   /// **'No one is praying yet'**
   String get event_prayer_no_supporters;
 
+  /// No description provided for @event_prayer_sort_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get event_prayer_sort_by;
+
+  /// No description provided for @event_prayer_sort_needs_prayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs prayers'**
+  String get event_prayer_sort_needs_prayers;
+
+  /// No description provided for @event_prayer_sort_most_prayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Most prayed'**
+  String get event_prayer_sort_most_prayed;
+
+  /// No description provided for @event_prayer_sort_newest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get event_prayer_sort_newest;
+
+  /// No description provided for @event_prayer_sort_oldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get event_prayer_sort_oldest;
+
+  /// No description provided for @event_prayer_sort_by_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'By intention'**
+  String get event_prayer_sort_by_intention;
+
+  /// No description provided for @event_prayer_clear_intention.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear intention'**
+  String get event_prayer_clear_intention;
+
+  /// No description provided for @event_prayer_filter_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No requests match'**
+  String get event_prayer_filter_empty_title;
+
+  /// No description provided for @event_prayer_filter_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another sort or intention'**
+  String get event_prayer_filter_empty_body;
+
   /// No description provided for @recitation_live_sync.
   ///
   /// In en, this message translates to:

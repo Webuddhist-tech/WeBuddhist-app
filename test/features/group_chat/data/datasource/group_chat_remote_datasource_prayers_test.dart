@@ -201,6 +201,37 @@ void main() {
       expect(page.total, 1);
     });
 
+    test('listMessages passes sort and intention only when given', () async {
+      final seen = <Map<String, dynamic>>[];
+      final ds = _datasource((options) async {
+        seen.add(Map.of(options.queryParameters));
+        return _status(200, {
+          'messages': [],
+          'skip': 0,
+          'limit': 20,
+          'total': 0,
+        });
+      });
+
+      await ds.listMessages('r1', messageType: 'PRAYER');
+      await ds.listMessages(
+        'r1',
+        messageType: 'PRAYER',
+        sort: 'needs_prayers',
+      );
+      await ds.listMessages(
+        'r1',
+        messageType: 'PRAYER',
+        intention: 'protection',
+      );
+
+      expect(seen[0].containsKey('sort'), isFalse);
+      expect(seen[0].containsKey('intention'), isFalse);
+      expect(seen[1]['sort'], 'needs_prayers');
+      expect(seen[2]['intention'], 'protection');
+      expect(seen[2].containsKey('sort'), isFalse);
+    });
+
     test('listPrayers reads each person\'s count', () async {
       final ds = _datasource((options) async {
         return _status(200, {
