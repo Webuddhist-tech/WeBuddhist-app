@@ -226,8 +226,8 @@ class PrayerRequestTile extends StatelessWidget {
   }
 }
 
-/// The request as written, or in the viewer's language once the server has
-/// translated it, with a link to switch between the two.
+/// The request in the viewer's language once the server has translated it,
+/// otherwise as written, with a link to switch between the two.
 class _PrayerBody extends StatefulWidget {
   const _PrayerBody({
     required this.request,
@@ -246,18 +246,21 @@ class _PrayerBody extends StatefulWidget {
 }
 
 class _PrayerBodyState extends State<_PrayerBody> {
-  bool _showTranslation = false;
+  // The translation is the resting view; a fresh one shows again by default.
+  bool _showOriginal = false;
 
   @override
   void didUpdateWidget(_PrayerBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.request.translatedBody == null) _showTranslation = false;
+    if (oldWidget.request.translatedBody != widget.request.translatedBody) {
+      _showOriginal = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final translated = widget.request.translatedBody;
-    final showTranslation = translated != null && _showTranslation;
+    final showTranslation = translated != null && !_showOriginal;
     final body = _CollapsibleBody(
       text: showTranslation ? translated : widget.request.body,
       textColor: widget.textColor,
@@ -275,7 +278,7 @@ class _PrayerBodyState extends State<_PrayerBody> {
           sourceLanguage: widget.request.sourceLanguage,
           textColor: widget.textColor,
           muted: widget.muted,
-          onTap: () => setState(() => _showTranslation = !showTranslation),
+          onTap: () => setState(() => _showOriginal = showTranslation),
         ),
       ],
     );
