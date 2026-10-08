@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 
@@ -19,11 +20,18 @@ class PracticeAccumulationItem extends StatelessWidget {
     final beadUrl = mantra.mantra?.beadImageUrl ?? mantra.beadImageUrl;
     final title = mantra.displayTitle(language);
 
-    const titleStyle = TextStyle(
+    const baseTitleStyle = TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.bold,
       height: 1.25,
     );
+    final titleStyle =
+        AppFontConfig.applyTibetanMetrics(
+          language,
+          baseTitleStyle,
+          compact: true,
+        ) ??
+        baseTitleStyle;
 
     return Card(
       clipBehavior: Clip.antiAlias,

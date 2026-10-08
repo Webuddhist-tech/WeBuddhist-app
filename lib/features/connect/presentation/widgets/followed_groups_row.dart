@@ -32,6 +32,13 @@ class FollowedGroupsRow extends StatelessWidget {
   static const double _titleFontSize = 11;
   static const double _labelHeight = 14;
 
+  static double _labelHeightFor(bool tibetan) =>
+      tibetan
+          ? _titleFontSize * AppFontConfig.tibetanCompactLineHeight
+          : _labelHeight;
+
+  static double _rowHeightFor(bool tibetan) => 70 + _labelHeightFor(tibetan);
+
   @override
   Widget build(BuildContext context) {
     if (isLoading && groups.isEmpty) {
@@ -43,9 +50,11 @@ class FollowedGroupsRow extends StatelessWidget {
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tibetanLabels =
+        context.isTibetanLocale || groups.any((g) => _containsTibetan(g.title));
 
     return SizedBox(
-      height: 84,
+      height: _rowHeightFor(tibetanLabels),
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         scrollDirection: Axis.horizontal,
@@ -108,7 +117,7 @@ class _FollowedGroupTile extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             SizedBox(
-              height: FollowedGroupsRow._labelHeight,
+              height: FollowedGroupsRow._labelHeightFor(hasTibetanTitle),
               child: Text(
                 group.title,
                 maxLines: 1,
@@ -237,7 +246,7 @@ class _AllGroupsTile extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             SizedBox(
-              height: FollowedGroupsRow._labelHeight,
+              height: FollowedGroupsRow._labelHeightFor(hasTibetanLabel),
               child: Text(
                 label,
                 maxLines: 1,
@@ -313,7 +322,7 @@ class _FollowedGroupsRowSkeleton extends StatelessWidget {
     return Skeletonizer(
       enabled: true,
       child: SizedBox(
-        height: 84,
+        height: FollowedGroupsRow._rowHeightFor(context.isTibetanLocale),
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           scrollDirection: Axis.horizontal,

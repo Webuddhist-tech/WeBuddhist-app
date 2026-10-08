@@ -1,32 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/poems/domain/entities/poem.dart';
 import 'package:flutter_pecha/features/poems/presentation/utils/poem_share.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// A single poem preview shown on the home page — cover image, title, a
 /// truncated excerpt, and the author, matching the "Poems" home section.
 ///
 /// Tapping the card opens the full-screen swipeable poems viewer starting on
 /// this poem.
-class PoemPreviewCard extends StatelessWidget {
+class PoemPreviewCard extends ConsumerWidget {
   const PoemPreviewCard({super.key, required this.poem, required this.onTap});
 
   final Poem poem;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final languageCode = ref.watch(contentLanguageProvider);
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final primaryColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final placeholderColor =
         isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
+    final excerptStyle = TextStyle(
+      fontSize: 14,
+      color: secondaryColor,
+      height: 1.5,
+    );
 
     return InkWell(
       onTap: onTap,
@@ -55,11 +64,14 @@ class PoemPreviewCard extends StatelessWidget {
             child: Text(
               poem.title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: primaryColor,
-                height: 1.3,
+              style: AppFontConfig.applyTibetanMetrics(
+                languageCode,
+                TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: primaryColor,
+                  height: 1.3,
+                ),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -69,11 +81,12 @@ class PoemPreviewCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: _PoemPreviewExcerpt(
               content: poem.content,
-              style: TextStyle(
-                fontSize: 14,
-                color: secondaryColor,
-                height: 1.5,
-              ),
+              style:
+                  AppFontConfig.applyTibetanMetrics(
+                    languageCode,
+                    excerptStyle,
+                  ) ??
+                  excerptStyle,
             ),
           ),
           Padding(
@@ -83,11 +96,15 @@ class PoemPreviewCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     poem.authorName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
-                      height: 1.2,
+                    style: AppFontConfig.applyTibetanMetrics(
+                      languageCode,
+                      TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                        height: 1.2,
+                      ),
+                      compact: true,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

@@ -1140,13 +1140,11 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
           tabAlignment: TabAlignment.start,
           labelColor: labelColor,
           dividerColor: Colors.transparent,
-          labelStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+          labelStyle: context.tabLabelStyle(
+            const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
+          unselectedLabelStyle: context.tabLabelStyle(
+            const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
           tabs: [
             for (final tab in _visibleTabs) Tab(text: _tabLabel(tab, profile)),

@@ -193,10 +193,9 @@ class _ConnectMainTabBar extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.label,
         dividerColor: Colors.transparent,
         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-        labelStyle: _labelStyle,
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
+        labelStyle: context.tabLabelStyle(_labelStyle),
+        unselectedLabelStyle: context.tabLabelStyle(
+          const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         tabs: [
           for (final label in labels)

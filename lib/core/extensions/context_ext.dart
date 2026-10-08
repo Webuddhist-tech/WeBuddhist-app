@@ -17,4 +17,20 @@ extension BuildContextExt on BuildContext {
         fontSize,
         compact: compact,
       );
+
+  /// TabBar drops the inherited text style, so set the Tibetan font here.
+  TextStyle tabLabelStyle(TextStyle style) {
+    final languageCode = Localizations.localeOf(this).languageCode;
+    if (!AppFontConfig.isTibetanLanguage(languageCode)) return style;
+    return AppFontConfig.applyTibetanMetrics(
+          languageCode,
+          style.copyWith(
+            fontFamily: AppFontConfig.getFontFamily(
+              languageCode,
+              FontType.system,
+            ),
+          ),
+        ) ??
+        style;
+  }
 }
