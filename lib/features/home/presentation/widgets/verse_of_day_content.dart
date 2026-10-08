@@ -48,7 +48,11 @@ class VerseOfDayTypography {
     return VerseOfDayTypography(
       contentFont: base.contentFont,
       systemFont: base.systemFont,
-      verseFontSize: verseFontSize ?? base.verseFontSize,
+      verseFontSize:
+          verseFontSize ??
+          (isTibetan
+              ? AppFontConfig.tibetanContentFontSize
+              : base.verseFontSize),
       attributionFontSize:
           attributionFontSize ?? getLocalizedFontSize(AppTextSize.body),
       useContentFontForAttribution: isTibetan,

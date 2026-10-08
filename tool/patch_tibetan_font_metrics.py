@@ -10,8 +10,9 @@ glyphs they actually draw:
   BabelStone Tibetan   ascender 1.102 em, descender 1.901 em (3.003 em/line)
 
 Flutter derives every line box from these numbers.  As soon as a style sets
-`height:` (the app uses 1.55 / 1.25 for Tibetan) the box is shrunk around
-the *baseline*, not around the glyphs, so:
+`height:` (see tibetanUiLineHeight / tibetanCompactLineHeight in
+lib/core/theme/font_config.dart) the box is shrunk around the *baseline*,
+not around the glyphs, so:
 
   * vowel signs on the first line poke out above the box and are clipped
     whenever a paragraph clips itself (maxLines + ellipsis) or an ancestor

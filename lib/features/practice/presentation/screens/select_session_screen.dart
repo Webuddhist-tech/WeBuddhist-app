@@ -148,13 +148,11 @@ class _SelectSessionScreenState extends ConsumerState<SelectSessionScreen>
             Tab(text: localizations.session_mala),
             Tab(text: localizations.home_timer),
           ],
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+          labelStyle: context.tabLabelStyle(
+            const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.normal,
-            fontSize: 14,
+          unselectedLabelStyle: context.tabLabelStyle(
+            const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
           ),
           labelColor:
               isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,

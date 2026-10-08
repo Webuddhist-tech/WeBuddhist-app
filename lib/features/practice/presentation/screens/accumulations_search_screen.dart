@@ -202,20 +202,23 @@ class _AccumulationsSearchScreenState
       );
     }
 
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1.1,
-      ),
-      itemCount: searchState.results.length,
-      itemBuilder: (context, index) {
-        final mantra = searchState.results[index];
-        return PracticeAccumulationItem(
-          mantra: mantra,
-          language: widget.language,
-          onTap: () => widget.onTap(mantra),
-        );
-      },
+    return LayoutBuilder(
+      builder:
+          (context, constraints) => GridView.builder(
+            gridDelegate: PracticeAccumulationItem.gridDelegate(
+              widget.language,
+              constraints.maxWidth,
+            ),
+            itemCount: searchState.results.length,
+            itemBuilder: (context, index) {
+              final mantra = searchState.results[index];
+              return PracticeAccumulationItem(
+                mantra: mantra,
+                language: widget.language,
+                onTap: () => widget.onTap(mantra),
+              );
+            },
+          ),
     );
   }
 }

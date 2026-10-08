@@ -68,6 +68,7 @@ class OnboardingChoiceScaffold extends StatelessWidget {
                 const SizedBox(height: 28),
               Text(
                 title,
+                strutStyle: context.tibetanStrutStyle(26, compact: true),
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w700,

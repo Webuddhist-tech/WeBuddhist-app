@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
@@ -18,6 +20,10 @@ import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_link_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+
+bool _containsTibetan(String value) {
+  return RegExp(r'[\u0F00-\u0FFF]').hasMatch(value);
+}
 
 class ConnectPostCard extends ConsumerStatefulWidget {
   const ConnectPostCard({
@@ -73,6 +79,7 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
     final isDark = theme.brightness == Brightness.dark;
     final post = widget.post;
     final caption = post.caption.trim();
+    final hasTibetanCaption = _containsTibetan(caption);
     final imageMedia =
         post.media
             .where((item) => item.isImage && item.url.isNotEmpty)
@@ -110,6 +117,13 @@ class _ConnectPostCardState extends ConsumerState<ConnectPostCard> {
                     _captionExpanded
                         ? TextOverflow.visible
                         : TextOverflow.ellipsis,
+                strutStyle:
+                    hasTibetanCaption
+                        ? AppFontConfig.tibetanStrutStyle(
+                          AppConfig.tibetanLanguageCode,
+                          15,
+                        )
+                        : null,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
