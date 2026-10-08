@@ -773,6 +773,35 @@ class GroupProfileRemoteDatasource {
     }
   }
 
+  /// `DELETE /cms/author/groups/{groupId}/chat/messages/{messageId}`.
+  ///
+  /// Moderation: soft-deletes any member's message, unlike the member-facing
+  /// route, which only ever deletes the caller's own. The server broadcasts
+  /// the same `message_deleted` frame, so open threads grey it out live.
+  Future<void> deleteGroupChatMessage(
+    String groupId, {
+    required String messageId,
+  }) async {
+    try {
+      final response = await dio.delete(
+        '/cms/author/groups/$groupId/chat/messages/$messageId',
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode >= 200 && statusCode < 300) return;
+
+      _logger.error('Failed to delete chat message $messageId: $statusCode');
+      throw _statusToException(
+        response.statusCode,
+        'Failed to delete message',
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in deleteGroupChatMessage', e);
+      throw _dioToException(e, 'Failed to delete message');
+    }
+  }
+
   Future<void> submitJoinRequest(
     String groupId, {
     required String message,

@@ -202,7 +202,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'group-chat',
         builder: (context, state) {
           final groupId = state.pathParameters['groupId'] ?? '';
-          return ClarityMask(child: GroupChatScreen(groupId: groupId));
+          return ClarityMask(
+            child: GroupChatScreen(
+              groupId: groupId,
+              targetMessageId:
+                  state.uri.queryParameters[AppRoutes.chatMessageQuery],
+            ),
+          );
         },
       ),
       ShellRoute(

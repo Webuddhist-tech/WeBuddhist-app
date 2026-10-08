@@ -16,6 +16,8 @@ class _PagingRepository extends Fake
   final List<GroupReportsPage> pages;
   final List<int> reportSkips = [];
   final List<String> resolvedReportIds = [];
+  final List<String> deletedMessageIds = [];
+  bool deleteFails = false;
   int _nextPage = 0;
 
   @override
@@ -42,6 +44,16 @@ class _PagingRepository extends Fake
     required String reportId,
   }) async {
     resolvedReportIds.add(reportId);
+    return const Right(null);
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteGroupChatMessage(
+    String groupId, {
+    required String messageId,
+  }) async {
+    if (deleteFails) return const Left(ServerFailure('Failed'));
+    deletedMessageIds.add(messageId);
     return const Right(null);
   }
 }
@@ -80,7 +92,62 @@ GroupReport _report(String id, {String commentId = 'c1'}) {
   );
 }
 
+GroupReport _messageReport(String id, {String messageId = 'm1'}) {
+  return GroupReport(
+    id: id,
+    kind: GroupReportKind.chatMessage,
+    messageId: messageId,
+    contentText: 'A message',
+  );
+}
+
+_PagingRepository _messageQueue() {
+  return _PagingRepository([
+    GroupReportsPage(
+      reports: [_messageReport('r1'), _messageReport('r2')],
+      received: 2,
+      skip: 0,
+      limit: 20,
+      total: 2,
+    ),
+  ]);
+}
+
 void main() {
+  test('deleting a reported message resolves its reports too', () async {
+    final repository = _messageQueue();
+    final notifier = GroupReportsNotifier(
+      repository: repository,
+      groupId: 'g1',
+    );
+
+    await notifier.loadInitial();
+    final deleted = await notifier.deleteMessageItem(
+      notifier.state.items.single,
+    );
+
+    expect(deleted, isTrue);
+    expect(repository.deletedMessageIds, ['m1']);
+    expect(repository.resolvedReportIds, unorderedEquals(['r1', 'r2']));
+  });
+
+  test('a failed delete leaves the reports on the queue', () async {
+    final repository = _messageQueue()..deleteFails = true;
+    final notifier = GroupReportsNotifier(
+      repository: repository,
+      groupId: 'g1',
+    );
+
+    await notifier.loadInitial();
+    final deleted = await notifier.deleteMessageItem(
+      notifier.state.items.single,
+    );
+
+    expect(deleted, isFalse);
+    expect(repository.resolvedReportIds, isEmpty);
+    expect(notifier.state.items, hasLength(1));
+  });
+
   test('the next page skips the reports of an unknown kind too', () async {
     // A first page the server filled, of which this client kept only one.
     final repository = _PagingRepository([

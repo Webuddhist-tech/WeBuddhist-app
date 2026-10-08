@@ -3978,6 +3978,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_reports_delete_confirm_title => TolgeeBridge.get(
+    localeName,
+    'group_reports_delete_confirm_title',
+    () => _fallback.group_reports_delete_confirm_title,
+  );
+
+  @override
+  String get group_reports_delete_message_confirm => TolgeeBridge.get(
+    localeName,
+    'group_reports_delete_message_confirm',
+    () => _fallback.group_reports_delete_message_confirm,
+  );
+
+  @override
+  String get group_reports_message_removed => TolgeeBridge.get(
+    localeName,
+    'group_reports_message_removed',
+    () => _fallback.group_reports_message_removed,
+  );
+
+  @override
+  String get group_reports_delete_message_error => TolgeeBridge.get(
+    localeName,
+    'group_reports_delete_message_error',
+    () => _fallback.group_reports_delete_message_error,
+  );
+
+  @override
   String get group_members_only_title => TolgeeBridge.get(
     localeName,
     'group_members_only_title',
@@ -5244,6 +5272,27 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'group_chat_load_failed',
     () => _fallback.group_chat_load_failed,
+  );
+
+  @override
+  String get group_chat_message_not_found => TolgeeBridge.get(
+    localeName,
+    'group_chat_message_not_found',
+    () => _fallback.group_chat_message_not_found,
+  );
+
+  @override
+  String get group_chat_message_too_far_back => TolgeeBridge.get(
+    localeName,
+    'group_chat_message_too_far_back',
+    () => _fallback.group_chat_message_too_far_back,
+  );
+
+  @override
+  String get group_chat_keep_looking => TolgeeBridge.get(
+    localeName,
+    'group_chat_keep_looking',
+    () => _fallback.group_chat_keep_looking,
   );
 
   @override

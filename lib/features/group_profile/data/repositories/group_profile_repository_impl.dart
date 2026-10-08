@@ -601,6 +601,29 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
+  Future<Either<Failure, void>> deleteGroupChatMessage(
+    String groupId, {
+    required String messageId,
+  }) async {
+    try {
+      await remote.deleteGroupChatMessage(groupId, messageId: messageId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on AuthenticationException catch (e) {
+      return Left(AuthenticationFailure(e.message));
+    } on NotFoundException catch (e) {
+      return Left(NotFoundFailure(e.message));
+    } on RateLimitException catch (e) {
+      return Left(RateLimitFailure(e.message));
+    } catch (e) {
+      return Left(UnknownFailure('Failed to delete message: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> submitJoinRequest(
     String groupId, {
     required String message,

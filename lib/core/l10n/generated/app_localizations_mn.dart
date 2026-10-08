@@ -2044,6 +2044,20 @@ class AppLocalizationsMn extends AppLocalizations {
       'Гомдлуудыг ачаалж чадсангүй. Дахин оролдоно уу';
 
   @override
+  String get group_reports_delete_confirm_title => 'Та итгэлтэй байна уу?';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'Энэ мессеж бүрмөсөн устгагдана';
+
+  @override
+  String get group_reports_message_removed => 'Мессежийг устгалаа';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'Мессежийг устгаж чадсангүй. Дахин оролдоно уу';
+
+  @override
   String get group_members_only_title => 'Зөвхөн гишүүдэд';
 
   @override
@@ -2701,6 +2715,16 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => 'Зурвасуудыг ачаалж чадсангүй';
+
+  @override
+  String get group_chat_message_not_found => 'Энэ зурвас чатад байхгүй болсон';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
 
   @override
   String get group_chat_retry => 'Дахин оролдох';

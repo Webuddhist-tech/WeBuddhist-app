@@ -2041,6 +2041,20 @@ class AppLocalizationsHi extends AppLocalizations {
       'रिपोर्ट लोड करने में असमर्थ। कृपया पुनः प्रयास करें';
 
   @override
+  String get group_reports_delete_confirm_title => 'क्या आप निश्चित हैं?';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'यह संदेश स्थायी रूप से हटा दिया जाएगा';
+
+  @override
+  String get group_reports_message_removed => 'संदेश हटा दिया गया है';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'संदेश हटाने में असमर्थ। कृपया पुनः प्रयास करें';
+
+  @override
   String get group_members_only_title => 'केवल सदस्यों के लिए';
 
   @override
@@ -2696,6 +2710,16 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => 'संदेश लोड नहीं हो सके';
+
+  @override
+  String get group_chat_message_not_found => 'यह संदेश अब चैट में नहीं है';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
 
   @override
   String get group_chat_retry => 'पुनः प्रयास करें';

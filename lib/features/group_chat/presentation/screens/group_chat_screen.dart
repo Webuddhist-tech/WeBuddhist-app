@@ -47,7 +47,15 @@ enum _RoomState { resolving, absent, joined, unavailable }
 class GroupChatScreen extends ConsumerStatefulWidget {
   final String groupId;
 
-  const GroupChatScreen({super.key, required this.groupId});
+  /// A message to open the thread on, rather than the newest one. Set when the
+  /// chat is reached from the reports queue's "View message".
+  final String? targetMessageId;
+
+  const GroupChatScreen({
+    super.key,
+    required this.groupId,
+    this.targetMessageId,
+  });
 
   @override
   ConsumerState<GroupChatScreen> createState() => _GroupChatScreenState();
@@ -752,6 +760,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
               : GroupChatThread(
                 roomId: roomId,
                 groupId: widget.groupId,
+                targetMessageId: widget.targetMessageId,
                 onReply: _startReply,
                 onSelectionChanged: _onSelectionChanged,
               ),
