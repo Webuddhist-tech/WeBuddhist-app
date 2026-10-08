@@ -122,12 +122,15 @@ class GroupChatRemoteDatasource {
     }
   }
 
-  /// [messageType] narrows the page to one kind, e.g. `PRAYER`.
+  /// [messageType] narrows the page to one kind, e.g. `PRAYER`. [sort] and
+  /// [intention] (a slug) only apply to prayer requests.
   Future<ChatMessagesPage> listMessages(
     String roomId, {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   }) async {
     try {
       final response = await _dio.get(
@@ -136,6 +139,8 @@ class GroupChatRemoteDatasource {
           'skip': skip,
           'limit': limit,
           if (messageType != null) 'message_type': messageType,
+          if (sort != null) 'sort': sort,
+          if (intention != null) 'intention': intention,
         },
         options: _noCache,
       );

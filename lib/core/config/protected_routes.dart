@@ -68,6 +68,13 @@ class ProtectedRoutes {
     '/groups/author/comments/{commentId}',
     '/groups/author/comments/{commentId}/likes',
 
+    // Verse of the day likes (GET sends token for `liked_by_me`), likers
+    // list, comment delete and comment likes.
+    '/verse-of-day/{verseId}/likes',
+    '/verse-of-day/{verseId}/likes/users',
+    '/verse-of-day/comments/{commentId}',
+    '/verse-of-day/comments/{commentId}/likes',
+
     // Group accumulators (group prayer accumulations)
     '/group-accumulators/',
 
@@ -91,6 +98,9 @@ class ProtectedRoutes {
     // Verse of the day: public for guests; when logged in, Bearer + existing
     // X-Timezone lets the backend upsert user_metadata.timezone.
     '/verse-of-day/today',
+    // Verse comments: public list; POST needs the token when logged in.
+    '/verse-of-day/{verseId}/comments',
+    '/verse-of-day/{verseId}/comments/{commentId}',
     // Series list/detail: sends auth when logged in so the response includes
     // user-enriched fields like `progress` and `partner`.
     '/series',

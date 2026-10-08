@@ -12,6 +12,7 @@ import 'package:flutter_pecha/features/home/presentation/providers/routine_info_
 import 'package:flutter_pecha/features/home/presentation/providers/streak_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/today_events_provider.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/home_screen_constants.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_analytics.dart';
@@ -226,6 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Pull-to-refresh handler. Invalidates the series list and verse of day,
   /// then awaits the refreshed results so the spinner stays until data lands.
   Future<void> _onRefresh() async {
+    _refreshVerseOfDayEngagement();
     ref.invalidate(seriesListFutureProvider);
     ref.invalidate(featuredSeriesFutureProvider);
     ref.invalidate(homeGroupEventsPreviewProvider);
@@ -305,6 +307,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       loading: () => const MyPracticesStatsCardSkeleton(),
       error: (_, __) => const SizedBox.shrink(),
     );
+  }
+
+  /// Likes and comments live in their own providers, which stay alive with
+  /// the card, so invalidating the verse alone leaves their counts stale.
+  void _refreshVerseOfDayEngagement() {
+    final verseId = ref
+        .read(verseOfDayFutureProvider)
+        .valueOrNull
+        ?.fold((_) => null, (verse) => verse.id);
+    if (verseId == null || verseId.isEmpty) return;
+
+    ref.read(verseOfDayLikesProvider(verseId).notifier).load();
+    ref.read(verseOfDayCommentsProvider(verseId).notifier).loadInitial();
   }
 
   Widget _buildVerseOfDaySection() {

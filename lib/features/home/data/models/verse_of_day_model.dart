@@ -1,50 +1,5 @@
 import 'package:flutter_pecha/features/home/domain/entities/verse_of_day.dart';
 
-class VerseOfDayGroupInfoModel {
-  final String id;
-  final String title;
-  final String subTitle;
-  final String description;
-  final String language;
-
-  VerseOfDayGroupInfoModel({
-    required this.id,
-    required this.title,
-    required this.subTitle,
-    required this.description,
-    required this.language,
-  });
-
-  factory VerseOfDayGroupInfoModel.fromJson(Map<String, dynamic> json) {
-    return VerseOfDayGroupInfoModel(
-      id: (json['id'] as String?) ?? '',
-      title: (json['title'] as String?) ?? '',
-      subTitle: (json['sub_title'] as String?) ?? '',
-      description: (json['description'] as String?) ?? '',
-      language: (json['language'] as String?) ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'sub_title': subTitle,
-      'description': description,
-      'language': language,
-    };
-  }
-
-  VerseOfDayGroupInfo toEntity() {
-    return VerseOfDayGroupInfo(
-      id: id,
-      title: title,
-      subTitle: subTitle,
-      description: description,
-    );
-  }
-}
-
 class VerseOfDayModel {
   final String id;
   final String verse;
@@ -52,7 +7,8 @@ class VerseOfDayModel {
   final String refId;
   final String refType;
   final String date;
-  final List<VerseOfDayGroupInfoModel> groupInfo;
+  final String source;
+  final String groupTitle;
 
   VerseOfDayModel({
     required this.id,
@@ -61,19 +17,15 @@ class VerseOfDayModel {
     required this.refId,
     required this.refType,
     required this.date,
-    this.groupInfo = const [],
+    this.source = '',
+    this.groupTitle = '',
   });
 
   factory VerseOfDayModel.fromJson(Map<String, dynamic> json) {
     final vodJson = json['verse_of_day'] as Map<String, dynamic>? ?? json;
-    final groupInfoList =
-        (vodJson['group_info'] as List<dynamic>?)
-            ?.map(
-              (g) =>
-                  VerseOfDayGroupInfoModel.fromJson(g as Map<String, dynamic>),
-            )
-            .toList() ??
-        [];
+    final groups =
+        (vodJson['group_info'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>();
 
     return VerseOfDayModel(
       id: (vodJson['id'] as String?) ?? '',
@@ -82,7 +34,9 @@ class VerseOfDayModel {
       refId: (vodJson['ref_id'] as String?) ?? '',
       refType: (vodJson['ref_type'] as String?) ?? '',
       date: (vodJson['date'] as String?) ?? '',
-      groupInfo: groupInfoList,
+      source: (vodJson['source'] as String?) ?? '',
+      groupTitle:
+          groups.isEmpty ? '' : (groups.first['title'] as String?) ?? '',
     );
   }
 
@@ -94,7 +48,10 @@ class VerseOfDayModel {
       'ref_id': refId,
       'ref_type': refType,
       'date': date,
-      'group_info': groupInfo.map((g) => g.toJson()).toList(),
+      'source': source,
+      'group_info': [
+        if (groupTitle.isNotEmpty) {'title': groupTitle},
+      ],
     };
   }
 
@@ -104,7 +61,8 @@ class VerseOfDayModel {
       verse: verse,
       imageUrl: imageUrl,
       date: date,
-      groupInfo: groupInfo.map((g) => g.toEntity()).toList(),
+      source: source,
+      groupTitle: groupTitle,
     );
   }
 }

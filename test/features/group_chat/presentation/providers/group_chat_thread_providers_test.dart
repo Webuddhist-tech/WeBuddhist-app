@@ -60,6 +60,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   }) async {
     listCallCount++;
     // Cleared before awaiting, so only this call is held.

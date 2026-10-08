@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/timer/presentation/widgets/timer_sheet_header.dart';
 
@@ -67,7 +68,7 @@ class _DurationPickerSheetState extends State<DurationPickerSheet> {
         child: Column(
           children: [
             TimerSheetHeader(
-              title: 'Duration',
+              title: context.l10n.timer_duration_title,
               onClose: () => Navigator.of(context).pop(_selected),
             ),
             Expanded(

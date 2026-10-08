@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/ambient_sound.dart';
 import 'package:flutter_pecha/features/timer/presentation/providers/timers_providers.dart';
 import 'package:flutter_pecha/features/timer/presentation/services/ambient_sound_player.dart';
@@ -124,7 +125,10 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TimerSheetHeader(title: 'Ambient sounds', onClose: _close),
+            TimerSheetHeader(
+              title: context.l10n.timer_ambient_sounds_title,
+              onClose: _close,
+            ),
             Flexible(
               child: soundsAsync.when(
                 data:
@@ -133,7 +137,7 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
                       children: [
                         _SoundTile(
                           icon: AppAssets.timerAmbientSound,
-                          label: 'Default (no sound)',
+                          label: context.l10n.timer_ambient_sound_none,
                           selected: _selectedId == null,
                           onTap: _selectDefault,
                         ),
@@ -158,7 +162,7 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Failed to load ambient sounds',
+                            context.l10n.timer_ambient_sounds_load_error,
                             style: TextStyle(color: textColor),
                           ),
                           const SizedBox(height: 8),
@@ -167,7 +171,7 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
                                 () => ref.invalidate(
                                   ambientSoundsFutureProvider,
                                 ),
-                            child: const Text('Retry'),
+                            child: Text(context.l10n.retry),
                           ),
                         ],
                       ),
@@ -180,7 +184,7 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'VOLUME',
+                    context.l10n.timer_volume_label,
                     style: TextStyle(
                       fontSize: 12,
                       letterSpacing: 0.5,

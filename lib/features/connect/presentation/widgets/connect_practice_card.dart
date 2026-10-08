@@ -8,7 +8,7 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
-import 'package:flutter_pecha/features/connect/presentation/providers/connect_practices_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_header.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -110,11 +110,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
         widget.isSeriesEnrolled ??
         (practice.isJoined || series.isGroupEnrolled == true);
     final isEnrolling = widget.isEnrollingSeries ?? _isEnrollingSeries;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
 
     return Material(
-      color: cardColor,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap:
             isEnrolling
@@ -225,8 +223,6 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     final hasJoined =
         practice.isJoined ||
         accumulatorHasJoined(accumulator, localJoinedIds: localJoinedIds);
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final dateRange = PlanDateFormat.formatRangeOrNull(
       accumulator.startDate,
       accumulator.endDate,
@@ -236,7 +232,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
         (_joiningAccumulatorId == accumulator.id);
 
     return Material(
-      color: cardColor,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap:
             isJoining
@@ -346,8 +342,6 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     bool isDark,
     double? lineHeight,
   ) {
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final dateRange = PlanDateFormat.formatRangeOrNull(plan.startDate, null);
     final details = [
       if (dateRange != null) dateRange,
@@ -355,7 +349,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     ].join(' · ');
 
     return Material(
-      color: cardColor,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () => _navigateToPlanDetail(practice, plan),
         child: Column(
@@ -429,8 +423,6 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
         practice.groupId?.trim().isNotEmpty == true
             ? practice.groupId!
             : collection.groupId;
-    final cardColor =
-        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final itemCountLabel =
         collection.itemCount > 0
             ? context.l10n.my_recitation_collection_chant_count(
@@ -439,7 +431,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
             : null;
 
     return Material(
-      color: cardColor,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () => _navigateToCollectionDetail(practice, collection),
         child: Column(
@@ -609,9 +601,19 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
       return;
     }
 
-    ref.read(myConnectPracticesProvider.notifier).refresh();
-    ref.read(discoverConnectPracticesProvider.notifier).refresh();
+    _refreshConnectFeeds();
     context.push('/home/series/${series.id}');
+  }
+
+  // Only feeds already on screen; reading a dead autoDispose provider would
+  // create it and fetch for nothing.
+  void _refreshConnectFeeds() {
+    for (final provider in [
+      myUnifiedConnectFeedProvider,
+      discoverUnifiedConnectFeedProvider,
+    ]) {
+      if (ref.exists(provider)) ref.read(provider.notifier).refresh();
+    }
   }
 
   void _navigateToAccumulatorDetail(
@@ -654,8 +656,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     setState(() => _joiningAccumulatorId = null);
 
     if (ok) {
-      ref.read(myConnectPracticesProvider.notifier).refresh();
-      ref.read(discoverConnectPracticesProvider.notifier).refresh();
+      _refreshConnectFeeds();
       _navigateToAccumulatorDetail(accumulator.id, practice);
       return;
     }

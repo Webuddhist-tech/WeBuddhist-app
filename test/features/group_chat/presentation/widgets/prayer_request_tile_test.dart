@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_inte
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_prayer_text.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 
 const _healing = ChatPrayerIntentionDTO(
   slug: 'healing',
@@ -52,6 +53,7 @@ Future<void> _pump(
   VoidCallback? onShowSupporters,
   VoidCallback? onEdit,
   VoidCallback? onDelete,
+  DateTime? now,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -73,6 +75,7 @@ Future<void> _pump(
           onShowSupporters: onShowSupporters,
           onEdit: onEdit,
           onDelete: onDelete,
+          now: now,
         ),
       ),
     ),
@@ -132,6 +135,42 @@ void main() {
     expect(find.text('Show more'), findsOneWidget);
   });
 
+  group('sent time beside the name', () {
+    final sent = DateTime.parse('2026-09-11T10:04:00+00:00').toLocal();
+
+    testWidgets('today shows the clock time', (tester) async {
+      await _pump(tester, count: 0, prayedByMe: false, now: sent);
+      expect(
+        find.text('· ${DateFormat.jm('en').format(sent)}'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('yesterday reads Yesterday', (tester) async {
+      final now = DateTime(sent.year, sent.month, sent.day + 1, 9);
+      await _pump(tester, count: 0, prayedByMe: false, now: now);
+      expect(find.text('· Yesterday'), findsOneWidget);
+    });
+
+    testWidgets('earlier this year shows the date', (tester) async {
+      final now = DateTime(sent.year, sent.month, sent.day + 10, 9);
+      await _pump(tester, count: 0, prayedByMe: false, now: now);
+      expect(
+        find.text('· ${DateFormat.MMMd('en').format(sent)}'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('an earlier year shows the full date', (tester) async {
+      final now = DateTime(sent.year + 1, 1, 2, 9);
+      await _pump(tester, count: 0, prayedByMe: false, now: now);
+      expect(
+        find.text('· ${DateFormat.yMMMd('en').format(sent)}'),
+        findsOneWidget,
+      );
+    });
+  });
+
   testWidgets('nobody praying yet reads Pray with no count', (tester) async {
     await _pump(tester, count: 0, prayedByMe: false);
     expect(find.text('Pray'), findsOneWidget);
@@ -143,7 +182,7 @@ void main() {
   ) async {
     await _pump(tester, count: 3, prayedByMe: false);
     expect(find.text('Pray'), findsOneWidget);
-    expect(find.text('3 people are praying'), findsOneWidget);
+    expect(find.text('3 people prayed'), findsOneWidget);
   });
 
   testWidgets('once I pray the button still reads Pray with my count', (
@@ -153,7 +192,7 @@ void main() {
     expect(find.text('Pray'), findsOneWidget);
     expect(find.text('+3'), findsOneWidget);
     expect(find.text('Praying'), findsNothing);
-    expect(find.text('1 person is praying'), findsOneWidget);
+    expect(find.text('1 person prayed'), findsOneWidget);
   });
 
   testWidgets('a prayer with no count yet shows no badge', (tester) async {
@@ -173,7 +212,7 @@ void main() {
         ChatPrayerUserDTO(userId: 'u4', name: 'Karma'),
       ],
     );
-    expect(find.text('+13 more are praying'), findsOneWidget);
+    expect(find.text('+13 more prayed'), findsOneWidget);
   });
 
   testWidgets('tapping the count on my own request opens the roster', (
@@ -188,7 +227,7 @@ void main() {
       onShowSupporters: () => opened = true,
     );
     expect(find.byIcon(AppAssets.caretRight), findsOneWidget);
-    await tester.tap(find.text('2 people are praying'));
+    await tester.tap(find.text('2 people prayed'));
     expect(opened, isTrue);
   });
 
@@ -202,9 +241,9 @@ void main() {
       prayedByMe: false,
       onShowSupporters: () => opened = true,
     );
-    expect(find.text('2 people are praying'), findsOneWidget);
+    expect(find.text('2 people prayed'), findsOneWidget);
     expect(find.byIcon(AppAssets.caretRight), findsNothing);
-    await tester.tap(find.text('2 people are praying'));
+    await tester.tap(find.text('2 people prayed'));
     expect(opened, isFalse);
   });
 

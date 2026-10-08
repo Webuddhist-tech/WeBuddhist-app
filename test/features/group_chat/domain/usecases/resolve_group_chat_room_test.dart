@@ -95,6 +95,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? messageType,
+    String? sort,
+    String? intention,
   }) async =>
       const Right(ChatMessagesPage(messages: [], skip: 0, limit: 0, total: 0));
 

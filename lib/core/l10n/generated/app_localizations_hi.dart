@@ -204,6 +204,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get mala_group_untitled => 'बिना शीर्षक वाला स्पेस';
 
   @override
+  String get mala_all_time_accumulation => 'मेरा अब तक का कुल संचय';
+
+  @override
+  String get mala_personal_practice => 'व्यक्तिगत अभ्यास';
+
+  @override
+  String get mala_events_section => 'कार्यक्रम';
+
+  @override
+  String mala_my_total(String count) {
+    return 'मेरा कुल: $count';
+  }
+
+  @override
+  String mala_group_total(String count) {
+    return 'समूह का कुल: $count';
+  }
+
+  @override
   String get home_timer => 'टाइमर';
 
   @override
@@ -798,7 +817,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_all_groups => 'सभी स्पेस';
 
   @override
-  String get connect_my_empty_feed_title => 'आपके स्पेस शांत रहे हैं';
+  String get connect_my_empty_feed_title => 'कोई नया अपडेट नहीं';
 
   @override
   String get connect_my_empty_events_title => 'कोई आगामी कार्यक्रम नहीं';
@@ -811,15 +830,15 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_feed_subtitle =>
-      'आपके स्पेस से कुछ नया नहीं है। अन्य आज पोस्ट कर रहे हैं';
+      'आपके स्पेस ने कुछ नया साझा नहीं किया है';
 
   @override
   String get connect_my_empty_events_subtitle =>
-      'अभी आपके स्पेस में कुछ भी निर्धारित नहीं है। अन्य के पास सभी के लिए खुले कार्यक्रम हैं';
+      'आपके स्पेस ने कोई कार्यक्रम तय नहीं किया है';
 
   @override
   String get connect_my_empty_posts_subtitle =>
-      'आपके स्पेस ने कुछ भी पोस्ट नहीं किया है। देखें अन्य क्या साझा कर रहे हैं';
+      'आपके स्पेस ने कुछ भी पोस्ट नहीं किया है';
 
   @override
   String get connect_my_empty_groups_subtitle =>
@@ -840,7 +859,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get connect_my_empty_practices_subtitle =>
-      'आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है। देखें अन्य क्या पेश कर रहे हैं';
+      'आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है';
 
   @override
   String get connect_my_empty_practices_browse => 'अन्य अभ्यास देखें';
@@ -867,7 +886,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'यह टिप्पणी स्थायी रूप से हटा दी जाएगी';
 
   @override
-  String get connect_comment_delete_failed => 'टिप्पणी हटाने में विफल';
+  String get connect_comment_delete_failed => 'टिप्पणी हटाने में असमर्थ';
 
   @override
   String connect_post_comments_count(int count) {
@@ -1212,7 +1231,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get author => 'लेखक';
 
   @override
-  String get plans_created => 'योजना बनाई गई';
+  String get plans_created => 'बनाई गई योजनाएँ';
 
   @override
   String get ai_confirm => 'पुष्टि करें';
@@ -2064,7 +2083,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_member_admin => 'एडमिन';
 
   @override
-  String get group_member_owner => 'Owner';
+  String get group_member_owner => 'स्वामी';
 
   @override
   String group_remove_member(String name) {
@@ -2308,6 +2327,27 @@ class AppLocalizationsHi extends AppLocalizations {
       'उद्धरण शेयर नहीं हो सका। कृपया फिर से प्रयास करें';
 
   @override
+  String verse_comments_title(int count) {
+    return 'Comments · $count';
+  }
+
+  @override
+  String verse_likes_title(int count) {
+    return 'Likes · $count';
+  }
+
+  @override
+  String get verse_like_failed => 'Unable to update like. Please try again';
+
+  @override
+  String get verse_comment_failed => 'Unable to post comment. Please try again';
+
+  @override
+  String verse_comment_replying_to(String name) {
+    return 'Replying to $name';
+  }
+
+  @override
   String get share_app_message =>
       'मैं इस ऐप का उपयोग दैनिक बौद्ध अभ्यास बनाने के लिए कर रहा हूँ, और मुझे लगा कि आपको यह पसंद आएगा।';
 
@@ -2460,13 +2500,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get bookmark_removed => 'बुकमार्क हटाया गया';
 
   @override
-  String get bookmark_remove_failed => 'बुकमार्क हटाने में विफल';
+  String get bookmark_remove_failed => 'बुकमार्क हटाने में असमर्थ';
 
   @override
   String get bookmark_saved => 'बुकमार्क सहेजा गया';
 
   @override
-  String get bookmark_save_failed => 'बुकमार्क सहेजने में विफल';
+  String get bookmark_save_failed => 'बुकमार्क सहेजने में असमर्थ';
 
   @override
   String get bookmarks_yesterday => 'कल';
@@ -2476,7 +2516,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'पेज लोड होने में बहुत समय लगा। कृपया अपना इंटरनेट कनेक्शन जांचें';
 
   @override
-  String get webview_load_failed => 'पेज लोड करने में विफल';
+  String get webview_load_failed => 'पेज लोड करने में असमर्थ';
 
   @override
   String get privacy_policy_load_error =>
@@ -2487,7 +2527,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'सेवा की शर्तें पेज लोड करने में असमर्थ';
 
   @override
-  String get series_enroll_error => 'श्रृंखला में नामांकन विफल';
+  String get series_enroll_error => 'श्रृंखला में नामांकन करने में असमर्थ';
 
   @override
   String series_share_message(String title, String url) {
@@ -2946,6 +2986,23 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_live_go_live => 'लाइव';
 
   @override
+  String get event_replays => 'रिप्ले';
+
+  @override
+  String event_replay_session(String day, String session) {
+    return 'दिन $day · सत्र $session';
+  }
+
+  @override
+  String get event_replay_recording => 'रिकॉर्डिंग';
+
+  @override
+  String get event_replay_back_to_live => 'लाइव पर वापस';
+
+  @override
+  String get event_replays_empty => 'अभी कोई रिकॉर्डिंग नहीं';
+
+  @override
   String get event_puja_starts_in => 'पूजा शुरू होने में';
 
   @override
@@ -2977,6 +3034,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get event_prayer_hint => 'आज हम आपके लिए कैसे प्रार्थना कर सकते हैं?';
+
+  @override
+  String event_prayer_hint_intention(String topics) {
+    return 'Share a prayer about $topics';
+  }
 
   @override
   String get event_prayer_load_failed => 'प्रार्थना अनुरोध लोड नहीं किए जा सके';
@@ -3040,7 +3102,7 @@ class AppLocalizationsHi extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count लोगों ने प्रार्थना की',
-      one: '1 व्यक्ति ने प्रार्थना की',
+      one: '$count व्यक्ति ने प्रार्थना की',
     );
     return '$_temp0';
   }
@@ -3063,6 +3125,33 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get event_prayer_no_supporters =>
       'अभी तक किसी ने प्रार्थना नहीं की है';
+
+  @override
+  String get event_prayer_sort_by => 'Sort by';
+
+  @override
+  String get event_prayer_sort_needs_prayers => 'Needs prayers';
+
+  @override
+  String get event_prayer_sort_most_prayed => 'Most prayed';
+
+  @override
+  String get event_prayer_sort_newest => 'Newest';
+
+  @override
+  String get event_prayer_sort_oldest => 'Oldest';
+
+  @override
+  String get event_prayer_sort_by_intention => 'By intention';
+
+  @override
+  String get event_prayer_clear_intention => 'Clear intention';
+
+  @override
+  String get event_prayer_filter_empty_title => 'No requests match';
+
+  @override
+  String get event_prayer_filter_empty_body => 'Try another sort or intention';
 
   @override
   String get recitation_live_sync => 'सिंक';
@@ -3115,4 +3204,99 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedback_error_unavailable => 'फ़ीडबैक अभी उपलब्ध नहीं है';
+
+  @override
+  String get connect_failed_load_discover_groups_error =>
+      'Unable to load spaces';
+
+  @override
+  String get connect_failed_like_post_error => 'Unable to like post';
+
+  @override
+  String get connect_failed_unlike_post_error => 'Unable to unlike post';
+
+  @override
+  String get connect_failed_like_comment_error => 'Unable to like comment';
+
+  @override
+  String get connect_failed_unlike_comment_error => 'Unable to unlike comment';
+
+  @override
+  String get group_events_load_error =>
+      'Unable to load events. Please try again.';
+
+  @override
+  String get group_events_empty => 'No events yet';
+
+  @override
+  String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
+
+  @override
+  String get chant_collection_reload_error =>
+      'Unable to reload collection to reorder';
+
+  @override
+  String get chant_collection_reorder_error => 'Unable to reorder chants';
+
+  @override
+  String get timer_duration_label => 'DURATION';
+
+  @override
+  String get timer_ambient_sound_label => 'AMBIENT SOUND';
+
+  @override
+  String get timer_begin_session => 'Begin session';
+
+  @override
+  String get timer_save_changes => 'Save changes';
+
+  @override
+  String get timer_new_title => 'New timer';
+
+  @override
+  String get timer_edit_title => 'Edit timer';
+
+  @override
+  String get timer_your_timers => 'Your timers';
+
+  @override
+  String get timer_custom_timer => 'Custom timer';
+
+  @override
+  String get timer_ambient_sounds_title => 'Ambient sounds';
+
+  @override
+  String get timer_ambient_sound_none => 'Default (no sound)';
+
+  @override
+  String get timer_ambient_sounds_load_error => 'Unable to load ambient sounds';
+
+  @override
+  String get timer_volume_label => 'VOLUME';
+
+  @override
+  String get timer_duration_title => 'Duration';
+
+  @override
+  String get timer_edit => 'Edit timer';
+
+  @override
+  String get timer_delete => 'Delete timer';
+
+  @override
+  String get timer_delete_title => 'Delete timer?';
+
+  @override
+  String get timer_delete_message =>
+      'This timer will be removed from your timers.';
+
+  @override
+  String get timer_duration_must_be_greater_than_error =>
+      'Duration must be greater than 0';
+
+  @override
+  String get splash_tagline_1 => 'We Buddhists practice together';
+
+  @override
+  String get splash_tagline_2 => 'We Buddhists practice daily';
 }

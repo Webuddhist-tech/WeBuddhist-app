@@ -22,9 +22,6 @@ class PresetTimersScreen extends ConsumerWidget {
   static const _horizontalPadding = 16.0;
   static const _gridSpacing = 12.0;
   static const _sectionSpacing = 24.0;
-  // TODO(localization): move to l10n once copy is finalized.
-  static const _yourTimersTitle = 'Your timers';
-  static const _customTimerLabel = 'Custom timer';
 
   void _onAddCustomTimer(BuildContext context) {
     context.push('/home/timers/new');
@@ -48,7 +45,7 @@ class PresetTimersScreen extends ConsumerWidget {
       floatingActionButton:
           hasUserCreatedTimers
               ? _CustomTimerFab(
-                label: _customTimerLabel,
+                label: l10n.timer_custom_timer,
                 onPressed: () => _onAddCustomTimer(context),
               )
               : null,
@@ -227,14 +224,14 @@ class _TimersContent extends ConsumerWidget {
       ),
       children: [
         if (yourTimersItemCount > 0) ...[
-          _SectionTitle(title: PresetTimersScreen._yourTimersTitle),
+          _SectionTitle(title: context.l10n.timer_your_timers),
           const SizedBox(height: PresetTimersScreen._gridSpacing),
           _TimersGrid(
             itemCount: yourTimersItemCount,
             itemBuilder: (context, index) {
               if (showAddCard && index == 0) {
                 return CustomTimerCard(
-                  label: PresetTimersScreen._customTimerLabel,
+                  label: context.l10n.timer_custom_timer,
                   onTap: () => context.push('/home/timers/new'),
                 );
               }
@@ -319,7 +316,7 @@ class _TimersContentSkeleton extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.all(PresetTimersScreen._horizontalPadding),
         children: [
-          _SectionTitle(title: PresetTimersScreen._yourTimersTitle),
+          _SectionTitle(title: context.l10n.timer_your_timers),
           const SizedBox(height: PresetTimersScreen._gridSpacing),
           _TimersGrid(
             itemCount: 1,

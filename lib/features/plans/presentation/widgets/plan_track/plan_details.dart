@@ -19,11 +19,14 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_player.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_toggles.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_replays_menu.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/routine_info_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
@@ -36,6 +39,7 @@ import 'package:flutter_pecha/features/plans/data/utils/plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/utils/series_plan_utils.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/event_replays.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/live_tracked_plan_text.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
@@ -97,7 +101,19 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   bool _isSharing = false;
   late String _liveLanguage;
   bool _liveAudioOnly = false;
-  bool _liveStreamSeen = false;
+
+  /// YouTube ids of the streams seen live, by language. They keep the page
+  /// live and stay out of the Replays menu until their own language says
+  /// the link is gone.
+  final Map<String, String> _liveStreams = {};
+
+  /// Recording picked from the Replays menu; null plays the live stream.
+  /// It keeps playing across day changes until another is picked.
+  EventReplay? _replay;
+
+  /// The day's own first session, played once the stream is over. Kept while
+  /// the next day loads so tapping through days does not swap the layout.
+  EventReplay? _autoReplay;
   final _embedded = PlanEmbeddedController();
   Timer? _dayViewedTimer;
   bool _didOpenLiveText = false;
@@ -147,6 +163,16 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   int get _todayDayNumber =>
       PlanUtils.daysBetween(widget.startDate, DateTime.now()) + 1;
 
+  /// Whether the selected day's sessions can already have happened: any
+  /// past day, or today once the event's start has passed (or is unknown).
+  bool get _dayHasBegun {
+    final today = _todayDayNumber;
+    if (selectedDay < today) return true;
+    if (selectedDay > today) return false;
+    final start = _liveEvent()?.startDate;
+    return start == null || !DateTime.now().isBefore(start);
+  }
+
   /// The loaded completion status, or null while it is still loading.
   Map<int, bool>? _completionStatus() =>
       ref
@@ -155,6 +181,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           ?.fold((_) => null, (status) => status);
 
   void _selectDay(int day) {
+    // A picked recording keeps playing; changing day only changes the menu.
     setState(() => selectedDay = day);
     _scheduleDayViewed();
   }
@@ -196,6 +223,23 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
     _listenForDayCompletion();
     final live = _liveStatus();
+    // Until the event has loaded, nothing says which of today's videos is
+    // the live stream, so the menu waits rather than offer it as a replay.
+    // A failed request offers Retry instead.
+    final dayReplays =
+        _knowsStream(live) ? _dayReplays() : const <EventReplay>[];
+    final replays = dayReplays ?? const <EventReplay>[];
+    // Live wins while it is on; a recording is then opt-in from the menu.
+    // Once the stream is gone, a past day plays its own first session, and
+    // so does today after the event has begun. Before it begins the
+    // countdown keeps the slot; recordings wait in the menu.
+    if (live != _LiveStatus.none) {
+      _autoReplay = null;
+    } else if (dayReplays != null) {
+      _autoReplay =
+          dayReplays.isNotEmpty && _dayHasBegun ? dayReplays.first : null;
+    }
+    final replay = _replay ?? _autoReplay;
     // Only the live layout hosts the embedded panel, so a task opened
     // while the stream was still loading stays put even if the request
     // then fails or finds no stream; the plain layout takes over once the
@@ -203,7 +247,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     final usesLiveBody =
         _embedded.isOpen ||
         live == _LiveStatus.loading ||
-        live == _LiveStatus.live;
+        live == _LiveStatus.live ||
+        replay != null;
 
     return PopScope(
       canPop: !_embedded.isOpen,
@@ -215,10 +260,23 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         appBar:
             usesLiveBody
                 ? null
-                : _buildAppBar(context, language, localizations, live: live),
+                : _buildAppBar(
+                  context,
+                  language,
+                  localizations,
+                  live: live,
+                  replays: replays,
+                  replay: replay,
+                ),
         body:
             usesLiveBody
-                ? _buildLiveEventBody(language, localizations, live: live)
+                ? _buildLiveEventBody(
+                  language,
+                  localizations,
+                  live: live,
+                  replays: replays,
+                  replay: replay,
+                )
                 : _buildPlanBody(
                   language,
                   localizations,
@@ -236,32 +294,97 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
 
   bool get _hasEventHeader => widget.eventId != null && widget.showLiveStream;
 
-  /// Sticky once a stream was seen, so a language without one keeps the
-  /// toggles reachable. A failed request is `failed`, never `none`, so a
-  /// network blip cannot hide an active stream.
+  /// Whether the live stream, if any, is known, so it can be told apart
+  /// from the day's recordings.
+  bool _knowsStream(_LiveStatus live) =>
+      live != _LiveStatus.loading && live != _LiveStatus.failed;
+
+  /// Sticky per language once a stream was seen, so a language without one
+  /// keeps the toggles reachable. A failed request is `failed`, never
+  /// `none`, so a network blip cannot hide an active stream. Only a
+  /// successful answer with no stream, in a language that had one, lets
+  /// the page leave the live state: that stream really is over. The link
+  /// stays on the event after it ends, so an event already over when the
+  /// page opens has no live stream; its link is one of the recordings.
   _LiveStatus _liveStatus() {
     if (!_hasEventHeader) return _LiveStatus.none;
     final eventAsync = ref.watch(groupEventInLanguageProvider(_liveKey));
     final either = eventAsync.valueOrNull;
     if (either == null) {
-      if (_liveStreamSeen) return _LiveStatus.live;
+      if (_liveStreams.isNotEmpty) return _LiveStatus.live;
       return eventAsync.hasError ? _LiveStatus.failed : _LiveStatus.loading;
     }
     final status = either.fold(
       (failure) =>
           failure is NotFoundFailure ? _LiveStatus.none : _LiveStatus.failed,
-      (event) =>
-          GroupEventLiveUtils.videoIdOf(event) != null
-              ? _LiveStatus.live
-              : _LiveStatus.none,
+      (event) {
+        final videoId = GroupEventLiveUtils.videoIdOf(event);
+        if (videoId == null) return _LiveStatus.none;
+        // One seen live earlier in this visit keeps playing past the end
+        // rather than restarting as a replay mid-session.
+        if (_liveStreams.isEmpty &&
+            GroupEventLiveUtils.hasEnded(event, DateTime.now())) {
+          return _LiveStatus.none;
+        }
+        _liveStreams[_liveLanguage] = videoId;
+        return _LiveStatus.live;
+      },
     );
-    if (status == _LiveStatus.live) _liveStreamSeen = true;
-    return _liveStreamSeen ? _LiveStatus.live : status;
+    if (status == _LiveStatus.none) _liveStreams.remove(_liveLanguage);
+    return _liveStreams.isNotEmpty ? _LiveStatus.live : status;
   }
 
   void _retryLiveEvent() {
     ref.invalidate(groupEventInLanguageProvider(_liveKey));
   }
+
+  /// The event as last fetched in the stream language, or null. Watched
+  /// from build; [listen] false reads it once from a tap handler.
+  GroupEvent? _liveEvent({bool listen = true}) {
+    final provider = groupEventInLanguageProvider(_liveKey);
+    final async = listen ? ref.watch(provider) : ref.read(provider);
+    return async.valueOrNull?.fold((_) => null, (event) => event);
+  }
+
+  /// The selected day's recordings (issue #869 copies the event's YouTube
+  /// links onto the day), minus the streams that are live right now. Null
+  /// while the day is still loading.
+  List<EventReplay>? _dayReplays() {
+    if (!_hasEventHeader) return const [];
+    final day =
+        ref
+            .watch(
+              userPlanDayContentFutureProvider(
+                PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),
+              ),
+            )
+            .valueOrNull;
+    if (day == null) return null;
+    final videos = day.fold((_) => null, (content) => content.videos);
+    if (videos == null || videos.isEmpty) return const [];
+    return EventReplays.of(
+      videos,
+      dayNumber: selectedDay,
+      excludeVideoIds: _liveStreams.values,
+    );
+  }
+
+  void _openReplay(EventReplay replay) {
+    setState(() => _replay = replay);
+    final eventId = widget.eventId;
+    if (eventId == null) return;
+    ref
+        .read(groupEventAnalyticsProvider)
+        .eventReplayOpened(
+          eventId: eventId,
+          groupId: _liveEvent(listen: false)?.groupId ?? '',
+          dayNumber: replay.dayNumber,
+          session: replay.session,
+          videoId: replay.videoId,
+        );
+  }
+
+  void _backToLive() => setState(() => _replay = null);
 
   Widget _buildPlanBody(
     String language,
@@ -275,7 +398,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(),
+                _buildHeader(null, showsStream: false),
                 if (retryLive != null) _buildLiveEventError(retryLive),
                 // Room under the edge-to-edge event header.
                 if (widget.eventId != null) const SizedBox(height: 12),
@@ -295,6 +418,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     String language,
     AppLocalizations localizations, {
     required _LiveStatus live,
+    required List<EventReplay> replays,
+    required EventReplay? replay,
   }) {
     return PlanEmbeddedScope(
       controller: _embedded,
@@ -314,11 +439,19 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     language,
                     localizations,
                     live: live,
+                    replays: replays,
+                    replay: replay,
                     primary: false,
                   ),
-                  _buildHeader(),
+                  _buildHeader(replay, showsStream: live != _LiveStatus.none),
                   // An open task carries prayer requests in its own header.
-                  if (!_embedded.isOpen) _buildPrayerRequestsButton(),
+                  if (!_embedded.isOpen)
+                    _buildUnderStreamRow(
+                      // Only a picked recording can go back; with no stream
+                      // the day's own session plays and there is no "live".
+                      showBackToLive:
+                          _replay != null && live == _LiveStatus.live,
+                    ),
                 ],
               ),
             ),
@@ -450,12 +583,19 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     String language,
     AppLocalizations localizations, {
     required _LiveStatus live,
+    required List<EventReplay> replays,
+    required EventReplay? replay,
     bool primary = true,
   }) {
     final isLiveEvent = live == _LiveStatus.live;
     final isEvent = widget.eventId != null;
+    // A playing recording keeps the video / audio switch without a stream.
+    final showsPlayer = isLiveEvent || replay != null;
     return AppBar(
       primary: primary,
+      // The Replays menu sits where a title would, flush with the arrow.
+      centerTitle: isEvent ? false : null,
+      titleSpacing: isEvent ? 0 : null,
       leading: IconButton(
         icon: const Icon(AppAssets.arrowLeft),
         onPressed: () {
@@ -469,15 +609,24 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           }
         },
       ),
-      // An event page shows no plan title; the header names the event.
+      // An event page shows no plan title; the header names the event. The
+      // online attendee gets the day's Replays menu in its place, once the
+      // stream has loaded and can be told apart from the recordings.
       title:
-          isEvent
-              ? null
-              : Text(widget.plan.title, style: TextStyle(fontSize: 20)),
+          !isEvent
+              ? Text(widget.plan.title, style: TextStyle(fontSize: 20))
+              : _hasEventHeader && _knowsStream(live)
+              ? GroupEventReplaysMenu(
+                replays: replays,
+                selected: replay,
+                onSelected: _openReplay,
+              )
+              : null,
       // The live toggles fill the bar, so the live layout keeps prayer
-      // requests under the stream instead.
+      // requests under the stream instead. Replays come from this plan's
+      // language only, so the language switch stays with the stream.
       actions:
-          isLiveEvent
+          showsPlayer
               ? [
                 GroupEventMediaToggle(
                   audioOnly: _audioOnly,
@@ -485,12 +634,15 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                       (audioOnly) =>
                           setState(() => _liveAudioOnly = audioOnly),
                 ),
-                const SizedBox(width: 8),
-                GroupEventLanguageToggle(
-                  language: _liveLanguage,
-                  onChanged:
-                      (language) => setState(() => _liveLanguage = language),
-                ),
+                if (isLiveEvent) ...[
+                  const SizedBox(width: 8),
+                  GroupEventLanguageToggle(
+                    language: _liveLanguage,
+                    onChanged:
+                        (language) =>
+                            setState(() => _liveLanguage = language),
+                  ),
+                ],
                 const SizedBox(width: 12),
               ]
               : isEvent
@@ -503,7 +655,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
-  Widget _buildHeader() {
+  /// [showsStream] false keeps an ended event's leftover link from playing
+  /// as live: the page has no stream then, only recordings.
+  Widget _buildHeader(EventReplay? replay, {bool showsStream = true}) {
     if (widget.eventId == null) {
       return PlanCoverImage(image: widget.plan.coverImage);
     }
@@ -520,9 +674,49 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       language: _liveLanguage,
       audioOnly: _audioOnly,
       fallbackTitle: widget.plan.title,
+      showsStream: showsStream,
+      replay:
+          replay == null
+              ? null
+              : GroupEventReplay(
+                videoId: replay.videoId,
+                title: EventReplays.label(
+                  context.l10n,
+                  Localizations.localeOf(context).languageCode,
+                  replay,
+                ),
+              ),
       notStartedBackground: ResponsiveCoverImage(
         image: widget.plan.coverImage,
         fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  /// One row under the player: prayer requests always flush with the right
+  /// margin; the left holds the "Back to live" pill while a picked
+  /// recording plays over a live stream, and is empty otherwise. The chip
+  /// scales down rather than overflowing when a long label meets a narrow
+  /// phone. Nothing at all until the event says its chat is on.
+  Widget _buildUnderStreamRow({required bool showBackToLive}) {
+    final hasChip = _liveEvent()?.chatEnabled ?? false;
+    if (!hasChip && !showBackToLive) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          if (showBackToLive) ...[
+            GroupEventBackToLivePill(onTap: _backToLive),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerEnd,
+              child: _buildPrayerRequestsButton(padding: EdgeInsets.zero),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -706,7 +900,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                   return ActivityList(
                     language: language,
                     tasks: tasks,
-                    videos: dayContent.videos,
+                    // The online attendee's recordings live in the Replays
+                    // menu above, not in the shorts carousel.
+                    videos: _hasEventHeader ? const [] : dayContent.videos,
                     today: selectedDay,
                     totalDays: tasks.length,
                     planId: widget.plan.id,

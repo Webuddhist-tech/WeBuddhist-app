@@ -462,6 +462,7 @@ class _CreateEditCollectionScreenState
         _showSubmitFailure(
           'Failed to reload collection to reorder',
           detailFailure,
+          message: context.l10n.chant_collection_reload_error,
         );
         return;
       }
@@ -470,6 +471,7 @@ class _CreateEditCollectionScreenState
         _showSubmitFailure(
           'Failed to reorder chants',
           const ServerFailure('A chant has no server item id or display_order'),
+          message: context.l10n.chant_collection_reorder_error,
         );
         return;
       }
@@ -548,12 +550,16 @@ class _CreateEditCollectionScreenState
       result.fold((failure) => failure, (_) => null);
 
   /// Logs the detail, re-enables the form, and shows a translated message.
-  void _showSubmitFailure(String logContext, Failure failure) {
+  void _showSubmitFailure(
+    String logContext,
+    Failure failure, {
+    String? message,
+  }) {
     _logger.error('$logContext: ${failure.message}');
     setState(() => _isSubmitting = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(context.l10n.something_went_wrong),
+        content: Text(message ?? context.l10n.something_went_wrong),
         behavior: SnackBarBehavior.floating,
       ),
     );

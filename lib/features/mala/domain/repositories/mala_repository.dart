@@ -37,9 +37,11 @@ abstract class MalaRepository {
 
   /// Joined group accumulators for a preset
   /// (`GET /accumulators/{accumulator_id}/groups?joined_only=true`).
+  /// [language] localizes each row's group name and event title.
   Future<Either<Failure, List<AccumulatorGroup>>> getJoinedAccumulatorGroups(
-    String accumulatorId,
-  );
+    String accumulatorId, {
+    String? language,
+  });
 
   /// Submit the user's absolute count for a group accumulator
   /// (`POST /group-accumulators/{group_accumulator_id}`, body

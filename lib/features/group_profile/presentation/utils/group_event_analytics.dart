@@ -56,6 +56,24 @@ class GroupEventAnalytics {
     });
   }
 
+  /// An online attendee picked a recording of [dayNumber] from the Replays
+  /// menu; [session] is its position among that day's recordings.
+  void eventReplayOpened({
+    required String eventId,
+    required String groupId,
+    required int dayNumber,
+    required int session,
+    required String videoId,
+  }) {
+    _analytics.trackInBackground(AnalyticsEvents.groupEventReplayOpened, {
+      AnalyticsProperties.eventId: eventId,
+      AnalyticsProperties.groupId: groupId,
+      AnalyticsProperties.dayNumber: dayNumber,
+      AnalyticsProperties.session: session,
+      AnalyticsProperties.videoId: videoId,
+    });
+  }
+
   void accumulatorViewed({
     required String groupId,
     required String accumulatorId,

@@ -78,6 +78,24 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
 
   void _onBodyChanged() => setState(() {});
 
+  /// A request being edited carries its intention without the catalog's
+  /// description, so prefer the catalog's copy of the same slug.
+  ChatPrayerIntentionDTO? get _selectedIntention {
+    final slug = _intention?.slug;
+    final items = ref.watch(prayerIntentionsProvider).valueOrNull ?? const [];
+    return items.where((item) => item.slug == slug).firstOrNull ?? _intention;
+  }
+
+  String _bodyHint(BuildContext context) {
+    final selected = _selectedIntention;
+    if (selected == null || selected.description.isEmpty) {
+      return context.l10n.event_prayer_hint;
+    }
+    return context.l10n.event_prayer_hint_intention(
+      selected.localizedDescription(context),
+    );
+  }
+
   bool get _canSend =>
       !_sending &&
       _intention != null &&
@@ -254,7 +272,7 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
         textCapitalization: TextCapitalization.sentences,
         style: TextStyle(fontSize: 15, height: 1.4, color: textColor),
         decoration: InputDecoration(
-          hintText: context.l10n.event_prayer_hint,
+          hintText: _bodyHint(context),
           hintStyle: TextStyle(fontSize: 15, height: 1.4, color: hintColor),
           isDense: true,
           filled: false,
@@ -326,52 +344,36 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     bool isDark,
     List<ChatPrayerIntentionDTO> items,
   ) {
-    // A request being edited carries its intention without the catalog's
-    // description, so prefer the catalog's copy of the same slug.
     final selectedSlug = _intention?.slug;
-    final selected =
-        items.where((item) => item.slug == selectedSlug).firstOrNull ??
-        _intention;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Five share the row as in the design; a larger catalog wraps
-        // rather than squeezing every circle thinner.
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final perRow = math.min(
-              items.length,
-              NewPrayerRequestSheet._choicesPerRow,
-            );
-            final width = math.max(
-              NewPrayerRequestSheet._minChoiceWidth,
-              constraints.maxWidth / math.max(perRow, 1),
-            );
-            return Wrap(
-              runSpacing: 8,
-              children: [
-                for (final item in items)
-                  SizedBox(
-                    width: width,
-                    child: _IntentionChoice(
-                      intention: item,
-                      selected: item.slug == selected?.slug,
-                      isDark: isDark,
-                      onTap:
-                          _sending
-                              ? null
-                              : () => setState(() => _intention = item),
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-        if (selected != null) ...[
-          const SizedBox(height: 16),
-          _IntentionDescription(intention: selected, isDark: isDark),
-        ],
-      ],
+    // Five share the row as in the design; a larger catalog wraps
+    // rather than squeezing every circle thinner.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final perRow = math.min(
+          items.length,
+          NewPrayerRequestSheet._choicesPerRow,
+        );
+        final width = math.max(
+          NewPrayerRequestSheet._minChoiceWidth,
+          constraints.maxWidth / math.max(perRow, 1),
+        );
+        return Wrap(
+          runSpacing: 8,
+          children: [
+            for (final item in items)
+              SizedBox(
+                width: width,
+                child: _IntentionChoice(
+                  intention: item,
+                  selected: item.slug == selectedSlug,
+                  isDark: isDark,
+                  onTap:
+                      _sending ? null : () => setState(() => _intention = item),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -503,52 +505,6 @@ class _IntentionChoice extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _IntentionDescription extends StatelessWidget {
-  const _IntentionDescription({required this.intention, required this.isDark});
-
-  final ChatPrayerIntentionDTO intention;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = prayerIntentionColor(intention, isDark);
-    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: prayerIntentionBorderColor(intention, isDark),
-        ),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            intention.localizedLabel(context),
-            strutStyle: context.tibetanStrutStyle(13, compact: true),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: prayerAccentTextColor(accent, isDark),
-            ),
-          ),
-          if (intention.description.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              intention.localizedDescription(context),
-              strutStyle: context.tibetanStrutStyle(12),
-              style: TextStyle(fontSize: 12, height: 1.4, color: muted),
-            ),
-          ],
-        ],
       ),
     );
   }

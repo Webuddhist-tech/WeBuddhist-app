@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_message_time.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_thread_rows.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_prayer_text.dart';
+import 'package:intl/intl.dart';
 
 /// One prayer request as a card tinted by its intention: who asked, what
 /// for, how many are praying, and a pray button for everyone but the requester.
@@ -24,11 +29,15 @@ class PrayerRequestTile extends StatelessWidget {
     this.onShowSupporters,
     this.onEdit,
     this.onDelete,
+    this.now,
   });
 
   final ChatMessageDTO request;
   final String displayName;
   final String? avatarUrl;
+
+  /// Injectable for tests; defaults to the wall clock.
+  final DateTime? now;
 
   /// The viewer's own request: named "You", no pray button, roster opens.
   final bool isOwn;
@@ -51,6 +60,7 @@ class PrayerRequestTile extends StatelessWidget {
     final accent = prayerIntentionColor(intention, isDark);
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final name = isOwn ? context.l10n.event_prayer_you : displayName;
 
     return Padding(
@@ -78,16 +88,35 @@ class PrayerRequestTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    strutStyle: context.tibetanStrutStyle(13, compact: true),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                    ),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          strutStyle: context.tibetanStrutStyle(
+                            13,
+                            compact: true,
+                          ),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '· ${_sentLabel(context)}',
+                        maxLines: 1,
+                        strutStyle: context.tibetanStrutStyle(
+                          11,
+                          compact: true,
+                        ),
+                        style: TextStyle(fontSize: 11, color: muted),
+                      ),
+                    ],
                   ),
                 ),
                 if (onEdit != null || onDelete != null)
@@ -127,6 +156,23 @@ class PrayerRequestTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// When it was sent: a clock time today, *Yesterday*, or a date beyond that.
+  String _sentLabel(BuildContext context) {
+    final at = request.createdAtLocal;
+    final kind = chatDateLabelKind(at, now ?? DateTime.now());
+    if (kind == ChatDateLabelKind.yesterday) {
+      return context.l10n.group_chat_yesterday;
+    }
+    final locale = intlFormatLocaleOf(context);
+    final pattern = switch (kind) {
+      ChatDateLabelKind.today => DateFormat.jm(locale),
+      ChatDateLabelKind.thisYear => DateFormat.MMMd(locale),
+      _ => DateFormat.yMMMd(locale),
+    };
+    final formatted = pattern.format(at);
+    return context.isTibetanLocale ? toTibetanDigits(formatted) : formatted;
   }
 
   Widget _buildFooter(
