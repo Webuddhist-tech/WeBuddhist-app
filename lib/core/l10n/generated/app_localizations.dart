@@ -1774,30 +1774,6 @@ abstract class AppLocalizations {
   /// **'Space'**
   String get connect_group_fallback_title;
 
-  /// No description provided for @connect_event_attend.
-  ///
-  /// In en, this message translates to:
-  /// **'Attend'**
-  String get connect_event_attend;
-
-  /// No description provided for @connect_event_attending.
-  ///
-  /// In en, this message translates to:
-  /// **'Attending'**
-  String get connect_event_attending;
-
-  /// No description provided for @connect_event_join_in_person.
-  ///
-  /// In en, this message translates to:
-  /// **'Join in person'**
-  String get connect_event_join_in_person;
-
-  /// No description provided for @connect_event_join_online.
-  ///
-  /// In en, this message translates to:
-  /// **'Join online'**
-  String get connect_event_join_online;
-
   /// No description provided for @connect_event_enter.
   ///
   /// In en, this message translates to:
@@ -1810,17 +1786,53 @@ abstract class AppLocalizations {
   /// **'How are you attending?'**
   String get connect_event_participation_prompt;
 
-  /// No description provided for @connect_event_joining_in_person.
+  /// No description provided for @connect_event_practice_in_person.
   ///
   /// In en, this message translates to:
-  /// **'Joining in person'**
-  String get connect_event_joining_in_person;
+  /// **'Practice in-person'**
+  String get connect_event_practice_in_person;
 
-  /// No description provided for @connect_event_joining_online.
+  /// No description provided for @connect_event_practice_online.
   ///
   /// In en, this message translates to:
-  /// **'Joining online'**
-  String get connect_event_joining_online;
+  /// **'Practice online'**
+  String get connect_event_practice_online;
+
+  /// No description provided for @connect_event_view_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'In-person view'**
+  String get connect_event_view_in_person;
+
+  /// No description provided for @connect_event_view_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online view'**
+  String get connect_event_view_online;
+
+  /// No description provided for @connect_event_join_to_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the event to practice'**
+  String get connect_event_join_to_practice;
+
+  /// No description provided for @connect_event_leave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave event'**
+  String get connect_event_leave;
+
+  /// No description provided for @connect_event_leave_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this event?'**
+  String get connect_event_leave_confirm_title;
+
+  /// No description provided for @connect_event_leave_confirm_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll no longer be attending {title}. You can still view the event and attend again anytime.'**
+  String connect_event_leave_confirm_message(String title);
 
   /// No description provided for @connect_event_participants_attending.
   ///

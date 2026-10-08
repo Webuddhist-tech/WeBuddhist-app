@@ -590,6 +590,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final showLiveStream = extra?['showLiveStream'] as bool? ?? true;
           final liveTextId = extra?['liveTextId'] as String?;
           final liveSegmentId = extra?['liveSegmentId'] as String?;
+          final readOnly = extra?['readOnly'] as bool? ?? false;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -602,6 +603,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             showLiveStream: showLiveStream,
             liveTextId: liveTextId,
             liveSegmentId: liveSegmentId,
+            readOnly: readOnly,
           );
         },
       ),
@@ -617,6 +619,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final showLiveStream = extra?['showLiveStream'] as bool? ?? false;
           final liveTextId = extra?['liveTextId'] as String?;
           final liveSegmentId = extra?['liveSegmentId'] as String?;
+          final readOnly = extra?['readOnly'] as bool? ?? false;
           if (plan == null) {
             throw Exception('Missing required parameters');
           }
@@ -628,6 +631,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             showLiveStream: showLiveStream,
             liveTextId: liveTextId,
             liveSegmentId: liveSegmentId,
+            readOnly: readOnly,
           );
         },
       ),

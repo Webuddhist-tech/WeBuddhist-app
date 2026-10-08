@@ -955,18 +955,6 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_group_fallback_title => 'ཚོགས་པ།';
 
   @override
-  String get connect_event_attend => 'ཞུགས།';
-
-  @override
-  String get connect_event_attending => 'ཞུགས་ཟིན།';
-
-  @override
-  String get connect_event_join_in_person => 'མཉམ་ཞུགས།';
-
-  @override
-  String get connect_event_join_online => 'དྲ་ཐོག་མཉམ་ཞུགས།';
-
-  @override
   String get connect_event_enter => 'འཇུག';
 
   @override
@@ -974,10 +962,31 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཁྱེད་རང་ཇི་ལྟར་ཞུགས་ཀྱི་ཡིན་ནམ།';
 
   @override
-  String get connect_event_joining_in_person => 'ངོ་བཅར་ཞུ་བ།';
+  String get connect_event_practice_in_person => 'ངོ་བཅར་ཉམས་ལེན།';
 
   @override
-  String get connect_event_joining_online => 'དྲ་ཐོག་མཉམ་ཞུགས་བྱེད་བཞིན་པ།';
+  String get connect_event_practice_online => 'དྲ་ཐོག་ཉམས་ལེན།';
+
+  @override
+  String get connect_event_view_in_person => 'ངོ་བཅར་ལ་ལྟ།';
+
+  @override
+  String get connect_event_view_online => 'དྲ་ཐོག་ལ་ལྟ།';
+
+  @override
+  String get connect_event_join_to_practice => 'ཉམས་ལེན་ཆེད་བྱེད་སྒོར་ཞུགས།';
+
+  @override
+  String get connect_event_leave => 'བྱེད་སྒོ་ནས་ཕྱིར་ཐོན།';
+
+  @override
+  String get connect_event_leave_confirm_title =>
+      'བྱེད་སྒོ་འདི་ནས་ཕྱིར་ཐོན་ནམ།';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'ཁྱེད་ཀྱིས་$titleལ་མཉམ་ཞུགས་མི་བྱེད། བྱེད་སྒོ་ལ་ད་དུང་ལྟ་ཐུབ་ལ་དུས་ནམ་ཡིན་ཡང་བསྐྱར་དུ་ཞུགས་ཆོག';
+  }
 
   @override
   String connect_event_participants_attending(int count) {

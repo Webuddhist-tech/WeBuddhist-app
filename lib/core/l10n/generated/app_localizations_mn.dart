@@ -952,18 +952,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_group_fallback_title => 'Орон зай';
 
   @override
-  String get connect_event_attend => 'Оролцох';
-
-  @override
-  String get connect_event_attending => 'Оролцож байна';
-
-  @override
-  String get connect_event_join_in_person => 'Биечлэн оролцох';
-
-  @override
-  String get connect_event_join_online => 'Онлайнаар нэгдэх';
-
-  @override
   String get connect_event_enter => 'Орох';
 
   @override
@@ -971,10 +959,32 @@ class AppLocalizationsMn extends AppLocalizations {
       'Та хэрхэн оролцож байна вэ?';
 
   @override
-  String get connect_event_joining_in_person => 'Биечлэн оролцож байна';
+  String get connect_event_practice_in_person => 'Биечлэн дадлага хийх';
 
   @override
-  String get connect_event_joining_online => 'Онлайнаар нэгдэж байна';
+  String get connect_event_practice_online => 'Онлайнаар дадлага хийх';
+
+  @override
+  String get connect_event_view_in_person => 'Биечлэн харах';
+
+  @override
+  String get connect_event_view_online => 'Онлайнаар харах';
+
+  @override
+  String get connect_event_join_to_practice =>
+      'Дадлага хийхийн тулд арга хэмжээнд нэгдэнэ үү';
+
+  @override
+  String get connect_event_leave => 'Арга хэмжээнээс гарах';
+
+  @override
+  String get connect_event_leave_confirm_title =>
+      'Энэ арга хэмжээнээс гарах уу?';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'Та $title-д цаашид оролцохгүй. Та арга хэмжээг үзэх боломжтой хэвээр байх бөгөөд хүссэн үедээ дахин оролцож болно.';
+  }
 
   @override
   String connect_event_participants_attending(int count) {

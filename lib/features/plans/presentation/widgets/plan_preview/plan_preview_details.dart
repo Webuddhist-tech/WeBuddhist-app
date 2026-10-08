@@ -43,6 +43,7 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
     this.showLiveStream = false,
     this.liveTextId,
     this.liveSegmentId,
+    this.readOnly = false,
   });
 
   final Plan plan;
@@ -64,6 +65,10 @@ class PlanPreviewDetails extends ConsumerStatefulWidget {
   /// a default from the plan start date. Used by deep links so the recipient
   /// lands on the same day that was shared.
   final int? initialDay;
+
+  /// An event explored before joining: no "Add to Routine", and group
+  /// accumulation tasks wait for the join instead of opening the counter.
+  final bool readOnly;
 
   @override
   ConsumerState<PlanPreviewDetails> createState() => _PlanPreviewDetailsState();
@@ -181,7 +186,7 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
               ),
             ),
           ),
-          if (!alreadyInRoutine && !isFuturePlan)
+          if (!widget.readOnly && !alreadyInRoutine && !isFuturePlan)
             _buildBottomButton(context, isGuest),
         ],
       ),
@@ -311,6 +316,8 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
                     dayAudioUrl: content.audioUrl,
                     eventId: widget.eventId,
                     isOnlineAttendee: widget.showLiveStream,
+                    onPracticeLocked:
+                        widget.readOnly ? _showPracticeLocked : null,
                   );
                 },
               );
@@ -389,6 +396,12 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
           fontFamily: "Inter",
         ),
       ),
+    );
+  }
+
+  void _showPracticeLocked() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.connect_event_join_to_practice)),
     );
   }
 

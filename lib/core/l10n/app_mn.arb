@@ -993,8 +993,6 @@
   "connect_open": "Нээх",
   "connect_event_fallback_title": "Арга хэмжээ",
   "connect_group_fallback_title": "Орон зай",
-  "connect_event_attend": "Оролцох",
-  "connect_event_attending": "Оролцож байна",
   "connect_event_participants_attending": "{count} оролцогч",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -1163,12 +1161,23 @@
   "feedback_error_too_large": "Зургууд хэт том байна. Нэгийг хасаад дахин оролдоно уу",
   "feedback_error_failed": "Санал хүсэлтийг илгээж чадсангүй. Дахин оролдоно уу",
   "feedback_error_unavailable": "Санал хүсэлт одоогоор боломжгүй байна",
-  "connect_event_join_in_person": "Биечлэн оролцох",
-  "connect_event_join_online": "Онлайнаар нэгдэх",
   "connect_event_enter": "Орох",
   "connect_event_participation_prompt": "Та хэрхэн оролцож байна вэ?",
-  "connect_event_joining_in_person": "Биечлэн оролцож байна",
-  "connect_event_joining_online": "Онлайнаар нэгдэж байна",
+  "connect_event_practice_in_person": "Биечлэн дадлага хийх",
+  "connect_event_practice_online": "Онлайнаар дадлага хийх",
+  "connect_event_view_in_person": "Биечлэн харах",
+  "connect_event_view_online": "Онлайнаар харах",
+  "connect_event_join_to_practice": "Дадлага хийхийн тулд арга хэмжээнд нэгдэнэ үү",
+  "connect_event_leave": "Арга хэмжээнээс гарах",
+  "connect_event_leave_confirm_title": "Энэ арга хэмжээнээс гарах уу?",
+  "connect_event_leave_confirm_message": "Та {title}-д цаашид оролцохгүй. Та арга хэмжээг үзэх боломжтой хэвээр байх бөгөөд хүссэн үедээ дахин оролцож болно.",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "connect_event_when": "Хэзээ",
   "connect_event_where": "Хаана",
   "connect_event_practices": "Үйл явдлын дадлагууд",

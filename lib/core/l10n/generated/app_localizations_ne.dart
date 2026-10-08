@@ -960,18 +960,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_group_fallback_title => 'स्पेस';
 
   @override
-  String get connect_event_attend => 'सहभागी हुनुहोस्';
-
-  @override
-  String get connect_event_attending => 'सहभागी';
-
-  @override
-  String get connect_event_join_in_person => 'प्रत्यक्ष रूपमा सहभागी हुनुहोस्';
-
-  @override
-  String get connect_event_join_online => 'अनलाइन सहभागी हुनुहोस्';
-
-  @override
   String get connect_event_enter => 'प्रवेश गर्नुहोस्';
 
   @override
@@ -979,10 +967,32 @@ class AppLocalizationsNe extends AppLocalizations {
       'तपाईं कसरी सहभागी हुँदै हुनुहुन्छ?';
 
   @override
-  String get connect_event_joining_in_person => 'प्रत्यक्ष रूपमा सहभागी हुँदै';
+  String get connect_event_practice_in_person =>
+      'प्रत्यक्ष रूपमा अभ्यास गर्नुहोस्';
 
   @override
-  String get connect_event_joining_online => 'अनलाइन सहभागी हुँदै';
+  String get connect_event_practice_online => 'अनलाइन अभ्यास गर्नुहोस्';
+
+  @override
+  String get connect_event_view_in_person => 'प्रत्यक्ष दृश्य';
+
+  @override
+  String get connect_event_view_online => 'अनलाइन दृश्य';
+
+  @override
+  String get connect_event_join_to_practice =>
+      'अभ्यास गर्न कार्यक्रममा सहभागी हुनुहोस्';
+
+  @override
+  String get connect_event_leave => 'कार्यक्रम छोड्नुहोस्';
+
+  @override
+  String get connect_event_leave_confirm_title => 'यो कार्यक्रम छोड्ने?';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'तपाईं अब $title मा सहभागी हुनुहुने छैन। तपाईं अझै कार्यक्रम हेर्न र जुनसुकै बेला फेरि सहभागी हुन सक्नुहुन्छ।';
+  }
 
   @override
   String connect_event_participants_attending(int count) {

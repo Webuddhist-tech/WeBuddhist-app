@@ -23,6 +23,7 @@ import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/plans/presentation/screens/plan_text_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_cover_image.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_track/activity_list.dart';
@@ -123,6 +124,8 @@ PlanVideoModel _video(String id, String videoId, int order) => PlanVideoModel(
 
 UserPlanDayDetailResponse _makeDay({
   List<PlanVideoModel> videos = const [],
+  bool taskCompleted = false,
+  bool withAccumulationTask = false,
 }) => UserPlanDayDetailResponse(
   id: 'day-1',
   dayNumber: 1,
@@ -133,16 +136,33 @@ UserPlanDayDetailResponse _makeDay({
       title: 'Tara of the day',
       estimatedTime: null,
       displayOrder: 1,
-      isCompleted: false,
+      isCompleted: taskCompleted,
       subTasks: [
         UserSubtasksDto(
           id: 'sub-1',
-          isCompleted: false,
+          isCompleted: taskCompleted,
           contentType: 'TEXT',
           content: 'Green Tara is the swift protector.',
         ),
       ],
     ),
+    if (withAccumulationTask)
+      UserTasksDto(
+        id: 'task-2',
+        title: 'Tara Sadhana',
+        estimatedTime: null,
+        displayOrder: 2,
+        isCompleted: false,
+        subTasks: [
+          UserSubtasksDto(
+            id: 'sub-2',
+            isCompleted: false,
+            contentType: 'GROUP_ACCUMULATION',
+            content: '',
+            referenceId: 'accumulator-1',
+          ),
+        ],
+      ),
   ],
   isCompleted: false,
 );
@@ -163,6 +183,10 @@ Future<void> _pumpLiveEventDetails(
   Size viewSize = const Size(390, 844),
   // Recordings of day 1, as the backend copies them onto the plan day.
   List<PlanVideoModel> videos = const [],
+  // Explored from the event page before joining.
+  bool readOnly = false,
+  bool taskCompleted = false,
+  bool withAccumulationTask = false,
 }) async {
   tester.view.physicalSize = viewSize;
   tester.view.devicePixelRatio = 1.0;
@@ -170,7 +194,11 @@ Future<void> _pumpLiveEventDetails(
   // A live stream or a replay mounts the YouTube player's WebView.
   FakeInAppWebViewPlatform.install();
 
-  final day = _makeDay(videos: videos);
+  final day = _makeDay(
+    videos: videos,
+    taskCompleted: taskCompleted,
+    withAccumulationTask: withAccumulationTask,
+  );
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -211,6 +239,7 @@ Future<void> _pumpLiveEventDetails(
           startDate: startDate ?? DateTime.now(),
           eventId: eventId,
           showLiveStream: showLiveStream,
+          readOnly: readOnly,
         ),
       ),
     ),
@@ -513,6 +542,108 @@ void main() {
     expect(find.text('Day 1 of 21'), findsOneWidget);
     expect(find.byType(MissedDaysBadge), findsOneWidget);
     expect(find.text('3 missed days'), findsOneWidget);
+  });
+
+  group('explored before joining (read-only)', () {
+    Future<Either<Failure, GroupEvent>> liveWithChat() async =>
+        Right(_liveEvent());
+
+    Finder tick() => find.descendant(
+      of: find.byType(ActivityList),
+      matching: find.byIcon(AppAssets.check),
+    );
+
+    testWidgets('an attendee sees the tick and prayer requests', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        showLiveStream: false,
+        fetch: liveWithChat,
+        taskCompleted: true,
+      );
+      await _settle(tester);
+
+      expect(tick(), findsOneWidget);
+      expect(find.text('Prayer requests'), findsOneWidget);
+    });
+
+    testWidgets('the in-person page has no ticks or prayer requests', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        showLiveStream: false,
+        fetch: liveWithChat,
+        taskCompleted: true,
+        readOnly: true,
+      );
+      await _settle(tester);
+
+      expect(find.byType(PlanCoverImage), findsOneWidget);
+      expect(find.text('Tara of the day'), findsOneWidget);
+      expect(tick(), findsNothing);
+      expect(find.text('Prayer requests'), findsNothing);
+      expect(find.text('Practice now'), findsNothing);
+      expect(_activityList(tester).readOnly, isTrue);
+    });
+
+    testWidgets('the online page keeps the stream but no prayer requests', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(tester, fetch: liveWithChat, readOnly: true);
+      await _settle(tester);
+
+      expect(find.byType(GroupEventLiveHeader), findsOneWidget);
+      expect(find.byType(GroupEventMediaToggle), findsOneWidget);
+      expect(find.text('Prayer requests'), findsNothing);
+    });
+
+    Future<List<String>> openedSubtaskIds(WidgetTester tester) async {
+      await tester.tap(find.text('Tara of the day'));
+      await _settle(tester);
+      final screen = tester.widget<PlanTextScreen>(
+        find.byType(PlanTextScreen),
+      );
+      return screen.navigationContext.currentItem!.subtaskIds;
+    }
+
+    testWidgets('an opened task carries nothing to mark complete', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(tester, readOnly: true);
+
+      expect(await openedSubtaskIds(tester), isEmpty);
+      expect(_body(), findsOneWidget);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('an attendee\'s opened task completes as it is read', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(tester);
+
+      expect(await openedSubtaskIds(tester), ['sub-1']);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('a group accumulation task asks to join instead of counting', (
+      tester,
+    ) async {
+      await _pumpLiveEventDetails(
+        tester,
+        streamKnownAbsent: true,
+        withAccumulationTask: true,
+        readOnly: true,
+      );
+      await _settle(tester);
+
+      await tester.tap(find.text('Tara Sadhana'));
+      await _settle(tester);
+
+      expect(find.text('Join the event to practice'), findsOneWidget);
+      expect(find.byType(PlanDetails), findsOneWidget);
+    });
   });
 
   GroupEventLivePlayer player(WidgetTester tester) =>
