@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -150,13 +151,25 @@ class MalaSettingsSheet extends ConsumerWidget {
     final shareUrl = await resolveShareUrl(context, longUrl);
     if (!context.mounted) return;
 
+    // Read before pop: the sheet's context is gone once it closes.
+    final shareAnalytics = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(shareAnalyticsProvider);
     Navigator.of(context).pop();
-    await SharePlus.instance.share(
+    final result = await SharePlus.instance.share(
       ShareParams(
         text: '$shareMessage\n\n$shareUrl',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.mala,
+        targetId: mantra.presetId,
+        format: 'text',
+      );
+    }
   }
 
   void _onAddToPractice(BuildContext context) {

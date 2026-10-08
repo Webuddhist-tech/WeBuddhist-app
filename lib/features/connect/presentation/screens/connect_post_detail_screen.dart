@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -253,7 +254,16 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
             ? caption
             : shareUrl;
     if (message.isEmpty) return;
-    await SharePlus.instance.share(ShareParams(text: message));
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(ShareParams(text: message));
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.post,
+        targetId: _post.id,
+        format: 'text',
+        groupId: _post.groupId,
+      );
+    }
   }
 
   @override
