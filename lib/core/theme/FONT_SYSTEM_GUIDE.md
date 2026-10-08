@@ -212,10 +212,10 @@ The shipped fonts are rebuilt (`tool/patch_tibetan_font_metrics.py`) with
 ascender/descender fitted to the ink, so the same `height:` values now
 produce boxes that enclose the glyphs and are centred on them:
 
-| Font | New asc / desc | Box at `height: 2.0` |
-| --- | --- | --- |
-| `NotoSerifTibetanWB` | 1.220 / 0.580 (1.80 per line) | 1.320 / 0.680 em |
-| `WBTibetanContent` | 1.000 / 0.600 (1.60 per line) | 1.200 / 0.800 em |
+| Font | New asc / desc | Box at `height: 1.9` | Box at `height: 1.5` (compact) |
+| --- | --- | --- | --- |
+| `NotoSerifTibetanWB` | 1.220 / 0.580 (1.80 per line) | 1.270 / 0.630 em | 1.070 / 0.430 em |
+| `WBTibetanContent` | 1.000 / 0.600 (1.60 per line) | 1.150 / 0.750 em | 0.950 / 0.550 em |
 
 Rules that follow from this:
 
@@ -224,11 +224,17 @@ Rules that follow from this:
   `test/core/theme/tibetan_font_metrics_test.dart` fails if that happens.
 - `tibetanStrutStyle()` is still fine to use, but it is no longer required to
   make Tibetan text sit correctly; a plain `Text` now behaves the same way.
-- The three line heights in `font_config.dart` (`tibetanUiLineHeight`,
-  `tibetanContentLineHeight`, `tibetanCompactLineHeight`) were raised from
-  1.55 / 1.55 / 1.25 to 2.0 on 2026-10-08 because the fitted metrics read
-  cramped. Anything at or above the ink envelope (~1.8 em for the UI font)
-  encloses every vowel and stack, so truncated paragraphs no longer clip.
+- The three line heights in `font_config.dart` were raised on 2026-10-08
+  because the fitted metrics read cramped: `tibetanUiLineHeight` and
+  `tibetanContentLineHeight` from 1.55 to 1.9, `tibetanCompactLineHeight`
+  from 1.25 to 1.5. At 1.9 the UI box (1.270 / 0.630 em) covers vowels over
+  a superscript (+1.16) and ordinary stacks (-0.47); only the deepest stacks
+  (-0.70) can still lose ~0.07 em (1 px at 13 px) on a truncated last line.
+  The compact box (1.070 / 0.430 em) is still *inside* the ink: a truncated
+  compact label can lose ~0.09 em off a first-line vowel over a superscript
+  and up to ~0.27 em (4 px at 14 px) off a deep stack on the last line. Use
+  the UI height, or avoid truncation, where that matters; compact is for
+  single-line labels and titles that are allowed to clip slightly.
 - Fixed-height boxes around Tibetan labels must be derived from those
   constants (see `FollowedGroupsRow._labelHeightFor`), never hard-coded.
 - `TabBar` replaces the inherited `DefaultTextStyle` with its label style, so
