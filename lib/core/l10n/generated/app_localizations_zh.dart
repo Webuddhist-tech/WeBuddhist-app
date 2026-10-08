@@ -2565,6 +2565,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_message_not_found => '此訊息已不在聊天中';
 
   @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => '重試';
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -14,6 +16,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_rem
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_thread.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,6 +36,10 @@ class _PagedRepository implements GroupChatRepository {
   /// reported as a deleted message.
   bool failLaterPages = false;
 
+  /// When set, pages after the first wait on it, so a test can hold one in
+  /// flight.
+  Completer<void>? laterPagesGate;
+
   @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
@@ -43,6 +50,7 @@ class _PagedRepository implements GroupChatRepository {
     String? intention,
   }) async {
     requestedSkips.add(skip);
+    if (skip > 0) await laterPagesGate?.future;
     if (skip > 0 && failLaterPages) {
       return const Left(NetworkFailure('offline'));
     }
@@ -106,34 +114,47 @@ class _ViewerNotifier extends UserNotifier {
   }
 }
 
+List<Override> _overrides(_PagedRepository repository) => [
+  groupChatRepositoryProvider.overrideWithValue(repository),
+  userProvider.overrideWith((ref) => _ViewerNotifier()),
+];
+
+/// Pumps the thread. With [container], the test can drive the room's
+/// provider before the thread exists.
 Future<void> _pumpThread(
   WidgetTester tester,
   _PagedRepository repository, {
   required String? targetMessageId,
+  ProviderContainer? container,
 }) async {
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        groupChatRepositoryProvider.overrideWithValue(repository),
-        userProvider.overrideWith((ref) => _ViewerNotifier()),
-      ],
-      child: MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: GroupChatThread(
-            roomId: 'room-1',
-            groupId: 'group-1',
-            targetMessageId: targetMessageId,
-            onReply: (_) {},
-            onSelectionChanged: (_) {},
-          ),
-        ),
+  final app = MaterialApp(
+    locale: const Locale('en'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(
+      body: GroupChatThread(
+        roomId: 'room-1',
+        groupId: 'group-1',
+        targetMessageId: targetMessageId,
+        onReply: (_) {},
+        onSelectionChanged: (_) {},
       ),
     ),
   );
+  await tester.pumpWidget(
+    container == null
+        ? ProviderScope(overrides: _overrides(repository), child: app)
+        : UncontrolledProviderScope(container: container, child: app),
+  );
   await tester.pumpAndSettle();
+}
+
+void _expectOnScreen(WidgetTester tester, Finder target) {
+  expect(target, findsOneWidget);
+  final viewport = tester.getRect(find.byType(Scaffold));
+  final row = tester.getRect(target);
+  expect(row.top, greaterThanOrEqualTo(viewport.top));
+  expect(row.bottom, lessThanOrEqualTo(viewport.bottom));
 }
 
 void main() {
@@ -211,6 +232,65 @@ void main() {
     expect(row.top, greaterThanOrEqualTo(viewport.top));
     expect(row.bottom, lessThanOrEqualTo(viewport.bottom));
     expect(find.text('This message is no longer in the chat'), findsNothing);
+  });
+
+  testWidgets('a message past the paging budget can be searched for further', (
+    tester,
+  ) async {
+    // The first page and twelve more reach m-389; the target is older.
+    final repository = _PagedRepository(total: 600);
+    await _pumpThread(tester, repository, targetMessageId: 'm-500');
+
+    expect(
+      find.text('This message is further back in the chat'),
+      findsOneWidget,
+    );
+    // Running out of budget is not proof the message is gone.
+    expect(find.text('This message is no longer in the chat'), findsNothing);
+    expect(find.text('message 0'), findsOneWidget);
+
+    await tester.tap(find.text('Keep looking'));
+    await tester.pumpAndSettle();
+
+    // Carried on from the history already loaded rather than starting over.
+    expect(repository.requestedSkips.where((skip) => skip == 30), [30]);
+    _expectOnScreen(tester, find.text('message 500'));
+    expect(find.text('This message is no longer in the chat'), findsNothing);
+  });
+
+  testWidgets('a page already loading counts towards the search', (
+    tester,
+  ) async {
+    final repository = _PagedRepository();
+    final container = ProviderContainer(overrides: _overrides(repository));
+    addTearDown(container.dispose);
+    final provider = groupChatThreadProvider('room-1');
+    final keepAlive = container.listen(provider, (_, _) {});
+    addTearDown(keepAlive.close);
+    await tester.pump();
+
+    // A page someone else asked for, still in flight when the jump starts.
+    // `loadMore` returns at once for the jump's own request then.
+    repository.laterPagesGate = Completer<void>();
+    unawaited(container.read(provider.notifier).loadMore());
+
+    await _pumpThread(
+      tester,
+      repository,
+      targetMessageId: 'm-70',
+      container: container,
+    );
+
+    // Still waiting on that page, not out of budget and calling it missing.
+    expect(find.text('This message is no longer in the chat'), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(repository.requestedSkips, [0, 30]);
+
+    repository.laterPagesGate!.complete();
+    await tester.pumpAndSettle();
+
+    _expectOnScreen(tester, find.text('message 70'));
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('stays on the newest message without a target', (tester) async {

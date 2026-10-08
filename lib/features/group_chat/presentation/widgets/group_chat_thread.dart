@@ -38,8 +38,12 @@ enum _TargetReach {
   /// The row is on screen.
   reached,
 
-  /// History ran out, or the paging budget did, without the message.
+  /// History ran out without the message.
   missing,
+
+  /// The paging budget ran out with history still left, so the message may
+  /// simply be older than what has been loaded so far.
+  tooFarBack,
 
   /// A later page failed to load, so the message's absence is not settled.
   loadFailed,
@@ -150,6 +154,10 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   /// the pages the jump itself loads start it again.
   bool _targetJumpStarted = false;
 
+  /// Searches waiting out a page load that was already running. Completed on
+  /// dispose, so a search the thread outlived returns instead of hanging.
+  final _pendingLoadWaits = <Completer<void>>{};
+
   /// The viewer's backend user id — the id space chat's `sender_id` and
   /// reaction `user_ids` use. Read from the profile rather than passed in, so
   /// a session that loads `/users/info` after this screen opens starts
@@ -182,6 +190,10 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   @override
   void dispose() {
     _highlightTimer?.cancel();
+    for (final wait in _pendingLoadWaits) {
+      if (!wait.isCompleted) wait.complete();
+    }
+    _pendingLoadWaits.clear();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -269,37 +281,55 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     });
   }
 
-  /// Opens the thread on [messageId]. A message that is gone, or older than
-  /// the paging budget, gets the missing-message notice. A page that failed
-  /// to load is a different notice, with a retry: the message may still be
-  /// there. Either miss jumps back to the newest messages first, because the
-  /// search may already have moved into older history.
+  /// Opens the thread on [messageId]. Only a message history ran out without
+  /// gets the missing-message notice. One older than the paging budget, or
+  /// behind a page that failed to load, may still be there, so each gets its
+  /// own notice with a way to carry on. Any miss jumps back to the newest
+  /// messages first, because the search may already have moved into older
+  /// history.
   Future<void> _jumpToTarget(String messageId) async {
     _chasingTarget = true;
     final reach = await _scrollToMessage(messageId);
     _chasingTarget = false;
     if (!mounted || reach == _TargetReach.reached) return;
     _restoreNewest();
-    if (reach == _TargetReach.loadFailed) {
-      _showTargetLoadError(messageId);
-      return;
+    final l10n = context.l10n;
+    switch (reach) {
+      case _TargetReach.reached:
+        return;
+      case _TargetReach.loadFailed:
+        _showTargetRetry(
+          messageId,
+          message: l10n.group_chat_load_failed,
+          actionLabel: l10n.group_chat_retry,
+        );
+      case _TargetReach.tooFarBack:
+        _showTargetRetry(
+          messageId,
+          message: l10n.group_chat_message_too_far_back,
+          actionLabel: l10n.group_chat_keep_looking,
+        );
+      case _TargetReach.missing:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.group_chat_message_not_found)),
+        );
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.group_chat_message_not_found)),
-    );
   }
 
-  /// The opening jump could not page far enough to decide. Retry runs the
-  /// jump again; [_targetJumpStarted] stays set, so a later page arriving on
-  /// its own does not start a second search.
-  void _showTargetLoadError(String messageId) {
-    final failedMessage = context.l10n.group_chat_load_failed;
-    final retryLabel = context.l10n.group_chat_retry;
+  /// The opening jump stopped without settling whether the message exists.
+  /// The action runs the jump again, which pages on from the history already
+  /// loaded rather than starting over. [_targetJumpStarted] stays set, so a
+  /// later page arriving on its own does not start a second search.
+  void _showTargetRetry(
+    String messageId, {
+    required String message,
+    required String actionLabel,
+  }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(failedMessage),
+        content: Text(message),
         action: SnackBarAction(
-          label: retryLabel,
+          label: actionLabel,
           onPressed: () {
             if (!mounted) return;
             unawaited(_jumpToTarget(messageId));
@@ -432,11 +462,13 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
 
   /// Pages back until [messageId] is in the loaded window.
   ///
-  /// [_TargetReach.missing] when the thread runs out of history first, or when
-  /// the walk is bounded out — a quote whose original was never in this room
-  /// cannot be found by paging forever. [_TargetReach.loadFailed] when a page
-  /// request fails: `loadMore` leaves [GroupChatThreadState.hasMore] set and
-  /// records an error, so the message may still be further back.
+  /// [_TargetReach.missing] when the thread runs out of history first.
+  /// [_TargetReach.tooFarBack] when the walk is bounded out with history
+  /// left — a quote whose original was never in this room cannot be found by
+  /// paging forever, but neither does running out of budget prove the message
+  /// is gone. [_TargetReach.loadFailed] when a page request fails: `loadMore`
+  /// leaves [GroupChatThreadState.hasMore] set and records an error, so the
+  /// message may still be further back.
   Future<_TargetReach> _loadUntilPresent(String messageId) async {
     final provider = groupChatThreadProvider(widget.roomId);
     for (var attempt = 0; attempt < _maxLoadHops; attempt++) {
@@ -446,8 +478,12 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
 
       await ref.read(provider.notifier).loadMore();
       if (!mounted) return _TargetReach.missing;
-      // `loadMore` returns immediately while another page is already in
-      // flight, so yield a frame rather than spinning through the budget.
+      // `loadMore` returns at once while another load is already running,
+      // without waiting for it. Wait that one out, so it counts as this step
+      // rather than the budget running out before its page lands.
+      await _settlePendingLoad(provider);
+      if (!mounted) return _TargetReach.missing;
+      // Lets the list lay out the new rows before the caller measures them.
       await SchedulerBinding.instance.endOfFrame;
       if (!mounted) return _TargetReach.missing;
 
@@ -461,7 +497,29 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     final state = ref.read(provider);
     if (_messageIsLoaded(state, messageId)) return _TargetReach.reached;
     if (state.error != null) return _TargetReach.loadFailed;
-    return _TargetReach.missing;
+    return state.hasMore ? _TargetReach.tooFarBack : _TargetReach.missing;
+  }
+
+  /// Returns once no page load is running, or the thread is gone.
+  Future<void> _settlePendingLoad(
+    ProviderListenable<GroupChatThreadState> provider,
+  ) async {
+    bool busy(GroupChatThreadState state) =>
+        state.isLoading || state.isLoadingMore;
+    if (!busy(ref.read(provider))) return;
+
+    final wait = Completer<void>();
+    _pendingLoadWaits.add(wait);
+    final subscription = ref.listenManual(provider, (_, next) {
+      if (!busy(next) && !wait.isCompleted) wait.complete();
+    });
+    try {
+      await wait.future;
+    } finally {
+      _pendingLoadWaits.remove(wait);
+      // Unmounting closes the subscription along with the element.
+      if (mounted) subscription.close();
+    }
   }
 
   bool _messageIsLoaded(GroupChatThreadState state, String messageId) {

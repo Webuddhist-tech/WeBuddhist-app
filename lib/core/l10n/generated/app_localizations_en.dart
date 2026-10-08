@@ -2691,6 +2691,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'This message is no longer in the chat';
 
   @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'Retry';
 
   @override

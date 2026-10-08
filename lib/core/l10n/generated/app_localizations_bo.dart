@@ -2724,6 +2724,13 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_chat_message_not_found => 'འཕྲིན་ཡིག་འདི་ཁ་བརྡའི་ནང་མི་གནས།';
 
   @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'བསྐྱར་དུ་ཚོད་ལྟ།';
 
   @override

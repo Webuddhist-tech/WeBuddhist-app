@@ -4766,6 +4766,18 @@ abstract class AppLocalizations {
   /// **'This message is no longer in the chat'**
   String get group_chat_message_not_found;
 
+  /// No description provided for @group_chat_message_too_far_back.
+  ///
+  /// In en, this message translates to:
+  /// **'This message is further back in the chat'**
+  String get group_chat_message_too_far_back;
+
+  /// No description provided for @group_chat_keep_looking.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep looking'**
+  String get group_chat_keep_looking;
+
   /// No description provided for @group_chat_retry.
   ///
   /// In en, this message translates to:

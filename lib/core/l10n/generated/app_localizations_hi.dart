@@ -2715,6 +2715,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_message_not_found => 'यह संदेश अब चैट में नहीं है';
 
   @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'पुनः प्रयास करें';
 
   @override

@@ -2720,6 +2720,13 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_chat_message_not_found => 'Энэ зурвас чатад байхгүй болсон';
 
   @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'Дахин оролдох';
 
   @override

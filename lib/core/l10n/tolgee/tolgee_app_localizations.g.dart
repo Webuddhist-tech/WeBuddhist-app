@@ -5282,6 +5282,20 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_chat_message_too_far_back => TolgeeBridge.get(
+    localeName,
+    'group_chat_message_too_far_back',
+    () => _fallback.group_chat_message_too_far_back,
+  );
+
+  @override
+  String get group_chat_keep_looking => TolgeeBridge.get(
+    localeName,
+    'group_chat_keep_looking',
+    () => _fallback.group_chat_keep_looking,
+  );
+
+  @override
   String get group_chat_retry => TolgeeBridge.get(
     localeName,
     'group_chat_retry',
