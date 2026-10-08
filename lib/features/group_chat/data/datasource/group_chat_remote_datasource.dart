@@ -123,7 +123,8 @@ class GroupChatRemoteDatasource {
   }
 
   /// [messageType] narrows the page to one kind, e.g. `PRAYER`. [sort] and
-  /// [intention] (a slug) only apply to prayer requests.
+  /// [intention] (a slug) only apply to prayer requests. [translationLanguage]
+  /// (`EN`, `ZH`, `BO`) asks for each body in that language as well.
   Future<ChatMessagesPage> listMessages(
     String roomId, {
     int skip = 0,
@@ -131,6 +132,7 @@ class GroupChatRemoteDatasource {
     String? messageType,
     String? sort,
     String? intention,
+    String? translationLanguage,
   }) async {
     try {
       final response = await _dio.get(
@@ -141,6 +143,8 @@ class GroupChatRemoteDatasource {
           if (messageType != null) 'message_type': messageType,
           if (sort != null) 'sort': sort,
           if (intention != null) 'intention': intention,
+          if (translationLanguage != null)
+            'translation_language': translationLanguage,
         },
         options: _noCache,
       );

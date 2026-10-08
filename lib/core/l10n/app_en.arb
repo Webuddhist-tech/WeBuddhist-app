@@ -1582,6 +1582,17 @@
   "event_prayer_clear_intention": "Clear intention",
   "event_prayer_filter_empty_title": "No requests match",
   "event_prayer_filter_empty_body": "Try another sort or intention",
+  "event_prayer_see_translation": "See translation",
+  "event_prayer_see_original": "See original",
+  "event_prayer_translated_from": "Translated from {language}",
+  "@event_prayer_translated_from": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "event_prayer_translated": "Translated",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",

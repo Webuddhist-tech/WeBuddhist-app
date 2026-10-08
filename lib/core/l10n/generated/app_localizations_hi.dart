@@ -3137,6 +3137,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_prayer_filter_empty_body => 'Try another sort or intention';
 
   @override
+  String get event_prayer_see_translation => 'See translation';
+
+  @override
+  String get event_prayer_see_original => 'See original';
+
+  @override
+  String event_prayer_translated_from(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get event_prayer_translated => 'Translated';
+
+  @override
   String get recitation_live_sync => 'सिंक';
 
   @override

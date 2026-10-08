@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_liv
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_translation_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
@@ -51,6 +52,21 @@ const _peace = ChatPrayerIntentionDTO(
   color: '#FFFFFF',
 );
 
+const _readyTranslation = ChatMessageTranslationDTO(
+  targetLanguage: 'EN',
+  status: ChatMessageTranslationDTO.statusReady,
+  body: 'May the Guru bless us',
+);
+
+/// A Chinese request the server has already put into English.
+ChatMessageDTO _translated(String id, {int count = 0}) {
+  return _prayer(id, count: count).copyWith(
+    sourceLanguage: 'ZH',
+    translation: _readyTranslation,
+    canTranslate: true,
+  );
+}
+
 class _FakeGroupChatRepository implements GroupChatRepository {
   _FakeGroupChatRepository({this.history = const []});
 
@@ -62,6 +78,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Failure? prayFailureOnce;
   final List<String?> listedTypes = [];
   final List<String?> listedSorts = [];
+  final List<String?> listedTranslationLanguages = [];
   final List<String?> listedIntentions = [];
   final List<List<String>> prayed = [];
   final List<int> prayedCounts = [];
@@ -107,11 +124,13 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String? messageType,
     String? sort,
     String? intention,
+    String? translationLanguage,
   }) async {
     listedTypes.add(messageType);
     listedSkips.add(skip);
     listedSorts.add(sort);
     listedIntentions.add(intention);
+    listedTranslationLanguages.add(translationLanguage);
     final gate = listGate;
     if (gate != null) await gate.future;
     final rows =
@@ -316,11 +335,17 @@ void main() {
   late _FakeGroupChatRepository repository;
   late ProviderContainer container;
 
-  ProviderContainer buildContainer({PrayerPacing pacing = _instant}) {
+  ProviderContainer buildContainer({
+    PrayerPacing pacing = _instant,
+    String translationLanguage = 'EN',
+  }) {
     return ProviderContainer(
       overrides: [
         groupChatRepositoryProvider.overrideWithValue(repository),
         prayerPacingProvider.overrideWithValue(pacing),
+        prayerTranslationLanguageProvider.overrideWithValue(
+          translationLanguage,
+        ),
       ],
     );
   }
@@ -355,6 +380,20 @@ void main() {
       expect(repository.listedIntentions, [null]);
       expect(notifier.state.filter, PrayerRequestsFilter.initial);
       expect(notifier.state.total, 1);
+    });
+
+    test('every page is listed in the translation language', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer(translationLanguage: 'BO');
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.loadMore();
+      await notifier.refreshLatest();
+
+      expect(repository.listedSkips, [0, 30, 0]);
+      expect(repository.listedTranslationLanguages, ['BO', 'BO', 'BO']);
     });
 
     test('setFilter re-lists from the top under the new sort', () async {
@@ -811,6 +850,112 @@ void main() {
       final edited = _byId(notifier, 'a');
       expect(edited.body, 'From elsewhere');
       expect(edited.intention, peace);
+      expect(edited.prayerCount, 2);
+    });
+
+    test('edit with a new body drops the stale translation', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_translated('a', count: 3)],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(_byId(notifier, 'a').translatedBody, 'May the Guru bless us');
+
+      await notifier.edit('a', body: 'Please pray again', intention: _healing);
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Please pray again');
+      expect(edited.translation, isNull);
+      expect(edited.sourceLanguage, isNull);
+      expect(edited.translatedBody, isNull);
+      expect(edited.canTranslate, isFalse);
+      expect(edited.prayerCount, 3);
+    });
+
+    test('edit takes the translation the server answers with', () async {
+      repository = _FakeGroupChatRepository(history: [_translated('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      const pendingTranslation = ChatMessageTranslationDTO(
+        targetLanguage: 'EN',
+        status: ChatMessageTranslationDTO.statusPending,
+      );
+      repository.updateResponse = _prayer('a').copyWith(
+        body: 'Edited',
+        intention: _healing,
+        translation: pendingTranslation,
+        canTranslate: true,
+      );
+      await notifier.edit('a', body: 'Edited', intention: _healing);
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'Edited');
+      expect(edited.translation, pendingTranslation);
+      expect(edited.canTranslate, isTrue);
+      expect(edited.sourceLanguage, isNull);
+      expect(edited.translatedBody, isNull);
+    });
+
+    test('an edit of the intention alone keeps the translation', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_translated('a', count: 2)],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      await notifier.edit('a', body: 'pray a', intention: _peace);
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.intention, _peace);
+      expect(edited.translation, _readyTranslation);
+      expect(edited.sourceLanguage, 'ZH');
+      expect(edited.canTranslate, isTrue);
+      expect(edited.translatedBody, 'May the Guru bless us');
+      expect(edited.prayerCount, 2);
+    });
+
+    test('applyEdit with a new body drops the translation', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_translated('a', count: 2)],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.applyEdit(_prayer('a').copyWith(body: 'From elsewhere'));
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.body, 'From elsewhere');
+      expect(edited.translation, isNull);
+      expect(edited.sourceLanguage, isNull);
+      expect(edited.canTranslate, isFalse);
+      expect(edited.prayerCount, 2);
+    });
+
+    test('applyEdit with the same body keeps the translation', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_translated('a', count: 2)],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.applyEdit(_prayer('a', intention: _peace));
+
+      final edited = _byId(notifier, 'a');
+      expect(edited.intention, _peace);
+      expect(edited.translation, _readyTranslation);
+      expect(edited.sourceLanguage, 'ZH');
+      expect(edited.canTranslate, isTrue);
       expect(edited.prayerCount, 2);
     });
 
