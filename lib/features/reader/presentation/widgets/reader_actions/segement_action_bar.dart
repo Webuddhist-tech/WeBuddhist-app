@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -174,9 +175,13 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
     final segmentInfo = ref.watch(
       segmentInfoFutureProvider(widget.segment.segmentId),
     );
-    final videos = segmentInfo.valueOrNull?.videos ?? const <SegmentVideo>[];
-    final hasRootText =
-        segmentInfo.valueOrNull?.relatedText.hasRootText ?? false;
+    final info = segmentInfo.valueOrNull;
+    final videos = info?.videos ?? const <SegmentVideo>[];
+    final hasRootText = info?.relatedText.hasRootText ?? false;
+    // Counts arrive with segment info. Until then, and when a segment has
+    // none at all, Commentaries and Versions stay off the sheet.
+    final showCommentaries = (info?.relatedText.commentaries ?? 0) > 0;
+    final showVersions = (info?.translations ?? 0) > 0;
 
     return _ResourcesPanel(
       onDismiss: widget.onClose,
@@ -204,30 +209,32 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
         onTap: _handleBookmark,
       ),
       tiles: [
-        _ResourceTile(
-          icon: AppAssets.readerCommentary,
-          label: localizations.text_commentary,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            notifier.toggleCommentary(widget.segment.segmentId);
-            _track(ReaderAction.commentary);
-            if (!state.isCommentaryOpen) {
-              widget.onOpenCommentary?.call();
-            }
-          },
-        ),
-        _ResourceTile(
-          icon: AppAssets.readerVersion,
-          label: localizations.version,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            notifier.toggleTranslation(widget.segment.segmentId);
-            _track(ReaderAction.version);
-            if (!state.isTranslationOpen) {
-              widget.onOpenTranslation?.call();
-            }
-          },
-        ),
+        if (showCommentaries)
+          _ResourceTile(
+            icon: AppAssets.readerCommentary,
+            label: localizations.text_commentary,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              notifier.toggleCommentary(widget.segment.segmentId);
+              _track(ReaderAction.commentary);
+              if (!state.isCommentaryOpen) {
+                widget.onOpenCommentary?.call();
+              }
+            },
+          ),
+        if (showVersions)
+          _ResourceTile(
+            icon: AppAssets.readerVersion,
+            label: localizations.version,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              notifier.toggleTranslation(widget.segment.segmentId);
+              _track(ReaderAction.version);
+              if (!state.isTranslationOpen) {
+                widget.onOpenTranslation?.call();
+              }
+            },
+          ),
         if (hasRootText)
           _ResourceTile(
             icon: AppAssets.readerRootText,
@@ -278,10 +285,24 @@ class _ResourcesPanel extends StatefulWidget {
 
 class _ResourcesPanelState extends State<_ResourcesPanel> {
   static const double _headerHeight = 70;
-  static const double _collapsedContentHeight = 328;
+
+  /// Tuned for Commentaries + Versions. Each missing or extra tile adjusts it.
+  static const double _twoTileContentHeight = 328;
+  static const double _tileHeight = 56;
+
+  /// Resources title and divider, dropped when nothing is listed under them.
+  static const double _resourcesHeaderHeight = 33;
   static const double _videosSectionHeight = 280;
 
+  double get _collapsedContentHeight {
+    final count = widget.tiles.length;
+    var height = _twoTileContentHeight + (count - 2) * _tileHeight;
+    if (count == 0) height -= _resourcesHeaderHeight;
+    return height;
+  }
+
   late final DraggableScrollableController _sheetController;
+  bool _sizeRefreshScheduled = false;
 
   @override
   void initState() {
@@ -297,8 +318,25 @@ class _ResourcesPanelState extends State<_ResourcesPanel> {
     super.dispose();
   }
 
+  /// The sheet reports a new size while this panel is building when the tile
+  /// list arrives and the collapsed height changes. Applying that immediately
+  /// marks the panel dirty mid-build.
   void _onSheetSizeChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final phase = WidgetsBinding.instance.schedulerPhase;
+    final duringBuild =
+        phase == SchedulerPhase.persistentCallbacks ||
+        phase == SchedulerPhase.midFrameMicrotasks;
+    if (!duringBuild) {
+      setState(() {});
+      return;
+    }
+    if (_sizeRefreshScheduled) return;
+    _sizeRefreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sizeRefreshScheduled = false;
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -547,18 +585,24 @@ class _ResourcesPanelState extends State<_ResourcesPanel> {
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
-          child: Text(
-            context.l10n.resources,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 18,
+        if (widget.tiles.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 2, 20, 8),
+            child: Text(
+              context.l10n.resources,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
             ),
           ),
-        ),
-        Divider(height: 1, thickness: 1, color: Theme.of(context).dividerColor),
-        for (final tile in widget.tiles) tile,
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: Theme.of(context).dividerColor,
+          ),
+          for (final tile in widget.tiles) tile,
+        ],
         if (showMorePrompt) _SwipeForMorePrompt(onTap: _expand),
         if (showVideos && widget.videos.isNotEmpty)
           _VideosSection(videos: widget.videos, onVideoTap: _openSegmentVideo),

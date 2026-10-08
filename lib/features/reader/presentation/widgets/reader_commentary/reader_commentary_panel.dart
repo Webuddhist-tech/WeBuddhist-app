@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_language_order.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_bottom_panel_shell.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
@@ -88,48 +89,6 @@ class _CommentaryList extends ConsumerWidget {
   final String segmentId;
   final String textLanguage;
 
-  /// `zh` and `lzh` are treated as a family pair and always placed adjacent.
-  static const _chinesePair = {'zh', 'lzh'};
-
-  /// Builds the ordered list of language sections to render.
-  ///
-  /// **Chinese text (`zh` / `lzh`):** Both Chinese variants are pinned at the
-  /// top — the text's language first, the partner second. The partner section
-  /// always appears (showing "not available" when empty). All other languages
-  /// that have commentaries follow, sorted A→Z.
-  ///
-  /// **Non-Chinese text:** Text language is first. Remaining languages are
-  /// sorted A→Z, but `zh` is moved to immediately follow `lzh` so the Chinese
-  /// family always appears together.
-  List<String> _orderedLanguageCodes(
-    Map<String, List<SegmentCommentary>> byLanguage,
-  ) {
-    if (_chinesePair.contains(textLanguage)) {
-      // Chinese text: pin both Chinese variants at the top — text language
-      // first, partner always second (shows "not available" when empty).
-      final partner = textLanguage == 'zh' ? 'lzh' : 'zh';
-      final ordered = <String>[textLanguage];
-      ordered.add(partner);
-      final others =
-          byLanguage.keys.where((l) => !_chinesePair.contains(l)).toList()
-            ..sort();
-      ordered.addAll(others);
-      return ordered;
-    } else {
-      // Non-Chinese text: text language first, rest A→Z with zh kept right
-      // after lzh so the Chinese pair is always adjacent.
-      final ordered = <String>[textLanguage];
-      final allOthers =
-          byLanguage.keys.where((l) => l != textLanguage).toList()..sort();
-      if (allOthers.contains('lzh') && allOthers.contains('zh')) {
-        allOthers.remove('zh');
-        allOthers.insert(allOthers.indexOf('lzh') + 1, 'zh');
-      }
-      ordered.addAll(allOthers);
-      return ordered;
-    }
-  }
-
   /// Each commentary followed by the editions that translate it, so every
   /// language lands in its own section.
   static Iterable<SegmentCommentary> _flatten(
@@ -147,7 +106,12 @@ class _CommentaryList extends ConsumerWidget {
     for (final c in _flatten(commentaries)) {
       byLanguage.putIfAbsent(c.language, () => []).add(c);
     }
-    final orderedLanguages = _orderedLanguageCodes(byLanguage);
+    final uiLanguage = Localizations.localeOf(context).languageCode;
+    final orderedLanguages = orderedCommentaryLanguageCodes(
+      languages: byLanguage.keys,
+      textLanguage: textLanguage,
+      pinEnglish: uiLanguage == 'en' || textLanguage == 'en',
+    );
 
     final expandedContent = ref.watch(_expandedContentIndexProvider(segmentId));
     final expandedMetadata = ref.watch(
