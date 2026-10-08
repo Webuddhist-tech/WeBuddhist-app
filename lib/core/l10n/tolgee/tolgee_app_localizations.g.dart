@@ -6153,6 +6153,35 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_prayer_see_translation => TolgeeBridge.get(
+    localeName,
+    'event_prayer_see_translation',
+    () => _fallback.event_prayer_see_translation,
+  );
+
+  @override
+  String get event_prayer_see_original => TolgeeBridge.get(
+    localeName,
+    'event_prayer_see_original',
+    () => _fallback.event_prayer_see_original,
+  );
+
+  @override
+  String event_prayer_translated_from(String language) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_translated_from',
+    <String, Object>{'language': language},
+    () => _fallback.event_prayer_translated_from(language),
+  );
+
+  @override
+  String get event_prayer_translated => TolgeeBridge.get(
+    localeName,
+    'event_prayer_translated',
+    () => _fallback.event_prayer_translated,
+  );
+
+  @override
   String get recitation_live_sync => TolgeeBridge.get(
     localeName,
     'recitation_live_sync',

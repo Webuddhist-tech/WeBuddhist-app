@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_translation_language.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
@@ -36,6 +38,12 @@ class PrayerPacing {
 }
 
 final prayerPacingProvider = Provider<PrayerPacing>((_) => const PrayerPacing());
+
+/// `translation_language` for the list: the app language where the server
+/// can translate into it, English otherwise.
+final prayerTranslationLanguageProvider = Provider<String>(
+  (ref) => prayerTranslationLanguage(ref.watch(contentLanguageProvider)),
+);
 
 /// The last server-confirmed prayer state of one request.
 class _PrayerSnapshot {
@@ -293,6 +301,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   final String eventId;
   static const int _limit = 30;
 
+  String get _translationLanguage =>
+      ref.read(prayerTranslationLanguageProvider);
+
   // Held directly so queued taps can still go out after dispose.
   final GroupChatRepository _repository;
   final PrayerPacing _pacing;
@@ -419,6 +430,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       messageType: ChatMessageDTO.typePrayer,
       sort: filter.sortParam,
       intention: filter.intentionParam,
+      translationLanguage: _translationLanguage,
     );
     if (!mounted || generation != _listGeneration) return;
 
@@ -482,6 +494,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       messageType: ChatMessageDTO.typePrayer,
       sort: filter.sortParam,
       intention: filter.intentionParam,
+      translationLanguage: _translationLanguage,
     );
     if (!mounted || generation != _listGeneration) return;
 
@@ -536,6 +549,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       messageType: ChatMessageDTO.typePrayer,
       sort: filter.sortParam,
       intention: filter.intentionParam,
+      translationLanguage: _translationLanguage,
     );
     if (!mounted || generation != _listGeneration) return;
     result.fold((_) {}, (page) {
@@ -594,10 +608,20 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       final newIntention = updated?.intention ?? intention;
       // Patched onto whatever the row is now, not the copy from before the
       // round trip: a prayer that landed meanwhile must survive the save.
-      var message = current.copyWith(body: newBody, intention: newIntention);
+      var message = _edited(
+        current,
+        updated,
+        body: newBody,
+        intention: newIntention,
+      );
       if (mounted) {
         _update(messageId, (request) {
-          message = request.copyWith(body: newBody, intention: newIntention);
+          message = _edited(
+            request,
+            updated,
+            body: newBody,
+            intention: newIntention,
+          );
           return message;
         });
       }
@@ -615,8 +639,33 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     }
     _update(
       message.id,
-      (request) =>
-          request.copyWith(body: message.body, intention: message.intention),
+      (request) => _edited(
+        request,
+        message,
+        body: message.body,
+        intention: message.intention,
+      ),
+    );
+  }
+
+  /// An edit onto the row as it is now. A new body makes the old translation
+  /// stale, so only what [server] sent with it, if anything, is kept.
+  static ChatMessageDTO _edited(
+    ChatMessageDTO request,
+    ChatMessageDTO? server, {
+    required String body,
+    required ChatPrayerIntentionDTO? intention,
+  }) {
+    if (body == request.body) {
+      return request.copyWith(body: body, intention: intention);
+    }
+    return request.copyWith(
+      body: body,
+      intention: intention,
+      clearTranslation: true,
+      sourceLanguage: server?.sourceLanguage,
+      translation: server?.translation,
+      canTranslate: server?.canTranslate ?? false,
     );
   }
 

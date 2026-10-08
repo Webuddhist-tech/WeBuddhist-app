@@ -5504,6 +5504,30 @@ abstract class AppLocalizations {
   /// **'Try another sort or intention'**
   String get event_prayer_filter_empty_body;
 
+  /// No description provided for @event_prayer_see_translation.
+  ///
+  /// In en, this message translates to:
+  /// **'See translation'**
+  String get event_prayer_see_translation;
+
+  /// No description provided for @event_prayer_see_original.
+  ///
+  /// In en, this message translates to:
+  /// **'See original'**
+  String get event_prayer_see_original;
+
+  /// No description provided for @event_prayer_translated_from.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated from {language}'**
+  String event_prayer_translated_from(String language);
+
+  /// No description provided for @event_prayer_translated.
+  ///
+  /// In en, this message translates to:
+  /// **'Translated'**
+  String get event_prayer_translated;
+
   /// No description provided for @recitation_live_sync.
   ///
   /// In en, this message translates to:

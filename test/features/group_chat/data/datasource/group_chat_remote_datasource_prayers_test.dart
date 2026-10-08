@@ -232,6 +232,66 @@ void main() {
       expect(seen[2].containsKey('sort'), isFalse);
     });
 
+    test('listMessages sends translation_language only when given', () async {
+      final seen = <Map<String, dynamic>>[];
+      final ds = _datasource((options) async {
+        seen.add(Map.of(options.queryParameters));
+        return _status(200, {
+          'messages': [],
+          'skip': 0,
+          'limit': 20,
+          'total': 0,
+        });
+      });
+
+      await ds.listMessages('r1', messageType: 'PRAYER');
+      await ds.listMessages(
+        'r1',
+        messageType: 'PRAYER',
+        translationLanguage: 'ZH',
+      );
+
+      expect(seen[0].containsKey('translation_language'), isFalse);
+      expect(seen[1]['message_type'], 'PRAYER');
+      expect(seen[1]['translation_language'], 'ZH');
+    });
+
+    test('listMessages parses the translation shape the API sends', () async {
+      final ds = _datasource((options) async {
+        return _status(200, {
+          'messages': [
+            {
+              ..._message,
+              'body': '愿上师加持',
+              'source_language': 'ZH',
+              'translation': {
+                'target_language': 'EN',
+                'status': 'ready',
+                'body': 'May the Guru bless us',
+              },
+              'can_translate': true,
+            },
+          ],
+          'skip': 0,
+          'limit': 20,
+          'total': 1,
+        });
+      });
+
+      final page = await ds.listMessages(
+        'r1',
+        messageType: 'PRAYER',
+        translationLanguage: 'EN',
+      );
+
+      final message = page.messages.single;
+      expect(message.body, '愿上师加持');
+      expect(message.sourceLanguage, 'ZH');
+      expect(message.canTranslate, isTrue);
+      expect(message.translation?.targetLanguage, 'EN');
+      expect(message.translatedBody, 'May the Guru bless us');
+    });
+
     test('listPrayers reads each person\'s count', () async {
       final ds = _datasource((options) async {
         return _status(200, {
