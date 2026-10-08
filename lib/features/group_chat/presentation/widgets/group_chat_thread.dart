@@ -33,6 +33,18 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_swipe_to_reply.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// How far an opening jump got.
+enum _TargetReach {
+  /// The row is on screen.
+  reached,
+
+  /// History ran out, or the paging budget did, without the message.
+  missing,
+
+  /// A later page failed to load, so the message's absence is not settled.
+  loadFailed,
+}
+
 /// The message list for a joined room.
 ///
 /// Reversed so index 0 is the newest message at the bottom: "load older" is a
@@ -107,9 +119,9 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   /// Reversed list, so offset 0 is the bottom.
   static const double _followThreshold = 120;
 
-  /// Bounds the walk towards an off-screen quote, so a parent that never
-  /// materialises cannot spin.
-  static const int _maxScrollHops = 20;
+  /// Fraction of the viewport each step of a search moves. Short of a full
+  /// screen, so the next step still overlaps the rows the previous one built.
+  static const double _scrollSearchStride = 0.85;
 
   /// Bounds how far back the thread will page to find a quoted original.
   static const int _maxLoadHops = 12;
@@ -218,9 +230,10 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
   void _scrollToNewest() {
     if (!_scrollController.hasClients) return;
     final distance = _scrollController.position.pixels;
-    final milliseconds = (distance / _scrollPixelsPerMs)
-        .clamp(_minScrollMs, _maxScrollMs)
-        .round();
+    final milliseconds =
+        (distance / _scrollPixelsPerMs)
+            .clamp(_minScrollMs, _maxScrollMs)
+            .round();
     _scrollController.animateTo(
       0,
       duration: Duration(milliseconds: milliseconds),
@@ -256,75 +269,203 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
     });
   }
 
-  /// Opens the thread on [messageId], and says so when it cannot be reached —
-  /// a message deleted outright, or older than the paging budget. The thread
-  /// is left on the newest messages in that case, which is where it already
-  /// sits.
+  /// Opens the thread on [messageId]. A message that is gone, or older than
+  /// the paging budget, gets the missing-message notice. A page that failed
+  /// to load is a different notice, with a retry: the message may still be
+  /// there. Either miss jumps back to the newest messages first, because the
+  /// search may already have moved into older history.
   Future<void> _jumpToTarget(String messageId) async {
-    final found = await _scrollToMessage(messageId);
+    _chasingTarget = true;
+    final reach = await _scrollToMessage(messageId);
     _chasingTarget = false;
-    if (found || !mounted) return;
+    if (!mounted || reach == _TargetReach.reached) return;
+    _restoreNewest();
+    if (reach == _TargetReach.loadFailed) {
+      _showTargetLoadError(messageId);
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.l10n.group_chat_message_not_found)),
+    );
+  }
+
+  /// The opening jump could not page far enough to decide. Retry runs the
+  /// jump again; [_targetJumpStarted] stays set, so a later page arriving on
+  /// its own does not start a second search.
+  void _showTargetLoadError(String messageId) {
+    final failedMessage = context.l10n.group_chat_load_failed;
+    final retryLabel = context.l10n.group_chat_retry;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(failedMessage),
+        action: SnackBarAction(
+          label: retryLabel,
+          onPressed: () {
+            if (!mounted) return;
+            unawaited(_jumpToTarget(messageId));
+          },
+        ),
+      ),
     );
   }
 
   /// Scrolls to a message, reporting whether it was reached.
   ///
   /// `ListView.builder` only keeps rows near the viewport alive, so a parent
-  /// that is off screen has no context to scroll to yet — which is why tapping
-  /// a quote used to work for nearby originals and do nothing for distant
-  /// ones. Older messages sit at a larger offset in this reversed list, so the
-  /// search walks that way a viewport at a time, building rows as it goes,
-  /// until the target materialises and `ensureVisible` can place it exactly.
-  Future<bool> _scrollToMessage(String messageId) async {
-    if (await _ensureMessageVisible(messageId)) return true;
+  /// that is off screen has no context to scroll to yet. Older messages sit
+  /// at a larger offset in this reversed list. Once the target is loaded, the
+  /// search jumps near that row's index and then walks until the row is built
+  /// and `ensureVisible` can place it. The walk runs for the whole loaded
+  /// window: a few hundred short messages still fit in the paging budget, and
+  /// their combined height can be many screens.
+  Future<_TargetReach> _scrollToMessage(String messageId) async {
+    if (await _ensureMessageVisible(messageId)) return _TargetReach.reached;
 
     // Older than the loaded window: page back until it appears, so a quote
     // still reaches its original however far up the thread it sits.
-    if (!await _loadUntilPresent(messageId)) return false;
+    final loaded = await _loadUntilPresent(messageId);
+    if (loaded != _TargetReach.reached) return loaded;
 
-    for (var attempt = 0; attempt < _maxScrollHops; attempt++) {
-      if (!mounted || !_scrollController.hasClients) return false;
+    await _jumpNearLoadedRow(messageId);
+    if (!mounted) return _TargetReach.missing;
+    if (await _ensureMessageVisible(messageId)) return _TargetReach.reached;
+
+    // One step per loaded row is further than the distance between them, and
+    // reaching either end of the scroll extent stops the walk sooner. The
+    // bound is what keeps a row that never materialises from spinning.
+    final hopBudget = _loadedRows().length;
+    for (var attempt = 0; attempt < hopBudget; attempt++) {
+      if (!mounted || !_scrollController.hasClients)
+        return _TargetReach.missing;
+      final delta = _scrollDeltaToward(messageId);
+      if (delta == null) return _TargetReach.missing;
       final position = _scrollController.position;
-      final next = (position.pixels + position.viewportDimension * 0.85).clamp(
+      final next = (position.pixels + delta).clamp(
         0.0,
         position.maxScrollExtent,
       );
-      // Already at the oldest loaded row: nowhere further to look.
-      if (next <= position.pixels) return false;
+      if ((next - position.pixels).abs() < 1) return _TargetReach.missing;
 
       _scrollController.jumpTo(next);
       await SchedulerBinding.instance.endOfFrame;
-      if (!mounted) return false;
-      if (await _ensureMessageVisible(messageId)) return true;
+      if (!mounted) return _TargetReach.missing;
+      if (await _ensureMessageVisible(messageId)) return _TargetReach.reached;
     }
-    return false;
+    return _TargetReach.missing;
+  }
+
+  /// Puts the thread back on the newest message. The reversed list keeps that
+  /// row at offset zero.
+  void _restoreNewest() {
+    if (!_scrollController.hasClients || _scrollController.offset <= 0) return;
+    _scrollController.jumpTo(0);
+  }
+
+  List<ChatThreadRow> _loadedRows() {
+    final messages = ref.read(groupChatThreadProvider(widget.roomId)).messages;
+    return buildChatThreadRows(messages);
+  }
+
+  /// Jumps to where [messageId]'s row should sit, from its index and the
+  /// list's estimated extent. Exact placement still belongs to
+  /// [Scrollable.ensureVisible] once the row has been built.
+  Future<void> _jumpNearLoadedRow(String messageId) async {
+    if (!_scrollController.hasClients) return;
+    final rows = _loadedRows();
+    final index = _indexOfMessage(rows, messageId);
+    if (index == null || rows.isEmpty) return;
+
+    final position = _scrollController.position;
+    // Index 0 is the newest row, at offset 0. The extent estimates rows that
+    // are not laid out yet from the average of those that are.
+    final estimated = position.maxScrollExtent * index / rows.length;
+    final landed = (estimated - position.viewportDimension * 0.3).clamp(
+      0.0,
+      position.maxScrollExtent,
+    );
+    if ((landed - position.pixels).abs() < 1) return;
+    _scrollController.jumpTo(landed);
+    await SchedulerBinding.instance.endOfFrame;
+  }
+
+  int? _indexOfMessage(List<ChatThreadRow> rows, String messageId) {
+    for (var index = 0; index < rows.length; index++) {
+      final row = rows[index];
+      if (row is ChatMessageRow && row.message.id == messageId) return index;
+    }
+    return null;
+  }
+
+  /// Signed viewport step toward [messageId]. Positive moves toward older
+  /// messages. Null when that row is already inside the built range, so
+  /// another stride is not what reveals it.
+  double? _scrollDeltaToward(String messageId) {
+    if (!_scrollController.hasClients) return null;
+    final rows = _loadedRows();
+    final indexById = <String, int>{};
+    for (var index = 0; index < rows.length; index++) {
+      final row = rows[index];
+      if (row is ChatMessageRow) indexById[row.message.id] = index;
+    }
+    final target = indexById[messageId];
+    if (target == null) return null;
+
+    int? newestBuilt;
+    int? oldestBuilt;
+    for (final entry in _rowKeys.entries) {
+      if (entry.value.currentContext == null) continue;
+      final index = indexById[entry.key];
+      if (index == null) continue;
+      if (newestBuilt == null || index < newestBuilt) newestBuilt = index;
+      if (oldestBuilt == null || index > oldestBuilt) oldestBuilt = index;
+    }
+
+    final step =
+        _scrollController.position.viewportDimension * _scrollSearchStride;
+    if (step <= 0) return null;
+    // Nothing built yet, or the target is still older than what is: keep
+    // walking up the reversed list.
+    if (oldestBuilt == null || target > oldestBuilt) return step;
+    if (newestBuilt != null && target < newestBuilt) return -step;
+    return null;
   }
 
   /// Pages back until [messageId] is in the loaded window.
   ///
-  /// Returns false when the thread runs out of history first, or when the walk
-  /// is bounded out — a quote whose original was never in this room cannot be
-  /// found by paging forever.
-  Future<bool> _loadUntilPresent(String messageId) async {
+  /// [_TargetReach.missing] when the thread runs out of history first, or when
+  /// the walk is bounded out — a quote whose original was never in this room
+  /// cannot be found by paging forever. [_TargetReach.loadFailed] when a page
+  /// request fails: `loadMore` leaves [GroupChatThreadState.hasMore] set and
+  /// records an error, so the message may still be further back.
+  Future<_TargetReach> _loadUntilPresent(String messageId) async {
     final provider = groupChatThreadProvider(widget.roomId);
     for (var attempt = 0; attempt < _maxLoadHops; attempt++) {
       final state = ref.read(provider);
-      if (state.messages.any((message) => message.id == messageId)) return true;
-      if (!state.hasMore) return false;
+      if (_messageIsLoaded(state, messageId)) return _TargetReach.reached;
+      if (!state.hasMore) return _TargetReach.missing;
 
       await ref.read(provider.notifier).loadMore();
-      if (!mounted) return false;
+      if (!mounted) return _TargetReach.missing;
       // `loadMore` returns immediately while another page is already in
       // flight, so yield a frame rather than spinning through the budget.
       await SchedulerBinding.instance.endOfFrame;
-      if (!mounted) return false;
+      if (!mounted) return _TargetReach.missing;
+
+      final after = ref.read(provider);
+      if (_messageIsLoaded(after, messageId)) return _TargetReach.reached;
+      if (!after.hasMore) return _TargetReach.missing;
+      // Stop on the failed page. Repeating it would spend the paging budget
+      // and then look the same as a message that was deleted.
+      if (after.error != null) return _TargetReach.loadFailed;
     }
-    return ref
-        .read(provider)
-        .messages
-        .any((message) => message.id == messageId);
+    final state = ref.read(provider);
+    if (_messageIsLoaded(state, messageId)) return _TargetReach.reached;
+    if (state.error != null) return _TargetReach.loadFailed;
+    return _TargetReach.missing;
+  }
+
+  bool _messageIsLoaded(GroupChatThreadState state, String messageId) {
+    return state.messages.any((message) => message.id == messageId);
   }
 
   /// Places [messageId] in view when its row is currently built.
@@ -894,8 +1035,7 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
               selfDisplayName: joinChatName(user?.firstName, user?.lastName),
               isHighlighted: message.id == _highlightedId,
               isSelected: _selectedIds.contains(message.id),
-              isParentDeleted:
-                  parent != null && deletedIds.contains(parent.id),
+              isParentDeleted: parent != null && deletedIds.contains(parent.id),
               isParentOwn:
                   parent != null &&
                   isSelfChatMessage(
@@ -920,7 +1060,8 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: isDeleted ? () {} : () => _onTapRow(message),
-                  onLongPress: isDeleted ? null : () => _onLongPressRow(message),
+                  onLongPress:
+                      isDeleted ? null : () => _onLongPressRow(message),
                   child: AbsorbPointer(child: bubble),
                 ),
               );
