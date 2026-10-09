@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/plans/data/models/task_settings.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.dart';
 
 class UserTasksDto {
@@ -7,6 +8,7 @@ class UserTasksDto {
   final int displayOrder;
   final bool isCompleted;
   final List<UserSubtasksDto> subTasks;
+  final TaskSettings? settings;
 
   UserTasksDto({
     required this.id,
@@ -15,6 +17,7 @@ class UserTasksDto {
     required this.displayOrder,
     required this.isCompleted,
     required this.subTasks,
+    this.settings,
   });
 
   factory UserTasksDto.fromJson(Map<String, dynamic> json) {
@@ -31,6 +34,7 @@ class UserTasksDto {
                     UserSubtasksDto.fromJson(subtask as Map<String, dynamic>),
               )
               .toList(),
+      settings: TaskSettings.tryParse(json['settings']),
     );
   }
 
@@ -42,6 +46,7 @@ class UserTasksDto {
       'display_order': displayOrder,
       'is_completed': isCompleted,
       'sub_tasks': subTasks.map((e) => e.toJson()).toList(),
+      if (settings != null) 'settings': settings!.toJson(),
     };
   }
 
@@ -52,6 +57,7 @@ class UserTasksDto {
     int? displayOrder,
     bool? isCompleted,
     List<UserSubtasksDto>? subTasks,
+    TaskSettings? settings,
   }) {
     return UserTasksDto(
       id: id ?? this.id,
@@ -60,6 +66,7 @@ class UserTasksDto {
       displayOrder: displayOrder ?? this.displayOrder,
       isCompleted: isCompleted ?? this.isCompleted,
       subTasks: subTasks ?? this.subTasks,
+      settings: settings ?? this.settings,
     );
   }
 }

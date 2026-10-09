@@ -863,6 +863,33 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     }
   }
 
+  /// Opens the sheet a plan task asked for on segment tap
+  /// (`settings.is_commentary_open` / `is_translation_open`), once the
+  /// segment's counts are known. Commentary wins when both are set. A sheet
+  /// the segment has nothing for is skipped. Does nothing when [segmentId]
+  /// is no longer selected or a sheet is already open. True when a sheet
+  /// was opened.
+  bool autoOpenPlanPanel(
+    String segmentId, {
+    required bool hasCommentaries,
+    required bool hasVersions,
+  }) {
+    if (_isDisposed) return false;
+    if (state.selectedSegment?.segmentId != segmentId) return false;
+    if (state.isCommentaryOpen || state.isTranslationOpen) return false;
+    final item = _params.navigationContext?.currentItem;
+    if ((item?.autoOpenCommentary ?? false) && hasCommentaries) {
+      openCommentary(segmentId);
+      return true;
+    }
+    if ((item?.autoOpenTranslation ?? false) && hasVersions) {
+      // Root text stays closed.
+      openTranslation(segmentId);
+      return true;
+    }
+    return false;
+  }
+
   /// Open commentary panel for a segment
   void openCommentary(String segmentId) {
     if (_isDisposed) return;

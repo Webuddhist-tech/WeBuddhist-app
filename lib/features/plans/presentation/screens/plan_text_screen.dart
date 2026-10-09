@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigation_bottom_bar.dart';
@@ -368,7 +369,9 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
     required bool showFontControls,
   }) {
     final eventId = _eventId;
+    final isLive = widget.navigationContext.currentItem?.isLive ?? false;
     return [
+      if (isLive) const PlanTaskLiveLabel(),
       if (eventId != null) PrayerRequestsIconButton(eventId: eventId),
       if (showFontControls)
         ReaderFontSizeButton(onPressed: () => showFontSizeBottomSheet(context)),
