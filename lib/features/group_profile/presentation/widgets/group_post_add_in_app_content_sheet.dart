@@ -443,6 +443,7 @@ class _GroupPostAddInAppContentSheetState
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: SizedBox(
+        width: double.infinity,
         height: 48,
         child: ElevatedButton(
           // Stays in the enabled style while the link is being shortened.
@@ -544,42 +545,27 @@ class _ChantsTab extends ConsumerWidget {
               : ref.read(listProvider.notifier).retry,
       itemBuilder: (context, chant) {
         final content = GroupPostInAppContent.chant(chant);
-        return PracticeChantListTile(
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final tile = PracticeChantListTile(
           recitation: chant,
           includeOuterPadding: false,
+          showTrailingCaret: false,
           onTap: () => onSelect(content),
-          trailing: _ChantSelectionMark(isSelected: selectedId == content.id),
+        );
+        if (selectedId != content.id) return tile;
+        // Drawn over the tile; behind it the tile's own fill would hide it.
+        return DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+              width: 2,
+            ),
+          ),
+          child: tile,
         );
       },
-    );
-  }
-}
-
-/// Same selector the add-chants-to-collection screen puts on this tile.
-class _ChantSelectionMark extends StatelessWidget {
-  const _ChantSelectionMark({required this.isSelected});
-
-  final bool isSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-
-    return Center(
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-        ),
-        child: Icon(
-          isSelected ? AppAssets.check : AppAssets.plus,
-          size: 18,
-          color: color,
-        ),
-      ),
     );
   }
 }
