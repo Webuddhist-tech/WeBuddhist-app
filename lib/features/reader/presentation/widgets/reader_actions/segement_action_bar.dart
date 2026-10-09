@@ -27,6 +27,7 @@ import 'package:flutter_pecha/features/texts/presentation/providers/segment_prov
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 /// Converts HTML to plain text, removing specified elements using regex
 String _htmlToPlainText(String htmlString) {
@@ -178,11 +179,15 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
     final info = segmentInfo.valueOrNull;
     final videos = info?.videos ?? const <SegmentVideo>[];
     final hasRootText = info?.relatedText.hasRootText ?? false;
-    // Counts arrive with segment info. Only a loaded count of zero takes
-    // Commentaries or Versions off the sheet: while it loads, or when it
-    // fails, both stay, and their sheets load and report on their own.
-    final showCommentaries = info == null || info.relatedText.commentaries > 0;
-    final showVersions = info == null || info.translations > 0;
+    // Counts arrive with segment info. Until then placeholder rows hold the
+    // space, so an action the segment turns out not to have never flashes.
+    // A loaded count of zero hides that action; a failed request is not a
+    // zero, so both stay and their sheets load and report on their own.
+    final countsLoading = info == null && !segmentInfo.hasError;
+    final showCommentaries =
+        !countsLoading && (info == null || info.relatedText.commentaries > 0);
+    final showVersions =
+        !countsLoading && (info == null || info.translations > 0);
 
     return _ResourcesPanel(
       onDismiss: widget.onClose,
@@ -210,6 +215,10 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
         onTap: _handleBookmark,
       ),
       tiles: [
+        if (countsLoading) ...const [
+          _ResourceTileSkeleton(labelWidth: 120),
+          _ResourceTileSkeleton(labelWidth: 80),
+        ],
         if (showCommentaries)
           _ResourceTile(
             icon: AppAssets.readerCommentary,
@@ -844,6 +853,35 @@ class _ResourceTile extends StatelessWidget {
         color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
       ),
       onTap: onTap,
+    );
+  }
+}
+
+/// Stands in for a [_ResourceTile] while the segment's counts load.
+class _ResourceTileSkeleton extends StatelessWidget {
+  final double labelWidth;
+
+  const _ResourceTileSkeleton({required this.labelWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return Skeletonizer(
+      enabled: true,
+      child: ListTile(
+        leading: Bone(
+          width: 24,
+          height: 24,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        title: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Bone(
+            width: labelWidth,
+            height: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ),
     );
   }
 }
