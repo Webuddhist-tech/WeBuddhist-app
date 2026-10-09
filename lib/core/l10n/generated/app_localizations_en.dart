@@ -200,7 +200,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_group_accumulations => 'Add recitation to';
 
   @override
-  String get mala_groups_section => 'Groups';
+  String get mala_groups_section => 'Events';
 
   @override
   String get mala_group_untitled => 'Untitled space';
@@ -257,7 +257,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get home_share_support => 'Your support helps our community grow.';
+  String get home_share_support => 'Your support helps our community grow';
 
   @override
   String get no_feature_content => 'No featured content available';
@@ -1223,7 +1223,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get image => 'Image';
 
   @override
-  String get feedback => 'Feedback';
+  String get feedback => 'Give feedback';
 
   @override
   String get author => 'Author';
@@ -2227,7 +2227,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_accumulator_my_contributions => 'My contributions';
 
   @override
-  String get group_accumulator_recited => 'Recited';
+  String get group_accumulator_recited => 'Recitations';
 
   @override
   String get group_accumulator_total => 'Total';
@@ -3112,7 +3112,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_no_supporters => 'No one is praying yet';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';

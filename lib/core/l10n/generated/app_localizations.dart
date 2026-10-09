@@ -445,7 +445,7 @@ abstract class AppLocalizations {
   /// No description provided for @mala_groups_section.
   ///
   /// In en, this message translates to:
-  /// **'Groups'**
+  /// **'Events'**
   String get mala_groups_section;
 
   /// No description provided for @mala_group_untitled.
@@ -547,7 +547,7 @@ abstract class AppLocalizations {
   /// No description provided for @home_share_support.
   ///
   /// In en, this message translates to:
-  /// **'Your support helps our community grow.'**
+  /// **'Your support helps our community grow'**
   String get home_share_support;
 
   /// No description provided for @no_feature_content.
@@ -2263,7 +2263,7 @@ abstract class AppLocalizations {
   /// No description provided for @feedback.
   ///
   /// In en, this message translates to:
-  /// **'Feedback'**
+  /// **'Give feedback'**
   String get feedback;
 
   /// No description provided for @author.
@@ -4015,7 +4015,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_accumulator_recited.
   ///
   /// In en, this message translates to:
-  /// **'Recited'**
+  /// **'Recitations'**
   String get group_accumulator_recited;
 
   /// No description provided for @group_accumulator_total.
@@ -5465,7 +5465,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_sort_by.
   ///
   /// In en, this message translates to:
-  /// **'Sort by'**
+  /// **'Pray for'**
   String get event_prayer_sort_by;
 
   /// No description provided for @event_prayer_sort_needs_prayers.

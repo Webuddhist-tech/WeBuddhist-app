@@ -257,7 +257,7 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get home_share_support =>
-      'Таны дэмжлэг манай нийгэмлэгийг өсгөхөд тусалдаг.';
+      'Таны дэмжлэг манай нийгэмлэгийг өсгөхөд тусалдаг';
 
   @override
   String get no_feature_content => 'Онцлох агуулга байхгүй байна';
@@ -3153,7 +3153,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get event_prayer_no_supporters => 'Одоогоор хэн ч залбираагүй байна';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';

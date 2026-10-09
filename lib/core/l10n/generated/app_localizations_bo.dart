@@ -3087,7 +3087,7 @@ class AppLocalizationsBo extends AppLocalizations {
   }
 
   @override
-  String get event_prayer_new_request => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་གསར་པ།';
+  String get event_prayer_new_request => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་གསར་དུ་ཞུ་བ།';
 
   @override
   String get event_prayer_edit_request => 'Edit prayer request';
@@ -3129,8 +3129,8 @@ class AppLocalizationsBo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'མི་ $count གིས་སྨོན་ལམ་བཏབ་སོང་།',
-      one: 'མི་ $count གིས་སྨོན་ལམ་བཏབ་སོང་།',
+      other: 'མི་ $count ནས་སྨོན་ལམ་བཏབ་སོང་།',
+      one: 'མི་ $count ནས་སྨོན་ལམ་བཏབ་སོང་།',
     );
     return '$_temp0';
   }
@@ -3155,22 +3155,22 @@ class AppLocalizationsBo extends AppLocalizations {
       'ད་དུང་སུས་ཀྱང་སྨོན་ལམ་འདེབས་ཀྱི་མི་འདུག';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
-  String get event_prayer_sort_needs_prayers => 'Needs prayers';
+  String get event_prayer_sort_needs_prayers => 'ཐུགས་སྨོན་གནང་དགོས་པ་ནས་སྟོན།';
 
   @override
-  String get event_prayer_sort_most_prayed => 'Most prayed';
+  String get event_prayer_sort_most_prayed => 'ཐུགས་སྨོན་རག་མང་ཤོས་ནས་སྟོན།';
 
   @override
-  String get event_prayer_sort_newest => 'Newest';
+  String get event_prayer_sort_newest => 'སྐྱབས་ཞུ་གསར་ཤོས་ནས་སྟོན།';
 
   @override
-  String get event_prayer_sort_oldest => 'Oldest';
+  String get event_prayer_sort_oldest => 'སྐྱབས་ཞུ་རྙིང་ཤོས་ནས་སྟོན།';
 
   @override
-  String get event_prayer_sort_by_intention => 'By intention';
+  String get event_prayer_sort_by_intention => 'སྐྱབས་ཞུའི་དགོས་དམིགས་ནས།';
 
   @override
   String get event_prayer_clear_intention => 'Clear intention';
