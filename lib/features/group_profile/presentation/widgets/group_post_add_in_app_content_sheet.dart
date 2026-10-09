@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
-import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
@@ -25,7 +24,9 @@ import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Picks an event, practice or chant the user follows and hands the composer
-/// the same short link the item's share button produces.
+/// the item's `webuddhist.com/open/...` deep link. The link is posted as-is,
+/// not shortened: the feed opens first-party links inside the app, which a
+/// shortener redirect would hide from the deep link router.
 class GroupPostAddInAppContentSheet extends ConsumerStatefulWidget {
   const GroupPostAddInAppContentSheet({super.key});
 
@@ -56,7 +57,6 @@ class _GroupPostAddInAppContentSheetState
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
   GroupPostInAppContent? _selected;
-  bool _isAttaching = false;
   // Raw practice count when the last all-skipped page auto-load was issued.
   int _practicesAutoLoadedAt = -1;
 
@@ -124,19 +124,13 @@ class _GroupPostAddInAppContentSheetState
   }
 
   void _select(GroupPostInAppContent content) {
-    // _attach() pops with the item it captured; a tap meanwhile would only
-    // move the highlight away from it.
-    if (_isAttaching) return;
     setState(() => _selected = _selected?.id == content.id ? null : content);
   }
 
-  Future<void> _attach() async {
+  void _attach() {
     final selected = _selected;
-    if (selected == null || _isAttaching) return;
-    setState(() => _isAttaching = true);
-
-    final url = await resolveShareUrlRef(ref, selected.link.toString());
-    if (!mounted) return;
+    if (selected == null) return;
+    final url = selected.link.toString();
     Navigator.of(context).pop(
       GroupPostLinkDraft(
         url: url,
@@ -231,8 +225,7 @@ class _GroupPostAddInAppContentSheetState
                 ),
               ),
               IconButton(
-                onPressed:
-                    _isAttaching ? null : () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(AppAssets.x),
                 visualDensity: VisualDensity.compact,
               ),
@@ -465,9 +458,7 @@ class _GroupPostAddInAppContentSheetState
         width: double.infinity,
         height: 48,
         child: ElevatedButton(
-          // Stays in the enabled style while the link is being shortened.
-          onPressed:
-              _isAttaching ? () {} : (_selected == null ? null : _attach),
+          onPressed: _selected == null ? null : _attach,
           style: ElevatedButton.styleFrom(
             backgroundColor:
                 isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
@@ -481,23 +472,10 @@ class _GroupPostAddInAppContentSheetState
             ),
             elevation: 0,
           ),
-          child:
-              _isAttaching
-                  ? SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: foreground,
-                    ),
-                  )
-                  : Text(
-                    l10n.group_post_attach,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+          child: Text(
+            l10n.group_post_attach,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );

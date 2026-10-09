@@ -127,6 +127,29 @@ class AppLinksDeepLinkService {
     _initialized = false;
   }
 
+  /// Routes a first-party link tapped inside the app (a post's link card, a
+  /// chat message) with the same router, tab setter and plan navigator the
+  /// OS-delivered links use. Pushes on top of the current screen so Back
+  /// returns to where the link was tapped. Returns false when the link is not
+  /// first-party or has no route, so the caller can fall back to a browser.
+  ///
+  /// Deliberately skips the duplicate-dispatch window: a user may well open
+  /// the same link twice in a row from the feed.
+  bool openInApp(Uri uri) {
+    final router = _router;
+    if (router == null) return false;
+    if (!DeepLinkRouter.isFirstPartyAppLink(uri)) return false;
+
+    return DeepLinkRouter.route(
+      uri,
+      router,
+      source: 'in_app',
+      analytics: _analytics,
+      tabSetter: _tabSetter,
+      planNavigator: _planNavigator,
+    );
+  }
+
   void _handleLink(Uri uri) {
     if (!DeepLinkRouter.isFirstPartyAppLink(uri)) {
       _logger.debug('Ignoring non-first-party app link: $uri');

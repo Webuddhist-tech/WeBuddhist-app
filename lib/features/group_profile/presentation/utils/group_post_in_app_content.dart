@@ -4,7 +4,8 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_pract
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 
 /// One pickable item in the composer's in-app content sheet and the deep
-/// link it posts, the same link the item's share button uses.
+/// link it posts: the same `/open/...` link the item's share button shortens,
+/// kept long here so the feed can route it in-app.
 class GroupPostInAppContent {
   final String id;
   final String title;
