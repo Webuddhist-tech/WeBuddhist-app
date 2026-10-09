@@ -195,6 +195,9 @@ class PlanTextItem {
   /// the matching versions card is placed above the language sections.
   final String? translationTextId;
 
+  /// Plan task `settings.is_live`. The Live label is shown only for this task.
+  final bool isLive;
+
   const PlanTextItem._({
     required this.contentType,
     required this.textId,
@@ -214,6 +217,7 @@ class PlanTextItem {
     this.commentaryTextId,
     this.autoOpenTranslation = false,
     this.translationTextId,
+    this.isLive = false,
   });
 
   /// Build an inline item from one or more [blocks]. Throws if empty.
@@ -226,6 +230,7 @@ class PlanTextItem {
     String? audioUrl,
     int? startMs,
     int? endMs,
+    bool isLive = false,
   }) {
     assert(blocks.isNotEmpty, 'inline requires at least one block');
     final first = blocks.first;
@@ -243,6 +248,7 @@ class PlanTextItem {
       audioUrl: audioUrl,
       startMs: startMs,
       endMs: endMs,
+      isLive: isLive,
     );
   }
 
@@ -262,6 +268,7 @@ class PlanTextItem {
     String? commentaryTextId,
     bool autoOpenTranslation = false,
     String? translationTextId,
+    bool isLive = false,
   }) {
     assert(textId.isNotEmpty, 'sourceReference requires non-empty textId');
     return PlanTextItem._(
@@ -280,6 +287,7 @@ class PlanTextItem {
       commentaryTextId: commentaryTextId,
       autoOpenTranslation: autoOpenTranslation,
       translationTextId: translationTextId,
+      isLive: isLive,
     );
   }
 
@@ -399,6 +407,7 @@ class PlanTextItem {
     String? commentaryTextId,
     bool? autoOpenTranslation,
     String? translationTextId,
+    bool? isLive,
   }) {
     return PlanTextItem._(
       contentType: contentType ?? this.contentType,
@@ -419,6 +428,7 @@ class PlanTextItem {
       commentaryTextId: commentaryTextId ?? this.commentaryTextId,
       autoOpenTranslation: autoOpenTranslation ?? this.autoOpenTranslation,
       translationTextId: translationTextId ?? this.translationTextId,
+      isLive: isLive ?? this.isLive,
     );
   }
 
@@ -442,6 +452,7 @@ class PlanTextItem {
         other.commentaryTextId != commentaryTextId ||
         other.autoOpenTranslation != autoOpenTranslation ||
         other.translationTextId != translationTextId ||
+        other.isLive != isLive ||
         !listEquals(other.blocks, blocks)) {
       return false;
     }
@@ -474,6 +485,7 @@ class PlanTextItem {
     commentaryTextId,
     autoOpenTranslation,
     translationTextId,
+    isLive,
   );
 
   @override
@@ -530,6 +542,12 @@ class NavigationContext {
   /// the reader must not follow the live recitation position.
   final bool isOnlineAttendee;
 
+  /// `settings.is_live` when this screen was opened from a plan task that is
+  /// not in the plan text sequence (a group accumulation). Null leaves the
+  /// event Live pill unchanged. Plan text items carry the flag on
+  /// [PlanTextItem.isLive] instead. Live following does not read this.
+  final bool? taskIsLive;
+
   const NavigationContext({
     required this.source,
     this.planId,
@@ -549,12 +567,22 @@ class NavigationContext {
     this.collectionId,
     this.eventId,
     this.isOnlineAttendee = false,
+    this.taskIsLive,
   });
 
   bool get isFromEvent => eventId != null && eventId!.isNotEmpty;
 
   /// True when the reader should follow the event's live recitation.
   bool get isLiveRecitation => isFromEvent && !isOnlineAttendee;
+
+  /// `settings.is_live` for the plan task on screen.
+  /// Null when the screen was not opened from a plan task.
+  bool? get planTaskIsLive {
+    if (source == NavigationSource.plan && hasPlanItems) {
+      return currentItem?.isLive ?? false;
+    }
+    return taskIsLive;
+  }
 
   /// True when the reader should show chant-again / finish-session controls
   /// and increment the group accumulation count.
@@ -669,6 +697,7 @@ class NavigationContext {
     String? collectionId,
     String? eventId,
     bool? isOnlineAttendee,
+    bool? taskIsLive,
   }) {
     return NavigationContext(
       source: source ?? this.source,
@@ -690,6 +719,7 @@ class NavigationContext {
       collectionId: collectionId ?? this.collectionId,
       eventId: eventId ?? this.eventId,
       isOnlineAttendee: isOnlineAttendee ?? this.isOnlineAttendee,
+      taskIsLive: taskIsLive ?? this.taskIsLive,
     );
   }
 

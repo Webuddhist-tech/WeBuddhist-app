@@ -44,6 +44,7 @@ void main() {
     expect(item.commentaryTextId, 'commentary-1');
     expect(item.autoOpenTranslation, isFalse);
     expect(item.translationTextId, isNull);
+    expect(item.isLive, isFalse);
   });
 
   test('preview plan day task keeps commentary settings', () {
@@ -67,6 +68,7 @@ void main() {
     expect(item.commentaryTextId, 'commentary-1');
     expect(item.autoOpenTranslation, isFalse);
     expect(item.translationTextId, isNull);
+    expect(item.isLive, isFalse);
   });
 
   test('a translation id is shown for both plan day endpoints', () {
@@ -147,6 +149,7 @@ void main() {
     expect(items.single.commentaryTextId, isNull);
     expect(items.single.autoOpenTranslation, isFalse);
     expect(items.single.translationTextId, isNull);
+    expect(items.single.isLive, isFalse);
   });
 
   test('preview tasks without settings leave the reader unchanged', () {
@@ -170,5 +173,41 @@ void main() {
     expect(items.single.commentaryTextId, isNull);
     expect(items.single.autoOpenTranslation, isFalse);
     expect(items.single.translationTextId, isNull);
+    expect(items.single.isLive, isFalse);
+  });
+
+  test('only the task marked live carries the live flag', () {
+    UserTasksDto task(String id, bool isLive, String contentType) {
+      return UserTasksDto.fromJson({
+        'id': id,
+        'title': id,
+        'estimated_time': null,
+        'display_order': isLive ? 1 : 0,
+        'is_completed': false,
+        'sub_tasks': [
+          {
+            'id': '$id-sub',
+            'is_completed': false,
+            'content_type': contentType,
+            'content': contentType == 'TEXT' ? 'Hello' : '',
+            'source_text_id': contentType == 'TEXT' ? null : 'text-$id',
+            'display_order': 0,
+          },
+        ],
+        'settings': {
+          'is_commentary_open': false,
+          'is_translation_open': false,
+          'is_live': isLive,
+        },
+      });
+    }
+
+    final items = PlanSubtaskNavigation.fromUserTasks([
+      task('quiet', false, 'SOURCE_REFERENCE'),
+      task('live-read', true, 'SOURCE_REFERENCE'),
+      task('live-note', true, 'TEXT'),
+    ]);
+
+    expect(items.map((item) => item.isLive).toList(), [false, true, true]);
   });
 }

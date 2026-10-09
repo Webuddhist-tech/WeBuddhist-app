@@ -1,7 +1,4 @@
 /// Reader hints on a plan task, from `settings` on a plan-day task.
-///
-/// Commentary fields drive the reader now. Translation and live are parsed
-/// so a cached day keeps them until those behaviors are wired.
 class TaskSettings {
   final bool isCommentaryOpen;
   final String? commentaryTextId;

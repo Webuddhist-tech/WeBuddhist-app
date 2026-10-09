@@ -18,7 +18,9 @@ import 'package:flutter_pecha/features/mala/presentation/providers/mala_provider
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_live_pill.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_segment_audio_controller.dart';
@@ -747,6 +749,23 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  /// The existing follow control when this task is live and a recitation is
+  /// being followed. A static label when the task is live without one.
+  /// Other screens keep the event pill. Following the line is unchanged.
+  Widget? _livePill(String? liveEventId) {
+    final pill = planLivePill(
+      taskIsLive: widget.navigationContext?.planTaskIsLive,
+      followsRecitation: liveEventId != null,
+    );
+    return switch (pill) {
+      PlanLivePill.hidden => null,
+      PlanLivePill.staticLabel => const PlanTaskLiveLabel(),
+      PlanLivePill.syncToggle => RecitationLiveSyncToggle(
+        eventId: liveEventId!,
+      ),
+    };
+  }
+
   /// Embedded: a close bar with font size and languages instead of the app bar.
   /// Either bar carries the live sync button when following an event.
   Widget _buildAppBar(
@@ -756,10 +775,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   ) {
     final eventId = _eventId;
     final liveEventId = _liveEventId;
-    final liveSyncToggle =
-        liveEventId == null
-            ? null
-            : RecitationLiveSyncToggle(eventId: liveEventId);
+    final liveSyncToggle = _livePill(liveEventId);
     final prayerRequestsButton =
         eventId == null ? null : PrayerRequestsIconButton(eventId: eventId);
     if (_isEmbedded) {

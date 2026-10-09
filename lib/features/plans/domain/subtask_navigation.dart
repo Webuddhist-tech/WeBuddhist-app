@@ -39,6 +39,7 @@ class PlanSubtaskNavigation {
             (s) => _toSourceItemFromUser(s, task.title, task.id, task.settings),
         blockOf: _toBlockFromUser,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
+        isLive: task.settings?.isLive ?? false,
       );
       if (item != null) items.add(item);
     }
@@ -66,6 +67,7 @@ class PlanSubtaskNavigation {
             (s) => _toSourceItemFromPlan(s, task.title, task.id, task.settings),
         blockOf: _toBlockFromPlan,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
+        isLive: task.settings?.isLive ?? false,
       );
       if (item != null) items.add(item);
     }
@@ -117,6 +119,7 @@ class PlanSubtaskNavigation {
     required PlanTextItem? Function(S) sourceOf,
     required PlanInlineBlock? Function(S) blockOf,
     required (String? url, int? startMs, int? endMs) Function(S) audioOf,
+    bool isLive = false,
   }) {
     for (final subtask in subtasks) {
       final type = PlanContentTypes.parse(contentTypeOf(subtask));
@@ -140,6 +143,7 @@ class PlanSubtaskNavigation {
         audioUrl: normalizeAudioUrl(audioUrl),
         startMs: startMs,
         endMs: endMs,
+        isLive: isLive,
       );
     }
     return null;
@@ -192,6 +196,7 @@ class PlanSubtaskNavigation {
       commentaryTextId: settings?.commentaryTextId,
       autoOpenTranslation: settings?.isTranslationOpen ?? false,
       translationTextId: settings?.translationTextId,
+      isLive: settings?.isLive ?? false,
     );
   }
 
@@ -218,6 +223,7 @@ class PlanSubtaskNavigation {
       commentaryTextId: settings?.commentaryTextId,
       autoOpenTranslation: settings?.isTranslationOpen ?? false,
       translationTextId: settings?.translationTextId,
+      isLive: settings?.isLive ?? false,
     );
   }
 
