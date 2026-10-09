@@ -2931,6 +2931,18 @@ class AppLocalizationsHi extends AppLocalizations {
       'एक मान्य लिंक दर्ज करें, उदाहरण: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_search_hint => 'Search content...';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'आप अधिकतम $count फ़ोटो जोड़ सकते हैं';
   }

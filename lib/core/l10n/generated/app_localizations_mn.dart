@@ -2940,6 +2940,18 @@ class AppLocalizationsMn extends AppLocalizations {
       'Зөв холбоос оруулна уу, жишээ нь: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_search_hint => 'Search content...';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'Та $count хүртэл зураг нэмэх боломжтой';
   }

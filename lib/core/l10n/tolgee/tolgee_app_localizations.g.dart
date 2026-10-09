@@ -5707,6 +5707,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_post_in_app_content => TolgeeBridge.get(
+    localeName,
+    'group_post_in_app_content',
+    () => _fallback.group_post_in_app_content,
+  );
+
+  @override
+  String get group_post_add_in_app_content_title => TolgeeBridge.get(
+    localeName,
+    'group_post_add_in_app_content_title',
+    () => _fallback.group_post_add_in_app_content_title,
+  );
+
+  @override
+  String get group_post_in_app_content_search_hint => TolgeeBridge.get(
+    localeName,
+    'group_post_in_app_content_search_hint',
+    () => _fallback.group_post_in_app_content_search_hint,
+  );
+
+  @override
+  String get group_post_in_app_content_empty => TolgeeBridge.get(
+    localeName,
+    'group_post_in_app_content_empty',
+    () => _fallback.group_post_in_app_content_empty,
+  );
+
+  @override
   String group_post_photo_limit(int count) => TolgeeBridge.format(
     localeName,
     'group_post_photo_limit',

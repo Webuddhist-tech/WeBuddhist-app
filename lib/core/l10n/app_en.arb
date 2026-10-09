@@ -1467,6 +1467,10 @@
   "group_post_preview_failed_title": "Couldn't load a preview",
   "group_post_preview_failed_message": "You can still attach it as a link",
   "group_post_invalid_link": "Enter a valid link, for example: https://example.com",
+  "group_post_in_app_content": "In-app content",
+  "group_post_add_in_app_content_title": "Add in-app content",
+  "group_post_in_app_content_search_hint": "Search content...",
+  "group_post_in_app_content_empty": "Nothing to add yet",
   "group_post_photo_limit": "You can add up to {count} photos",
   "@group_post_photo_limit": {
     "placeholders": {

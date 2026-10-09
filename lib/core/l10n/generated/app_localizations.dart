@@ -5126,6 +5126,30 @@ abstract class AppLocalizations {
   /// **'Enter a valid link, for example: https://example.com'**
   String get group_post_invalid_link;
 
+  /// No description provided for @group_post_in_app_content.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app content'**
+  String get group_post_in_app_content;
+
+  /// No description provided for @group_post_add_in_app_content_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add in-app content'**
+  String get group_post_add_in_app_content_title;
+
+  /// No description provided for @group_post_in_app_content_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search content...'**
+  String get group_post_in_app_content_search_hint;
+
+  /// No description provided for @group_post_in_app_content_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to add yet'**
+  String get group_post_in_app_content_empty;
+
   /// No description provided for @group_post_photo_limit.
   ///
   /// In en, this message translates to:
