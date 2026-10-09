@@ -1846,34 +1846,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get connect_event_attend => TolgeeBridge.get(
-    localeName,
-    'connect_event_attend',
-    () => _fallback.connect_event_attend,
-  );
-
-  @override
-  String get connect_event_attending => TolgeeBridge.get(
-    localeName,
-    'connect_event_attending',
-    () => _fallback.connect_event_attending,
-  );
-
-  @override
-  String get connect_event_join_in_person => TolgeeBridge.get(
-    localeName,
-    'connect_event_join_in_person',
-    () => _fallback.connect_event_join_in_person,
-  );
-
-  @override
-  String get connect_event_join_online => TolgeeBridge.get(
-    localeName,
-    'connect_event_join_online',
-    () => _fallback.connect_event_join_online,
-  );
-
-  @override
   String get connect_event_enter => TolgeeBridge.get(
     localeName,
     'connect_event_enter',
@@ -1888,18 +1860,62 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get connect_event_joining_in_person => TolgeeBridge.get(
+  String get connect_event_practice_in_person => TolgeeBridge.get(
     localeName,
-    'connect_event_joining_in_person',
-    () => _fallback.connect_event_joining_in_person,
+    'connect_event_practice_in_person',
+    () => _fallback.connect_event_practice_in_person,
   );
 
   @override
-  String get connect_event_joining_online => TolgeeBridge.get(
+  String get connect_event_practice_online => TolgeeBridge.get(
     localeName,
-    'connect_event_joining_online',
-    () => _fallback.connect_event_joining_online,
+    'connect_event_practice_online',
+    () => _fallback.connect_event_practice_online,
   );
+
+  @override
+  String get connect_event_view_in_person => TolgeeBridge.get(
+    localeName,
+    'connect_event_view_in_person',
+    () => _fallback.connect_event_view_in_person,
+  );
+
+  @override
+  String get connect_event_view_online => TolgeeBridge.get(
+    localeName,
+    'connect_event_view_online',
+    () => _fallback.connect_event_view_online,
+  );
+
+  @override
+  String get connect_event_join_to_practice => TolgeeBridge.get(
+    localeName,
+    'connect_event_join_to_practice',
+    () => _fallback.connect_event_join_to_practice,
+  );
+
+  @override
+  String get connect_event_leave => TolgeeBridge.get(
+    localeName,
+    'connect_event_leave',
+    () => _fallback.connect_event_leave,
+  );
+
+  @override
+  String get connect_event_leave_confirm_title => TolgeeBridge.get(
+    localeName,
+    'connect_event_leave_confirm_title',
+    () => _fallback.connect_event_leave_confirm_title,
+  );
+
+  @override
+  String connect_event_leave_confirm_message(String title) =>
+      TolgeeBridge.format(
+        localeName,
+        'connect_event_leave_confirm_message',
+        <String, Object>{'title': title},
+        () => _fallback.connect_event_leave_confirm_message(title),
+      );
 
   @override
   String connect_event_participants_attending(int count) => TolgeeBridge.format(

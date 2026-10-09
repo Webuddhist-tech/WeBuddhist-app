@@ -12,7 +12,8 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Icon-only variant for a task screen's app bar; hidden until the event
-/// says its chat room is on.
+/// says its chat room is on, and from anyone exploring it without joining,
+/// as on the event page.
 class PrayerRequestsIconButton extends ConsumerWidget {
   final String eventId;
 
@@ -20,14 +21,17 @@ class PrayerRequestsIconButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatEnabled = ref.watch(
+    final shown = ref.watch(
       groupEventDetailProvider(eventId).select(
         (async) =>
-            async.valueOrNull?.fold((_) => false, (e) => e.chatEnabled) ??
+            async.valueOrNull?.fold(
+              (_) => false,
+              (e) => e.chatEnabled && e.isJoined,
+            ) ??
             false,
       ),
     );
-    if (!chatEnabled) return const SizedBox.shrink();
+    if (!shown) return const SizedBox.shrink();
 
     return IconButton(
       tooltip: context.l10n.event_prayer_requests,

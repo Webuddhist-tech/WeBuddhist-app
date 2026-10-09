@@ -976,8 +976,6 @@
   "connect_open": "ཁ་ཕྱེ།",
   "connect_event_fallback_title": "བྱེད་སྒོ།",
   "connect_group_fallback_title": "ཚོགས་པ།",
-  "connect_event_attend": "ཞུགས།",
-  "connect_event_attending": "ཞུགས་ཟིན།",
   "connect_event_participants_attending": "མཉམ་ཞུགས་མཁན། {count}",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -1125,9 +1123,6 @@
   "event_prayer_pray": "སྨོན་ལམ་འདེབས།",
   "event_prayer_praying": "སྨོན་ལམ་བཏབ་ཟིན།",
   "bookmark_group_accumulation": "ཚོགས་པའི་བསགས་གྲངས།",
-  "connect_event_joining_in_person": "ངོ་བཅར་ཞུ་བ།",
-  "connect_event_join_in_person": "མཉམ་ཞུགས།",
-  "connect_event_join_online": "དྲ་ཐོག་མཉམ་ཞུགས།",
   "connect_event_organizer": "གོ་སྒྲིག་པ།",
   "connect_event_when": "ཚོགས་དུས།",
   "connect_event_where": "ཚོགས་ཡུལ།",
@@ -1162,7 +1157,21 @@
   "feedback_error_unavailable": "ད་ལྟ་བསམ་འཆར་སྤྲོད་ཐབས་མི་འདུག",
   "connect_event_enter": "འཇུག",
   "connect_event_participation_prompt": "ཁྱེད་རང་ཇི་ལྟར་ཞུགས་ཀྱི་ཡིན་ནམ།",
-  "connect_event_joining_online": "དྲ་ཐོག་མཉམ་ཞུགས་བྱེད་བཞིན་པ།",
+  "connect_event_practice_in_person": "ངོ་བཅར་ཉམས་ལེན།",
+  "connect_event_practice_online": "དྲ་ཐོག་ཉམས་ལེན།",
+  "connect_event_view_in_person": "ངོ་བཅར་ལ་ལྟ།",
+  "connect_event_view_online": "དྲ་ཐོག་ལ་ལྟ།",
+  "connect_event_join_to_practice": "ཉམས་ལེན་ཆེད་བྱེད་སྒོར་ཞུགས།",
+  "connect_event_leave": "བྱེད་སྒོ་ནས་ཕྱིར་ཐོན།",
+  "connect_event_leave_confirm_title": "བྱེད་སྒོ་འདི་ནས་ཕྱིར་ཐོན་ནམ།",
+  "connect_event_leave_confirm_message": "ཁྱེད་ཀྱིས་{title}ལ་མཉམ་ཞུགས་མི་བྱེད། བྱེད་སྒོ་ལ་ད་དུང་ལྟ་ཐུབ་ལ་དུས་ནམ་ཡིན་ཡང་བསྐྱར་དུ་ཞུགས་ཆོག",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "connect_event_practices": "མཛད་སྒོའི་ཉམས་ལེན།",
   "connect_event_tab_recitations": "ཞལ་འདོན།",
   "connect_event_add_recitations": "ཞལ་འདོན་ཁ་སྣོན།",

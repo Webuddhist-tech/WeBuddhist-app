@@ -898,28 +898,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_group_fallback_title => '共修空間';
 
   @override
-  String get connect_event_attend => '參加';
-
-  @override
-  String get connect_event_attending => '已參加';
-
-  @override
-  String get connect_event_join_in_person => '現場參加';
-
-  @override
-  String get connect_event_join_online => '線上參加';
-
-  @override
   String get connect_event_enter => '進入';
 
   @override
   String get connect_event_participation_prompt => '您會怎麼參加?';
 
   @override
-  String get connect_event_joining_in_person => '正在現場';
+  String get connect_event_practice_in_person => '現場修持';
 
   @override
-  String get connect_event_joining_online => '正在線上';
+  String get connect_event_practice_online => '線上修持';
+
+  @override
+  String get connect_event_view_in_person => '現場檢視';
+
+  @override
+  String get connect_event_view_online => '線上檢視';
+
+  @override
+  String get connect_event_join_to_practice => '參加活動即可修持';
+
+  @override
+  String get connect_event_leave => '退出活動';
+
+  @override
+  String get connect_event_leave_confirm_title => '要退出此活動嗎？';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return '您將不再參加$title。您仍可查看此活動，並隨時再次參加。';
+  }
 
   @override
   String connect_event_participants_attending(int count) {
