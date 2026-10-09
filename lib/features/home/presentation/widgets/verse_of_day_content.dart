@@ -128,9 +128,7 @@ class VerseOfDayContent extends StatelessWidget {
     required this.verseOfDay,
     required this.typography,
     required this.verseColor,
-    this.attributionColor,
     this.sourceColor,
-    this.showAttribution = true,
     this.imageAspectRatio = 1.65,
     this.showBranding = false,
     this.useContentFontForAttribution = false,
@@ -144,11 +142,7 @@ class VerseOfDayContent extends StatelessWidget {
   final VerseOfDay verseOfDay;
   final VerseOfDayTypography typography;
   final Color verseColor;
-  final Color? attributionColor;
   final Color? sourceColor;
-
-  /// Group name and source under the verse; off on the home card.
-  final bool showAttribution;
   final double imageAspectRatio;
   final bool showBranding;
   final bool useContentFontForAttribution;
@@ -167,7 +161,6 @@ class VerseOfDayContent extends StatelessWidget {
     final attributionStrutStyle = context.tibetanStrutStyle(
       typography.attributionFontSize,
     );
-    final hasGroupTitle = verseOfDay.groupTitle.isNotEmpty;
     final hasSource = verseOfDay.source.isNotEmpty;
     final sourceFontSize = typography.attributionFontSize - 2;
 
@@ -194,55 +187,34 @@ class VerseOfDayContent extends StatelessWidget {
                 strutStyle: verseStrutStyle,
                 style: typography.verseTextStyle(color: verseColor),
               ),
-              if (showAttribution && (hasGroupTitle || hasSource)) ...[
+              if (hasSource) ...[
                 SizedBox(height: attributionSpacing),
-                Column(
-                  crossAxisAlignment:
+                Row(
+                  mainAxisAlignment:
                       textAlign == TextAlign.center
-                          ? CrossAxisAlignment.center
-                          : CrossAxisAlignment.start,
+                          ? MainAxisAlignment.center
+                          : MainAxisAlignment.start,
                   children: [
-                    if (hasGroupTitle)
-                      Text(
-                        withTibetanLineBreakOpportunities(
-                          verseOfDay.groupTitle,
-                        ),
+                    Icon(
+                      AppAssets.bookOpen,
+                      size: sourceFontSize + 4,
+                      color: sourceColor ?? verseColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        withTibetanLineBreakOpportunities(verseOfDay.source),
                         strutStyle: attributionStrutStyle,
-                        style: typography.attributionTextStyle(
-                          color: attributionColor ?? verseColor,
-                          useContentFontForAttribution:
-                              useContentFontForAttribution,
-                        ),
+                        style: typography
+                            .attributionTextStyle(
+                              color: sourceColor ?? verseColor,
+                              useContentFontForAttribution:
+                                  useContentFontForAttribution,
+                              fontWeight: FontWeight.w400,
+                            )
+                            .copyWith(fontSize: sourceFontSize),
                       ),
-                    if (hasGroupTitle && hasSource) const SizedBox(height: 6),
-                    if (hasSource)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            AppAssets.bookOpen,
-                            size: sourceFontSize + 4,
-                            color: sourceColor ?? verseColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              withTibetanLineBreakOpportunities(
-                                verseOfDay.source,
-                              ),
-                              strutStyle: attributionStrutStyle,
-                              style: typography
-                                  .attributionTextStyle(
-                                    color: sourceColor ?? verseColor,
-                                    useContentFontForAttribution:
-                                        useContentFontForAttribution,
-                                    fontWeight: FontWeight.w400,
-                                  )
-                                  .copyWith(fontSize: sourceFontSize),
-                            ),
-                          ),
-                        ],
-                      ),
+                    ),
                   ],
                 ),
               ],
