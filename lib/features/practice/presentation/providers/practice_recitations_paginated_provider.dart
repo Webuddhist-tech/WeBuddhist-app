@@ -268,6 +268,23 @@ final practiceRecitationsPaginatedProvider = StateNotifierProvider.autoDispose
       );
     });
 
+/// The chant catalogue alone, without the user's collections, for pickers
+/// that only list chants (e.g. the group post composer's in-app content
+/// sheet). Skips the `/users/me/recitation-collections` request that
+/// [practiceRecitationsPaginatedProvider] makes for a signed-in user, and
+/// needs no auth deferral since nothing on the request depends on auth.
+final practiceRecitationsCatalogueProvider = StateNotifierProvider.autoDispose
+    .family<PracticeRecitationsNotifier, PracticeRecitationsState, String>((
+      ref,
+      languageCode,
+    ) {
+      return PracticeRecitationsNotifier(
+        datasource: ref.watch(recitationsRemoteDatasourceProvider),
+        languageCode: languageCode,
+        includeCollections: false,
+      );
+    });
+
 final practiceRecitationSearchProvider = StateNotifierProvider.autoDispose
     .family<RecitationSearchNotifier, RecitationSearchState, String>((
       ref,

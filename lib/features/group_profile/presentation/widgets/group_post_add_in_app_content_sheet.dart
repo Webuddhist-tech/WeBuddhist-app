@@ -508,7 +508,8 @@ class _ChantsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final language = ref.watch(practiceRecitationsLanguageProvider);
-    final listProvider = practiceRecitationsPaginatedProvider(language);
+    // Catalogue only: the picker lists chants, never the user's collections.
+    final listProvider = practiceRecitationsCatalogueProvider(language);
     final searchProvider = practiceRecitationSearchProvider(language);
     final listState = ref.watch(listProvider);
     final searchState = ref.watch(searchProvider);
