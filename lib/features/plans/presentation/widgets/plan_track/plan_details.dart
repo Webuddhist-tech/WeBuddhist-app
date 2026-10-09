@@ -72,6 +72,7 @@ class PlanDetails extends ConsumerStatefulWidget {
     this.showLiveStream = true,
     this.liveTextId,
     this.liveSegmentId,
+    this.readOnly = false,
   });
   final UserPlansModel plan;
   final int selectedDay;
@@ -87,6 +88,11 @@ class PlanDetails extends ConsumerStatefulWidget {
   /// When set, today's plan opens this live-tracked text once the day loads.
   final String? liveTextId;
   final String? liveSegmentId;
+
+  /// An event explored before joining: the days, tasks and stream show, and
+  /// tasks open to read or watch, but nothing is ticked, completed or
+  /// counted, and prayer requests stay with the attendees.
+  final bool readOnly;
 
   @override
   ConsumerState<PlanDetails> createState() => _PlanDetailsState();
@@ -135,7 +141,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
           planId: widget.plan.id,
           planName: widget.plan.title,
           totalDays: widget.plan.totalDays,
-          isEnrolled: true,
+          isEnrolled: !widget.readOnly,
           source: _viewSource,
         );
     _scheduleDayViewed();
@@ -221,7 +227,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     final language = widget.plan.language;
     final localizations = context.l10n;
 
-    _listenForDayCompletion();
+    // Nothing completes on a read-only page, so no day-done sheet either.
+    if (!widget.readOnly) _listenForDayCompletion();
     final live = _liveStatus();
     // Until the event has loaded, nothing says which of today's videos is
     // the live stream, so the menu waits rather than offer it as a replay.
@@ -699,7 +706,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   /// scales down rather than overflowing when a long label meets a narrow
   /// phone. Nothing at all until the event says its chat is on.
   Widget _buildUnderStreamRow({required bool showBackToLive}) {
-    final hasChip = _liveEvent()?.chatEnabled ?? false;
+    final hasChip = !widget.readOnly && (_liveEvent()?.chatEnabled ?? false);
     if (!hasChip && !showBackToLive) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -721,10 +728,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
-  /// Only once the event says its chat room is on.
+  /// Only once the event says its chat room is on, and only for attendees.
   Widget _buildPrayerRequestsButton({EdgeInsetsGeometry? padding}) {
     final eventId = widget.eventId;
-    if (eventId == null) return const SizedBox.shrink();
+    if (eventId == null || widget.readOnly) return const SizedBox.shrink();
     final event = ref
         .watch(groupEventInLanguageProvider(_liveKey))
         .valueOrNull
@@ -917,6 +924,8 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
                     onGroupAccumulationPracticed:
                         (taskId) => _completeTask(taskId, dayContent.tasks),
                     onReaderClosed: _onReaderClosed,
+                    readOnly: widget.readOnly,
+                    onPracticeLocked: _showPracticeLocked,
                   );
                 },
               );
@@ -1247,12 +1256,22 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     );
   }
 
+  /// A read-only page counts nothing; practising waits for joining.
+  void _showPracticeLocked() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.connect_event_join_to_practice)),
+    );
+  }
+
   /// One shot: the home live pill lands on the text the recitation is on,
   /// opened the same way as tapping that task. Back returns here.
   void _scheduleLiveTrackedText(List<UserTasksDto> tasks, String? audioUrl) {
     final liveTextId = widget.liveTextId;
     if (liveTextId == null || liveTextId.isEmpty || _didOpenLiveText) return;
-    final items = PlanSubtaskNavigation.fromUserTasks(tasks);
+    final items = PlanSubtaskNavigation.fromUserTasks(
+      tasks,
+      withCompletion: !widget.readOnly,
+    );
     _didOpenLiveText = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -1287,11 +1306,16 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
               accumulationTask,
             );
     if (accumulationTask != null && accumulatorId != null) {
+      if (widget.readOnly) {
+        _showPracticeLocked();
+        return;
+      }
       openGroupAccumulatorPractice(
         context,
         ref,
         accumulatorId: accumulatorId,
         eventId: widget.eventId,
+        taskIsLive: accumulationTask.settings?.isLive ?? false,
       ).then((practiced) {
         if (practiced) _completeTask(accumulationTask.id, tasks);
         _onReaderClosed();
@@ -1299,7 +1323,10 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       return;
     }
 
-    final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
+    final planTextItems = PlanSubtaskNavigation.fromUserTasks(
+      tasks,
+      withCompletion: !widget.readOnly,
+    );
     if (planTextItems.isEmpty) return;
 
     // Find first uncompleted item of any content type; fall back to first.
@@ -1345,6 +1372,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     BuildContext context,
     AppLocalizations localizations,
   ) {
+    if (widget.readOnly) return const SizedBox.shrink();
     final dayContent = ref.watch(
       userPlanDayContentFutureProvider(
         PlanDaysParams(planId: widget.plan.id, dayNumber: selectedDay),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show mapEquals;
+import 'package:intl/intl.dart' show Intl, NumberFormat;
 import 'package:intl/message_format.dart';
 
 import 'tolgee_locale_map.dart';
@@ -78,11 +79,34 @@ class TolgeeBridge {
       return fallback();
     }
     try {
-      return MessageFormat(raw, locale: localeName).format(args);
+      return MessageFormat(
+        _normalizeIcu(raw),
+        locale: _formatLocale(localeName),
+      ).format(args);
     } catch (_) {
       return fallback();
     }
   }
+
+  /// Locale [MessageFormat] can be built for. intl ships no number data for
+  /// `bo`, and the constructor throws on it, which left every Tibetan
+  /// placeholder key stuck on the bundled ARB.
+  static String _formatLocale(String localeName) {
+    return Intl.verifiedLocale(
+          localeName,
+          NumberFormat.localeExists,
+          onFailure: (_) => 'en',
+        ) ??
+        'en';
+  }
+
+  /// Tolgee's plural editor can publish `other {…} }`; intl's parser rejects
+  /// whitespace between closing braces even though ICU allows it.
+  static String _normalizeIcu(String raw) {
+    return raw.replaceAll(_spaceBetweenClosingBraces, '}');
+  }
+
+  static final RegExp _spaceBetweenClosingBraces = RegExp(r'\}\s+(?=\})');
 
   static String? _raw(String localeName, String key) {
     if (!_matchesLoadedLanguage(localeName)) {

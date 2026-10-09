@@ -237,13 +237,11 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
                 ),
               )
               .toList(),
-      labelStyle: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 14,
+      labelStyle: context.tabLabelStyle(
+        const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
       ),
-      unselectedLabelStyle: const TextStyle(
-        fontWeight: FontWeight.normal,
-        fontSize: 14,
+      unselectedLabelStyle: context.tabLabelStyle(
+        const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
       ),
       labelColor:
           isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,

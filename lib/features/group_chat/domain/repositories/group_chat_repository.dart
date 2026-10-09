@@ -24,6 +24,7 @@ abstract class GroupChatRepository {
     String? messageType,
     String? sort,
     String? intention,
+    String? translationLanguage,
   });
 
   Future<Either<Failure, ChatMessageDTO>> sendGroupMessage(

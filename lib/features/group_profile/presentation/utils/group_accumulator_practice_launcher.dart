@@ -23,6 +23,10 @@ Future<bool> openGroupAccumulatorPractice(
   required String accumulatorId,
   String? eventId,
   bool isOnlineAttendee = false,
+
+  /// Plan task `settings.is_live`. Null when this chant was not opened from
+  /// a plan task, so the event Live pill stays as it is.
+  bool? taskIsLive,
 }) async {
   final authState = ref.read(authProvider);
   if (authState.isGuest || !authState.isLoggedIn) {
@@ -86,6 +90,7 @@ Future<bool> openGroupAccumulatorPractice(
       groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
       eventId: eventId,
       isOnlineAttendee: isOnlineAttendee,
+      taskIsLive: taskIsLive,
     ),
   );
   if (!context.mounted) return false;

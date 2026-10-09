@@ -511,4 +511,141 @@ void main() {
       );
     });
   });
+
+  group('plan task sheets on segment tap', () {
+    ReaderParams planParams({
+      bool commentary = false,
+      bool translation = false,
+    }) {
+      return ReaderParams(
+        textId: 'E2',
+        navigationContext: NavigationContext(
+          source: NavigationSource.plan,
+          planTextItems: [
+            PlanTextItem.sourceReference(
+              textId: 'E2',
+              title: 'Read',
+              autoOpenCommentary: commentary,
+              autoOpenTranslation: translation,
+            ),
+          ],
+          currentTextIndex: 0,
+        ),
+      );
+    }
+
+    const segment = Segment(segmentId: 'E2-1', segmentNumber: 1, content: 'a');
+
+    test('tapping a segment alone opens no sheet', () async {
+      final params = planParams(commentary: true, translation: true);
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+      await _loaded(container, params);
+      container
+          .read(readerNotifierProvider(params).notifier)
+          .toggleSegmentSelection(segment);
+
+      final state = container.read(readerNotifierProvider(params));
+      expect(state.selectedSegment?.segmentId, 'E2-1');
+      expect(state.isCommentaryOpen, isFalse);
+      expect(state.isTranslationOpen, isFalse);
+    });
+
+    test('commentary opens only when the segment has some', () async {
+      final params = planParams(commentary: true);
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+      await _loaded(container, params);
+      final notifier = container.read(readerNotifierProvider(params).notifier);
+      notifier.toggleSegmentSelection(segment);
+
+      expect(
+        notifier.autoOpenPlanPanel(
+          'E2-1',
+          hasCommentaries: false,
+          hasVersions: true,
+        ),
+        isFalse,
+      );
+      expect(
+        container.read(readerNotifierProvider(params)).isCommentaryOpen,
+        isFalse,
+      );
+
+      expect(
+        notifier.autoOpenPlanPanel(
+          'E2-1',
+          hasCommentaries: true,
+          hasVersions: true,
+        ),
+        isTrue,
+      );
+      final state = container.read(readerNotifierProvider(params));
+      expect(state.commentarySegmentId, 'E2-1');
+      expect(state.isTranslationOpen, isFalse);
+    });
+
+    test('versions open when commentary has nothing to show', () async {
+      final params = planParams(commentary: true, translation: true);
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+      await _loaded(container, params);
+      final notifier = container.read(readerNotifierProvider(params).notifier);
+      notifier.toggleSegmentSelection(segment);
+
+      expect(
+        notifier.autoOpenPlanPanel(
+          'E2-1',
+          hasCommentaries: false,
+          hasVersions: true,
+        ),
+        isTrue,
+      );
+      final state = container.read(readerNotifierProvider(params));
+      expect(state.translationSegmentId, 'E2-1');
+      expect(state.showsRootText, isFalse);
+      expect(state.isCommentaryOpen, isFalse);
+    });
+
+    test('a segment no longer selected is left alone', () async {
+      final params = planParams(commentary: true);
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+      await _loaded(container, params);
+      final notifier = container.read(readerNotifierProvider(params).notifier);
+      notifier.toggleSegmentSelection(segment);
+      notifier.toggleSegmentSelection(segment);
+
+      expect(
+        notifier.autoOpenPlanPanel(
+          'E2-1',
+          hasCommentaries: true,
+          hasVersions: true,
+        ),
+        isFalse,
+      );
+      expect(
+        container.read(readerNotifierProvider(params)).isCommentaryOpen,
+        isFalse,
+      );
+    });
+
+    test('a task without the setting opens nothing', () async {
+      final params = planParams();
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+      await _loaded(container, params);
+      final notifier = container.read(readerNotifierProvider(params).notifier);
+      notifier.toggleSegmentSelection(segment);
+
+      expect(
+        notifier.autoOpenPlanPanel(
+          'E2-1',
+          hasCommentaries: true,
+          hasVersions: true,
+        ),
+        isFalse,
+      );
+    });
+  });
 }

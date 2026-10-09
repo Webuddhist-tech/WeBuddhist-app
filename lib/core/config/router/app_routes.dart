@@ -36,7 +36,15 @@ class AppRoutes {
   /// Community group chat. Top-level so it is not guest-accessible via `/home`.
   static const String groupChat = '/groups/:groupId/chat';
 
-  static String groupChatPath(String groupId) => '/groups/$groupId/chat';
+  /// Query on [groupChat]. The thread opens scrolled to this message instead
+  /// of the newest one — the reports queue's "View message" uses it.
+  static const String chatMessageQuery = 'messageId';
+
+  static String groupChatPath(String groupId, {String? messageId}) {
+    final path = '/groups/$groupId/chat';
+    if (messageId == null || messageId.isEmpty) return path;
+    return '$path?$chatMessageQuery=${Uri.encodeQueryComponent(messageId)}';
+  }
 
   /// Query on `/home/events/:eventId`. When `1`, the event screen opens the
   /// prayer-request sheet after it is showing.

@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_shorts_section.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -35,6 +36,12 @@ class ActivityList extends ConsumerWidget {
   /// live recitation.
   final bool isOnlineAttendee;
 
+  /// An event explored before joining: no checkboxes, the reader marks
+  /// nothing complete, and a group-accumulation task calls
+  /// [onPracticeLocked] instead of opening the counter.
+  final bool readOnly;
+  final VoidCallback? onPracticeLocked;
+
   const ActivityList({
     super.key,
     required this.language,
@@ -51,6 +58,8 @@ class ActivityList extends ConsumerWidget {
     this.dayAudioUrl,
     this.eventId,
     this.isOnlineAttendee = false,
+    this.readOnly = false,
+    this.onPracticeLocked,
   });
 
   @override
@@ -76,15 +85,18 @@ class ActivityList extends ConsumerWidget {
               margin: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
                 children: [
-                  _TaskCheckbox(
-                    isCompleted: task.isCompleted,
-                    onTap: () => onActivityToggled(task.id),
-                  ),
-                  const SizedBox(width: 10),
+                  if (!readOnly) ...[
+                    _TaskCheckbox(
+                      isCompleted: task.isCompleted,
+                      onTap: () => onActivityToggled(task.id),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   Expanded(
                     child: _TaskTitleButton(
                       language: language,
                       title: task.title,
+                      isLive: task.settings?.isLive ?? false,
                       hasNavigableContent: isNavigable,
                       hasAudio: hasAudio,
                       onTap:
@@ -135,12 +147,17 @@ class ActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
+      if (readOnly) {
+        onPracticeLocked?.call();
+        return;
+      }
       openGroupAccumulatorPractice(
         context,
         ref,
         accumulatorId: accumulatorId,
         eventId: eventId,
         isOnlineAttendee: isOnlineAttendee,
+        taskIsLive: task.settings?.isLive ?? false,
       ).then((practiced) {
         if (practiced) onGroupAccumulationPracticed?.call(task.id);
         onReaderClosed?.call();
@@ -148,7 +165,10 @@ class ActivityList extends ConsumerWidget {
       return;
     }
 
-    final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
+    final planTextItems = PlanSubtaskNavigation.fromUserTasks(
+      tasks,
+      withCompletion: !readOnly,
+    );
     if (planTextItems.isEmpty) return;
 
     // Open at the task's first subtask; next/prev walks the rest.
@@ -221,11 +241,13 @@ class _TaskTitleButton extends StatelessWidget {
     required this.title,
     required this.onTap,
     required this.language,
+    required this.isLive,
     required this.hasNavigableContent,
     required this.hasAudio,
   });
 
   final String title;
+  final bool isLive;
   final VoidCallback onTap;
   final String language;
   final bool hasNavigableContent;
@@ -242,12 +264,22 @@ class _TaskTitleButton extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                title,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (isLive) ...[
+                    const SizedBox(width: 8),
+                    const PlanTaskLiveBadge(),
+                  ],
+                ],
               ),
             ),
             if (hasNavigableContent && !hasAudio) ...[

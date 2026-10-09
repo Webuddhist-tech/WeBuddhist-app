@@ -1,6 +1,7 @@
 import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_subtasks_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
+import 'package:flutter_pecha/features/plans/data/models/task_settings.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
@@ -22,8 +23,13 @@ class PlanSubtaskNavigation {
   PlanSubtaskNavigation._();
 
   /// Build the unified item list for an enrolled user, sorted by task
-  /// `displayOrder`.
-  static List<PlanTextItem> fromUserTasks(List<UserTasksDto> tasks) {
+  /// `displayOrder`. [withCompletion] false leaves `subtaskId` and
+  /// `isCompleted` off, as [fromPlanTasks] does, for a read-only page that
+  /// must not call completion APIs.
+  static List<PlanTextItem> fromUserTasks(
+    List<UserTasksDto> tasks, {
+    bool withCompletion = true,
+  }) {
     final sorted = List<UserTasksDto>.from(tasks)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
 
@@ -34,9 +40,17 @@ class PlanSubtaskNavigation {
         title: task.title,
         taskId: task.id,
         contentTypeOf: (s) => s.contentType,
-        sourceOf: (s) => _toSourceItemFromUser(s, task.title, task.id),
-        blockOf: _toBlockFromUser,
+        sourceOf:
+            (s) => _toSourceItemFromUser(
+              s,
+              task.title,
+              task.id,
+              task.settings,
+              withCompletion: withCompletion,
+            ),
+        blockOf: (s) => _toBlockFromUser(s, withCompletion: withCompletion),
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
+        isLive: task.settings?.isLive ?? false,
       );
       if (item != null) items.add(item);
     }
@@ -60,9 +74,11 @@ class PlanSubtaskNavigation {
         title: task.title,
         taskId: task.id,
         contentTypeOf: (s) => s.contentType,
-        sourceOf: (s) => _toSourceItemFromPlan(s, task.title, task.id),
+        sourceOf:
+            (s) => _toSourceItemFromPlan(s, task.title, task.id, task.settings),
         blockOf: _toBlockFromPlan,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
+        isLive: task.settings?.isLive ?? false,
       );
       if (item != null) items.add(item);
     }
@@ -114,6 +130,7 @@ class PlanSubtaskNavigation {
     required PlanTextItem? Function(S) sourceOf,
     required PlanInlineBlock? Function(S) blockOf,
     required (String? url, int? startMs, int? endMs) Function(S) audioOf,
+    bool isLive = false,
   }) {
     for (final subtask in subtasks) {
       final type = PlanContentTypes.parse(contentTypeOf(subtask));
@@ -137,6 +154,7 @@ class PlanSubtaskNavigation {
         audioUrl: normalizeAudioUrl(audioUrl),
         startMs: startMs,
         endMs: endMs,
+        isLive: isLive,
       );
     }
     return null;
@@ -157,16 +175,20 @@ class PlanSubtaskNavigation {
   }
 
   static bool _isUserSubtaskNavigable(UserSubtasksDto s) =>
-      _toSourceItemFromUser(s, '', null) != null || _toBlockFromUser(s) != null;
+      _toSourceItemFromUser(s, '', null, null) != null ||
+      _toBlockFromUser(s) != null;
 
   static bool _isPlanSubtaskNavigable(PlanSubtasksModel s) =>
-      _toSourceItemFromPlan(s, '', null) != null || _toBlockFromPlan(s) != null;
+      _toSourceItemFromPlan(s, '', null, null) != null ||
+      _toBlockFromPlan(s) != null;
 
   static PlanTextItem? _toSourceItemFromUser(
     UserSubtasksDto subtask,
     String title,
     String? taskId,
-  ) {
+    TaskSettings? settings, {
+    bool withCompletion = true,
+  }) {
     if (PlanContentTypes.parse(subtask.contentType) !=
         PlanItemContentType.sourceReference) {
       return null;
@@ -176,12 +198,17 @@ class PlanSubtaskNavigation {
       textId: subtask.sourceTextId!,
       title: title,
       segmentIds: subtask.segmentIds,
-      subtaskId: subtask.id,
+      subtaskId: withCompletion ? subtask.id : null,
       taskId: taskId,
-      isCompleted: subtask.isCompleted,
+      isCompleted: withCompletion && subtask.isCompleted,
       audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
+      autoOpenCommentary: settings?.isCommentaryOpen ?? false,
+      commentaryTextId: settings?.commentaryTextId,
+      autoOpenTranslation: settings?.isTranslationOpen ?? false,
+      translationTextId: settings?.translationTextId,
+      isLive: settings?.isLive ?? false,
     );
   }
 
@@ -189,6 +216,7 @@ class PlanSubtaskNavigation {
     PlanSubtasksModel subtask,
     String title,
     String? taskId,
+    TaskSettings? settings,
   ) {
     if (PlanContentTypes.parse(subtask.contentType) !=
         PlanItemContentType.sourceReference) {
@@ -203,18 +231,26 @@ class PlanSubtaskNavigation {
       audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
+      autoOpenCommentary: settings?.isCommentaryOpen ?? false,
+      commentaryTextId: settings?.commentaryTextId,
+      autoOpenTranslation: settings?.isTranslationOpen ?? false,
+      translationTextId: settings?.translationTextId,
+      isLive: settings?.isLive ?? false,
     );
   }
 
-  static PlanInlineBlock? _toBlockFromUser(UserSubtasksDto subtask) {
+  static PlanInlineBlock? _toBlockFromUser(
+    UserSubtasksDto subtask, {
+    bool withCompletion = true,
+  }) {
     final type = PlanContentTypes.parse(subtask.contentType);
     if (type == null || !type.isInline) return null;
     if (!_hasInlineContent(subtask.content)) return null;
     return PlanInlineBlock(
       contentType: type,
       content: subtask.content,
-      subtaskId: subtask.id,
-      isCompleted: subtask.isCompleted,
+      subtaskId: withCompletion ? subtask.id : null,
+      isCompleted: withCompletion && subtask.isCompleted,
     );
   }
 

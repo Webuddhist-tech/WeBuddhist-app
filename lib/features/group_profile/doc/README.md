@@ -34,7 +34,7 @@ group_profile/
 |------|-------|
 | Main screen | `presentation/screens/group_profile_screen.dart` |
 | Provider hub | `presentation/providers/group_profile_providers.dart` |
-| Posts | `group_post_providers.dart`, `group_profile_posts_tab.dart`, `group_post_composer_screen.dart` |
+| Posts | `group_post_providers.dart`, `group_profile_posts_tab.dart`, `group_post_composer_screen.dart`, `group_post_add_link_sheet.dart`, `group_post_add_in_app_content_sheet.dart` (followed events/practices/chants → `/open/...` deep link via `GroupPostInAppContent`, posted unshortened so the feed's link card can route it in-app via `openLink`) |
 | Accumulator | `group_accumulator_providers.dart`, `group_accumulator_screen.dart` |
 | Recitation collection | `group_recitation_collection_screen.dart`, completion providers |
 | Repository | `GroupProfileRepositoryInterface` (note naming) |

@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_content_block.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_metadata_tile.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_section_header.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/translation_list_order.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation/segment_translation.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -67,6 +68,10 @@ class ReaderTranslationPanel extends ConsumerWidget {
               translations: data.translations,
               segmentId: segmentId,
               textLanguage: textLanguage,
+              translationTextId:
+                  rootText
+                      ? null
+                      : params.navigationContext?.currentItem?.translationTextId,
             ),
         error:
             (error, _) => _ErrorState(
@@ -84,28 +89,13 @@ class _TranslationList extends ConsumerWidget {
     required this.translations,
     required this.segmentId,
     required this.textLanguage,
+    required this.translationTextId,
   });
 
   final List<SegmentTranslation> translations;
   final String segmentId;
   final String textLanguage;
-
-  /// Groups translations by language code, preserving original order within
-  /// each group, and emits the current text language first.
-  List<MapEntry<String, List<SegmentTranslation>>> _grouped() {
-    final grouped = <String, List<SegmentTranslation>>{};
-    for (final t in translations) {
-      grouped.putIfAbsent(t.language, () => []).add(t);
-    }
-    final entries = grouped.entries.toList();
-    entries.sort((a, b) {
-      final aFirst = a.key == textLanguage ? 0 : 1;
-      final bFirst = b.key == textLanguage ? 0 : 1;
-      if (aFirst != bFirst) return aFirst.compareTo(bFirst);
-      return a.key.compareTo(b.key);
-    });
-    return entries;
-  }
+  final String? translationTextId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -113,7 +103,11 @@ class _TranslationList extends ConsumerWidget {
       return const _EmptyState();
     }
 
-    final groups = _grouped();
+    final order = orderTranslations(
+      translations: translations,
+      textLanguage: textLanguage,
+      translationTextId: translationTextId,
+    );
     final expandedContent = ref.watch(_expandedContentIndexProvider(segmentId));
     final expandedMetadata = ref.watch(
       _expandedMetadataIndexProvider(segmentId),
@@ -121,7 +115,20 @@ class _TranslationList extends ConsumerWidget {
 
     final children = <Widget>[];
     var globalIndex = 0;
-    for (final entry in groups) {
+    final pinned = order.pinned;
+    if (pinned != null) {
+      final index = globalIndex++;
+      children.add(
+        _TranslationItem(
+          translation: pinned,
+          index: index,
+          segmentId: segmentId,
+          isContentExpanded: expandedContent == index,
+          isMetadataExpanded: expandedMetadata == index,
+        ),
+      );
+    }
+    for (final entry in order.groups) {
       children.add(
         ReaderPanelSectionHeader(
           languageCode: entry.key,

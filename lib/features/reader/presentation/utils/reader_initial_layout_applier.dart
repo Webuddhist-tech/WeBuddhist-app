@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/domain/layout/reader_initial_layout.dart';
@@ -253,6 +254,23 @@ class ReaderInitialLayoutApplier {
         .sync(ref.read(contentLanguageProvider));
     if (!context.mounted) return;
 
+    // A plan task that names a translation shows that edition under the
+    // original, ahead of the translation saved for this context. A later
+    // change in the language control replaces it for this visit.
+    final planTranslationId =
+        params.navigationContext?.currentItem?.translationTextId;
+    if (planTranslationId != null &&
+        await _applyPlanTranslation(
+          ref: ref,
+          context: context,
+          scope: scope,
+          translationTextId: planTranslationId,
+          textVersionId: textVersionId,
+        )) {
+      return;
+    }
+    if (!context.mounted) return;
+
     // The person's own picks in this context win; they may still be loading.
     await ref.read(readerContextLayoutProvider(scope.context).notifier).loaded;
     if (!context.mounted) return;
@@ -314,6 +332,54 @@ class ReaderInitialLayoutApplier {
         (outcome == SecondaryFillOutcome.unavailable ||
             outcome == SecondaryFillOutcome.failed)) {
       notifier.markTranslationUnavailable();
+    }
+  }
+
+  /// Puts the plan task's translation under the original. False when that
+  /// id cannot be loaded or it is the edition already on screen, so the
+  /// usual layout still runs.
+  ///
+  /// True without writing when the person picks a translation or moves a
+  /// switch while the edition is still loading: that newer choice stays.
+  Future<bool> _applyPlanTranslation({
+    required WidgetRef ref,
+    required BuildContext context,
+    required ReaderSettingsScope scope,
+    required String translationTextId,
+    required String textVersionId,
+  }) async {
+    final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
+    final resolveGeneration = notifier.secondaryResolveGeneration;
+    final enabledGeneration = notifier.secondaryEnabledGeneration;
+    final originalGeneration = notifier.originalVisibleGeneration;
+    bool choiceUnchanged() =>
+        notifier.secondaryResolveGeneration == resolveGeneration &&
+        notifier.secondaryEnabledGeneration == enabledGeneration &&
+        notifier.originalVisibleGeneration == originalGeneration;
+    try {
+      final version = await ref.read(
+        readerVersionInfoProvider(translationTextId).future,
+      );
+      if (!context.mounted) return true;
+      if (!choiceUnchanged()) return true;
+      if (version.id.isEmpty || version.id == textVersionId) return false;
+      notifier.showPlanTranslation(
+        ReaderSlotConfig(
+          languageCode: version.language,
+          languageLabel: getLanguageName(version.language, context),
+          versionId: version.id,
+          versionLabel: version.title,
+        ),
+      );
+      return true;
+    } catch (e, st) {
+      _logger.warning(
+        'Plan translation $translationTextId not applied',
+        e,
+        st,
+      );
+      if (!context.mounted || !choiceUnchanged()) return true;
+      return false;
     }
   }
 

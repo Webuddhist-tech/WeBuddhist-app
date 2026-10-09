@@ -57,9 +57,9 @@ class AppFontConfig {
   static const TextLeadingDistribution tibetanLeadingDistribution =
       TextLeadingDistribution.even;
 
-  static const double tibetanUiLineHeight = 1.55;
-  static const double tibetanCompactLineHeight = 1.25;
-  static const double tibetanContentLineHeight = 1.55;
+  static const double tibetanUiLineHeight = 1.9;
+  static const double tibetanCompactLineHeight = 1.5;
+  static const double tibetanContentLineHeight = 1.9;
 
   static const double captionFontSize = 12;
   static const double labelFontSize = 14;
@@ -268,9 +268,9 @@ class AppFontConfig {
     if (!isGoogle) {
       // Local (asset) font: stamp the family onto every theme style, the
       // same way the GoogleFonts text themes do.
-      return ThemeData(brightness: brightness).textTheme.apply(
-        fontFamily: fontName,
-      );
+      return ThemeData(
+        brightness: brightness,
+      ).textTheme.apply(fontFamily: fontName);
     }
 
     // Use Google Fonts

@@ -139,5 +139,72 @@ void main() {
         'Hey Tenzin!',
       );
     });
+
+    test('Tibetan placeholder and plural strings format over the air', () {
+      // intl has no number data for `bo`, so MessageFormat used to throw on
+      // the locale and every Tibetan placeholder key fell back to the ARB.
+      load('bo-IN', <String, String>{
+        'greeting': 'བཀྲ་ཤིས་བདེ་ལེགས་ {name}',
+        'mala_rounds_count':
+            '{count, plural, =0 {0 ཕྲེང་འཁོར་} =1 {1 ཕྲེང་འཁོར་} '
+            'other {{count} ཕྲེང་འཁོར་}}',
+      });
+
+      expect(
+        TolgeeBridge.format('bo', 'greeting', <String, Object>{
+          'name': 'Tenzin',
+        }, () => 'bundled'),
+        'བཀྲ་ཤིས་བདེ་ལེགས་ Tenzin',
+      );
+      expect(
+        TolgeeBridge.format('bo', 'mala_rounds_count', <String, Object>{
+          'count': 1,
+        }, () => 'bundled'),
+        '1 ཕྲེང་འཁོར་',
+      );
+      expect(
+        TolgeeBridge.format('bo', 'mala_rounds_count', <String, Object>{
+          'count': 7,
+        }, () => 'bundled'),
+        '7 ཕྲེང་འཁོར་',
+      );
+    });
+
+    test('whitespace before a closing brace is tolerated', () {
+      // Exactly what Tolgee published for a Tibetan plural edited in its
+      // plural editor; ICU allows the space, intl's parser does not.
+      load('bo-IN', <String, String>{
+        'event_prayer_people_praying':
+            '{count, plural, other {མི་{count} ནས་སྨོན་ལམ་བཏབ་སོང་། 1} }',
+        'days_count': '{count, plural, other{ཉིན་ {count}} } །',
+      });
+
+      expect(
+        TolgeeBridge.format(
+          'bo',
+          'event_prayer_people_praying',
+          <String, Object>{'count': 3},
+          () => 'bundled',
+        ),
+        'མི་3 ནས་སྨོན་ལམ་བཏབ་སོང་། 1',
+      );
+      expect(
+        TolgeeBridge.format('bo', 'days_count', <String, Object>{
+          'count': 2,
+        }, () => 'bundled'),
+        'ཉིན་ 2 །',
+      );
+    });
+
+    test('a malformed remote message still falls back', () {
+      load('bo-IN', <String, String>{'broken': '{count, plural, other {'});
+
+      expect(
+        TolgeeBridge.format('bo', 'broken', <String, Object>{
+          'count': 2,
+        }, () => 'bundled'),
+        'bundled',
+      );
+    });
   });
 }

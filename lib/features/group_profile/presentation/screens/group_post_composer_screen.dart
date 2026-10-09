@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post
 import 'package:flutter_pecha/features/group_profile/data/models/group_post_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_post_add_in_app_content_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_post_add_link_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -254,6 +255,13 @@ class _GroupPostComposerScreenState
   Future<void> _addLink() async {
     if (_isSubmitting) return;
     final draft = await GroupPostAddLinkSheet.show(context);
+    if (draft == null || !mounted) return;
+    setState(() => _link = draft);
+  }
+
+  Future<void> _addInAppContent() async {
+    if (_isSubmitting) return;
+    final draft = await GroupPostAddInAppContentSheet.show(context);
     if (draft == null || !mounted) return;
     setState(() => _link = draft);
   }
@@ -755,6 +763,14 @@ class _GroupPostComposerScreenState
                 label: l10n.group_post_link,
                 color: secondaryColor,
                 onTap: _isSubmitting ? null : _addLink,
+              ),
+            ),
+            Expanded(
+              child: _ComposerAction(
+                icon: AppAssets.squaresFour,
+                label: l10n.group_post_in_app_content,
+                color: secondaryColor,
+                onTap: _isSubmitting ? null : _addInAppContent,
               ),
             ),
           ],

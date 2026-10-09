@@ -257,7 +257,7 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get home_share_support =>
-      'Таны дэмжлэг манай нийгэмлэгийг өсгөхөд тусалдаг.';
+      'Таны дэмжлэг манай нийгэмлэгийг өсгөхөд тусалдаг';
 
   @override
   String get no_feature_content => 'Онцлох агуулга байхгүй байна';
@@ -952,18 +952,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_group_fallback_title => 'Орон зай';
 
   @override
-  String get connect_event_attend => 'Оролцох';
-
-  @override
-  String get connect_event_attending => 'Оролцож байна';
-
-  @override
-  String get connect_event_join_in_person => 'Биечлэн оролцох';
-
-  @override
-  String get connect_event_join_online => 'Онлайнаар нэгдэх';
-
-  @override
   String get connect_event_enter => 'Орох';
 
   @override
@@ -971,10 +959,32 @@ class AppLocalizationsMn extends AppLocalizations {
       'Та хэрхэн оролцож байна вэ?';
 
   @override
-  String get connect_event_joining_in_person => 'Биечлэн оролцож байна';
+  String get connect_event_practice_in_person => 'Биечлэн дадлага хийх';
 
   @override
-  String get connect_event_joining_online => 'Онлайнаар нэгдэж байна';
+  String get connect_event_practice_online => 'Онлайнаар дадлага хийх';
+
+  @override
+  String get connect_event_view_in_person => 'Биечлэн харах';
+
+  @override
+  String get connect_event_view_online => 'Онлайнаар харах';
+
+  @override
+  String get connect_event_join_to_practice =>
+      'Дадлага хийхийн тулд арга хэмжээнд нэгдэнэ үү';
+
+  @override
+  String get connect_event_leave => 'Арга хэмжээнээс гарах';
+
+  @override
+  String get connect_event_leave_confirm_title =>
+      'Энэ арга хэмжээнээс гарах уу?';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'Та $title-д цаашид оролцохгүй. Та арга хэмжээг үзэх боломжтой хэвээр байх бөгөөд хүссэн үедээ дахин оролцож болно.';
+  }
 
   @override
   String connect_event_participants_attending(int count) {
@@ -2044,6 +2054,20 @@ class AppLocalizationsMn extends AppLocalizations {
       'Гомдлуудыг ачаалж чадсангүй. Дахин оролдоно уу';
 
   @override
+  String get group_reports_delete_confirm_title => 'Та итгэлтэй байна уу?';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'Энэ мессеж бүрмөсөн устгагдана';
+
+  @override
+  String get group_reports_message_removed => 'Мессежийг устгалаа';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'Мессежийг устгаж чадсангүй. Дахин оролдоно уу';
+
+  @override
   String get group_members_only_title => 'Зөвхөн гишүүдэд';
 
   @override
@@ -2703,6 +2727,16 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_chat_load_failed => 'Зурвасуудыг ачаалж чадсангүй';
 
   @override
+  String get group_chat_message_not_found => 'Энэ зурвас чатад байхгүй болсон';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'Дахин оролдох';
 
   @override
@@ -2916,6 +2950,15 @@ class AppLocalizationsMn extends AppLocalizations {
       'Зөв холбоос оруулна уу, жишээ нь: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'Та $count хүртэл зураг нэмэх боломжтой';
   }
@@ -3119,7 +3162,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get event_prayer_no_supporters => 'Одоогоор хэн ч залбираагүй байна';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';
@@ -3144,6 +3187,20 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get event_prayer_filter_empty_body => 'Try another sort or intention';
+
+  @override
+  String get event_prayer_see_translation => 'See translation';
+
+  @override
+  String get event_prayer_see_original => 'See original';
+
+  @override
+  String event_prayer_translated_from(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get event_prayer_translated => 'Translated';
 
   @override
   String get recitation_live_sync => 'Синк хийх';

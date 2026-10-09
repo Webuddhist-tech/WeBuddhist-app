@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_list_order.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_bottom_panel_shell.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
@@ -62,6 +63,8 @@ class ReaderCommentaryPanel extends ConsumerWidget {
               commentaries: data.commentaries,
               segmentId: segmentId,
               textLanguage: textLanguage,
+              commentaryTextId:
+                  params.navigationContext?.currentItem?.commentaryTextId,
             ),
         error:
             (error, _) => _ErrorState(
@@ -82,72 +85,21 @@ class _CommentaryList extends ConsumerWidget {
     required this.commentaries,
     required this.segmentId,
     required this.textLanguage,
+    required this.commentaryTextId,
   });
 
   final List<SegmentCommentary> commentaries;
   final String segmentId;
   final String textLanguage;
-
-  /// `zh` and `lzh` are treated as a family pair and always placed adjacent.
-  static const _chinesePair = {'zh', 'lzh'};
-
-  /// Builds the ordered list of language sections to render.
-  ///
-  /// **Chinese text (`zh` / `lzh`):** Both Chinese variants are pinned at the
-  /// top — the text's language first, the partner second. The partner section
-  /// always appears (showing "not available" when empty). All other languages
-  /// that have commentaries follow, sorted A→Z.
-  ///
-  /// **Non-Chinese text:** Text language is first. Remaining languages are
-  /// sorted A→Z, but `zh` is moved to immediately follow `lzh` so the Chinese
-  /// family always appears together.
-  List<String> _orderedLanguageCodes(
-    Map<String, List<SegmentCommentary>> byLanguage,
-  ) {
-    if (_chinesePair.contains(textLanguage)) {
-      // Chinese text: pin both Chinese variants at the top — text language
-      // first, partner always second (shows "not available" when empty).
-      final partner = textLanguage == 'zh' ? 'lzh' : 'zh';
-      final ordered = <String>[textLanguage];
-      ordered.add(partner);
-      final others =
-          byLanguage.keys.where((l) => !_chinesePair.contains(l)).toList()
-            ..sort();
-      ordered.addAll(others);
-      return ordered;
-    } else {
-      // Non-Chinese text: text language first, rest A→Z with zh kept right
-      // after lzh so the Chinese pair is always adjacent.
-      final ordered = <String>[textLanguage];
-      final allOthers =
-          byLanguage.keys.where((l) => l != textLanguage).toList()..sort();
-      if (allOthers.contains('lzh') && allOthers.contains('zh')) {
-        allOthers.remove('zh');
-        allOthers.insert(allOthers.indexOf('lzh') + 1, 'zh');
-      }
-      ordered.addAll(allOthers);
-      return ordered;
-    }
-  }
-
-  /// Each commentary followed by the editions that translate it, so every
-  /// language lands in its own section.
-  static Iterable<SegmentCommentary> _flatten(
-    Iterable<SegmentCommentary> items,
-  ) sync* {
-    for (final c in items) {
-      yield c;
-      yield* _flatten(c.translations);
-    }
-  }
+  final String? commentaryTextId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final byLanguage = <String, List<SegmentCommentary>>{};
-    for (final c in _flatten(commentaries)) {
-      byLanguage.putIfAbsent(c.language, () => []).add(c);
-    }
-    final orderedLanguages = _orderedLanguageCodes(byLanguage);
+    final order = orderCommentaries(
+      commentaries: commentaries,
+      textLanguage: textLanguage,
+      commentaryTextId: commentaryTextId,
+    );
 
     final expandedContent = ref.watch(_expandedContentIndexProvider(segmentId));
     final expandedMetadata = ref.watch(
@@ -156,8 +108,26 @@ class _CommentaryList extends ConsumerWidget {
 
     final children = <Widget>[];
     var globalIndex = 0;
-    for (final code in orderedLanguages) {
-      final items = byLanguage[code] ?? const <SegmentCommentary>[];
+    final pinned = order.pinned;
+    if (pinned != null) {
+      final index = globalIndex++;
+      children.add(
+        _CommentaryItem(
+          commentary: pinned,
+          index: index,
+          segmentId: segmentId,
+          isContentExpanded: expandedContent == index,
+          isMetadataExpanded: expandedMetadata == index,
+        ),
+      );
+    }
+    for (final code in order.languageCodes) {
+      final items = order.byLanguage[code] ?? const <SegmentCommentary>[];
+      // The pinned card already left this section. An empty placeholder
+      // would only repeat that it is gone.
+      if (items.isEmpty && pinned != null && code == pinned.language) {
+        continue;
+      }
       if (items.isEmpty) {
         children.add(ReaderPanelSectionHeader(languageCode: code));
         children.add(_LanguageUnavailable(languageCode: code));

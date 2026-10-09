@@ -898,28 +898,36 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_group_fallback_title => '共修空間';
 
   @override
-  String get connect_event_attend => '參加';
-
-  @override
-  String get connect_event_attending => '已參加';
-
-  @override
-  String get connect_event_join_in_person => '現場參加';
-
-  @override
-  String get connect_event_join_online => '線上參加';
-
-  @override
   String get connect_event_enter => '進入';
 
   @override
   String get connect_event_participation_prompt => '您會怎麼參加?';
 
   @override
-  String get connect_event_joining_in_person => '正在現場';
+  String get connect_event_practice_in_person => '現場修持';
 
   @override
-  String get connect_event_joining_online => '正在線上';
+  String get connect_event_practice_online => '線上修持';
+
+  @override
+  String get connect_event_view_in_person => '現場檢視';
+
+  @override
+  String get connect_event_view_online => '線上檢視';
+
+  @override
+  String get connect_event_join_to_practice => '參加活動即可修持';
+
+  @override
+  String get connect_event_leave => '退出活動';
+
+  @override
+  String get connect_event_leave_confirm_title => '要退出此活動嗎？';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return '您將不再參加$title。您仍可查看此活動，並隨時再次參加。';
+  }
 
   @override
   String connect_event_participants_attending(int count) {
@@ -1931,6 +1939,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_reports_load_error => '無法載入檢舉，請再試一次。';
 
   @override
+  String get group_reports_delete_confirm_title => '你確定嗎？';
+
+  @override
+  String get group_reports_delete_message_confirm => '這則訊息將被永久刪除。';
+
+  @override
+  String get group_reports_message_removed => '訊息已移除';
+
+  @override
+  String get group_reports_delete_message_error => '無法刪除訊息，請再試一次。';
+
+  @override
   String get group_members_only_title => '僅限成員';
 
   @override
@@ -2550,6 +2570,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_load_failed => '無法載入訊息';
 
   @override
+  String get group_chat_message_not_found => '此訊息已不在聊天中';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => '重試';
 
   @override
@@ -2752,6 +2782,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_post_invalid_link => '請輸入有效的連結，例如：https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return '最多可新增 $count 張相片';
   }
@@ -2942,7 +2981,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_no_supporters => '目前還沒有人迴向';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';
@@ -2967,6 +3006,20 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get event_prayer_filter_empty_body => 'Try another sort or intention';
+
+  @override
+  String get event_prayer_see_translation => 'See translation';
+
+  @override
+  String get event_prayer_see_original => 'See original';
+
+  @override
+  String event_prayer_translated_from(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get event_prayer_translated => 'Translated';
 
   @override
   String get recitation_live_sync => '同步';

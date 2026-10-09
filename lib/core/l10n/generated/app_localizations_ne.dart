@@ -960,18 +960,6 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_group_fallback_title => 'स्पेस';
 
   @override
-  String get connect_event_attend => 'सहभागी हुनुहोस्';
-
-  @override
-  String get connect_event_attending => 'सहभागी';
-
-  @override
-  String get connect_event_join_in_person => 'प्रत्यक्ष रूपमा सहभागी हुनुहोस्';
-
-  @override
-  String get connect_event_join_online => 'अनलाइन सहभागी हुनुहोस्';
-
-  @override
   String get connect_event_enter => 'प्रवेश गर्नुहोस्';
 
   @override
@@ -979,10 +967,32 @@ class AppLocalizationsNe extends AppLocalizations {
       'तपाईं कसरी सहभागी हुँदै हुनुहुन्छ?';
 
   @override
-  String get connect_event_joining_in_person => 'प्रत्यक्ष रूपमा सहभागी हुँदै';
+  String get connect_event_practice_in_person =>
+      'प्रत्यक्ष रूपमा अभ्यास गर्नुहोस्';
 
   @override
-  String get connect_event_joining_online => 'अनलाइन सहभागी हुँदै';
+  String get connect_event_practice_online => 'अनलाइन अभ्यास गर्नुहोस्';
+
+  @override
+  String get connect_event_view_in_person => 'प्रत्यक्ष दृश्य';
+
+  @override
+  String get connect_event_view_online => 'अनलाइन दृश्य';
+
+  @override
+  String get connect_event_join_to_practice =>
+      'अभ्यास गर्न कार्यक्रममा सहभागी हुनुहोस्';
+
+  @override
+  String get connect_event_leave => 'कार्यक्रम छोड्नुहोस्';
+
+  @override
+  String get connect_event_leave_confirm_title => 'यो कार्यक्रम छोड्ने?';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'तपाईं अब $title मा सहभागी हुनुहुने छैन। तपाईं अझै कार्यक्रम हेर्न र जुनसुकै बेला फेरि सहभागी हुन सक्नुहुन्छ।';
+  }
 
   @override
   String connect_event_participants_attending(int count) {
@@ -2051,6 +2061,21 @@ class AppLocalizationsNe extends AppLocalizations {
       'रिपोर्टहरू लोड गर्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्';
 
   @override
+  String get group_reports_delete_confirm_title =>
+      'के तपाईं निश्चित हुनुहुन्छ?';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'यो सन्देश स्थायी रूपमा हटाइनेछ';
+
+  @override
+  String get group_reports_message_removed => 'सन्देश हटाइयो';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'सन्देश मेट्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्';
+
+  @override
   String get group_members_only_title => 'सदस्यहरूका लागि मात्र';
 
   @override
@@ -2708,6 +2733,16 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_chat_load_failed => 'सन्देशहरू लोड गर्न सकिएन';
 
   @override
+  String get group_chat_message_not_found => 'यो सन्देश अब च्याटमा छैन';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'पुनः प्रयास गर्नुहोस्';
 
   @override
@@ -2920,6 +2955,15 @@ class AppLocalizationsNe extends AppLocalizations {
       'मान्य लिङ्क प्रविष्ट गर्नुहोस्, उदाहरण: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'तपाईं $count वटासम्म फोटो थप्न सक्नुहुन्छ';
   }
@@ -3126,7 +3170,7 @@ class AppLocalizationsNe extends AppLocalizations {
       'अहिलेसम्म कसैले प्रार्थना गरेको छैन';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';
@@ -3151,6 +3195,20 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get event_prayer_filter_empty_body => 'Try another sort or intention';
+
+  @override
+  String get event_prayer_see_translation => 'See translation';
+
+  @override
+  String get event_prayer_see_original => 'See original';
+
+  @override
+  String event_prayer_translated_from(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get event_prayer_translated => 'Translated';
 
   @override
   String get recitation_live_sync => 'सिङ्क गर्नुहोस्';

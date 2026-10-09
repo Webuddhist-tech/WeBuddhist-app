@@ -200,7 +200,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_group_accumulations => 'Add recitation to';
 
   @override
-  String get mala_groups_section => 'Groups';
+  String get mala_groups_section => 'Events';
 
   @override
   String get mala_group_untitled => 'Untitled space';
@@ -257,7 +257,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get home_share_support => 'Your support helps our community grow.';
+  String get home_share_support => 'Your support helps our community grow';
 
   @override
   String get no_feature_content => 'No featured content available';
@@ -946,28 +946,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_group_fallback_title => 'Space';
 
   @override
-  String get connect_event_attend => 'Attend';
-
-  @override
-  String get connect_event_attending => 'Attending';
-
-  @override
-  String get connect_event_join_in_person => 'Join in person';
-
-  @override
-  String get connect_event_join_online => 'Join online';
-
-  @override
   String get connect_event_enter => 'Enter';
 
   @override
   String get connect_event_participation_prompt => 'How are you attending?';
 
   @override
-  String get connect_event_joining_in_person => 'Joining in person';
+  String get connect_event_practice_in_person => 'Practice in-person';
 
   @override
-  String get connect_event_joining_online => 'Joining online';
+  String get connect_event_practice_online => 'Practice online';
+
+  @override
+  String get connect_event_view_in_person => 'In-person view';
+
+  @override
+  String get connect_event_view_online => 'Online view';
+
+  @override
+  String get connect_event_join_to_practice => 'Join the event to practice';
+
+  @override
+  String get connect_event_leave => 'Leave event';
+
+  @override
+  String get connect_event_leave_confirm_title => 'Leave this event?';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'You\'ll no longer be attending $title. You can still view the event and attend again anytime.';
+  }
 
   @override
   String connect_event_participants_attending(int count) {
@@ -1215,7 +1223,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get image => 'Image';
 
   @override
-  String get feedback => 'Feedback';
+  String get feedback => 'Give feedback';
 
   @override
   String get author => 'Author';
@@ -2028,6 +2036,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load reports. Please try again';
 
   @override
+  String get group_reports_delete_confirm_title => 'Are you sure?';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'This message will be permanently removed';
+
+  @override
+  String get group_reports_message_removed => 'Message has been removed';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'Unable to delete message. Please try again';
+
+  @override
   String get group_members_only_title => 'Members only';
 
   @override
@@ -2205,7 +2227,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_accumulator_my_contributions => 'My contributions';
 
   @override
-  String get group_accumulator_recited => 'Recited';
+  String get group_accumulator_recited => 'Recitations';
 
   @override
   String get group_accumulator_total => 'Total';
@@ -2673,6 +2695,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_load_failed => 'Messages couldn\'t be loaded';
 
   @override
+  String get group_chat_message_not_found =>
+      'This message is no longer in the chat';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'Retry';
 
   @override
@@ -2879,6 +2912,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a valid link, for example: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'You can add up to $count photos';
   }
@@ -3079,7 +3121,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_no_supporters => 'No one is praying yet';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';
@@ -3104,6 +3146,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_prayer_filter_empty_body => 'Try another sort or intention';
+
+  @override
+  String get event_prayer_see_translation => 'See translation';
+
+  @override
+  String get event_prayer_see_original => 'See original';
+
+  @override
+  String event_prayer_translated_from(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get event_prayer_translated => 'Translated';
 
   @override
   String get recitation_live_sync => 'Sync';

@@ -25,6 +25,8 @@ class AppLinksDeepLinkService {
   void Function(int tabIndex)? _tabSetter;
   void Function(String planId, int? dayNumber, String? planLanguage)?
       _planNavigator;
+  void Function(String planId, int? dayNumber, String? planLanguage)?
+      _inAppPlanNavigator;
 
   static const Duration _duplicateDispatchWindow = Duration(seconds: 5);
 
@@ -72,6 +74,16 @@ class AppLinksDeepLinkService {
         navigator,
   ) {
     _planNavigator = navigator;
+  }
+
+  /// Plan opener for links tapped inside the app (see [openInApp]). Unlike
+  /// [setPlanNavigator]'s, it must push on top of the current screens rather
+  /// than reset to Home, so Back returns to the post the link was tapped in.
+  void setInAppPlanNavigator(
+    void Function(String planId, int? dayNumber, String? planLanguage)
+        navigator,
+  ) {
+    _inAppPlanNavigator = navigator;
   }
 
   bool drainPendingLink() {
@@ -125,6 +137,33 @@ class AppLinksDeepLinkService {
     await _subscription?.cancel();
     _subscription = null;
     _initialized = false;
+  }
+
+  /// Routes a first-party link tapped inside the app (a post's link card, a
+  /// chat message) with the same router and tab setter the OS-delivered links
+  /// use. Pushes on top of the current screen so Back returns to where the
+  /// link was tapped. Returns false when the link is not first-party or has
+  /// no route, so the caller can fall back to a browser.
+  ///
+  /// Plan links go through [setInAppPlanNavigator]'s opener, not the OS one:
+  /// that one resets to Home and switches tabs, which would drop the post.
+  /// With no in-app opener wired, the router's fallback pushes My Practices.
+  ///
+  /// Deliberately skips the duplicate-dispatch window: a user may well open
+  /// the same link twice in a row from the feed.
+  bool openInApp(Uri uri) {
+    final router = _router;
+    if (router == null) return false;
+    if (!DeepLinkRouter.isFirstPartyAppLink(uri)) return false;
+
+    return DeepLinkRouter.route(
+      uri,
+      router,
+      source: 'in_app',
+      analytics: _analytics,
+      tabSetter: _tabSetter,
+      planNavigator: _inAppPlanNavigator,
+    );
   }
 
   void _handleLink(Uri uri) {

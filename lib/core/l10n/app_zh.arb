@@ -756,6 +756,10 @@
   "group_reports_delete_message": "刪除訊息",
   "group_reports_empty": "沒有待審核的檢舉",
   "group_reports_load_error": "無法載入檢舉，請再試一次。",
+  "group_reports_delete_confirm_title": "你確定嗎？",
+  "group_reports_delete_message_confirm": "這則訊息將被永久刪除。",
+  "group_reports_message_removed": "訊息已移除",
+  "group_reports_delete_message_error": "無法刪除訊息，請再試一次。",
   "group_members_only_title": "僅限成員",
   "group_members_only_message": "加入此社群即可查看內容",
   "group_join_request_waiting_title": "等待管理員審核",
@@ -972,8 +976,6 @@
   "connect_open": "開啟",
   "connect_event_fallback_title": "活動",
   "connect_group_fallback_title": "共修空間",
-  "connect_event_attend": "參加",
-  "connect_event_attending": "已參加",
   "connect_event_participants_attending": "{count} 位參與者",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -1016,6 +1018,7 @@
   "group_chat_empty_title": "尚無訊息",
   "group_chat_empty_body": "和您的社群開始聊天吧",
   "group_chat_load_failed": "無法載入訊息",
+  "group_chat_message_not_found": "此訊息已不在聊天中",
   "group_chat_retry": "重試",
   "group_chat_unknown_sender": "成員",
   "group_chat_reactions_all": "全部",
@@ -1119,11 +1122,22 @@
   "event_prayer_closed": "本活動的迴向名單已關閉",
   "event_prayer_pray": "迴向祈願",
   "event_prayer_praying": "已迴向",
-  "connect_event_join_in_person": "現場參加",
-  "connect_event_join_online": "線上參加",
   "connect_event_participation_prompt": "您會怎麼參加?",
-  "connect_event_joining_in_person": "正在現場",
-  "connect_event_joining_online": "正在線上",
+  "connect_event_practice_in_person": "現場修持",
+  "connect_event_practice_online": "線上修持",
+  "connect_event_view_in_person": "現場檢視",
+  "connect_event_view_online": "線上檢視",
+  "connect_event_join_to_practice": "參加活動即可修持",
+  "connect_event_leave": "退出活動",
+  "connect_event_leave_confirm_title": "要退出此活動嗎？",
+  "connect_event_leave_confirm_message": "您將不再參加{title}。您仍可查看此活動，並隨時再次參加。",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "connect_event_organizer": "主辦單位",
   "connect_event_when": "時間",
   "connect_event_where": "地點",

@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_ac
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_shorts_section.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -35,6 +36,10 @@ class PreviewActivityList extends ConsumerWidget {
   /// live recitation.
   final bool isOnlineAttendee;
 
+  /// When set (an event explored before joining), a group-accumulation task
+  /// calls this instead of opening the counter.
+  final VoidCallback? onPracticeLocked;
+
   const PreviewActivityList({
     super.key,
     required this.language,
@@ -47,6 +52,7 @@ class PreviewActivityList extends ConsumerWidget {
     this.dayAudioUrl,
     this.eventId,
     this.isOnlineAttendee = false,
+    this.onPracticeLocked,
   });
 
   List<PlanTasksModel> get _sortedTasks {
@@ -135,11 +141,17 @@ class PreviewActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
+      final onPracticeLocked = this.onPracticeLocked;
+      if (onPracticeLocked != null) {
+        onPracticeLocked();
+        return;
+      }
       openGroupAccumulatorPractice(
         context,
         ref,
         accumulatorId: accumulatorId,
         eventId: eventId,
+        taskIsLive: task.settings?.isLive ?? false,
       );
       return;
     }
@@ -197,12 +209,22 @@ class _PreviewTaskItem extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                task.title,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      task.title,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (task.settings?.isLive ?? false) ...[
+                    const SizedBox(width: 8),
+                    const PlanTaskLiveBadge(),
+                  ],
+                ],
               ),
             ),
             if (hasNavigableContent && !hasAudio) ...[

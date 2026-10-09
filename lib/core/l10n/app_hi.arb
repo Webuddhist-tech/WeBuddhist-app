@@ -773,6 +773,10 @@
   "group_reports_delete_message": "संदेश हटाएँ",
   "group_reports_empty": "समीक्षा के लिए कोई रिपोर्ट नहीं",
   "group_reports_load_error": "रिपोर्ट लोड करने में असमर्थ। कृपया पुनः प्रयास करें",
+  "group_reports_delete_confirm_title": "क्या आप निश्चित हैं?",
+  "group_reports_delete_message_confirm": "यह संदेश स्थायी रूप से हटा दिया जाएगा",
+  "group_reports_message_removed": "संदेश हटा दिया गया है",
+  "group_reports_delete_message_error": "संदेश हटाने में असमर्थ। कृपया पुनः प्रयास करें",
   "group_members_only_title": "केवल सदस्यों के लिए",
   "group_members_only_message": "इसकी सामग्री देखने के लिए इस स्पेस में शामिल हों",
   "group_join_request_waiting_title": "एडमिन की प्रतीक्षा में",
@@ -989,8 +993,6 @@
   "connect_open": "खोलें",
   "connect_event_fallback_title": "कार्यक्रम",
   "connect_group_fallback_title": "स्पेस",
-  "connect_event_attend": "शामिल हों",
-  "connect_event_attending": "शामिल हैं",
   "connect_event_participants_attending": "{count} प्रतिभागी",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -1033,6 +1035,7 @@
   "group_chat_empty_title": "अभी कोई संदेश नहीं",
   "group_chat_empty_body": "अपने स्पेस के साथ बातचीत शुरू करें",
   "group_chat_load_failed": "संदेश लोड नहीं हो सके",
+  "group_chat_message_not_found": "यह संदेश अब चैट में नहीं है",
   "group_chat_retry": "पुनः प्रयास करें",
   "group_chat_unknown_sender": "सदस्य",
   "group_chat_reactions_all": "सभी",
@@ -1158,12 +1161,23 @@
   "feedback_error_too_large": "चित्र बहुत बड़े हैं। एक हटाकर पुनः प्रयास करें",
   "feedback_error_failed": "फ़ीडबैक नहीं भेजा जा सका। कृपया पुनः प्रयास करें",
   "feedback_error_unavailable": "फ़ीडबैक अभी उपलब्ध नहीं है",
-  "connect_event_join_in_person": "व्यक्तिगत रूप से शामिल हों",
-  "connect_event_join_online": "ऑनलाइन जुड़ें",
   "connect_event_enter": "प्रवेश करें",
   "connect_event_participation_prompt": "आप कैसे शामिल हो रहे हैं?",
-  "connect_event_joining_in_person": "व्यक्तिगत रूप से शामिल हो रहे हैं",
-  "connect_event_joining_online": "ऑनलाइन जुड़ रहे हैं",
+  "connect_event_practice_in_person": "व्यक्तिगत रूप से अभ्यास करें",
+  "connect_event_practice_online": "ऑनलाइन अभ्यास करें",
+  "connect_event_view_in_person": "व्यक्तिगत दृश्य",
+  "connect_event_view_online": "ऑनलाइन दृश्य",
+  "connect_event_join_to_practice": "अभ्यास के लिए कार्यक्रम में शामिल हों",
+  "connect_event_leave": "कार्यक्रम छोड़ें",
+  "connect_event_leave_confirm_title": "यह कार्यक्रम छोड़ें?",
+  "connect_event_leave_confirm_message": "अब आप {title} में शामिल नहीं रहेंगे। आप फिर भी कार्यक्रम देख सकते हैं और कभी भी दोबारा शामिल हो सकते हैं।",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "connect_event_when": "जब",
   "connect_event_where": "कहाँ",
   "connect_event_practices": "कार्यक्रम के अभ्यास",
