@@ -2955,6 +2955,15 @@ class AppLocalizationsNe extends AppLocalizations {
       'मान्य लिङ्क प्रविष्ट गर्नुहोस्, उदाहरण: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'तपाईं $count वटासम्म फोटो थप्न सक्नुहुन्छ';
   }

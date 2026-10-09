@@ -34,6 +34,7 @@ connect/
 | Tab host | `presentation/screens/connect_screen.dart` |
 | Feed | `connect_unified_feed_providers.dart`, `connect_feed_merge_utils.dart` |
 | Post likes/comments | `connect_post_like_actions.dart`, `connect_post_comments_providers.dart` |
+| Followed practices list | `connect_practices_providers.dart` — no tab of its own; backs the group post composer's in-app content sheet |
 | Groups | `connect_providers.dart`, `discover_groups_screen.dart` |
 | Optimistic UI | `pendingJoinedGroupsProvider`, `pendingUnjoinedGroupIdsProvider` |
 | Barrel | `connect.dart` (screen only) |

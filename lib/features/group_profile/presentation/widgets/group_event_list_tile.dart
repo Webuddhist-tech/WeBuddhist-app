@@ -37,7 +37,7 @@ class GroupEventListTile extends StatelessWidget {
             ? event.title.trim()
             : context.l10n.connect_event_fallback_title;
     final groupName = event.groupName?.trim() ?? '';
-    final dateLabel = _formatDateLabel(context, event);
+    final dateLabel = formatDateLabel(context, event);
     final chips = _buildChips(context);
 
     return Material(
@@ -204,7 +204,8 @@ class GroupEventListTile extends StatelessWidget {
     ];
   }
 
-  String? _formatDateLabel(BuildContext context, GroupEvent event) {
+  /// "12 Mar · 7:00 pm", a day range for multi-day events, or the recurrence.
+  static String? formatDateLabel(BuildContext context, GroupEvent event) {
     final start = event.startDate?.toLocal();
     if (start == null) return null;
 
@@ -225,7 +226,7 @@ class GroupEventListTile extends StatelessWidget {
     return '${dayFormat.format(start)} · $time';
   }
 
-  String? _recurrenceLabel(
+  static String? _recurrenceLabel(
     BuildContext context,
     GroupEvent event,
     DateTime start,

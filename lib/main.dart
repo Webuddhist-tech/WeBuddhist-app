@@ -35,6 +35,7 @@ import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasour
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/more/data/datasource/user_stats_local_datasource.dart';
 import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasource.dart';
+import 'package:flutter_pecha/features/plans/presentation/providers/plans_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/routine_local_storage.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_providers.dart';
@@ -383,6 +384,32 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
                 MainTab.practice.index;
             router.go(AppRoutes.home);
             router.push(AppRoutes.practiceMyPractices);
+          },
+        );
+        // A plan link tapped inside the app (a group post's attached plan)
+        // must keep the screens beneath it, so instead of the reset above it
+        // resolves the plan and pushes its preview on top, the same screen
+        // the Connect practice card and the composer's picker open. When the
+        // plan cannot be loaded, My Practices is pushed so the tap still
+        // lands somewhere and Back returns to the post.
+        AppLinksDeepLinkService.instance.setInAppPlanNavigator(
+          (String planId, int? dayNumber, String? planLanguage) async {
+            final either = await ref.read(
+              planByIdFutureProvider(planId).future,
+            );
+            if (!mounted) return;
+            final plan = either.fold((_) => null, (plan) => plan);
+            if (plan == null) {
+              router.push(AppRoutes.practiceMyPractices);
+              return;
+            }
+            router.push(
+              AppRoutes.practicePlanPreview,
+              extra: {
+                'plan': plan,
+                if (dayNumber != null) 'selectedDay': dayNumber,
+              },
+            );
           },
         );
       });

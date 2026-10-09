@@ -25,6 +25,11 @@ GoRouter _buildTestRouter() {
             ),
           ),
           GoRoute(
+            path: 'events/:eventId',
+            builder: (_, state) =>
+                Text('event:${state.pathParameters['eventId']}'),
+          ),
+          GoRoute(
             path: 'poems',
             builder: (_, state) {
               final extra = state.extra as Map<String, dynamic>?;
@@ -118,6 +123,56 @@ void main() {
 
       router.pop();
       await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    // The group post composer's in-app content picker posts these two
+    // shapes (plus the accumulator, collection and reader ones above), so a
+    // tapped post link must resolve for them.
+    testWidgets('event link pushes the event on top of the current screen', (
+      tester,
+    ) async {
+      final router = _buildTestRouter();
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+      final routed = DeepLinkRouter.route(
+        Uri.parse('https://webuddhist.com/open/events/ev-3'),
+        router,
+        source: 'test',
+      );
+      await tester.pumpAndSettle();
+
+      expect(routed, isTrue);
+      expect(find.text('event:ev-3'), findsOneWidget);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    testWidgets('plan link hands the plan id to the plan navigator', (
+      tester,
+    ) async {
+      final router = _buildTestRouter();
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      String? openedPlanId;
+      int? openedDay;
+
+      final routed = DeepLinkRouter.route(
+        Uri.parse('https://webuddhist.com/open/plan/plan-5'),
+        router,
+        source: 'test',
+        planNavigator: (planId, dayNumber, _) {
+          openedPlanId = planId;
+          openedDay = dayNumber;
+        },
+      );
+      await tester.pumpAndSettle();
+
+      expect(routed, isTrue);
+      expect(openedPlanId, 'plan-5');
+      expect(openedDay, isNull);
+      // Nothing was pushed: the navigator owns the plan screen.
       expect(find.text('home'), findsOneWidget);
     });
 

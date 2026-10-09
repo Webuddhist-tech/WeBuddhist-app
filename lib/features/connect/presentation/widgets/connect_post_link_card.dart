@@ -25,7 +25,8 @@ class ConnectPostLinkCard extends ConsumerWidget {
   /// When set, an X badge is drawn on the card (composer usage).
   final VoidCallback? onRemove;
 
-  /// Defaults to opening the link externally.
+  /// Defaults to opening the link: first-party WeBuddhist links go to their
+  /// screen in the app, everything else to the browser sheet.
   final VoidCallback? onTap;
 
   @override
@@ -73,7 +74,7 @@ class ConnectPostLinkCard extends ConsumerWidget {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(onTap: onTap ?? () => openUrl(url), child: body),
+      child: InkWell(onTap: onTap ?? () => openLink(url), child: body),
     );
 
     if (onRemove == null) return card;

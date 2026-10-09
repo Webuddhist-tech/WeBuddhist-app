@@ -2912,6 +2912,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter a valid link, for example: https://example.com';
 
   @override
+  String get group_post_in_app_content => 'In-app content';
+
+  @override
+  String get group_post_add_in_app_content_title => 'Add in-app content';
+
+  @override
+  String get group_post_in_app_content_empty => 'Nothing to add yet';
+
+  @override
   String group_post_photo_limit(int count) {
     return 'You can add up to $count photos';
   }

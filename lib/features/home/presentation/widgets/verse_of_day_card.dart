@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/home/presentation/widgets/verse_comments_
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_content.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_of_day_engagement_bar.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/verse_share_sheet.dart';
+import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class VerseOfDayCard extends ConsumerStatefulWidget {
@@ -36,7 +37,10 @@ class _VerseOfDayCardState extends ConsumerState<VerseOfDayCard> {
   @override
   Widget build(BuildContext context) {
     final languageCode = ref.watch(localeProvider).languageCode;
-    final typography = VerseOfDayTypography.forCard(languageCode);
+    final typography = VerseOfDayTypography.forCard(
+      languageCode,
+      attributionFontSize: getLocalizedFontSize(AppTextSize.bodyLarge),
+    );
     final colorScheme = Theme.of(context).colorScheme;
 
     return Material(
