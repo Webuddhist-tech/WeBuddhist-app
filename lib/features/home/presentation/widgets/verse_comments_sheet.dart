@@ -192,61 +192,67 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(verseOfDayCommentsProvider(widget.verseId));
 
-    return DraggableScrollableSheet(
-      initialChildSize: VerseCommentsSheet._initialSize,
-      minChildSize: VerseCommentsSheet._minSize,
-      maxChildSize: VerseCommentsSheet._maxSize,
-      snap: true,
-      snapSizes: const [
-        VerseCommentsSheet._minSize,
-        VerseCommentsSheet._initialSize,
-        VerseCommentsSheet._maxSize,
-      ],
-      snapAnimationDuration: const Duration(milliseconds: 180),
-      builder: (context, scrollController) {
-        _attachScrollController(scrollController);
+    return VerseSheetTapToDismiss(
+      child: DraggableScrollableSheet(
+        initialChildSize: VerseCommentsSheet._initialSize,
+        minChildSize: VerseCommentsSheet._minSize,
+        maxChildSize: VerseCommentsSheet._maxSize,
+        snap: true,
+        snapSizes: const [
+          VerseCommentsSheet._minSize,
+          VerseCommentsSheet._initialSize,
+          VerseCommentsSheet._maxSize,
+        ],
+        snapAnimationDuration: const Duration(milliseconds: 180),
+        builder: (context, scrollController) {
+          _attachScrollController(scrollController);
 
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: Material(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 12,
-            shadowColor: Colors.black.withValues(alpha: 0.18),
-            child: Column(
-              children: [
-                VerseSheetHeader(
-                  title: context.l10n.verse_comments_title(state.total),
-                ),
-                Expanded(
-                  child: MediaQuery.removeViewInsets(
-                    context: context,
-                    removeBottom: true,
-                    child: _buildBody(
-                      context,
-                      isDark,
-                      state,
-                      scrollController,
+          return VerseSheetTapShield(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              child: Material(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                elevation: 12,
+                shadowColor: Colors.black.withValues(alpha: 0.18),
+                child: Column(
+                  children: [
+                    VerseSheetHeader(
+                      title: context.l10n.verse_comments_title(state.total),
                     ),
-                  ),
+                    Expanded(
+                      child: MediaQuery.removeViewInsets(
+                        context: context,
+                        removeBottom: true,
+                        child: _buildBody(
+                          context,
+                          isDark,
+                          state,
+                          scrollController,
+                        ),
+                      ),
+                    ),
+                    if (_replyTarget != null)
+                      _ReplyingToBanner(
+                        name: _replyTarget!.user.displayName,
+                        isDark: isDark,
+                        onClear: () => setState(() => _replyTarget = null),
+                      ),
+                    _VerseCommentComposer(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      isSubmitting: state.isSubmitting,
+                      onSubmit: _submit,
+                      isReplying: _replyTarget != null,
+                    ),
+                  ],
                 ),
-                if (_replyTarget != null)
-                  _ReplyingToBanner(
-                    name: _replyTarget!.user.displayName,
-                    isDark: isDark,
-                    onClear: () => setState(() => _replyTarget = null),
-                  ),
-                _VerseCommentComposer(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  isSubmitting: state.isSubmitting,
-                  onSubmit: _submit,
-                  isReplying: _replyTarget != null,
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -300,8 +306,7 @@ class _VerseCommentsSheetState extends ConsumerState<VerseCommentsSheet> {
               isDark: isDark,
               isReply: item.isReply,
               isOwn:
-                  currentUserId != null &&
-                  item.comment.userId == currentUserId,
+                  currentUserId != null && item.comment.userId == currentUserId,
               onLike: () => _toggleLike(item.comment),
               onReply: () => _startReply(item.comment),
               onDelete: () => _confirmDelete(item.comment),

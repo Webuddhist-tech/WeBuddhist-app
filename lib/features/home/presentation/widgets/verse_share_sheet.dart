@@ -153,8 +153,7 @@ Future<void> shareVerseOfDayQuote(
 }
 
 Future<String> _verseOfDayShareText(BuildContext context) async {
-  final shareQuoteMessage =
-      AppLocalizations.of(context)!.share_quote_message;
+  final shareQuoteMessage = AppLocalizations.of(context)!.share_quote_message;
   final longUrl = DeepLinkUrlBuilder.homeLink().toString();
   final homeLink = await resolveShareUrl(context, longUrl);
   if (!context.mounted) return shareQuoteMessage;
@@ -349,6 +348,11 @@ void showVerseShareSheet(BuildContext context, VerseOfDay verseOfDay) {
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     useRootNavigator: true,
+    // Cap the height so a long verse leaves the barrier tappable; the preview
+    // is wrapped in a Flexible scroll view and absorbs the limit.
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+    ),
     builder: (_) => VerseShareSheet(verseOfDay: verseOfDay),
   );
 }
