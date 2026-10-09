@@ -48,6 +48,7 @@ class _PagedRepository implements GroupChatRepository {
     String? messageType,
     String? sort,
     String? intention,
+    String? translationLanguage,
   }) async {
     requestedSkips.add(skip);
     if (skip > 0) await laterPagesGate?.future;
