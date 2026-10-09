@@ -65,37 +65,45 @@ class _VerseLikersSheetState extends ConsumerState<VerseLikersSheet> {
       verseOfDayLikesProvider(widget.verseId).select((s) => s.likeCount),
     );
 
-    return DraggableScrollableSheet(
-      initialChildSize: VerseLikersSheet._initialSize,
-      minChildSize: VerseLikersSheet._minSize,
-      maxChildSize: VerseLikersSheet._maxSize,
-      snap: true,
-      snapSizes: const [
-        VerseLikersSheet._minSize,
-        VerseLikersSheet._initialSize,
-        VerseLikersSheet._maxSize,
-      ],
-      snapAnimationDuration: const Duration(milliseconds: 180),
-      builder: (context, scrollController) {
-        _attachScrollController(scrollController);
+    return VerseSheetTapToDismiss(
+      child: DraggableScrollableSheet(
+        initialChildSize: VerseLikersSheet._initialSize,
+        minChildSize: VerseLikersSheet._minSize,
+        maxChildSize: VerseLikersSheet._maxSize,
+        snap: true,
+        snapSizes: const [
+          VerseLikersSheet._minSize,
+          VerseLikersSheet._initialSize,
+          VerseLikersSheet._maxSize,
+        ],
+        snapAnimationDuration: const Duration(milliseconds: 180),
+        builder: (context, scrollController) {
+          _attachScrollController(scrollController);
 
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: Material(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            elevation: 12,
-            shadowColor: Colors.black.withValues(alpha: 0.18),
-            child: Column(
-              children: [
-                VerseSheetHeader(
-                  title: context.l10n.verse_likes_title(likeCount),
+          return VerseSheetTapShield(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+              child: Material(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                elevation: 12,
+                shadowColor: Colors.black.withValues(alpha: 0.18),
+                child: Column(
+                  children: [
+                    VerseSheetHeader(
+                      title: context.l10n.verse_likes_title(likeCount),
+                    ),
+                    Expanded(
+                      child: _buildBody(context, state, scrollController),
+                    ),
+                  ],
                 ),
-                Expanded(child: _buildBody(context, state, scrollController)),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

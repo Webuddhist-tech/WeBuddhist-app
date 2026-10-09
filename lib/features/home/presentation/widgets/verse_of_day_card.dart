@@ -47,7 +47,8 @@ class _VerseOfDayCardState extends ConsumerState<VerseOfDayCard> {
           verseOfDay: widget.verseOfDay,
           typography: typography,
           verseColor: colorScheme.onSurface,
-          showAttribution: false,
+          sourceColor: colorScheme.onSurfaceVariant,
+          useContentFontForAttribution: typography.useContentFontForAttribution,
           textAlign: TextAlign.start,
           textPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           footer: VerseOfDayEngagementBar(

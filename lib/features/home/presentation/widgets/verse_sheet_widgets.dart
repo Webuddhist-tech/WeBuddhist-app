@@ -105,3 +105,45 @@ class VerseUserAvatar extends StatelessWidget {
     );
   }
 }
+
+/// Closes a modal verse sheet when the dimmed area above it is tapped.
+///
+/// `showModalBottomSheet` wraps its builder output in a canvas [Material]
+/// that absorbs hit tests over the full route height, so with a
+/// [DraggableScrollableSheet] inside it taps above the sheet never reach the
+/// modal barrier. The outer detector catches those taps and pops; the inner
+/// one wins the gesture arena for taps on the sheet itself so they are
+/// ignored. Both are hidden from semantics so screen readers keep the
+/// barrier's own "dismiss" action.
+class VerseSheetTapToDismiss extends StatelessWidget {
+  const VerseSheetTapToDismiss({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onTap: () => Navigator.of(context).pop(),
+      child: child,
+    );
+  }
+}
+
+/// Swallows taps on the sheet body so [VerseSheetTapToDismiss] above it does
+/// not close the sheet.
+class VerseSheetTapShield extends StatelessWidget {
+  const VerseSheetTapShield({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      excludeFromSemantics: true,
+      onTap: () {},
+      child: child,
+    );
+  }
+}
