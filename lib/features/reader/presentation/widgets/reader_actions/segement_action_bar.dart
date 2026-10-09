@@ -179,7 +179,10 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
     final videos = info?.videos ?? const <SegmentVideo>[];
     final hasRootText = info?.relatedText.hasRootText ?? false;
     // Counts arrive with segment info. Until then, and when a segment has
-    // none at all, Commentaries and Versions stay off the sheet.
+    // none at all, Commentaries and Versions stay off the sheet. A failed
+    // request is not a count of zero: the provider keeps that error, so the
+    // sheet offers a retry instead of hiding both actions for good.
+    final infoFailed = segmentInfo.hasError && info == null;
     final showCommentaries = (info?.relatedText.commentaries ?? 0) > 0;
     final showVersions = (info?.translations ?? 0) > 0;
 
@@ -209,6 +212,17 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
         onTap: _handleBookmark,
       ),
       tiles: [
+        if (infoFailed)
+          _ResourceTile(
+            icon: Icons.refresh,
+            label: localizations.retry,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              ref.invalidate(
+                segmentInfoFutureProvider(widget.segment.segmentId),
+              );
+            },
+          ),
         if (showCommentaries)
           _ResourceTile(
             icon: AppAssets.readerCommentary,

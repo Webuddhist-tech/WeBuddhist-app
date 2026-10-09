@@ -749,9 +749,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  /// The existing follow control when this task is live and a recitation is
-  /// being followed. A static label when the task is live without one.
-  /// Other screens keep the event pill. Following the line is unchanged.
+  /// The follow control whenever a recitation is being followed, including a
+  /// plan task that is not itself live. A static label when the task is live
+  /// and nothing is being followed. Other screens keep the event pill.
   Widget? _livePill(String? liveEventId) {
     final pill = planLivePill(
       taskIsLive: widget.navigationContext?.planTaskIsLive,

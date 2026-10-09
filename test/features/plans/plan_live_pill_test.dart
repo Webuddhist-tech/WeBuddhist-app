@@ -17,10 +17,10 @@ void main() {
     );
   });
 
-  test('a plan task that is not live hides the pill', () {
+  test('a plan task that is not live keeps the follow control', () {
     expect(
       planLivePill(taskIsLive: false, followsRecitation: true),
-      PlanLivePill.hidden,
+      PlanLivePill.syncToggle,
     );
     expect(
       planLivePill(taskIsLive: false, followsRecitation: false),

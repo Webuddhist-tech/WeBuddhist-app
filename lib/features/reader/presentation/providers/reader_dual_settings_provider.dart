@@ -191,6 +191,7 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   bool _secondaryEdited = false;
   int _secondaryResolveGeneration = 0;
   int _secondaryEnabledGeneration = 0;
+  int _originalVisibleGeneration = 0;
 
   bool get isPrimaryEdited => _primaryEdited;
   bool get isSecondaryEdited => _secondaryEdited;
@@ -203,6 +204,11 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// Settings-language fill does not turn translation back on after the user
   /// disables it.
   int get secondaryEnabledGeneration => _secondaryEnabledGeneration;
+
+  /// Bumped when the original switch actually changes, so a plan edition
+  /// still loading does not turn the original back on after the person
+  /// hides it.
+  int get originalVisibleGeneration => _originalVisibleGeneration;
 
   ReaderContextLayoutNotifier get _store =>
       _ref.read(readerContextLayoutProvider(scope.context).notifier);
@@ -334,6 +340,7 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// and the widgets keep showing the original until that version exists.
   void setOriginalVisible(bool visible) {
     if (state.originalVisible == visible) return;
+    _originalVisibleGeneration++;
     _holdPlanOriginal = false;
     if (isLibrary) {
       state = state.copyWith(originalVisible: visible);

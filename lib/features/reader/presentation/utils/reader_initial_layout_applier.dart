@@ -338,6 +338,9 @@ class ReaderInitialLayoutApplier {
   /// Puts the plan task's translation under the original. False when that
   /// id cannot be loaded or it is the edition already on screen, so the
   /// usual layout still runs.
+  ///
+  /// True without writing when the person picks a translation or moves a
+  /// switch while the edition is still loading: that newer choice stays.
   Future<bool> _applyPlanTranslation({
     required WidgetRef ref,
     required BuildContext context,
@@ -345,22 +348,29 @@ class ReaderInitialLayoutApplier {
     required String translationTextId,
     required String textVersionId,
   }) async {
+    final notifier = ref.read(readerDualSettingsProvider(scope).notifier);
+    final resolveGeneration = notifier.secondaryResolveGeneration;
+    final enabledGeneration = notifier.secondaryEnabledGeneration;
+    final originalGeneration = notifier.originalVisibleGeneration;
+    bool choiceUnchanged() =>
+        notifier.secondaryResolveGeneration == resolveGeneration &&
+        notifier.secondaryEnabledGeneration == enabledGeneration &&
+        notifier.originalVisibleGeneration == originalGeneration;
     try {
       final version = await ref.read(
         readerVersionInfoProvider(translationTextId).future,
       );
       if (!context.mounted) return true;
+      if (!choiceUnchanged()) return true;
       if (version.id.isEmpty || version.id == textVersionId) return false;
-      ref
-          .read(readerDualSettingsProvider(scope).notifier)
-          .showPlanTranslation(
-            ReaderSlotConfig(
-              languageCode: version.language,
-              languageLabel: getLanguageName(version.language, context),
-              versionId: version.id,
-              versionLabel: version.title,
-            ),
-          );
+      notifier.showPlanTranslation(
+        ReaderSlotConfig(
+          languageCode: version.language,
+          languageLabel: getLanguageName(version.language, context),
+          versionId: version.id,
+          versionLabel: version.title,
+        ),
+      );
       return true;
     } catch (e, st) {
       _logger.warning(
@@ -368,6 +378,7 @@ class ReaderInitialLayoutApplier {
         e,
         st,
       );
+      if (!context.mounted || !choiceUnchanged()) return true;
       return false;
     }
   }

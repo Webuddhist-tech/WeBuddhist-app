@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
@@ -122,5 +124,166 @@ void main() {
       expect(picked.secondaryEnabled, isTrue);
       expect(picked.originalVisible, isTrue);
     },
+  );
+
+  testWidgets(
+    'a translation picked while the plan edition loads is left alone',
+    (tester) async {
+      final held = _HeldPlanEdition();
+      final host = await _pumpPlanHost(tester, held);
+      final ref = host as WidgetRef;
+      final pending = _applyPlan(host);
+
+      await held.untilStarted(tester);
+      ref
+          .read(readerDualSettingsProvider(_params.settingsScope).notifier)
+          .replaceSecondary(
+            const ReaderSlotConfig(
+              languageCode: 'en',
+              languageLabel: 'English',
+              versionId: 'ed-other',
+              versionLabel: 'Other edition',
+            ),
+          );
+      held.release();
+      await pending;
+
+      final settings = ref.read(readerDualSettingsProvider(_params.settingsScope));
+      expect(settings.secondary.versionId, 'ed-other');
+      expect(settings.secondaryEnabled, isFalse);
+    },
+  );
+
+  testWidgets(
+    'turning translation off while the plan edition loads is left alone',
+    (tester) async {
+      final held = _HeldPlanEdition();
+      final host = await _pumpPlanHost(tester, held);
+      final ref = host as WidgetRef;
+      ref
+          .read(readerContextLayoutProvider(ReaderLayoutContext.plan).notifier)
+          .setTranslationOn(true);
+      final pending = _applyPlan(host);
+
+      await held.untilStarted(tester);
+      ref
+          .read(readerDualSettingsProvider(_params.settingsScope).notifier)
+          .setSecondaryEnabled(false);
+      held.release();
+      await pending;
+
+      final settings = ref.read(readerDualSettingsProvider(_params.settingsScope));
+      expect(settings.secondaryEnabled, isFalse);
+      expect(settings.secondary.versionId, isNot('ed-en'));
+    },
+  );
+
+  testWidgets(
+    'showing the original while the plan edition loads is left alone',
+    (tester) async {
+      final held = _HeldPlanEdition();
+      final host = await _pumpPlanHost(tester, held);
+      final ref = host as WidgetRef;
+      final pending = _applyPlan(host);
+
+      await held.untilStarted(tester);
+      // A plan seeds the original off. Turning it on during the request is
+      // the person's choice.
+      ref
+          .read(readerDualSettingsProvider(_params.settingsScope).notifier)
+          .setOriginalVisible(true);
+      held.release();
+      await pending;
+
+      final settings = ref.read(readerDualSettingsProvider(_params.settingsScope));
+      expect(settings.originalVisible, isTrue);
+      expect(settings.secondary.versionId, isNot('ed-en'));
+    },
+  );
+
+  testWidgets(
+    'the plan edition still applies when nothing changes while it loads',
+    (tester) async {
+      final held = _HeldPlanEdition();
+      final host = await _pumpPlanHost(tester, held);
+      final ref = host as WidgetRef;
+      final pending = _applyPlan(host);
+
+      await held.untilStarted(tester);
+      held.release();
+      await pending;
+
+      final settings = ref.read(readerDualSettingsProvider(_params.settingsScope));
+      expect(settings.secondary.versionId, 'ed-en');
+      expect(settings.secondaryEnabled, isTrue);
+      expect(settings.originalVisible, isTrue);
+    },
+  );
+}
+
+/// Holds the plan edition request so a test can change the reader first.
+class _HeldPlanEdition {
+  final Completer<void> _started = Completer<void>();
+  final Completer<void> _release = Completer<void>();
+
+  Override override() {
+    return readerVersionInfoProvider.overrideWith((ref, versionId) async {
+      ref.keepAlive();
+      if (!_started.isCompleted) _started.complete();
+      await _release.future;
+      return _planEdition;
+    });
+  }
+
+  Future<void> untilStarted(WidgetTester tester) async {
+    for (var i = 0; i < 30 && !_started.isCompleted; i++) {
+      await tester.pump();
+    }
+    expect(_started.isCompleted, isTrue);
+  }
+
+  void release() {
+    if (!_release.isCompleted) _release.complete();
+  }
+}
+
+Future<Element> _pumpPlanHost(
+  WidgetTester tester,
+  _HeldPlanEdition held,
+) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        readerSettingsRemoteDatasourceProvider.overrideWithValue(
+          FakeReaderSettingsDatasource(
+            languages: const [_english],
+            versions: const {
+              'en': [_planEdition],
+            },
+            versionInfo: const {'text-en': _planEdition},
+          ),
+        ),
+        held.override(),
+        localStorageServiceProvider.overrideWithValue(FakeLocalStorage()),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const _Host(),
+      ),
+    ),
+  );
+  await tester.pump();
+  return tester.element(find.byType(_Host));
+}
+
+Future<void> _applyPlan(Element host) {
+  return ReaderInitialLayoutApplier().applyForText(
+    ref: host as WidgetRef,
+    context: host,
+    params: _params,
+    textLanguage: 'bo',
+    textVersionId: 'bo-root',
   );
 }
