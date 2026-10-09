@@ -65,11 +65,7 @@ class _VerseLikersSheetState extends ConsumerState<VerseLikersSheet> {
       verseOfDayLikesProvider(widget.verseId).select((s) => s.likeCount),
     );
 
-    // The modal's drag detector spans the full route height, so taps above
-    // the sheet never reach the barrier; close on them here instead.
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(context).pop(),
+    return VerseSheetTapToDismiss(
       child: DraggableScrollableSheet(
         initialChildSize: VerseLikersSheet._initialSize,
         minChildSize: VerseLikersSheet._minSize,
@@ -84,8 +80,7 @@ class _VerseLikersSheetState extends ConsumerState<VerseLikersSheet> {
         builder: (context, scrollController) {
           _attachScrollController(scrollController);
 
-          return GestureDetector(
-            onTap: () {},
+          return VerseSheetTapShield(
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(24),
