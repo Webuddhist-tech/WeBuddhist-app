@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/deep_linking/app_links_deep_link_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -43,6 +45,40 @@ void main() {
       expect(service.openInApp(uri), isTrue);
       await tester.pumpAndSettle();
       expect(find.text('event:ev-1'), findsOneWidget);
+    });
+
+    testWidgets('plan links use the in-app opener, not the OS reset path', (
+      tester,
+    ) async {
+      final router = _buildTestRouter();
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      // Not awaited: push() completes only when the route is popped.
+      unawaited(router.push('/home/events/ev-9'));
+      await tester.pumpAndSettle();
+
+      var osNavigatorCalls = 0;
+      String? inAppPlanId;
+      int? inAppDay;
+      final service =
+          AppLinksDeepLinkService.instance
+            ..setRouter(router)
+            ..setPlanNavigator((_, __, ___) => osNavigatorCalls++)
+            ..setInAppPlanNavigator((planId, dayNumber, _) {
+              inAppPlanId = planId;
+              inAppDay = dayNumber;
+            });
+
+      final routed = service.openInApp(
+        Uri.parse('https://webuddhist.com/open/plan/plan-2/day/3'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(routed, isTrue);
+      expect(inAppPlanId, 'plan-2');
+      expect(inAppDay, 3);
+      expect(osNavigatorCalls, 0);
+      // The screen the link was tapped from is still there underneath.
+      expect(find.text('event:ev-9'), findsOneWidget);
     });
 
     testWidgets('leaves third-party and shortener links to the browser', (
