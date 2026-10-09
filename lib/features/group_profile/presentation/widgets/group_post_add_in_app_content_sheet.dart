@@ -96,13 +96,15 @@ class _GroupPostAddInAppContentSheetState
   }
 
   void _onTabChanged() {
+    // The search field exists only on the chants tab.
+    setState(() {});
     if (_tabController.indexIsChanging) return;
     _loadTab(_tab);
   }
 
   void _onSearchChanged(String value) {
     setState(() => _query = value.trim());
-    if (_tab == _Tab.chants) _searchChants();
+    _searchChants();
   }
 
   void _clearSearch() {
@@ -110,8 +112,8 @@ class _GroupPostAddInAppContentSheetState
     _onSearchChanged('');
   }
 
-  // Chants search the catalogue server-side; the notifier ignores queries
-  // shorter than its minimum, which the tab filters locally instead.
+  // Server-side title search; below the notifier's minimum length the tab
+  // shows the plain catalogue.
   void _searchChants() {
     final language = ref.read(practiceRecitationsLanguageProvider);
     ref
@@ -169,7 +171,9 @@ class _GroupPostAddInAppContentSheetState
             children: [
               _buildHeader(l10n),
               _buildTabBar(l10n, isDark),
-              _buildSearchField(l10n, isDark),
+              // Only chants have a search endpoint; /events and
+              // /author/groups/practices take no search param.
+              if (_tab == _Tab.chants) _buildSearchField(l10n, isDark),
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -291,7 +295,7 @@ class _GroupPostAddInAppContentSheetState
         textInputAction: TextInputAction.search,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: l10n.group_post_in_app_content_search_hint,
+          hintText: l10n.my_recitation_collection_search_chants,
           hintStyle: TextStyle(fontSize: 14, color: secondaryColor),
           isDense: true,
           filled: true,
@@ -319,21 +323,13 @@ class _GroupPostAddInAppContentSheetState
 
   Widget _buildEventsTab(AppLocalizations l10n, ConnectEventsState state) {
     final notifier = ref.read(myConnectEventsProvider(_eventsFilter).notifier);
-    final events =
-        state.events
-            .where(
-              (event) => _matchesQuery(_query, event.title, event.groupName),
-            )
-            .toList();
 
     return _ContentList<GroupEvent>(
-      items: events,
+      items: state.events,
       isLoading: !state.hasLoaded || state.isLoading,
       error: state.error,
       hasMore: state.hasMore,
       isLoadingMore: state.isLoadingMore,
-      query: _query,
-      pagesOnMiss: true,
       onLoadMore: notifier.loadMore,
       onRetry: notifier.retry,
       itemBuilder: (context, event) {
@@ -362,8 +358,7 @@ class _GroupPostAddInAppContentSheetState
     final items = <(GroupPractice, GroupPostInAppContent)>[
       for (final practice in state.practices)
         if (GroupPostInAppContent.practice(practice) case final content?)
-          if (_matchesQuery(_query, content.title, practice.groupName))
-            (practice, content),
+          (practice, content),
     ];
 
     return _ContentList<(GroupPractice, GroupPostInAppContent)>(
@@ -372,8 +367,6 @@ class _GroupPostAddInAppContentSheetState
       error: state.error,
       hasMore: state.hasMore,
       isLoadingMore: state.isLoadingMore,
-      query: _query,
-      pagesOnMiss: true,
       onLoadMore: notifier.loadMore,
       onRetry: notifier.retry,
       itemBuilder:
@@ -485,13 +478,6 @@ class _GroupPostAddInAppContentSheetState
   }
 }
 
-bool _matchesQuery(String query, String title, [String? extra]) {
-  if (query.isEmpty) return true;
-  final needle = query.toLowerCase();
-  return title.toLowerCase().contains(needle) ||
-      (extra?.toLowerCase().contains(needle) ?? false);
-}
-
 Widget? _responsiveThumbnail(ResponsiveImage? image) {
   if (image == null || image.isEmpty) return null;
   return ResponsiveCoverImage(image: image, fit: BoxFit.cover);
@@ -524,12 +510,7 @@ class _ChantsTab extends ConsumerWidget {
     final searchState = ref.watch(searchProvider);
     final isServerSearch =
         query.length >= RecitationSearchNotifier.minQueryLength;
-    final chants =
-        isServerSearch
-            ? searchState.results
-            : listState.recitations
-                .where((chant) => _matchesQuery(query, chant.title))
-                .toList();
+    final chants = isServerSearch ? searchState.results : listState.recitations;
 
     return _ContentList<RecitationModel>(
       items: chants,
@@ -537,7 +518,7 @@ class _ChantsTab extends ConsumerWidget {
       error: isServerSearch ? searchState.error : listState.error,
       hasMore: !isServerSearch && listState.hasMore,
       isLoadingMore: listState.isLoadingMore,
-      query: query,
+      query: isServerSearch ? query : '',
       onLoadMore: ref.read(listProvider.notifier).loadMore,
       onRetry:
           isServerSearch
@@ -577,11 +558,10 @@ class _ContentList<T> extends StatelessWidget {
     required this.error,
     required this.hasMore,
     required this.isLoadingMore,
-    required this.query,
     required this.onLoadMore,
     required this.onRetry,
     required this.itemBuilder,
-    this.pagesOnMiss = false,
+    this.query = '',
   });
 
   final List<T> items;
@@ -589,11 +569,9 @@ class _ContentList<T> extends StatelessWidget {
   final String? error;
   final bool hasMore;
   final bool isLoadingMore;
-  final String query;
 
-  /// Keep fetching pages while a local filter has no hit. Only for the short
-  /// followed-only lists; the chant catalogue is searched server-side.
-  final bool pagesOnMiss;
+  /// The active search, used only to word the empty state.
+  final String query;
   final VoidCallback onLoadMore;
   final VoidCallback onRetry;
   final Widget Function(BuildContext context, T item) itemBuilder;
@@ -605,12 +583,6 @@ class _ContentList<T> extends StatelessWidget {
         return Center(child: ErrorStateWidget(error: error!, onRetry: onRetry));
       }
       if (isLoading) return const Center(child: CircularProgressIndicator());
-      if (pagesOnMiss && query.isNotEmpty && hasMore) {
-        if (!isLoadingMore) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => onLoadMore());
-        }
-        return const Center(child: CircularProgressIndicator());
-      }
       return _EmptyMessage(query: query);
     }
 

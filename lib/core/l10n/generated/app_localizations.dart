@@ -5138,12 +5138,6 @@ abstract class AppLocalizations {
   /// **'Add in-app content'**
   String get group_post_add_in_app_content_title;
 
-  /// No description provided for @group_post_in_app_content_search_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Search content...'**
-  String get group_post_in_app_content_search_hint;
-
   /// No description provided for @group_post_in_app_content_empty.
   ///
   /// In en, this message translates to:

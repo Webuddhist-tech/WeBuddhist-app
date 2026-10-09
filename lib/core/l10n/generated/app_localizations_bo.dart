@@ -2948,9 +2948,6 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_post_add_in_app_content_title => 'Add in-app content';
 
   @override
-  String get group_post_in_app_content_search_hint => 'Search content...';
-
-  @override
   String get group_post_in_app_content_empty => 'Nothing to add yet';
 
   @override

@@ -5721,13 +5721,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get group_post_in_app_content_search_hint => TolgeeBridge.get(
-    localeName,
-    'group_post_in_app_content_search_hint',
-    () => _fallback.group_post_in_app_content_search_hint,
-  );
-
-  @override
   String get group_post_in_app_content_empty => TolgeeBridge.get(
     localeName,
     'group_post_in_app_content_empty',
