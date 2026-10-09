@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_report_reason_label.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Admin moderation queue: reported posts, comments, and chat messages,
 /// each with the reports filed against it.
@@ -30,7 +33,10 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
   ];
 
   final Set<String> _expandedItemKeys = {};
-  final Set<String> _resolvingItemKeys = {};
+
+  /// Items with a resolve or a delete in flight. Both reload the queue, so
+  /// only one may run at a time across the whole screen.
+  final Set<String> _busyItemKeys = {};
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -62,9 +68,9 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
     // One resolve reloads the queue. A second tap before that finishes is
     // ignored: the notifier would return false without trying the request,
     // and the screen would show an error for an item it never sent.
-    if (_resolvingItemKeys.isNotEmpty) return;
+    if (_busyItemKeys.isNotEmpty) return;
     final key = _itemKey(item);
-    _resolvingItemKeys.add(key);
+    _busyItemKeys.add(key);
     setState(() {});
 
     final resolved = await ref
@@ -72,7 +78,7 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
         .resolveItem(item);
     if (!mounted) return;
     setState(() {
-      _resolvingItemKeys.remove(key);
+      _busyItemKeys.remove(key);
       if (resolved) _expandedItemKeys.remove(key);
     });
     if (!resolved) {
@@ -83,6 +89,56 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
         ),
       );
     }
+  }
+
+  /// Confirms, then removes the reported chat message for everyone and takes
+  /// the item off the queue.
+  Future<void> _deleteMessage(GroupReportedItem item) async {
+    if (_busyItemKeys.isNotEmpty) return;
+    final l10n = context.l10n;
+    final key = _itemKey(item);
+    _busyItemKeys.add(key);
+    setState(() {});
+
+    // The dialog holds its own spinner until this resolves, so the only
+    // feedback left for the screen is the snackbar afterwards.
+    final deleted = await showDestructiveConfirmationDialog(
+      context,
+      title: l10n.group_reports_delete_confirm_title,
+      message: l10n.group_reports_delete_message_confirm,
+      onConfirmed:
+          () => ref
+              .read(groupReportsProvider(widget.groupId).notifier)
+              .deleteMessageItem(item),
+    );
+    if (!mounted) return;
+    setState(() {
+      _busyItemKeys.remove(key);
+      if (deleted == true) _expandedItemKeys.remove(key);
+    });
+
+    // Null means the admin cancelled, which needs no word either way.
+    if (deleted == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          deleted
+              ? l10n.group_reports_message_removed
+              : l10n.group_reports_delete_message_error,
+        ),
+        backgroundColor: deleted ? null : Colors.red,
+      ),
+    );
+  }
+
+  /// Opens the chat scrolled to the reported message. The thread resolves the
+  /// room from the group itself, so only the message id travels.
+  void _viewMessage(GroupReportedItem item) {
+    final messageId = item.latest.messageId?.trim() ?? '';
+    if (messageId.isEmpty) return;
+    context.push(
+      AppRoutes.groupChatPath(widget.groupId, messageId: messageId),
+    );
   }
 
   static bool _isNearEnd(ScrollMetrics metrics) =>
@@ -243,8 +299,17 @@ class _GroupReportsScreenState extends ConsumerState<GroupReportsScreen> {
             isDark: isDark,
             isExpanded: _expandedItemKeys.contains(_itemKey(item)),
             onToggleExpanded: () => _toggleExpanded(item),
-            onDismiss:
-                _resolvingItemKeys.isNotEmpty ? null : () => _resolve(item),
+            onDismiss: _busyItemKeys.isNotEmpty ? null : () => _resolve(item),
+            onView:
+                item.kind == GroupReportKind.chatMessage &&
+                        (item.latest.messageId?.trim().isNotEmpty ?? false)
+                    ? () => _viewMessage(item)
+                    : null,
+            onDelete:
+                item.kind != GroupReportKind.chatMessage ||
+                        _busyItemKeys.isNotEmpty
+                    ? null
+                    : () => _deleteMessage(item),
           ),
         );
       }
@@ -355,6 +420,14 @@ class _ReportedItemTile extends StatelessWidget {
   /// Resolves the item's reports; null while any item is resolving.
   final VoidCallback? onDismiss;
 
+  /// Opens the reported content where it was posted; null for the kinds not
+  /// wired up yet.
+  final VoidCallback? onView;
+
+  /// Removes the reported content; null for the kinds not wired up yet and
+  /// while another item is busy.
+  final VoidCallback? onDelete;
+
   const _ReportedItemTile({
     required this.groupId,
     required this.item,
@@ -362,6 +435,8 @@ class _ReportedItemTile extends StatelessWidget {
     required this.isExpanded,
     required this.onToggleExpanded,
     required this.onDismiss,
+    required this.onView,
+    required this.onDelete,
   });
 
   @override
@@ -376,6 +451,8 @@ class _ReportedItemTile extends StatelessWidget {
             item: item,
             isDark: isDark,
             onDismiss: onDismiss,
+            onView: onView,
+            onDelete: onDelete,
           ),
           _ReportsToggle(
             count: item.reports.length,
@@ -397,12 +474,16 @@ class _ReportedContentCard extends StatelessWidget {
   final GroupReportedItem item;
   final bool isDark;
   final VoidCallback? onDismiss;
+  final VoidCallback? onView;
+  final VoidCallback? onDelete;
 
   const _ReportedContentCard({
     required this.groupId,
     required this.item,
     required this.isDark,
     required this.onDismiss,
+    required this.onView,
+    required this.onDelete,
   });
 
   @override
@@ -471,14 +552,14 @@ class _ReportedContentCard extends StatelessWidget {
                       isDark
                           ? AppColors.textTertiaryDark
                           : AppColors.textSecondary,
-                  onPressed: null,
+                  onPressed: onView,
                 ),
               ),
               Expanded(
                 child: _CardActionButton(
                   label: deleteLabel,
                   color: AppColors.danger,
-                  onPressed: null,
+                  onPressed: onDelete,
                 ),
               ),
             ],
@@ -672,8 +753,9 @@ class _CardActionButton extends StatelessWidget {
       onPressed: onPressed,
       style: TextButton.styleFrom(
         foregroundColor: color,
-        // View and delete are not wired up yet. Dimmed so an admin can tell
-        // the button is inert instead of tapping a control that does nothing.
+        // View and delete on kinds other than chat messages are not wired up
+        // yet. Dimmed so an admin can tell the button is inert instead of
+        // tapping a control that does nothing.
         disabledForegroundColor: color.withValues(alpha: 0.38),
       ),
       child: Text(

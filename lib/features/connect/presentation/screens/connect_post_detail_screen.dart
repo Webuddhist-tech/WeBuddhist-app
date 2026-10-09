@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -18,6 +20,10 @@ import 'package:flutter_pecha/features/connect/presentation/widgets/connect_comm
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+
+bool _containsTibetan(String value) {
+  return RegExp(r'[\u0F00-\u0FFF]').hasMatch(value);
+}
 
 class ConnectPostDetailScreen extends ConsumerWidget {
   const ConnectPostDetailScreen({
@@ -410,6 +416,13 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
             const SizedBox(height: 12),
             Text(
               caption,
+              strutStyle:
+                  _containsTibetan(caption)
+                      ? AppFontConfig.tibetanStrutStyle(
+                        AppConfig.tibetanLanguageCode,
+                        15,
+                      )
+                      : null,
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,

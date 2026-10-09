@@ -12,6 +12,7 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/avatar_fallback.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -24,11 +25,13 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_accum
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_actions.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_link_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_time_format.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_more_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participation_dialog.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
@@ -84,7 +87,9 @@ class _GroupEventDetailScreenState
   _EventTab? _openingTab;
   bool? _attendingOverride;
   GroupEventParticipationType? _participationOverride;
-  GroupEventParticipationType? _pendingJoin;
+
+  /// The action-row button whose work is in flight; it shows the spinner.
+  GroupEventAction? _pendingAction;
   bool _isSubmitting = false;
   bool _isOpeningPuja = false;
   bool _viewTracked = false;
@@ -116,6 +121,10 @@ class _GroupEventDetailScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final eventAsync = ref.watch(groupEventDetailProvider(widget.eventId));
+    final loadedEvent = eventAsync.valueOrNull?.fold(
+      (_) => null,
+      (event) => event,
+    );
 
     return Scaffold(
       backgroundColor:
@@ -124,7 +133,7 @@ class _GroupEventDetailScreenState
         bottom: false,
         child: Column(
           children: [
-            _buildAppBar(context, isDark),
+            _buildAppBar(context, isDark, loadedEvent),
             Expanded(
               child: eventAsync.when(
                 data:
@@ -155,12 +164,23 @@ class _GroupEventDetailScreenState
     );
   }
 
-  Widget _buildAppBar(BuildContext context, bool isDark) {
+  Widget _buildAppBar(BuildContext context, bool isDark, GroupEvent? event) {
+    final menuEvent =
+        event != null &&
+                showsGroupEventMenu(
+                  isAttending: _attendingOverride ?? event.isJoined,
+                  isPast: isGroupEventPast(event),
+                )
+            ? event
+            : null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
-        children: [
-          IconButton(
+      // The toolbar keeps the title centred whether or not ⋮ shows.
+      child: SizedBox(
+        height: kMinInteractiveDimension,
+        child: NavigationToolbar(
+          leading: IconButton(
             icon: const Icon(AppAssets.arrowLeft),
             onPressed: () {
               if (context.canPop()) {
@@ -170,19 +190,37 @@ class _GroupEventDetailScreenState
               }
             },
           ),
-          Expanded(
-            child: Text(
-              context.l10n.connect_tab_events,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
+          middle: Text(
+            context.l10n.connect_tab_events,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
-          IconButton(
-            icon: const Icon(AppAssets.readerShare),
-            onPressed: _shareEvent,
-            iconSize: 22,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(AppAssets.readerShare),
+                onPressed: _shareEvent,
+                iconSize: 22,
+              ),
+              if (menuEvent != null)
+                IconButton(
+                  icon: const Icon(AppAssets.dotsThreeVertical),
+                  iconSize: 22,
+                  // Leaving mid-entry would still navigate into the left
+                  // event.
+                  onPressed:
+                      _isSubmitting || _isOpeningPuja
+                          ? null
+                          : () => showGroupEventMoreSheet(
+                            context,
+                            onLeave: () => _confirmLeave(menuEvent),
+                          ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -245,6 +283,11 @@ class _GroupEventDetailScreenState
             ? _openingTab!
             : _EventTab.about;
     final isPast = isGroupEventPast(event);
+    final actions = groupEventActionsFor(
+      event,
+      isAttending: isAttending,
+      isPast: isPast,
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 32),
@@ -279,9 +322,9 @@ class _GroupEventDetailScreenState
           ),
           const SizedBox(height: 14),
           _EventGroupRow(event: event, isDark: isDark),
-          if (!isPast || (event.hasPuja && isAttending)) ...[
+          if (actions.isNotEmpty) ...[
             const SizedBox(height: 14),
-            _buildActionRow(event, isAttending, isDark, isPast: isPast),
+            _buildActionRow(event, actions, isDark),
           ],
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
@@ -297,6 +340,7 @@ class _GroupEventDetailScreenState
             _EventTab.accumulations => _EventAccumulatorPanel(
               accumulatorId: groupAccumulator!.id,
               groupTitle: event.groupName,
+              isAttending: isAttending,
               isDark: isDark,
             ),
           },
@@ -348,169 +392,94 @@ class _GroupEventDetailScreenState
         : GroupEventParticipationType.offline;
   }
 
-  String _attendingLabel(GroupEvent event) => switch (_participationOf(event)) {
-    GroupEventParticipationType.online =>
-      context.l10n.connect_event_joining_online,
-    GroupEventParticipationType.offline =>
-      context.l10n.connect_event_joining_in_person,
-    null => context.l10n.connect_event_attending,
-  };
-
+  /// Black Practice / Join pills; grey view pills explore the plan read-only.
+  /// Join sits on its own full-width line under the views.
   Widget _buildActionRow(
     GroupEvent event,
-    bool isAttending,
-    bool isDark, {
-    required bool isPast,
-  }) {
-    final secondaryButtonColor =
-        isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite;
-    final secondaryBorder = isDark ? AppColors.grey800 : AppColors.grey300;
+    List<GroupEventAction> actions,
+    bool isDark,
+  ) {
+    final l10n = context.l10n;
     final isHybrid = isGroupEventHybrid(event);
+    final isBusy = _isSubmitting || _isOpeningPuja;
 
-    final attendButton = ElevatedButton(
-      // Leaving mid-entry would still navigate into the left event.
-      onPressed:
-          _isSubmitting || _isOpeningPuja
-              ? null
-              : () => isAttending ? _leaveEvent(event) : _attendEvent(event),
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        minimumSize: const Size(0, 44),
-        backgroundColor:
-            isAttending
-                ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
-                : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary),
-        foregroundColor:
-            isAttending
-                ? (isDark ? AppColors.textTertiaryDark : AppColors.textPrimary)
-                : (isDark ? AppColors.textPrimary : AppColors.surfaceWhite),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      child:
-          _isSubmitting && _pendingJoin == null
-              ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-              : Text(
-                isAttending
-                    ? _attendingLabel(event)
-                    : context.l10n.connect_event_attend,
-              ),
-    );
+    // A hybrid attendee re-joins with the picked format, which also enters;
+    // a single-format attendee has nothing to pick.
+    Future<void> practice(GroupEventParticipationType participation) =>
+        isHybrid
+            ? _attendEvent(event, participation: participation)
+            : _enterPuja(event);
 
-    // Hybrid events always ask for a format; each tap re-joins and enters.
-    if (isHybrid && !isPast) {
-      Widget joinButton(GroupEventParticipationType type, String label) {
-        final isPending = _pendingJoin == type;
-        return Expanded(
-          child: ElevatedButton(
-            onPressed:
-                _isSubmitting || _isOpeningPuja
-                    ? null
-                    : () => _attendEvent(event, participation: type),
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              minimumSize: const Size(0, 48),
-              backgroundColor:
-                  isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-              foregroundColor:
-                  isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
-              textStyle: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-              shape: const StadiumBorder(),
-            ),
-            child:
-                isPending
-                    ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                    : Text(label),
-          ),
-        );
-      }
-
-      return Row(
-        children: [
-          joinButton(
-            GroupEventParticipationType.offline,
-            context.l10n.connect_event_join_in_person,
-          ),
-          const SizedBox(width: 12),
-          joinButton(
-            GroupEventParticipationType.online,
-            context.l10n.connect_event_join_online,
-          ),
-        ],
-      );
-    }
-
-    if (event.hasPuja && isAttending) {
-      final pujaButton = ElevatedButton(
-        onPressed: _isOpeningPuja ? null : () => _enterPuja(event),
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          minimumSize: const Size(0, 44),
-          backgroundColor:
-              isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-          foregroundColor:
-              isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+    Widget button(GroupEventAction action) {
+      final (String label, Future<void> Function() run) = switch (action) {
+        GroupEventAction.viewInPerson => (
+          l10n.connect_event_view_in_person,
+          () => _explorePuja(event, online: false),
         ),
-        child:
-            _isOpeningPuja
-                ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                : Text(context.l10n.start_reading),
-      );
-      if (isPast) {
-        return SizedBox(width: double.infinity, child: pujaButton);
-      }
-      return Row(
-        children: [
-          Expanded(child: attendButton),
-          const SizedBox(width: 12),
-          Expanded(child: pujaButton),
-        ],
+        GroupEventAction.viewOnline => (
+          l10n.connect_event_view_online,
+          () => _explorePuja(event, online: true),
+        ),
+        GroupEventAction.join => (l10n.join, () => _attendEvent(event)),
+        GroupEventAction.practiceInPerson => (
+          l10n.connect_event_practice_in_person,
+          () => practice(GroupEventParticipationType.offline),
+        ),
+        GroupEventAction.practiceOnline => (
+          l10n.connect_event_practice_online,
+          () => practice(GroupEventParticipationType.online),
+        ),
+        GroupEventAction.practiceNow => (
+          l10n.start_reading,
+          () => _enterPuja(event),
+        ),
+      };
+      return _EventActionButton(
+        label: label,
+        secondary:
+            action == GroupEventAction.viewInPerson ||
+            action == GroupEventAction.viewOnline,
+        isPending: _pendingAction == action,
+        isDark: isDark,
+        onPressed: isBusy ? null : () => _runAction(action, run),
       );
     }
 
-    if (!isAttending) {
-      return SizedBox(width: double.infinity, child: attendButton);
-    }
+    final hasJoin = actions.contains(GroupEventAction.join);
+    final paired = actions.where((a) => a != GroupEventAction.join).toList();
 
-    return Row(
+    return Column(
       children: [
-        Expanded(child: attendButton),
-        const SizedBox(width: 12),
-        Expanded(
-          child: OutlinedButton(
-            onPressed: _isSubmitting ? null : _shareEvent,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(0, 44),
-              backgroundColor: secondaryButtonColor,
-              foregroundColor:
-                  isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-              side: BorderSide(color: secondaryBorder),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: Text(context.l10n.group_invite),
+        if (paired.isNotEmpty)
+          Row(
+            children: [
+              for (var i = 0; i < paired.length; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(child: button(paired[i])),
+              ],
+            ],
           ),
-        ),
+        if (paired.isNotEmpty && hasJoin) const SizedBox(height: 12),
+        if (hasJoin)
+          SizedBox(
+            width: double.infinity,
+            child: button(GroupEventAction.join),
+          ),
       ],
     );
+  }
+
+  /// Runs an action-row button's work with its spinner showing.
+  Future<void> _runAction(
+    GroupEventAction action,
+    Future<void> Function() run,
+  ) async {
+    setState(() => _pendingAction = action);
+    try {
+      await run();
+    } finally {
+      if (mounted) setState(() => _pendingAction = null);
+    }
   }
 
   Widget _buildTabs(List<_EventTab> tabs, _EventTab selected, bool isDark) {
@@ -608,6 +577,43 @@ class _GroupEventDetailScreenState
     }
   }
 
+  /// Opens the event's plan read-only, before joining: no series
+  /// enrollment, no participation saved. [online] picks the layout with the
+  /// live stream on top. Needs a login like practising does.
+  Future<void> _explorePuja(GroupEvent event, {required bool online}) async {
+    if (_isOpeningPuja) return;
+    final seriesId = event.series?.id ?? event.seriesId;
+    final planId = event.plan?.id ?? event.planId;
+    if (seriesId == null && planId == null) return;
+
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+
+    setState(() => _isOpeningPuja = true);
+    try {
+      if (seriesId != null) {
+        await _enterSeries(
+          event,
+          seriesId,
+          showLiveStream: online,
+          readOnly: true,
+        );
+      } else {
+        await _openPlanPreview(
+          planId!,
+          eventId: event.id,
+          showLiveStream: online,
+          readOnly: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isOpeningPuja = false);
+    }
+  }
+
   Future<bool> _saveParticipation(
     GroupEvent event,
     GroupEventParticipationType participation,
@@ -635,6 +641,7 @@ class _GroupEventDetailScreenState
     bool showLiveStream = false,
     String? liveTextId,
     String? liveSegmentId,
+    bool readOnly = false,
   }) async {
     final either = await ref.read(planByIdFutureProvider(planId).future);
     if (!mounted) return false;
@@ -651,17 +658,20 @@ class _GroupEventDetailScreenState
         'showLiveStream': showLiveStream,
         if (liveTextId != null) 'liveTextId': liveTextId,
         if (liveSegmentId != null) 'liveSegmentId': liveSegmentId,
+        'readOnly': readOnly,
       },
     );
     return true;
   }
 
+  /// [readOnly] opens the plan without enrolling in the series.
   Future<bool> _enterSeries(
     GroupEvent event,
     String seriesId, {
     required bool showLiveStream,
     String? liveTextId,
     String? liveSegmentId,
+    bool readOnly = false,
   }) async {
     final seriesEither = await ref.read(seriesByIdProvider(seriesId).future);
     if (!mounted) return false;
@@ -672,20 +682,24 @@ class _GroupEventDetailScreenState
       return false;
     }
 
-    final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
-    if (!mounted) return false;
-    if (!enrollments.contains(seriesId)) {
-      final ok =
-          await ref.read(seriesEnrollmentProvider(seriesId).notifier).enroll();
+    if (!readOnly) {
+      final enrollments = await ref.read(userSeriesEnrollmentsProvider.future);
       if (!mounted) return false;
-      if (!ok) {
-        final state = ref.read(seriesEnrollmentProvider(seriesId));
-        _showError(
-          state is SeriesEnrollmentFailure
-              ? state.failure.message
-              : context.l10n.series_enroll_error,
-        );
-        return false;
+      if (!enrollments.contains(seriesId)) {
+        final ok =
+            await ref
+                .read(seriesEnrollmentProvider(seriesId).notifier)
+                .enroll();
+        if (!mounted) return false;
+        if (!ok) {
+          final state = ref.read(seriesEnrollmentProvider(seriesId));
+          _showError(
+            state is SeriesEnrollmentFailure
+                ? state.failure.message
+                : context.l10n.series_enroll_error,
+          );
+          return false;
+        }
       }
     }
 
@@ -709,6 +723,7 @@ class _GroupEventDetailScreenState
         'showLiveStream': showLiveStream,
         if (liveTextId != null) 'liveTextId': liveTextId,
         if (liveSegmentId != null) 'liveSegmentId': liveSegmentId,
+        'readOnly': readOnly,
       },
     );
     return true;
@@ -742,10 +757,7 @@ class _GroupEventDetailScreenState
     // not another attend.
     final wasAttending = _attendingOverride ?? event.isJoined;
     final previousParticipation = _participationOf(event);
-    setState(() {
-      _isSubmitting = true;
-      _pendingJoin = participation;
-    });
+    setState(() => _isSubmitting = true);
     final result = await joinGroupEventEnsuringGroupMembership(
       ref: ref,
       event: event,
@@ -783,39 +795,53 @@ class _GroupEventDetailScreenState
         return true;
       },
     );
-    // The format buttons replace Enter, so picking one also opens the puja.
+    // A Practice button on a hybrid event picks the format and opens the
+    // puja in one tap; plain Join stays on the page.
     if (joined && participation != null && event.hasPuja) {
       await _enterPuja(event);
     }
-    if (mounted) setState(() => _pendingJoin = null);
   }
 
-  Future<void> _leaveEvent(GroupEvent event) async {
-    if (isGroupEventPast(event)) return;
-
-    final authState = ref.read(authProvider);
-    if (authState.isGuest || !authState.isLoggedIn) {
-      LoginDrawer.show(context, ref);
+  /// From the ⋮ menu. The dialog keeps its spinner until the server answers.
+  /// Leaving drops the RSVP and the event's chat room; the series enrollment
+  /// and accumulator membership stay, as the API leaves them.
+  Future<void> _confirmLeave(GroupEvent event) async {
+    final l10n = context.l10n;
+    final title =
+        event.title.trim().isNotEmpty
+            ? event.title.trim()
+            : l10n.connect_event_fallback_title;
+    String? error;
+    final left = await showDestructiveConfirmationDialog(
+      context,
+      title: l10n.connect_event_leave_confirm_title,
+      message: l10n.connect_event_leave_confirm_message(title),
+      confirmLabel: l10n.connect_event_leave,
+      onConfirmed: () async {
+        final result = await ref
+            .read(groupProfileRepositoryProvider)
+            .leaveGroupEvent(event.id);
+        return result.fold((failure) {
+          error = failure.message;
+          return false;
+        }, (_) => true);
+      },
+    );
+    if (!mounted) return;
+    if (left != true) {
+      final message = error;
+      if (message != null) _showError(message);
       return;
     }
 
-    setState(() => _isSubmitting = true);
-    final result = await ref
-        .read(groupProfileRepositoryProvider)
-        .leaveGroupEvent(event.id);
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-
-    result.fold((failure) => _showError(failure.message), (_) {
-      setState(() {
-        _attendingOverride = false;
-        _participationOverride = null;
-      });
-      ref
-          .read(groupEventAnalyticsProvider)
-          .eventLeft(eventId: event.id, groupId: event.groupId);
-      _refreshEvent(event);
+    setState(() {
+      _attendingOverride = false;
+      _participationOverride = null;
     });
+    ref
+        .read(groupEventAnalyticsProvider)
+        .eventLeft(eventId: event.id, groupId: event.groupId);
+    _refreshEvent(event);
   }
 
   void _refreshEvent(GroupEvent event) {
@@ -857,6 +883,62 @@ class _GroupEventDetailScreenState
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+}
+
+/// A pill in the event page's action row: black, or grey when [secondary].
+/// A busy row keeps its colours; only the pending button shows a spinner.
+class _EventActionButton extends StatelessWidget {
+  final String label;
+  final bool secondary;
+  final bool isPending;
+  final bool isDark;
+  final VoidCallback? onPressed;
+
+  const _EventActionButton({
+    required this.label,
+    required this.secondary,
+    required this.isPending,
+    required this.isDark,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final background =
+        secondary
+            ? (isDark ? AppColors.surfaceVariantDark : AppColors.grey100)
+            : (isDark ? AppColors.surfaceWhite : AppColors.textPrimary);
+    final foreground =
+        secondary
+            ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary)
+            : (isDark ? AppColors.textPrimary : AppColors.surfaceWhite);
+
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        backgroundColor: background,
+        foregroundColor: foreground,
+        disabledBackgroundColor: background,
+        disabledForegroundColor: foreground.withValues(alpha: 0.5),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+      ),
+      child:
+          isPending
+              ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: foreground,
+                ),
+              )
+              : Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }
 }
@@ -1483,11 +1565,16 @@ class _EventLinkText extends ConsumerWidget {
 class _EventAccumulatorPanel extends ConsumerStatefulWidget {
   final String accumulatorId;
   final String? groupTitle;
+
+  /// Contributing waits for the event to be joined: until then the button
+  /// stays greyed, whatever the accumulator membership.
+  final bool isAttending;
   final bool isDark;
 
   const _EventAccumulatorPanel({
     required this.accumulatorId,
     required this.groupTitle,
+    required this.isAttending,
     required this.isDark,
   });
 
@@ -1628,7 +1715,7 @@ class _EventAccumulatorPanelState
         SizedBox(
           width: double.infinity,
           child:
-              hasJoined
+              hasJoined && widget.isAttending
                   ? OutlinedButton.icon(
                     onPressed: () => _addRecitations(detail),
                     style: OutlinedButton.styleFrom(
@@ -1655,7 +1742,10 @@ class _EventAccumulatorPanelState
                     ),
                   )
                   : ElevatedButton(
-                    onPressed: _isJoining ? null : () => _join(detail),
+                    onPressed:
+                        !widget.isAttending || _isJoining
+                            ? null
+                            : () => _join(detail),
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
                       minimumSize: const Size(0, 50),
@@ -1667,6 +1757,11 @@ class _EventAccumulatorPanelState
                           isDark
                               ? AppColors.textPrimary
                               : AppColors.surfaceWhite,
+                      disabledBackgroundColor:
+                          isDark
+                              ? AppColors.surfaceVariantDark
+                              : AppColors.grey100,
+                      disabledForegroundColor: secondaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),

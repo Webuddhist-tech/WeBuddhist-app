@@ -955,18 +955,6 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_group_fallback_title => 'ཚོགས་པ།';
 
   @override
-  String get connect_event_attend => 'ཞུགས།';
-
-  @override
-  String get connect_event_attending => 'ཞུགས་ཟིན།';
-
-  @override
-  String get connect_event_join_in_person => 'མཉམ་ཞུགས།';
-
-  @override
-  String get connect_event_join_online => 'དྲ་ཐོག་མཉམ་ཞུགས།';
-
-  @override
   String get connect_event_enter => 'འཇུག';
 
   @override
@@ -974,10 +962,31 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཁྱེད་རང་ཇི་ལྟར་ཞུགས་ཀྱི་ཡིན་ནམ།';
 
   @override
-  String get connect_event_joining_in_person => 'ངོ་བཅར་ཞུ་བ།';
+  String get connect_event_practice_in_person => 'ངོ་བཅར་ཉམས་ལེན།';
 
   @override
-  String get connect_event_joining_online => 'དྲ་ཐོག་མཉམ་ཞུགས་བྱེད་བཞིན་པ།';
+  String get connect_event_practice_online => 'དྲ་ཐོག་ཉམས་ལེན།';
+
+  @override
+  String get connect_event_view_in_person => 'ངོ་བཅར་ལ་ལྟ།';
+
+  @override
+  String get connect_event_view_online => 'དྲ་ཐོག་ལ་ལྟ།';
+
+  @override
+  String get connect_event_join_to_practice => 'ཉམས་ལེན་ཆེད་བྱེད་སྒོར་ཞུགས།';
+
+  @override
+  String get connect_event_leave => 'བྱེད་སྒོ་ནས་ཕྱིར་ཐོན།';
+
+  @override
+  String get connect_event_leave_confirm_title =>
+      'བྱེད་སྒོ་འདི་ནས་ཕྱིར་ཐོན་ནམ།';
+
+  @override
+  String connect_event_leave_confirm_message(String title) {
+    return 'ཁྱེད་ཀྱིས་$titleལ་མཉམ་ཞུགས་མི་བྱེད། བྱེད་སྒོ་ལ་ད་དུང་ལྟ་ཐུབ་ལ་དུས་ནམ་ཡིན་ཡང་བསྐྱར་དུ་ཞུགས་ཆོག';
+  }
 
   @override
   String connect_event_participants_attending(int count) {
@@ -2050,6 +2059,20 @@ class AppLocalizationsBo extends AppLocalizations {
       'སྙན་ཞུ་ཕབ་ལེན་བྱེད་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
+  String get group_reports_delete_confirm_title => 'ཁྱེད་རང་གཏན་འཁེལ་ཡིན་ནམ།';
+
+  @override
+  String get group_reports_delete_message_confirm =>
+      'འཕྲིན་ཡིག་འདི་གཏན་དུ་བསུབ་འགྲོ།';
+
+  @override
+  String get group_reports_message_removed => 'འཕྲིན་ཡིག་བསུབས་ཟིན།';
+
+  @override
+  String get group_reports_delete_message_error =>
+      'འཕྲིན་ཡིག་བསུབ་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་བྱོས།';
+
+  @override
   String get group_members_only_title => 'ཚོགས་མི་ཁོ་ནར།';
 
   @override
@@ -2707,6 +2730,16 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_chat_load_failed => 'འཕྲིན་ཡིག་ལེན་ཐུབ་མ་སོང་།';
 
   @override
+  String get group_chat_message_not_found => 'འཕྲིན་ཡིག་འདི་ཁ་བརྡའི་ནང་མི་གནས།';
+
+  @override
+  String get group_chat_message_too_far_back =>
+      'This message is further back in the chat';
+
+  @override
+  String get group_chat_keep_looking => 'Keep looking';
+
+  @override
   String get group_chat_retry => 'བསྐྱར་དུ་ཚོད་ལྟ།';
 
   @override
@@ -3147,6 +3180,20 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get event_prayer_filter_empty_body => 'Try another sort or intention';
+
+  @override
+  String get event_prayer_see_translation => 'See translation';
+
+  @override
+  String get event_prayer_see_original => 'See original';
+
+  @override
+  String event_prayer_translated_from(String language) {
+    return 'Translated from $language';
+  }
+
+  @override
+  String get event_prayer_translated => 'Translated';
 
   @override
   String get recitation_live_sync => 'མཉམ་སྒྲིག';

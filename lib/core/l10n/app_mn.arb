@@ -773,6 +773,10 @@
   "group_reports_delete_message": "Мессеж устгах",
   "group_reports_empty": "Хянах гомдол алга",
   "group_reports_load_error": "Гомдлуудыг ачаалж чадсангүй. Дахин оролдоно уу",
+  "group_reports_delete_confirm_title": "Та итгэлтэй байна уу?",
+  "group_reports_delete_message_confirm": "Энэ мессеж бүрмөсөн устгагдана",
+  "group_reports_message_removed": "Мессежийг устгалаа",
+  "group_reports_delete_message_error": "Мессежийг устгаж чадсангүй. Дахин оролдоно уу",
   "group_members_only_title": "Зөвхөн гишүүдэд",
   "group_members_only_message": "Агуулгыг үзэхийн тулд энэ орон зайд нэгдээрэй",
   "group_join_request_waiting_title": "Админы хариуг хүлээж байна",
@@ -989,8 +993,6 @@
   "connect_open": "Нээх",
   "connect_event_fallback_title": "Арга хэмжээ",
   "connect_group_fallback_title": "Орон зай",
-  "connect_event_attend": "Оролцох",
-  "connect_event_attending": "Оролцож байна",
   "connect_event_participants_attending": "{count} оролцогч",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -1033,6 +1035,7 @@
   "group_chat_empty_title": "Одоогоор зурвас алга",
   "group_chat_empty_body": "Орон зайтайгаа яриа эхлүүлээрэй",
   "group_chat_load_failed": "Зурвасуудыг ачаалж чадсангүй",
+  "group_chat_message_not_found": "Энэ зурвас чатад байхгүй болсон",
   "group_chat_retry": "Дахин оролдох",
   "group_chat_unknown_sender": "Гишүүн",
   "group_chat_reactions_all": "Бүгд",
@@ -1158,12 +1161,23 @@
   "feedback_error_too_large": "Зургууд хэт том байна. Нэгийг хасаад дахин оролдоно уу",
   "feedback_error_failed": "Санал хүсэлтийг илгээж чадсангүй. Дахин оролдоно уу",
   "feedback_error_unavailable": "Санал хүсэлт одоогоор боломжгүй байна",
-  "connect_event_join_in_person": "Биечлэн оролцох",
-  "connect_event_join_online": "Онлайнаар нэгдэх",
   "connect_event_enter": "Орох",
   "connect_event_participation_prompt": "Та хэрхэн оролцож байна вэ?",
-  "connect_event_joining_in_person": "Биечлэн оролцож байна",
-  "connect_event_joining_online": "Онлайнаар нэгдэж байна",
+  "connect_event_practice_in_person": "Биечлэн дадлага хийх",
+  "connect_event_practice_online": "Онлайнаар дадлага хийх",
+  "connect_event_view_in_person": "Биечлэн харах",
+  "connect_event_view_online": "Онлайнаар харах",
+  "connect_event_join_to_practice": "Дадлага хийхийн тулд арга хэмжээнд нэгдэнэ үү",
+  "connect_event_leave": "Арга хэмжээнээс гарах",
+  "connect_event_leave_confirm_title": "Энэ арга хэмжээнээс гарах уу?",
+  "connect_event_leave_confirm_message": "Та {title}-д цаашид оролцохгүй. Та арга хэмжээг үзэх боломжтой хэвээр байх бөгөөд хүссэн үедээ дахин оролцож болно.",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "connect_event_when": "Хэзээ",
   "connect_event_where": "Хаана",
   "connect_event_practices": "Үйл явдлын дадлагууд",

@@ -45,20 +45,23 @@ class AllAccumulationsScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1.1,
-        ),
-        itemCount: mantras.length,
-        itemBuilder: (context, index) {
-          final mantra = mantras[index];
-          return PracticeAccumulationItem(
-            mantra: mantra,
-            language: language,
-            onTap: () => onTap(mantra),
-          );
-        },
+      body: LayoutBuilder(
+        builder:
+            (context, constraints) => GridView.builder(
+              gridDelegate: PracticeAccumulationItem.gridDelegate(
+                language,
+                constraints.maxWidth,
+              ),
+              itemCount: mantras.length,
+              itemBuilder: (context, index) {
+                final mantra = mantras[index];
+                return PracticeAccumulationItem(
+                  mantra: mantra,
+                  language: language,
+                  onTap: () => onTap(mantra),
+                );
+              },
+            ),
       ),
     );
   }

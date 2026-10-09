@@ -282,6 +282,28 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
     }
   }
 
+  /// Removes the chat message behind [item] for everyone, then resolves the
+  /// reports filed against it so the card leaves the queue.
+  ///
+  /// Returns false when the delete itself failed; the reports are left alone
+  /// then, so the item stays on the queue to be acted on again. A delete that
+  /// went through reports success even if resolving the reports did not,
+  /// because the message is gone either way.
+  Future<bool> deleteMessageItem(GroupReportedItem item) async {
+    if (item.kind != GroupReportKind.chatMessage || _resolving) return false;
+    final messageId = item.latest.messageId?.trim() ?? '';
+    if (messageId.isEmpty) return false;
+
+    final result = await _repository.deleteGroupChatMessage(
+      _groupId,
+      messageId: messageId,
+    );
+    if (!mounted || result.isLeft()) return false;
+
+    await resolveItem(item);
+    return true;
+  }
+
   void retry() {
     if (state.reports.isEmpty) {
       loadInitial();

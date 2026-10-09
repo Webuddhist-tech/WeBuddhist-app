@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -137,9 +138,10 @@ class PrayerRequestTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            _CollapsibleBody(
-              text: request.body,
+            _PrayerBody(
+              request: request,
               textColor: textColor,
+              muted: muted,
               linkColor: prayerAccentTextColor(accent, isDark),
             ),
             const SizedBox(height: 12),
@@ -221,6 +223,143 @@ class PrayerRequestTile extends StatelessWidget {
         ],
       ],
     );
+  }
+}
+
+/// The request in the viewer's language once the server has translated it,
+/// otherwise as written, with a link to switch between the two.
+class _PrayerBody extends StatefulWidget {
+  const _PrayerBody({
+    required this.request,
+    required this.textColor,
+    required this.muted,
+    required this.linkColor,
+  });
+
+  final ChatMessageDTO request;
+  final Color textColor;
+  final Color muted;
+  final Color linkColor;
+
+  @override
+  State<_PrayerBody> createState() => _PrayerBodyState();
+}
+
+class _PrayerBodyState extends State<_PrayerBody> {
+  // The translation is the resting view; a fresh one shows again by default.
+  bool _showOriginal = false;
+
+  @override
+  void didUpdateWidget(_PrayerBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.request.translatedBody != widget.request.translatedBody) {
+      _showOriginal = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final translated = widget.request.translatedBody;
+    final showTranslation = translated != null && !_showOriginal;
+    final body = _CollapsibleBody(
+      text: showTranslation ? translated : widget.request.body,
+      textColor: widget.textColor,
+      linkColor: widget.linkColor,
+    );
+    if (translated == null) return body;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        body,
+        const SizedBox(height: 8),
+        _TranslationToggle(
+          showingTranslation: showTranslation,
+          sourceLanguage: widget.request.sourceLanguage,
+          textColor: widget.textColor,
+          muted: widget.muted,
+          onTap: () => setState(() => _showOriginal = showTranslation),
+        ),
+      ],
+    );
+  }
+}
+
+/// *See translation* under the original; *Translated from X · See original*
+/// under the translation.
+class _TranslationToggle extends StatelessWidget {
+  const _TranslationToggle({
+    required this.showingTranslation,
+    required this.sourceLanguage,
+    required this.textColor,
+    required this.muted,
+    required this.onTap,
+  });
+
+  final bool showingTranslation;
+  final String? sourceLanguage;
+  final Color textColor;
+  final Color muted;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final action =
+        showingTranslation
+            ? l10n.event_prayer_see_original
+            : l10n.event_prayer_see_translation;
+    final origin = showingTranslation ? _translatedFrom(context) : null;
+
+    return Semantics(
+      button: true,
+      label: origin == null ? action : '$origin · $action',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(AppAssets.translate, size: 14, color: muted),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    if (origin != null) TextSpan(text: '$origin · '),
+                    TextSpan(
+                      text: action,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
+                ),
+                strutStyle: context.tibetanStrutStyle(13, compact: true),
+                style: TextStyle(fontSize: 13, color: muted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// *Translated from Chinese*, or just *Translated* for a language the app
+  /// has no name for.
+  String _translatedFrom(BuildContext context) {
+    final l10n = context.l10n;
+    final name = switch (sourceLanguage?.toLowerCase()) {
+      AppConfig.englishLanguageCode => l10n.english,
+      AppConfig.chineseLanguageCode => l10n.chinese,
+      AppConfig.tibetanLanguageCode => l10n.tibetan,
+      _ => null,
+    };
+    return name == null
+        ? l10n.event_prayer_translated
+        : l10n.event_prayer_translated_from(name);
   }
 }
 

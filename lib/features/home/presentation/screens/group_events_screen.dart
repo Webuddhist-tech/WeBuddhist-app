@@ -191,10 +191,11 @@ class _GroupEventsTabBar extends StatelessWidget {
         indicatorSize: TabBarIndicatorSize.label,
         dividerColor: Colors.transparent,
         labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-        labelStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
+        labelStyle: context.tabLabelStyle(
+          const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+        ),
+        unselectedLabelStyle: context.tabLabelStyle(
+          const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         tabs: [
           Tab(text: l10n.connect_events_filter_all),

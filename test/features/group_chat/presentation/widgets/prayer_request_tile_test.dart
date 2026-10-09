@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_translation_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
@@ -105,7 +106,88 @@ Future<void> _pumpBody(
   );
 }
 
+/// A Chinese request the server has already put into English.
+ChatMessageDTO _chinese({
+  String body = '愿上师加持我们',
+  String translated = 'May the Guru bless us',
+}) {
+  return _prayer(count: 0, prayedByMe: false).copyWith(
+    body: body,
+    sourceLanguage: 'ZH',
+    canTranslate: true,
+    translation: ChatMessageTranslationDTO(
+      targetLanguage: 'EN',
+      status: ChatMessageTranslationDTO.statusReady,
+      body: translated,
+    ),
+  );
+}
+
+Future<void> _pumpRequest(WidgetTester tester, ChatMessageDTO request) {
+  return tester.pumpWidget(
+    MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: PrayerRequestTile(request: request, displayName: 'Tenzin'),
+      ),
+    ),
+  );
+}
+
 void main() {
+  group('translation', () {
+    const seeOriginal = 'Translated from Chinese · See original';
+
+    testWidgets('a translated request opens in my language', (tester) async {
+      await _pumpRequest(tester, _chinese());
+      expect(find.text('May the Guru bless us'), findsOneWidget);
+      expect(find.text('愿上师加持我们'), findsNothing);
+      expect(find.text(seeOriginal), findsOneWidget);
+    });
+
+    testWidgets('See original swaps in the source text and back', (
+      tester,
+    ) async {
+      await _pumpRequest(tester, _chinese());
+
+      await tester.tap(find.text(seeOriginal));
+      await tester.pump();
+      expect(find.text('愿上师加持我们'), findsOneWidget);
+      expect(find.text('May the Guru bless us'), findsNothing);
+      expect(find.text('See translation'), findsOneWidget);
+
+      await tester.tap(find.text('See translation'));
+      await tester.pump();
+      expect(find.text('May the Guru bless us'), findsOneWidget);
+      expect(find.text(seeOriginal), findsOneWidget);
+    });
+
+    testWidgets('a fresh translation shows by default again', (tester) async {
+      await _pumpRequest(tester, _chinese());
+      await tester.tap(find.text(seeOriginal));
+      await tester.pump();
+      expect(find.text('愿上师加持我们'), findsOneWidget);
+
+      await _pumpRequest(
+        tester,
+        _chinese(body: '请为我祈祷', translated: 'Please pray for me'),
+      );
+      expect(find.text('Please pray for me'), findsOneWidget);
+      expect(find.text('请为我祈祷'), findsNothing);
+    });
+
+    testWidgets('a request with no translation reads as written', (
+      tester,
+    ) async {
+      await _pumpRequest(tester, _prayer(count: 0, prayedByMe: false));
+      expect(find.text('May all be well'), findsOneWidget);
+      expect(find.text('See translation'), findsNothing);
+      expect(find.byIcon(AppAssets.translate), findsNothing);
+    });
+  });
+
   testWidgets('a short request has no show more', (tester) async {
     await _pumpBody(tester, 'May all be well');
     expect(find.text('Show more'), findsNothing);

@@ -773,6 +773,10 @@
   "group_reports_delete_message": "सन्देश मेट्नुहोस्",
   "group_reports_empty": "समीक्षा गर्नुपर्ने कुनै रिपोर्ट छैन",
   "group_reports_load_error": "रिपोर्टहरू लोड गर्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्",
+  "group_reports_delete_confirm_title": "के तपाईं निश्चित हुनुहुन्छ?",
+  "group_reports_delete_message_confirm": "यो सन्देश स्थायी रूपमा हटाइनेछ",
+  "group_reports_message_removed": "सन्देश हटाइयो",
+  "group_reports_delete_message_error": "सन्देश मेट्न असमर्थ। कृपया पुनः प्रयास गर्नुहोस्",
   "group_members_only_title": "सदस्यहरूका लागि मात्र",
   "group_members_only_message": "यसको सामग्री हेर्न यो स्पेसमा सामेल हुनुहोस्",
   "group_join_request_waiting_title": "प्रशासकको प्रतीक्षामा",
@@ -989,8 +993,6 @@
   "connect_open": "खोल्नुहोस्",
   "connect_event_fallback_title": "कार्यक्रम",
   "connect_group_fallback_title": "स्पेस",
-  "connect_event_attend": "सहभागी हुनुहोस्",
-  "connect_event_attending": "सहभागी",
   "connect_event_participants_attending": "{count} सहभागी",
   "@connect_event_participants_attending": {
     "placeholders": {
@@ -1033,6 +1035,7 @@
   "group_chat_empty_title": "अहिलेसम्म कुनै सन्देश छैन",
   "group_chat_empty_body": "आफ्नो स्पेससँग कुराकानी सुरु गर्नुहोस्",
   "group_chat_load_failed": "सन्देशहरू लोड गर्न सकिएन",
+  "group_chat_message_not_found": "यो सन्देश अब च्याटमा छैन",
   "group_chat_retry": "पुनः प्रयास गर्नुहोस्",
   "group_chat_unknown_sender": "सदस्य",
   "group_chat_reactions_all": "सबै",
@@ -1158,12 +1161,23 @@
   "feedback_error_too_large": "तस्बिरहरू धेरै ठूला छन्। एउटा हटाएर पुनः प्रयास गर्नुहोस्",
   "feedback_error_failed": "प्रतिक्रिया पठाउन सकिएन। कृपया पुनः प्रयास गर्नुहोस्",
   "feedback_error_unavailable": "प्रतिक्रिया अहिले उपलब्ध छैन",
-  "connect_event_join_in_person": "प्रत्यक्ष रूपमा सहभागी हुनुहोस्",
-  "connect_event_join_online": "अनलाइन सहभागी हुनुहोस्",
   "connect_event_enter": "प्रवेश गर्नुहोस्",
   "connect_event_participation_prompt": "तपाईं कसरी सहभागी हुँदै हुनुहुन्छ?",
-  "connect_event_joining_in_person": "प्रत्यक्ष रूपमा सहभागी हुँदै",
-  "connect_event_joining_online": "अनलाइन सहभागी हुँदै",
+  "connect_event_practice_in_person": "प्रत्यक्ष रूपमा अभ्यास गर्नुहोस्",
+  "connect_event_practice_online": "अनलाइन अभ्यास गर्नुहोस्",
+  "connect_event_view_in_person": "प्रत्यक्ष दृश्य",
+  "connect_event_view_online": "अनलाइन दृश्य",
+  "connect_event_join_to_practice": "अभ्यास गर्न कार्यक्रममा सहभागी हुनुहोस्",
+  "connect_event_leave": "कार्यक्रम छोड्नुहोस्",
+  "connect_event_leave_confirm_title": "यो कार्यक्रम छोड्ने?",
+  "connect_event_leave_confirm_message": "तपाईं अब {title} मा सहभागी हुनुहुने छैन। तपाईं अझै कार्यक्रम हेर्न र जुनसुकै बेला फेरि सहभागी हुन सक्नुहुन्छ।",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "connect_event_when": "कहिले",
   "connect_event_where": "कहाँ",
   "connect_event_practices": "कार्यक्रमका अभ्यासहरू",

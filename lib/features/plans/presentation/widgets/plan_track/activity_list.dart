@@ -36,6 +36,12 @@ class ActivityList extends ConsumerWidget {
   /// live recitation.
   final bool isOnlineAttendee;
 
+  /// An event explored before joining: no checkboxes, the reader marks
+  /// nothing complete, and a group-accumulation task calls
+  /// [onPracticeLocked] instead of opening the counter.
+  final bool readOnly;
+  final VoidCallback? onPracticeLocked;
+
   const ActivityList({
     super.key,
     required this.language,
@@ -52,6 +58,8 @@ class ActivityList extends ConsumerWidget {
     this.dayAudioUrl,
     this.eventId,
     this.isOnlineAttendee = false,
+    this.readOnly = false,
+    this.onPracticeLocked,
   });
 
   @override
@@ -77,11 +85,13 @@ class ActivityList extends ConsumerWidget {
               margin: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
                 children: [
-                  _TaskCheckbox(
-                    isCompleted: task.isCompleted,
-                    onTap: () => onActivityToggled(task.id),
-                  ),
-                  const SizedBox(width: 10),
+                  if (!readOnly) ...[
+                    _TaskCheckbox(
+                      isCompleted: task.isCompleted,
+                      onTap: () => onActivityToggled(task.id),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   Expanded(
                     child: _TaskTitleButton(
                       language: language,
@@ -137,6 +147,10 @@ class ActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
+      if (readOnly) {
+        onPracticeLocked?.call();
+        return;
+      }
       openGroupAccumulatorPractice(
         context,
         ref,
@@ -151,7 +165,10 @@ class ActivityList extends ConsumerWidget {
       return;
     }
 
-    final planTextItems = PlanSubtaskNavigation.fromUserTasks(tasks);
+    final planTextItems = PlanSubtaskNavigation.fromUserTasks(
+      tasks,
+      withCompletion: !readOnly,
+    );
     if (planTextItems.isEmpty) return;
 
     // Open at the task's first subtask; next/prev walks the rest.

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_translation_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 
@@ -44,6 +45,13 @@ class ChatMessageDTO extends Equatable {
   final int myPrayerCount;
   final List<ChatPrayerUserDTO> recentPrayers;
 
+  /// Language the server detected for [body], e.g. `ZH`; null until it has.
+  final String? sourceLanguage;
+
+  /// [body] in the language the list was requested with, when it was.
+  final ChatMessageTranslationDTO? translation;
+  final bool canTranslate;
+
   const ChatMessageDTO({
     required this.id,
     required this.roomId,
@@ -62,13 +70,26 @@ class ChatMessageDTO extends Equatable {
     this.prayedByMe = false,
     this.myPrayerCount = 0,
     this.recentPrayers = const [],
+    this.sourceLanguage,
+    this.translation,
+    this.canTranslate = false,
   });
 
   bool get isPrayerRequest => messageType == typePrayer;
 
+  /// [body] in the viewer's language, once the server has it.
+  String? get translatedBody {
+    final translation = this.translation;
+    if (!canTranslate || translation == null || !translation.isReady) {
+      return null;
+    }
+    return translation.body;
+  }
+
   factory ChatMessageDTO.fromJson(Map<String, dynamic> json) {
     final parentJson = json['parent'];
     final intentionJson = json['intention'];
+    final translationJson = json['translation'];
     final prayerCount = json['prayer_count'];
     final myPrayerCount = json['my_prayer_count'];
     return ChatMessageDTO(
@@ -105,6 +126,12 @@ class ChatMessageDTO extends Equatable {
               .map(ChatPrayerUserDTO.fromJson)
               .toList() ??
           const [],
+      sourceLanguage: json['source_language'] as String?,
+      translation:
+          translationJson is Map<String, dynamic>
+              ? ChatMessageTranslationDTO.fromJson(translationJson)
+              : null,
+      canTranslate: json['can_translate'] as bool? ?? false,
     );
   }
 
@@ -113,6 +140,8 @@ class ChatMessageDTO extends Equatable {
   ///
   /// [deletedAt] only ever goes from null to a timestamp — nothing undeletes a
   /// message — so the usual `?? this` idiom loses nothing here.
+  /// [clearTranslation] drops the translation and detected language a new
+  /// body has made stale, unless new ones are passed with it.
   ChatMessageDTO copyWith({
     String? body,
     String? deletedAt,
@@ -123,6 +152,10 @@ class ChatMessageDTO extends Equatable {
     bool? prayedByMe,
     int? myPrayerCount,
     List<ChatPrayerUserDTO>? recentPrayers,
+    String? sourceLanguage,
+    ChatMessageTranslationDTO? translation,
+    bool? canTranslate,
+    bool clearTranslation = false,
   }) {
     return ChatMessageDTO(
       id: id,
@@ -142,6 +175,11 @@ class ChatMessageDTO extends Equatable {
       prayedByMe: prayedByMe ?? this.prayedByMe,
       myPrayerCount: myPrayerCount ?? this.myPrayerCount,
       recentPrayers: recentPrayers ?? this.recentPrayers,
+      sourceLanguage:
+          sourceLanguage ?? (clearTranslation ? null : this.sourceLanguage),
+      translation:
+          translation ?? (clearTranslation ? null : this.translation),
+      canTranslate: canTranslate ?? this.canTranslate,
     );
   }
 
@@ -166,6 +204,9 @@ class ChatMessageDTO extends Equatable {
         'my_prayer_count': myPrayerCount,
         'recent_prayers': recentPrayers.map((user) => user.toJson()).toList(),
       },
+      if (sourceLanguage != null) 'source_language': sourceLanguage,
+      if (translation != null) 'translation': translation!.toJson(),
+      'can_translate': canTranslate,
     };
   }
 
@@ -188,5 +229,8 @@ class ChatMessageDTO extends Equatable {
     prayedByMe,
     myPrayerCount,
     recentPrayers,
+    sourceLanguage,
+    translation,
+    canTranslate,
   ];
 }

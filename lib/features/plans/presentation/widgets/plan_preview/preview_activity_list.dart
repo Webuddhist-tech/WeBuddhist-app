@@ -36,6 +36,10 @@ class PreviewActivityList extends ConsumerWidget {
   /// live recitation.
   final bool isOnlineAttendee;
 
+  /// When set (an event explored before joining), a group-accumulation task
+  /// calls this instead of opening the counter.
+  final VoidCallback? onPracticeLocked;
+
   const PreviewActivityList({
     super.key,
     required this.language,
@@ -48,6 +52,7 @@ class PreviewActivityList extends ConsumerWidget {
     this.dayAudioUrl,
     this.eventId,
     this.isOnlineAttendee = false,
+    this.onPracticeLocked,
   });
 
   List<PlanTasksModel> get _sortedTasks {
@@ -136,6 +141,11 @@ class PreviewActivityList extends ConsumerWidget {
       task,
     );
     if (accumulatorId != null) {
+      final onPracticeLocked = this.onPracticeLocked;
+      if (onPracticeLocked != null) {
+        onPracticeLocked();
+        return;
+      }
       openGroupAccumulatorPractice(
         context,
         ref,

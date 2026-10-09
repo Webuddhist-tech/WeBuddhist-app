@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// Flutter builds every line box from the font's ascender/descender. The
 /// upstream Noto Serif Tibetan / BabelStone Tibetan files declare values far
-/// larger than the glyphs they draw, so with the app's `height: 1.55` the box
+/// larger than the glyphs they draw, so with the app's `height:` values the box
 /// no longer encloses the vowel signs (clipped on truncated paragraphs) and
 /// its centre sits well below the ink (labels ride high in buttons). The
 /// shipped fonts are rebuilt with fitted metrics

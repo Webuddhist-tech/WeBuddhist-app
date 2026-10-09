@@ -54,6 +54,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
     String? messageType,
     String? sort,
     String? intention,
+    String? translationLanguage,
   }) async {
     try {
       return Right(
@@ -64,6 +65,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
           messageType: messageType,
           sort: sort,
           intention: intention,
+          translationLanguage: translationLanguage,
         ),
       );
     } catch (e) {

@@ -32,6 +32,7 @@ class _OneMessageRepository implements GroupChatRepository {
     String? messageType,
     String? sort,
     String? intention,
+    String? translationLanguage,
   }) async {
     return const Right(
       ChatMessagesPage(
