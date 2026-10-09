@@ -852,23 +852,42 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       // Select new segment
       state = state.copyWith(selectedSegment: segment);
 
-      final item = _params.navigationContext?.currentItem;
-      final autoOpenCommentary = item?.autoOpenCommentary ?? false;
-      final autoOpenTranslation = item?.autoOpenTranslation ?? false;
+      // Update commentary if it's open
       if (state.isCommentaryOpen) {
         state = state.copyWith(commentarySegmentId: segment.segmentId);
-      } else if (autoOpenCommentary && !state.isTranslationOpen) {
-        // Plan task asked for the commentary sheet on segment tap. Leave an
-        // already-open versions sheet alone.
-        openCommentary(segment.segmentId);
       }
+      // Update translation if it's open
       if (state.isTranslationOpen) {
         state = state.copyWith(translationSegmentId: segment.segmentId);
-      } else if (autoOpenTranslation && !state.isCommentaryOpen) {
-        // Plan task asked for the versions sheet. Root text stays closed.
-        openTranslation(segment.segmentId);
       }
     }
+  }
+
+  /// Opens the sheet a plan task asked for on segment tap
+  /// (`settings.is_commentary_open` / `is_translation_open`), once the
+  /// segment's counts are known. Commentary wins when both are set. A sheet
+  /// the segment has nothing for is skipped. Does nothing when [segmentId]
+  /// is no longer selected or a sheet is already open. True when a sheet
+  /// was opened.
+  bool autoOpenPlanPanel(
+    String segmentId, {
+    required bool hasCommentaries,
+    required bool hasVersions,
+  }) {
+    if (_isDisposed) return false;
+    if (state.selectedSegment?.segmentId != segmentId) return false;
+    if (state.isCommentaryOpen || state.isTranslationOpen) return false;
+    final item = _params.navigationContext?.currentItem;
+    if ((item?.autoOpenCommentary ?? false) && hasCommentaries) {
+      openCommentary(segmentId);
+      return true;
+    }
+    if ((item?.autoOpenTranslation ?? false) && hasVersions) {
+      // Root text stays closed.
+      openTranslation(segmentId);
+      return true;
+    }
+    return false;
   }
 
   /// Open commentary panel for a segment

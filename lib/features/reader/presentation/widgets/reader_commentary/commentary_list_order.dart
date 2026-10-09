@@ -22,7 +22,6 @@ class CommentaryListOrder {
 CommentaryListOrder orderCommentaries({
   required List<SegmentCommentary> commentaries,
   required String textLanguage,
-  required bool pinEnglish,
   String? commentaryTextId,
 }) {
   final pinned = _firstMatch(commentaries, commentaryTextId);
@@ -37,7 +36,6 @@ CommentaryListOrder orderCommentaries({
     languageCodes: orderedCommentaryLanguageCodes(
       languages: byLanguage.keys,
       textLanguage: textLanguage,
-      pinEnglish: pinEnglish,
     ),
   );
 }

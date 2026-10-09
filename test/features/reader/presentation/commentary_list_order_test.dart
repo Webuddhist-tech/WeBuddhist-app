@@ -21,12 +21,10 @@ CommentaryListOrder _order(
   List<SegmentCommentary> commentaries, {
   String? commentaryTextId,
   String textLanguage = 'bo',
-  bool pinEnglish = true,
 }) {
   return orderCommentaries(
     commentaries: commentaries,
     textLanguage: textLanguage,
-    pinEnglish: pinEnglish,
     commentaryTextId: commentaryTextId,
   );
 }
@@ -41,7 +39,7 @@ void main() {
     ], commentaryTextId: 'wanted');
 
     expect(order.pinned, same(match));
-    expect(order.languageCodes.first, 'en');
+    expect(order.languageCodes, ['bo', 'en']);
     expect(order.byLanguage['bo']!.map((c) => c.textId), ['bo-2']);
   });
 
@@ -82,6 +80,6 @@ void main() {
     ], commentaryTextId: 'missing');
 
     expect(order.pinned, isNull);
-    expect(order.languageCodes, ['en', 'bo']);
+    expect(order.languageCodes, ['bo', 'en']);
   });
 }

@@ -23,6 +23,8 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_conten
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
+import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
+import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -422,9 +424,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// Selects [segment]. A plan task with commentary or versions set to open
-  /// does that here, and the verse is brought to the top the way those
-  /// buttons do. Closing that sheet leaves the segment selected, so the
-  /// resources sheet is what's left.
+  /// does that here once the segment's counts arrive, and the verse is
+  /// brought to the top the way those buttons do. Closing that sheet leaves
+  /// the segment selected, so the resources sheet is what's left.
   void _onSegmentTap(Segment segment) {
     final notifier = ref.read(readerNotifierProvider(widget.params).notifier);
     final before = ref.read(readerNotifierProvider(widget.params));
@@ -433,12 +435,31 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (deselecting) return;
 
     final item = widget.params.navigationContext?.currentItem;
-    final after = ref.read(readerNotifierProvider(widget.params));
-    final opened =
-        (item?.autoOpenCommentary == true && after.isCommentaryOpen) ||
-        (item?.autoOpenTranslation == true && after.isTranslationOpen);
-    if (!opened) return;
-    _scrollToSegment(segment.segmentId, alignment: 0.0);
+    if (item == null ||
+        (!item.autoOpenCommentary && !item.autoOpenTranslation)) {
+      return;
+    }
+    _autoOpenPlanPanel(segment.segmentId);
+  }
+
+  /// A segment with no commentaries or versions does not get an empty sheet.
+  /// A failed count is not a zero: the sheet opens and shows its own error.
+  Future<void> _autoOpenPlanPanel(String segmentId) async {
+    SegmentInfo? info;
+    try {
+      info = await ref.read(segmentInfoFutureProvider(segmentId).future);
+    } catch (e, st) {
+      _logger.warning('Segment info for $segmentId not loaded', e, st);
+    }
+    if (!mounted) return;
+    final opened = ref
+        .read(readerNotifierProvider(widget.params).notifier)
+        .autoOpenPlanPanel(
+          segmentId,
+          hasCommentaries: info == null || info.relatedText.commentaries > 0,
+          hasVersions: info == null || info.translations > 0,
+        );
+    if (opened) _scrollToSegment(segmentId, alignment: 0.0);
   }
 
   void _scrollToSegment(String segmentId, {double? alignment}) {

@@ -1,37 +1,27 @@
 /// Language-section order for the commentary list.
 ///
-/// The text's own language comes first. Chinese (`zh` / `lzh`) stays a pair:
-/// on a Chinese text the partner is always listed, even when that segment has
-/// none; otherwise `zh` is kept immediately after `lzh`.
+/// The text's own language always comes first, even when that segment has
+/// none (the section then says so). The rest follow A→Z.
 ///
-/// When [pinEnglish] is set and this segment has English commentaries, `en`
-/// is placed first. An empty English section is never inserted.
+/// Chinese (`zh` / `lzh`) stays a pair: on a Chinese text the partner is
+/// always listed second, even when empty; otherwise `zh` is kept
+/// immediately after `lzh`.
 List<String> orderedCommentaryLanguageCodes({
   required Iterable<String> languages,
   required String textLanguage,
-  required bool pinEnglish,
 }) {
   final present = languages.toSet();
-  final showEnglishFirst = pinEnglish && present.contains('en');
 
   if (_chinesePair.contains(textLanguage)) {
     final partner = textLanguage == 'zh' ? 'lzh' : 'zh';
-    final ordered = <String>[if (showEnglishFirst) 'en', textLanguage, partner];
-    final reserved = <String>{..._chinesePair, if (showEnglishFirst) 'en'};
     final others =
-        present.where((code) => !reserved.contains(code)).toList()..sort();
-    return [...ordered, ...others];
+        present.where((code) => !_chinesePair.contains(code)).toList()..sort();
+    return [textLanguage, partner, ...others];
   }
 
-  final ordered = <String>[
-    if (showEnglishFirst && textLanguage != 'en') 'en',
-    if (textLanguage != 'en' || present.contains('en')) textLanguage,
-  ];
-  final reserved = <String>{textLanguage, if (showEnglishFirst) 'en'};
-  final others =
-      present.where((code) => !reserved.contains(code)).toList()..sort();
+  final others = present.where((code) => code != textLanguage).toList()..sort();
   _keepChinesePairAdjacent(others);
-  return [...ordered, ...others];
+  return [textLanguage, ...others];
 }
 
 const _chinesePair = {'zh', 'lzh'};

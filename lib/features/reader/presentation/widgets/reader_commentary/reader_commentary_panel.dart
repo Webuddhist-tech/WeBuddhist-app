@@ -95,11 +95,9 @@ class _CommentaryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uiLanguage = Localizations.localeOf(context).languageCode;
     final order = orderCommentaries(
       commentaries: commentaries,
       textLanguage: textLanguage,
-      pinEnglish: uiLanguage == 'en' || textLanguage == 'en',
       commentaryTextId: commentaryTextId,
     );
 
