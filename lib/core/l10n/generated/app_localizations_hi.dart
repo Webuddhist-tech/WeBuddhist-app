@@ -3143,7 +3143,7 @@ class AppLocalizationsHi extends AppLocalizations {
       'अभी तक किसी ने प्रार्थना नहीं की है';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';

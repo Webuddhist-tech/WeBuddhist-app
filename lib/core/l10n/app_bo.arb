@@ -1199,7 +1199,7 @@
   "event_replays_empty": "ད་དུང་བརྙན་ཕབ་མེད།",
   "event_puja_starts_in": "པཱུ་ཛ་འགོ་འཛུགས་པར་དུས་ཚོད།",
   "event_puja_not_started": "པུ་ཇ་ད་དུང་འགོ་བཙུགས་མེད",
-  "event_prayer_new_request": "ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ་གསར་པ།",
+  "event_prayer_new_request": "ཐུགས་སྨོན་སྐྱབས་འཇུག་གསར་དུ་ཞུ་བ།",
   "event_prayer_choose_intention": "སྨོན་ལམ་གྱི་དམིགས་ཡུལ་ཞིག་འདེམས",
   "event_prayer_intentions_failed": "སྨོན་ལམ་གྱི་དམིགས་ཡུལ་རྣམས་འཇུག་ཐུབ་མ་སོང་།",
   "event_prayer_you": "ཁྱེད།",
@@ -1212,7 +1212,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {མི་ {count} གིས་སྨོན་ལམ་བཏབ་སོང་།}\nother {མི་ {count} གིས་སྨོན་ལམ་བཏབ་སོང་།}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {མི་ {count} ནས་སྨོན་ལམ་བཏབ་སོང་།}\nother {མི་ {count} ནས་སྨོན་ལམ་བཏབ་སོང་།}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1266,5 +1266,10 @@
   "bookmarks_empty_group_accumulations_title": "ད་དུང་དཔེ་རྟགས་བཀོད་པའི་ཚོགས་པའི་བསགས་གྲངས་མི་འདུག",
   "bookmarks_empty_group_accumulations_subtitle": "བསགས་གྲངས་ཞིག་འདིར་ཉར་བར་དེ་ལ་དཔེ་རྟགས་འགོད་རོགས།",
   "practice_collection_already_added": "ཕྱོགས་བསྡུས་འདི་ཁྱེད་ཀྱི་ཉམས་ལེན་ནང་སྔོན་ནས་ཡོད།",
-  "practice_group_accumulator_already_added": "གྲངས་གསོག་འདི་ཁྱེད་ཀྱི་ཉམས་ལེན་ནང་སྔོན་ནས་ཡོད།"
+  "practice_group_accumulator_already_added": "གྲངས་གསོག་འདི་ཁྱེད་ཀྱི་ཉམས་ལེན་ནང་སྔོན་ནས་ཡོད།",
+  "event_prayer_sort_needs_prayers": "ཐུགས་སྨོན་གནང་དགོས་པ་ནས་སྟོན།",
+  "event_prayer_sort_most_prayed": "ཐུགས་སྨོན་རག་མང་ཤོས་ནས་སྟོན།",
+  "event_prayer_sort_newest": "སྐྱབས་ཞུ་གསར་ཤོས་ནས་སྟོན།",
+  "event_prayer_sort_oldest": "སྐྱབས་ཞུ་རྙིང་ཤོས་ནས་སྟོན།",
+  "event_prayer_sort_by_intention": "སྐྱབས་ཞུའི་དགོས་དམིགས་ནས།"
 }
