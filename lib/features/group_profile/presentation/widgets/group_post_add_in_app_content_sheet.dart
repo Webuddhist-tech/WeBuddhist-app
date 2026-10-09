@@ -57,6 +57,8 @@ class _GroupPostAddInAppContentSheetState
   String _query = '';
   GroupPostInAppContent? _selected;
   bool _isAttaching = false;
+  // Raw practice count when the last all-skipped page auto-load was issued.
+  int _practicesAutoLoadedAt = -1;
 
   _Tab get _tab => _Tab.values[_tabController.index];
 
@@ -122,6 +124,9 @@ class _GroupPostAddInAppContentSheetState
   }
 
   void _select(GroupPostInAppContent content) {
+    // _attach() pops with the item it captured; a tap meanwhile would only
+    // move the highlight away from it.
+    if (_isAttaching) return;
     setState(() => _selected = _selected?.id == content.id ? null : content);
   }
 
@@ -360,10 +365,31 @@ class _GroupPostAddInAppContentSheetState
         if (GroupPostInAppContent.practice(practice) case final content?)
           (practice, content),
     ];
+    // Every entry so far lacked its typed body, so keep paging or valid
+    // practices further on are unreachable; a page that adds nothing stops it.
+    final allSkipped =
+        items.isEmpty &&
+        state.hasLoaded &&
+        state.hasMore &&
+        state.error == null;
+    var fetchingMore = allSkipped && state.isLoadingMore;
+    if (allSkipped &&
+        !state.isLoading &&
+        !state.isLoadingMore &&
+        _practicesAutoLoadedAt != state.practices.length) {
+      fetchingMore = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final loaded = ref.read(myConnectPracticesProvider).practices.length;
+        if (_practicesAutoLoadedAt == loaded) return;
+        _practicesAutoLoadedAt = loaded;
+        notifier.loadMore();
+      });
+    }
 
     return _ContentList<(GroupPractice, GroupPostInAppContent)>(
       items: items,
-      isLoading: !state.hasLoaded || state.isLoading,
+      isLoading: !state.hasLoaded || state.isLoading || fetchingMore,
       error: state.error,
       hasMore: state.hasMore,
       isLoadingMore: state.isLoadingMore,
@@ -589,8 +615,10 @@ class _ContentList<T> extends StatelessWidget {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         final metrics = notification.metrics;
+        // After a failed page the footer's retry takes over from the scroll.
         if (hasMore &&
             !isLoadingMore &&
+            error == null &&
             metrics.pixels >= metrics.maxScrollExtent - 200) {
           onLoadMore();
         }
@@ -603,19 +631,50 @@ class _ContentList<T> extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           if (index == items.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+            if (isLoadingMore) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 ),
-              ),
-            );
+              );
+            }
+            if (error != null) return _LoadMoreError(onRetry: onRetry);
+            return const SizedBox.shrink();
           }
           return itemBuilder(context, items[index]);
         },
+      ),
+    );
+  }
+}
+
+class _LoadMoreError extends StatelessWidget {
+  const _LoadMoreError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        children: [
+          Text(
+            context.l10n.unableToLoad,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: secondaryColor),
+          ),
+          TextButton(onPressed: onRetry, child: Text(context.l10n.tryAgain)),
+        ],
       ),
     );
   }
