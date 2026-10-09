@@ -3170,7 +3170,7 @@ class AppLocalizationsNe extends AppLocalizations {
       'अहिलेसम्म कसैले प्रार्थना गरेको छैन';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';

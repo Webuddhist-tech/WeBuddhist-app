@@ -2981,7 +2981,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get event_prayer_no_supporters => '目前還沒有人迴向';
 
   @override
-  String get event_prayer_sort_by => 'Sort by';
+  String get event_prayer_sort_by => 'Pray for';
 
   @override
   String get event_prayer_sort_needs_prayers => 'Needs prayers';
