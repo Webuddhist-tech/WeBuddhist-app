@@ -8,10 +8,15 @@ import 'package:flutter_pecha/features/reader/data/models/reader_version_detail.
 /// Languages and versions served from memory. A language missing from
 /// [versions] fails the way a network error would.
 class FakeReaderSettingsDatasource implements ReaderSettingsRemoteDatasource {
-  FakeReaderSettingsDatasource({required this.languages, required this.versions});
+  FakeReaderSettingsDatasource({
+    required this.languages,
+    required this.versions,
+    this.versionInfo = const {},
+  });
 
   final List<ReaderLanguageOption> languages;
   final Map<String, List<ReaderVersionDetail>> versions;
+  final Map<String, ReaderVersionDetail> versionInfo;
 
   /// Languages whose versions were asked for, in order.
   final List<String> versionRequests = [];
@@ -51,6 +56,11 @@ class FakeReaderSettingsDatasource implements ReaderSettingsRemoteDatasource {
   }) => throw UnimplementedError();
 
   @override
-  Future<ReaderVersionDetail> fetchVersionInfo({required String versionId}) =>
-      throw UnimplementedError();
+  Future<ReaderVersionDetail> fetchVersionInfo({
+    required String versionId,
+  }) async {
+    final found = versionInfo[versionId];
+    if (found == null) throw StateError('version $versionId missing');
+    return found;
+  }
 }

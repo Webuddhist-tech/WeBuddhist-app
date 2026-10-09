@@ -179,6 +179,22 @@ class PlanTextItem {
   /// natural end of the resolved file (the common case for per-subtask audio).
   final int? endMs;
 
+  /// When true, selecting a segment opens the commentary sheet immediately.
+  /// Comes from the plan task's `settings.is_commentary_open`.
+  final bool autoOpenCommentary;
+
+  /// Plan task `settings.commentary_text_id`. The matching commentary card
+  /// is shown above the language sections.
+  final String? commentaryTextId;
+
+  /// When true, selecting a segment opens the versions sheet immediately.
+  /// Comes from the plan task's `settings.is_translation_open`.
+  final bool autoOpenTranslation;
+
+  /// Plan task `settings.translation_text_id`. Shown under the original, and
+  /// the matching versions card is placed above the language sections.
+  final String? translationTextId;
+
   const PlanTextItem._({
     required this.contentType,
     required this.textId,
@@ -194,6 +210,10 @@ class PlanTextItem {
     this.audioUrl,
     this.startMs,
     this.endMs,
+    this.autoOpenCommentary = false,
+    this.commentaryTextId,
+    this.autoOpenTranslation = false,
+    this.translationTextId,
   });
 
   /// Build an inline item from one or more [blocks]. Throws if empty.
@@ -238,6 +258,10 @@ class PlanTextItem {
     String? audioUrl,
     int? startMs,
     int? endMs,
+    bool autoOpenCommentary = false,
+    String? commentaryTextId,
+    bool autoOpenTranslation = false,
+    String? translationTextId,
   }) {
     assert(textId.isNotEmpty, 'sourceReference requires non-empty textId');
     return PlanTextItem._(
@@ -252,6 +276,10 @@ class PlanTextItem {
       audioUrl: audioUrl,
       startMs: startMs,
       endMs: endMs,
+      autoOpenCommentary: autoOpenCommentary,
+      commentaryTextId: commentaryTextId,
+      autoOpenTranslation: autoOpenTranslation,
+      translationTextId: translationTextId,
     );
   }
 
@@ -367,6 +395,10 @@ class PlanTextItem {
     String? audioUrl,
     int? startMs,
     int? endMs,
+    bool? autoOpenCommentary,
+    String? commentaryTextId,
+    bool? autoOpenTranslation,
+    String? translationTextId,
   }) {
     return PlanTextItem._(
       contentType: contentType ?? this.contentType,
@@ -383,6 +415,10 @@ class PlanTextItem {
       audioUrl: audioUrl ?? this.audioUrl,
       startMs: startMs ?? this.startMs,
       endMs: endMs ?? this.endMs,
+      autoOpenCommentary: autoOpenCommentary ?? this.autoOpenCommentary,
+      commentaryTextId: commentaryTextId ?? this.commentaryTextId,
+      autoOpenTranslation: autoOpenTranslation ?? this.autoOpenTranslation,
+      translationTextId: translationTextId ?? this.translationTextId,
     );
   }
 
@@ -402,6 +438,10 @@ class PlanTextItem {
         other.audioUrl != audioUrl ||
         other.startMs != startMs ||
         other.endMs != endMs ||
+        other.autoOpenCommentary != autoOpenCommentary ||
+        other.commentaryTextId != commentaryTextId ||
+        other.autoOpenTranslation != autoOpenTranslation ||
+        other.translationTextId != translationTextId ||
         !listEquals(other.blocks, blocks)) {
       return false;
     }
@@ -430,6 +470,10 @@ class PlanTextItem {
     audioUrl,
     startMs,
     endMs,
+    autoOpenCommentary,
+    commentaryTextId,
+    autoOpenTranslation,
+    translationTextId,
   );
 
   @override

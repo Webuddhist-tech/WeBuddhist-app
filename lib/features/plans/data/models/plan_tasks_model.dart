@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/features/plans/data/models/plan_subtasks_model.dart';
+import 'package:flutter_pecha/features/plans/data/models/task_settings.dart';
 
 class PlanTasksModel {
   final String id;
@@ -6,6 +7,7 @@ class PlanTasksModel {
   final int? estimatedTime;
   final int? displayOrder;
   final List<PlanSubtasksModel> subtasks;
+  final TaskSettings? settings;
 
   PlanTasksModel({
     required this.id,
@@ -13,6 +15,7 @@ class PlanTasksModel {
     this.estimatedTime,
     this.displayOrder,
     required this.subtasks,
+    this.settings,
   });
 
   factory PlanTasksModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +28,7 @@ class PlanTasksModel {
               .toList(),
       estimatedTime: json['estimated_time'] as int?,
       displayOrder: json['display_order'] as int?,
+      settings: TaskSettings.tryParse(json['settings']),
     );
   }
 
@@ -35,6 +39,7 @@ class PlanTasksModel {
       'subtasks': subtasks.map((e) => e.toJson()).toList(),
       'estimated_time': estimatedTime,
       'display_order': displayOrder,
+      if (settings != null) 'settings': settings!.toJson(),
     };
   }
 
@@ -45,6 +50,7 @@ class PlanTasksModel {
     List<PlanSubtasksModel>? subtasks,
     int? estimatedTime,
     int? displayOrder,
+    TaskSettings? settings,
   }) {
     return PlanTasksModel(
       id: id ?? this.id,
@@ -52,6 +58,7 @@ class PlanTasksModel {
       subtasks: subtasks ?? this.subtasks,
       estimatedTime: estimatedTime ?? this.estimatedTime,
       displayOrder: displayOrder ?? this.displayOrder,
+      settings: settings ?? this.settings,
     );
   }
 

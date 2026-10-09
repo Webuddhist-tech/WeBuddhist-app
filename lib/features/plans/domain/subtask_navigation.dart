@@ -1,6 +1,7 @@
 import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_subtasks_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
+import 'package:flutter_pecha/features/plans/data/models/task_settings.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.dart';
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
@@ -34,7 +35,8 @@ class PlanSubtaskNavigation {
         title: task.title,
         taskId: task.id,
         contentTypeOf: (s) => s.contentType,
-        sourceOf: (s) => _toSourceItemFromUser(s, task.title, task.id),
+        sourceOf:
+            (s) => _toSourceItemFromUser(s, task.title, task.id, task.settings),
         blockOf: _toBlockFromUser,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
       );
@@ -60,7 +62,8 @@ class PlanSubtaskNavigation {
         title: task.title,
         taskId: task.id,
         contentTypeOf: (s) => s.contentType,
-        sourceOf: (s) => _toSourceItemFromPlan(s, task.title, task.id),
+        sourceOf:
+            (s) => _toSourceItemFromPlan(s, task.title, task.id, task.settings),
         blockOf: _toBlockFromPlan,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
       );
@@ -157,15 +160,18 @@ class PlanSubtaskNavigation {
   }
 
   static bool _isUserSubtaskNavigable(UserSubtasksDto s) =>
-      _toSourceItemFromUser(s, '', null) != null || _toBlockFromUser(s) != null;
+      _toSourceItemFromUser(s, '', null, null) != null ||
+      _toBlockFromUser(s) != null;
 
   static bool _isPlanSubtaskNavigable(PlanSubtasksModel s) =>
-      _toSourceItemFromPlan(s, '', null) != null || _toBlockFromPlan(s) != null;
+      _toSourceItemFromPlan(s, '', null, null) != null ||
+      _toBlockFromPlan(s) != null;
 
   static PlanTextItem? _toSourceItemFromUser(
     UserSubtasksDto subtask,
     String title,
     String? taskId,
+    TaskSettings? settings,
   ) {
     if (PlanContentTypes.parse(subtask.contentType) !=
         PlanItemContentType.sourceReference) {
@@ -182,6 +188,10 @@ class PlanSubtaskNavigation {
       audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
+      autoOpenCommentary: settings?.isCommentaryOpen ?? false,
+      commentaryTextId: settings?.commentaryTextId,
+      autoOpenTranslation: settings?.isTranslationOpen ?? false,
+      translationTextId: settings?.translationTextId,
     );
   }
 
@@ -189,6 +199,7 @@ class PlanSubtaskNavigation {
     PlanSubtasksModel subtask,
     String title,
     String? taskId,
+    TaskSettings? settings,
   ) {
     if (PlanContentTypes.parse(subtask.contentType) !=
         PlanItemContentType.sourceReference) {
@@ -203,6 +214,10 @@ class PlanSubtaskNavigation {
       audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
+      autoOpenCommentary: settings?.isCommentaryOpen ?? false,
+      commentaryTextId: settings?.commentaryTextId,
+      autoOpenTranslation: settings?.isTranslationOpen ?? false,
+      translationTextId: settings?.translationTextId,
     );
   }
 

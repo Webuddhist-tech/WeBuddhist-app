@@ -421,6 +421,26 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     });
   }
 
+  /// Selects [segment]. A plan task with commentary or versions set to open
+  /// does that here, and the verse is brought to the top the way those
+  /// buttons do. Closing that sheet leaves the segment selected, so the
+  /// resources sheet is what's left.
+  void _onSegmentTap(Segment segment) {
+    final notifier = ref.read(readerNotifierProvider(widget.params).notifier);
+    final before = ref.read(readerNotifierProvider(widget.params));
+    final deselecting = before.selectedSegment?.segmentId == segment.segmentId;
+    notifier.toggleSegmentSelection(segment);
+    if (deselecting) return;
+
+    final item = widget.params.navigationContext?.currentItem;
+    final after = ref.read(readerNotifierProvider(widget.params));
+    final opened =
+        (item?.autoOpenCommentary == true && after.isCommentaryOpen) ||
+        (item?.autoOpenTranslation == true && after.isTranslationOpen);
+    if (!opened) return;
+    _scrollToSegment(segment.segmentId, alignment: 0.0);
+  }
+
   void _scrollToSegment(String segmentId, {double? alignment}) {
     final state = ref.read(readerNotifierProvider(widget.params));
     final content = state.content;
@@ -719,7 +739,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(readerNotifierProvider(widget.params));
-    final notifier = ref.read(readerNotifierProvider(widget.params).notifier);
     final dualSettings = ref.watch(
       readerDualSettingsProvider(widget.params.settingsScope),
     );
@@ -907,8 +926,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                     secondarySlot: dualSettings.secondary,
                     secondaryState: secondaryState,
                     liveSegmentId: liveSegmentId,
-                    onSegmentTap:
-                        (segment) => notifier.toggleSegmentSelection(segment),
+                    onSegmentTap: _onSegmentTap,
                   );
                 }
 
@@ -928,8 +946,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   secondarySlot: dualSettings.secondary,
                   secondaryState: secondaryState,
                   liveSegmentId: liveSegmentId,
-                  onSegmentTap:
-                      (segment) => notifier.toggleSegmentSelection(segment),
+                  onSegmentTap: _onSegmentTap,
                 );
               },
             ),

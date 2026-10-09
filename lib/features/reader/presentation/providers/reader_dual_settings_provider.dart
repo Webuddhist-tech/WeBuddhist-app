@@ -175,6 +175,13 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// list language's hold on it for this visit.
   bool _originalPinReleased = false;
 
+  /// A plan task named a translation to show under the original for this
+  /// visit. Holds the layers on without writing the context store, until the
+  /// person toggles one of them. Their saved pick is left alone, so the next
+  /// open of this plan text uses the sent id again.
+  bool _holdPlanTranslation = false;
+  bool _holdPlanOriginal = false;
+
   // "User has edited this slot" flags. Needed because the slot config alone
   // can't tell "untouched defaults" apart from "user picked something that
   // happens to match the defaults" (e.g. picking English when defaults are
@@ -239,10 +246,12 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
             ? scope.context == ReaderLayoutContext.event
             : _seed?.originalVisible;
     final secondaryEnabled =
+        _holdPlanTranslation ||
         isTranslationPinnedByList ||
         (!_translationUnavailable &&
             (prefs.translationOn ?? (opened || _seededTranslationOn)));
     final originalVisible =
+        _holdPlanOriginal ||
         _translationUnavailable ||
         _isOriginalPinnedByList ||
         (prefs.originalVisible ?? defaultOriginalVisible ?? true);
@@ -300,6 +309,7 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
 
   void setSecondaryEnabled(bool enabled) {
     if (state.secondaryEnabled == enabled) return;
+    _holdPlanTranslation = false;
     _secondaryEnabledGeneration++;
     _translationUnavailable = false;
     if (isLibrary) {
@@ -324,6 +334,7 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// and the widgets keep showing the original until that version exists.
   void setOriginalVisible(bool visible) {
     if (state.originalVisible == visible) return;
+    _holdPlanOriginal = false;
     if (isLibrary) {
       state = state.copyWith(originalVisible: visible);
       _ref.read(readerOriginalVisibleProvider.notifier).setVisible(visible);
@@ -463,6 +474,22 @@ class ReaderDualSettingsNotifier extends StateNotifier<ReaderDualLayoutSettings>
   /// version) without marking it as the person's pick, so
   /// [isSecondaryEdited] keeps telling their layout apart from automatic
   /// ones. Still bumps [secondaryResolveGeneration] like any slot write.
+  /// Shows [translation] under the original for this visit, ahead of the
+  /// translation saved for this context. Does not remember it.
+  void showPlanTranslation(ReaderSlotConfig translation) {
+    if (isLibrary) return;
+    _holdPlanTranslation = true;
+    _holdPlanOriginal = true;
+    _translationUnavailable = false;
+    _secondaryResolveGeneration++;
+    state = state.copyWith(
+      secondary: translation,
+      secondaryEnabled: true,
+      originalVisible: true,
+    );
+    _recompute();
+  }
+
   void fillSecondary(ReaderSlotConfig config) {
     _secondaryResolveGeneration++;
     state = state.copyWith(secondary: config);

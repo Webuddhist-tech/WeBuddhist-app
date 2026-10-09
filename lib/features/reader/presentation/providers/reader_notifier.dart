@@ -852,13 +852,21 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       // Select new segment
       state = state.copyWith(selectedSegment: segment);
 
-      // Update commentary if it's open
+      final item = _params.navigationContext?.currentItem;
+      final autoOpenCommentary = item?.autoOpenCommentary ?? false;
+      final autoOpenTranslation = item?.autoOpenTranslation ?? false;
       if (state.isCommentaryOpen) {
         state = state.copyWith(commentarySegmentId: segment.segmentId);
+      } else if (autoOpenCommentary && !state.isTranslationOpen) {
+        // Plan task asked for the commentary sheet on segment tap. Leave an
+        // already-open versions sheet alone.
+        openCommentary(segment.segmentId);
       }
-      // Update translation if it's open
       if (state.isTranslationOpen) {
         state = state.copyWith(translationSegmentId: segment.segmentId);
+      } else if (autoOpenTranslation && !state.isCommentaryOpen) {
+        // Plan task asked for the versions sheet. Root text stays closed.
+        openTranslation(segment.segmentId);
       }
     }
   }
