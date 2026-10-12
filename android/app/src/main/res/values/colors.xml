@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Matches AppColors.surfaceLight so the native splash blends into Flutter's. -->
+    <color name="splash_background">#FBF9F4</color>
+    <!-- Tint for the white ic_notification silhouette; keep in sync with AppColors.primary. -->
+    <color name="notification_accent">#FF0000</color>
 </resources>

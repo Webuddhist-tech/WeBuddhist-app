@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Native launch screen shown before Flutter draws; mirrors SplashScreen (96dp logo). -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
+    <item android:drawable="@color/splash_background" />
 
-    <!-- App logo centered on splash screen -->
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launcher_icon" />
+            android:src="@drawable/splash_logo" />
     </item>
 </layer-list>

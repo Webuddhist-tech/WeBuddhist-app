@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 
 /// Central registry for all app notification channels.
 ///
@@ -82,6 +83,7 @@ class NotificationChannels {
       importance: Importance.high,
       priority: Priority.high,
       icon: 'ic_notification',
+      color: AppColors.primary,
       playSound: true,
       sound: routineAndroidSound,
       enableVibration: true,
@@ -162,6 +164,7 @@ class NotificationChannels {
       importance: Importance.low,
       priority: Priority.low,
       icon: 'ic_notification',
+      color: AppColors.primary,
       ongoing: !paused,
       autoCancel: false,
       onlyAlertOnce: true,
@@ -184,6 +187,7 @@ class NotificationChannels {
       importance: Importance.high,
       priority: Priority.high,
       icon: 'ic_notification',
+      color: AppColors.primary,
       playSound: true,
       sound: routineAndroidSound,
       enableVibration: true,
@@ -222,6 +226,7 @@ class NotificationChannels {
           priority: Priority.high,
           styleInformation: styleInformation,
           icon: icon,
+          color: AppColors.primary,
           largeIcon: largeIcon,
           enableVibration: true,
           playSound: true,
