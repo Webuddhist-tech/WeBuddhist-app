@@ -494,7 +494,7 @@ class _PostAuthorRow extends StatelessWidget {
                   : null,
           onBackgroundImageError:
               avatarUrl != null && avatarUrl!.isNotEmpty
-                  ? ignoreImageLoadError
+                  ? reportImageLoadError
                   : null,
           child:
               avatarUrl == null || avatarUrl!.isEmpty

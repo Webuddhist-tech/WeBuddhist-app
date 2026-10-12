@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/error/crash_reporting/error_classifier.dart';
+
 /// Strips the query string and fragment so presigned URLs (e.g. S3 with
 /// rotating signatures) resolve to the same logical asset.
 String stableNetworkImageCacheKey(String url) {
@@ -15,6 +18,19 @@ bool isSameNetworkImage(String? a, String? b) {
 /// such as a [CircleAvatar]'s background color or a precache whose widget
 /// shows its own error state.
 ///
-/// Registering any listener marks the failure as handled. With none, Flutter
-/// reports it as an unhandled framework error.
-void ignoreImageLoadError(Object error, StackTrace? stackTrace) {}
+/// Registering a listener keeps Flutter from treating the failure as
+/// unhandled. The failure is still passed to `FlutterError.reportError`,
+/// tagged as an image-stream error and marked silent, so the crash reporter
+/// records it as a rate-limited non-fatal instead of dropping it. Failed
+/// downloads and expired image URLs therefore stay visible in Crashlytics.
+void reportImageLoadError(Object error, StackTrace? stackTrace) {
+  FlutterError.reportError(
+    FlutterErrorDetails(
+      exception: error,
+      stack: stackTrace,
+      library: ErrorClassifier.imageLibrary,
+      context: ErrorDescription('while loading an image that has a fallback'),
+      silent: true,
+    ),
+  );
+}

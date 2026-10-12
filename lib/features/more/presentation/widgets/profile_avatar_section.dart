@@ -38,7 +38,7 @@ class ProfileAvatarSection extends StatelessWidget {
               backgroundColor: AppColors.grey300,
               backgroundImage: image,
               onBackgroundImageError:
-                  image != null ? ignoreImageLoadError : null,
+                  image != null ? reportImageLoadError : null,
               child: avatarUrl.isEmpty && pickedAvatarFile == null
                   ? Icon(
                       AppAssets.profile,

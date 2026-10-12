@@ -89,7 +89,7 @@ class VerseUserAvatar extends StatelessWidget {
       backgroundColor:
           isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
       backgroundImage: hasAvatar ? avatarUrl!.cachedNetworkImageProvider : null,
-      onBackgroundImageError: hasAvatar ? ignoreImageLoadError : null,
+      onBackgroundImageError: hasAvatar ? reportImageLoadError : null,
       child:
           hasAvatar
               ? null

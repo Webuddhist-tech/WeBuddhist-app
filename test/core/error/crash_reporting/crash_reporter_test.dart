@@ -131,4 +131,20 @@ void main() {
 
     expect(calls, 2);
   });
+
+  // Greptile review on #943: tags are optional and must not block recording.
+  test('a failing tag write still records the error', () async {
+    final recordedFatal = <bool>[];
+    final reporter = CrashReporter(
+      recordFlutterError:
+          (_, {required fatal}) async => recordedFatal.add(fatal),
+      recordError: (_, __, {required fatal}) async {},
+      setCustomKey: (_, __) async => throw StateError('channel down'),
+    );
+
+    reporter.handleFlutterError(FlutterErrorDetails(exception: TypeError()));
+    await reporter.idle;
+
+    expect(recordedFatal, [true]);
+  });
 }

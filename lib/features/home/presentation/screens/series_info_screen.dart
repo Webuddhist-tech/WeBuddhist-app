@@ -168,7 +168,7 @@ class SeriesInfoScreen extends ConsumerWidget {
                       : null,
               onBackgroundImageError:
                   group.avatarUrl != null && group.avatarUrl!.isNotEmpty
-                      ? ignoreImageLoadError
+                      ? reportImageLoadError
                       : null,
               child:
                   (group.avatarUrl == null || group.avatarUrl!.isEmpty)

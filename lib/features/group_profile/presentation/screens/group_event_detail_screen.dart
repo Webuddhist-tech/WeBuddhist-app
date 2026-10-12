@@ -1172,7 +1172,7 @@ class _EventGroupRow extends ConsumerWidget {
                 backgroundImage:
                     avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
                 onBackgroundImageError:
-                    avatarUrl.isNotEmpty ? ignoreImageLoadError : null,
+                    avatarUrl.isNotEmpty ? reportImageLoadError : null,
                 child:
                     avatarUrl.isEmpty
                         ? Icon(

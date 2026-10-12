@@ -65,7 +65,7 @@ class ProfilePage extends ConsumerWidget {
                               : null,
                       onBackgroundImageError:
                           pictureUrl != null && pictureUrl.isNotEmpty
-                              ? ignoreImageLoadError
+                              ? reportImageLoadError
                               : null,
                       child:
                           (pictureUrl == null || pictureUrl.isEmpty)

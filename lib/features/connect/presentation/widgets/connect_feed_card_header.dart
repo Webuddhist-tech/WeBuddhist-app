@@ -61,7 +61,7 @@ class ConnectFeedCardHeader extends StatelessWidget {
               : null,
       onBackgroundImageError:
           groupAvatarUrl != null && groupAvatarUrl!.isNotEmpty
-              ? ignoreImageLoadError
+              ? reportImageLoadError
               : null,
       child:
           groupAvatarUrl == null || groupAvatarUrl!.isEmpty

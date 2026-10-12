@@ -96,7 +96,7 @@ class AuthorDetailScreen extends ConsumerWidget {
                       : null,
               onBackgroundImageError:
                   authorData.imageUrl?.isNotEmpty ?? false
-                      ? ignoreImageLoadError
+                      ? reportImageLoadError
                       : null,
               backgroundColor: Colors.grey[800],
               child:

@@ -116,15 +116,25 @@ class CrashReporter {
     Future<void> Function() record,
   ) {
     _pending = _pending.then((_) async {
+      // Tags are optional context: a failed tag write must not stop the
+      // error itself from being recorded.
+      await _trySetCustomKey(categoryKey, classification.category.name);
+      await _trySetCustomKey(sourceKey, source.name);
       try {
-        await _setCustomKey(categoryKey, classification.category.name);
-        await _setCustomKey(sourceKey, source.name);
         await record();
       } catch (e) {
         // Never let a reporting failure re-enter the global error handlers.
         _logger.warning('Failed to report error to Crashlytics: $e');
       }
     });
+  }
+
+  Future<void> _trySetCustomKey(String key, String value) async {
+    try {
+      await _setCustomKey(key, value);
+    } catch (e) {
+      _logger.warning('Failed to set Crashlytics key $key: $e');
+    }
   }
 
   /// Completes once every report queued so far has been sent. For tests.
