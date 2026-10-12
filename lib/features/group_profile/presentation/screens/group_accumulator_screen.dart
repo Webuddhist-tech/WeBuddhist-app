@@ -330,7 +330,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
 
     setState(() => _isJoining = true);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );
@@ -407,12 +407,16 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
   }
 
   Future<void> _refreshAfterPractice(GroupAccumulatorDetail detail) async {
+    // Captured before the await: the screen can close while counts flush.
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
-      await ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave);
+      await container
+          .read(malaSyncManagerProvider)
+          .flush(SyncReason.screenLeave);
     } catch (_) {}
 
     refreshGroupAccumulatorData(
-      ref,
+      container,
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );

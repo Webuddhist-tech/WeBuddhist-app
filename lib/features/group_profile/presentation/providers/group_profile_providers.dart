@@ -207,6 +207,13 @@ void refreshGroupPracticesFromRef(Ref ref, String groupId) {
   ref.read(groupPracticesProvider(groupId).notifier).loadInitial();
 }
 
+/// For work that can outlive the screen that started it, where a [WidgetRef]
+/// would already be disposed.
+void refreshGroupPracticesIn(ProviderContainer container, String groupId) {
+  if (!container.exists(groupPracticesProvider(groupId))) return;
+  container.read(groupPracticesProvider(groupId).notifier).loadInitial();
+}
+
 @immutable
 class GroupRecitationCollectionKey {
   final String groupId;

@@ -44,7 +44,9 @@ class _RecitationsSearchScreenState
     _searchController.removeListener(_onSearchTextChanged);
     _searchController.dispose();
     _focusNode.dispose();
-    _searchNotifier(widget.languageCode).clear();
+    // No clear() here: `ref` cannot be used in dispose, and the search
+    // provider is autoDispose, so its results are dropped once this screen
+    // stops watching it.
     super.dispose();
   }
 

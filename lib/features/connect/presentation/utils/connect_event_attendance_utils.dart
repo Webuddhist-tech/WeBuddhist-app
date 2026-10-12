@@ -15,38 +15,52 @@ bool isGroupEventPast(GroupEvent event, {DateTime? now}) {
   return reference.toLocal().isBefore(current);
 }
 
-bool isUserInGroup(WidgetRef ref, String groupId) {
+typedef _ProviderRead = T Function<T>(ProviderListenable<T> provider);
+
+bool isUserInGroup(WidgetRef ref, String groupId) =>
+    _isUserInGroup(ref.read, groupId);
+
+bool _isUserInGroup(_ProviderRead read, String groupId) {
   if (groupId.isEmpty) return true;
 
-  if (ref.read(pendingUnjoinedGroupIdsProvider).contains(groupId)) {
+  if (read(pendingUnjoinedGroupIdsProvider).contains(groupId)) {
     return false;
   }
 
-  final pendingJoined = ref.read(pendingJoinedGroupsProvider);
+  final pendingJoined = read(pendingJoinedGroupsProvider);
   if (pendingJoined.any((group) => group.id == groupId)) {
     return true;
   }
 
-  final myGroups = ref.read(myGroupsProvider).valueOrNull?.groups ?? const [];
+  final myGroups = read(myGroupsProvider).valueOrNull?.groups ?? const [];
   if (myGroups.any((group) => group.id == groupId)) {
     return true;
   }
 
-  final profileEither = ref.read(groupProfileProvider(groupId)).valueOrNull;
+  final profileEither = read(groupProfileProvider(groupId)).valueOrNull;
   return profileEither?.fold((_) => false, (profile) => profile.isFollowing) ??
       false;
 }
 
+/// Joins the event, first joining its group if needed.
+///
+/// Takes the app's [ProviderContainer] (`ProviderScope.containerOf(context,
+/// listen: false)`) rather than a [WidgetRef]. The user can leave the event
+/// screen while the requests run. A disposed screen's `ref` throws, and
+/// skipping the follow-state update would leave other screens showing the
+/// group as not joined.
 Future<Either<Failure, void>> joinGroupEventEnsuringGroupMembership({
-  required WidgetRef ref,
+  required ProviderContainer container,
   required GroupEvent event,
   GroupEventParticipationType? participationType,
 }) async {
-  final repository = ref.read(groupProfileRepositoryProvider);
+  final repository = container.read(groupProfileRepositoryProvider);
 
-  if (event.groupId.isNotEmpty && !isUserInGroup(ref, event.groupId)) {
-    final profileResult =
-        await ref.read(groupProfileProvider(event.groupId).future);
+  if (event.groupId.isNotEmpty &&
+      !_isUserInGroup(container.read, event.groupId)) {
+    final profileResult = await container.read(
+      groupProfileProvider(event.groupId).future,
+    );
     final groupProfile = profileResult.fold<GroupProfile?>(
       (_) => null,
       (profile) => profile,
@@ -75,7 +89,7 @@ Future<Either<Failure, void>> joinGroupEventEnsuringGroupMembership({
         groupType: groupProfile.groupType,
         loadInitialStatus: false,
       );
-      ref
+      container
           .read(groupFollowProvider(followKey).notifier)
           .markAutoJoinedFromPracticeEnrollment(group: groupProfile);
     }

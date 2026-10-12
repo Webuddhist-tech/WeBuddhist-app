@@ -135,7 +135,10 @@ class _GroupEventsTabContent extends ConsumerWidget {
     final state = ref.watch(provider);
 
     // Each tab fetches its own `event_format` listing the first time it builds.
+    // The tab can be disposed before the frame ends, e.g. when the user swipes
+    // past it or leaves the screen, and `ref` is unusable after that.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
       ref.read(provider.notifier).ensureLoaded();
     });
 

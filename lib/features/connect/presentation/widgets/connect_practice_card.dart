@@ -646,7 +646,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
 
     setState(() => _joiningAccumulatorId = accumulator.id);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: accumulator.id,
       groupId: groupId,
       awaitRefresh: false,

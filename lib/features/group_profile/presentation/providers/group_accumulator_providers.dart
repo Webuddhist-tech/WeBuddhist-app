@@ -254,46 +254,56 @@ bool accumulatorHasJoined(
   return accumulator.isJoined == true;
 }
 
+/// Takes the app's [ProviderContainer] rather than a [WidgetRef] because it
+/// runs after awaits, when the screen that asked for it may be gone.
 void refreshGroupAccumulatorData(
-  WidgetRef ref, {
+  ProviderContainer container, {
   required String accumulatorId,
   String? groupId,
 }) {
-  ref.invalidate(groupAccumulatorDetailProvider(accumulatorId));
+  container.invalidate(groupAccumulatorDetailProvider(accumulatorId));
   // Reload live member lists in place so they keep showing the current rows
   // instead of resetting to a spinner; unmounted ones load fresh on demand.
   for (final sort in GroupAccumulatorMemberSort.values) {
     final provider = groupAccumulatorMembersProvider(
       GroupAccumulatorMembersKey(accumulatorId: accumulatorId, sortBy: sort),
     );
-    if (ref.exists(provider)) {
-      ref.read(provider.notifier).loadInitial(force: true);
+    if (container.exists(provider)) {
+      container.read(provider.notifier).loadInitial(force: true);
     }
   }
   if (groupId != null && groupId.isNotEmpty) {
-    refreshGroupPractices(ref, groupId);
+    refreshGroupPracticesIn(container, groupId);
   }
 }
 
+/// Joins on the server, then updates the app's join state.
+///
+/// Takes the app's [ProviderContainer] (`ProviderScope.containerOf(context,
+/// listen: false)`) rather than a [WidgetRef]. The user can leave the screen
+/// while the request runs. A disposed screen's `ref` throws, and skipping the
+/// updates would leave other screens showing the accumulator as not joined.
 Future<bool> joinGroupAccumulator({
-  required WidgetRef ref,
+  required ProviderContainer container,
   required String accumulatorId,
   required String groupId,
   GroupProfile? group,
   bool awaitRefresh = true,
 }) async {
-  final repository = ref.read(groupAccumulatorRepositoryProvider);
+  final repository = container.read(groupAccumulatorRepositoryProvider);
   final result = await repository.joinGroupAccumulator(accumulatorId);
 
   if (result.isLeft()) return false;
 
-  ref
+  container
       .read(groupAccumulatorJoinCacheProvider(groupId).notifier)
       .markJoined(accumulatorId);
 
   GroupProfile? resolvedGroup = group;
   if (resolvedGroup == null) {
-    final profileResult = await ref.read(groupProfileProvider(groupId).future);
+    final profileResult = await container.read(
+      groupProfileProvider(groupId).future,
+    );
     resolvedGroup = profileResult.fold((_) => null, (profile) => profile);
   }
 
@@ -302,20 +312,20 @@ Future<bool> joinGroupAccumulator({
       groupId: groupId,
       groupType: resolvedGroup.groupType,
     );
-    ref
+    container
         .read(groupFollowProvider(followKey).notifier)
         .markAutoJoinedFromPracticeEnrollment(group: resolvedGroup);
   }
 
   refreshGroupAccumulatorData(
-    ref,
+    container,
     accumulatorId: accumulatorId,
     groupId: groupId,
   );
 
   final refreshFuture = Future.wait([
-    ref.read(groupAccumulatorDetailProvider(accumulatorId).future),
-    ref.read(groupPracticesProvider(groupId).notifier).loadInitial(),
+    container.read(groupAccumulatorDetailProvider(accumulatorId).future),
+    container.read(groupPracticesProvider(groupId).notifier).loadInitial(),
   ]);
 
   if (awaitRefresh) {
@@ -328,25 +338,28 @@ Future<bool> joinGroupAccumulator({
 /// Ends a group accumulation chant session by flushing pending counts and
 /// refreshing accumulator data. Does not delete or reset local/server counts;
 /// per-visit session display in the reader is handled separately via a baseline.
+///
+/// Takes the app's [ProviderContainer] because the reader is usually closing
+/// while the flush runs, and its `ref` is unusable once it is disposed.
 Future<bool> finishGroupAccumulatorSession({
-  required WidgetRef ref,
+  required ProviderContainer container,
   required String groupAccumulatorId,
   required String presetId,
   String? groupId,
 }) async {
   try {
-    await ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave);
+    await container.read(malaSyncManagerProvider).flush(SyncReason.screenLeave);
   } catch (_) {
     // Leaving the reader should still succeed even if flush fails.
   }
 
   refreshGroupAccumulatorData(
-    ref,
+    container,
     accumulatorId: groupAccumulatorId,
     groupId: groupId,
   );
-  ref.invalidate(joinedGroupUserCountsProvider(presetId));
-  ref.invalidate(joinedAccumulatorGroupsProvider(presetId));
+  container.invalidate(joinedGroupUserCountsProvider(presetId));
+  container.invalidate(joinedAccumulatorGroupsProvider(presetId));
 
   return true;
 }

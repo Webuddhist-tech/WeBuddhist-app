@@ -286,7 +286,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (ctx != null) {
       final sessionCount = _chantOpenedCount;
       final success = await finishGroupAccumulatorSession(
-        ref: ref,
+        container: ProviderScope.containerOf(context, listen: false),
         groupAccumulatorId: ctx.groupAccumulatorId!,
         presetId: ctx.presetAccumulatorId!,
         groupId: ctx.groupId,

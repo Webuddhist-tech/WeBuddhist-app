@@ -378,7 +378,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   void _adjustScrollAfterPreviousLoad() {
-    if (_positionBeforePreviousLoad == null) return;
+    // Runs after an earlier page loads, which can finish after the reader
+    // was closed. There is nothing left to scroll, and `ref` is unusable.
+    if (!mounted || _positionBeforePreviousLoad == null) return;
 
     final state = ref.read(readerNotifierProvider(widget.params));
     final content = state.content;
@@ -387,6 +389,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Calculate how many items were added at the beginning
     // This is approximate - we adjust based on the position we were at
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       if (_itemScrollController.isAttached &&
           _positionBeforePreviousLoad != null) {
         // Mark as programmatic scroll to avoid affecting app bar
