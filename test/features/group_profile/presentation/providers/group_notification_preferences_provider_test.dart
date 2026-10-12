@@ -1,10 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/update_group_notification_preferences_usecase.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_notification_preferences_provider.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -50,6 +55,27 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
 
   /// Lets the [index]th update call return.
   void release(int index) => holds[index].complete();
+}
+
+/// A signed-in session the test can end.
+class _Auth extends StateNotifier<AuthState> implements AuthNotifier {
+  _Auth() : super(const AuthState(isLoggedIn: true));
+
+  void signOut() => state = const AuthState(isLoggedIn: false);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+ProviderContainer _container(_FakeRepository repository, {_Auth? auth}) {
+  final container = ProviderContainer(
+    overrides: [
+      groupProfileRepositoryProvider.overrideWithValue(repository),
+      authProvider.overrideWith((ref) => auth ?? _Auth()),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container;
 }
 
 GroupNotificationPreferencesNotifier _notifier(_FakeRepository repository) {
@@ -351,6 +377,69 @@ void main() {
         (chat: true, content: null),
         (chat: null, content: false),
       ]);
+    });
+
+    test('a write queued when the sheet closes still reaches the backend, '
+        'then the provider lets go', () async {
+      final repo = _FakeRepository();
+      final container = _container(repo);
+      final provider = groupNotificationPreferencesProvider('grp-1');
+      final sub = container.listen(provider, (_, _) {});
+      await _settle();
+
+      final notifier = container.read(provider.notifier);
+      final flip = notifier.setChat(true);
+      notifier.setChat(false);
+
+      // The sheet closes while the first PATCH is still out.
+      sub.close();
+      await _settle();
+      expect(container.exists(provider), isTrue);
+
+      repo.release(0);
+      await _settle();
+      expect(repo.updates, [
+        (chat: true, content: null),
+        (chat: false, content: null),
+      ], reason: 'the queued value is sent, not dropped');
+
+      repo.release(1);
+      expect(await flip, isTrue);
+      expect(repo.server.chat, isFalse);
+
+      await _settle();
+      expect(
+        container.exists(provider),
+        isFalse,
+        reason: 'nothing left to send and nobody listening',
+      );
+    });
+
+    test('signing out drops a write still queued, so it never goes out '
+        'as the next account', () async {
+      final repo = _FakeRepository();
+      final auth = _Auth();
+      final container = _container(repo, auth: auth);
+      final provider = groupNotificationPreferencesProvider('grp-1');
+      final sub = container.listen(provider, (_, _) {});
+      await _settle();
+
+      final notifier = container.read(provider.notifier);
+      final flip = notifier.setChat(true);
+      notifier.setChat(false);
+      sub.close();
+      await _settle();
+
+      // Sign-out starts while the first PATCH is still out.
+      auth.signOut();
+      repo.release(0);
+      await _settle();
+
+      expect(repo.updates, [
+        (chat: true, content: null),
+      ], reason: 'the queued value is dropped');
+      expect(await flip, isFalse);
+      expect(container.exists(provider), isFalse);
     });
   });
 }

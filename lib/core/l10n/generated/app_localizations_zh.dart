@@ -515,72 +515,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmarks_empty_chant_collections_subtitle => '將法本加入書籤，，即可收藏於此';
 
   @override
-  String get notification_settings => '通知設定';
-
-  @override
   String get notification_allow_title => '允許通知';
 
   @override
-  String get notification_allow_subtitle_enabled => '此應用程式已啟用通知';
-
-  @override
   String get notification_allow_subtitle_disabled => '需要權限。請點此前往「設定」授權';
-
-  @override
-  String get notification_allow_subtitle_paused => '提醒已暫停。點此恢復';
-
-  @override
-  String get notification_routine_title => '日常提醒';
-
-  @override
-  String get notification_routine_subtitle_enabled => '您的每日修持時段提醒';
-
-  @override
-  String get notification_routine_subtitle_disabled => '日常提醒已暫停。點此恢復。';
-
-  @override
-  String get notification_battery_title => '背景提醒通知';
-
-  @override
-  String get notification_battery_subtitle_enabled => '即使應用程式已關閉，您的提醒通知仍會準時發送';
-
-  @override
-  String get notification_battery_subtitle_disabled =>
-      '部分 Android 手機會暫停背景應用程式以節省電池使用量，這可能導致提醒通知延遲或遺漏。點此確保應用程式持續運行。';
-
-  @override
-  String get notification_recitation_title => '持誦提醒';
-
-  @override
-  String get notification_recitation_subtitle_enabled => '每日持誦提醒';
-
-  @override
-  String get notification_recitation_subtitle_disabled => '持誦提醒已暫停。點此恢復。';
-
-  @override
-  String get notification_practice_title => '念珠修持提醒';
-
-  @override
-  String get notification_practice_subtitle_enabled => '每日念珠修持提醒';
-
-  @override
-  String get notification_practice_subtitle_disabled => '念珠提醒已暫停。點此恢復';
-
-  @override
-  String get notification_timer_title => '計時器提醒';
-
-  @override
-  String get notification_timer_subtitle_enabled => '每日計時器提醒';
-
-  @override
-  String get notification_timer_subtitle_disabled => '計時器提醒已暫停。點此恢復';
-
-  @override
-  String get notification_battery_info_title => '關於背景提醒';
-
-  @override
-  String get notification_battery_info_body =>
-      '部分 Android 手機會暫停背景應用程式以節省電池，這可能導致已排程的提醒延遲或取消。開啟應用程式可讓您的提醒準時可靠地發送。';
 
   @override
   String get notification_snack_permission_denied => '通知已被封鎖。請在「設定」中開啟';
@@ -589,7 +527,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notification_snack_disable_alarms_in_settings => '在「設定」中關閉鬧鐘與提醒';
 
   @override
-  String get notification_snack_battery_reenable => '在「設定 → 電池」中還原「電池最佳化設定」';
+  String get notification_allow_subtitle_on => '來自 WeBuddhist 的提醒與更新';
+
+  @override
+  String get notification_allow_subtitle_off => '已關閉。開啟後即可收到提醒與更新。';
+
+  @override
+  String get notification_section_practice => '修持';
+
+  @override
+  String get notification_section_connect => '社群';
+
+  @override
+  String get notification_row_plans => '修持計畫';
+
+  @override
+  String get notification_row_chants => '持誦';
+
+  @override
+  String get notification_row_mala => '念珠與總計數';
+
+  @override
+  String get notification_row_timer => '計時器';
+
+  @override
+  String get notification_row_group_posts => '社群貼文';
+
+  @override
+  String get notification_row_group_chats => '社群聊天室';
+
+  @override
+  String get notification_row_my_prayer_requests => '我的迴向與祈願';
+
+  @override
+  String get notification_row_others_prayer_requests => '他人的迴向與祈願';
 
   @override
   String get profile_default_bio => '歡迎來到 WeBuddhist';
@@ -1723,9 +1694,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get follow => '追蹤';
 
   @override
-  String get following => '追蹤中';
-
-  @override
   String get calendar_title => '日曆';
 
   @override
@@ -1773,9 +1741,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get join => '加入';
-
-  @override
-  String get joined => '已加入';
 
   @override
   String get group_member => '位成員';
@@ -1836,16 +1801,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_notifications_unmuted => '聊天室通知已開啟';
 
   @override
-  String get group_leave => '退出';
-
-  @override
-  String get group_leave_confirm_title => '要退出嗎？';
-
-  @override
   String get group_leave_confirm_message => '您將不再收到此社群的訊息和動態';
 
   @override
-  String get group_leave_failed => '無法退出，請再試一次';
+  String get group_leave_space => '退出社群';
+
+  @override
+  String get group_leave_space_confirm_title => '要退出此社群嗎？';
+
+  @override
+  String get group_leave_space_failed => '無法退出社群，請再試一次';
 
   @override
   String get group_request_to_join => '申請加入';

@@ -19,19 +19,19 @@ GroupNotificationPreferencesState _prefs({
 void main() {
   group('chatBellStateFor', () {
     test('chat on', () {
-      expect(chatBellStateFor(_prefs(), masterOn: true), ChatBellState.on);
+      expect(chatBellStateFor(_prefs(), appOn: true), ChatBellState.on);
     });
 
     test('chat muted', () {
       expect(
-        chatBellStateFor(_prefs(chat: false), masterOn: true),
+        chatBellStateFor(_prefs(chat: false), appOn: true),
         ChatBellState.off,
       );
     });
 
     test('still loading', () {
       expect(
-        chatBellStateFor(_prefs(isLoading: true), masterOn: true),
+        chatBellStateFor(_prefs(isLoading: true), appOn: true),
         ChatBellState.loading,
       );
     });
@@ -40,20 +40,20 @@ void main() {
       expect(
         chatBellStateFor(
           _prefs(loadFailure: const NetworkFailure('offline')),
-          masterOn: true,
+          appOn: true,
         ),
         ChatBellState.unavailable,
       );
     });
 
-    test('master off wins over every group state', () {
+    test('app notifications off wins over every group state', () {
       for (final prefs in [
         _prefs(),
         _prefs(chat: false),
         _prefs(isLoading: true),
         _prefs(loadFailure: const NetworkFailure('offline')),
       ]) {
-        expect(chatBellStateFor(prefs, masterOn: false), ChatBellState.appOff);
+        expect(chatBellStateFor(prefs, appOn: false), ChatBellState.appOff);
       }
     });
   });

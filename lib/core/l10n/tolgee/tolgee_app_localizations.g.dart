@@ -996,13 +996,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get notification_settings => TolgeeBridge.get(
-    localeName,
-    'notification_settings',
-    () => _fallback.notification_settings,
-  );
-
-  @override
   String get notification_allow_title => TolgeeBridge.get(
     localeName,
     'notification_allow_title',
@@ -1010,143 +1003,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get notification_allow_subtitle_enabled => TolgeeBridge.get(
-    localeName,
-    'notification_allow_subtitle_enabled',
-    () => _fallback.notification_allow_subtitle_enabled,
-  );
-
-  @override
   String get notification_allow_subtitle_disabled => TolgeeBridge.get(
     localeName,
     'notification_allow_subtitle_disabled',
     () => _fallback.notification_allow_subtitle_disabled,
-  );
-
-  @override
-  String get notification_allow_subtitle_paused => TolgeeBridge.get(
-    localeName,
-    'notification_allow_subtitle_paused',
-    () => _fallback.notification_allow_subtitle_paused,
-  );
-
-  @override
-  String get notification_routine_title => TolgeeBridge.get(
-    localeName,
-    'notification_routine_title',
-    () => _fallback.notification_routine_title,
-  );
-
-  @override
-  String get notification_routine_subtitle_enabled => TolgeeBridge.get(
-    localeName,
-    'notification_routine_subtitle_enabled',
-    () => _fallback.notification_routine_subtitle_enabled,
-  );
-
-  @override
-  String get notification_routine_subtitle_disabled => TolgeeBridge.get(
-    localeName,
-    'notification_routine_subtitle_disabled',
-    () => _fallback.notification_routine_subtitle_disabled,
-  );
-
-  @override
-  String get notification_battery_title => TolgeeBridge.get(
-    localeName,
-    'notification_battery_title',
-    () => _fallback.notification_battery_title,
-  );
-
-  @override
-  String get notification_battery_subtitle_enabled => TolgeeBridge.get(
-    localeName,
-    'notification_battery_subtitle_enabled',
-    () => _fallback.notification_battery_subtitle_enabled,
-  );
-
-  @override
-  String get notification_battery_subtitle_disabled => TolgeeBridge.get(
-    localeName,
-    'notification_battery_subtitle_disabled',
-    () => _fallback.notification_battery_subtitle_disabled,
-  );
-
-  @override
-  String get notification_recitation_title => TolgeeBridge.get(
-    localeName,
-    'notification_recitation_title',
-    () => _fallback.notification_recitation_title,
-  );
-
-  @override
-  String get notification_recitation_subtitle_enabled => TolgeeBridge.get(
-    localeName,
-    'notification_recitation_subtitle_enabled',
-    () => _fallback.notification_recitation_subtitle_enabled,
-  );
-
-  @override
-  String get notification_recitation_subtitle_disabled => TolgeeBridge.get(
-    localeName,
-    'notification_recitation_subtitle_disabled',
-    () => _fallback.notification_recitation_subtitle_disabled,
-  );
-
-  @override
-  String get notification_practice_title => TolgeeBridge.get(
-    localeName,
-    'notification_practice_title',
-    () => _fallback.notification_practice_title,
-  );
-
-  @override
-  String get notification_practice_subtitle_enabled => TolgeeBridge.get(
-    localeName,
-    'notification_practice_subtitle_enabled',
-    () => _fallback.notification_practice_subtitle_enabled,
-  );
-
-  @override
-  String get notification_practice_subtitle_disabled => TolgeeBridge.get(
-    localeName,
-    'notification_practice_subtitle_disabled',
-    () => _fallback.notification_practice_subtitle_disabled,
-  );
-
-  @override
-  String get notification_timer_title => TolgeeBridge.get(
-    localeName,
-    'notification_timer_title',
-    () => _fallback.notification_timer_title,
-  );
-
-  @override
-  String get notification_timer_subtitle_enabled => TolgeeBridge.get(
-    localeName,
-    'notification_timer_subtitle_enabled',
-    () => _fallback.notification_timer_subtitle_enabled,
-  );
-
-  @override
-  String get notification_timer_subtitle_disabled => TolgeeBridge.get(
-    localeName,
-    'notification_timer_subtitle_disabled',
-    () => _fallback.notification_timer_subtitle_disabled,
-  );
-
-  @override
-  String get notification_battery_info_title => TolgeeBridge.get(
-    localeName,
-    'notification_battery_info_title',
-    () => _fallback.notification_battery_info_title,
-  );
-
-  @override
-  String get notification_battery_info_body => TolgeeBridge.get(
-    localeName,
-    'notification_battery_info_body',
-    () => _fallback.notification_battery_info_body,
   );
 
   @override
@@ -1164,10 +1024,87 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get notification_snack_battery_reenable => TolgeeBridge.get(
+  String get notification_allow_subtitle_on => TolgeeBridge.get(
     localeName,
-    'notification_snack_battery_reenable',
-    () => _fallback.notification_snack_battery_reenable,
+    'notification_allow_subtitle_on',
+    () => _fallback.notification_allow_subtitle_on,
+  );
+
+  @override
+  String get notification_allow_subtitle_off => TolgeeBridge.get(
+    localeName,
+    'notification_allow_subtitle_off',
+    () => _fallback.notification_allow_subtitle_off,
+  );
+
+  @override
+  String get notification_section_practice => TolgeeBridge.get(
+    localeName,
+    'notification_section_practice',
+    () => _fallback.notification_section_practice,
+  );
+
+  @override
+  String get notification_section_connect => TolgeeBridge.get(
+    localeName,
+    'notification_section_connect',
+    () => _fallback.notification_section_connect,
+  );
+
+  @override
+  String get notification_row_plans => TolgeeBridge.get(
+    localeName,
+    'notification_row_plans',
+    () => _fallback.notification_row_plans,
+  );
+
+  @override
+  String get notification_row_chants => TolgeeBridge.get(
+    localeName,
+    'notification_row_chants',
+    () => _fallback.notification_row_chants,
+  );
+
+  @override
+  String get notification_row_mala => TolgeeBridge.get(
+    localeName,
+    'notification_row_mala',
+    () => _fallback.notification_row_mala,
+  );
+
+  @override
+  String get notification_row_timer => TolgeeBridge.get(
+    localeName,
+    'notification_row_timer',
+    () => _fallback.notification_row_timer,
+  );
+
+  @override
+  String get notification_row_group_posts => TolgeeBridge.get(
+    localeName,
+    'notification_row_group_posts',
+    () => _fallback.notification_row_group_posts,
+  );
+
+  @override
+  String get notification_row_group_chats => TolgeeBridge.get(
+    localeName,
+    'notification_row_group_chats',
+    () => _fallback.notification_row_group_chats,
+  );
+
+  @override
+  String get notification_row_my_prayer_requests => TolgeeBridge.get(
+    localeName,
+    'notification_row_my_prayer_requests',
+    () => _fallback.notification_row_my_prayer_requests,
+  );
+
+  @override
+  String get notification_row_others_prayer_requests => TolgeeBridge.get(
+    localeName,
+    'notification_row_others_prayer_requests',
+    () => _fallback.notification_row_others_prayer_requests,
   );
 
   @override
@@ -3533,10 +3470,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
       TolgeeBridge.get(localeName, 'follow', () => _fallback.follow);
 
   @override
-  String get following =>
-      TolgeeBridge.get(localeName, 'following', () => _fallback.following);
-
-  @override
   String get calendar_title => TolgeeBridge.get(
     localeName,
     'calendar_title',
@@ -3638,10 +3571,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String get join => TolgeeBridge.get(localeName, 'join', () => _fallback.join);
-
-  @override
-  String get joined =>
-      TolgeeBridge.get(localeName, 'joined', () => _fallback.joined);
 
   @override
   String get group_member => TolgeeBridge.get(
@@ -3772,17 +3701,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get group_leave =>
-      TolgeeBridge.get(localeName, 'group_leave', () => _fallback.group_leave);
-
-  @override
-  String get group_leave_confirm_title => TolgeeBridge.get(
-    localeName,
-    'group_leave_confirm_title',
-    () => _fallback.group_leave_confirm_title,
-  );
-
-  @override
   String get group_leave_confirm_message => TolgeeBridge.get(
     localeName,
     'group_leave_confirm_message',
@@ -3790,10 +3708,24 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get group_leave_failed => TolgeeBridge.get(
+  String get group_leave_space => TolgeeBridge.get(
     localeName,
-    'group_leave_failed',
-    () => _fallback.group_leave_failed,
+    'group_leave_space',
+    () => _fallback.group_leave_space,
+  );
+
+  @override
+  String get group_leave_space_confirm_title => TolgeeBridge.get(
+    localeName,
+    'group_leave_space_confirm_title',
+    () => _fallback.group_leave_space_confirm_title,
+  );
+
+  @override
+  String get group_leave_space_failed => TolgeeBridge.get(
+    localeName,
+    'group_leave_space_failed',
+    () => _fallback.group_leave_space_failed,
   );
 
   @override
@@ -4196,12 +4128,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) =>
-      TolgeeBridge.format(
-        localeName,
-        'group_removed_message',
-        <String, Object>{'group': group, 'duration': duration},
-        () => _fallback.group_removed_message(group, duration),
-      );
+      TolgeeBridge.format(localeName, 'group_removed_message', <String, Object>{
+        'group': group,
+        'duration': duration,
+      }, () => _fallback.group_removed_message(group, duration));
 
   @override
   String group_removed_message_no_date(String group) => TolgeeBridge.format(
@@ -5875,12 +5805,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String event_replay_session(String day, String session) =>
-      TolgeeBridge.format(
-        localeName,
-        'event_replay_session',
-        <String, Object>{'day': day, 'session': session},
-        () => _fallback.event_replay_session(day, session),
-      );
+      TolgeeBridge.format(localeName, 'event_replay_session', <String, Object>{
+        'day': day,
+        'session': session,
+      }, () => _fallback.event_replay_session(day, session));
 
   @override
   String get event_replay_recording => TolgeeBridge.get(

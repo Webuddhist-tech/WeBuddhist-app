@@ -531,84 +531,11 @@ class AppLocalizationsMn extends AppLocalizations {
       'Энд хадгалахын тулд цуглуулга хавчуургалаарай';
 
   @override
-  String get notification_settings => 'Мэдэгдлийн тохиргоо';
-
-  @override
   String get notification_allow_title => 'Мэдэгдэл зөвшөөрөх';
-
-  @override
-  String get notification_allow_subtitle_enabled =>
-      'Энэ аппликейшнд мэдэгдэл идэвхжсэн байна';
 
   @override
   String get notification_allow_subtitle_disabled =>
       'Зөвшөөрөл шаардлагатай. Тохиргоо хэсэгт олгохын тулд дарна уу';
-
-  @override
-  String get notification_allow_subtitle_paused =>
-      'Сануулга түр зогссон. Үргэлжлүүлэхийн тулд дарна уу';
-
-  @override
-  String get notification_routine_title => 'Төлөвлөгөөний сануулга';
-
-  @override
-  String get notification_routine_subtitle_enabled =>
-      'Таны төлөвлөгөөний өдөр тутмын сануулга';
-
-  @override
-  String get notification_routine_subtitle_disabled =>
-      'Төлөвлөгөөний сануулга түр зогссон. Үргэлжлүүлэхийн тулд дарна уу';
-
-  @override
-  String get notification_battery_title => 'Дэвсгэр сануулга';
-
-  @override
-  String get notification_battery_subtitle_enabled =>
-      'Апп хаалттай байсан ч таны сануулга цагтаа илгээгдэнэ';
-
-  @override
-  String get notification_battery_subtitle_disabled =>
-      'Зарим Android утас батерей хэмнэхийн тулд дэвсгэр аппуудыг түр зогсоодог нь таны сануулгыг хойшлуулах буюу алгасах магадлалтай. Үргэлжлүүлэн ажиллуулахын тулд дарна уу.';
-
-  @override
-  String get notification_recitation_title => 'Уншлагын сануулга';
-
-  @override
-  String get notification_recitation_subtitle_enabled =>
-      'Таны уншлагын өдөр тутмын сануулга';
-
-  @override
-  String get notification_recitation_subtitle_disabled =>
-      'Уншлагын сануулга түр зогссон. Үргэлжлүүлэхийн тулд дарна уу';
-
-  @override
-  String get notification_practice_title => 'Эрхи тоолох сануулга';
-
-  @override
-  String get notification_practice_subtitle_enabled =>
-      'Таны эрхиний дадлагын өдөр тутмын сануулга';
-
-  @override
-  String get notification_practice_subtitle_disabled =>
-      'Эрхийн сануулга түр зогссон. Үргэлжлүүлэхийн тулд дарна уу';
-
-  @override
-  String get notification_timer_title => 'Таймерын сануулга';
-
-  @override
-  String get notification_timer_subtitle_enabled =>
-      'Таны цаг хэмжигчийн өдөр тутмын сануулга';
-
-  @override
-  String get notification_timer_subtitle_disabled =>
-      'Цаг хэмжигчийн сануулга түр зогссон. Үргэлжлүүлэхийн тулд дарна уу';
-
-  @override
-  String get notification_battery_info_title => 'Дэвсгэр сануулгын тухай';
-
-  @override
-  String get notification_battery_info_body =>
-      'Зарим Android утас батерей хэмнэхийн тулд дэвсгэр аппуудыг түр зогсоодог нь таны товлосон сануулгыг хойшлуулах буюу цуцлах магадлалтай. Энэ аппыг чөлөөлснөөр таны сануулга цагтаа найдвартай ирнэ.';
 
   @override
   String get notification_snack_permission_denied =>
@@ -619,8 +546,43 @@ class AppLocalizationsMn extends AppLocalizations {
       'Тохиргоо хэсэгт сэрүүлэг ба сануулгыг унтраана уу';
 
   @override
-  String get notification_snack_battery_reenable =>
-      'Тохиргоо → Батерей хэсэгт батерей оновчлолыг сэргээнэ үү';
+  String get notification_allow_subtitle_on =>
+      'WeBuddhist-ийн сануулга болон шинэчлэлтүүд';
+
+  @override
+  String get notification_allow_subtitle_off =>
+      'Унтраалттай. Сануулга, шинэчлэлт авахын тулд асаана уу.';
+
+  @override
+  String get notification_section_practice => 'Дадлага';
+
+  @override
+  String get notification_section_connect => 'Холбогдох';
+
+  @override
+  String get notification_row_plans => 'Төлөвлөгөө';
+
+  @override
+  String get notification_row_chants => 'Уншлага';
+
+  @override
+  String get notification_row_mala => 'Эрхи ба хуримтлал';
+
+  @override
+  String get notification_row_timer => 'Таймер';
+
+  @override
+  String get notification_row_group_posts => 'Орон зайн нийтлэл';
+
+  @override
+  String get notification_row_group_chats => 'Орон зайн чат';
+
+  @override
+  String get notification_row_my_prayer_requests => 'Миний залбирлын хүсэлтүүд';
+
+  @override
+  String get notification_row_others_prayer_requests =>
+      'Бусдын залбирлын хүсэлтүүд';
 
   @override
   String get profile_default_bio => 'WeBuddhist-д тавтай морил';
@@ -1827,9 +1789,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get follow => 'Дагах';
 
   @override
-  String get following => 'Дагаж байна';
-
-  @override
   String get calendar_title => 'Хуанли';
 
   @override
@@ -1877,9 +1836,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get join => 'Нэгдэх';
-
-  @override
-  String get joined => 'Нэгдсэн';
 
   @override
   String get group_member => 'гишүүн';
@@ -1943,17 +1899,18 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'Чатын мэдэгдэл асаалттай';
 
   @override
-  String get group_leave => 'Гарах';
-
-  @override
-  String get group_leave_confirm_title => 'Гарах уу?';
-
-  @override
   String get group_leave_confirm_message =>
       'Та энэ орон зайгаас зурвас, мэдээ авахаа болино';
 
   @override
-  String get group_leave_failed => 'Гарч чадсангүй. Дахин оролдоно уу';
+  String get group_leave_space => 'Орон зайнаас гарах';
+
+  @override
+  String get group_leave_space_confirm_title => 'Энэ орон зайнаас гарах уу?';
+
+  @override
+  String get group_leave_space_failed =>
+      'Орон зайнаас гарч чадсангүй. Дахин оролдоно уу';
 
   @override
   String get group_request_to_join => 'Нэгдэх хүсэлт';

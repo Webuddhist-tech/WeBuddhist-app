@@ -24,6 +24,8 @@ import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_bootstrap.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
+import 'package:flutter_pecha/features/notifications/presentation/providers/notification_provider.dart'
+    show notificationProvider;
 import 'package:flutter_pecha/features/push_notifications/application/push_notification_service.dart';
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_local_datasource.dart';
@@ -303,6 +305,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       ref
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.appResume);
+      // Every notification switch greys out on the OS permission, so a
+      // change made in system settings must show wherever the user returns.
+      unawaited(ref.read(notificationProvider.notifier).refreshStatus());
       unawaited(
         ref.read(timersDomainRepositoryProvider).flushPendingTimerStops(),
       );

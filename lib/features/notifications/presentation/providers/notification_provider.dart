@@ -37,6 +37,11 @@ class NotificationState {
     this.isBatteryOptimizationExempt = true,
   });
 
+  /// Whether anything can reach the user at all: the app's master switch is
+  /// on and the OS permission is granted. Every notification switch in the
+  /// app greys out while this is false; their saved values are untouched.
+  bool get notificationsOn => appMasterEnabled && hasSystemPermission;
+
   NotificationState copyWith({
     bool? isLoading,
     bool? appMasterEnabled,
