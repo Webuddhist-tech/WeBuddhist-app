@@ -138,6 +138,10 @@ class _CachedNetworkImageWidgetState extends State<CachedNetworkImageWidget> {
       precacheImage(
         CachedNetworkImageProvider(url, cacheKey: _stableCacheKey(url)),
         context,
+        // Without onError a failed precache is reported as an unhandled
+        // framework error. The CachedNetworkImage built below already shows
+        // the error widget for the same failure, so there is nothing to do.
+        onError: ignoreImageLoadError,
       );
     });
   }

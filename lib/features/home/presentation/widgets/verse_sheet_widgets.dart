@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Drag handle, back button and title shared by the verse bottom sheets.
 class VerseSheetHeader extends StatelessWidget {
@@ -88,6 +89,7 @@ class VerseUserAvatar extends StatelessWidget {
       backgroundColor:
           isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
       backgroundImage: hasAvatar ? avatarUrl!.cachedNetworkImageProvider : null,
+      onBackgroundImageError: hasAvatar ? ignoreImageLoadError : null,
       child:
           hasAvatar
               ? null

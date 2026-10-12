@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_ma
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class SeriesInfoScreen extends ConsumerWidget {
   final String seriesId;
@@ -164,6 +165,10 @@ class SeriesInfoScreen extends ConsumerWidget {
               backgroundImage:
                   group.avatarUrl != null && group.avatarUrl!.isNotEmpty
                       ? NetworkImage(group.avatarUrl!)
+                      : null,
+              onBackgroundImageError:
+                  group.avatarUrl != null && group.avatarUrl!.isNotEmpty
+                      ? ignoreImageLoadError
                       : null,
               child:
                   (group.avatarUrl == null || group.avatarUrl!.isEmpty)

@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_relative_time.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Shared author header for Connect feed cards (group avatar, name, time).
 class ConnectFeedCardHeader extends StatelessWidget {
@@ -57,6 +58,10 @@ class ConnectFeedCardHeader extends StatelessWidget {
       backgroundImage:
           groupAvatarUrl != null && groupAvatarUrl!.isNotEmpty
               ? groupAvatarUrl!.cachedNetworkImageProvider
+              : null,
+      onBackgroundImageError:
+          groupAvatarUrl != null && groupAvatarUrl!.isNotEmpty
+              ? ignoreImageLoadError
               : null,
       child:
           groupAvatarUrl == null || groupAvatarUrl!.isEmpty

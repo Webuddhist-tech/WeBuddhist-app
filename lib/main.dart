@@ -13,6 +13,7 @@ import 'package:flutter_pecha/core/config/app_feature_flags.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/deep_linking/app_links_deep_link_service.dart';
+import 'package:flutter_pecha/core/error/crash_reporting/crash_reporter.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/l10n/l10n.dart';
 import 'package:flutter_pecha/core/services/airbridge_deep_link_service.dart';
@@ -80,13 +81,9 @@ void main() async {
     _logger.warning('Error initializing Firebase: $e');
   }
   if (firebaseReady) {
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-    // Uncaught async errors (e.g. in auth restore) are otherwise invisible.
-    WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
-      _logger.error('Uncaught async error', error, stack);
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
-      return true;
-    };
+    // Classifies each unhandled framework and async error before reporting,
+    // so offline and image-load failures are not recorded as crashes.
+    CrashReporter.forCrashlytics(FirebaseCrashlytics.instance).install();
 
     // Register the FCM background/terminated-state handler. Must be done before
     // runApp and references a top-level function so it survives AOT and runs in
