@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/practice_recitations_paginated_provider.dart';
@@ -89,7 +90,7 @@ class _RecitationsSearchScreenState
                 children: [
                   IconButton(
                     onPressed: () => _onBack(languageCode),
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    icon: const Icon(AppAssets.arrowLeft),
                   ),
                   Expanded(
                     child: TextField(
