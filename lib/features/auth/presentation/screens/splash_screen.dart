@@ -17,6 +17,9 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   static const _introDuration = Duration(milliseconds: 900);
   static const _pulseDuration = Duration(milliseconds: 1600);
+  // Keep in sync with the native launch screens (96dp / 96pt logo).
+  static const double _logoSize = 96;
+  static const double _taglineGap = 24;
 
   late final int _taglineIndex = randomSplashTaglineIndex();
 
@@ -29,31 +32,9 @@ class _SplashScreenState extends State<SplashScreen>
     duration: _pulseDuration,
   );
 
-  late final Animation<double> _logoOpacity = CurvedAnimation(
-    parent: _intro,
-    curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-  );
-  late final Animation<double> _logoScale = Tween<double>(
-    begin: 0.8,
-    end: 1.0,
-  ).animate(
-    CurvedAnimation(
-      parent: _intro,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
-    ),
-  );
   late final Animation<double> _taglineOpacity = CurvedAnimation(
     parent: _intro,
     curve: const Interval(0.45, 1.0, curve: Curves.easeOut),
-  );
-  late final Animation<Offset> _taglineOffset = Tween<Offset>(
-    begin: const Offset(0, 0.4),
-    end: Offset.zero,
-  ).animate(
-    CurvedAnimation(
-      parent: _intro,
-      curve: const Interval(0.45, 1.0, curve: Curves.easeOutCubic),
-    ),
   );
   late final Animation<double> _pulseScale = Tween<double>(
     begin: 1.0,
@@ -78,30 +59,37 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FadeTransition(
-                  opacity: _logoOpacity,
-                  child: ScaleTransition(
-                    scale: _logoScale,
-                    child: ScaleTransition(
-                      scale: _pulseScale,
-                      child: Image.asset(AppAssets.weBuddhistLogo, height: 96),
-                    ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Logo stays at the window centre where the native launch screen
+          // drew it, so only the tagline animates in below.
+          final taglineTop = (constraints.maxHeight / 2 +
+                  _logoSize / 2 +
+                  _taglineGap)
+              .clamp(0.0, constraints.maxHeight);
+          return Stack(
+            children: [
+              Center(
+                child: ScaleTransition(
+                  scale: _pulseScale,
+                  child: Image.asset(
+                    AppAssets.weBuddhistLogo,
+                    height: _logoSize,
                   ),
                 ),
-                const SizedBox(height: 24),
-                FadeTransition(
+              ),
+              Positioned(
+                top: taglineTop,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: FadeTransition(
                   opacity: _taglineOpacity,
-                  child: SlideTransition(
-                    position: _taglineOffset,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(32, 0, 32, bottomInset + 24),
                     child: Text(
                       widget.tagline ??
                           splashTaglines[_taglineIndex](context.l10n),
@@ -114,10 +102,10 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
