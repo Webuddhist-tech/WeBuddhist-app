@@ -530,85 +530,11 @@ class AppLocalizationsHi extends AppLocalizations {
       'इसे यहाँ सहेजने के लिए किसी संग्रह को बुकमार्क करें';
 
   @override
-  String get notification_settings => 'नोटिफिकेशन सेटिंग्स';
-
-  @override
   String get notification_allow_title => 'नोटिफिकेशन की अनुमति दें';
-
-  @override
-  String get notification_allow_subtitle_enabled =>
-      'इस ऐप के लिए नोटिफिकेशन चालू हैं';
 
   @override
   String get notification_allow_subtitle_disabled =>
       'अनुमति आवश्यक है। अनुमति देने के लिए सेटिंग्स में टैप करें';
-
-  @override
-  String get notification_allow_subtitle_paused =>
-      'रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
-
-  @override
-  String get notification_routine_title => 'योजना रिमाइंडर';
-
-  @override
-  String get notification_routine_subtitle_enabled =>
-      'आपकी योजनाओं के लिए दैनिक रिमाइंडर';
-
-  @override
-  String get notification_routine_subtitle_disabled =>
-      'योजना रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
-
-  @override
-  String get notification_battery_title => 'बैकग्राउंड रिमाइंडर';
-
-  @override
-  String get notification_battery_subtitle_enabled =>
-      'आपके रिमाइंडर समय पर भेजे जाते हैं, भले ही ऐप बंद हो';
-
-  @override
-  String get notification_battery_subtitle_disabled =>
-      'कुछ Android फ़ोन बैटरी बचाने के लिए बैकग्राउंड ऐप्स रोक देते हैं, जिससे आपके रिमाइंडर देर से आ सकते हैं या छूट सकते हैं। इन्हें चालू रखने के लिए टैप करें।';
-
-  @override
-  String get notification_recitation_title => 'पाठ रिमाइंडर';
-
-  @override
-  String get notification_recitation_subtitle_enabled =>
-      'आपके पाठ के लिए दैनिक रिमाइंडर';
-
-  @override
-  String get notification_recitation_subtitle_disabled =>
-      'पाठ रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
-
-  @override
-  String get notification_practice_title => 'माला रिमाइंडर';
-
-  @override
-  String get notification_practice_subtitle_enabled =>
-      'आपके माला अभ्यास के लिए दैनिक रिमाइंडर';
-
-  @override
-  String get notification_practice_subtitle_disabled =>
-      'माला रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
-
-  @override
-  String get notification_timer_title => 'टाइमर रिमाइंडर';
-
-  @override
-  String get notification_timer_subtitle_enabled =>
-      'आपके टाइमर के लिए दैनिक रिमाइंडर';
-
-  @override
-  String get notification_timer_subtitle_disabled =>
-      'टाइमर रिमाइंडर रुके हुए हैं। फिर से शुरू करने के लिए टैप करें';
-
-  @override
-  String get notification_battery_info_title =>
-      'बैकग्राउंड रिमाइंडर के बारे में';
-
-  @override
-  String get notification_battery_info_body =>
-      'कुछ Android फ़ोन बैटरी बचाने के लिए बैकग्राउंड ऐप्स रोक देते हैं, जिससे आपके निर्धारित रिमाइंडर देर से आ सकते हैं या रद्द हो सकते हैं। ऐप को छूट देने से आपके रिमाइंडर भरोसेमंद रूप से समय पर रहते हैं।';
 
   @override
   String get notification_snack_permission_denied =>
@@ -619,8 +545,43 @@ class AppLocalizationsHi extends AppLocalizations {
       'सेटिंग्स में अलार्म और रिमाइंडर बंद करें';
 
   @override
-  String get notification_snack_battery_reenable =>
-      'सेटिंग्स → बैटरी में बैटरी ऑप्टिमाइज़ेशन पुनः चालू करें';
+  String get notification_allow_subtitle_on =>
+      'WeBuddhist से रिमाइंडर और अपडेट';
+
+  @override
+  String get notification_allow_subtitle_off =>
+      'बंद है। रिमाइंडर और अपडेट पाने के लिए चालू करें।';
+
+  @override
+  String get notification_section_practice => 'अभ्यास';
+
+  @override
+  String get notification_section_connect => 'कनेक्ट';
+
+  @override
+  String get notification_row_plans => 'योजनाएँ';
+
+  @override
+  String get notification_row_chants => 'पाठ';
+
+  @override
+  String get notification_row_mala => 'माला और संचय';
+
+  @override
+  String get notification_row_timer => 'टाइमर';
+
+  @override
+  String get notification_row_group_posts => 'स्पेस पोस्ट';
+
+  @override
+  String get notification_row_group_chats => 'स्पेस चैट';
+
+  @override
+  String get notification_row_my_prayer_requests => 'मेरे प्रार्थना अनुरोध';
+
+  @override
+  String get notification_row_others_prayer_requests =>
+      'दूसरों के प्रार्थना अनुरोध';
 
   @override
   String get profile_default_bio => 'WeBuddhist में आपका स्वागत है';
@@ -1822,9 +1783,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get follow => 'फ़ॉलो करें';
 
   @override
-  String get following => 'फ़ॉलो कर रहे हैं';
-
-  @override
   String get calendar_title => 'कैलेंडर';
 
   @override
@@ -1872,9 +1830,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get join => 'शामिल हों';
-
-  @override
-  String get joined => 'शामिल हो गए';
 
   @override
   String get group_member => 'सदस्य';
@@ -1937,17 +1892,18 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'चैट नोटिफिकेशन चालू हैं';
 
   @override
-  String get group_leave => 'छोड़ें';
-
-  @override
-  String get group_leave_confirm_title => 'छोड़ें?';
-
-  @override
   String get group_leave_confirm_message =>
       'आपको इस स्पेस से संदेश और अपडेट मिलने बंद हो जाएँगे';
 
   @override
-  String get group_leave_failed => 'छोड़ा नहीं जा सका। पुनः प्रयास करें';
+  String get group_leave_space => 'स्पेस छोड़ें';
+
+  @override
+  String get group_leave_space_confirm_title => 'यह स्पेस छोड़ें?';
+
+  @override
+  String get group_leave_space_failed =>
+      'स्पेस छोड़ा नहीं जा सका। पुनः प्रयास करें';
 
   @override
   String get group_request_to_join => 'शामिल होने का अनुरोध';

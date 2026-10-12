@@ -21,6 +21,7 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   );
   Failure? updateFailure;
   final List<({bool? chat, bool? content})> updates = [];
+  int getCalls = 0;
 
   /// When set, the read waits on it so a test can look at the loading state.
   Completer<void>? holdGet;
@@ -29,6 +30,7 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   @override
   Future<Either<Failure, GroupNotificationPreferences>>
   getGroupNotificationPreferences(String groupId) async {
+    getCalls++;
     final hold = holdGet;
     if (hold != null) await hold.future;
     final failure = getFailure;
@@ -51,18 +53,27 @@ class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   }
 }
 
-/// Pins the master switch without touching SharedPreferences or the OS.
+/// Pins the master switch and the OS permission without touching
+/// SharedPreferences or the OS.
 class _FakeNotificationNotifier extends NotificationNotifier {
-  final bool masterOn;
-
-  _FakeNotificationNotifier(Ref ref, {required this.masterOn})
-    : super(NotificationService(), ref) {
-    state = NotificationState(appMasterEnabled: masterOn);
+  _FakeNotificationNotifier(
+    Ref ref, {
+    required bool masterOn,
+    required bool permission,
+  }) : super(NotificationService(), ref) {
+    state = NotificationState(
+      appMasterEnabled: masterOn,
+      hasSystemPermission: permission,
+    );
   }
 
   @override
   Future<void> refreshStatus({bool initial = false}) async {}
 }
+
+/// The bundled English strings the sheet renders in these tests, so copy
+/// changes don't break the assertions.
+final _en = lookupAppLocalizations(const Locale('en'));
 
 const _profile = GroupProfile(
   id: 'grp-1',
@@ -70,36 +81,62 @@ const _profile = GroupProfile(
   isPublic: true,
 );
 
+const _page = GroupProfile(
+  id: 'page-1',
+  title: 'Lodhen Page',
+  isPublic: true,
+  groupType: GroupType.page,
+);
+
 const _followKey = GroupFollowKey(
   groupId: 'grp-1',
   groupType: GroupType.community,
 );
 
+List<Override> _overrides(
+  _FakeRepository repository, {
+  bool masterOn = true,
+  bool permission = true,
+}) {
+  return [
+    groupProfileRepositoryProvider.overrideWithValue(repository),
+    groupProfileProvider.overrideWith(
+      (ref, groupId) async => const Right(_profile),
+    ),
+    notificationProvider.overrideWith(
+      (ref) => _FakeNotificationNotifier(
+        ref,
+        masterOn: masterOn,
+        permission: permission,
+      ),
+    ),
+  ];
+}
+
 Future<void> _pump(
   WidgetTester tester, {
   required _FakeRepository repository,
   bool masterOn = true,
+  bool permission = true,
+  bool showNotificationSettings = true,
   // A held read keeps the spinners animating, so those tests pump one frame.
   bool settle = true,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        groupProfileRepositoryProvider.overrideWithValue(repository),
-        groupProfileProvider.overrideWith(
-          (ref, groupId) async => const Right(_profile),
-        ),
-        notificationProvider.overrideWith(
-          (ref) => _FakeNotificationNotifier(ref, masterOn: masterOn),
-        ),
-      ],
+      overrides: _overrides(
+        repository,
+        masterOn: masterOn,
+        permission: permission,
+      ),
       child: MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const Scaffold(
+        home: Scaffold(
           body: GroupNotificationSettingsDrawer(
             profile: _profile,
             followKey: _followKey,
+            showNotificationSettings: showNotificationSettings,
           ),
         ),
       ),
@@ -112,6 +149,34 @@ Future<void> _pump(
   }
 }
 
+/// Pumps an empty page and hands back its context, for tests that open the
+/// sheet the way the space page does.
+Future<BuildContext> _pumpPage(
+  WidgetTester tester, {
+  required _FakeRepository repository,
+  bool masterOn = true,
+}) async {
+  late BuildContext pageContext;
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: _overrides(repository, masterOn: masterOn),
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              pageContext = context;
+              return const SizedBox.expand();
+            },
+          ),
+        ),
+      ),
+    ),
+  );
+  return pageContext;
+}
+
 Switch _switchAfter(WidgetTester tester, String label) {
   final row = find.ancestor(of: find.text(label), matching: find.byType(Row));
   return tester.widget<Switch>(
@@ -120,6 +185,10 @@ Switch _switchAfter(WidgetTester tester, String label) {
 }
 
 void main() {
+  final chat = _en.group_notifications_chat;
+  final content = _en.group_notifications_content;
+  final leave = _en.group_leave_space;
+
   testWidgets('holds the switches back until the stored values arrive', (
     tester,
   ) async {
@@ -129,7 +198,7 @@ void main() {
     expect(find.byType(Switch), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNWidgets(2));
 
-    await tester.tap(find.text('Group chat'));
+    await tester.tap(find.text(chat));
     await tester.pump();
     expect(repository.updates, isEmpty);
 
@@ -137,8 +206,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(_switchAfter(tester, 'Group chat').value, isFalse);
-    expect(_switchAfter(tester, 'Group content').value, isTrue);
+    expect(_switchAfter(tester, chat).value, isFalse);
+    expect(_switchAfter(tester, content).value, isTrue);
   });
 
   testWidgets('a failed load shows an error with retry, not defaults', (
@@ -149,25 +218,25 @@ void main() {
     await _pump(tester, repository: repository);
 
     expect(find.byType(Switch), findsNothing);
-    expect(find.text("Couldn't load notification settings."), findsOneWidget);
-    expect(find.text('Leave group'), findsOneWidget);
+    expect(find.text(_en.group_notifications_load_failed), findsOneWidget);
+    expect(find.text(leave), findsOneWidget);
 
     repository.getFailure = null;
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text(_en.retry));
     await tester.pumpAndSettle();
 
-    expect(find.text("Couldn't load notification settings."), findsNothing);
-    expect(_switchAfter(tester, 'Group chat').value, isFalse);
-    expect(_switchAfter(tester, 'Group content').value, isTrue);
+    expect(find.text(_en.group_notifications_load_failed), findsNothing);
+    expect(_switchAfter(tester, chat).value, isFalse);
+    expect(_switchAfter(tester, content).value, isTrue);
   });
 
   testWidgets('shows both toggles from the stored values', (tester) async {
     await _pump(tester, repository: _FakeRepository());
 
-    expect(find.text('Notifications'), findsOneWidget);
-    expect(_switchAfter(tester, 'Group chat').value, isFalse);
-    expect(_switchAfter(tester, 'Group content').value, isTrue);
-    expect(find.text('Leave group'), findsOneWidget);
+    expect(find.text(_en.group_notifications_title), findsOneWidget);
+    expect(_switchAfter(tester, chat).value, isFalse);
+    expect(_switchAfter(tester, content).value, isTrue);
+    expect(find.text(leave), findsOneWidget);
   });
 
   testWidgets('tapping a row flips it and saves only that flag', (
@@ -176,11 +245,11 @@ void main() {
     final repository = _FakeRepository();
     await _pump(tester, repository: repository);
 
-    await tester.tap(find.text('Group chat'));
+    await tester.tap(find.text(chat));
     await tester.pumpAndSettle();
 
-    expect(_switchAfter(tester, 'Group chat').value, isTrue);
-    expect(_switchAfter(tester, 'Group content').value, isTrue);
+    expect(_switchAfter(tester, chat).value, isTrue);
+    expect(_switchAfter(tester, content).value, isTrue);
     expect(repository.updates, [(chat: true, content: null)]);
   });
 
@@ -189,14 +258,11 @@ void main() {
         _FakeRepository()..updateFailure = const NetworkFailure('offline');
     await _pump(tester, repository: repository);
 
-    await tester.tap(find.text('Group content'));
+    await tester.tap(find.text(content));
     await tester.pumpAndSettle();
 
-    expect(_switchAfter(tester, 'Group content').value, isTrue);
-    expect(
-      find.text("Couldn't update notification settings. Try again."),
-      findsOneWidget,
-    );
+    expect(_switchAfter(tester, content).value, isTrue);
+    expect(find.text(_en.group_notifications_update_failed), findsOneWidget);
   });
 
   testWidgets('master off greys out both toggles and offers the way to '
@@ -204,16 +270,27 @@ void main() {
     final repository = _FakeRepository();
     await _pump(tester, repository: repository, masterOn: false);
 
-    expect(_switchAfter(tester, 'Group chat').onChanged, isNull);
-    expect(_switchAfter(tester, 'Group content').onChanged, isNull);
-    expect(_switchAfter(tester, 'Group content').value, isFalse);
-    expect(
-      find.text('Notifications are turned off for the app.'),
-      findsOneWidget,
-    );
-    expect(find.text('Turn on'), findsOneWidget);
+    expect(_switchAfter(tester, chat).onChanged, isNull);
+    expect(_switchAfter(tester, content).onChanged, isNull);
+    expect(_switchAfter(tester, content).value, isFalse);
+    expect(find.text(_en.group_notifications_master_off), findsOneWidget);
+    expect(find.text(_en.group_notifications_open_settings), findsOneWidget);
 
-    await tester.tap(find.text('Group content'));
+    await tester.tap(find.text(content));
+    await tester.pumpAndSettle();
+    expect(repository.updates, isEmpty);
+  });
+
+  testWidgets('missing OS permission greys them out too, like the '
+      'notification settings screen', (tester) async {
+    final repository = _FakeRepository();
+    await _pump(tester, repository: repository, permission: false);
+
+    expect(_switchAfter(tester, chat).onChanged, isNull);
+    expect(_switchAfter(tester, content).value, isFalse);
+    expect(find.text(_en.group_notifications_master_off), findsOneWidget);
+
+    await tester.tap(find.text(chat));
     await tester.pumpAndSettle();
     expect(repository.updates, isEmpty);
   });
@@ -222,31 +299,10 @@ void main() {
     tester,
   ) async {
     GroupNotificationSheetResult? result;
-    late BuildContext pageContext;
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          groupProfileRepositoryProvider.overrideWithValue(_FakeRepository()),
-          groupProfileProvider.overrideWith(
-            (ref, groupId) async => const Right(_profile),
-          ),
-          notificationProvider.overrideWith(
-            (ref) => _FakeNotificationNotifier(ref, masterOn: false),
-          ),
-        ],
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                pageContext = context;
-                return const SizedBox.expand();
-              },
-            ),
-          ),
-        ),
-      ),
+    final pageContext = await _pumpPage(
+      tester,
+      repository: _FakeRepository(),
+      masterOn: false,
     );
 
     final opened = GroupNotificationSettingsDrawer.show(
@@ -256,7 +312,7 @@ void main() {
     ).then((value) => result = value);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Turn on'));
+    await tester.tap(find.text(_en.group_notifications_open_settings));
     await tester.pumpAndSettle();
     await opened;
 
@@ -265,24 +321,91 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('leave group asks first and cancel keeps the membership', (
+  testWidgets('leaving asks first and cancel keeps the membership', (
     tester,
   ) async {
     await _pump(tester, repository: _FakeRepository());
 
-    await tester.tap(find.text('Leave group'));
+    await tester.tap(find.text(leave));
     await tester.pumpAndSettle();
 
-    expect(find.text('Leave group?'), findsOneWidget);
-    expect(
-      find.text("You'll stop getting messages and updates from this group."),
-      findsOneWidget,
-    );
+    expect(find.text(_en.group_leave_space_confirm_title), findsOneWidget);
+    expect(find.text(_en.group_leave_confirm_message), findsOneWidget);
 
-    await tester.tap(find.text('Cancel'));
+    await tester.tap(find.text(_en.cancel));
     await tester.pumpAndSettle();
 
-    expect(find.text('Leave group?'), findsNothing);
+    expect(find.text(_en.group_leave_space_confirm_title), findsNothing);
     expect(find.byType(GroupNotificationSettingsDrawer), findsOneWidget);
+  });
+
+  group('without notification settings (a Page)', () {
+    testWidgets('shows only the leave row and never reads preferences', (
+      tester,
+    ) async {
+      final repository = _FakeRepository();
+      await _pump(
+        tester,
+        repository: repository,
+        showNotificationSettings: false,
+      );
+
+      expect(find.text(leave), findsOneWidget);
+      expect(find.text(_en.group_notifications_title), findsNothing);
+      expect(find.text(chat), findsNothing);
+      expect(find.byType(Switch), findsNothing);
+      expect(repository.getCalls, 0);
+    });
+
+    testWidgets('leaving still asks first', (tester) async {
+      await _pump(
+        tester,
+        repository: _FakeRepository(),
+        showNotificationSettings: false,
+      );
+
+      await tester.tap(find.text(leave));
+      await tester.pumpAndSettle();
+      expect(find.text(_en.group_leave_space_confirm_title), findsOneWidget);
+    });
+
+    testWidgets('openGroupMemberMenu opens a Page without switches', (
+      tester,
+    ) async {
+      final repository = _FakeRepository();
+      final pageContext = await _pumpPage(tester, repository: repository);
+
+      unawaited(
+        openGroupMemberMenu(
+          pageContext,
+          _page,
+          followKey: const GroupFollowKey(
+            groupId: 'page-1',
+            groupType: GroupType.page,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(leave), findsOneWidget);
+      expect(find.byType(Switch), findsNothing);
+      expect(repository.getCalls, 0);
+    });
+
+    testWidgets('openGroupMemberMenu opens a community with switches', (
+      tester,
+    ) async {
+      final repository = _FakeRepository();
+      final pageContext = await _pumpPage(tester, repository: repository);
+
+      unawaited(
+        openGroupMemberMenu(pageContext, _profile, followKey: _followKey),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(chat), findsOneWidget);
+      expect(find.text(leave), findsOneWidget);
+      expect(repository.getCalls, 1);
+    });
   });
 }

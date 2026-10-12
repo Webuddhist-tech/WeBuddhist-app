@@ -5,6 +5,8 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_notif
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/update_group_notification_preferences_usecase.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_notification_preferences_provider.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -351,6 +353,45 @@ void main() {
         (chat: true, content: null),
         (chat: null, content: false),
       ]);
+    });
+
+    test('a write queued when the sheet closes still reaches the backend, '
+        'then the provider lets go', () async {
+      final repo = _FakeRepository();
+      final container = ProviderContainer(
+        overrides: [groupProfileRepositoryProvider.overrideWithValue(repo)],
+      );
+      addTearDown(container.dispose);
+      final provider = groupNotificationPreferencesProvider('grp-1');
+      final sub = container.listen(provider, (_, _) {});
+      await _settle();
+
+      final notifier = container.read(provider.notifier);
+      final flip = notifier.setChat(true);
+      notifier.setChat(false);
+
+      // The sheet closes while the first PATCH is still out.
+      sub.close();
+      await _settle();
+      expect(container.exists(provider), isTrue);
+
+      repo.release(0);
+      await _settle();
+      expect(repo.updates, [
+        (chat: true, content: null),
+        (chat: false, content: null),
+      ], reason: 'the queued value is sent, not dropped');
+
+      repo.release(1);
+      expect(await flip, isTrue);
+      expect(repo.server.chat, isFalse);
+
+      await _settle();
+      expect(
+        container.exists(provider),
+        isFalse,
+        reason: 'nothing left to send and nobody listening',
+      );
     });
   });
 }

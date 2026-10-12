@@ -23,10 +23,10 @@ class GroupChatNotificationBell extends ConsumerWidget {
     final l10n = context.l10n;
     final provider = groupNotificationPreferencesProvider(groupId);
     final prefs = ref.watch(provider);
-    final masterOn = ref.watch(
-      notificationProvider.select((s) => s.appMasterEnabled),
+    final appOn = ref.watch(
+      notificationProvider.select((s) => s.notificationsOn),
     );
-    final bell = chatBellStateFor(prefs, masterOn: masterOn);
+    final bell = chatBellStateFor(prefs, appOn: appOn);
 
     // A reverted bell is the visible cue; the snackbar says why. Skipped while
     // the profile sheet sits over the chat, which reports the same failure.

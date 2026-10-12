@@ -83,6 +83,10 @@ class GroupNotificationPreferencesNotifier
   final GroupProfileRepositoryInterface _repository;
   final UpdateGroupNotificationPreferencesUseCase _update;
 
+  /// Called with true when the first write starts and with false once every
+  /// queued write has been sent, so the provider can stay alive in between.
+  final void Function(bool busy)? _onBusyChanged;
+
   /// Last value the backend confirmed per toggle, the revert target.
   GroupNotificationPreferences _persisted =
       GroupNotificationPreferences.defaults;
@@ -101,9 +105,11 @@ class GroupNotificationPreferencesNotifier
     required String groupId,
     required GroupProfileRepositoryInterface repository,
     required UpdateGroupNotificationPreferencesUseCase update,
+    void Function(bool busy)? onBusyChanged,
   }) : _groupId = groupId,
        _repository = repository,
        _update = update,
+       _onBusyChanged = onBusyChanged,
        super(
          const GroupNotificationPreferencesState(
            preferences: GroupNotificationPreferences.defaults,
@@ -165,6 +171,7 @@ class GroupNotificationPreferencesNotifier
     final running = _draining[toggle];
     if (running != null) return running.future;
     final completer = _draining[toggle] = Completer<bool>();
+    if (_draining.length == 1) _onBusyChanged?.call(true);
     unawaited(_drain(toggle, completer));
     return completer.future;
   }
@@ -222,6 +229,7 @@ class GroupNotificationPreferencesNotifier
     }
     _draining.remove(toggle);
     completer.complete(succeeded);
+    if (_draining.isEmpty) _onBusyChanged?.call(false);
   }
 }
 
@@ -234,15 +242,28 @@ final updateGroupNotificationPreferencesUseCaseProvider =
 
 /// Push toggles for [groupId]. Auto-disposed when the sheet closes, so the
 /// next open fetches fresh.
+///
+/// While a write is still queued the provider stays alive, so a toggle
+/// flipped just before the sheet closed still reaches the backend, and a
+/// sheet reopened meanwhile shows the same state instead of a stale read.
 final groupNotificationPreferencesProvider = StateNotifierProvider.autoDispose
     .family<
       GroupNotificationPreferencesNotifier,
       GroupNotificationPreferencesState,
       String
     >((ref, groupId) {
+      KeepAliveLink? keepAlive;
       return GroupNotificationPreferencesNotifier(
         groupId: groupId,
         repository: ref.watch(groupProfileRepositoryProvider),
         update: ref.watch(updateGroupNotificationPreferencesUseCaseProvider),
+        onBusyChanged: (busy) {
+          if (busy) {
+            keepAlive ??= ref.keepAlive();
+          } else {
+            keepAlive?.close();
+            keepAlive = null;
+          }
+        },
       );
     });

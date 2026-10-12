@@ -531,84 +531,11 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཕྱོགས་བསྡུས་ཞིག་འདིར་ཉར་བར་དེ་ལ་དཔེ་རྟགས་འགོད་རོགས།';
 
   @override
-  String get notification_settings => 'གསལ་བརྡའི་སྒྲིག་འགོད།';
-
-  @override
   String get notification_allow_title => 'གསར་བརྡ་གཏོང་ཆོག';
-
-  @override
-  String get notification_allow_subtitle_enabled =>
-      'མཉེན་ཆས་འདིའི་ནང་གསར་བརྡའི་སྒོ་ཕྱེས་འདུག';
 
   @override
   String get notification_allow_subtitle_disabled =>
       'ཆོག་མཆན་དགོས། སྒྲིག་འགོད་ནང་ཆོག་མཆན་སྤྲོད་པར་འདིར་ནོན།';
-
-  @override
-  String get notification_allow_subtitle_paused =>
-      'དྲན་སྐུལ་རྣམས་བཀག་འདུག མུ་མཐུད་དགོས་ན་འདིར་ནོན།';
-
-  @override
-  String get notification_routine_title => 'ཐུན་འཆར་དྲན་སྐུལ།';
-
-  @override
-  String get notification_routine_subtitle_enabled =>
-      'ཁྱེད་ཀྱི་ཐུན་འཆར་གྱི་ཉིན་རེའི་དྲན་སྐུལ།';
-
-  @override
-  String get notification_routine_subtitle_disabled =>
-      'ཐུན་འཆར་དྲན་སྐུལ་བཀག་འདུག མུ་མཐུད་དགོས་ན་འདིར་ནོན།';
-
-  @override
-  String get notification_battery_title => 'རྒྱབ་ལྗོངས་ཀྱི་དྲན་སྐུལ།';
-
-  @override
-  String get notification_battery_subtitle_enabled =>
-      'མཉེན་ཆས་ཁ་བརྒྱབ་ཡོད་ཀྱང་། ཁྱེད་རང་གི་དྲན་སྐུལ་རྣམས་དུས་ཐོག་ཏུ་གཏང་ཡོང་།';
-
-  @override
-  String get notification_battery_subtitle_disabled =>
-      'ཨན་ཊོ་ཁ་པར་ཁ་ཤས་ཀྱིས་གློག་རྫས་གྲོན་ཆུང་བྱ་ཆེད། མཉེན་ཆས་ཀྱི་རྒྱབ་ལྗོངས་པར་རིས་ངང་འཐེན་བྱེད་འགྲོ། དེའི་རྐྱེན་གྱིས་དྲན་སྐུལ་ཅོང་བརྡ་ཁག་ཀྱང་ཕྱིར་འགྱངས་པའམ་ཆད་འགྲོ་སྲིད་པས། མཉེན་ཆས་མུ་མཐུད་དུ་འཁོར་སྐྱོད་བྱེད་པར་འདིར་སྣུན།';
-
-  @override
-  String get notification_recitation_title => 'ཞལ་འདོན་དྲན་སྐུལ།';
-
-  @override
-  String get notification_recitation_subtitle_enabled =>
-      'ཁྱེད་ཀྱི་ཞལ་འདོན་གྱི་ཉིན་རེའི་དྲན་སྐུལ།';
-
-  @override
-  String get notification_recitation_subtitle_disabled =>
-      'ཁ་འདོན་དྲན་སྐུལ་བཀག་འདུག མུ་མཐུད་དགོས་ན་འདིར་ནོན།';
-
-  @override
-  String get notification_practice_title => 'ཕྲེང་བའི་ཉམས་ལེན་དྲན་སྐུལ།';
-
-  @override
-  String get notification_practice_subtitle_enabled =>
-      'ཕྲེང་བའི་ཉམས་ལེན་གྱི་ཉིན་རེའི་དྲན་སྐུལ།';
-
-  @override
-  String get notification_practice_subtitle_disabled =>
-      'ཕྲེང་བའི་དྲན་སྐུལ་བཀག་འདུག མུ་མཐུད་དགོས་ན་འདིར་ནོན།';
-
-  @override
-  String get notification_timer_title => 'དུས་འཛིན་དྲན་སྐུལ།';
-
-  @override
-  String get notification_timer_subtitle_enabled =>
-      'ཁྱེད་ཀྱི་དུས་འཛིན་གྱི་ཉིན་རེའི་དྲན་སྐུལ།';
-
-  @override
-  String get notification_timer_subtitle_disabled =>
-      'དུས་འཛིན་དྲན་སྐུལ་བཀག་འདུག མུ་མཐུད་དགོས་ན་འདིར་ནོན།';
-
-  @override
-  String get notification_battery_info_title => 'རྒྱབ་ལྗོངས་དྲན་སྐུལ་གྱི་སྐོར།';
-
-  @override
-  String get notification_battery_info_body =>
-      'Android ཁ་པར་འགའ་ཤས་ཀྱིས་གློག་ཁུངས་ཉར་ཚགས་སླད་རྒྱབ་ལྗོངས་ཀྱི་མཉེན་ཆས་མཚམས་འཇོག་བྱེད་པས། ཁྱེད་ཀྱི་འཆར་ཅན་དྲན་སྐུལ་ཕྱིར་འགྱངས་སམ་འཕྲོ་བརླག་ཏུ་འགྲོ་སྲིད། མཉེན་ཆས་འདི་ལ་དམིགས་བསལ་གནང་ན་དྲན་སྐུལ་རྣམས་དུས་ཐོག་ཏུ་ཡིད་བརྟན་ཐུབ་པར་ཡོང་ངེས།';
 
   @override
   String get notification_snack_permission_denied =>
@@ -619,8 +546,44 @@ class AppLocalizationsBo extends AppLocalizations {
       'སྒྲིག་འགོད་ནང་ནས་ཅོང་བརྡ་ & དྲན་སྐུལ་སྒོ་རྒྱོབས།';
 
   @override
-  String get notification_snack_battery_reenable =>
-      'སྒྲིག་འགོད → གློག་རྫས་ནང་ནས་གློག་རྫས་གྲོན་ཆུང་གི་ནུས་པ་སླར་གསོ་གནང་རོགས།';
+  String get notification_allow_subtitle_on =>
+      'WeBuddhist ནས་དྲན་སྐུལ་དང་གསར་འགྱུར།';
+
+  @override
+  String get notification_allow_subtitle_off =>
+      'བཀག་ཡོད། དྲན་སྐུལ་དང་གསར་འགྱུར་ཐོབ་པར་སྒོ་ཕྱེ་རོགས།';
+
+  @override
+  String get notification_section_practice => 'ཉམས་ལེན།';
+
+  @override
+  String get notification_section_connect => 'མཉམ་ཞུགས།';
+
+  @override
+  String get notification_row_plans => 'ཐུན་འཆར།';
+
+  @override
+  String get notification_row_chants => 'ཞལ་འདོན།';
+
+  @override
+  String get notification_row_mala => 'ཕྲེང་བ་དང་བསགས་གྲངས།';
+
+  @override
+  String get notification_row_timer => 'དུས་འཛིན།';
+
+  @override
+  String get notification_row_group_posts => 'ཚོགས་པའི་སྤེལ་བ།';
+
+  @override
+  String get notification_row_group_chats => 'ཚོགས་པའི་གླེང་མོལ།';
+
+  @override
+  String get notification_row_my_prayer_requests =>
+      'ངའི་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།';
+
+  @override
+  String get notification_row_others_prayer_requests =>
+      'གཞན་གྱི་ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་བ།';
 
   @override
   String get profile_default_bio => 'WeBuddhist ལ་ཕེབས་པར་དགའ་བསུ་ཞུ།';
@@ -1828,9 +1791,6 @@ class AppLocalizationsBo extends AppLocalizations {
   String get follow => 'རྗེས་འབྲང་བྱོས།';
 
   @override
-  String get following => 'རྗེས་འབྲང་ཟིན།';
-
-  @override
   String get calendar_title => 'ལོ་ཐོ།';
 
   @override
@@ -1878,9 +1838,6 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get join => 'ཞུགས།';
-
-  @override
-  String get joined => 'ཞུགས་ཟིན།';
 
   @override
   String get group_member => 'ཚོགས་མི།';
@@ -1947,18 +1904,18 @@ class AppLocalizationsBo extends AppLocalizations {
       'གླེང་མོལ་གསར་བརྡའི་སྒྲ་སྒོ་ཕྱེས་ཡོད།';
 
   @override
-  String get group_leave => 'ཕྱིར་ཐོན།';
-
-  @override
-  String get group_leave_confirm_title => 'ཕྱིར་ཐོན་ནམ།';
-
-  @override
   String get group_leave_confirm_message =>
       'ཚོགས་པ་འདི་ནས་འཕྲིན་ཡིག་དང་གསར་འགྱུར་ཡོང་མི་སྲིད།';
 
   @override
-  String get group_leave_failed =>
-      'ཕྱིར་ཐོན་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
+  String get group_leave_space => 'ཚོགས་པ་ནས་ཕྱིར་ཐོན།';
+
+  @override
+  String get group_leave_space_confirm_title => 'ཚོགས་པ་འདི་ནས་ཕྱིར་ཐོན་ནམ།';
+
+  @override
+  String get group_leave_space_failed =>
+      'ཚོགས་པ་ནས་ཕྱིར་ཐོན་ཐུབ་མ་སོང་། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།';
 
   @override
   String get group_request_to_join => 'མཉམ་ཞུགས་རེ་ཞུ།';

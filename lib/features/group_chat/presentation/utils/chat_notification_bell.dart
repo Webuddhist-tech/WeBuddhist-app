@@ -8,8 +8,9 @@ enum ChatBellState {
   /// The stored value could not be read: plain bell, a tap reads it again.
   unavailable,
 
-  /// The app's master switch is off, so nothing is delivered whatever the
-  /// group setting says: slashed bell, a tap explains and offers the way on.
+  /// The app's master switch is off or the OS permission is missing, so
+  /// nothing is delivered whatever the group setting says: slashed bell, a
+  /// tap explains and offers the way on.
   appOff,
 
   /// Chat pushes on for this group: plain bell, a tap mutes.
@@ -19,14 +20,15 @@ enum ChatBellState {
   off,
 }
 
-/// Resolves the bell from the group's push preferences and the app's master
-/// switch. The master switch wins, matching the profile sheet, which greys its
-/// toggles out while master is off.
+/// Resolves the bell from the group's push preferences and whether the app
+/// can deliver at all ([appOn], `NotificationState.notificationsOn`). The app
+/// wins, matching the profile sheet, which greys its toggles out on the same
+/// rule.
 ChatBellState chatBellStateFor(
   GroupNotificationPreferencesState prefs, {
-  required bool masterOn,
+  required bool appOn,
 }) {
-  if (!masterOn) return ChatBellState.appOff;
+  if (!appOn) return ChatBellState.appOff;
   if (prefs.loadFailure != null) return ChatBellState.unavailable;
   if (prefs.isLoading) return ChatBellState.loading;
   return prefs.preferences.chat ? ChatBellState.on : ChatBellState.off;
