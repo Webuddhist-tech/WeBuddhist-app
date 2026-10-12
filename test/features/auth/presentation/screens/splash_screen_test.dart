@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations_en.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_taglines.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,9 +61,33 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('does not overflow in a short viewport with large text', (
+  testWidgets('follows the phone brightness, not the app theme', (
     tester,
   ) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+        themeMode: ThemeMode.light,
+        home: const SplashScreen(tagline: 'We Buddhists learn daily'),
+      ),
+    );
+
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, AppColors.backgroundDark);
+    final text = tester.widget<Text>(find.text('We Buddhists learn daily'));
+    expect(text.style?.color, AppColors.textPrimaryDark);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('shows a full tagline line in a short viewport with large text', (
+    tester,
+  ) async {
+    const tagline =
+        'We Buddhists know that things are our own projections, not the way they look.';
     tester.view.physicalSize = const Size(320, 200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -70,10 +96,7 @@ void main() {
       const MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(3)),
-          child: SplashScreen(
-            tagline:
-                'We Buddhists know that things are our own projections, not the way they look.',
-          ),
+          child: SplashScreen(tagline: tagline),
         ),
       ),
     );
@@ -81,5 +104,14 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(SingleChildScrollView), findsOneWidget);
+
+    await tester.ensureVisible(find.text(tagline));
+    await tester.pump();
+    final rect = tester.getRect(find.text(tagline));
+    final lineHeight =
+        tester.renderObject<RenderParagraph>(find.text(tagline))
+            .preferredLineHeight;
+    expect(rect.top, greaterThanOrEqualTo(0));
+    expect(rect.top + lineHeight, lessThanOrEqualTo(200));
   });
 }
