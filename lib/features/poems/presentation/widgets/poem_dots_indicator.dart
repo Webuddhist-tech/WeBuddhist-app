@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/scroll_controller_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
 /// Centered pill-style page indicator — active page is a wide capsule, inactive
@@ -38,6 +41,10 @@ class PoemDotsIndicator extends StatefulWidget {
 
 class _PoemDotsIndicatorState extends State<PoemDotsIndicator> {
   ScrollController? _scrollController;
+
+  /// Set when a scroll to the current dot was requested before the dots
+  /// scroll view had been laid out. Cleared by [_handleScrollMetrics].
+  bool _pendingScroll = false;
 
   @override
   void initState() {
@@ -79,7 +86,15 @@ class _PoemDotsIndicatorState extends State<PoemDotsIndicator> {
 
   void _scrollToCurrent() {
     final controller = _scrollController;
-    if (controller == null || !controller.hasClients) return;
+    if (!mounted || controller == null || widget.count <= 1) return;
+    if (!controller.hasLaidOutPosition) {
+      // The dots can be built without being laid out in the same frame, for
+      // example while their screen is still hidden. Their sizes do not exist
+      // yet, so wait for the first layout instead of reading them.
+      _pendingScroll = true;
+      return;
+    }
+    _pendingScroll = false;
 
     final viewportWidth = controller.position.viewportDimension;
     if (viewportWidth <= 0) return;
@@ -95,13 +110,25 @@ class _PoemDotsIndicatorState extends State<PoemDotsIndicator> {
     );
   }
 
+  /// Runs a deferred scroll once the dots have been laid out. Flutter sends
+  /// this notification after a scroll view's first layout and whenever its
+  /// size changes.
+  bool _handleScrollMetrics(ScrollMetricsNotification notification) {
+    if (_pendingScroll && notification.depth == 0) _scrollToCurrent();
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.count <= 1) return const SizedBox.shrink();
 
-    final maxTrackWidth =
-        MediaQuery.sizeOf(context).width -
-        PoemDotsIndicator.screenHorizontalMargin * 2;
+    // Keeps the constraint valid when the window is narrower than the
+    // margins, e.g. a zero-size window, instead of going negative.
+    final maxTrackWidth = math.max(
+      0.0,
+      MediaQuery.sizeOf(context).width -
+          PoemDotsIndicator.screenHorizontalMargin * 2,
+    );
 
     return Center(
       child: ConstrainedBox(
@@ -116,33 +143,36 @@ class _PoemDotsIndicatorState extends State<PoemDotsIndicator> {
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: widget.borderColor ?? AppColors.grey100),
           ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(),
-            clipBehavior: Clip.hardEdge,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var index = 0; index < widget.count; index++) ...[
-                  if (index > 0) const SizedBox(width: PoemDotsIndicator.gap),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOut,
-                    width: _dotWidthAt(index),
-                    height: PoemDotsIndicator.dotSize,
-                    decoration: BoxDecoration(
-                      color:
-                          index == widget.currentIndex
-                              ? widget.activeColor
-                              : widget.inactiveColor,
-                      borderRadius: BorderRadius.circular(
-                        PoemDotsIndicator.dotSize / 2,
+          child: NotificationListener<ScrollMetricsNotification>(
+            onNotification: _handleScrollMetrics,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              clipBehavior: Clip.hardEdge,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var index = 0; index < widget.count; index++) ...[
+                    if (index > 0) const SizedBox(width: PoemDotsIndicator.gap),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      width: _dotWidthAt(index),
+                      height: PoemDotsIndicator.dotSize,
+                      decoration: BoxDecoration(
+                        color:
+                            index == widget.currentIndex
+                                ? widget.activeColor
+                                : widget.inactiveColor,
+                        borderRadius: BorderRadius.circular(
+                          PoemDotsIndicator.dotSize / 2,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
