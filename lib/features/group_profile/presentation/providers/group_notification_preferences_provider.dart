@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/update_group_notification_preferences_usecase.dart';
@@ -246,12 +247,19 @@ final updateGroupNotificationPreferencesUseCaseProvider =
 /// While a write is still queued the provider stays alive, so a toggle
 /// flipped just before the sheet closed still reaches the backend, and a
 /// sheet reopened meanwhile shows the same state instead of a stale read.
+///
+/// Re-created on login/logout. Sign-out flips the session before it clears
+/// credentials, so the write in flight finishes as the account that made it
+/// and anything queued behind it is dropped rather than sent as the next.
 final groupNotificationPreferencesProvider = StateNotifierProvider.autoDispose
     .family<
       GroupNotificationPreferencesNotifier,
       GroupNotificationPreferencesState,
       String
     >((ref, groupId) {
+      ref.watch(
+        authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
+      );
       KeepAliveLink? keepAlive;
       return GroupNotificationPreferencesNotifier(
         groupId: groupId,

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter_pecha/core/analytics/analytics_events.dart';
 import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/notifications/domain/entities/notification_preferences.dart';
 import 'package:flutter_pecha/features/notifications/domain/repositories/notification_preferences_repository.dart';
 import 'package:flutter_pecha/features/notifications/presentation/providers/notification_preferences_provider.dart';
@@ -52,6 +55,28 @@ class _FakeRepository implements NotificationPreferencesRepository {
 
   /// Lets the [index]th update call return.
   void release(int index) => holds[index].complete();
+}
+
+/// A signed-in session the test can end.
+class _Auth extends StateNotifier<AuthState> implements AuthNotifier {
+  _Auth() : super(const AuthState(isLoggedIn: true));
+
+  void signOut() => state = const AuthState(isLoggedIn: false);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+ProviderContainer _container(_FakeRepository repository, {_Auth? auth}) {
+  final container = ProviderContainer(
+    overrides: [
+      notificationPreferencesRepositoryProvider.overrideWithValue(repository),
+      analyticsServiceProvider.overrideWithValue(RecordingAnalyticsService()),
+      authProvider.overrideWith((ref) => auth ?? _Auth()),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container;
 }
 
 class _Harness {
@@ -338,6 +363,7 @@ void main() {
         overrides: [
           notificationPreferencesRepositoryProvider.overrideWithValue(repo),
           analyticsServiceProvider.overrideWithValue(analytics),
+          authProvider.overrideWith((ref) => _Auth()),
         ],
       );
       addTearDown(container.dispose);
@@ -364,15 +390,7 @@ void main() {
     test('a write queued when the sheet closes still reaches the backend, '
         'then the provider lets go', () async {
       final repo = _FakeRepository();
-      final container = ProviderContainer(
-        overrides: [
-          notificationPreferencesRepositoryProvider.overrideWithValue(repo),
-          analyticsServiceProvider.overrideWithValue(
-            RecordingAnalyticsService(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+      final container = _container(repo);
       final sub = container.listen(notificationPreferencesProvider, (_, _) {});
       await _settle();
 
@@ -402,6 +420,32 @@ void main() {
         isFalse,
         reason: 'nothing left to send and nobody listening',
       );
+    });
+
+    test('signing out drops a write still queued, so it never goes out '
+        'as the next account', () async {
+      final repo = _FakeRepository();
+      final auth = _Auth();
+      final container = _container(repo, auth: auth);
+      final sub = container.listen(notificationPreferencesProvider, (_, _) {});
+      await _settle();
+
+      final notifier = container.read(notificationPreferencesProvider.notifier);
+      final flip = notifier.set(_prayerRequest, true);
+      notifier.set(_prayerRequest, false);
+      sub.close();
+      await _settle();
+
+      // Sign-out starts while the first PATCH is still out.
+      auth.signOut();
+      repo.release(0);
+      await _settle();
+
+      expect(repo.updates, [
+        {_prayerRequest: true},
+      ], reason: 'the queued value is dropped');
+      expect(await flip, isFalse);
+      expect(container.exists(notificationPreferencesProvider), isFalse);
     });
 
     test('does not fire when quick taps end where they started', () async {

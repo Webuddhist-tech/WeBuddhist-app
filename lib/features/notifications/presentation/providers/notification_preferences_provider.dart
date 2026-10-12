@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/notifications/data/datasource/notification_preferences_remote_datasource.dart';
 import 'package:flutter_pecha/features/notifications/data/repositories/notification_preferences_repository_impl.dart';
 import 'package:flutter_pecha/features/notifications/domain/entities/notification_preferences.dart';
@@ -220,10 +221,15 @@ final notificationPreferencesRepositoryProvider =
 /// While a write is still queued the provider stays alive, so a switch
 /// flipped just before its sheet closed still reaches the backend, and a
 /// sheet reopened meanwhile shows the same state instead of a stale read.
+///
+/// Re-created on login/logout. Sign-out flips the session before it clears
+/// credentials, so the write in flight finishes as the account that made it
+/// and anything queued behind it is dropped rather than sent as the next.
 final notificationPreferencesProvider = StateNotifierProvider.autoDispose<
   NotificationPreferencesNotifier,
   NotificationPreferencesState
 >((ref) {
+  ref.watch(authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest));
   final analytics = ref.watch(notificationSettingsAnalyticsProvider);
   KeepAliveLink? keepAlive;
   return NotificationPreferencesNotifier(

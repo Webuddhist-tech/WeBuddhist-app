@@ -6,7 +6,6 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
-import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/notifications/domain/entities/notification_preferences.dart';
 import 'package:flutter_pecha/features/notifications/presentation/providers/notification_preferences_provider.dart';
@@ -27,35 +26,12 @@ class NotificationSettingsScreen extends ConsumerStatefulWidget {
       _NotificationSettingsScreenState();
 }
 
+/// OS permission and schedules are re-read on resume by the app-wide handler
+/// in `main.dart`, so this screen keeps no lifecycle observer of its own.
 class _NotificationSettingsScreenState
-    extends ConsumerState<NotificationSettingsScreen>
-    with WidgetsBindingObserver {
+    extends ConsumerState<NotificationSettingsScreen> {
   bool _isSchedulingTest = false;
   static const int _testNotifId = 9999;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      ref.read(notificationProvider.notifier).refreshStatus().then((_) {
-        // Engine short-circuits when master is off or permission is missing.
-        ref
-            .read(notificationSyncEngineProvider)
-            .sync(trigger: SyncTrigger.appResume);
-      });
-    }
-  }
 
   // ── Toggle handlers ────────────────────────────────────────────────────────
 

@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
@@ -71,6 +74,13 @@ class _FakeNotificationNotifier extends NotificationNotifier {
   Future<void> refreshStatus({bool initial = false}) async {}
 }
 
+class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
+  _SignedInAuth() : super(const AuthState(isLoggedIn: true));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// The bundled English strings the sheet renders in these tests, so copy
 /// changes don't break the assertions.
 final _en = lookupAppLocalizations(const Locale('en'));
@@ -110,6 +120,7 @@ List<Override> _overrides(
         permission: permission,
       ),
     ),
+    authProvider.overrideWith((ref) => _SignedInAuth()),
   ];
 }
 
