@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -53,10 +54,21 @@ class _TimerMoreBottomSheetState extends ConsumerState<TimerMoreBottomSheet> {
       final shareMessage = context.l10n.share_timer_message;
       final shareUrl = await resolveShareUrlRef(ref, longUrl);
       if (!mounted) return;
+      // Read before pop: this sheet is disposed once it closes.
+      final shareAnalytics = ref.read(shareAnalyticsProvider);
+      final timer = widget.timer;
       Navigator.of(context).pop();
-      await SharePlus.instance.share(
+      final result = await SharePlus.instance.share(
         ShareParams(text: '$shareMessage\n\n$shareUrl'),
       );
+      if (ShareAnalytics.wasUsed(result)) {
+        shareAnalytics.contentShared(
+          surface: ShareSurface.timer,
+          targetId: timer.id,
+          format: 'text',
+          groupId: timer.groupId,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }

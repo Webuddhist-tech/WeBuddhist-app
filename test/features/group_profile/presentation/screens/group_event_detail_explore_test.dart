@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_detail_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_live_player.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participants_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participation_dialog.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
@@ -33,6 +34,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../widgets/fake_in_app_webview_platform.dart';
 
@@ -403,5 +405,48 @@ void main() {
       tester.widget<ActivityList>(find.byType(ActivityList)).readOnly,
       isFalse,
     );
+  });
+
+  testWidgets('a past event keeps the view buttons, drops Join, and shows '
+      'the last day', (tester) async {
+    final end = DateTime.now().subtract(const Duration(days: 1));
+    final event = GroupEvent(
+      id: _eventId,
+      groupId: 'group-1',
+      title: 'Green Tara Puja',
+      startDate: end.subtract(const Duration(days: 20)),
+      endDate: end,
+      participantCount: 12,
+      isJoined: true,
+      seriesId: _seriesId,
+      series: const GroupEventPracticeRef(id: _seriesId, name: 'Green Tara'),
+      eventFormat: 'hybrid',
+    );
+
+    await _pumpEventPage(
+      tester,
+      event: event,
+      enrollments: [],
+      joins: [],
+    );
+
+    expect(find.text('Online view'), findsOneWidget);
+    expect(find.text('In-person view'), findsOneWidget);
+    expect(find.text('Join'), findsNothing);
+    expect(find.text('Practice now'), findsNothing);
+    expect(find.text('12 attended'), findsOneWidget);
+    expect(find.text('This event has ended'), findsOneWidget);
+    expect(
+      find.text(DateFormat('d MMM y', 'en').format(end)),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('12 attended'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(GroupEventParticipantsDrawer), findsOneWidget);
+    expect(find.text('12 attended'), findsNWidgets(2));
+    expect(find.text('12 participants'), findsNothing);
   });
 }

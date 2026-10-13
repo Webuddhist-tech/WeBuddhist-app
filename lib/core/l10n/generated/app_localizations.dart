@@ -1036,137 +1036,17 @@ abstract class AppLocalizations {
   /// **'Bookmark one to save it here'**
   String get bookmarks_empty_chant_collections_subtitle;
 
-  /// No description provided for @notification_settings.
-  ///
-  /// In en, this message translates to:
-  /// **'Notification settings'**
-  String get notification_settings;
-
   /// No description provided for @notification_allow_title.
   ///
   /// In en, this message translates to:
   /// **'Allow notifications'**
   String get notification_allow_title;
 
-  /// No description provided for @notification_allow_subtitle_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Notifications are enabled for this app'**
-  String get notification_allow_subtitle_enabled;
-
   /// No description provided for @notification_allow_subtitle_disabled.
   ///
   /// In en, this message translates to:
   /// **'Permission needed. Tap to grant in Settings'**
   String get notification_allow_subtitle_disabled;
-
-  /// No description provided for @notification_allow_subtitle_paused.
-  ///
-  /// In en, this message translates to:
-  /// **'Reminders are paused. Tap to resume'**
-  String get notification_allow_subtitle_paused;
-
-  /// No description provided for @notification_routine_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan reminders'**
-  String get notification_routine_title;
-
-  /// No description provided for @notification_routine_subtitle_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily reminders for your plans'**
-  String get notification_routine_subtitle_enabled;
-
-  /// No description provided for @notification_routine_subtitle_disabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan reminders are paused. Tap to resume'**
-  String get notification_routine_subtitle_disabled;
-
-  /// No description provided for @notification_battery_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Background reminders'**
-  String get notification_battery_title;
-
-  /// No description provided for @notification_battery_subtitle_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Your reminders are sent on time, even when the app is closed'**
-  String get notification_battery_subtitle_enabled;
-
-  /// No description provided for @notification_battery_subtitle_disabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Some Android phones pause background apps to save battery, which can delay or skip your reminders. Tap to keep yours running.'**
-  String get notification_battery_subtitle_disabled;
-
-  /// No description provided for @notification_recitation_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Chant reminders'**
-  String get notification_recitation_title;
-
-  /// No description provided for @notification_recitation_subtitle_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily reminders for your chants'**
-  String get notification_recitation_subtitle_enabled;
-
-  /// No description provided for @notification_recitation_subtitle_disabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Chant reminders are paused. Tap to resume'**
-  String get notification_recitation_subtitle_disabled;
-
-  /// No description provided for @notification_practice_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Mala reminders'**
-  String get notification_practice_title;
-
-  /// No description provided for @notification_practice_subtitle_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily reminders for your mala practice'**
-  String get notification_practice_subtitle_enabled;
-
-  /// No description provided for @notification_practice_subtitle_disabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Mala reminders are paused. Tap to resume'**
-  String get notification_practice_subtitle_disabled;
-
-  /// No description provided for @notification_timer_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Timer reminders'**
-  String get notification_timer_title;
-
-  /// No description provided for @notification_timer_subtitle_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Daily reminders for your timers'**
-  String get notification_timer_subtitle_enabled;
-
-  /// No description provided for @notification_timer_subtitle_disabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Timer reminders are paused. Tap to resume'**
-  String get notification_timer_subtitle_disabled;
-
-  /// No description provided for @notification_battery_info_title.
-  ///
-  /// In en, this message translates to:
-  /// **'About background reminders'**
-  String get notification_battery_info_title;
-
-  /// No description provided for @notification_battery_info_body.
-  ///
-  /// In en, this message translates to:
-  /// **'Some Android phones pause background apps to save battery, which can delay or cancel your scheduled reminders. Exempting the app keeps your reminders reliably on time.'**
-  String get notification_battery_info_body;
 
   /// No description provided for @notification_snack_permission_denied.
   ///
@@ -1180,11 +1060,77 @@ abstract class AppLocalizations {
   /// **'Turn off alarms & reminders in Settings'**
   String get notification_snack_disable_alarms_in_settings;
 
-  /// No description provided for @notification_snack_battery_reenable.
+  /// No description provided for @notification_allow_subtitle_on.
   ///
   /// In en, this message translates to:
-  /// **'Restore battery optimization in Settings → Battery'**
-  String get notification_snack_battery_reenable;
+  /// **'Reminders and updates from WeBuddhist'**
+  String get notification_allow_subtitle_on;
+
+  /// No description provided for @notification_allow_subtitle_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Turn on to get reminders and updates.'**
+  String get notification_allow_subtitle_off;
+
+  /// No description provided for @notification_section_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get notification_section_practice;
+
+  /// No description provided for @notification_section_connect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get notification_section_connect;
+
+  /// No description provided for @notification_row_plans.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get notification_row_plans;
+
+  /// No description provided for @notification_row_chants.
+  ///
+  /// In en, this message translates to:
+  /// **'Chants'**
+  String get notification_row_chants;
+
+  /// No description provided for @notification_row_mala.
+  ///
+  /// In en, this message translates to:
+  /// **'Mala & accumulations'**
+  String get notification_row_mala;
+
+  /// No description provided for @notification_row_timer.
+  ///
+  /// In en, this message translates to:
+  /// **'Timer'**
+  String get notification_row_timer;
+
+  /// No description provided for @notification_row_group_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Group posts'**
+  String get notification_row_group_posts;
+
+  /// No description provided for @notification_row_group_chats.
+  ///
+  /// In en, this message translates to:
+  /// **'Group chats'**
+  String get notification_row_group_chats;
+
+  /// No description provided for @notification_row_my_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayer requests'**
+  String get notification_row_my_prayer_requests;
+
+  /// No description provided for @notification_row_others_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Other people\'s prayer requests'**
+  String get notification_row_others_prayer_requests;
 
   /// No description provided for @profile_default_bio.
   ///
@@ -1696,6 +1642,18 @@ abstract class AppLocalizations {
   /// **'Online'**
   String get connect_online;
 
+  /// No description provided for @connect_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get connect_ended;
+
+  /// No description provided for @connect_ended_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended {date}'**
+  String connect_ended_on(String date);
+
   /// No description provided for @home_group_events.
   ///
   /// In en, this message translates to:
@@ -1810,6 +1768,12 @@ abstract class AppLocalizations {
   /// **'Online view'**
   String get connect_event_view_online;
 
+  /// No description provided for @connect_event_has_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'This event has ended'**
+  String get connect_event_has_ended;
+
   /// No description provided for @connect_event_join_to_practice.
   ///
   /// In en, this message translates to:
@@ -1839,6 +1803,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} participants'**
   String connect_event_participants_attending(int count);
+
+  /// No description provided for @connect_event_participants_attended.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attended'**
+  String connect_event_participants_attended(int count);
 
   /// No description provided for @connect_event_participants_empty.
   ///
@@ -3298,12 +3268,6 @@ abstract class AppLocalizations {
   /// **'Follow'**
   String get follow;
 
-  /// No description provided for @following.
-  ///
-  /// In en, this message translates to:
-  /// **'Following'**
-  String get following;
-
   /// No description provided for @calendar_title.
   ///
   /// In en, this message translates to:
@@ -3393,12 +3357,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join'**
   String get join;
-
-  /// No description provided for @joined.
-  ///
-  /// In en, this message translates to:
-  /// **'Joined'**
-  String get joined;
 
   /// No description provided for @group_member.
   ///
@@ -3508,29 +3466,29 @@ abstract class AppLocalizations {
   /// **'Chat notifications on'**
   String get group_chat_notifications_unmuted;
 
-  /// No description provided for @group_leave.
-  ///
-  /// In en, this message translates to:
-  /// **'Unjoin'**
-  String get group_leave;
-
-  /// No description provided for @group_leave_confirm_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Unjoin?'**
-  String get group_leave_confirm_title;
-
   /// No description provided for @group_leave_confirm_message.
   ///
   /// In en, this message translates to:
   /// **'You\'ll stop getting messages and updates from this space'**
   String get group_leave_confirm_message;
 
-  /// No description provided for @group_leave_failed.
+  /// No description provided for @group_leave_space.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t unjoin. Try again'**
-  String get group_leave_failed;
+  /// **'Leave space'**
+  String get group_leave_space;
+
+  /// No description provided for @group_leave_space_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this space?'**
+  String get group_leave_space_confirm_title;
+
+  /// No description provided for @group_leave_space_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t leave the space. Try again'**
+  String get group_leave_space_failed;
 
   /// No description provided for @group_request_to_join.
   ///
@@ -4041,6 +3999,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recite now'**
   String get group_accumulator_recite_now;
+
+  /// No description provided for @group_accumulator_view_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'View practice'**
+  String get group_accumulator_view_practice;
 
   /// No description provided for @group_accumulator_chant_again.
   ///
@@ -5339,13 +5303,13 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'How can we pray for you today?'**
+  /// **'Share a prayer for yourself or others…'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_hint_intention.
   ///
   /// In en, this message translates to:
-  /// **'Share a prayer about {topics}'**
+  /// **'Request a prayer for: {topics}'**
   String event_prayer_hint_intention(String topics);
 
   /// No description provided for @event_prayer_load_failed.

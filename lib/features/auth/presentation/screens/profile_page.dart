@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import '../../../../core/config/router/route_config.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -61,6 +62,10 @@ class ProfilePage extends ConsumerWidget {
                       backgroundImage:
                           pictureUrl != null && pictureUrl.isNotEmpty
                               ? pictureUrl.cachedNetworkImageProvider
+                              : null,
+                      onBackgroundImageError:
+                          pictureUrl != null && pictureUrl.isNotEmpty
+                              ? reportImageLoadError
                               : null,
                       child:
                           (pictureUrl == null || pictureUrl.isEmpty)

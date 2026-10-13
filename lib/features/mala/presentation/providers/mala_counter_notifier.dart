@@ -99,10 +99,13 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
        _seedNetworkTimeout =
            seedNetworkTimeout ?? _defaultSeedNetworkTimeout,
        super(MalaCounterState(beadsPerRound: mantra.beadsPerRound)) {
-    seed();
+    whenSeeded = seed();
   }
 
   static const _defaultSeedNetworkTimeout = Duration(seconds: 3);
+
+  /// Completes when the constructor's [seed] has settled, including its timeout.
+  late final Future<void> whenSeeded;
 
   final Mantra _mantra;
   final MalaLocalDataSource _local;

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -27,7 +28,6 @@ import 'package:flutter_pecha/features/group_profile/presentation/screens/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_reports_row.dart';
-import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_links_drawer.dart';
@@ -36,7 +36,6 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_posts_tab.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_removed_notice_card.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
-import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1292,7 +1291,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     setState(() => _joiningAccumulatorId = accumulator.id);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: accumulator.id,
       groupId: profile.id,
       group: profile,
@@ -1464,12 +1463,21 @@ class _GroupFollowButton extends ConsumerWidget {
     if (!context.mounted) return;
 
     final sharePositionOrigin = getSharePositionOrigin(context: context);
-    await SharePlus.instance.share(
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(
       ShareParams(
         text: '$shareMessage\n\n$shareUrl',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.group,
+        targetId: profile.id,
+        format: 'text',
+        groupId: profile.id,
+      );
+    }
   }
 
   Future<void> _onRequestToJoinPressed(
@@ -1514,10 +1522,6 @@ class _GroupFollowButton extends ConsumerWidget {
       groupType: profile.groupType,
     );
     final followState = ref.watch(groupFollowProvider(followKey));
-    final isFollowing = switch (followState) {
-      GroupFollowSuccess(isFollowing: final f) => f,
-      _ => false,
-    };
     final isLoading = followState is GroupFollowLoading;
     final joinRequestStatus = profile.myJoinRequestStatus;
 
@@ -1525,7 +1529,9 @@ class _GroupFollowButton extends ConsumerWidget {
       return _buildPrivateMembershipLoadingButton(context);
     }
 
-    if (isPrivateGroupMember(followState: followState)) {
+    // Same rule as the ⋮ on the app bar: a leave in flight or a failed leave
+    // keeps the member row instead of offering to join again.
+    if (lastConfirmedGroupMembership(followState)) {
       final isAdmin =
           ref
               .watch(groupMyPermissionProvider(profile.id))
@@ -1534,13 +1540,7 @@ class _GroupFollowButton extends ConsumerWidget {
           false;
       return Column(
         children: [
-          _buildJoinedActions(
-            context,
-            ref,
-            followKey,
-            isFollowing,
-            isLoading,
-          ),
+          _buildJoinedActions(context, ref),
           if (isAdmin) ...[
             GroupReportsRow(groupId: profile.id, isDark: isDark),
             const SizedBox(height: 8),
@@ -1566,10 +1566,6 @@ class _GroupFollowButton extends ConsumerWidget {
       groupType: profile.groupType,
     );
     final followState = ref.watch(groupFollowProvider(followKey));
-    final isFollowing = switch (followState) {
-      GroupFollowSuccess(isFollowing: final f) => f,
-      _ => false,
-    };
     final isLoading = followState is GroupFollowLoading;
     final isPage = profile.groupType.isPage;
     final isAdmin =
@@ -1579,20 +1575,16 @@ class _GroupFollowButton extends ConsumerWidget {
             ?.isGroupAdmin ??
         false;
 
+    // Communities and Pages share the joined row; leaving or unfollowing is
+    // in the ⋮ member menu on the app bar, and membership follows the same
+    // rule as that ⋮, so the two never disagree mid-leave.
     final actions =
-        isFollowing && !isPage
-            ? _buildJoinedActions(
-              context,
-              ref,
-              followKey,
-              isFollowing,
-              isLoading,
-            )
+        lastConfirmedGroupMembership(followState)
+            ? _buildJoinedActions(context, ref)
             : _buildPrimaryFollowButton(
               context,
               ref,
               followKey,
-              isFollowing,
               isLoading,
               isPage,
             );
@@ -1604,13 +1596,8 @@ class _GroupFollowButton extends ConsumerWidget {
     );
   }
 
-  Widget _buildJoinedActions(
-    BuildContext context,
-    WidgetRef ref,
-    GroupFollowKey followKey,
-    bool isFollowing,
-    bool isLoading,
-  ) {
+  /// Chat + Invite for a member or Page follower.
+  Widget _buildJoinedActions(BuildContext context, WidgetRef ref) {
     const fontSize = 16.0;
     final locale = Localizations.localeOf(context);
     final isTibetan = context.isTibetanLocale;
@@ -1626,39 +1613,30 @@ class _GroupFollowButton extends ConsumerWidget {
     );
 
     final authState = ref.watch(authProvider);
-    final showChat = isFollowing && authState.isLoggedIn && !authState.isGuest;
+    final showChat = authState.isLoggedIn && !authState.isGuest;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
           if (showChat) ...[
-            IconButton(
+            ElevatedButton.icon(
               onPressed:
                   () => context.push(AppRoutes.groupChatPath(profile.id)),
-              tooltip: context.l10n.group_chat_open,
-              icon: const Icon(AppAssets.chatCircleDots),
-              style: IconButton.styleFrom(
-                backgroundColor:
-                    isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-                foregroundColor:
-                    isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-                shape: const CircleBorder(),
-                fixedSize: Size.square(buttonHeight),
-                padding: EdgeInsets.zero,
+              icon: const Icon(AppAssets.chatCircleDots, size: 22),
+              label: Text(
+                context.l10n.group_chat_open,
+                strutStyle: context.tibetanStrutStyle(fontSize),
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: getSystemFontFamily(locale.languageCode),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            child: ElevatedButton(
-              // Opens the member menu (notification toggles + leave). Leaving
-              // is confirmed inside the sheet, never on a bare tap here.
-              onPressed:
-                  isLoading
-                      ? null
-                      : () => _openMemberMenu(context, followKey),
               style: buttonStyle.copyWith(
+                padding: const WidgetStatePropertyAll(
+                  EdgeInsets.symmetric(horizontal: 20),
+                ),
                 backgroundColor: WidgetStatePropertyAll(
                   isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
                 ),
@@ -1666,39 +1644,9 @@ class _GroupFollowButton extends ConsumerWidget {
                   isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
                 ),
               ),
-              child:
-                  isLoading
-                      ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              context.l10n.joined,
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              strutStyle: context.tibetanStrutStyle(fontSize),
-                              style: TextStyle(
-                                fontSize: fontSize,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: getSystemFontFamily(
-                                  locale.languageCode,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(AppAssets.caretDown, size: 18),
-                        ],
-                      ),
             ),
-          ),
-          const SizedBox(width: 12),
+            const SizedBox(width: 12),
+          ],
           Expanded(
             child: ElevatedButton(
               onPressed: () => _onInvitePressed(context, ref),
@@ -1859,11 +1807,12 @@ class _GroupFollowButton extends ConsumerWidget {
     );
   }
 
+  /// Full-width Join (community) or Follow (Page) for someone who is not in
+  /// yet.
   Widget _buildPrimaryFollowButton(
     BuildContext context,
     WidgetRef ref,
     GroupFollowKey followKey,
-    bool isFollowing,
     bool isLoading,
     bool isPage,
   ) {
@@ -1881,197 +1830,52 @@ class _GroupFollowButton extends ConsumerWidget {
       elevation: 0,
     );
 
-    final authState = ref.watch(authProvider);
-    final showChat = isFollowing && authState.isLoggedIn && !authState.isGuest;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child:
-          isFollowing
-              ? Row(
-                children: [
-                  if (showChat) ...[
-                    IconButton(
-                      onPressed:
-                          () =>
-                              context.push(AppRoutes.groupChatPath(profile.id)),
-                      tooltip: context.l10n.group_chat_open,
-                      icon: const Icon(AppAssets.chatCircleDots),
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            isDark
-                                ? AppColors.surfaceVariantDark
-                                : AppColors.grey100,
-                        foregroundColor:
-                            isDark
-                                ? AppColors.surfaceWhite
-                                : AppColors.textPrimary,
-                        shape: const CircleBorder(),
-                        fixedSize: Size.square(buttonHeight),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          isLoading
-                              ? null
-                              : () => _onFollowPressed(
-                                context,
-                                ref,
-                                followKey,
-                                isFollowing,
-                              ),
-                      style: buttonStyle.copyWith(
-                        backgroundColor: WidgetStatePropertyAll(
-                          isDark
-                              ? AppColors.surfaceVariantDark
-                              : AppColors.grey100,
-                        ),
-                        foregroundColor: WidgetStatePropertyAll(
-                          isDark
-                              ? AppColors.surfaceWhite
-                              : AppColors.textPrimary,
-                        ),
-                      ),
-                      child:
-                          isLoading
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : Text(
-                                isPage
-                                    ? context.l10n.following
-                                    : context.l10n.joined,
-                                textAlign: TextAlign.center,
-                                strutStyle: context.tibetanStrutStyle(fontSize),
-                                style: TextStyle(
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: getSystemFontFamily(
-                                    locale.languageCode,
-                                  ),
-                                ),
-                              ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed:
+              isLoading
+                  ? null
+                  : () => _onFollowPressed(context, ref, followKey),
+          style: buttonStyle.copyWith(
+            backgroundColor: WidgetStatePropertyAll(
+              isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
+            ),
+            foregroundColor: WidgetStatePropertyAll(
+              isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
+            ),
+            minimumSize: WidgetStatePropertyAll(
+              Size(double.infinity, buttonHeight),
+            ),
+          ),
+          child:
+              isLoading
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                  : Text(
+                    isPage ? context.l10n.follow : context.l10n.join,
+                    textAlign: TextAlign.center,
+                    strutStyle: context.tibetanStrutStyle(fontSize),
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: getSystemFontFamily(locale.languageCode),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _onInvitePressed(context, ref),
-                      style: buttonStyle.copyWith(
-                        backgroundColor: WidgetStatePropertyAll(
-                          isDark
-                              ? AppColors.surfaceWhite
-                              : AppColors.textPrimary,
-                        ),
-                        foregroundColor: WidgetStatePropertyAll(
-                          isDark
-                              ? AppColors.textPrimary
-                              : AppColors.surfaceWhite,
-                        ),
-                      ),
-                      child: Text(
-                        context.l10n.group_invite,
-                        textAlign: TextAlign.center,
-                        strutStyle: context.tibetanStrutStyle(fontSize),
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: getSystemFontFamily(locale.languageCode),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-              : SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : () => _onFollowPressed(
-                            context,
-                            ref,
-                            followKey,
-                            isFollowing,
-                          ),
-                  style: buttonStyle.copyWith(
-                    backgroundColor: WidgetStatePropertyAll(
-                      isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-                    ),
-                    foregroundColor: WidgetStatePropertyAll(
-                      isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
-                    ),
-                    minimumSize: WidgetStatePropertyAll(
-                      Size(double.infinity, buttonHeight),
-                    ),
-                  ),
-                  child:
-                      isLoading
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : Text(
-                            isPage ? context.l10n.follow : context.l10n.join,
-                            textAlign: TextAlign.center,
-                            strutStyle: context.tibetanStrutStyle(fontSize),
-                            style: TextStyle(
-                              fontSize: fontSize,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: getSystemFontFamily(
-                                locale.languageCode,
-                              ),
-                            ),
-                          ),
-                ),
-              ),
-    );
-  }
-
-  /// Shows the member sheet and acts on its result from this page's context,
-  /// after the sheet has closed, so no route is pushed from inside a modal
-  /// that is on its way out.
-  Future<void> _openMemberMenu(
-    BuildContext context,
-    GroupFollowKey followKey,
-  ) async {
-    final result = await GroupNotificationSettingsDrawer.show(
-      context,
-      profile,
-      followKey: followKey,
-    );
-    if (!context.mounted) return;
-    if (result == GroupNotificationSheetResult.openNotificationSettings) {
-      // This profile is a root-pushed route above the /home shell, and
-      // AppRoutes.notifications lives inside that shell. Pushing it through
-      // go_router from here makes the router insert a second /home shell page
-      // and trip its duplicate page key assertion, so the screen goes on the
-      // root navigator as a pageless route instead. Its own back button uses
-      // context.pop(), which go_router resolves to this route.
-      await Navigator.of(context, rootNavigator: true).push<void>(
-        MaterialPageRoute<void>(
-          settings: const RouteSettings(name: 'notifications'),
-          builder: (_) => const NotificationSettingsScreen(),
         ),
-      );
-    }
+      ),
+    );
   }
 
   Future<void> _onFollowPressed(
     BuildContext context,
     WidgetRef ref,
     GroupFollowKey followKey,
-    bool isCurrentlyFollowing,
   ) async {
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
@@ -2079,10 +1883,9 @@ class _GroupFollowButton extends ConsumerWidget {
       return;
     }
 
-    final notifier = ref.read(groupFollowProvider(followKey).notifier);
-    isCurrentlyFollowing
-        ? await notifier.unfollow(connectGroup: profile)
-        : await notifier.follow(connectGroup: profile);
+    await ref
+        .read(groupFollowProvider(followKey).notifier)
+        .follow(connectGroup: profile);
   }
 }
 

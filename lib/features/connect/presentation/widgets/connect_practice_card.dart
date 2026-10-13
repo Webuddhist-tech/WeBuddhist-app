@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_header.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -136,6 +138,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                 isDark: isDark,
                 title: series.title,
                 link: DeepLinkUrlBuilder.seriesLink(seriesId: series.id),
+                surface: ShareSurface.series,
+                targetId: series.id,
+                groupId: practice.groupId,
               ),
             ),
             Padding(
@@ -223,10 +228,16 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     final hasJoined =
         practice.isJoined ||
         accumulatorHasJoined(accumulator, localJoinedIds: localJoinedIds);
-    final dateRange = PlanDateFormat.formatRangeOrNull(
-      accumulator.startDate,
-      accumulator.endDate,
-    );
+    final hasEnded = isPastEndDate(accumulator.endDate, DateTime.now());
+    final dateBadge =
+        hasEnded
+            ? context.l10n.connect_ended_on(
+              PlanDateFormat.formatDate(accumulator.endDate!),
+            )
+            : PlanDateFormat.formatRangeOrNull(
+              accumulator.startDate,
+              accumulator.endDate,
+            );
     final isJoining =
         widget.isJoiningAccumulator ??
         (_joiningAccumulatorId == accumulator.id);
@@ -262,6 +273,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                   accumulatorId: accumulator.id,
                   groupId: groupId,
                 ),
+                surface: ShareSurface.accumulator,
+                targetId: accumulator.id,
+                groupId: groupId,
               ),
             ),
             Padding(
@@ -322,8 +336,8 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                               )
                               : null,
                       trailing:
-                          dateRange != null
-                              ? _PracticeImageBadge(label: dateRange)
+                          dateBadge != null
+                              ? _PracticeImageBadge(label: dateBadge)
                               : null,
                     ),
                   ],
@@ -364,6 +378,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                 isDark: isDark,
                 title: plan.title,
                 link: DeepLinkUrlBuilder.planLink(planId: plan.id),
+                surface: ShareSurface.plan,
+                targetId: plan.id,
+                groupId: practice.groupId,
               ),
             ),
             Padding(
@@ -450,6 +467,9 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                   groupId: groupId,
                   collectionId: collection.id,
                 ),
+                surface: ShareSurface.recitationCollection,
+                targetId: collection.id,
+                groupId: groupId,
               ),
             ),
             Padding(
@@ -512,9 +532,19 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     required bool isDark,
     required String title,
     required Uri link,
+    required ShareSurface surface,
+    required String targetId,
+    String? groupId,
   }) {
     return IconButton(
-      onPressed: () => _sharePractice(title, link),
+      onPressed:
+          () => _sharePractice(
+            title,
+            link,
+            surface: surface,
+            targetId: targetId,
+            groupId: groupId,
+          ),
       icon: Icon(
         AppAssets.readerShare,
         size: 20,
@@ -526,14 +556,29 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     );
   }
 
-  Future<void> _sharePractice(String title, Uri link) async {
+  Future<void> _sharePractice(
+    String title,
+    Uri link, {
+    required ShareSurface surface,
+    required String targetId,
+    String? groupId,
+  }) async {
     final shareUrl = await resolveShareUrlRef(ref, link.toString());
     if (!mounted) return;
 
     final message =
         shareUrl.isNotEmpty ? '${title.trim()}\n\n$shareUrl' : title.trim();
     if (message.isEmpty) return;
-    await SharePlus.instance.share(ShareParams(text: message));
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(ShareParams(text: message));
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: surface,
+        targetId: targetId,
+        format: 'text',
+        groupId: groupId,
+      );
+    }
   }
 
   void _navigateToPlanDetail(GroupPractice practice, GroupPracticePlan plan) {
@@ -646,7 +691,7 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
 
     setState(() => _joiningAccumulatorId = accumulator.id);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: accumulator.id,
       groupId: groupId,
       awaitRefresh: false,

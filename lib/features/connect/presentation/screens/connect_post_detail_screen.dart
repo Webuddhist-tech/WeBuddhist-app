@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_pecha/features/connect/presentation/widgets/connect_comm
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 bool _containsTibetan(String value) {
   return RegExp(r'[\u0F00-\u0FFF]').hasMatch(value);
@@ -259,7 +261,16 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
             ? caption
             : shareUrl;
     if (message.isEmpty) return;
-    await SharePlus.instance.share(ShareParams(text: message));
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(ShareParams(text: message));
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.post,
+        targetId: _post.id,
+        format: 'text',
+        groupId: _post.groupId,
+      );
+    }
   }
 
   @override
@@ -490,6 +501,10 @@ class _PostAuthorRow extends StatelessWidget {
           backgroundImage:
               avatarUrl != null && avatarUrl!.isNotEmpty
                   ? avatarUrl!.cachedNetworkImageProvider
+                  : null,
+          onBackgroundImageError:
+              avatarUrl != null && avatarUrl!.isNotEmpty
+                  ? reportImageLoadError
                   : null,
           child:
               avatarUrl == null || avatarUrl!.isEmpty

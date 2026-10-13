@@ -23,6 +23,7 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
     required this.sessionCount,
     required this.chantTitle,
     this.chantTitleFontFamily,
+    this.showSessionPill = true,
   });
 
   /// The chant's preset, as the key the personal counter is held under.
@@ -32,6 +33,10 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
   final int sessionCount;
   final String chantTitle;
   final String? chantTitleFontFamily;
+
+  /// False when the accumulation has ended: the title stays, the count pill
+  /// that switches targets does not.
+  final bool showSessionPill;
 
   static const barHeight = 56.0;
 
@@ -96,13 +101,60 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Material(
-            color: pillColor,
-            borderRadius: BorderRadius.circular(999),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: openGroupSheet,
+          if (showSessionPill)
+            Material(
+              color: pillColor,
               borderRadius: BorderRadius.circular(999),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: openGroupSheet,
+                borderRadius: BorderRadius.circular(999),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '+$sessionCount',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: primaryTextColor,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _GroupSessionAvatar(
+                        group: activeGroup,
+                        isPersonal: selection.isPersonal,
+                      ),
+                      Icon(
+                        AppAssets.caretRight2,
+                        size: 20,
+                        color: secondaryColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (showSessionPill) const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              chantTitle,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              strutStyle: context.tibetanStrutStyle(titleFontSize),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontFamily: chantTitleFontFamily,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          if (showSessionPill) ...[
+            const SizedBox(width: 12),
+            Opacity(
+              opacity: 0,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
                 child: Row(
@@ -117,10 +169,7 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    _GroupSessionAvatar(
-                      group: activeGroup,
-                      isPersonal: selection.isPersonal,
-                    ),
+                    const _GroupSessionAvatar(group: null),
                     Icon(
                       AppAssets.caretRight2,
                       size: 20,
@@ -130,48 +179,7 @@ class GroupAccumulatorChantBar extends ConsumerWidget {
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              chantTitle,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              strutStyle: context.tibetanStrutStyle(titleFontSize),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontFamily: chantTitleFontFamily,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Opacity(
-            opacity: 0,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '+$sessionCount',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: primaryTextColor,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const _GroupSessionAvatar(group: null),
-                  Icon(
-                    AppAssets.caretRight2,
-                    size: 20,
-                    color: secondaryColor,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          ],
         ],
       ),
     );

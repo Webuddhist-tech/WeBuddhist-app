@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_notification_preferences.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/update_group_notification_preferences_usecase.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/notifications/presentation/providers/notification_preferences_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// One of the two switches the sheet shows.
@@ -83,6 +85,10 @@ class GroupNotificationPreferencesNotifier
   final GroupProfileRepositoryInterface _repository;
   final UpdateGroupNotificationPreferencesUseCase _update;
 
+  /// Called with true when the first write starts and with false once every
+  /// queued write has been sent, so the provider can stay alive in between.
+  final void Function(bool busy)? _onBusyChanged;
+
   /// Last value the backend confirmed per toggle, the revert target.
   GroupNotificationPreferences _persisted =
       GroupNotificationPreferences.defaults;
@@ -101,9 +107,11 @@ class GroupNotificationPreferencesNotifier
     required String groupId,
     required GroupProfileRepositoryInterface repository,
     required UpdateGroupNotificationPreferencesUseCase update,
+    void Function(bool busy)? onBusyChanged,
   }) : _groupId = groupId,
        _repository = repository,
        _update = update,
+       _onBusyChanged = onBusyChanged,
        super(
          const GroupNotificationPreferencesState(
            preferences: GroupNotificationPreferences.defaults,
@@ -144,6 +152,15 @@ class GroupNotificationPreferencesNotifier
     return _load();
   }
 
+  /// Reads the stored values again without hiding the toggles, after an
+  /// account-wide switch they may inherit has changed. Toggles the member
+  /// has flipped here keep their value: those hold a group override, which
+  /// the account-wide switch no longer reaches.
+  Future<void> refresh() {
+    if (state.isLoading) return Future.value();
+    return _load();
+  }
+
   Future<bool> setChat(bool enabled) =>
       _flip(GroupNotificationToggle.chat, enabled);
 
@@ -165,6 +182,7 @@ class GroupNotificationPreferencesNotifier
     final running = _draining[toggle];
     if (running != null) return running.future;
     final completer = _draining[toggle] = Completer<bool>();
+    if (_draining.length == 1) _onBusyChanged?.call(true);
     unawaited(_drain(toggle, completer));
     return completer.future;
   }
@@ -222,6 +240,7 @@ class GroupNotificationPreferencesNotifier
     }
     _draining.remove(toggle);
     completer.complete(succeeded);
+    if (_draining.isEmpty) _onBusyChanged?.call(false);
   }
 }
 
@@ -234,15 +253,44 @@ final updateGroupNotificationPreferencesUseCaseProvider =
 
 /// Push toggles for [groupId]. Auto-disposed when the sheet closes, so the
 /// next open fetches fresh.
+///
+/// While a write is still queued the provider stays alive, so a toggle
+/// flipped just before the sheet closed still reaches the backend, and a
+/// sheet reopened meanwhile shows the same state instead of a stale read.
+///
+/// Re-reads when an account-wide switch the group may inherit is saved
+/// ([groupNotificationPreferencesRefreshProvider]), so a chat bell kept alive
+/// under the settings screen does not keep showing the value from before.
+///
+/// Re-created on login/logout. Sign-out flips the session before it clears
+/// credentials, so the write in flight finishes as the account that made it
+/// and anything queued behind it is dropped rather than sent as the next.
 final groupNotificationPreferencesProvider = StateNotifierProvider.autoDispose
     .family<
       GroupNotificationPreferencesNotifier,
       GroupNotificationPreferencesState,
       String
     >((ref, groupId) {
-      return GroupNotificationPreferencesNotifier(
+      ref.watch(
+        authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
+      );
+      KeepAliveLink? keepAlive;
+      final notifier = GroupNotificationPreferencesNotifier(
         groupId: groupId,
         repository: ref.watch(groupProfileRepositoryProvider),
         update: ref.watch(updateGroupNotificationPreferencesUseCaseProvider),
+        onBusyChanged: (busy) {
+          if (busy) {
+            keepAlive ??= ref.keepAlive();
+          } else {
+            keepAlive?.close();
+            keepAlive = null;
+          }
+        },
       );
+      ref.listen(
+        groupNotificationPreferencesRefreshProvider,
+        (_, __) => notifier.refresh(),
+      );
+      return notifier;
     });

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/analytics/analytics_events.dart';
+import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
+import 'package:flutter_pecha/core/analytics/analytics_service.dart';
+import 'package:flutter_pecha/core/analytics/no_op_analytics_service.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/features/poems/domain/entities/poem.dart';
 import 'package:flutter_pecha/features/poems/presentation/utils/poem_share.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../core/analytics/recording_analytics_service.dart';
 
 /// share_plus forwards every share to this channel; capturing its calls lets
 /// the test assert the exact payload without a platform share sheet.
@@ -25,12 +31,17 @@ Poem _makePoem(String title) =>
     Poem(id: 'poem-1', title: title, content: 'Content', authorName: 'Author');
 
 /// Pumps a localized app and returns a context that can call [sharePoem].
-Future<BuildContext> _pumpHost(WidgetTester tester) async {
+/// Analytics default to a no-op; the analytics tests pass a recorder.
+Future<BuildContext> _pumpHost(
+  WidgetTester tester, {
+  AnalyticsService analytics = const NoOpAnalyticsService(),
+}) async {
   late BuildContext hostContext;
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         shareUrlServiceProvider.overrideWithValue(_FakeShareUrlService()),
+        analyticsServiceProvider.overrideWithValue(analytics),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -115,6 +126,42 @@ void main() {
       await sharePoem(context, _makePoem(''));
 
       expect(sharedText(), '$_shareMessage\n\n$_shortUrl');
+    });
+  });
+
+  group('sharePoem analytics', () {
+    testWidgets('records one content_shared once an app is picked', (
+      tester,
+    ) async {
+      final service = RecordingAnalyticsService();
+      final context = await _pumpHost(tester, analytics: service);
+
+      await sharePoem(context, _makePoem('Benefits of Bodhicitta'));
+
+      expect(service.eventNames, [AnalyticsEvents.contentShared]);
+      // No content language is stored in tests, so the app default applies.
+      expect(service.events.single.properties, {
+        'surface': 'poem',
+        'target_id': 'poem-1',
+        'language': 'en',
+        'format': 'text',
+        'method': null,
+        'group_id': null,
+      });
+    });
+
+    testWidgets('records nothing when the share sheet is dismissed', (
+      tester,
+    ) async {
+      // share_plus reports a dismissed sheet as an empty result.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_shareChannel, (call) async => '');
+      final service = RecordingAnalyticsService();
+      final context = await _pumpHost(tester, analytics: service);
+
+      await sharePoem(context, _makePoem('Benefits of Bodhicitta'));
+
+      expect(service.events, isEmpty);
     });
   });
 }

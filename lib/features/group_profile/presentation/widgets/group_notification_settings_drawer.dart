@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart'
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_notification_preferences_provider.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/notifications/presentation/notification_settings_screen.dart';
 import 'package:flutter_pecha/features/notifications/presentation/providers/notification_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,24 +21,65 @@ enum GroupNotificationSheetResult {
   openNotificationSettings,
 }
 
-/// Member menu behind the "Joined" button: per-group push toggles and the
-/// way out of the group.
+/// Shows the member sheet for [profile] from the space page's ⋮ and acts on
+/// its result from [context], after the sheet has closed, so no route is
+/// pushed from inside a modal that is on its way out.
 ///
-/// - Group chat: pushes for chat messages.
-/// - Group content: pushes for new posts, new events and reminders for events
+/// A Page's sheet holds only the way out: following a Page is not a
+/// membership, and the backend rejects per-group notification settings for
+/// followers.
+Future<void> openGroupMemberMenu(
+  BuildContext context,
+  GroupProfile profile, {
+  required GroupFollowKey followKey,
+}) async {
+  final result = await GroupNotificationSettingsDrawer.show(
+    context,
+    profile,
+    followKey: followKey,
+    showNotificationSettings: !profile.groupType.isPage,
+  );
+  if (!context.mounted) return;
+  if (result == GroupNotificationSheetResult.openNotificationSettings) {
+    // The space page is a root-pushed route above the /home shell, and
+    // AppRoutes.notifications lives inside that shell. Pushing it through
+    // go_router from here makes the router insert a second /home shell page
+    // and trip its duplicate page key assertion, so the screen goes on the
+    // root navigator as a pageless route instead. Its own back button uses
+    // context.pop(), which go_router resolves to this route.
+    await Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: 'notifications'),
+        builder: (_) => const NotificationSettingsScreen(),
+      ),
+    );
+  }
+}
+
+/// Member menu behind the space page's ⋮: per-space push toggles and the way
+/// out of the space.
+///
+/// - Space chat: pushes for chat messages.
+/// - Space content: pushes for new posts, new events and reminders for events
 ///   the member joined.
 ///
 /// Both toggles are greyed out while the app's master notification switch is
-/// off, since nothing is delivered in that state anyway; their saved values
-/// are untouched and come back when master is on again.
+/// off or the OS permission is missing (`NotificationState.notificationsOn`),
+/// since nothing is delivered in that state anyway; their saved values are
+/// untouched and come back once notifications are on again.
+///
+/// With [showNotificationSettings] false (a Page) only the leave row shows,
+/// and the per-group preferences are never fetched.
 class GroupNotificationSettingsDrawer extends ConsumerWidget {
   final GroupProfile profile;
   final GroupFollowKey followKey;
+  final bool showNotificationSettings;
 
   const GroupNotificationSettingsDrawer({
     super.key,
     required this.profile,
     required this.followKey,
+    this.showNotificationSettings = true,
   });
 
   /// Resolves to what the member did, or null when the sheet was dismissed.
@@ -45,6 +87,7 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
     BuildContext context,
     GroupProfile profile, {
     required GroupFollowKey followKey,
+    bool showNotificationSettings = true,
   }) {
     return showModalBottomSheet<GroupNotificationSheetResult>(
       context: context,
@@ -57,19 +100,30 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
           (_) => GroupNotificationSettingsDrawer(
             profile: profile,
             followKey: followKey,
+            showNotificationSettings: showNotificationSettings,
           ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!showNotificationSettings) {
+      return _SheetFrame(
+        children: [
+          const SizedBox(height: 8),
+          _LeaveGroupRow(onTap: () => _confirmLeave(context, ref)),
+          const SizedBox(height: 8),
+        ],
+      );
+    }
+
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final groupId = profile.id;
 
     final prefsState = ref.watch(groupNotificationPreferencesProvider(groupId));
-    final masterOn = ref.watch(
-      notificationProvider.select((s) => s.appMasterEnabled),
+    final appOn = ref.watch(
+      notificationProvider.select((s) => s.notificationsOn),
     );
     final notifier = ref.read(
       groupNotificationPreferencesProvider(groupId).notifier,
@@ -90,6 +144,91 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
     final preferences = prefsState.preferences;
     final dividerColor = theme.colorScheme.onSurface.withValues(alpha: 0.12);
     final mutedColor = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+
+    return _SheetFrame(
+      children: [
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            l10n.group_notifications_title,
+            strutStyle: context.tibetanStrutStyle(20),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+        ),
+        if (!appOn) ...[
+          const SizedBox(height: 8),
+          _MasterOffNotice(color: mutedColor),
+        ],
+        const SizedBox(height: 4),
+        if (prefsState.loadFailure != null)
+          // Never show defaults as if they were saved choices.
+          _LoadFailedRow(color: mutedColor, onRetry: notifier.retry)
+        else ...[
+          _ToggleRow(
+            icon: AppAssets.chatCircleDots,
+            label: l10n.group_notifications_chat,
+            value: appOn && preferences.chat,
+            enabled: appOn,
+            loading: prefsState.isLoading,
+            onChanged: notifier.setChat,
+          ),
+          _ToggleRow(
+            icon: AppAssets.rows,
+            label: l10n.group_notifications_content,
+            value: appOn && preferences.content,
+            enabled: appOn,
+            loading: prefsState.isLoading,
+            onChanged: notifier.setContent,
+          ),
+        ],
+        const SizedBox(height: 8),
+        Divider(height: 1, thickness: 1, color: dividerColor),
+        _LeaveGroupRow(onTap: () => _confirmLeave(context, ref)),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Future<void> _confirmLeave(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
+
+    final left = await showDestructiveConfirmationDialog(
+      context,
+      title: l10n.group_leave_space_confirm_title,
+      message: l10n.group_leave_confirm_message,
+      confirmLabel: l10n.group_leave_space,
+      onConfirmed:
+          () => ref
+              .read(groupFollowProvider(followKey).notifier)
+              .unfollow(connectGroup: profile),
+    );
+    if (!context.mounted) return;
+
+    if (left == true) {
+      Navigator.of(context).pop(GroupNotificationSheetResult.left);
+      return;
+    }
+    if (left == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.group_leave_space_failed),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+}
+
+/// Rounded sheet surface with the drag handle; [children] go below it.
+class _SheetFrame extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SheetFrame({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -113,81 +252,11 @@ class GroupNotificationSettingsDrawer extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                l10n.group_notifications_title,
-                strutStyle: context.tibetanStrutStyle(20),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            if (!masterOn) ...[
-              const SizedBox(height: 8),
-              _MasterOffNotice(color: mutedColor),
-            ],
-            const SizedBox(height: 4),
-            if (prefsState.loadFailure != null)
-              // Never show defaults as if they were saved choices.
-              _LoadFailedRow(color: mutedColor, onRetry: notifier.retry)
-            else ...[
-              _ToggleRow(
-                icon: AppAssets.chatCircleDots,
-                label: l10n.group_notifications_chat,
-                value: masterOn && preferences.chat,
-                enabled: masterOn,
-                loading: prefsState.isLoading,
-                onChanged: notifier.setChat,
-              ),
-              _ToggleRow(
-                icon: AppAssets.rows,
-                label: l10n.group_notifications_content,
-                value: masterOn && preferences.content,
-                enabled: masterOn,
-                loading: prefsState.isLoading,
-                onChanged: notifier.setContent,
-              ),
-            ],
-            const SizedBox(height: 8),
-            Divider(height: 1, thickness: 1, color: dividerColor),
-            _LeaveGroupRow(onTap: () => _confirmLeave(context, ref)),
-            const SizedBox(height: 8),
+            ...children,
           ],
         ),
       ),
     );
-  }
-
-  Future<void> _confirmLeave(BuildContext context, WidgetRef ref) async {
-    final l10n = context.l10n;
-
-    final left = await showDestructiveConfirmationDialog(
-      context,
-      title: l10n.group_leave_confirm_title,
-      message: l10n.group_leave_confirm_message,
-      confirmLabel: l10n.group_leave,
-      onConfirmed:
-          () => ref
-              .read(groupFollowProvider(followKey).notifier)
-              .unfollow(connectGroup: profile),
-    );
-    if (!context.mounted) return;
-
-    if (left == true) {
-      Navigator.of(context).pop(GroupNotificationSheetResult.left);
-      return;
-    }
-    if (left == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.group_leave_failed),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
   }
 }
 
@@ -342,7 +411,7 @@ class _LeaveGroupRow extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                l10n.group_leave,
+                l10n.group_leave_space,
                 strutStyle: context.tibetanStrutStyle(17),
                 style: const TextStyle(fontSize: 17, color: color),
               ),

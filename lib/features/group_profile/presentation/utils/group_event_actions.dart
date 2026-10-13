@@ -12,14 +12,12 @@ enum GroupEventAction {
   join,
   practiceInPerson,
   practiceOnline,
-
-  /// After the event: opens the plan the way the attendee already picked.
-  practiceNow,
 }
 
 /// The event page's buttons, in display order. Before joining, the view
 /// buttons explore the plan read-only and Join attends; once joined, the
-/// practice buttons open it. Leaving lives in the ⋮ menu.
+/// practice buttons open it. After the event, everyone gets those view
+/// buttons and Join is gone. Leaving lives in the ⋮ menu.
 List<GroupEventAction> groupEventActionsFor(
   GroupEvent event, {
   required bool isAttending,
@@ -29,9 +27,15 @@ List<GroupEventAction> groupEventActionsFor(
   final online = hybrid || isGroupEventOnline(event);
   final inPerson = hybrid || !isGroupEventOnline(event);
 
+  if (isPast) {
+    return [
+      if (event.hasPuja && inPerson) GroupEventAction.viewInPerson,
+      if (event.hasPuja && online) GroupEventAction.viewOnline,
+    ];
+  }
+
   if (isAttending) {
     if (!event.hasPuja) return const [];
-    if (isPast) return const [GroupEventAction.practiceNow];
     return [
       if (inPerson) GroupEventAction.practiceInPerson,
       if (online) GroupEventAction.practiceOnline,
@@ -40,8 +44,7 @@ List<GroupEventAction> groupEventActionsFor(
   return [
     if (event.hasPuja && inPerson) GroupEventAction.viewInPerson,
     if (event.hasPuja && online) GroupEventAction.viewOnline,
-    // Attending is closed once the event is over; exploring is not.
-    if (!isPast) GroupEventAction.join,
+    GroupEventAction.join,
   ];
 }
 

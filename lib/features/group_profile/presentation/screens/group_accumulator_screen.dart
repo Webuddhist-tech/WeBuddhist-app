@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
@@ -330,7 +332,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
 
     setState(() => _isJoining = true);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );
@@ -359,12 +361,17 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
     BuildContext context,
     GroupAccumulatorDetail detail,
   ) async {
+    final ended = isPastEndDate(detail.endDate, DateTime.now());
     if (!detail.hasTextContent) {
       final presetId = detail.presetAccumulatorId;
       if (presetId.isEmpty) return;
       await context.push(
         '/mala',
-        extra: {'presetId': presetId, 'groupAccumulatorId': detail.id},
+        extra: {
+          'presetId': presetId,
+          'groupAccumulatorId': detail.id,
+          'groupAccumulatorEnded': ended,
+        },
       );
       if (!context.mounted) return;
       await _refreshAfterPractice(detail);
@@ -386,6 +393,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
                 ? _resolveGroupName(detail.groupId)!.trim()
                 : null,
         groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+        groupAccumulatorEnded: ended,
       ),
     );
 
@@ -407,12 +415,16 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
   }
 
   Future<void> _refreshAfterPractice(GroupAccumulatorDetail detail) async {
+    // Captured before the await: the screen can close while counts flush.
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
-      await ref.read(malaSyncManagerProvider).flush(SyncReason.screenLeave);
+      await container
+          .read(malaSyncManagerProvider)
+          .flush(SyncReason.screenLeave);
     } catch (_) {}
 
     refreshGroupAccumulatorData(
-      ref,
+      container,
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );
@@ -439,12 +451,21 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
 
     final sharePositionOrigin = getSharePositionOrigin(context: context);
 
-    await SharePlus.instance.share(
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(
       ShareParams(
         text: '$shareMessage\n\n$shareUrl',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.accumulator,
+        targetId: detail.id,
+        format: 'text',
+        groupId: detail.groupId,
+      );
+    }
   }
 
   /// The group title normally arrives via the route extra; when the screen is

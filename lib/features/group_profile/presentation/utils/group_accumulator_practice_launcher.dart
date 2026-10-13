@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
@@ -33,8 +34,11 @@ Future<bool> openGroupAccumulatorPractice(
     LoginDrawer.show(context, ref);
     return false;
   }
+  // Work after the practice screen closes runs through the app container,
+  // which stays valid if the screen that launched it is gone by then.
+  final container = ProviderScope.containerOf(context, listen: false);
 
-  var detail = await _loadDetail(ref, accumulatorId);
+  var detail = await _loadDetail(container, accumulatorId);
   if (detail == null || !context.mounted) return false;
 
   final localJoinedIds = ref.read(
@@ -42,7 +46,7 @@ Future<bool> openGroupAccumulatorPractice(
   );
   if (!accumulatorHasJoined(detail, localJoinedIds: localJoinedIds)) {
     final joined = await joinGroupAccumulator(
-      ref: ref,
+      container: container,
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );
@@ -56,22 +60,27 @@ Future<bool> openGroupAccumulatorPractice(
       );
       return false;
     }
-    detail = await _loadDetail(ref, accumulatorId) ?? detail;
+    detail = await _loadDetail(container, accumulatorId) ?? detail;
     if (!context.mounted) return false;
   }
 
   final countBefore = detail.user?.totalCount ?? 0;
+  final ended = isPastEndDate(detail.endDate, DateTime.now());
 
   if (!detail.hasTextContent) {
     final presetId = detail.presetAccumulatorId;
     if (presetId.isEmpty) return false;
     await context.push(
       '/mala',
-      extra: {'presetId': presetId, 'groupAccumulatorId': detail.id},
+      extra: {
+        'presetId': presetId,
+        'groupAccumulatorId': detail.id,
+        'groupAccumulatorEnded': ended,
+      },
     );
     if (!context.mounted) return false;
-    await _refreshAfterPractice(ref, detail);
-    return await _countIncreased(ref, accumulatorId, countBefore);
+    await _refreshAfterPractice(container, detail);
+    return await _countIncreased(container, accumulatorId, countBefore);
   }
 
   final textId = detail.textId;
@@ -88,6 +97,7 @@ Future<bool> openGroupAccumulatorPractice(
       groupId: detail.groupId,
       groupTitle: groupName,
       groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+      groupAccumulatorEnded: ended,
       eventId: eventId,
       isOnlineAttendee: isOnlineAttendee,
       taskIsLive: taskIsLive,
@@ -95,10 +105,10 @@ Future<bool> openGroupAccumulatorPractice(
   );
   if (!context.mounted) return false;
 
-  await _refreshAfterPractice(ref, detail);
+  await _refreshAfterPractice(container, detail);
   final practiced =
       (sessionCount ?? 0) > 0 ||
-      await _countIncreased(ref, accumulatorId, countBefore);
+      await _countIncreased(container, accumulatorId, countBefore);
   // Zero: every chant of the visit was switched to another target.
   if (sessionCount == null || sessionCount <= 0 || !context.mounted) {
     return practiced;
@@ -116,20 +126,20 @@ Future<bool> openGroupAccumulatorPractice(
 }
 
 Future<bool> _countIncreased(
-  WidgetRef ref,
+  ProviderContainer container,
   String accumulatorId,
   int countBefore,
 ) async {
-  final detail = await _loadDetail(ref, accumulatorId);
+  final detail = await _loadDetail(container, accumulatorId);
   return (detail?.user?.totalCount ?? 0) > countBefore;
 }
 
 Future<GroupAccumulatorDetail?> _loadDetail(
-  WidgetRef ref,
+  ProviderContainer container,
   String accumulatorId,
 ) async {
   try {
-    final either = await ref.read(
+    final either = await container.read(
       groupAccumulatorDetailProvider(accumulatorId).future,
     );
     return either.fold((_) => null, (detail) => detail);
@@ -139,18 +149,18 @@ Future<GroupAccumulatorDetail?> _loadDetail(
 }
 
 Future<void> _refreshAfterPractice(
-  WidgetRef ref,
+  ProviderContainer container,
   GroupAccumulatorDetail detail,
 ) async {
   // Wait for the in-flight sweep too: the practice screen already kicked off
   // a flush on leave, and a plain flush() returns at once while one runs.
   try {
-    await ref
+    await container
         .read(malaSyncManagerProvider)
         .flushAndSettle(SyncReason.screenLeave);
   } catch (_) {}
   refreshGroupAccumulatorData(
-    ref,
+    container,
     accumulatorId: detail.id,
     groupId: detail.groupId,
   );

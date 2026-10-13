@@ -528,84 +528,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Bookmark one to save it here';
 
   @override
-  String get notification_settings => 'Notification settings';
-
-  @override
   String get notification_allow_title => 'Allow notifications';
-
-  @override
-  String get notification_allow_subtitle_enabled =>
-      'Notifications are enabled for this app';
 
   @override
   String get notification_allow_subtitle_disabled =>
       'Permission needed. Tap to grant in Settings';
-
-  @override
-  String get notification_allow_subtitle_paused =>
-      'Reminders are paused. Tap to resume';
-
-  @override
-  String get notification_routine_title => 'Plan reminders';
-
-  @override
-  String get notification_routine_subtitle_enabled =>
-      'Daily reminders for your plans';
-
-  @override
-  String get notification_routine_subtitle_disabled =>
-      'Plan reminders are paused. Tap to resume';
-
-  @override
-  String get notification_battery_title => 'Background reminders';
-
-  @override
-  String get notification_battery_subtitle_enabled =>
-      'Your reminders are sent on time, even when the app is closed';
-
-  @override
-  String get notification_battery_subtitle_disabled =>
-      'Some Android phones pause background apps to save battery, which can delay or skip your reminders. Tap to keep yours running.';
-
-  @override
-  String get notification_recitation_title => 'Chant reminders';
-
-  @override
-  String get notification_recitation_subtitle_enabled =>
-      'Daily reminders for your chants';
-
-  @override
-  String get notification_recitation_subtitle_disabled =>
-      'Chant reminders are paused. Tap to resume';
-
-  @override
-  String get notification_practice_title => 'Mala reminders';
-
-  @override
-  String get notification_practice_subtitle_enabled =>
-      'Daily reminders for your mala practice';
-
-  @override
-  String get notification_practice_subtitle_disabled =>
-      'Mala reminders are paused. Tap to resume';
-
-  @override
-  String get notification_timer_title => 'Timer reminders';
-
-  @override
-  String get notification_timer_subtitle_enabled =>
-      'Daily reminders for your timers';
-
-  @override
-  String get notification_timer_subtitle_disabled =>
-      'Timer reminders are paused. Tap to resume';
-
-  @override
-  String get notification_battery_info_title => 'About background reminders';
-
-  @override
-  String get notification_battery_info_body =>
-      'Some Android phones pause background apps to save battery, which can delay or cancel your scheduled reminders. Exempting the app keeps your reminders reliably on time.';
 
   @override
   String get notification_snack_permission_denied =>
@@ -616,8 +543,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'Turn off alarms & reminders in Settings';
 
   @override
-  String get notification_snack_battery_reenable =>
-      'Restore battery optimization in Settings → Battery';
+  String get notification_allow_subtitle_on =>
+      'Reminders and updates from WeBuddhist';
+
+  @override
+  String get notification_allow_subtitle_off =>
+      'Off. Turn on to get reminders and updates.';
+
+  @override
+  String get notification_section_practice => 'Practice';
+
+  @override
+  String get notification_section_connect => 'Connect';
+
+  @override
+  String get notification_row_plans => 'Plans';
+
+  @override
+  String get notification_row_chants => 'Chants';
+
+  @override
+  String get notification_row_mala => 'Mala & accumulations';
+
+  @override
+  String get notification_row_timer => 'Timer';
+
+  @override
+  String get notification_row_group_posts => 'Group posts';
+
+  @override
+  String get notification_row_group_chats => 'Group chats';
+
+  @override
+  String get notification_row_my_prayer_requests => 'My prayer requests';
+
+  @override
+  String get notification_row_others_prayer_requests =>
+      'Other people\'s prayer requests';
 
   @override
   String get profile_default_bio => 'Welcome to WeBuddhist';
@@ -906,6 +868,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_online => 'Online';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => 'Featured events';
 
   @override
@@ -964,6 +934,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_view_online => 'Online view';
 
   @override
+  String get connect_event_has_ended => 'This event has ended';
+
+  @override
   String get connect_event_join_to_practice => 'Join the event to practice';
 
   @override
@@ -980,6 +953,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String connect_event_participants_attending(int count) {
     return '$count participants';
+  }
+
+  @override
+  String connect_event_participants_attended(int count) {
+    return '$count attended';
   }
 
   @override
@@ -1808,9 +1786,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get follow => 'Follow';
 
   @override
-  String get following => 'Following';
-
-  @override
   String get calendar_title => 'Calendar';
 
   @override
@@ -1858,9 +1833,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get join => 'Join';
-
-  @override
-  String get joined => 'Joined';
 
   @override
   String get group_member => 'member';
@@ -1924,17 +1896,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_notifications_unmuted => 'Chat notifications on';
 
   @override
-  String get group_leave => 'Unjoin';
-
-  @override
-  String get group_leave_confirm_title => 'Unjoin?';
-
-  @override
   String get group_leave_confirm_message =>
       'You\'ll stop getting messages and updates from this space';
 
   @override
-  String get group_leave_failed => 'Couldn\'t unjoin. Try again';
+  String get group_leave_space => 'Leave space';
+
+  @override
+  String get group_leave_space_confirm_title => 'Leave this space?';
+
+  @override
+  String get group_leave_space_failed => 'Couldn\'t leave the space. Try again';
 
   @override
   String get group_request_to_join => 'Ask to join';
@@ -2241,6 +2213,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_accumulator_recite_now => 'Recite now';
+
+  @override
+  String get group_accumulator_view_practice => 'View practice';
 
   @override
   String get group_accumulator_chant_again => 'Chant again';
@@ -3031,11 +3006,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_add => 'Add a prayer request';
 
   @override
-  String get event_prayer_hint => 'How can we pray for you today?';
+  String get event_prayer_hint => 'Share a prayer for yourself or others…';
 
   @override
   String event_prayer_hint_intention(String topics) {
-    return 'Share a prayer about $topics';
+    return 'Request a prayer for: $topics';
   }
 
   @override

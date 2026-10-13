@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:intl/intl.dart';
@@ -179,16 +180,25 @@ class GroupEventListTile extends StatelessWidget {
     final isHybrid = isGroupEventHybrid(event);
     final showLocation = !isOnline && locationName.isNotEmpty;
     final showOnline = isOnline || isHybrid;
+    final hasEnded = isPastEndDate(event.endDate, DateTime.now());
+    final inPersonColor =
+        isDark ? AppColors.eventInPersonChipDark : AppColors.eventInPersonChip;
 
     return [
+      // Solid and inverted against the theme so it reads before the rest.
+      if (hasEnded)
+        _EventChip(
+          label: context.l10n.connect_ended,
+          color: isDark ? AppColors.textPrimary : AppColors.textPrimaryDark,
+          backgroundColor:
+              isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+          lineHeight: lineHeight,
+        ),
       if (showLocation)
         _EventChip(
           icon: AppAssets.mapPin,
           label: locationName,
-          color:
-              isDark
-                  ? AppColors.eventInPersonChipDark
-                  : AppColors.eventInPersonChip,
+          color: inPersonColor,
           lineHeight: lineHeight,
         ),
       if (showOnline)
@@ -251,15 +261,19 @@ class GroupEventListTile extends StatelessWidget {
 }
 
 class _EventChip extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String label;
   final Color color;
+
+  /// A solid fill. Null tints the chip with a faint [color].
+  final Color? backgroundColor;
   final double? lineHeight;
 
   const _EventChip({
-    required this.icon,
+    this.icon,
     required this.label,
     required this.color,
+    this.backgroundColor,
     this.lineHeight,
   });
 
@@ -268,18 +282,20 @@ class _EventChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: backgroundColor ?? color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Icon(icon, size: 14, color: color),
-          ),
-          const SizedBox(width: 4),
+          if (icon != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(icon, size: 14, color: color),
+            ),
+            const SizedBox(width: 4),
+          ],
           Flexible(
             child: Text(
               label,

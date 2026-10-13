@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_taglines.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,6 +18,11 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   static const _introDuration = Duration(milliseconds: 900);
   static const _pulseDuration = Duration(milliseconds: 1600);
+  // Keep in sync with the native launch screens (96dp / 96pt logo).
+  static const double _logoSize = 96;
+  static const double _taglineGap = 24;
+  static const double _horizontalPadding = 32;
+  static const double _verticalPadding = 24;
 
   late final int _taglineIndex = randomSplashTaglineIndex();
 
@@ -29,31 +35,9 @@ class _SplashScreenState extends State<SplashScreen>
     duration: _pulseDuration,
   );
 
-  late final Animation<double> _logoOpacity = CurvedAnimation(
-    parent: _intro,
-    curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-  );
-  late final Animation<double> _logoScale = Tween<double>(
-    begin: 0.8,
-    end: 1.0,
-  ).animate(
-    CurvedAnimation(
-      parent: _intro,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
-    ),
-  );
   late final Animation<double> _taglineOpacity = CurvedAnimation(
     parent: _intro,
     curve: const Interval(0.45, 1.0, curve: Curves.easeOut),
-  );
-  late final Animation<Offset> _taglineOffset = Tween<Offset>(
-    begin: const Offset(0, 0.4),
-    end: Offset.zero,
-  ).animate(
-    CurvedAnimation(
-      parent: _intro,
-      curve: const Interval(0.45, 1.0, curve: Curves.easeOutCubic),
-    ),
   );
   late final Animation<double> _pulseScale = Tween<double>(
     begin: 1.0,
@@ -75,49 +59,103 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  double _taglineLineHeight(BuildContext context, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: 'A',
+        style: DefaultTextStyle.of(context).style.merge(style),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final height = painter.preferredLineHeight;
+    painter.dispose();
+    return height;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    // Follows the phone, not the saved theme, so the native launch screen
+    // hands off without a background change; the saved theme applies on the
+    // screen that replaces the splash.
+    final isDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final taglineStyle = TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+    );
+
+    final logo = ScaleTransition(
+      scale: _pulseScale,
+      child: Image.asset(AppAssets.weBuddhistLogo, height: _logoSize),
+    );
+    final tagline = FadeTransition(
+      opacity: _taglineOpacity,
+      child: Text(
+        widget.tagline ?? splashTaglines[_taglineIndex](context.l10n),
+        textAlign: TextAlign.center,
+        style: taglineStyle,
+      ),
+    );
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FadeTransition(
-                  opacity: _logoOpacity,
-                  child: ScaleTransition(
-                    scale: _logoScale,
-                    child: ScaleTransition(
-                      scale: _pulseScale,
-                      child: Image.asset(AppAssets.weBuddhistLogo, height: 96),
-                    ),
-                  ),
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.surfaceLight,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Logo stays at the window centre where the native launch screen
+          // drew it, so only the tagline animates in below.
+          final taglineTop =
+              constraints.maxHeight / 2 + _logoSize / 2 + _taglineGap;
+          final taglineRoom =
+              constraints.maxHeight -
+              taglineTop -
+              bottomInset -
+              _verticalPadding;
+          if (taglineRoom < _taglineLineHeight(context, taglineStyle)) {
+            // Too short for a full line under the centred logo; scroll it all.
+            return Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  _horizontalPadding,
+                  _verticalPadding,
+                  _horizontalPadding,
+                  bottomInset + _verticalPadding,
                 ),
-                const SizedBox(height: 24),
-                FadeTransition(
-                  opacity: _taglineOpacity,
-                  child: SlideTransition(
-                    position: _taglineOffset,
-                    child: Text(
-                      widget.tagline ??
-                          splashTaglines[_taglineIndex](context.l10n),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: onSurface,
-                      ),
-                    ),
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    logo,
+                    const SizedBox(height: _taglineGap),
+                    tagline,
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
+            );
+          }
+          return Stack(
+            children: [
+              Center(child: logo),
+              Positioned(
+                top: taglineTop,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    _horizontalPadding,
+                    0,
+                    _horizontalPadding,
+                    bottomInset + _verticalPadding,
+                  ),
+                  child: tagline,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

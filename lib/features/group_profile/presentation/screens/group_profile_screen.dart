@@ -4,9 +4,12 @@ import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_member_menu.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_notification_settings_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_body.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,7 +39,14 @@ class GroupProfileScreen extends ConsumerWidget {
         bottom: false,
         child: Column(
           children: [
-            _buildAppBar(context, ref, groupId, profileTitle, isDark),
+            _buildAppBar(
+              context,
+              ref,
+              groupId,
+              profileTitle,
+              loadedProfile,
+              isDark,
+            ),
             Expanded(
               child: profileAsync.when(
                 skipLoadingOnReload: true,
@@ -84,6 +94,7 @@ class GroupProfileScreen extends ConsumerWidget {
     WidgetRef ref,
     String groupId,
     String? title,
+    GroupProfile? profile,
     bool isDark,
   ) {
     final showTitle = ref.watch(groupProfileAppBarTitleVisibleProvider(groupId));
@@ -122,9 +133,50 @@ class GroupProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(width: 48, height: 48),
+          if (profile != null)
+            _MemberMenuButton(profile: profile)
+          else
+            const SizedBox(width: 48, height: 48),
         ],
       ),
+    );
+  }
+}
+
+/// The ⋮ that opens the member sheet, shown only to a confirmed member or
+/// Page follower. Otherwise an empty slot of the same size keeps the fading
+/// title where it is.
+class _MemberMenuButton extends ConsumerWidget {
+  final GroupProfile profile;
+
+  const _MemberMenuButton({required this.profile});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final followKey = GroupFollowKey(
+      groupId: profile.id,
+      groupType: profile.groupType,
+    );
+    final followState = ref.watch(groupFollowProvider(followKey));
+    final auth = ref.watch(authProvider);
+    final shows = showsGroupMemberMenu(
+      followState: followState,
+      signedIn: auth.isLoggedIn && !auth.isGuest,
+    );
+    if (!shows) return const SizedBox(width: 48, height: 48);
+
+    return IconButton(
+      icon: const Icon(AppAssets.dotsThreeVertical),
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      // Not while a join or leave is still in flight.
+      onPressed:
+          followState is GroupFollowLoading
+              ? null
+              : () => openGroupMemberMenu(
+                context,
+                profile,
+                followKey: followKey,
+              ),
     );
   }
 }

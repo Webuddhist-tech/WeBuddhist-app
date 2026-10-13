@@ -231,31 +231,22 @@
   },
   "bookmarks_empty_chant_collections_title": "No chant collections bookmarked yet",
   "bookmarks_empty_chant_collections_subtitle": "Bookmark one to save it here",
-  "notification_settings": "Notification settings",
   "notification_allow_title": "Allow notifications",
-  "notification_allow_subtitle_enabled": "Notifications are enabled for this app",
   "notification_allow_subtitle_disabled": "Permission needed. Tap to grant in Settings",
-  "notification_allow_subtitle_paused": "Reminders are paused. Tap to resume",
-  "notification_routine_title": "Plan reminders",
-  "notification_routine_subtitle_enabled": "Daily reminders for your plans",
-  "notification_routine_subtitle_disabled": "Plan reminders are paused. Tap to resume",
-  "notification_battery_title": "Background reminders",
-  "notification_battery_subtitle_enabled": "Your reminders are sent on time, even when the app is closed",
-  "notification_battery_subtitle_disabled": "Some Android phones pause background apps to save battery, which can delay or skip your reminders. Tap to keep yours running.",
-  "notification_recitation_title": "Chant reminders",
-  "notification_recitation_subtitle_enabled": "Daily reminders for your chants",
-  "notification_recitation_subtitle_disabled": "Chant reminders are paused. Tap to resume",
-  "notification_practice_title": "Mala reminders",
-  "notification_practice_subtitle_enabled": "Daily reminders for your mala practice",
-  "notification_practice_subtitle_disabled": "Mala reminders are paused. Tap to resume",
-  "notification_timer_title": "Timer reminders",
-  "notification_timer_subtitle_enabled": "Daily reminders for your timers",
-  "notification_timer_subtitle_disabled": "Timer reminders are paused. Tap to resume",
-  "notification_battery_info_title": "About background reminders",
-  "notification_battery_info_body": "Some Android phones pause background apps to save battery, which can delay or cancel your scheduled reminders. Exempting the app keeps your reminders reliably on time.",
   "notification_snack_permission_denied": "Notifications are blocked. Turn them on in Settings",
   "notification_snack_disable_alarms_in_settings": "Turn off alarms & reminders in Settings",
-  "notification_snack_battery_reenable": "Restore battery optimization in Settings → Battery",
+  "notification_allow_subtitle_on": "Reminders and updates from WeBuddhist",
+  "notification_allow_subtitle_off": "Off. Turn on to get reminders and updates.",
+  "notification_section_practice": "Practice",
+  "notification_section_connect": "Connect",
+  "notification_row_plans": "Plans",
+  "notification_row_chants": "Chants",
+  "notification_row_mala": "Mala & accumulations",
+  "notification_row_timer": "Timer",
+  "notification_row_group_posts": "Group posts",
+  "notification_row_group_chats": "Group chats",
+  "notification_row_my_prayer_requests": "My prayer requests",
+  "notification_row_others_prayer_requests": "Other people's prayer requests",
   "profile_default_bio": "Welcome to WeBuddhist",
   "profile_guest_title": "Guest user",
   "profile_guest_subtitle": "You're browsing as a guest",
@@ -365,6 +356,15 @@
   "connect_post_comments_empty": "No comments yet. Start the conversation",
   "connect_caption_more": "More",
   "connect_online": "Online",
+  "connect_ended": "Ended",
+  "connect_ended_on": "Ended {date}",
+  "@connect_ended_on": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "home_group_events": "Featured events",
   "home_poems": "Poems",
   "poems_load_error": "Unable to load poems.\nCheck your connection and try again",
@@ -384,6 +384,7 @@
   "connect_event_practice_online": "Practice online",
   "connect_event_view_in_person": "In-person view",
   "connect_event_view_online": "Online view",
+  "connect_event_has_ended": "This event has ended",
   "connect_event_join_to_practice": "Join the event to practice",
   "connect_event_leave": "Leave event",
   "connect_event_leave_confirm_title": "Leave this event?",
@@ -397,6 +398,14 @@
   },
   "connect_event_participants_attending": "{count} participants",
   "@connect_event_participants_attending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connect_event_participants_attended": "{count} attended",
+  "@connect_event_participants_attended": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -823,7 +832,6 @@
   "legal_terms_of_service": "Terms of service",
   "legal_privacy_policy": "Privacy policy",
   "follow": "Follow",
-  "following": "Following",
   "calendar_title": "Calendar",
   "calendar_upcoming_events": "Upcoming events",
   "calendar_day_short": "DAY",
@@ -856,7 +864,6 @@
   "moon_phase_last_quarter": "Last quarter",
   "moon_phase_waning_crescent": "Waning crescent",
   "join": "Join",
-  "joined": "Joined",
   "group_member": "member",
   "group_members": "members",
   "group_tab_members": "Members",
@@ -889,10 +896,10 @@
   "group_chat_unmute_notifications": "Unmute chat notifications",
   "group_chat_notifications_muted": "Chat notifications muted",
   "group_chat_notifications_unmuted": "Chat notifications on",
-  "group_leave": "Unjoin",
-  "group_leave_confirm_title": "Unjoin?",
   "group_leave_confirm_message": "You'll stop getting messages and updates from this space",
-  "group_leave_failed": "Couldn't unjoin. Try again",
+  "group_leave_space": "Leave space",
+  "group_leave_space_confirm_title": "Leave this space?",
+  "group_leave_space_failed": "Couldn't leave the space. Try again",
   "group_request_to_join": "Ask to join",
   "group_request": "Ask to join",
   "group_request_sent": "Request sent",
@@ -1068,6 +1075,7 @@
   "group_accumulator_contributions_empty": "Join this accumulation to track your contributions",
   "group_accumulator_leaderboard_empty": "No recitations yet",
   "group_accumulator_recite_now": "Recite now",
+  "group_accumulator_view_practice": "View practice",
   "group_accumulator_chant_again": "Chant again",
   "group_accumulator_finish_session": "Finish session",
   "group_accumulator_offline_recitation": "Offline recitation",
@@ -1533,8 +1541,8 @@
   "event_prayer_empty_title": "No prayer requests yet",
   "event_prayer_empty_body": "Your request and your space's requests will appear here",
   "event_prayer_add": "Add a prayer request",
-  "event_prayer_hint": "How can we pray for you today?",
-  "event_prayer_hint_intention": "Share a prayer about {topics}",
+  "event_prayer_hint": "Share a prayer for yourself or others…",
+  "event_prayer_hint_intention": "Request a prayer for: {topics}",
   "@event_prayer_hint_intention": {
     "placeholders": {
       "topics": {

@@ -13,15 +13,21 @@ class GroupEventParticipantsDrawer extends ConsumerStatefulWidget {
     super.key,
     required this.eventId,
     required this.totalAttending,
+    this.isPast = false,
   });
 
   final String eventId;
   final int totalAttending;
 
+  /// The event is over, so the heading reads "attended" rather than
+  /// "participants".
+  final bool isPast;
+
   static Future<void> show(
     BuildContext context, {
     required String eventId,
     required int totalAttending,
+    bool isPast = false,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -35,6 +41,7 @@ class GroupEventParticipantsDrawer extends ConsumerStatefulWidget {
           (_) => GroupEventParticipantsDrawer(
             eventId: eventId,
             totalAttending: totalAttending,
+            isPast: isPast,
           ),
     );
   }
@@ -99,9 +106,13 @@ class _GroupEventParticipantsDrawerState
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    context.l10n.connect_event_participants_attending(
-                      widget.totalAttending,
-                    ),
+                    widget.isPast
+                        ? context.l10n.connect_event_participants_attended(
+                          widget.totalAttending,
+                        )
+                        : context.l10n.connect_event_participants_attending(
+                          widget.totalAttending,
+                        ),
                     style: Theme.of(
                       context,
                     ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),

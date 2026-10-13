@@ -18,6 +18,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconn
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_delete_dialog.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_notification_settings_sheet.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_prompt.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_request_tile.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_filter_bar.dart';
@@ -577,8 +578,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   Widget _buildTitleBar(BuildContext context, bool isDark) {
     final titleColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final auth = ref.watch(authProvider);
+    final signedIn = auth.isLoggedIn && !auth.isGuest;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 16, 4),
+      padding: EdgeInsets.fromLTRB(4, 0, signedIn ? 4 : 16, 4),
       child: Row(
         children: [
           IconButton(
@@ -597,6 +600,16 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
               ),
             ),
           ),
+          // The ⋮ opens the prayer notification choices straight away; they
+          // need an account.
+          if (signedIn)
+            IconButton(
+              icon: Icon(AppAssets.dotsThreeVertical, color: titleColor),
+              tooltip: context.l10n.group_notifications_title,
+              onPressed:
+                  () =>
+                      unawaited(PrayerNotificationSettingsSheet.show(context)),
+            ),
         ],
       ),
     );

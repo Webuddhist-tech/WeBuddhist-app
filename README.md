@@ -49,7 +49,8 @@ user typed. Each feature fires them through a small analytics class
 (`PlanAnalytics`, `ReaderAnalytics`, `MalaAnalytics`, ...) in its
 `presentation/utils` folder, so screens never spell out event names or
 property keys themselves. Every share sheet reports one `content_shared`
-event with a `surface`, only after the sheet was actually used.
+event with a `surface` and the user's content `language`, only after the
+sheet was actually used.
 
 Microsoft Clarity adds session recordings and per-screen heatmaps on top of
 PostHog. One Clarity project can serve every flavor: each session is tagged

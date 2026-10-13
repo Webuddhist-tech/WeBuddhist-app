@@ -33,6 +33,7 @@ void main() {
     expect(group.userTotalCount, 23);
     expect(group.groupTotalCount, 423);
     expect(group.isJoined, isTrue);
+    expect(group.endDate, DateTime.utc(2026, 9, 21));
   });
 
   test('a plain group accumulation has no event title', () {
@@ -52,6 +53,7 @@ void main() {
     expect(group.eventTitle, isNull);
     expect(group.groupName, 'WeBuddhist');
     expect(group.image, isNull);
+    expect(group.endDate, isNull);
   });
 
   test('a payload from before the totals shipped still parses', () {

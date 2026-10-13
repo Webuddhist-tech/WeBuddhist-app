@@ -13,6 +13,7 @@ import 'package:flutter_pecha/core/config/app_feature_flags.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/deep_linking/app_links_deep_link_service.dart';
+import 'package:flutter_pecha/core/error/crash_reporting/crash_reporter.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
 import 'package:flutter_pecha/core/l10n/l10n.dart';
 import 'package:flutter_pecha/core/services/airbridge_deep_link_service.dart';
@@ -24,6 +25,8 @@ import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_bootstrap.dart';
 import 'package:flutter_pecha/features/notifications/application/notification_sync_engine.dart';
 import 'package:flutter_pecha/features/notifications/data/services/notification_service.dart';
+import 'package:flutter_pecha/features/notifications/presentation/providers/notification_provider.dart'
+    show notificationProvider;
 import 'package:flutter_pecha/features/push_notifications/application/push_notification_service.dart';
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_local_datasource.dart';
@@ -80,13 +83,9 @@ void main() async {
     _logger.warning('Error initializing Firebase: $e');
   }
   if (firebaseReady) {
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-    // Uncaught async errors (e.g. in auth restore) are otherwise invisible.
-    WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
-      _logger.error('Uncaught async error', error, stack);
-      FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
-      return true;
-    };
+    // Classifies each unhandled framework and async error before reporting,
+    // so offline and image-load failures are not recorded as crashes.
+    CrashReporter.forCrashlytics(FirebaseCrashlytics.instance).install();
 
     // Register the FCM background/terminated-state handler. Must be done before
     // runApp and references a top-level function so it survives AOT and runs in
@@ -303,6 +302,9 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       ref
           .read(notificationSyncEngineProvider)
           .sync(trigger: SyncTrigger.appResume);
+      // Every notification switch greys out on the OS permission, so a
+      // change made in system settings must show wherever the user returns.
+      unawaited(ref.read(notificationProvider.notifier).refreshStatus());
       unawaited(
         ref.read(timersDomainRepositoryProvider).flushPendingTimerStops(),
       );
