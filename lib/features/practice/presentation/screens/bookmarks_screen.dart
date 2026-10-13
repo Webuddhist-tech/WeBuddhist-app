@@ -247,11 +247,12 @@ class _BookmarkFilterPills extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Each pill's tap area adds a few pixels above and below the drawn pill,
+    // which supplies the gap between rows and most of the top padding.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
       child: Wrap(
         spacing: 8,
-        runSpacing: 8,
         children: [
           for (var i = 0; i < labels.length; i++)
             _FilterPill(
@@ -285,31 +286,51 @@ class _FilterPill extends StatelessWidget {
     final inverse = isDark ? AppColors.textPrimary : AppColors.textPrimaryDark;
     final border = isDark ? AppColors.cardBorderDark : AppColors.grey300;
 
+    // The pill is drawn at the design's height, but like a Material chip its
+    // tap area is padded to kMinInteractiveDimension; a tap on that padding
+    // selects the pill too.
     return Semantics(
       button: true,
       selected: isSelected,
-      child: Material(
-        color: isSelected ? ink : Colors.transparent,
-        shape: StadiumBorder(
-          side: BorderSide(color: isSelected ? ink : border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 56),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                strutStyle: context.tibetanStrutStyle(16, compact: true),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected ? inverse : ink,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: kMinInteractiveDimension,
+          ),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Material(
+              color: isSelected ? ink : Colors.transparent,
+              shape: StadiumBorder(
+                side: BorderSide(color: isSelected ? ink : border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 56),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      strutStyle: context.tibetanStrutStyle(16, compact: true),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected ? inverse : ink,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -359,8 +380,10 @@ class _BookmarkTabView extends StatelessWidget {
           builder:
               (context, constraints) => SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: constraints.maxHeight,
+                // A minimum, not a fixed height: with large text the message
+                // can be taller than the room left under the pills.
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: _BookmarkEmptyState(
                     firstLine: emptyMessage.$1,
                     secondLine: emptyMessage.$2,

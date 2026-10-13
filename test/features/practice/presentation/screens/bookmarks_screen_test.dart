@@ -11,7 +11,10 @@ class _FakeBookmarkRepository extends Fake implements BookmarkRepository {}
 void main() {
   late AppLocalizations l10n;
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -26,7 +29,7 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          locale: const Locale('en'),
+          locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: const BookmarksScreen(),
@@ -40,22 +43,47 @@ void main() {
   Matcher pill(String label, {required bool selected}) =>
       isSemantics(label: label, isButton: true, isSelected: selected);
 
+  List<String> pillLabels() => [
+    l10n.search_all,
+    l10n.home_shortcut_plans,
+    l10n.home_chants,
+    l10n.bookmark_mala,
+    l10n.bookmark_group_accumulation,
+    l10n.bookmark_timers,
+    l10n.bookmark_texts,
+  ];
+
+  /// The drawn pill, without the padding that pads its tap area.
+  Rect pillRect(WidgetTester tester, String label) => tester.getRect(
+    find.ancestor(of: find.text(label), matching: find.byType(Material)).first,
+  );
+
+  /// Pumps at a narrow phone size in Mongolian, which has the longest labels.
+  Future<void> pumpNarrowMongolian(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpScreen(tester, locale: const Locale('mn'));
+  }
+
+  /// Every pill sits inside the 16px gutters, and they need more than one row.
+  void expectPillsWrapInside(WidgetTester tester) {
+    final rects = [for (final label in pillLabels()) pillRect(tester, label)];
+    for (final rect in rects) {
+      expect(rect.left, greaterThanOrEqualTo(16));
+      expect(rect.right, lessThanOrEqualTo(320 - 16));
+    }
+    expect(rects.map((rect) => rect.top).toSet().length, greaterThan(1));
+    expect(tester.takeException(), isNull);
+  }
+
   testWidgets('shows every filter as a pill with All selected', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     await pumpScreen(tester);
 
-    final labels = [
-      l10n.search_all,
-      l10n.home_shortcut_plans,
-      l10n.home_chants,
-      l10n.bookmark_mala,
-      l10n.bookmark_group_accumulation,
-      l10n.bookmark_timers,
-      l10n.bookmark_texts,
-    ];
-    for (final label in labels) {
+    for (final label in pillLabels()) {
       expect(
         tester.getSemantics(find.text(label)),
         pill(label, selected: label == l10n.search_all),
@@ -109,5 +137,46 @@ void main() {
     );
     expect(find.text(l10n.bookmarks_empty_plans_title), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('pills meet the minimum tap target size', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpScreen(tester);
+
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+    semantics.dispose();
+  });
+
+  testWidgets('a tap just above the drawn pill selects it', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpScreen(tester);
+
+    final rect = pillRect(tester, l10n.bookmark_timers);
+    expect(rect.height, lessThan(kMinInteractiveDimension));
+    await tester.tapAt(Offset(rect.center.dx, rect.top - 2));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSemantics(find.text(l10n.bookmark_timers)),
+      pill(l10n.bookmark_timers, selected: true),
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('long labels wrap on a narrow phone', (tester) async {
+    await pumpNarrowMongolian(tester);
+
+    expectPillsWrapInside(tester);
+  });
+
+  testWidgets('long labels wrap on a narrow phone with large text', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpNarrowMongolian(tester);
+
+    expectPillsWrapInside(tester);
   });
 }
