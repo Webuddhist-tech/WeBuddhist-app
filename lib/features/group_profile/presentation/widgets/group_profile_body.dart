@@ -1290,7 +1290,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     setState(() => _joiningAccumulatorId = accumulator.id);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: accumulator.id,
       groupId: profile.id,
       group: profile,

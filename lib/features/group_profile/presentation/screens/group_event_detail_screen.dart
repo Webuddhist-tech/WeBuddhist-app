@@ -760,7 +760,7 @@ class _GroupEventDetailScreenState
     final previousParticipation = _participationOf(event);
     setState(() => _isSubmitting = true);
     final result = await joinGroupEventEnsuringGroupMembership(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       event: event,
       participationType: participation,
     );
@@ -1803,7 +1803,7 @@ class _EventAccumulatorPanelState
 
     setState(() => _isJoining = true);
     final ok = await joinGroupAccumulator(
-      ref: ref,
+      container: ProviderScope.containerOf(context, listen: false),
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );
@@ -1854,7 +1854,7 @@ class _EventAccumulatorPanelState
     } catch (_) {}
     if (!mounted) return;
     refreshGroupAccumulatorData(
-      ref,
+      ProviderScope.containerOf(context, listen: false),
       accumulatorId: detail.id,
       groupId: detail.groupId,
     );
