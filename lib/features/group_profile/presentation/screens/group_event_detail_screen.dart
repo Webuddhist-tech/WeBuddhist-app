@@ -305,6 +305,7 @@ class _GroupEventDetailScreenState
                   eventId: event.id,
                   participants: participants,
                   totalAttending: totalAttending,
+                  isPast: isPast,
                   isDark: isDark,
                 ),
               ),
@@ -326,6 +327,10 @@ class _GroupEventDetailScreenState
           if (actions.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildActionRow(event, actions, isDark),
+          ],
+          if (isPast) ...[
+            const SizedBox(height: 12),
+            _EventEndedBanner(event: event, isDark: isDark),
           ],
           _EventLinksCard(event: event, isDark: isDark),
           const SizedBox(height: 16),
@@ -429,10 +434,6 @@ class _GroupEventDetailScreenState
         GroupEventAction.practiceOnline => (
           l10n.connect_event_practice_online,
           () => practice(GroupEventParticipationType.online),
-        ),
-        GroupEventAction.practiceNow => (
-          l10n.start_reading,
-          () => _enterPuja(event),
         ),
       };
       return _EventActionButton(
@@ -888,6 +889,64 @@ class _GroupEventDetailScreenState
   }
 }
 
+/// Shown once the event is over: the prejoin buttons stay, Join does not,
+/// and the last day of the when-range sits on the right. Styled like the
+/// organizer card in [_EventGroupRow].
+class _EventEndedBanner extends StatelessWidget {
+  final GroupEvent event;
+  final bool isDark;
+
+  const _EventEndedBanner({required this.event, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final lastDay = (event.endDate ?? event.startDate)?.toLocal();
+    final dateText =
+        lastDay == null
+            ? null
+            : DateFormat(
+              'd MMM y',
+              intlFormatLocaleOf(context),
+            ).format(lastDay);
+    final cardColor =
+        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
+    final dateColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              context.l10n.connect_event_has_ended,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          if (dateText != null) ...[
+            const SizedBox(width: 12),
+            Text(
+              dateText,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: dateColor,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// A pill in the event page's action row: black, or grey when [secondary].
 /// A busy row keeps its colours; only the pending button shows a spinner.
 class _EventActionButton extends StatelessWidget {
@@ -1008,12 +1067,14 @@ class _AttendeesRow extends StatelessWidget {
   final String eventId;
   final List<GroupEventParticipant> participants;
   final int totalAttending;
+  final bool isPast;
   final bool isDark;
 
   const _AttendeesRow({
     required this.eventId,
     required this.participants,
     required this.totalAttending,
+    required this.isPast,
     required this.isDark,
   });
 
@@ -1058,6 +1119,7 @@ class _AttendeesRow extends StatelessWidget {
             context,
             eventId: eventId,
             totalAttending: totalAttending,
+            isPast: isPast,
           ),
       child: Row(
         children: [
@@ -1067,7 +1129,13 @@ class _AttendeesRow extends StatelessWidget {
           // Shares the line with the prayer requests chip, so let it shrink.
           Flexible(
             child: Text(
-              context.l10n.connect_event_participants_attending(totalAttending),
+              isPast
+                  ? context.l10n.connect_event_participants_attended(
+                    totalAttending,
+                  )
+                  : context.l10n.connect_event_participants_attending(
+                    totalAttending,
+                  ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

@@ -1768,6 +1768,12 @@ abstract class AppLocalizations {
   /// **'Online view'**
   String get connect_event_view_online;
 
+  /// No description provided for @connect_event_has_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'This event has ended'**
+  String get connect_event_has_ended;
+
   /// No description provided for @connect_event_join_to_practice.
   ///
   /// In en, this message translates to:
@@ -1797,6 +1803,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} participants'**
   String connect_event_participants_attending(int count);
+
+  /// No description provided for @connect_event_participants_attended.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attended'**
+  String connect_event_participants_attended(int count);
 
   /// No description provided for @connect_event_participants_empty.
   ///

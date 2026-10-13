@@ -1840,6 +1840,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_has_ended => TolgeeBridge.get(
+    localeName,
+    'connect_event_has_ended',
+    () => _fallback.connect_event_has_ended,
+  );
+
+  @override
   String get connect_event_join_to_practice => TolgeeBridge.get(
     localeName,
     'connect_event_join_to_practice',
@@ -1875,6 +1882,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'connect_event_participants_attending',
     <String, Object>{'count': count},
     () => _fallback.connect_event_participants_attending(count),
+  );
+
+  @override
+  String connect_event_participants_attended(int count) => TolgeeBridge.format(
+    localeName,
+    'connect_event_participants_attended',
+    <String, Object>{'count': count},
+    () => _fallback.connect_event_participants_attended(count),
   );
 
   @override
@@ -4143,10 +4158,12 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) =>
-      TolgeeBridge.format(localeName, 'group_removed_message', <String, Object>{
-        'group': group,
-        'duration': duration,
-      }, () => _fallback.group_removed_message(group, duration));
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_message',
+        <String, Object>{'group': group, 'duration': duration},
+        () => _fallback.group_removed_message(group, duration),
+      );
 
   @override
   String group_removed_message_no_date(String group) => TolgeeBridge.format(
@@ -5827,10 +5844,12 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String event_replay_session(String day, String session) =>
-      TolgeeBridge.format(localeName, 'event_replay_session', <String, Object>{
-        'day': day,
-        'session': session,
-      }, () => _fallback.event_replay_session(day, session));
+      TolgeeBridge.format(
+        localeName,
+        'event_replay_session',
+        <String, Object>{'day': day, 'session': session},
+        () => _fallback.event_replay_session(day, session),
+      );
 
   @override
   String get event_replay_recording => TolgeeBridge.get(

@@ -185,10 +185,13 @@ class GroupEventListTile extends StatelessWidget {
         isDark ? AppColors.eventInPersonChipDark : AppColors.eventInPersonChip;
 
     return [
+      // Solid and inverted against the theme so it reads before the rest.
       if (hasEnded)
         _EventChip(
           label: context.l10n.connect_ended,
-          color: inPersonColor,
+          color: isDark ? AppColors.textPrimary : AppColors.textPrimaryDark,
+          backgroundColor:
+              isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
           lineHeight: lineHeight,
         ),
       if (showLocation)
@@ -261,12 +264,16 @@ class _EventChip extends StatelessWidget {
   final IconData? icon;
   final String label;
   final Color color;
+
+  /// A solid fill. Null tints the chip with a faint [color].
+  final Color? backgroundColor;
   final double? lineHeight;
 
   const _EventChip({
     this.icon,
     required this.label,
     required this.color,
+    this.backgroundColor,
     this.lineHeight,
   });
 
@@ -275,7 +282,7 @@ class _EventChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: backgroundColor ?? color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
