@@ -924,6 +924,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_event_view_online => '線上檢視';
 
   @override
+  String get connect_event_has_ended => 'This event has ended';
+
+  @override
   String get connect_event_join_to_practice => '參加活動即可修持';
 
   @override
@@ -940,6 +943,11 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String connect_event_participants_attending(int count) {
     return '$count 位參與者';
+  }
+
+  @override
+  String connect_event_participants_attended(int count) {
+    return '$count attended';
   }
 
   @override

@@ -1903,6 +1903,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_has_ended => TolgeeBridge.get(
+    localeName,
+    'connect_event_has_ended',
+    () => _fallback.connect_event_has_ended,
+  );
+
+  @override
   String get connect_event_join_to_practice => TolgeeBridge.get(
     localeName,
     'connect_event_join_to_practice',
@@ -1938,6 +1945,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'connect_event_participants_attending',
     <String, Object>{'count': count},
     () => _fallback.connect_event_participants_attending(count),
+  );
+
+  @override
+  String connect_event_participants_attended(int count) => TolgeeBridge.format(
+    localeName,
+    'connect_event_participants_attended',
+    <String, Object>{'count': count},
+    () => _fallback.connect_event_participants_attended(count),
   );
 
   @override

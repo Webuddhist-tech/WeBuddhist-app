@@ -120,14 +120,22 @@ void main() {
       );
     });
 
-    test('falls back to one Practice now button after the event', () {
+    test('shows the view buttons once the event is over', () {
       expect(
         groupEventActionsFor(
           _event('hybrid'),
           isAttending: true,
           isPast: true,
         ),
-        [GroupEventAction.practiceNow],
+        [GroupEventAction.viewInPerson, GroupEventAction.viewOnline],
+      );
+      expect(
+        groupEventActionsFor(
+          _event('online', hasPuja: false),
+          isAttending: true,
+          isPast: true,
+        ),
+        isEmpty,
       );
     });
   });

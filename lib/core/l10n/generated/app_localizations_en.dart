@@ -972,6 +972,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_view_online => 'Online view';
 
   @override
+  String get connect_event_has_ended => 'This event has ended';
+
+  @override
   String get connect_event_join_to_practice => 'Join the event to practice';
 
   @override
@@ -988,6 +991,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String connect_event_participants_attending(int count) {
     return '$count participants';
+  }
+
+  @override
+  String connect_event_participants_attended(int count) {
+    return '$count attended';
   }
 
   @override
