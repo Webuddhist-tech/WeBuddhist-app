@@ -4420,6 +4420,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_accumulator_view_practice => TolgeeBridge.get(
+    localeName,
+    'group_accumulator_view_practice',
+    () => _fallback.group_accumulator_view_practice,
+  );
+
+  @override
   String get group_accumulator_chant_again => TolgeeBridge.get(
     localeName,
     'group_accumulator_chant_again',

@@ -2142,6 +2142,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_accumulator_recite_now => '立即持誦';
 
   @override
+  String get group_accumulator_view_practice => 'View practice';
+
+  @override
   String get group_accumulator_chant_again => '再次持誦';
 
   @override

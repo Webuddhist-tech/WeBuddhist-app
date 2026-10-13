@@ -277,7 +277,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     final added =
         _openedEndedAccumulator
-            ? await addOfflineChantsToPersonal(ref.read, mantra, count)
+            ? await addOfflineChantsToPersonal(
+              ref.read,
+              ref.listenManual,
+              mantra,
+              count,
+            )
             : addOfflineChantsToSelection(ref.read, mantra, count);
     if (!mounted) return;
     if (!added) {

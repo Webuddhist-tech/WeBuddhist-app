@@ -2270,6 +2270,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_accumulator_recite_now => 'Одоо уншина уу';
 
   @override
+  String get group_accumulator_view_practice => 'View practice';
+
+  @override
   String get group_accumulator_chant_again => 'Дахин унших';
 
   @override

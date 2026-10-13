@@ -2275,6 +2275,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_accumulator_recite_now => 'ད་ལྟ་བཟླས་བརྗོད་གནང་།';
 
   @override
+  String get group_accumulator_view_practice => 'View practice';
+
+  @override
   String get group_accumulator_chant_again => 'ཡང་བསྐྱར་བཟླས།';
 
   @override

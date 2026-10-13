@@ -64,7 +64,12 @@ void main() {
 
   /// A container with the reader's chant providers held open, as the reader
   /// holds them, and the stored selection loaded.
-  Future<ProviderContainer> openSession() async {
+  ///
+  /// [watchPersonalCounter] is false for an ended reader: the selection stays
+  /// on the group, so the personal counter is not watched.
+  Future<ProviderContainer> openSession({
+    bool watchPersonalCounter = true,
+  }) async {
     final container = ProviderContainer(
       overrides: [
         localStorageServiceProvider.overrideWithValue(FakeUserStorage(_userId)),
@@ -78,7 +83,9 @@ void main() {
     addTearDown(container.dispose);
     container.listen(malaAccumulationSelectionProvider(_presetId), (_, __) {});
     container.listen(groupAccumulationCountsProvider(_presetId), (_, __) {});
-    container.listen(malaCounterProvider(_mantra), (_, __) {});
+    if (watchPersonalCounter) {
+      container.listen(malaCounterProvider(_mantra), (_, __) {});
+    }
     await container
         .read(malaAccumulationSelectionProvider(_presetId).notifier)
         .loaded;
@@ -247,6 +254,30 @@ void main() {
     expect(eventTotal(container), 601);
     expect(local.readGroup(_userId, _eventAccumulation).total, 601);
   });
+
+  test(
+    'offline chants added to personal practice survive an unwatched seed',
+    () async {
+      repository.detailGate = Completer();
+      final container = await openSession(watchPersonalCounter: false);
+
+      final pending = addOfflineChantsToPersonal(
+        container.read,
+        container.listen,
+        _mantra,
+        9,
+      );
+      // Several turns, so an unwatched autoDispose counter would already
+      // be gone before the network seed returns.
+      await settle();
+
+      repository.detailGate!.complete(const Right(MalaCount(total: 0)));
+      expect(await pending, isTrue);
+      expect(personalTotal(container), 9);
+      await settle();
+      expect(local.read(_userId, _presetId).total, 9);
+    },
+  );
 
   test('the server count marks only its own group as loaded', () async {
     final container = await openSession();

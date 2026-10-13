@@ -1077,6 +1077,7 @@
   "group_accumulator_contributions_empty": "Join this accumulation to track your contributions",
   "group_accumulator_leaderboard_empty": "No recitations yet",
   "group_accumulator_recite_now": "Recite now",
+  "group_accumulator_view_practice": "View practice",
   "group_accumulator_chant_again": "Chant again",
   "group_accumulator_finish_session": "Finish session",
   "group_accumulator_offline_recitation": "Offline recitation",

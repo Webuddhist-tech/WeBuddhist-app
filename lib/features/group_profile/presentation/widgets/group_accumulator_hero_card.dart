@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:intl/intl.dart';
 
@@ -141,7 +142,11 @@ class GroupAccumulatorHeroCard extends StatelessWidget {
                     onTap: onJoinTap,
                   )
                 else
-                  _ActionButton(isDark: isDark, onTap: onActionTap),
+                  _ActionButton(
+                    isDark: isDark,
+                    ended: isPastEndDate(detail.endDate, DateTime.now()),
+                    onTap: onActionTap,
+                  ),
               ],
             ),
           ),
@@ -153,9 +158,10 @@ class GroupAccumulatorHeroCard extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   final bool isDark;
+  final bool ended;
   final VoidCallback? onTap;
 
-  const _ActionButton({required this.isDark, this.onTap});
+  const _ActionButton({required this.isDark, required this.ended, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +176,9 @@ class _ActionButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          context.l10n.group_accumulator_recite_now,
+          ended
+              ? context.l10n.group_accumulator_view_practice
+              : context.l10n.group_accumulator_recite_now,
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,

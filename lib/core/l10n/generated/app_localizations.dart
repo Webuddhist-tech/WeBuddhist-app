@@ -4054,6 +4054,12 @@ abstract class AppLocalizations {
   /// **'Recite now'**
   String get group_accumulator_recite_now;
 
+  /// No description provided for @group_accumulator_view_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'View practice'**
+  String get group_accumulator_view_practice;
+
   /// No description provided for @group_accumulator_chant_again.
   ///
   /// In en, this message translates to:
