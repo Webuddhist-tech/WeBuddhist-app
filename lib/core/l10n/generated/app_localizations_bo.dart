@@ -3051,7 +3051,7 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String event_prayer_hint_intention(String topics) {
-    return 'Share a prayer about $topics';
+    return 'སྐྱབས་ཞུའི་དགོས་དོན།: $topics';
   }
 
   @override
@@ -3114,8 +3114,8 @@ class AppLocalizationsBo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'མི་ $count ནས་སྨོན་ལམ་བཏབ་སོང་།',
-      one: 'མི་ $count ནས་སྨོན་ལམ་བཏབ་སོང་།',
+      other: 'མི་$count ནས་སྨོན་ལམ་བཏབ་སོང་།',
+      one: 'མི་$count ནས་སྨོན་ལམ་བཏབ་སོང་།',
     );
     return '$_temp0';
   }

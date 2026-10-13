@@ -3036,7 +3036,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String event_prayer_hint_intention(String topics) {
-    return 'Share a prayer about $topics';
+    return 'Request a prayer for: $topics';
   }
 
   @override

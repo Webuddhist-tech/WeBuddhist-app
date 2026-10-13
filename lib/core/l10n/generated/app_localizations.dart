@@ -5303,13 +5303,13 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'How can we pray for you today?'**
+  /// **'Share a prayer for yourself or others…'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_hint_intention.
   ///
   /// In en, this message translates to:
-  /// **'Share a prayer about {topics}'**
+  /// **'Request a prayer for: {topics}'**
   String event_prayer_hint_intention(String topics);
 
   /// No description provided for @event_prayer_load_failed.

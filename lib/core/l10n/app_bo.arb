@@ -1210,7 +1210,7 @@
       }
     }
   },
-  "event_prayer_people_praying": "{count, plural,\n=1 {མི་ {count} ནས་སྨོན་ལམ་བཏབ་སོང་།}\nother {མི་ {count} ནས་སྨོན་ལམ་བཏབ་སོང་།}\n}",
+  "event_prayer_people_praying": "{count, plural,\n=1 {མི་{count} ནས་སྨོན་ལམ་བཏབ་སོང་།}\nother {མི་{count} ནས་སྨོན་ལམ་བཏབ་སོང་།}\n}",
   "@event_prayer_people_praying": {
     "placeholders": {
       "count": {
@@ -1269,5 +1269,13 @@
   "event_prayer_sort_most_prayed": "ཐུགས་སྨོན་རག་མང་ཤོས་ནས་སྟོན།",
   "event_prayer_sort_newest": "སྐྱབས་ཞུ་གསར་ཤོས་ནས་སྟོན།",
   "event_prayer_sort_oldest": "སྐྱབས་ཞུ་རྙིང་ཤོས་ནས་སྟོན།",
-  "event_prayer_sort_by_intention": "སྐྱབས་ཞུའི་དགོས་དམིགས་ནས།"
+  "event_prayer_sort_by_intention": "སྐྱབས་ཞུའི་དགོས་དམིགས་ནས།",
+  "event_prayer_hint_intention": "སྐྱབས་ཞུའི་དགོས་དོན།: {topics}",
+  "@event_prayer_hint_intention": {
+    "placeholders": {
+      "topics": {
+        "type": "String"
+      }
+    }
+  }
 }
