@@ -527,6 +527,10 @@ class NavigationContext {
   /// User session count from `GET /group-accumulators/{id}` before entering.
   final int? groupAccumulatorSessionCount;
 
+  /// The accumulation this chant was opened from is past its end date.
+  /// The reader shows the text and does not record a chant into it.
+  final bool groupAccumulatorEnded;
+
   /// Language to load in the reader (e.g. the chant-list picker).
   /// Plans, library, and deep links leave this null so the API uses Settings.
   final String? language;
@@ -563,6 +567,7 @@ class NavigationContext {
     this.groupId,
     this.groupTitle,
     this.groupAccumulatorSessionCount,
+    this.groupAccumulatorEnded = false,
     this.language,
     this.collectionId,
     this.eventId,
@@ -693,6 +698,7 @@ class NavigationContext {
     String? groupId,
     String? groupTitle,
     int? groupAccumulatorSessionCount,
+    bool? groupAccumulatorEnded,
     String? language,
     String? collectionId,
     String? eventId,
@@ -715,6 +721,8 @@ class NavigationContext {
       groupTitle: groupTitle ?? this.groupTitle,
       groupAccumulatorSessionCount:
           groupAccumulatorSessionCount ?? this.groupAccumulatorSessionCount,
+      groupAccumulatorEnded:
+          groupAccumulatorEnded ?? this.groupAccumulatorEnded,
       language: language ?? this.language,
       collectionId: collectionId ?? this.collectionId,
       eventId: eventId ?? this.eventId,

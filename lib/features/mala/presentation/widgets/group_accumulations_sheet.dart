@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_accumulation_selection.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
@@ -82,9 +83,11 @@ class GroupAccumulationsSheet extends ConsumerWidget {
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     ref.watch(groupAccumulationCountsProvider(presetId));
-    final groups =
-        ref.watch(joinedAccumulatorGroupsProvider(presetId)).valueOrNull ??
-        this.groups;
+    final groups = contributableAccumulatorGroups(
+      ref.watch(joinedAccumulatorGroupsProvider(presetId)).valueOrNull ??
+          this.groups,
+      DateTime.now(),
+    );
     final countsNotifier = ref.read(
       groupAccumulationCountsProvider(presetId).notifier,
     );

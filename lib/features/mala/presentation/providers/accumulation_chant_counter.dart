@@ -74,3 +74,18 @@ bool addOfflineChantsToSelection(
     count: count,
   );
 }
+
+/// Adds [count] chants to personal practice, ignoring the selected group.
+///
+/// Used when the reader was opened from an accumulation that has ended.
+/// Waits out the personal counter's seed so the add is not dropped.
+Future<bool> addOfflineChantsToPersonal(
+  ProviderReader read,
+  Mantra mantra,
+  int count,
+) async {
+  final notifier = read(malaCounterProvider(mantra).notifier);
+  await notifier.whenSeeded;
+  if (read(malaCounterProvider(mantra)).seedFailed) return false;
+  return notifier.addCount(count);
+}

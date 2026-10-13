@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
@@ -45,11 +46,15 @@ class GroupAccumulationsBar extends ConsumerWidget {
       height: barHeight,
       child: groupsAsync.when(
         data: (groups) {
-          if (groups.isEmpty) return const SizedBox.shrink();
+          final openGroups = contributableAccumulatorGroups(
+            groups,
+            DateTime.now(),
+          );
+          if (openGroups.isEmpty) return const SizedBox.shrink();
           return _GroupAccumulationsBarContent(
             mantra: mantra,
             presetTitle: presetTitle,
-            groups: groups,
+            groups: openGroups,
             avatarSize: _avatarSize,
             avatarOverlap: _avatarOverlap,
           );

@@ -365,6 +365,15 @@
   "connect_post_comments_empty": "No comments yet. Start the conversation",
   "connect_caption_more": "More",
   "connect_online": "Online",
+  "connect_ended": "Ended",
+  "connect_ended_on": "Ended {date}",
+  "@connect_ended_on": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "home_group_events": "Featured events",
   "home_poems": "Poems",
   "poems_load_error": "Unable to load poems.\nCheck your connection and try again",

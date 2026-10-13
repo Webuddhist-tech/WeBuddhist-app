@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
@@ -359,12 +360,17 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
     BuildContext context,
     GroupAccumulatorDetail detail,
   ) async {
+    final ended = isPastEndDate(detail.endDate, DateTime.now());
     if (!detail.hasTextContent) {
       final presetId = detail.presetAccumulatorId;
       if (presetId.isEmpty) return;
       await context.push(
         '/mala',
-        extra: {'presetId': presetId, 'groupAccumulatorId': detail.id},
+        extra: {
+          'presetId': presetId,
+          'groupAccumulatorId': detail.id,
+          'groupAccumulatorEnded': ended,
+        },
       );
       if (!context.mounted) return;
       await _refreshAfterPractice(detail);
@@ -386,6 +392,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
                 ? _resolveGroupName(detail.groupId)!.trim()
                 : null,
         groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+        groupAccumulatorEnded: ended,
       ),
     );
 

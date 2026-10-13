@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_header.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -223,10 +224,16 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
     final hasJoined =
         practice.isJoined ||
         accumulatorHasJoined(accumulator, localJoinedIds: localJoinedIds);
-    final dateRange = PlanDateFormat.formatRangeOrNull(
-      accumulator.startDate,
-      accumulator.endDate,
-    );
+    final hasEnded = isPastEndDate(accumulator.endDate, DateTime.now());
+    final dateBadge =
+        hasEnded
+            ? context.l10n.connect_ended_on(
+              PlanDateFormat.formatDate(accumulator.endDate!),
+            )
+            : PlanDateFormat.formatRangeOrNull(
+              accumulator.startDate,
+              accumulator.endDate,
+            );
     final isJoining =
         widget.isJoiningAccumulator ??
         (_joiningAccumulatorId == accumulator.id);
@@ -322,8 +329,8 @@ class _ConnectPracticeCardState extends ConsumerState<ConnectPracticeCard> {
                               )
                               : null,
                       trailing:
-                          dateRange != null
-                              ? _PracticeImageBadge(label: dateRange)
+                          dateBadge != null
+                              ? _PracticeImageBadge(label: dateBadge)
                               : null,
                     ),
                   ],

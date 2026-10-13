@@ -1696,6 +1696,18 @@ abstract class AppLocalizations {
   /// **'Online'**
   String get connect_online;
 
+  /// No description provided for @connect_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get connect_ended;
+
+  /// No description provided for @connect_ended_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended {date}'**
+  String connect_ended_on(String date);
+
   /// No description provided for @home_group_events.
   ///
   /// In en, this message translates to:

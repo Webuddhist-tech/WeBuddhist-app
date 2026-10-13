@@ -910,6 +910,14 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_online => 'Онлайн';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => 'Онцлох арга хэмжээ';
 
   @override

@@ -918,6 +918,14 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_online => 'अनलाइन';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => 'विशेष कार्यक्रम';
 
   @override

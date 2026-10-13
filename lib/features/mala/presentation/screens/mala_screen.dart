@@ -29,6 +29,7 @@ class MalaScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialPresetId,
     this.initialGroupAccumulatorId,
+    this.openedFromEndedAccumulator = false,
     this.source,
   });
 
@@ -38,6 +39,10 @@ class MalaScreen extends ConsumerStatefulWidget {
   /// When set (e.g. from a group accumulator screen), pre-select that group
   /// accumulation instead of the last-used personal/group choice.
   final String? initialGroupAccumulatorId;
+
+  /// Recite now opened a finished accumulation. Beads still count into it.
+  /// The switcher and add-rounds controls stay hidden.
+  final bool openedFromEndedAccumulator;
 
   /// Where the screen was opened from, carried on `mala_screen_opened`.
   final String? source;
@@ -197,7 +202,13 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
       next.whenData((loadedGroups) {
         ref
             .read(malaAccumulationSelectionProvider(mantra.presetId).notifier)
-            .validateAgainst(loadedGroups);
+            .validateAgainst(
+              loadedGroups,
+              keepEndedId:
+                  widget.openedFromEndedAccumulator
+                      ? widget.initialGroupAccumulatorId
+                      : null,
+            );
         ref.invalidate(joinedGroupUserCountsProvider(mantra.presetId));
       });
     });
@@ -334,18 +345,19 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GroupAccumulationsBar(
-                        mantra: mantra,
-                        presetTitle: mantra.displayTitle(language),
+                if (!widget.openedFromEndedAccumulator)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GroupAccumulationsBar(
+                          mantra: mantra,
+                          presetTitle: mantra.displayTitle(language),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    AddMalaRoundsButton(mantra: mantra),
-                  ],
-                ),
+                      const SizedBox(width: 12),
+                      AddMalaRoundsButton(mantra: mantra),
+                    ],
+                  ),
               ],
             ),
           ),

@@ -859,6 +859,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_online => '線上';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => '精選活動';
 
   @override

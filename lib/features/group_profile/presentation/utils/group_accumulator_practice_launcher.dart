@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
@@ -61,13 +62,18 @@ Future<bool> openGroupAccumulatorPractice(
   }
 
   final countBefore = detail.user?.totalCount ?? 0;
+  final ended = isPastEndDate(detail.endDate, DateTime.now());
 
   if (!detail.hasTextContent) {
     final presetId = detail.presetAccumulatorId;
     if (presetId.isEmpty) return false;
     await context.push(
       '/mala',
-      extra: {'presetId': presetId, 'groupAccumulatorId': detail.id},
+      extra: {
+        'presetId': presetId,
+        'groupAccumulatorId': detail.id,
+        'groupAccumulatorEnded': ended,
+      },
     );
     if (!context.mounted) return false;
     await _refreshAfterPractice(ref, detail);
@@ -88,6 +94,7 @@ Future<bool> openGroupAccumulatorPractice(
       groupId: detail.groupId,
       groupTitle: groupName,
       groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+      groupAccumulatorEnded: ended,
       eventId: eventId,
       isOnlineAttendee: isOnlineAttendee,
       taskIsLive: taskIsLive,

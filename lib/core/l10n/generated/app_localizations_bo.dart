@@ -914,6 +914,14 @@ class AppLocalizationsBo extends AppLocalizations {
   String get connect_online => 'དྲ་ཐོག';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => 'ཁྱད་གསལ་བྱེད་སྒོ།';
 
   @override
