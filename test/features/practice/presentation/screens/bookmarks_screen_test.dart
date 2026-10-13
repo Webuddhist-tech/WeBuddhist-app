@@ -10,6 +10,7 @@ class _FakeBookmarkRepository extends Fake implements BookmarkRepository {}
 
 void main() {
   late AppLocalizations l10n;
+  late MaterialLocalizations materialL10n;
 
   Future<void> pumpScreen(
     WidgetTester tester, {
@@ -37,11 +38,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    l10n = AppLocalizations.of(tester.element(find.byType(BookmarksScreen)))!;
+    final element = tester.element(find.byType(BookmarksScreen));
+    l10n = AppLocalizations.of(element)!;
+    materialL10n = MaterialLocalizations.of(element);
   }
-
-  Matcher pill(String label, {required bool selected}) =>
-      isSemantics(label: label, isButton: true, isSelected: selected);
 
   List<String> pillLabels() => [
     l10n.search_all,
@@ -52,6 +52,18 @@ void main() {
     l10n.bookmark_timers,
     l10n.bookmark_texts,
   ];
+
+  /// A pill reads as a button in the selected state, with its position in the
+  /// group as the hint ("Tab 2 of 7").
+  Matcher pill(String label, {required bool selected}) => containsSemantics(
+    label: label,
+    hint: materialL10n.tabLabel(
+      tabIndex: pillLabels().indexOf(label) + 1,
+      tabCount: pillLabels().length,
+    ),
+    isButton: true,
+    isSelected: selected,
+  );
 
   /// The drawn pill, without the padding that pads its tap area.
   Rect pillRect(WidgetTester tester, String label) => tester.getRect(
@@ -77,9 +89,7 @@ void main() {
     expect(tester.takeException(), isNull);
   }
 
-  testWidgets('shows every filter as a pill with All selected', (
-    tester,
-  ) async {
+  testWidgets('shows every filter as a pill with All selected', (tester) async {
     final semantics = tester.ensureSemantics();
     await pumpScreen(tester);
 
@@ -120,11 +130,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     await pumpScreen(tester);
 
-    await tester.fling(
-      find.byType(TabBarView),
-      const Offset(-400, 0),
-      1000,
-    );
+    await tester.fling(find.byType(TabBarView), const Offset(-400, 0), 1000);
     await tester.pumpAndSettle();
 
     expect(
@@ -178,5 +184,37 @@ void main() {
     await pumpNarrowMongolian(tester);
 
     expectPillsWrapInside(tester);
+  });
+
+  testWidgets('on a short screen the pills scroll instead of hiding the list', (
+    tester,
+  ) async {
+    // Landscape phone with the largest text in the longest-label locale: the
+    // pill rows are taller than the body.
+    tester.view.physicalSize = const Size(640, 320);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpScreen(tester, locale: const Locale('mn'));
+
+    expect(tester.takeException(), isNull);
+    final list = tester.getRect(find.byType(TabBarView));
+    expect(list.height, greaterThanOrEqualTo(list.bottom / 2 - 56));
+    expect(find.text(l10n.bookmarks_empty_all_title), findsOneWidget);
+
+    // The last pill starts out below the pill area and scrolls into it.
+    final lastPill = find.text(l10n.bookmark_texts);
+    expect(tester.getRect(lastPill).top, greaterThan(list.top));
+    await tester.dragUntilVisible(
+      lastPill,
+      find.ancestor(
+        of: find.text(l10n.search_all),
+        matching: find.byType(Scrollable),
+      ),
+      const Offset(0, -50),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getRect(lastPill).bottom, lessThanOrEqualTo(list.top));
   });
 }

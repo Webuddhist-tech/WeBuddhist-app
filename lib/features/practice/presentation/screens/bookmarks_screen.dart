@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -91,16 +92,20 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
     if (ok) {
       final type = bookmarkTypeFromItem(bookmark.type);
       if (type != null) {
-        ref.read(bookmarkExistsCacheProvider.notifier).set(
-          BookmarkTarget(type: type, sourceId: bookmark.sourceId),
-          const BookmarkExistsResult(exists: false),
-        );
+        ref
+            .read(bookmarkExistsCacheProvider.notifier)
+            .set(
+              BookmarkTarget(type: type, sourceId: bookmark.sourceId),
+              const BookmarkExistsResult(exists: false),
+            );
       }
     }
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          ok ? context.l10n.bookmark_removed : context.l10n.bookmark_remove_failed,
+          ok
+              ? context.l10n.bookmark_removed
+              : context.l10n.bookmark_remove_failed,
         ),
         duration: const Duration(seconds: 2),
       ),
@@ -191,40 +196,54 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
         centerTitle: true,
       ),
       // The pills wrap to as many rows as the locale needs, so they live in
-      // the body rather than in a fixed-height AppBar.bottom.
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ListenableBuilder(
-            listenable: _tabController,
-            builder:
-                (context, _) => _BookmarkFilterPills(
-                  labels: _tabLabels(context),
-                  selectedIndex: _tabController.index,
-                  isDark: isDark,
-                  onSelected: _tabController.animateTo,
+      // the body rather than in a fixed-height AppBar.bottom. On a short body
+      // (landscape with large text) the rows could crowd out the list, so the
+      // pill area is capped at half the body and scrolls beyond that.
+      body: LayoutBuilder(
+        builder:
+            (context, constraints) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight / 2,
+                  ),
+                  child: SingleChildScrollView(
+                    child: ListenableBuilder(
+                      listenable: _tabController,
+                      builder:
+                          (context, _) => _BookmarkFilterPills(
+                            labels: _tabLabels(context),
+                            selectedIndex: _tabController.index,
+                            isDark: isDark,
+                            onSelected: _tabController.animateTo,
+                          ),
+                    ),
+                  ),
                 ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: List.generate(
-                _tabs.length,
-                (i) => _BookmarkTabView(
-                  state: state,
-                  tab: _tabs[i],
-                  emptyMessage: emptyMessages[i],
-                  isDark: isDark,
-                  onRefresh:
-                      () => ref.read(bookmarksProvider.notifier).refresh(),
-                  onRetry: () => ref.read(bookmarksProvider.notifier).load(),
-                  onRemove: _onRemove,
-                  onTap: _onTap,
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: List.generate(
+                      _tabs.length,
+                      (i) => _BookmarkTabView(
+                        state: state,
+                        tab: _tabs[i],
+                        emptyMessage: emptyMessages[i],
+                        isDark: isDark,
+                        onRefresh:
+                            () =>
+                                ref.read(bookmarksProvider.notifier).refresh(),
+                        onRetry:
+                            () => ref.read(bookmarksProvider.notifier).load(),
+                        onRemove: _onRemove,
+                        onTap: _onTap,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ),
-        ],
       ),
     );
   }
@@ -247,6 +266,7 @@ class _BookmarkFilterPills extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
     // Each pill's tap area adds a few pixels above and below the drawn pill,
     // which supplies the gap between rows and most of the top padding.
     return Padding(
@@ -257,6 +277,10 @@ class _BookmarkFilterPills extends StatelessWidget {
           for (var i = 0; i < labels.length; i++)
             _FilterPill(
               label: labels[i],
+              semanticsHint: localizations.tabLabel(
+                tabIndex: i + 1,
+                tabCount: labels.length,
+              ),
               isSelected: i == selectedIndex,
               isDark: isDark,
               onTap: () => onSelected(i),
@@ -270,12 +294,17 @@ class _BookmarkFilterPills extends StatelessWidget {
 class _FilterPill extends StatelessWidget {
   const _FilterPill({
     required this.label,
+    required this.semanticsHint,
     required this.isSelected,
     required this.isDark,
     required this.onTap,
   });
 
   final String label;
+
+  /// Position within the group ("Tab 2 of 7"), as Flutter's [TabBar] reads
+  /// it, so screen readers know the pills are a set of filters.
+  final String semanticsHint;
   final bool isSelected;
   final bool isDark;
   final VoidCallback onTap;
@@ -290,8 +319,10 @@ class _FilterPill extends StatelessWidget {
     // tap area is padded to kMinInteractiveDimension; a tap on that padding
     // selects the pill too.
     return Semantics(
+      role: SemanticsRole.tab,
       button: true,
       selected: isSelected,
+      hint: semanticsHint,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         excludeFromSemantics: true,
@@ -414,7 +445,11 @@ class _BookmarkTabView extends StatelessWidget {
       final header = _sectionLabel(context, bookmark.createdAt);
       if (header != lastHeader) {
         children.add(
-          _SectionHeader(label: header, isDark: isDark, isFirst: lastHeader == null),
+          _SectionHeader(
+            label: header,
+            isDark: isDark,
+            isFirst: lastHeader == null,
+          ),
         );
         lastHeader = header;
       }
