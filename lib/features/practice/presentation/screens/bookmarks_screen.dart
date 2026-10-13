@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsRole;
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -91,16 +92,20 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
     if (ok) {
       final type = bookmarkTypeFromItem(bookmark.type);
       if (type != null) {
-        ref.read(bookmarkExistsCacheProvider.notifier).set(
-          BookmarkTarget(type: type, sourceId: bookmark.sourceId),
-          const BookmarkExistsResult(exists: false),
-        );
+        ref
+            .read(bookmarkExistsCacheProvider.notifier)
+            .set(
+              BookmarkTarget(type: type, sourceId: bookmark.sourceId),
+              const BookmarkExistsResult(exists: false),
+            );
       }
     }
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          ok ? context.l10n.bookmark_removed : context.l10n.bookmark_remove_failed,
+          ok
+              ? context.l10n.bookmark_removed
+              : context.l10n.bookmark_remove_failed,
         ),
         duration: const Duration(seconds: 2),
       ),
@@ -189,67 +194,180 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
         ),
         scrolledUnderElevation: 0,
         centerTitle: true,
-        bottom: _buildTabBar(context, isDark),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: List.generate(
-          _tabs.length,
-          (i) => _BookmarkTabView(
-            state: state,
-            tab: _tabs[i],
-            emptyMessage: emptyMessages[i],
-            isDark: isDark,
-            onRefresh: () => ref.read(bookmarksProvider.notifier).refresh(),
-            onRetry: () => ref.read(bookmarksProvider.notifier).load(),
-            onRemove: _onRemove,
-            onTap: _onTap,
-          ),
-        ),
+      // The pills wrap to as many rows as the locale needs, so they live in
+      // the body rather than in a fixed-height AppBar.bottom. On a short body
+      // (landscape with large text) the rows could crowd out the list, so the
+      // pill area is capped at half the body and scrolls beyond that.
+      body: LayoutBuilder(
+        builder:
+            (context, constraints) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: constraints.maxHeight / 2,
+                  ),
+                  child: SingleChildScrollView(
+                    child: ListenableBuilder(
+                      listenable: _tabController,
+                      builder:
+                          (context, _) => _BookmarkFilterPills(
+                            labels: _tabLabels(context),
+                            selectedIndex: _tabController.index,
+                            isDark: isDark,
+                            onSelected: _tabController.animateTo,
+                          ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: List.generate(
+                      _tabs.length,
+                      (i) => _BookmarkTabView(
+                        state: state,
+                        tab: _tabs[i],
+                        emptyMessage: emptyMessages[i],
+                        isDark: isDark,
+                        onRefresh:
+                            () =>
+                                ref.read(bookmarksProvider.notifier).refresh(),
+                        onRetry:
+                            () => ref.read(bookmarksProvider.notifier).load(),
+                        onRemove: _onRemove,
+                        onTap: _onTap,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
       ),
     );
   }
+}
 
-  /// Scrollable tabs that still fill the screen width evenly when labels are
-  /// short; tabs grow past their share when a locale needs more room.
-  PreferredSizeWidget _buildTabBar(BuildContext context, bool isDark) {
-    final labels = _tabLabels(context);
-    final minTabWidth = MediaQuery.sizeOf(context).width / labels.length;
+/// Type filters as wrapping pills; the selected one is filled with the ink
+/// colour. Selecting a pill pages the [TabBarView] below to that filter.
+class _BookmarkFilterPills extends StatelessWidget {
+  const _BookmarkFilterPills({
+    required this.labels,
+    required this.selectedIndex,
+    required this.isDark,
+    required this.onSelected,
+  });
 
-    return TabBar(
-      controller: _tabController,
-      isScrollable: true,
-      tabAlignment: TabAlignment.start,
-      labelPadding: EdgeInsets.zero,
-      padding: EdgeInsets.zero,
-      tabs:
-          labels
-              .map(
-                (label) => Tab(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: minTabWidth),
+  final List<String> labels;
+  final int selectedIndex;
+  final bool isDark;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final localizations = MaterialLocalizations.of(context);
+    // Each pill's tap area adds a few pixels above and below the drawn pill,
+    // which supplies the gap between rows and most of the top padding.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+      child: Wrap(
+        spacing: 8,
+        children: [
+          for (var i = 0; i < labels.length; i++)
+            _FilterPill(
+              label: labels[i],
+              semanticsHint: localizations.tabLabel(
+                tabIndex: i + 1,
+                tabCount: labels.length,
+              ),
+              isSelected: i == selectedIndex,
+              isDark: isDark,
+              onTap: () => onSelected(i),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.semanticsHint,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final String label;
+
+  /// Position within the group ("Tab 2 of 7"), as Flutter's [TabBar] reads
+  /// it, so screen readers know the pills are a set of filters.
+  final String semanticsHint;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final inverse = isDark ? AppColors.textPrimary : AppColors.textPrimaryDark;
+    final border = isDark ? AppColors.cardBorderDark : AppColors.grey300;
+
+    // The pill is drawn at the design's height, but like a Material chip its
+    // tap area is padded to kMinInteractiveDimension; a tap on that padding
+    // selects the pill too.
+    return Semantics(
+      role: SemanticsRole.tab,
+      button: true,
+      selected: isSelected,
+      hint: semanticsHint,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: kMinInteractiveDimension,
+          ),
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Material(
+              color: isSelected ? ink : Colors.transparent,
+              shape: StadiumBorder(
+                side: BorderSide(color: isSelected ? ink : border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 56),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     child: Text(
                       label,
                       textAlign: TextAlign.center,
                       maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      strutStyle: context.tibetanStrutStyle(16, compact: true),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected ? inverse : ink,
+                      ),
                     ),
                   ),
                 ),
-              )
-              .toList(),
-      labelStyle: context.tabLabelStyle(
-        const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+          ),
+        ),
       ),
-      unselectedLabelStyle: context.tabLabelStyle(
-        const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
-      ),
-      labelColor:
-          isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-      unselectedLabelColor:
-          isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
-      indicatorColor: Colors.blue,
-      indicatorSize: TabBarIndicatorSize.tab,
-      dividerColor: Colors.transparent,
     );
   }
 }
@@ -293,8 +411,10 @@ class _BookmarkTabView extends StatelessWidget {
           builder:
               (context, constraints) => SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                child: SizedBox(
-                  height: constraints.maxHeight,
+                // A minimum, not a fixed height: with large text the message
+                // can be taller than the room left under the pills.
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: _BookmarkEmptyState(
                     firstLine: emptyMessage.$1,
                     secondLine: emptyMessage.$2,
@@ -325,7 +445,11 @@ class _BookmarkTabView extends StatelessWidget {
       final header = _sectionLabel(context, bookmark.createdAt);
       if (header != lastHeader) {
         children.add(
-          _SectionHeader(label: header, isDark: isDark, isFirst: lastHeader == null),
+          _SectionHeader(
+            label: header,
+            isDark: isDark,
+            isFirst: lastHeader == null,
+          ),
         );
         lastHeader = header;
       }
