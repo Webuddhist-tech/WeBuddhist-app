@@ -189,67 +189,133 @@ class _BookmarksScreenState extends ConsumerState<BookmarksScreen>
         ),
         scrolledUnderElevation: 0,
         centerTitle: true,
-        bottom: _buildTabBar(context, isDark),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: List.generate(
-          _tabs.length,
-          (i) => _BookmarkTabView(
-            state: state,
-            tab: _tabs[i],
-            emptyMessage: emptyMessages[i],
-            isDark: isDark,
-            onRefresh: () => ref.read(bookmarksProvider.notifier).refresh(),
-            onRetry: () => ref.read(bookmarksProvider.notifier).load(),
-            onRemove: _onRemove,
-            onTap: _onTap,
+      // The pills wrap to as many rows as the locale needs, so they live in
+      // the body rather than in a fixed-height AppBar.bottom.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListenableBuilder(
+            listenable: _tabController,
+            builder:
+                (context, _) => _BookmarkFilterPills(
+                  labels: _tabLabels(context),
+                  selectedIndex: _tabController.index,
+                  isDark: isDark,
+                  onSelected: _tabController.animateTo,
+                ),
           ),
-        ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: List.generate(
+                _tabs.length,
+                (i) => _BookmarkTabView(
+                  state: state,
+                  tab: _tabs[i],
+                  emptyMessage: emptyMessages[i],
+                  isDark: isDark,
+                  onRefresh:
+                      () => ref.read(bookmarksProvider.notifier).refresh(),
+                  onRetry: () => ref.read(bookmarksProvider.notifier).load(),
+                  onRemove: _onRemove,
+                  onTap: _onTap,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  /// Scrollable tabs that still fill the screen width evenly when labels are
-  /// short; tabs grow past their share when a locale needs more room.
-  PreferredSizeWidget _buildTabBar(BuildContext context, bool isDark) {
-    final labels = _tabLabels(context);
-    final minTabWidth = MediaQuery.sizeOf(context).width / labels.length;
+/// Type filters as wrapping pills; the selected one is filled with the ink
+/// colour. Selecting a pill pages the [TabBarView] below to that filter.
+class _BookmarkFilterPills extends StatelessWidget {
+  const _BookmarkFilterPills({
+    required this.labels,
+    required this.selectedIndex,
+    required this.isDark,
+    required this.onSelected,
+  });
 
-    return TabBar(
-      controller: _tabController,
-      isScrollable: true,
-      tabAlignment: TabAlignment.start,
-      labelPadding: EdgeInsets.zero,
-      padding: EdgeInsets.zero,
-      tabs:
-          labels
-              .map(
-                (label) => Tab(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: minTabWidth),
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                    ),
-                  ),
+  final List<String> labels;
+  final int selectedIndex;
+  final bool isDark;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (var i = 0; i < labels.length; i++)
+            _FilterPill(
+              label: labels[i],
+              isSelected: i == selectedIndex,
+              isDark: isDark,
+              onTap: () => onSelected(i),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final inverse = isDark ? AppColors.textPrimary : AppColors.textPrimaryDark;
+    final border = isDark ? AppColors.cardBorderDark : AppColors.grey300;
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: Material(
+        color: isSelected ? ink : Colors.transparent,
+        shape: StadiumBorder(
+          side: BorderSide(color: isSelected ? ink : border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 56),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                strutStyle: context.tibetanStrutStyle(16, compact: true),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? inverse : ink,
                 ),
-              )
-              .toList(),
-      labelStyle: context.tabLabelStyle(
-        const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+          ),
+        ),
       ),
-      unselectedLabelStyle: context.tabLabelStyle(
-        const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
-      ),
-      labelColor:
-          isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-      unselectedLabelColor:
-          isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
-      indicatorColor: Colors.blue,
-      indicatorSize: TabBarIndicatorSize.tab,
-      dividerColor: Colors.transparent,
     );
   }
 }
