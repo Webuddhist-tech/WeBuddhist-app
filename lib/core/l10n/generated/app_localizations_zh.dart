@@ -830,6 +830,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get connect_online => '線上';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => '精選活動';
 
   @override
@@ -2097,6 +2105,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_accumulator_recite_now => '立即持誦';
+
+  @override
+  String get group_accumulator_view_practice => 'View practice';
 
   @override
   String get group_accumulator_chant_again => '再次持誦';

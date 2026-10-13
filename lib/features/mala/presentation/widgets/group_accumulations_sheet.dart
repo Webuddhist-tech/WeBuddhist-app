@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_accumulation_selection.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
@@ -26,9 +27,11 @@ import 'package:intl/intl.dart';
 /// `GET /accumulators/{presetId}/groups`, plus any unsynced local taps via
 /// [GroupAccumulationCountsNotifier.displayLifetimeCount]. The personal row
 /// shows `total_counted` from `GET /accumulators/{parent_id}` via
-/// [MalaCounterNotifier.displayLifetimeCount]. The header adds them up. The
-/// on-screen mala counter uses session counts instead; those reset to 0 on
-/// DELETE while the totals here do not.
+/// [MalaCounterNotifier.displayLifetimeCount]. The header adds personal
+/// practice to every joined accumulation, ended ones included. Rows list only
+/// accumulations that can still take counts. The on-screen mala counter uses
+/// session counts instead; those reset to 0 on DELETE while the totals here
+/// do not.
 class GroupAccumulationsSheet extends ConsumerWidget {
   const GroupAccumulationsSheet({
     super.key,
@@ -82,20 +85,23 @@ class GroupAccumulationsSheet extends ConsumerWidget {
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     ref.watch(groupAccumulationCountsProvider(presetId));
-    final groups =
+    final joined =
         ref.watch(joinedAccumulatorGroupsProvider(presetId)).valueOrNull ??
-        this.groups;
+        groups;
+    // Rows omit ended accumulations. The header total uses every joined one,
+    // so chants in an ended group stay in the all-time figure.
+    final selectable = contributableAccumulatorGroups(joined, DateTime.now());
     final countsNotifier = ref.read(
       groupAccumulationCountsProvider(presetId).notifier,
     );
     final myTotals = {
-      for (final group in groups)
+      for (final group in joined)
         group.groupAccumulatorId: countsNotifier.displayLifetimeCount(
           group.groupAccumulatorId,
           group.userTotalCount,
         ),
     };
-    final sections = splitAccumulationSections(groups);
+    final sections = splitAccumulationSections(selectable);
     final allTime = allTimeAccumulation(
       personalLifetime: personalLifetimeCount,
       myGroupLifetimes: myTotals.values,
@@ -114,7 +120,7 @@ class GroupAccumulationsSheet extends ConsumerWidget {
             () => _select(
               ref,
               MalaAccumulationSelection.group(group.groupAccumulatorId),
-              groups,
+              joined,
             ),
         leading: _GroupAvatar(group: group),
         title: accumulationRowTitle(group) ?? l10n.mala_group_untitled,
@@ -181,7 +187,7 @@ class GroupAccumulationsSheet extends ConsumerWidget {
                           () => _select(
                             ref,
                             const MalaAccumulationSelection.personal(),
-                            groups,
+                            joined,
                           ),
                       leading: const _PersonalAvatar(),
                       title: l10n.mala_personal_practice,
@@ -190,7 +196,7 @@ class GroupAccumulationsSheet extends ConsumerWidget {
                         personalLifetimeCount,
                       ),
                     ),
-                    if (groups.isNotEmpty) ...[
+                    if (selectable.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Divider(
                         height: 1,

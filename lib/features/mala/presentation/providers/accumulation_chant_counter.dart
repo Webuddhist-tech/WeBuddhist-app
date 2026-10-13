@@ -8,6 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// `ref.read` of a widget or a container.
 typedef ProviderReader = T Function<T>(ProviderListenable<T> provider);
 
+/// `ref.listenManual` or `container.listen`. Holds an autoDispose provider
+/// open across an await.
+typedef ProviderListen =
+    ProviderSubscription<T> Function<T>(
+      ProviderListenable<T> provider,
+      void Function(T? previous, T next) listener,
+    );
+
 /// Counts one chant made in the reader into whichever target the accumulation
 /// sheet has selected for [mantra] right now: personal practice or one joined
 /// accumulation. Chants already counted stay where they were made.
@@ -73,4 +81,28 @@ bool addOfflineChantsToSelection(
     groups: const [],
     count: count,
   );
+}
+
+/// Adds [count] chants to personal practice, ignoring the selected group.
+///
+/// Used when the reader was opened from an accumulation that has ended.
+/// That reader leaves the selection on the group, so nothing else watches
+/// this autoDispose counter. [listen] keeps it alive until the seed finishes
+/// and the add has run; a bare read would let it dispose across the wait.
+Future<bool> addOfflineChantsToPersonal(
+  ProviderReader read,
+  ProviderListen listen,
+  Mantra mantra,
+  int count,
+) async {
+  final subscription = listen(malaCounterProvider(mantra), (_, __) {});
+  try {
+    final notifier = read(malaCounterProvider(mantra).notifier);
+    await notifier.whenSeeded;
+    if (!notifier.mounted) return false;
+    if (read(malaCounterProvider(mantra)).seedFailed) return false;
+    return notifier.addCount(count);
+  } finally {
+    subscription.close();
+  }
 }

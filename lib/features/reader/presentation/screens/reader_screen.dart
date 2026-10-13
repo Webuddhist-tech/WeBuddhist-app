@@ -129,6 +129,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   bool get _isGroupAccumulatorChant => _chantContext != null;
 
+  bool get _openedEndedAccumulator =>
+      _chantContext?.groupAccumulatorEnded == true;
+
   /// The chant's preset as the key its counters are held under. A recitation
   /// is not in the mala catalogue, so there is no fuller [Mantra] to use.
   Mantra? get _chantMantra {
@@ -217,12 +220,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   void _seedInitialChantCountIfNeeded() {
     if (_hasSeededInitialChantCount) return;
     _hasSeededInitialChantCount = true;
-
+    if (_openedEndedAccumulator) return;
     _countChant();
   }
 
   /// Counts one chant into the target selected in the accumulation sheet.
   void _countChant() {
+    if (_openedEndedAccumulator) return;
     final mantra = _chantMantra;
     if (mantra == null) return;
 
@@ -271,13 +275,23 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final mantra = _chantMantra;
     if (mantra == null) return;
 
-    if (!addOfflineChantsToSelection(ref.read, mantra, count)) {
+    final added =
+        _openedEndedAccumulator
+            ? await addOfflineChantsToPersonal(
+              ref.read,
+              ref.listenManual,
+              mantra,
+              count,
+            )
+            : addOfflineChantsToSelection(ref.read, mantra, count);
+    if (!mounted) return;
+    if (!added) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.something_went_wrong)),
       );
       return;
     }
-    _tallyChants(mantra, count);
+    if (!_openedEndedAccumulator) _tallyChants(mantra, count);
   }
 
   Future<void> _finishChantSession() async {
@@ -632,7 +646,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         chantBarHeight;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final chantFooter =
-        chantMantra != null && !isPanelOpen
+        chantMantra != null && !isPanelOpen && !_openedEndedAccumulator
             ? GroupAccumulatorChantFooter(
               onChantAgain: _onChantAgain,
               onFinishSession: _finishChantSession,
@@ -703,6 +717,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   chantTitleFontFamily: getFontFamily(
                     state.openedText!.language,
                   ),
+                  showSessionPill: !_openedEndedAccumulator,
                 ),
             ],
           ),

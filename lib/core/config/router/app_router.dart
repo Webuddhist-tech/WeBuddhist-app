@@ -510,6 +510,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return MalaScreen(
             initialPresetId: extra?['presetId'] as String?,
             initialGroupAccumulatorId: extra?['groupAccumulatorId'] as String?,
+            openedFromEndedAccumulator:
+                extra?['groupAccumulatorEnded'] as bool? ?? false,
           );
         },
       ),
@@ -769,6 +771,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               groupTitle: extra['groupTitle'] as String?,
               groupAccumulatorSessionCount:
                   extra['groupAccumulatorSessionCount'] as int?,
+              groupAccumulatorEnded:
+                  extra['groupAccumulatorEnded'] as bool? ?? false,
               language: extra['language'] as String?,
               collectionId: extra['collectionId'] as String?,
               eventId: extra['eventId'] as String?,

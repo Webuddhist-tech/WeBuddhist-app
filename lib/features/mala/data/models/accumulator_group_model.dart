@@ -12,6 +12,7 @@ class AccumulatorGroupModel {
     this.eventTitle,
     this.image,
     this.groupTotalCount = 0,
+    this.endDate,
   });
 
   final String groupAccumulatorId;
@@ -23,6 +24,7 @@ class AccumulatorGroupModel {
   final int userTotalCount;
   final int groupTotalCount;
   final bool isJoined;
+  final DateTime? endDate;
 
   factory AccumulatorGroupModel.fromJson(Map<String, dynamic> json) {
     return AccumulatorGroupModel(
@@ -35,7 +37,13 @@ class AccumulatorGroupModel {
       userTotalCount: (json['user_total_count'] as num?)?.toInt() ?? 0,
       groupTotalCount: (json['group_total_count'] as num?)?.toInt() ?? 0,
       isJoined: json['is_joined'] as bool? ?? false,
+      endDate: _parseDate(json['end_date']),
     );
+  }
+
+  static DateTime? _parseDate(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    return DateTime.tryParse(value);
   }
 
   AccumulatorGroup toEntity() {
@@ -49,6 +57,7 @@ class AccumulatorGroupModel {
       userTotalCount: userTotalCount,
       groupTotalCount: groupTotalCount,
       isJoined: isJoined,
+      endDate: endDate,
     );
   }
 }

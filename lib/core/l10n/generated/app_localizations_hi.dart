@@ -871,6 +871,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get connect_online => 'ऑनलाइन';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => 'विशेष कार्यक्रम';
 
   @override
@@ -2211,6 +2219,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get group_accumulator_recite_now => 'अभी जाप करें';
+
+  @override
+  String get group_accumulator_view_practice => 'View practice';
 
   @override
   String get group_accumulator_chant_again => 'फिर से जाप करें';

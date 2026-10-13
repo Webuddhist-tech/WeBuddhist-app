@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_accumulation_selection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,12 +61,26 @@ class MalaAccumulationSelectionNotifier
     await _persist();
   }
 
-  /// Falls back to personal when the saved group is no longer joined.
-  Future<void> validateAgainst(List<AccumulatorGroup> groups) async {
+  /// Falls back to personal when the saved group is no longer joined, or when
+  /// it has ended. [keepEndedId] stays selected: Recite now opened that
+  /// finished accumulation on purpose.
+  Future<void> validateAgainst(
+    List<AccumulatorGroup> groups, {
+    String? keepEndedId,
+  }) async {
     final id = state.groupAccumulatorId;
     if (id == null) return;
-    final stillJoined = groups.any((g) => g.groupAccumulatorId == id);
-    if (!stillJoined) await selectPersonal();
+    AccumulatorGroup? match;
+    for (final group in groups) {
+      if (group.groupAccumulatorId == id) {
+        match = group;
+        break;
+      }
+    }
+    if (match == null ||
+        (isPastEndDate(match.endDate, DateTime.now()) && id != keepEndedId)) {
+      await selectPersonal();
+    }
   }
 
   Future<void> _persist() async {

@@ -153,6 +153,36 @@ Finder _checkIn(String title) =>
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets(
+    'an ended accumulation stays in the all-time total and off the rows',
+    (tester) async {
+      final ended = AccumulatorGroup(
+        groupAccumulatorId: 'ga-ended',
+        groupId: 'g-old',
+        title: 'Completed retreat',
+        groupName: 'Old group',
+        userTotalCount: 100,
+        groupTotalCount: 400,
+        isJoined: true,
+        endDate: DateTime.utc(2020),
+      );
+
+      await _openSheet(
+        tester,
+        groups: [_taraEvent, ended],
+        personalLifetime: 20,
+      );
+
+      // 20 personal + 23 still open + 100 ended.
+      expect(find.text('143'), findsOneWidget);
+      expect(find.text('20'), findsOneWidget);
+      expect(find.text('The praise to the twenty-one Tara'), findsOneWidget);
+      expect(find.text('Completed retreat'), findsNothing);
+      expect(find.text('Old group'), findsNothing);
+      expect(find.textContaining('100'), findsNothing);
+    },
+  );
+
   testWidgets('header adds personal practice and every accumulation', (
     tester,
   ) async {

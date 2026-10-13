@@ -14,6 +14,7 @@ class AccumulatorGroup extends Equatable {
     this.eventTitle,
     this.image,
     this.groupTotalCount = 0,
+    this.endDate,
   });
 
   final String groupAccumulatorId;
@@ -40,6 +41,9 @@ class AccumulatorGroup extends Equatable {
   final int groupTotalCount;
   final bool isJoined;
 
+  /// When this accumulation stops taking counts. Null means it has no end.
+  final DateTime? endDate;
+
   @override
   List<Object?> get props => [
     groupAccumulatorId,
@@ -51,5 +55,6 @@ class AccumulatorGroup extends Equatable {
     userTotalCount,
     groupTotalCount,
     isJoined,
+    endDate,
   ];
 }

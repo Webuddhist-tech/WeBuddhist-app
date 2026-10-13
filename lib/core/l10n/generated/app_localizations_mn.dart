@@ -872,6 +872,14 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_online => 'Онлайн';
 
   @override
+  String get connect_ended => 'Ended';
+
+  @override
+  String connect_ended_on(String date) {
+    return 'Ended $date';
+  }
+
+  @override
   String get home_group_events => 'Онцлох арга хэмжээ';
 
   @override
@@ -2217,6 +2225,9 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_accumulator_recite_now => 'Одоо уншина уу';
+
+  @override
+  String get group_accumulator_view_practice => 'View practice';
 
   @override
   String get group_accumulator_chant_again => 'Дахин унших';

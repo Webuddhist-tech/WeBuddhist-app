@@ -1698,6 +1698,21 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_ended => TolgeeBridge.get(
+    localeName,
+    'connect_ended',
+    () => _fallback.connect_ended,
+  );
+
+  @override
+  String connect_ended_on(String date) => TolgeeBridge.format(
+    localeName,
+    'connect_ended_on',
+    <String, Object>{'date': date},
+    () => _fallback.connect_ended_on(date),
+  );
+
+  @override
   String get home_group_events => TolgeeBridge.get(
     localeName,
     'home_group_events',
@@ -4334,6 +4349,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'group_accumulator_recite_now',
     () => _fallback.group_accumulator_recite_now,
+  );
+
+  @override
+  String get group_accumulator_view_practice => TolgeeBridge.get(
+    localeName,
+    'group_accumulator_view_practice',
+    () => _fallback.group_accumulator_view_practice,
   );
 
   @override

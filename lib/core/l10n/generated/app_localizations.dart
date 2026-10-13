@@ -1642,6 +1642,18 @@ abstract class AppLocalizations {
   /// **'Online'**
   String get connect_online;
 
+  /// No description provided for @connect_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get connect_ended;
+
+  /// No description provided for @connect_ended_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended {date}'**
+  String connect_ended_on(String date);
+
   /// No description provided for @home_group_events.
   ///
   /// In en, this message translates to:
@@ -3975,6 +3987,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recite now'**
   String get group_accumulator_recite_now;
+
+  /// No description provided for @group_accumulator_view_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'View practice'**
+  String get group_accumulator_view_practice;
 
   /// No description provided for @group_accumulator_chant_again.
   ///
