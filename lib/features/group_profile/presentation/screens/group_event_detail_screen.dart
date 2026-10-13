@@ -889,7 +889,8 @@ class _GroupEventDetailScreenState
 }
 
 /// Shown once the event is over: the prejoin buttons stay, Join does not,
-/// and the last day of the when-range sits on the right.
+/// and the last day of the when-range sits on the right. Styled like the
+/// organizer card in [_EventGroupRow].
 class _EventEndedBanner extends StatelessWidget {
   final GroupEvent event;
   final bool isDark;
@@ -906,17 +907,17 @@ class _EventEndedBanner extends StatelessWidget {
               'd MMM y',
               intlFormatLocaleOf(context),
             ).format(lastDay);
-    final titleColor =
-        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final cardColor =
+        isDark ? AppColors.cardBackgroundDark : AppColors.surfaceWhite;
     final dateColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-        borderRadius: BorderRadius.circular(12),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
@@ -925,11 +926,7 @@ class _EventEndedBanner extends StatelessWidget {
               context.l10n.connect_event_has_ended,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: titleColor,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
           if (dateText != null) ...[
