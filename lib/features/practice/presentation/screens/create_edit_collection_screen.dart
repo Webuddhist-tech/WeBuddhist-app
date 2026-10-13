@@ -799,7 +799,13 @@ class _CoverTile extends StatelessWidget {
               if (localFile != null)
                 Image.file(localFile!, fit: BoxFit.cover)
               else if (networkUrl != null && networkUrl!.isNotEmpty)
-                CachedNetworkImage(imageUrl: networkUrl!, fit: BoxFit.cover)
+                CachedNetworkImage(
+                  imageUrl: networkUrl!,
+                  fit: BoxFit.cover,
+                  errorWidget:
+                      (context, url, error) =>
+                          const ColoredBox(color: _kCoverPlaceholder),
+                )
               else
                 const ColoredBox(color: _kCoverPlaceholder),
               if (isUploading)

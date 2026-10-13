@@ -13,6 +13,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class AuthorDetailScreen extends ConsumerWidget {
   final String authorId;
@@ -92,6 +93,10 @@ class AuthorDetailScreen extends ConsumerWidget {
               backgroundImage:
                   authorData.imageUrl?.isNotEmpty ?? false
                       ? authorData.imageUrl!.cachedNetworkImageProvider
+                      : null,
+              onBackgroundImageError:
+                  authorData.imageUrl?.isNotEmpty ?? false
+                      ? reportImageLoadError
                       : null,
               backgroundColor: Colors.grey[800],
               child:

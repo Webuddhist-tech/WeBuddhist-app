@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Displays the circular profile avatar with an upload-in-progress overlay
 /// and a small edit button in the bottom-right corner.
@@ -25,6 +26,7 @@ class ProfileAvatarSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final image = _resolveImage();
     return Center(
       child: Stack(
         clipBehavior: Clip.none,
@@ -34,7 +36,9 @@ class ProfileAvatarSection extends StatelessWidget {
             child: CircleAvatar(
               radius: 52,
               backgroundColor: AppColors.grey300,
-              backgroundImage: _resolveImage(),
+              backgroundImage: image,
+              onBackgroundImageError:
+                  image != null ? reportImageLoadError : null,
               child: avatarUrl.isEmpty && pickedAvatarFile == null
                   ? Icon(
                       AppAssets.profile,

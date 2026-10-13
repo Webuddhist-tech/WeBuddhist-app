@@ -52,6 +52,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 enum _EventTab { videos, about, accumulations }
 
@@ -1170,6 +1171,8 @@ class _EventGroupRow extends ConsumerWidget {
                     isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
                 backgroundImage:
                     avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                onBackgroundImageError:
+                    avatarUrl.isNotEmpty ? reportImageLoadError : null,
                 child:
                     avatarUrl.isEmpty
                         ? Icon(

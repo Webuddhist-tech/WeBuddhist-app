@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_commen
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_action_menu.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class ConnectPostCommentTile extends ConsumerStatefulWidget {
   const ConnectPostCommentTile({
@@ -234,6 +235,7 @@ class _CommentAvatar extends StatelessWidget {
       backgroundColor:
           isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
       backgroundImage: hasAvatar ? avatarUrl!.cachedNetworkImageProvider : null,
+      onBackgroundImageError: hasAvatar ? reportImageLoadError : null,
       child:
           hasAvatar
               ? null
