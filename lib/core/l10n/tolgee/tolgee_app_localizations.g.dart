@@ -4226,10 +4226,12 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) =>
-      TolgeeBridge.format(localeName, 'group_removed_message', <String, Object>{
-        'group': group,
-        'duration': duration,
-      }, () => _fallback.group_removed_message(group, duration));
+      TolgeeBridge.format(
+        localeName,
+        'group_removed_message',
+        <String, Object>{'group': group, 'duration': duration},
+        () => _fallback.group_removed_message(group, duration),
+      );
 
   @override
   String group_removed_message_no_date(String group) => TolgeeBridge.format(
@@ -5910,10 +5912,12 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String event_replay_session(String day, String session) =>
-      TolgeeBridge.format(localeName, 'event_replay_session', <String, Object>{
-        'day': day,
-        'session': session,
-      }, () => _fallback.event_replay_session(day, session));
+      TolgeeBridge.format(
+        localeName,
+        'event_replay_session',
+        <String, Object>{'day': day, 'session': session},
+        () => _fallback.event_replay_session(day, session),
+      );
 
   @override
   String get event_replay_recording => TolgeeBridge.get(
