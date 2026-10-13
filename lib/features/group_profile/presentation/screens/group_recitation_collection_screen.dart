@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -221,12 +222,21 @@ class _GroupRecitationCollectionScreenState
 
     final sharePositionOrigin = getSharePositionOrigin(context: context);
 
-    await SharePlus.instance.share(
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
+    final result = await SharePlus.instance.share(
       ShareParams(
         text: '$shareMessage\n\n$shareUrl',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
+    if (ShareAnalytics.wasUsed(result)) {
+      shareAnalytics.contentShared(
+        surface: ShareSurface.recitationCollection,
+        targetId: collection.id,
+        format: 'text',
+        groupId: collection.groupId,
+      );
+    }
   }
 
   /// Resolves the group name from the cached group profile if available.
