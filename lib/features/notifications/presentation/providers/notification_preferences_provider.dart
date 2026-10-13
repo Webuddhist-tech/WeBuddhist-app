@@ -234,11 +234,15 @@ final notificationPreferencesProvider = StateNotifierProvider.autoDispose<
   KeepAliveLink? keepAlive;
   return NotificationPreferencesNotifier(
     repository: ref.watch(notificationPreferencesRepositoryProvider),
-    onSaved:
-        (toggle, enabled) => analytics.settingChanged(
-          setting: _analyticsSetting(toggle),
-          enabled: enabled,
-        ),
+    onSaved: (toggle, enabled) {
+      analytics.settingChanged(
+        setting: _analyticsSetting(toggle),
+        enabled: enabled,
+      );
+      if (toggle.affectsGroups) {
+        ref.read(groupNotificationPreferencesRefreshProvider.notifier).state++;
+      }
+    },
     onBusyChanged: (busy) {
       if (busy) {
         keepAlive ??= ref.keepAlive();
@@ -250,12 +254,35 @@ final notificationPreferencesProvider = StateNotifierProvider.autoDispose<
   );
 });
 
-NotificationSetting _analyticsSetting(ConnectNotificationToggle toggle) =>
-    switch (toggle) {
-      ConnectNotificationToggle.groupPosts => NotificationSetting.groupPosts,
-      ConnectNotificationToggle.groupChats => NotificationSetting.groupChats,
-      ConnectNotificationToggle.prayerReceived =>
-        NotificationSetting.prayerReceived,
-      ConnectNotificationToggle.prayerRequest =>
-        NotificationSetting.prayerRequest,
-    };
+/// Bumped after an account-wide switch that groups inherit has been saved.
+///
+/// The backend resolves a group's push preferences over the account-wide
+/// ones, so a group whose member never touched its own toggles follows these
+/// switches. A live `groupNotificationPreferencesProvider` (one kept alive
+/// by an open chat, say) re-reads on each bump instead of showing the value
+/// it loaded before the switch moved.
+final groupNotificationPreferencesRefreshProvider = StateProvider<int>(
+  (ref) => 0,
+);
+
+extension on ConnectNotificationToggle {
+  /// True for the switches a group's own toggles fall back to: `GROUP_POST`
+  /// sits behind a group's content toggle and `CHAT_MESSAGE` behind its chat
+  /// toggle. The prayer switches have no group counterpart.
+  bool get affectsGroups => switch (this) {
+    ConnectNotificationToggle.groupPosts ||
+    ConnectNotificationToggle.groupChats => true,
+    ConnectNotificationToggle.prayerReceived ||
+    ConnectNotificationToggle.prayerRequest => false,
+  };
+}
+
+NotificationSetting _analyticsSetting(
+  ConnectNotificationToggle toggle,
+) => switch (toggle) {
+  ConnectNotificationToggle.groupPosts => NotificationSetting.groupPosts,
+  ConnectNotificationToggle.groupChats => NotificationSetting.groupChats,
+  ConnectNotificationToggle.prayerReceived =>
+    NotificationSetting.prayerReceived,
+  ConnectNotificationToggle.prayerRequest => NotificationSetting.prayerRequest,
+};

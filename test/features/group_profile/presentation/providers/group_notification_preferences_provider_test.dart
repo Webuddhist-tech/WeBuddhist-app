@@ -9,6 +9,7 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 import 'package:flutter_pecha/features/group_profile/domain/usecases/update_group_notification_preferences_usecase.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_notification_preferences_provider.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/notifications/presentation/providers/notification_preferences_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -440,6 +441,85 @@ void main() {
       ], reason: 'the queued value is dropped');
       expect(await flip, isFalse);
       expect(container.exists(provider), isFalse);
+    });
+  });
+
+  group('account-wide refresh', () {
+    test('re-reads without hiding the toggles when the signal bumps', () async {
+      final repo = _FakeRepository();
+      final container = _container(repo);
+      final provider = groupNotificationPreferencesProvider('grp-1');
+      final sub = container.listen(provider, (_, _) {});
+      addTearDown(sub.close);
+      await _settle();
+      expect(container.read(provider).preferences.chat, isFalse);
+      expect(repo.getCalls, 1);
+
+      // The account-wide "Group chats" switch went on; this group inherits.
+      repo.server = const GroupNotificationPreferences(
+        chat: true,
+        content: true,
+      );
+      repo.getHold = Completer<void>();
+      container
+          .read(groupNotificationPreferencesRefreshProvider.notifier)
+          .state++;
+      await _settle();
+      expect(repo.getCalls, 2);
+      expect(
+        container.read(provider).isLoading,
+        isFalse,
+        reason: 'the bell keeps its current state while the re-read is out',
+      );
+
+      repo.getHold!.complete();
+      await _settle();
+      expect(container.read(provider).preferences.chat, isTrue);
+    });
+
+    test('a toggle flipped here keeps its value over the re-read', () async {
+      final repo = _FakeRepository();
+      final container = _container(repo);
+      final provider = groupNotificationPreferencesProvider('grp-1');
+      final sub = container.listen(provider, (_, _) {});
+      addTearDown(sub.close);
+      await _settle();
+
+      final notifier = container.read(provider.notifier);
+      final flip = notifier.setContent(false);
+      repo.release(0);
+      expect(await flip, isTrue);
+
+      // The server snapshot says content on for whatever reason; the member's
+      // own override is what the backend will actually honour.
+      repo.server = const GroupNotificationPreferences(
+        chat: true,
+        content: true,
+      );
+      container
+          .read(groupNotificationPreferencesRefreshProvider.notifier)
+          .state++;
+      await _settle();
+      await _settle();
+      expect(
+        container.read(provider).preferences,
+        const GroupNotificationPreferences(chat: true, content: false),
+      );
+    });
+
+    test('is ignored while the first load is still out', () async {
+      final repo = _FakeRepository()..getHold = Completer<void>();
+      final container = _container(repo);
+      final provider = groupNotificationPreferencesProvider('grp-1');
+      final sub = container.listen(provider, (_, _) {});
+      addTearDown(sub.close);
+      await _settle();
+
+      container
+          .read(groupNotificationPreferencesRefreshProvider.notifier)
+          .state++;
+      await _settle();
+      expect(repo.getCalls, 1);
     });
   });
 }

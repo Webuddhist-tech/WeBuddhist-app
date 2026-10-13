@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_notif
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/update_group_notification_preferences_usecase.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/notifications/presentation/providers/notification_preferences_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// One of the two switches the sheet shows.
@@ -151,6 +152,15 @@ class GroupNotificationPreferencesNotifier
     return _load();
   }
 
+  /// Reads the stored values again without hiding the toggles, after an
+  /// account-wide switch they may inherit has changed. Toggles the member
+  /// has flipped here keep their value: those hold a group override, which
+  /// the account-wide switch no longer reaches.
+  Future<void> refresh() {
+    if (state.isLoading) return Future.value();
+    return _load();
+  }
+
   Future<bool> setChat(bool enabled) =>
       _flip(GroupNotificationToggle.chat, enabled);
 
@@ -248,6 +258,10 @@ final updateGroupNotificationPreferencesUseCaseProvider =
 /// flipped just before the sheet closed still reaches the backend, and a
 /// sheet reopened meanwhile shows the same state instead of a stale read.
 ///
+/// Re-reads when an account-wide switch the group may inherit is saved
+/// ([groupNotificationPreferencesRefreshProvider]), so a chat bell kept alive
+/// under the settings screen does not keep showing the value from before.
+///
 /// Re-created on login/logout. Sign-out flips the session before it clears
 /// credentials, so the write in flight finishes as the account that made it
 /// and anything queued behind it is dropped rather than sent as the next.
@@ -261,7 +275,7 @@ final groupNotificationPreferencesProvider = StateNotifierProvider.autoDispose
         authProvider.select((auth) => auth.isLoggedIn && !auth.isGuest),
       );
       KeepAliveLink? keepAlive;
-      return GroupNotificationPreferencesNotifier(
+      final notifier = GroupNotificationPreferencesNotifier(
         groupId: groupId,
         repository: ref.watch(groupProfileRepositoryProvider),
         update: ref.watch(updateGroupNotificationPreferencesUseCaseProvider),
@@ -274,4 +288,9 @@ final groupNotificationPreferencesProvider = StateNotifierProvider.autoDispose
           }
         },
       );
+      ref.listen(
+        groupNotificationPreferencesRefreshProvider,
+        (_, __) => notifier.refresh(),
+      );
+      return notifier;
     });

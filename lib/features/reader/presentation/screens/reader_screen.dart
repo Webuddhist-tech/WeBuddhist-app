@@ -275,11 +275,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final mantra = _chantMantra;
     if (mantra == null) return;
 
+    // The personal save waits for the counter to seed. Run it off the app
+    // container, not this widget's ref: closing the reader meanwhile would
+    // drop the widget's listener, dispose the counter and lose the count
+    // the user just confirmed.
+    final container = ProviderScope.containerOf(context, listen: false);
     final added =
         _openedEndedAccumulator
             ? await addOfflineChantsToPersonal(
-              ref.read,
-              ref.listenManual,
+              container.read,
+              container.listen,
               mantra,
               count,
             )

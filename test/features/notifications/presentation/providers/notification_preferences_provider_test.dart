@@ -462,4 +462,47 @@ void main() {
       expect(harness.saved, isEmpty);
     });
   });
+
+  group('group refresh signal', () {
+    test('bumps after a saved group switch, not after a prayer one', () async {
+      final repo = _FakeRepository();
+      final container = _container(repo);
+      final sub = container.listen(notificationPreferencesProvider, (_, _) {});
+      addTearDown(sub.close);
+      await _settle();
+      final notifier = container.read(notificationPreferencesProvider.notifier);
+      final refresh = groupNotificationPreferencesRefreshProvider;
+      expect(container.read(refresh), 0);
+
+      final prayer = notifier.set(_prayerRequest, true);
+      repo.release(0);
+      await prayer;
+      expect(container.read(refresh), 0, reason: 'groups do not inherit it');
+
+      final chats = notifier.set(_groupChats, true);
+      repo.release(1);
+      await chats;
+      expect(container.read(refresh), 1);
+
+      final posts = notifier.set(ConnectNotificationToggle.groupPosts, false);
+      repo.release(2);
+      await posts;
+      expect(container.read(refresh), 2);
+    });
+
+    test('does not bump when the save fails', () async {
+      final repo = _FakeRepository()..updateFailure = const NetworkFailure('x');
+      final container = _container(repo);
+      final sub = container.listen(notificationPreferencesProvider, (_, _) {});
+      addTearDown(sub.close);
+      await _settle();
+
+      final flip = container
+          .read(notificationPreferencesProvider.notifier)
+          .set(_groupChats, true);
+      repo.release(0);
+      expect(await flip, isFalse);
+      expect(container.read(groupNotificationPreferencesRefreshProvider), 0);
+    });
+  });
 }
