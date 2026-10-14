@@ -8,7 +8,7 @@ import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_l10n.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 
-/// The sort option's name as shown in the chip and the sort sheet.
+/// The sort option's name as shown on the sort control and in the sort sheet.
 String prayerSortLabel(AppLocalizations l10n, PrayerSort sort) {
   return switch (sort) {
     PrayerSort.needsPrayers => l10n.event_prayer_sort_needs_prayers,
@@ -18,7 +18,8 @@ String prayerSortLabel(AppLocalizations l10n, PrayerSort sort) {
   };
 }
 
-/// Sort chip, the intention chip when one is in view, and the match count.
+/// Match count on the left, the intention chip beside it when one is in
+/// view, and the sort control as plain text on the right.
 class PrayerRequestsFilterBar extends StatelessWidget {
   const PrayerRequestsFilterBar({
     super.key,
@@ -51,7 +52,11 @@ class PrayerRequestsFilterBar extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _SortChip(label: sortLabel, isDark: isDark, onTap: onOpenSort),
+                Text(
+                  l10n.event_prayer_request_count(total),
+                  strutStyle: context.tibetanStrutStyle(13, compact: true),
+                  style: TextStyle(fontSize: 13, color: muted),
+                ),
                 if (intention != null) ...[
                   const SizedBox(width: 8),
                   _IntentionChip(
@@ -65,18 +70,23 @@ class PrayerRequestsFilterBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Text(
-          l10n.event_prayer_request_count(total),
-          strutStyle: context.tibetanStrutStyle(13, compact: true),
-          style: TextStyle(fontSize: 13, color: muted),
+        Flexible(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: _SortButton(
+              label: sortLabel,
+              isDark: isDark,
+              onTap: onOpenSort,
+            ),
+          ),
         ),
       ],
     );
   }
 }
 
-class _SortChip extends StatelessWidget {
-  const _SortChip({
+class _SortButton extends StatelessWidget {
+  const _SortButton({
     required this.label,
     required this.isDark,
     required this.onTap,
@@ -90,28 +100,26 @@ class _SortChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final border = isDark ? AppColors.cardBorderDark : AppColors.grey300;
-    final fill = isDark ? AppColors.chipBackgroundDark : AppColors.surfaceWhite;
 
     return Semantics(
       button: true,
       label: context.l10n.event_prayer_sort_by,
       value: label,
-      child: Material(
-        color: fill,
-        shape: StadiumBorder(side: BorderSide(color: border)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(AppAssets.sliders, size: 16, color: foreground),
-                const SizedBox(width: 6),
-                Text(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
                   label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
                   strutStyle: context.tibetanStrutStyle(13, compact: true),
                   style: TextStyle(
                     fontSize: 13,
@@ -119,10 +127,10 @@ class _SortChip extends StatelessWidget {
                     color: foreground,
                   ),
                 ),
-                const SizedBox(width: 4),
-                Icon(AppAssets.caretDown, size: 14, color: foreground),
-              ],
-            ),
+              ),
+              const SizedBox(width: 4),
+              Icon(AppAssets.caretDown, size: 14, color: foreground),
+            ],
           ),
         ),
       ),
