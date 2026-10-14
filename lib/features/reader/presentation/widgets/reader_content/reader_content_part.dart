@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_item.dart';
@@ -19,10 +22,12 @@ import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reade
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_skeleton.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
+import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
@@ -104,6 +109,23 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool get _isCollapsed =>
       widget.sources.length > 1 || widget.sources.first.isCollapsed;
 
+  /// The list as last built, with the page's table of contents.
+  _PageLayout? _layout;
+
+  /// The table of contents for the sections sheet, refreshed after each build.
+  final ValueNotifier<_SectionsSnapshot> _sections = ValueNotifier(
+    const _SectionsSnapshot.empty(),
+  );
+
+  /// Key of the section at the top of the viewport.
+  final ValueNotifier<String?> _currentSectionKey = ValueNotifier(null);
+
+  /// The sections pill slides away on a scroll down and back on a scroll up.
+  bool _pillVisible = true;
+
+  /// Section id of a text's own title, for verses under no heading.
+  static const _textSectionId = 'text';
+
   /// Source [index]'s verses in the loaded text's ids: a translation opened
   /// under its original has navigation's ids mapped across
   /// ([ReaderState.segmentAliases]). Empty when the whole text is shown.
@@ -159,6 +181,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _onScrollPositionChanged,
     );
     _debounceTimer?.cancel();
+    _sections.dispose();
+    _currentSectionKey.dispose();
     super.dispose();
   }
 
@@ -171,8 +195,24 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     // Track scroll direction for app bar visibility
     _trackScrollDirection();
+    _updateCurrentSection();
 
     if (_isLiveRecitation) _maybePauseLiveFollow();
+  }
+
+  /// The section of the entry at the top of the viewport, for the pill.
+  void _updateCurrentSection() {
+    final layout = _layout;
+    if (layout == null) return;
+    int? top;
+    for (final position in _itemPositionsListener.itemPositions.value) {
+      if (position.itemTrailingEdge <= 0) continue;
+      if (top == null || position.index < top) top = position.index;
+    }
+    if (top == null || top >= layout.sectionOfEntry.length) return;
+    final section = layout.sectionOfEntry[top];
+    if (section < 0) return;
+    _currentSectionKey.value = layout.sections[section].key;
   }
 
   void _trackScrollDirection() {
@@ -203,6 +243,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       if (isScrollingDown != _lastScrollDirection) {
         _lastScrollDirection = isScrollingDown;
         widget.onScrollDirectionChanged?.call(isScrollingDown);
+        if (_pillVisible == isScrollingDown) {
+          setState(() => _pillVisible = !isScrollingDown);
+        }
       }
       _lastScrollOffset = currentOffset;
     }
@@ -233,47 +276,250 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return collapsedReaderItems(content, active.toSet());
   }
 
-  List<_Entry> _currentEntries() => _entriesFor([
+  List<_Entry> _currentEntries() => _layoutFor([
     for (var i = 0; i < _startedCount; i++) _readView(i),
-  ]);
+  ]).entries;
 
-  /// The list, source after source: a rule before each one after the first,
-  /// its title when its headings do not carry one, its items, or its retry
-  /// row when it failed. A source still loading its first page adds
-  /// nothing; the tail skeleton stands in for it.
-  List<_Entry> _entriesFor(List<_SourceView> views) {
+  /// The list, source after source, with the page's table of contents.
+  ///
+  /// A rule goes before each source after the first, then its title when its
+  /// headings carry none, its items, or its retry row when it failed. A
+  /// heading already drawn on the page (the same text read on from a later
+  /// range) is not drawn again; the translation's headings go above the
+  /// verse they open at. A source still loading its first page adds nothing;
+  /// the tail skeleton stands in for it.
+  ///
+  /// Each verse belongs to the innermost titled heading over it, or to its
+  /// text's title: those are the sections the navigator lists, in order.
+  _PageLayout _layoutFor(List<_SourceView> views) {
     final entries = <_Entry>[];
+    final sectionOfEntry = <int>[];
+    final sections = <_PageSection>[];
+    final sectionIndexByKey = <String, int>{};
+    // Headings drawn so far, by the source and entry they were drawn at.
+    final drawn = <String, (int, int)>{};
+    // The original's heading in effect at each depth.
+    final open = <FlattenedItem>[];
+    String? previousTextId;
+
+    int sectionAt(
+      int source,
+      String id,
+      String title,
+      String language,
+      int entry,
+    ) => sectionIndexByKey.putIfAbsent('$source:$id', () {
+      sections.add(
+        _PageSection(
+          source: source,
+          id: id,
+          title: title,
+          language: language,
+          entryIndex: entry,
+        ),
+      );
+      return sections.length - 1;
+    });
+
+    void add(_Entry entry, int section) {
+      entries.add(entry);
+      sectionOfEntry.add(section);
+    }
+
     for (final view in views) {
       final items = view.items;
       if (view.index > 0) {
         if (items.isEmpty && !view.state.isError) continue;
-        entries.add(_Entry.divider(view.index));
+        add(_Entry.divider(view.index), -1);
       }
       if (view.state.isError) {
-        entries.add(_Entry.error(view.index));
+        add(_Entry.error(view.index), -1);
         continue;
       }
+      if (view.params.textId != previousTextId) open.clear();
+      previousTextId = view.params.textId;
+      final (textTitle, textLanguage) = _titleOf(view);
+      int textSection() => sectionAt(
+        view.index,
+        _textSectionId,
+        textTitle,
+        textLanguage,
+        entries.length,
+      );
       if (views.length > 1 &&
           items.isNotEmpty &&
           !view.translationHeadings &&
           !_startsWithTitle(items)) {
-        entries.add(_Entry.title(view.index));
+        add(_Entry.title(view.index), textSection());
       }
-      for (var i = 0; i < items.length; i++) {
-        entries.add(
-          _Entry.item(view.index, items[i], i > 0 ? items[i - 1] : null),
+      FlattenedItem? previous;
+      for (final item in items) {
+        if (item.isHeader) {
+          final section = item.section!;
+          if (open.length > item.depth) {
+            open.removeRange(item.depth, open.length);
+          }
+          while (open.length < item.depth) {
+            open.add(item);
+          }
+          open.add(item);
+          if (!view.translationHeadings) {
+            if (_isCollapsed && drawn.containsKey(section.id)) continue;
+            drawn[section.id] = (view.index, entries.length);
+          }
+          // A heading the translation's stand in for stays in the list, as
+          // an empty item, so indices do not move.
+          add(_Entry.item(view.index, item, previous), -1);
+          previous = item;
+          continue;
+        }
+
+        final segment = item.segment!;
+        var headings = const <SecondaryHeading>[];
+        final int sectionIndex;
+        if (view.translationHeadings) {
+          final secondary = view.secondaryState!;
+          headings = [
+            for (final heading
+                in view.collapsedHeadings?[segment.segmentId] ??
+                    secondary.headingsBySegmentNumber[segment.segmentNumber] ??
+                    const <SecondaryHeading>[])
+              if (!drawn.containsKey(heading.section.id)) heading,
+          ];
+          for (final heading in headings) {
+            drawn[heading.section.id] = (view.index, entries.length);
+          }
+          final enclosing = secondary.headingsEnclosing(segment.segmentNumber);
+          sectionIndex =
+              enclosing.isEmpty
+                  ? textSection()
+                  : sectionAt(
+                    view.index,
+                    enclosing.last.section.id,
+                    enclosing.last.section.title ?? '',
+                    view.dualSettings.secondary.languageCode,
+                    entries.length,
+                  );
+        } else {
+          Section? heading;
+          for (var depth = open.length - 1; depth >= 0; depth--) {
+            final candidate = open[depth].section!;
+            if (candidate.title?.isNotEmpty ?? false) {
+              heading = candidate;
+              break;
+            }
+          }
+          if (heading == null) {
+            sectionIndex = textSection();
+          } else {
+            final (title, language) = _headingText(view, heading);
+            final at = drawn[heading.id];
+            sectionIndex = sectionAt(
+              view.index,
+              heading.id,
+              title,
+              language,
+              at != null && at.$1 == view.index ? at.$2 : entries.length,
+            );
+          }
+        }
+        add(
+          _Entry.item(view.index, item, previous, headings: headings),
+          sectionIndex,
         );
+        previous = item;
       }
     }
     if (!_isCollapsed && widget.chantSessionFooter != null) {
-      entries.add(const _Entry.footer());
+      add(const _Entry.footer(), -1);
     }
-    return entries;
+    // Headings and rules go with the section that follows them.
+    var next = -1;
+    for (var i = sectionOfEntry.length - 1; i >= 0; i--) {
+      if (sectionOfEntry[i] < 0) {
+        sectionOfEntry[i] = next;
+      } else {
+        next = sectionOfEntry[i];
+      }
+    }
+    return _PageLayout(
+      entries: entries,
+      sections: sections,
+      sectionOfEntry: sectionOfEntry,
+    );
   }
 
   static bool _startsWithTitle(List<FlattenedItem> items) {
     final first = items.first;
     return first.isHeader && (first.section?.title?.isNotEmpty ?? false);
+  }
+
+  /// A heading's title as the page reads it: in the translation's language
+  /// when the table of contents has it, else the text's.
+  (String, String) _headingText(_SourceView view, Section section) {
+    final headingLanguage =
+        view.secondaryActive ? view.dualSettings.secondary.languageCode : null;
+    final translated =
+        headingLanguage == null ? null : section.titleIn(headingLanguage);
+    if (translated != null) return (translated, headingLanguage!);
+    return (section.title ?? '', view.language);
+  }
+
+  /// What the sections are of: the plan task on a page of several texts,
+  /// else the text.
+  String _pageTitle(_SourceView first) {
+    final task = widget.sources.first.navigationContext?.currentItem?.title;
+    if (widget.sources.length > 1 && task != null && task.trim().isNotEmpty) {
+      return task;
+    }
+    return first.state.openedText?.title ?? '';
+  }
+
+  // ─── Sections navigator ──────────────────────────────────────────────────
+
+  Future<void> _openSectionsSheet() async {
+    HapticFeedback.lightImpact();
+    // Every text takes part in the navigator: start those not loaded yet.
+    if (_startedCount < widget.sources.length) {
+      setState(() => _startedCount = widget.sources.length);
+    }
+    final picked = await showModalBottomSheet<_PageSection>(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ReaderPanelConstants.topRadius),
+        ),
+      ),
+      isScrollControlled: true,
+      builder:
+          (_) => _SectionsSheet(snapshot: _sections, current: _currentSectionKey),
+    );
+    if (picked == null || !mounted) return;
+    _scrollToEntry(picked.entryIndex);
+  }
+
+  /// Brings the entry at [index] to the top.
+  void _scrollToEntry(int index) {
+    final count = _layout?.entries.length ?? 0;
+    if (index < 0 || index >= count || !_itemScrollController.isAttached) {
+      return;
+    }
+    _isProgrammaticScroll = true;
+    _itemScrollController.scrollTo(
+      index: index,
+      duration: ReaderConstants.scrollAnimationDuration,
+      curve: Curves.easeInOutCubic,
+      alignment: 0,
+    );
+    Future.delayed(
+      ReaderConstants.scrollAnimationDuration +
+          const Duration(milliseconds: 100),
+      () {
+        _isProgrammaticScroll = false;
+        if (mounted) _checkPaginationThresholds();
+      },
+    );
   }
 
   /// Index in [entries] of [segmentId], within [source] when given.
@@ -1115,7 +1361,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       });
     }
 
-    final entries = _entriesFor(views);
+    final layout = _layoutFor(views);
+    _layout = layout;
+    final entries = layout.entries;
     final liveSegmentId = _resolveLiveHighlight(
       views,
       entries,
@@ -1127,8 +1375,43 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         tail.isLoadingNext ||
         (views.length > 1 && !tail.hasContent && !tail.isError);
 
+    // Texts not started yet count as a section each until they load.
+    final pending = widget.sources.length - _startedCount;
+    final snapshot = _SectionsSnapshot(
+      title: _pageTitle(first),
+      sections: layout.sections,
+      pendingSources: pending,
+    );
+    if (snapshot != _sections.value) {
+      // The sheet, in its own route, listens: not during this build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _sections.value = snapshot;
+      });
+    }
+    final showPill =
+        layout.sections.isNotEmpty && layout.sections.length + pending > 1;
+
     return Column(
       children: [
+        if (showPill)
+          SlideAwayHeader(
+            visible: _pillVisible,
+            child: ValueListenableBuilder<String?>(
+              valueListenable: _currentSectionKey,
+              builder: (context, key, _) {
+                var index = layout.sections.indexWhere((s) => s.key == key);
+                if (index < 0) index = 0;
+                final section = layout.sections[index];
+                return _SectionsPill(
+                  title: section.title,
+                  language: section.language,
+                  position: index + 1,
+                  total: layout.sections.length + pending,
+                  onTap: _openSectionsSheet,
+                );
+              },
+            ),
+          ),
         // Loading previous indicator (never while collapsed)
         if (!_isCollapsed && first.state.isLoadingPrevious)
           const SegmentSkeletonList(count: 1, linesPerSegment: 2),
@@ -1208,6 +1491,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           view: views[entry.source],
           item: entry.item!,
           previousItem: entry.previous,
+          headings: entry.headings,
           liveSegmentId: liveSegmentId,
         );
     }
@@ -1217,30 +1501,23 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     required _SourceView view,
     required FlattenedItem item,
     FlattenedItem? previousItem,
+    // The translation's headings to draw above this verse, when its own
+    // headings stand in for the original's (then empty items in the list).
+    List<SecondaryHeading> headings = const [],
     String? liveSegmentId,
   }) {
     final state = view.state;
     final language = view.language;
     final secondaryState = view.secondaryState;
     final secondarySlot = view.dualSettings.secondary;
-    // Set in the collapsed view: the translation's headings per verse id.
-    final collapsedHeadings = view.collapsedHeadings;
-    // With the translation's own headings in use they are drawn above the
-    // verse they open at; the original's stay in the list as empty items so
-    // indices do not move. Otherwise the original's headings show, in the
-    // translation's language when the table of contents has them in it.
-    final translationHeadings = view.translationHeadings;
-    final headingLanguage =
-        view.secondaryActive ? view.dualSettings.secondary.languageCode : null;
     return item.when(
       header: (section, depth) {
-        if (translationHeadings) return const SizedBox.shrink();
-        final translated =
-            headingLanguage == null ? null : section.titleIn(headingLanguage);
+        if (view.translationHeadings) return const SizedBox.shrink();
+        final (title, headingLanguage) = _headingText(view, section);
         return SectionHeader(
-          section: translated == null ? section : section.copyWith(title: translated),
+          section: title == section.title ? section : section.copyWith(title: title),
           depth: depth,
-          language: translated == null ? language : headingLanguage!,
+          language: headingLanguage,
           showDivider: depth > 0 && (previousItem?.isSegment ?? false),
         );
       },
@@ -1252,15 +1529,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             liveSegmentId != null && liveSegmentId == segment.segmentId;
 
         if (view.secondaryActive) {
-          final headings =
-              !translationHeadings
-                  ? const <SecondaryHeading>[]
-                  : collapsedHeadings != null
-                  ? collapsedHeadings[segment.segmentId] ??
-                      const <SecondaryHeading>[]
-                  : secondaryState!.headingsBySegmentNumber[segment
-                          .segmentNumber] ??
-                      const <SecondaryHeading>[];
           // Translation only: a verse the translation has no line for is
           // left out, unless the reader is being pointed at it.
           final hidden =
@@ -1369,25 +1637,370 @@ class _Entry {
   /// The item before this one in the same source, for heading rules.
   final FlattenedItem? previous;
 
-  const _Entry.item(this.source, this.item, this.previous)
-    : kind = _EntryKind.item;
+  /// The translation's headings drawn above this verse.
+  final List<SecondaryHeading> headings;
+
+  const _Entry.item(
+    this.source,
+    this.item,
+    this.previous, {
+    this.headings = const [],
+  }) : kind = _EntryKind.item;
   const _Entry.title(this.source)
     : kind = _EntryKind.title,
       item = null,
-      previous = null;
+      previous = null,
+      headings = const [];
   const _Entry.divider(this.source)
     : kind = _EntryKind.divider,
       item = null,
-      previous = null;
+      previous = null,
+      headings = const [];
   const _Entry.error(this.source)
     : kind = _EntryKind.error,
       item = null,
-      previous = null;
+      previous = null,
+      headings = const [];
   const _Entry.footer()
     : kind = _EntryKind.footer,
       source = 0,
       item = null,
-      previous = null;
+      previous = null,
+      headings = const [];
+}
+
+/// A section of the page's table of contents: the innermost titled heading
+/// over a run of verses, or a text's title when it has none.
+class _PageSection {
+  final int source;
+  final String id;
+  final String title;
+  final String language;
+
+  /// The entry to bring to the top: the heading, or the first verse when
+  /// the heading was drawn for an earlier source.
+  final int entryIndex;
+
+  const _PageSection({
+    required this.source,
+    required this.id,
+    required this.title,
+    required this.language,
+    required this.entryIndex,
+  });
+
+  String get key => '$source:$id';
+
+  @override
+  bool operator ==(Object other) =>
+      other is _PageSection &&
+      other.source == source &&
+      other.id == id &&
+      other.title == title &&
+      other.language == language &&
+      other.entryIndex == entryIndex;
+
+  @override
+  int get hashCode => Object.hash(source, id, title, language, entryIndex);
+}
+
+/// The list and its table of contents, as built from the started sources.
+class _PageLayout {
+  final List<_Entry> entries;
+  final List<_PageSection> sections;
+
+  /// Each entry's section, -1 for one past the last section.
+  final List<int> sectionOfEntry;
+
+  const _PageLayout({
+    required this.entries,
+    required this.sections,
+    required this.sectionOfEntry,
+  });
+}
+
+/// What the sections sheet shows.
+class _SectionsSnapshot {
+  final String title;
+  final List<_PageSection> sections;
+
+  /// Texts of the page not loaded yet, each a section to come.
+  final int pendingSources;
+
+  const _SectionsSnapshot({
+    required this.title,
+    required this.sections,
+    required this.pendingSources,
+  });
+
+  const _SectionsSnapshot.empty()
+    : title = '',
+      sections = const [],
+      pendingSources = 0;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SectionsSnapshot &&
+      other.title == title &&
+      other.pendingSources == pendingSources &&
+      listEquals(other.sections, sections);
+
+  @override
+  int get hashCode => Object.hash(title, pendingSources, Object.hashAll(sections));
+}
+
+/// The section at the top of the page and its place in the table of
+/// contents; opens the sections sheet.
+class _SectionsPill extends StatelessWidget {
+  final String title;
+  final String language;
+  final int position;
+  final int total;
+  final VoidCallback onTap;
+
+  const _SectionsPill({
+    required this.title,
+    required this.language,
+    required this.position,
+    required this.total,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.colorScheme.onSurface;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Center(
+        child: Material(
+          color: accent.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontFamily: getFontFamily(language),
+                        color: accent,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '· $position / $total',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: accent.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(AppAssets.caretDown, size: 16, color: accent),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The page's sections: the one on screen marked, those before it ticked.
+/// Pops with the section tapped.
+class _SectionsSheet extends StatelessWidget {
+  final ValueListenable<_SectionsSnapshot> snapshot;
+  final ValueListenable<String?> current;
+
+  const _SectionsSheet({required this.snapshot, required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.55);
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: ValueListenableBuilder<_SectionsSnapshot>(
+          valueListenable: snapshot,
+          builder:
+              (context, pages, _) => ValueListenableBuilder<String?>(
+                valueListenable: current,
+                builder: (context, currentKey, _) {
+                  final currentIndex = pages.sections.indexWhere(
+                    (s) => s.key == currentKey,
+                  );
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: ReaderPanelConstants.dragHandleWidth,
+                        height: ReaderPanelConstants.dragHandleHeight,
+                        decoration: BoxDecoration(
+                          color: ReaderPanelConstants.dragHandleColor(context),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.reader_sections_title,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (pages.title.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  pages.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: muted,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, color: theme.dividerColor),
+                      Flexible(
+                        child: ListView(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(bottom: 16),
+                          children: [
+                            for (var i = 0; i < pages.sections.length; i++)
+                              _SectionRow(
+                                index: i,
+                                section: pages.sections[i],
+                                isCurrent: i == currentIndex,
+                                isRead: i < currentIndex,
+                                onTap:
+                                    () => Navigator.of(
+                                      context,
+                                    ).pop(pages.sections[i]),
+                              ),
+                            for (var i = 0; i < pages.pendingSources; i++)
+                              _PendingSectionRow(label: l10n.loading),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionRow extends StatelessWidget {
+  final int index;
+  final _PageSection section;
+  final bool isCurrent;
+  final bool isRead;
+  final VoidCallback onTap;
+
+  const _SectionRow({
+    required this.index,
+    required this.section,
+    required this.isCurrent,
+    required this.isRead,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.colorScheme.onSurface;
+    final muted = accent.withValues(alpha: 0.55);
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color: isCurrent ? accent.withValues(alpha: 0.06) : null,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              child:
+                  isRead
+                      ? Icon(AppAssets.check, size: 18, color: muted)
+                      : Text(
+                        '${index + 1}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: muted,
+                        ),
+                      ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                section.title,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontFamily: getFontFamily(section.language),
+                  fontWeight: isCurrent ? FontWeight.w700 : null,
+                  height: getLineHeight(section.language),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A text of the page still loading its first page.
+class _PendingSectionRow extends StatelessWidget {
+  final String label;
+
+  const _PendingSectionRow({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.55);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            child: Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: muted),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(label, style: theme.textTheme.bodyLarge?.copyWith(color: muted)),
+        ],
+      ),
+    );
+  }
 }
 
 /// Applies a text's first-visit language layout once the text and its

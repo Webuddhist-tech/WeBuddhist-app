@@ -192,7 +192,8 @@ void main() {
   ) async {
     await _pump(tester);
 
-    expect(find.text(_rootTitleA), findsOneWidget);
+    // The pill names the section at the top as well as its heading.
+    expect(find.text(_rootTitleA), findsWidgets);
     expect(find.text(_rootTitleB), findsOneWidget);
   });
 
@@ -203,7 +204,7 @@ void main() {
 
     await _showTranslation(tester, ref, 0, versionId: 'A-zh', label: 'A Chinese');
 
-    expect(find.text(_translatedHeading), findsOneWidget);
+    expect(find.text(_translatedHeading), findsWidgets);
     expect(find.text(_rootTitleA), findsNothing);
   });
 
@@ -214,7 +215,7 @@ void main() {
 
       await _showTranslation(tester, ref, 0, versionId: 'A-en', label: 'A English');
 
-      expect(find.text('Alpha'), findsOneWidget);
+      expect(find.text('Alpha'), findsWidgets);
       expect(find.text(_rootTitleA), findsNothing);
     },
   );
