@@ -22,6 +22,31 @@ List<ReaderLanguageOption> translationLanguages(
     if (language.translationCount > 0) language,
 ];
 
+/// The translation languages any of several texts offers, in the order
+/// first seen, their versions counted across the texts.
+List<ReaderLanguageOption> mergedTranslationLanguages(
+  Iterable<List<ReaderLanguageOption>> perText,
+) {
+  final merged = <String, ReaderLanguageOption>{};
+  for (final languages in perText) {
+    for (final language in translationLanguages(languages)) {
+      final key = normalizeReaderLanguageCode(language.code);
+      final seen = merged[key];
+      merged[key] =
+          seen == null
+              ? language
+              : ReaderLanguageOption(
+                code: seen.code,
+                label: seen.label,
+                versionCount: seen.versionCount + language.versionCount,
+                translationCount:
+                    seen.translationCount + language.translationCount,
+              );
+    }
+  }
+  return merged.values.toList(growable: false);
+}
+
 /// Versions that can be a translation: root texts are only the original.
 List<ReaderVersionDetail> translationVersions(
   List<ReaderVersionDetail> versions,

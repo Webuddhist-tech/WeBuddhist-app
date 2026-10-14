@@ -966,26 +966,44 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  /// Lays out the active source's text.
+  /// Lays out the active source's text; the page's other loaded texts
+  /// follow each pick. One not loaded yet takes it up when it loads.
   Future<void> _openLanguagesSheet(BuildContext context) async {
     _clearTransientState();
 
-    // Snapshot of the loaded text so the drawer can show it as "Original".
     final state = ref.read(readerNotifierProvider(_activeParams));
-    final textDetail = state.textDetail;
-    final languageCode = textDetail?.language ?? 'en';
-    final primaryDisplay = ReaderSlotConfig(
-      languageCode: languageCode,
-      languageLabel: getLanguageName(languageCode, context),
-      versionId: textDetail?.id,
-      versionLabel: textDetail?.title,
-    );
+    final scopes = {_activeParams.settingsScope};
+    final others = <ReaderLanguagesText>[];
+    for (final params in _sources) {
+      if (!scopes.add(params.settingsScope)) continue;
+      if (!ref.exists(readerNotifierProvider(params))) continue;
+      final textDetail = ref.read(readerNotifierProvider(params)).textDetail;
+      if (textDetail == null) continue;
+      others.add(
+        ReaderLanguagesText(
+          scope: params.settingsScope,
+          primaryDisplay: _primaryDisplayOf(textDetail),
+        ),
+      );
+    }
 
     await showReaderLanguagesSheet(
       context,
       scope: _activeParams.settingsScope,
-      primaryDisplay: primaryDisplay,
+      primaryDisplay: _primaryDisplayOf(state.textDetail),
       sourceSample: scriptDetectionSample(state.content),
+      others: others,
+    );
+  }
+
+  /// Snapshot of a loaded text so the drawer can show it as "Original".
+  ReaderSlotConfig _primaryDisplayOf(TextDetail? textDetail) {
+    final languageCode = textDetail?.language ?? 'en';
+    return ReaderSlotConfig(
+      languageCode: languageCode,
+      languageLabel: getLanguageName(languageCode, context),
+      versionId: textDetail?.id,
+      versionLabel: textDetail?.title,
     );
   }
 
