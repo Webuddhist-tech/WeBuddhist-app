@@ -80,14 +80,15 @@ List<String> _ids(String textId, int from, int to) => [
 ];
 
 /// Readers for a task whose sources are text A then text B.
-List<ReaderParams> _sources(List<String> aVerses, List<String> bVerses) {
-  final item = PlanTextItem.sources(
-    sources: [
+List<ReaderParams> _sources(List<String> aVerses, List<String> bVerses) =>
+    _sourcesOf([
       PlanSourceRef(textId: 'A', segmentIds: aVerses),
       PlanSourceRef(textId: 'B', segmentIds: bVerses),
-    ],
-    title: 'Two prayers',
-  );
+    ]);
+
+List<ReaderParams> _sourcesOf(List<PlanSourceRef> sources) {
+  final item = PlanTextItem.sources(sources: sources, title: 'Two prayers');
+  final aVerses = sources.first.segmentIds!;
   final ctx = NavigationContext(
     source: NavigationSource.plan,
     planId: 'plan',
@@ -211,6 +212,26 @@ void main() {
       expect(find.byType(Divider), findsOneWidget);
       expect(_verse('B-1'), findsOneWidget);
       expect(_verse('B-2'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'the same verses of one text twice share a reader and show twice',
+    (tester) async {
+      _totals = {'A': 3};
+      final fetches = await _pump(
+        tester,
+        _sourcesOf([
+          PlanSourceRef(textId: 'A', segmentIds: _ids('A', 1, 2)),
+          PlanSourceRef(textId: 'A', segmentIds: _ids('A', 1, 2)),
+        ]),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(_verse('A-1'), findsNWidgets(2));
+      expect(_verse('A-2'), findsNWidgets(2));
+      expect(find.byType(Divider), findsOneWidget);
+      expect(fetches.map((f) => f.textId), ['A']);
     },
   );
 }

@@ -1146,8 +1146,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         // Loading next indicator: a page, or the next source's first one
         if (isLoadingTail)
           const SegmentSkeletonList(count: 1, linesPerSegment: 2),
-        for (final view in views)
-          _ReaderSourceSetup(key: ValueKey(view.params), params: view.params),
+        // One per distinct text: two sources naming the same verses of a
+        // text share a reader, and would share a key.
+        for (final params in {for (final view in views) view.params})
+          _ReaderSourceSetup(key: ValueKey(params), params: params),
       ],
     );
   }
