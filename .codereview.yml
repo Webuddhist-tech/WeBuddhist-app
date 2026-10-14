@@ -1,0 +1,21 @@
+instructions: |
+  This is a Flutter app using Riverpod for state. Widgets live in lib/features/*/presentation,
+  providers in lib/features/*/presentation/providers, data access in lib/features/*/data.
+  Prefer const constructors and avoid rebuilding whole trees on small state changes.
+
+rules:
+  - rule: Never call setState or read providers inside build() in a way that triggers rebuild loops.
+    paths: ["lib/**/presentation/**"]
+    severity: high
+  - rule: Paging offsets must stay consistent with the selected sort when live updates arrive.
+    paths: ["lib/**/providers/**"]
+  - rule: Do not log tokens, passwords or full request bodies.
+
+review:
+  ignore: ["**/*.g.dart", "**/*.freezed.dart", "lib/l10n/**", "ios/**", "android/**", "build/**"]
+  min_severity: low
+  max_comments: 15
+  incremental: true
+
+summary:
+  diagram: true
