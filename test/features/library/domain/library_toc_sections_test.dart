@@ -66,6 +66,8 @@ void main() {
     expect(sections.map((s) => s.id), ['A', 'B']);
     final alpha = sections.first;
     expect(alpha.title, 'Alpha');
+    // Every language's title is kept for a page read in another language.
+    expect(alpha.titles, {'en': 'Alpha'});
     expect(alpha.sectionNumber, 1);
     expect(alpha.parentId, isNull);
     expect(alpha.segments, isEmpty);
@@ -76,6 +78,7 @@ void main() {
     expect(alpha.sections![1].sectionNumber, 2);
     // No English title: any title is better than none.
     expect(alpha.sections![1].title, 'ཀ');
+    expect(alpha.sections![1].titles, {'bo': 'ཀ'});
 
     final beta = sections.last;
     expect(beta.sectionNumber, 2);

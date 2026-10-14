@@ -253,7 +253,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         entries.add(_Entry.error(view.index));
         continue;
       }
-      if (views.length > 1 && items.isNotEmpty && !_startsWithTitle(items)) {
+      if (views.length > 1 &&
+          items.isNotEmpty &&
+          !view.translationHeadings &&
+          !_startsWithTitle(items)) {
         entries.add(_Entry.title(view.index));
       }
       for (var i = 0; i < items.length; i++) {
@@ -987,6 +990,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     final items = _itemsOf(index, state);
     final collapsed = _activeSegmentIdsOf(index, state).isNotEmpty;
+    // Headings follow the translation when one shows: its own table of
+    // contents where it has one. A page showing only the translation waits
+    // for its first page, so the original's never flash in; one showing the
+    // original too keeps the original's headings until then.
+    final translationHeadings =
+        secondaryActive &&
+        secondaryState != null &&
+        (showOriginal
+            ? secondaryState.headingsBySegmentNumber.isNotEmpty
+            : secondaryState.headsTranslationOnly);
     return _SourceView(
       index: index,
       params: params,
@@ -996,11 +1009,22 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       secondaryActive: secondaryActive,
       showOriginal: showOriginal,
       secondaryState: secondaryState,
+      translationHeadings: translationHeadings,
       collapsedHeadings:
           collapsed && secondaryState != null
               ? collapsedTranslationHeadings(items, secondaryState)
               : null,
     );
+  }
+
+  /// A text's title as the page reads it: its translation's when one shows.
+  (String, String) _titleOf(_SourceView view) {
+    final translation = view.dualSettings.secondary;
+    final translated = translation.versionLabel;
+    if (view.secondaryActive && translated != null && translated.isNotEmpty) {
+      return (translated, translation.languageCode);
+    }
+    return (view.state.openedText?.title ?? '', view.language);
   }
 
   /// Handle initial scroll to segment. Skipped while collapsed — the first
@@ -1163,11 +1187,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       case _EntryKind.divider:
         return const _SourceDivider();
       case _EntryKind.title:
-        final view = views[entry.source];
-        return _SourceTitle(
-          title: view.state.openedText?.title ?? '',
-          language: view.language,
-        );
+        final (title, language) = _titleOf(views[entry.source]);
+        return _SourceTitle(title: title, language: language);
       case _EntryKind.error:
         return _SourceErrorRow(
           onRetry:
@@ -1204,25 +1225,25 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final secondarySlot = view.dualSettings.secondary;
     // Set in the collapsed view: the translation's headings per verse id.
     final collapsedHeadings = view.collapsedHeadings;
-    // Headings follow the top layer: with only the translation on screen they
-    // are the translation's, drawn above the verse they open at. The
-    // original's stay in the list as empty items so indices do not move.
-    final translationHeadings =
-        view.secondaryActive &&
-        !view.showOriginal &&
-        (secondaryState?.headsTranslationOnly ?? false);
+    // With the translation's own headings in use they are drawn above the
+    // verse they open at; the original's stay in the list as empty items so
+    // indices do not move. Otherwise the original's headings show, in the
+    // translation's language when the table of contents has them in it.
+    final translationHeadings = view.translationHeadings;
+    final headingLanguage =
+        view.secondaryActive ? view.dualSettings.secondary.languageCode : null;
     return item.when(
-      header:
-          (section, depth) =>
-              translationHeadings
-                  ? const SizedBox.shrink()
-                  : SectionHeader(
-                    section: section,
-                    depth: depth,
-                    language: language,
-                    showDivider:
-                        depth > 0 && (previousItem?.isSegment ?? false),
-                  ),
+      header: (section, depth) {
+        if (translationHeadings) return const SizedBox.shrink();
+        final translated =
+            headingLanguage == null ? null : section.titleIn(headingLanguage);
+        return SectionHeader(
+          section: translated == null ? section : section.copyWith(title: translated),
+          depth: depth,
+          language: translated == null ? language : headingLanguage!,
+          showDivider: depth > 0 && (previousItem?.isSegment ?? false),
+        );
+      },
       segment: (segment, depth, sectionId) {
         final isSelected =
             state.selectedSegment?.segmentId == segment.segmentId;
@@ -1316,6 +1337,9 @@ class _SourceView {
   final bool secondaryActive;
   final bool showOriginal;
   final SecondaryReaderState? secondaryState;
+
+  /// The translation's own headings stand in for the original's.
+  final bool translationHeadings;
   final Map<String, List<SecondaryHeading>>? collapsedHeadings;
 
   const _SourceView({
@@ -1327,6 +1351,7 @@ class _SourceView {
     this.secondaryActive = false,
     this.showOriginal = true,
     this.secondaryState,
+    this.translationHeadings = false,
     this.collapsedHeadings,
   });
 
