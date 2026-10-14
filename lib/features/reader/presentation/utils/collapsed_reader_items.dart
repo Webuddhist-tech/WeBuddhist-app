@@ -34,6 +34,19 @@ List<FlattenedItem> collapsedReaderItems(
   return items;
 }
 
+/// The first of [active], in order, that [content] lacks and [skipped] does
+/// not name: where the next page is fetched. Null once every verse is in.
+String? nextSegmentToLoad(
+  FlattenedContent content,
+  List<String> active, {
+  Set<String> skipped = const {},
+}) {
+  for (final id in active) {
+    if (!content.containsSegment(id) && !skipped.contains(id)) return id;
+  }
+  return null;
+}
+
 /// The translation's headings to draw above each verse of the collapsed
 /// list: those enclosing it that an earlier verse has not shown yet.
 Map<String, List<SecondaryHeading>> collapsedTranslationHeadings(

@@ -35,8 +35,6 @@ import 'package:flutter_pecha/features/reader/domain/services/live_position_reso
 import 'package:flutter_pecha/features/reader/domain/services/navigation_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
-import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
-import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
@@ -82,7 +80,14 @@ class ReaderScreen extends ConsumerStatefulWidget {
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen>
     with SingleTickerProviderStateMixin {
+  /// One reader per text on this page: the text opened, or each source of
+  /// the plan task. The first gates loading and errors.
+  late List<ReaderParams> _sources;
   late ReaderParams _params;
+
+  /// The source whose segment was last tapped: its selection, panels and
+  /// sheets are the ones on screen.
+  late ReaderParams _activeParams;
 
   /// Gap kept below the floating audio button when it sits over the bare
   /// reader content (no action bar). Matches the original floating offset.
@@ -159,32 +164,57 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   PlanSegmentAudioController? _audioController;
   bool _isAdvancing = false;
 
-  /// Applies this reader's first-visit language layout once the text and its
-  /// translations are known (see [ReaderInitialLayoutApplier]).
-  final ReaderInitialLayoutApplier _layoutApplier =
-      ReaderInitialLayoutApplier();
-
   bool get _hasAudio => _audioController?.hasAudio ?? false;
 
   @override
   void initState() {
     super.initState();
-    _params = ReaderParams(
-      textId: widget.textId,
-      segmentId: widget.segmentId,
-      navigationContext: widget.navigationContext,
-    );
+    _sources = _sourceParams();
+    _params = _sources.first;
+    _activeParams = _params;
     _initAudio();
     _initGroupAccumulatorChantSession();
-    // Both inputs may already be cached from an earlier visit.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _applyInitialLayout());
   }
 
-  void _applyInitialLayout() {
-    if (!mounted) return;
-    unawaited(
-      _layoutApplier.maybeApply(ref: ref, context: context, params: _params),
-    );
+  /// A reader per source text of the plan task opened, else one for the
+  /// text opened, restricted to the task's verses when it names them.
+  List<ReaderParams> _sourceParams() {
+    final ctx = widget.navigationContext;
+    final item = ctx?.currentItem;
+    if (item == null || !item.isSourceReference || item.textId != widget.textId) {
+      return [
+        ReaderParams(
+          textId: widget.textId,
+          segmentId: widget.segmentId,
+          navigationContext: ctx,
+        ),
+      ];
+    }
+    return [
+      for (final (index, source) in item.sources.indexed)
+        ReaderParams(
+          textId: source.textId,
+          segmentId:
+              index == 0
+                  ? widget.segmentId ?? source.firstSegmentId
+                  : source.firstSegmentId,
+          segmentIds: source.segmentIds,
+          navigationContext: ctx,
+        ),
+    ];
+  }
+
+  void _onSourceSelected(ReaderParams params) {
+    if (_activeParams == params) return;
+    setState(() => _activeParams = params);
+  }
+
+  /// Drops the selection and open panels; only the active source has any.
+  void _clearTransientState() {
+    final notifier = ref.read(readerNotifierProvider(_activeParams).notifier);
+    notifier.selectSegment(null);
+    notifier.closeCommentary();
+    notifier.closeTranslation();
   }
 
   void _initGroupAccumulatorChantSession() {
@@ -367,11 +397,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     _audioController?.cancel();
     ref.read(planSubtaskCompletionProvider).completeCurrent(navContext);
-
-    final notifier = ref.read(readerNotifierProvider(_params).notifier);
-    notifier.selectSegment(null);
-    notifier.closeCommentary();
-    notifier.closeTranslation();
+    _clearTransientState();
 
     final didNavigate = PlanNavigator.navigateAdjacent(
       context,
@@ -425,17 +451,23 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             .read(readerDualSettingsProvider(_params.settingsScope))
             .primary
             .versionId;
-    final onThisText = LivePositionResolver.textMatches(
-      position,
-      loadedTextIds: [widget.textId, state.textDetail?.id, primaryVersionId],
-      content: state.content,
-    );
+    final onThisText =
+        (navContext.currentItem?.hasSourceText(position.textId) ?? false) ||
+        LivePositionResolver.textMatches(
+          position,
+          loadedTextIds: [
+            widget.textId,
+            state.textDetail?.id,
+            primaryVersionId,
+          ],
+          content: state.content,
+        );
     if (onThisText) return;
 
     final items = navContext.planTextItems;
     if (items == null) return;
     final index = items.indexWhere(
-      (item) => item.isSourceReference && item.textId == position.textId,
+      (item) => item.hasSourceText(position.textId),
     );
     if (index < 0) return;
     final newContext = const NavigationService()
@@ -449,10 +481,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       // Moving on with the group finishes this text, as a swipe would.
       ref.read(planSubtaskCompletionProvider).completeCurrent(navContext);
     }
-    final notifier = ref.read(readerNotifierProvider(_params).notifier);
-    notifier.selectSegment(null);
-    notifier.closeCommentary();
-    notifier.closeTranslation();
+    _clearTransientState();
     PlanNavigator.replace(context, items[index], newContext);
   }
 
@@ -491,33 +520,27 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(
-      prefetchBookmarkExistsProvider(
-        BookmarkTarget(type: BookmarkType.text, sourceId: widget.textId),
-      ),
-    );
+    for (final source in _sources) {
+      ref.watch(
+        prefetchBookmarkExistsProvider(
+          BookmarkTarget(type: BookmarkType.text, sourceId: source.textId),
+        ),
+      );
+    }
 
     final state = ref.watch(readerNotifierProvider(_params));
-    final notifier = ref.read(readerNotifierProvider(_params).notifier);
+    final active = ref.watch(readerNotifierProvider(_activeParams));
+    final activeNotifier = ref.read(
+      readerNotifierProvider(_activeParams).notifier,
+    );
     final readerTheme = _readerTheme(context);
     // The embedded host drops its video to audio while a panel is open.
     ref.listen(
       readerNotifierProvider(
-        _params,
+        _activeParams,
       ).select((s) => s.isCommentaryOpen || s.isTranslationOpen),
       (_, isPanelOpen) =>
           PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
-    );
-    // The first-visit layout needs the text's language and its list of
-    // translations; whichever arrives last applies it. Listening here also
-    // keeps the languages request alive for the sheet.
-    ref.listen(
-      readerNotifierProvider(_params).select((s) => s.textDetail?.language),
-      (_, __) => _applyInitialLayout(),
-    );
-    ref.listen(
-      readerLanguagesProvider(widget.textId),
-      (_, __) => _applyInitialLayout(),
     );
 
     final liveEventId = _liveEventId;
@@ -547,7 +570,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     final scaffold = Scaffold(
       backgroundColor: readerTheme.scaffoldBackgroundColor,
-      body: _buildBody(context, state, notifier),
+      body: _buildBody(context, state, active, activeNotifier),
     );
     // Embedded, the host owns leaving; there is no route of our own to pop.
     if (_isEmbedded) return Theme(data: readerTheme, child: scaffold);
@@ -564,9 +587,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             if (!mounted) return;
             // Clear transient reader state after navigation finishes so this
             // cannot mutate Riverpod state while GoRouter rebuilds the tree.
-            notifier.selectSegment(null);
-            notifier.closeCommentary();
-            notifier.closeTranslation();
+            _clearTransientState();
             _invalidatePlanProviders();
             if (_isGroupAccumulatorChant && !_chantSessionFinished) {
               unawaited(
@@ -590,13 +611,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
+  /// [state] is the first source's, which gates loading and errors;
+  /// [active] is the tapped source's, which owns the selection and panels.
   Widget _buildBody(
     BuildContext context,
     ReaderState state,
-    ReaderNotifier notifier,
+    ReaderState active,
+    ReaderNotifier activeNotifier,
   ) {
     final localizations = context.l10n;
-    final textDetail = state.textDetail;
     // Loading state; also the first frame, before the initial fetch starts.
     if (state.isLoading || state.status == ReaderStatus.initial) {
       return _buildStatusView(
@@ -625,14 +648,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           message: localizations.noContentAvailable,
           retryLabel: localizations.retry,
           backLabel: localizations.back,
-          onRetry: () => notifier.reload(),
+          onRetry:
+              () => ref.read(readerNotifierProvider(_params).notifier).reload(),
           onBack: () => _navigateBack(context),
         ),
       );
     }
 
-    final isPanelOpen = state.isCommentaryOpen || state.isTranslationOpen;
-    final isActionBarVisible = state.hasSelection && !isPanelOpen;
+    final isPanelOpen = active.isCommentaryOpen || active.isTranslationOpen;
+    final isActionBarVisible = active.hasSelection && !isPanelOpen;
     final isBottomOverlayVisible =
         !isPanelOpen && (_hasAudio || isActionBarVisible);
     final chantBarHeight =
@@ -678,30 +702,28 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               // App bar slides up out of view on scroll-down.
               SlideAwayHeader(
                 visible: _isAppBarVisible,
-                child: _buildAppBar(context, state, textDetail),
+                child: _buildAppBar(context),
               ),
               // Main scrollable content
               Expanded(
                 child: SwipeNavigationWrapper(
-                  params: _params,
+                  params: _activeParams,
                   textDetail: state.textDetail!,
                   isAppBarVisible: _isAppBarVisible,
                   child: ReaderTranslationSplitView(
-                    params: _params,
+                    params: _activeParams,
                     // Reader content with scroll detection. The segment
                     // action bar is hosted in the screen-level bottom
                     // overlay so it can share a fixed gap with the
                     // floating audio button.
                     mainContent: ReaderCommentarySplitView(
-                      params: _params,
+                      params: _activeParams,
                       mainContent: ReaderContentPart(
-                        params: _params,
-                        language: state.textDetail!.language,
+                        sources: _sources,
                         initialSegmentId: widget.segmentId,
-                        visibleSegmentIds:
-                            widget.navigationContext?.currentSegmentIds,
                         bottomPadding: contentBottomPadding,
                         chantSessionFooter: chantFooter,
+                        onSourceSelected: _onSourceSelected,
                         onScrollDirectionChanged: _onScrollDirectionChanged,
                         onScrollControllerReady: (scrollFn) {
                           _scrollToSegment = scrollFn;
@@ -760,7 +782,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                       child: Center(child: _buildAudioButton()),
                     ),
                   if (isActionBarVisible)
-                    _buildSegmentActionBar(state, notifier),
+                    _buildSegmentActionBar(active, activeNotifier),
                 ],
               ),
             ),
@@ -788,11 +810,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   /// Embedded: a close bar with font size and languages instead of the app bar.
   /// Either bar carries the live sync button when following an event.
-  Widget _buildAppBar(
-    BuildContext context,
-    ReaderState state,
-    TextDetail? textDetail,
-  ) {
+  Widget _buildAppBar(BuildContext context) {
     final eventId = _eventId;
     final liveEventId = _liveEventId;
     final liveSyncToggle = _livePill(liveEventId);
@@ -808,27 +826,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             onPressed: () => showFontSizeBottomSheet(context),
           ),
           ReaderLanguagesButton(
-            onPressed: () => _openLanguagesSheet(context, textDetail),
+            onPressed: () => _openLanguagesSheet(context),
           ),
         ],
       );
     }
     return ReaderAppBarOverlay(
-      params: _params,
+      params: _activeParams,
       colorIndex: widget.colorIndex,
       liveSyncToggle: liveSyncToggle,
       prayerRequestsButton: prayerRequestsButton,
       // Picking a result replaces the route without the event, which drops
       // the live sync, so the reader that follows a recitation has no search.
       onSearchPressed:
-          liveEventId == null ? () => _handleSearch(context, state) : null,
-      onLanguagesPressed: () => _openLanguagesSheet(context, textDetail),
+          liveEventId == null ? () => _handleSearch(context) : null,
+      onLanguagesPressed: () => _openLanguagesSheet(context),
       // The event page already offers share and offline recitations, so the
       // menu goes and font size gets its own button.
       onMorePressed:
-          eventId == null
-              ? () => _openMoreBottomSheet(context, textDetail)
-              : null,
+          eventId == null ? () => _openMoreBottomSheet(context) : null,
       onFontSizePressed:
           eventId == null ? null : () => showFontSizeBottomSheet(context),
     );
@@ -858,7 +874,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   Widget _buildSegmentActionBar(ReaderState state, ReaderNotifier notifier) {
     return SegmentActionBar(
       segment: state.selectedSegment!,
-      params: _params,
+      params: _activeParams,
       onClose: () => notifier.selectSegment(null),
       onOpenCommentary: () {
         if (_scrollToSegment != null && state.selectedSegment != null) {
@@ -915,21 +931,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<void> _handleSearch(BuildContext context, ReaderState state) async {
-    final notifier = ref.read(readerNotifierProvider(_params).notifier);
+  /// Searches the active source's text.
+  Future<void> _handleSearch(BuildContext context) async {
     final router = ref.read(appRouterProvider);
+    final textId = _activeParams.textId;
+    final language =
+        ref.read(readerNotifierProvider(_activeParams)).textDetail?.language;
 
     // Close selection before search
-    notifier.selectSegment(null);
-    notifier.closeCommentary();
-    notifier.closeTranslation();
+    _clearTransientState();
 
     final result = await showSearch<Map<String, String>?>(
       context: context,
       delegate: ReaderSearchDelegate(
         ref: ref,
-        textId: widget.textId,
-        language: state.textDetail?.language,
+        textId: textId,
+        language: language,
       ),
     );
 
@@ -937,7 +954,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       final selectedTextId = result['textId']!;
       final selectedSegmentId = result['segmentId']!;
 
-      if (selectedTextId == widget.textId) {
+      if (selectedTextId == textId) {
         router.pushReplacement(
           '/reader/$selectedTextId',
           extra: NavigationContext(
@@ -949,16 +966,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
   }
 
-  Future<void> _openLanguagesSheet(
-    BuildContext context,
-    TextDetail? textDetail,
-  ) async {
-    final notifier = ref.read(readerNotifierProvider(_params).notifier);
-    notifier.selectSegment(null);
-    notifier.closeCommentary();
-    notifier.closeTranslation();
+  /// Lays out the active source's text.
+  Future<void> _openLanguagesSheet(BuildContext context) async {
+    _clearTransientState();
 
     // Snapshot of the loaded text so the drawer can show it as "Original".
+    final state = ref.read(readerNotifierProvider(_activeParams));
+    final textDetail = state.textDetail;
     final languageCode = textDetail?.language ?? 'en';
     final primaryDisplay = ReaderSlotConfig(
       languageCode: languageCode,
@@ -969,23 +983,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     await showReaderLanguagesSheet(
       context,
-      scope: _params.settingsScope,
+      scope: _activeParams.settingsScope,
       primaryDisplay: primaryDisplay,
-      sourceSample: scriptDetectionSample(
-        ref.read(readerNotifierProvider(_params)).content,
-      ),
+      sourceSample: scriptDetectionSample(state.content),
     );
   }
 
-  void _openMoreBottomSheet(BuildContext context, TextDetail? textDetail) {
-    final notifier = ref.read(readerNotifierProvider(_params).notifier);
-    notifier.selectSegment(null);
-    notifier.closeCommentary();
-    notifier.closeTranslation();
+  void _openMoreBottomSheet(BuildContext context) {
+    _clearTransientState();
 
     // Adds the edition the user opened, not the original it is shown under.
-    final openedText =
-        ref.read(readerNotifierProvider(_params)).openedText ?? textDetail;
+    final openedText = ref.read(readerNotifierProvider(_activeParams)).openedText;
     final showAddToPractices =
         (widget.navigationContext?.source == NavigationSource.recitationList ||
             widget.navigationContext?.source == NavigationSource.routine) &&
@@ -993,7 +1001,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     showReaderMoreBottomSheet(
       context,
-      textId: widget.textId,
+      textId: _activeParams.textId,
       showAddToPractices: showAddToPractices,
       showOfflineRecitation: _isGroupAccumulatorChant,
       onAddToPractices:
@@ -1010,7 +1018,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       AppRoutes.practiceEditRoutine,
       extra: {
         'initialRecitation': RecitationModel(
-          textId: widget.textId,
+          textId: _activeParams.textId,
           title: textDetail.title,
           language: textDetail.language,
         ),

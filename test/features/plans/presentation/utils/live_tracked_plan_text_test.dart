@@ -47,4 +47,29 @@ void main() {
       -1,
     );
   });
+
+  test('finds a text that is a later source of its task', () {
+    final withSources = [
+      ...items,
+      PlanTextItem.sources(
+        sources: const [
+          PlanSourceRef(textId: 'en-c'),
+          PlanSourceRef(textId: 'en-d'),
+        ],
+        title: 'C and D',
+      ),
+    ];
+    expect(
+      planItemIndexForLiveEditions(items: withSources, liveTextId: 'en-d'),
+      2,
+    );
+    expect(
+      planItemIndexForLiveEditions(
+        items: withSources,
+        liveTextId: 'bo-d',
+        editionIds: {'en-d'},
+      ),
+      2,
+    );
+  });
 }
