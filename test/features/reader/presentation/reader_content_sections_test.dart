@@ -171,10 +171,9 @@ void main() {
       await _pump(tester, _twoRangesOfA());
 
       expect(find.text('· 1 / 2'), findsOneWidget);
-      // The pill and the heading both name the section.
-      expect(find.text(_refugeTitle), findsNWidgets(2));
-      // The book's title heads the page once, not again after the rule.
-      expect(find.text(_rootTitle), findsOneWidget);
+      // The pill names the text, as its heading does.
+      expect(find.text(_refugeTitle), findsOneWidget);
+      expect(find.text(_rootTitle), findsNWidgets(2));
     },
   );
 
@@ -187,14 +186,19 @@ void main() {
     await _settle(tester);
     expect(find.text('Sections'), findsOneWidget);
     expect(find.text('Two prayers'), findsOneWidget);
-    expect(find.text(_kingTitle), findsWidgets);
+    // Each text is a row (pill, heading and two rows name the book), its
+    // sections nested under it.
+    expect(find.text(_rootTitle), findsNWidgets(4));
+    expect(find.text(_kingTitle), findsOneWidget);
 
-    await tester.tap(find.text(_kingTitle).last);
+    // The second text's row brings its own title heading to the top.
+    await tester.tap(find.text(_rootTitle).last);
     await _settle(tester);
 
     expect(find.text('Sections'), findsNothing);
     expect(find.text('· 2 / 2'), findsOneWidget);
-    expect(find.text(_kingTitle), findsNWidgets(2));
+    expect(find.text(_rootTitle), findsNWidgets(2));
+    expect(find.text(_kingTitle), findsOneWidget);
   });
 
   testWidgets('the pill slides away on a scroll down and back on a scroll up', (
@@ -213,11 +217,19 @@ void main() {
     expect(_pillVisible(tester), isTrue);
   });
 
-  testWidgets('a text read whole lists its chapters', (tester) async {
+  testWidgets('a text read whole lists its chapters, with no count', (
+    tester,
+  ) async {
     await _pump(tester, const [ReaderParams(textId: 'A')]);
 
-    expect(find.text('· 1 / 2'), findsOneWidget);
+    expect(find.textContaining('/ '), findsNothing);
+    expect(find.text(_rootTitle), findsNWidgets(2));
+
+    await tester.tap(find.text(_rootTitle).first);
+    await _settle(tester);
+    expect(find.text('Sections'), findsOneWidget);
     expect(find.text(_refugeTitle), findsNWidgets(2));
+    expect(find.text(_kingTitle), findsOneWidget);
   });
 
   testWidgets('a text with one section has nothing to navigate', (

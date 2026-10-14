@@ -283,18 +283,18 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// The list, source after source, with the page's table of contents.
   ///
   /// A rule goes before each source after the first, then its title when its
-  /// headings carry none, its items, or its retry row when it failed. A
-  /// heading already drawn on the page (the same text read on from a later
-  /// range) is not drawn again; the translation's headings go above the
-  /// verse they open at. A source still loading its first page adds nothing;
-  /// the tail skeleton stands in for it.
+  /// headings carry none, its items, or its retry row when it failed. The
+  /// translation's headings go above the verse they open at. A source still
+  /// loading its first page adds nothing; the tail skeleton stands in for it.
   ///
-  /// Each verse belongs to the innermost titled heading over it, or to its
-  /// text's title: those are the sections the navigator lists, in order.
+  /// The navigator lists each source as a text, titled by its first heading
+  /// or its own title, with its sections nested: each verse belongs to the
+  /// innermost titled heading over it, or to the text.
   _PageLayout _layoutFor(List<_SourceView> views) {
     final entries = <_Entry>[];
     final sectionOfEntry = <int>[];
     final sections = <_PageSection>[];
+    final texts = <_PageText>[];
     final sectionIndexByKey = <String, int>{};
     // Headings drawn so far, by the source and entry they were drawn at.
     final drawn = <String, (int, int)>{};
@@ -339,6 +339,21 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       if (view.params.textId != previousTextId) open.clear();
       previousTextId = view.params.textId;
       final (textTitle, textLanguage) = _titleOf(view);
+      // The text is named by its first heading when it has one.
+      final heading = items.isEmpty ? null : items.first.section;
+      final titled = heading != null && (heading.title?.isNotEmpty ?? false);
+      final (title, titleLanguage) =
+          titled && !view.translationHeadings
+              ? _headingText(view, heading)
+              : (textTitle, textLanguage);
+      final text = _PageText(
+        source: view.index,
+        title: title,
+        language: titleLanguage,
+        entryIndex: entries.length,
+        titleSectionId: titled ? heading.id : _textSectionId,
+      );
+      texts.add(text);
       int textSection() => sectionAt(
         view.index,
         _textSectionId,
@@ -364,7 +379,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           }
           open.add(item);
           if (!view.translationHeadings) {
-            if (_isCollapsed && drawn.containsKey(section.id)) continue;
             drawn[section.id] = (view.index, entries.length);
           }
           // A heading the translation's stand in for stays in the list, as
@@ -379,16 +393,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         final int sectionIndex;
         if (view.translationHeadings) {
           final secondary = view.secondaryState!;
-          headings = [
-            for (final heading
-                in view.collapsedHeadings?[segment.segmentId] ??
-                    secondary.headingsBySegmentNumber[segment.segmentNumber] ??
-                    const <SecondaryHeading>[])
-              if (!drawn.containsKey(heading.section.id)) heading,
-          ];
-          for (final heading in headings) {
-            drawn[heading.section.id] = (view.index, entries.length);
-          }
+          headings =
+              view.collapsedHeadings?[segment.segmentId] ??
+              secondary.headingsBySegmentNumber[segment.segmentNumber] ??
+              const <SecondaryHeading>[];
           final enclosing = secondary.headingsEnclosing(segment.segmentNumber);
           sectionIndex =
               enclosing.isEmpty
@@ -442,9 +450,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         next = sectionOfEntry[i];
       }
     }
+    // A text's sections nest under it; the one it is named after is the text.
+    for (final section in sections) {
+      final text = texts.firstWhere((t) => t.source == section.source);
+      if (section.id != text.titleSectionId) text.sections.add(section);
+    }
     return _PageLayout(
       entries: entries,
       sections: sections,
+      texts: texts,
       sectionOfEntry: sectionOfEntry,
     );
   }
@@ -483,7 +497,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (_startedCount < widget.sources.length) {
       setState(() => _startedCount = widget.sources.length);
     }
-    final picked = await showModalBottomSheet<_PageSection>(
+    final picked = await showModalBottomSheet<int>(
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
@@ -496,7 +510,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           (_) => _SectionsSheet(snapshot: _sections, current: _currentSectionKey),
     );
     if (picked == null || !mounted) return;
-    _scrollToEntry(picked.entryIndex);
+    _scrollToEntry(picked);
   }
 
   /// Brings the entry at [index] to the top.
@@ -1375,11 +1389,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         tail.isLoadingNext ||
         (views.length > 1 && !tail.hasContent && !tail.isError);
 
-    // Texts not started yet count as a section each until they load.
+    // Texts not started yet are listed as loading until they are.
     final pending = widget.sources.length - _startedCount;
     final snapshot = _SectionsSnapshot(
       title: _pageTitle(first),
-      sections: layout.sections,
+      texts: layout.texts,
       pendingSources: pending,
     );
     if (snapshot != _sections.value) {
@@ -1388,8 +1402,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         if (mounted) _sections.value = snapshot;
       });
     }
+    // Something to move between: another text, or sections of this one.
     final showPill =
-        layout.sections.isNotEmpty && layout.sections.length + pending > 1;
+        layout.texts.isNotEmpty &&
+        (widget.sources.length > 1 || layout.texts.first.sections.length > 1);
 
     return Column(
       children: [
@@ -1399,14 +1415,20 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             child: ValueListenableBuilder<String?>(
               valueListenable: _currentSectionKey,
               builder: (context, key, _) {
-                var index = layout.sections.indexWhere((s) => s.key == key);
-                if (index < 0) index = 0;
-                final section = layout.sections[index];
+                final section = layout.sections.firstWhere(
+                  (s) => s.key == key,
+                  orElse: () => layout.sections.first,
+                );
+                final index = layout.texts.indexWhere(
+                  (t) => t.source == section.source,
+                );
+                final text = layout.texts[index < 0 ? 0 : index];
                 return _SectionsPill(
-                  title: section.title,
-                  language: section.language,
-                  position: index + 1,
-                  total: layout.sections.length + pending,
+                  title: text.title,
+                  language: text.language,
+                  position: text.source + 1,
+                  // One text: nothing to count.
+                  total: widget.sources.length > 1 ? widget.sources.length : null,
                   onTap: _openSectionsSheet,
                 );
               },
@@ -1704,10 +1726,44 @@ class _PageSection {
   int get hashCode => Object.hash(source, id, title, language, entryIndex);
 }
 
+/// A text of the page as the navigator lists it, with its sections nested.
+class _PageText {
+  final int source;
+  final String title;
+  final String language;
+  final int entryIndex;
+
+  /// The section the text is named after, left out of [sections].
+  final String titleSectionId;
+  final List<_PageSection> sections = [];
+
+  _PageText({
+    required this.source,
+    required this.title,
+    required this.language,
+    required this.entryIndex,
+    required this.titleSectionId,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is _PageText &&
+      other.source == source &&
+      other.title == title &&
+      other.language == language &&
+      other.entryIndex == entryIndex &&
+      listEquals(other.sections, sections);
+
+  @override
+  int get hashCode =>
+      Object.hash(source, title, language, entryIndex, Object.hashAll(sections));
+}
+
 /// The list and its table of contents, as built from the started sources.
 class _PageLayout {
   final List<_Entry> entries;
   final List<_PageSection> sections;
+  final List<_PageText> texts;
 
   /// Each entry's section, -1 for one past the last section.
   final List<int> sectionOfEntry;
@@ -1715,6 +1771,7 @@ class _PageLayout {
   const _PageLayout({
     required this.entries,
     required this.sections,
+    required this.texts,
     required this.sectionOfEntry,
   });
 }
@@ -1722,20 +1779,20 @@ class _PageLayout {
 /// What the sections sheet shows.
 class _SectionsSnapshot {
   final String title;
-  final List<_PageSection> sections;
+  final List<_PageText> texts;
 
-  /// Texts of the page not loaded yet, each a section to come.
+  /// Texts of the page not loaded yet.
   final int pendingSources;
 
   const _SectionsSnapshot({
     required this.title,
-    required this.sections,
+    required this.texts,
     required this.pendingSources,
   });
 
   const _SectionsSnapshot.empty()
     : title = '',
-      sections = const [],
+      texts = const [],
       pendingSources = 0;
 
   @override
@@ -1743,19 +1800,19 @@ class _SectionsSnapshot {
       other is _SectionsSnapshot &&
       other.title == title &&
       other.pendingSources == pendingSources &&
-      listEquals(other.sections, sections);
+      listEquals(other.texts, texts);
 
   @override
-  int get hashCode => Object.hash(title, pendingSources, Object.hashAll(sections));
+  int get hashCode => Object.hash(title, pendingSources, Object.hashAll(texts));
 }
 
-/// The section at the top of the page and its place in the table of
-/// contents; opens the sections sheet.
+/// The text at the top of the page and, among several, its place; opens the
+/// sections sheet.
 class _SectionsPill extends StatelessWidget {
   final String title;
   final String language;
   final int position;
-  final int total;
+  final int? total;
   final VoidCallback onTap;
 
   const _SectionsPill({
@@ -1796,13 +1853,15 @@ class _SectionsPill extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '· $position / $total',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: accent.withValues(alpha: 0.55),
+                  if (total != null) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '· $position / $total',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: accent.withValues(alpha: 0.55),
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(width: 4),
                   Icon(AppAssets.caretDown, size: 16, color: accent),
                 ],
@@ -1815,8 +1874,9 @@ class _SectionsPill extends StatelessWidget {
   }
 }
 
-/// The page's sections: the one on screen marked, those before it ticked.
-/// Pops with the section tapped.
+/// The page's texts with their sections nested: the text on screen marked,
+/// those before it ticked, the section on screen marked under its text.
+/// Pops with the entry index to go to.
 class _SectionsSheet extends StatelessWidget {
   final ValueListenable<_SectionsSnapshot> snapshot;
   final ValueListenable<String?> current;
@@ -1840,8 +1900,12 @@ class _SectionsSheet extends StatelessWidget {
               (context, pages, _) => ValueListenableBuilder<String?>(
                 valueListenable: current,
                 builder: (context, currentKey, _) {
-                  final currentIndex = pages.sections.indexWhere(
-                    (s) => s.key == currentKey,
+                  // A section key is "<source>:<id>".
+                  final currentSource = int.tryParse(
+                    (currentKey ?? '').split(':').first,
+                  );
+                  final currentText = pages.texts.indexWhere(
+                    (t) => t.source == currentSource,
                   );
                   return Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1855,14 +1919,17 @@ class _SectionsSheet extends StatelessWidget {
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      Padding(
+                      // Full width, or the column centres the header.
+                      SizedBox(
+                        width: double.infinity,
+                        child:                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               l10n.reader_sections_title,
-                              style: theme.textTheme.titleLarge?.copyWith(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1881,23 +1948,37 @@ class _SectionsSheet extends StatelessWidget {
                           ],
                         ),
                       ),
+                      ),
                       Divider(height: 1, color: theme.dividerColor),
                       Flexible(
                         child: ListView(
                           shrinkWrap: true,
                           padding: const EdgeInsets.only(bottom: 16),
                           children: [
-                            for (var i = 0; i < pages.sections.length; i++)
+                            for (var i = 0; i < pages.texts.length; i++) ...[
                               _SectionRow(
                                 index: i,
-                                section: pages.sections[i],
-                                isCurrent: i == currentIndex,
-                                isRead: i < currentIndex,
+                                title: pages.texts[i].title,
+                                language: pages.texts[i].language,
+                                isCurrent: i == currentText,
+                                isRead: i < currentText,
                                 onTap:
                                     () => Navigator.of(
                                       context,
-                                    ).pop(pages.sections[i]),
+                                    ).pop(pages.texts[i].entryIndex),
                               ),
+                              for (final section in pages.texts[i].sections)
+                                _SectionRow(
+                                  title: section.title,
+                                  language: section.language,
+                                  isCurrent: section.key == currentKey,
+                                  nested: true,
+                                  onTap:
+                                      () => Navigator.of(
+                                        context,
+                                      ).pop(section.entryIndex),
+                                ),
+                            ],
                             for (var i = 0; i < pages.pendingSources; i++)
                               _PendingSectionRow(label: l10n.loading),
                           ],
@@ -1913,18 +1994,24 @@ class _SectionsSheet extends StatelessWidget {
   }
 }
 
+/// A text row, numbered or ticked once read, or one of its sections
+/// ([nested]) indented under it.
 class _SectionRow extends StatelessWidget {
-  final int index;
-  final _PageSection section;
+  final int? index;
+  final String title;
+  final String language;
   final bool isCurrent;
   final bool isRead;
+  final bool nested;
   final VoidCallback onTap;
 
   const _SectionRow({
-    required this.index,
-    required this.section,
+    this.index,
+    required this.title,
+    required this.language,
     required this.isCurrent,
-    required this.isRead,
+    this.isRead = false,
+    this.nested = false,
     required this.onTap,
   });
 
@@ -1937,31 +2024,36 @@ class _SectionRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         color: isCurrent ? accent.withValues(alpha: 0.06) : null,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: EdgeInsets.fromLTRB(nested ? 56 : 20, nested ? 10 : 14, 20, nested ? 10 : 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 24,
-              child:
-                  isRead
-                      ? Icon(AppAssets.check, size: 18, color: muted)
-                      : Text(
-                        '${index + 1}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: muted,
+            if (!nested) ...[
+              SizedBox(
+                width: 24,
+                child:
+                    isRead
+                        ? Icon(AppAssets.check, size: 18, color: muted)
+                        : Text(
+                          '${(index ?? 0) + 1}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: muted,
+                          ),
                         ),
-                      ),
-            ),
-            const SizedBox(width: 12),
+              ),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Text(
-                section.title,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontFamily: getFontFamily(section.language),
-                  fontWeight: isCurrent ? FontWeight.w700 : null,
-                  height: getLineHeight(section.language),
-                ),
+                title,
+                style: (nested
+                        ? theme.textTheme.bodyMedium
+                        : theme.textTheme.bodyLarge)
+                    ?.copyWith(
+                      fontFamily: getFontFamily(language),
+                      fontWeight: isCurrent ? FontWeight.w700 : null,
+                      height: getLineHeight(language),
+                    ),
               ),
             ),
           ],
