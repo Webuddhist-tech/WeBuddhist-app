@@ -934,6 +934,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_view_online => 'Online view';
 
   @override
+  String get connect_event_accumulation_online => 'Online';
+
+  @override
+  String get connect_event_accumulation_in_person => 'In-person';
+
+  @override
   String get connect_event_has_ended => 'This event has ended';
 
   @override

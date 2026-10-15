@@ -265,16 +265,16 @@ class _GroupEventDetailScreenState
     final isAttending = _attendingOverride ?? event.isJoined;
     final totalAttending = _attendeeCount(event, isAttending);
     final videos = _videoLinks(event);
-    final groupAccumulator = event.groupAccumulator;
+    final accumulations = event.allAccumulations;
     final tabs = <_EventTab>[
-      if (groupAccumulator != null) _EventTab.accumulations,
+      if (accumulations.isNotEmpty) _EventTab.accumulations,
       _EventTab.about,
       if (videos.isNotEmpty) _EventTab.videos,
     ];
     // Newcomers start on About; returning participants (`is_joined`, the same
     // rows `participant_count` counts) go straight to the accumulation.
     _openingTab ??=
-        event.isJoined && groupAccumulator != null
+        event.isJoined && accumulations.isNotEmpty
             ? _EventTab.accumulations
             : _EventTab.about;
     final selectedTab =
@@ -344,7 +344,8 @@ class _GroupEventDetailScreenState
             ),
             _EventTab.about => _AboutPanel(event: event, isDark: isDark),
             _EventTab.accumulations => _EventAccumulatorPanel(
-              accumulatorId: groupAccumulator!.id,
+              accumulations: accumulations,
+              showFormat: isGroupEventHybrid(event),
               groupTitle: event.groupName,
               isAttending: isAttending,
               isDark: isDark,
@@ -1634,7 +1635,11 @@ class _EventLinkText extends ConsumerWidget {
 /// Accumulations tab: progress, leaderboard / own count, and a way to log
 /// recitations done with the livestream or offline.
 class _EventAccumulatorPanel extends ConsumerStatefulWidget {
-  final String accumulatorId;
+  /// First by display order owns the leaderboard, contributions and logging.
+  final List<GroupEventAccumulation> accumulations;
+
+  /// Hybrid events label each row with the attendance mode that feeds it.
+  final bool showFormat;
   final String? groupTitle;
 
   /// Contributing waits for the event to be joined: until then the button
@@ -1643,7 +1648,8 @@ class _EventAccumulatorPanel extends ConsumerStatefulWidget {
   final bool isDark;
 
   const _EventAccumulatorPanel({
-    required this.accumulatorId,
+    required this.accumulations,
+    required this.showFormat,
     required this.groupTitle,
     required this.isAttending,
     required this.isDark,
@@ -1659,13 +1665,12 @@ class _EventAccumulatorPanelState
   bool _showContributions = false;
   bool _isJoining = false;
 
+  String get _primaryId => widget.accumulations.first.groupAccumulatorId;
+
   @override
   Widget build(BuildContext context) {
-    final detailAsync = ref.watch(
-      groupAccumulatorDetailProvider(widget.accumulatorId),
-    );
-    void retry() =>
-        ref.invalidate(groupAccumulatorDetailProvider(widget.accumulatorId));
+    final detailAsync = ref.watch(groupAccumulatorDetailProvider(_primaryId));
+    void retry() => ref.invalidate(groupAccumulatorDetailProvider(_primaryId));
 
     return detailAsync.when(
       loading:
@@ -1691,15 +1696,11 @@ class _EventAccumulatorPanelState
       detail,
       localJoinedIds: localJoinedIds,
     );
-    final numberFormat = NumberFormat.decimalPattern(
-      intlFormatLocaleOf(context),
-    );
     final primaryColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final progressText =
-        '${numberFormat.format(detail.totalCount)} / ${numberFormat.format(detail.targetCount)}';
+    final accumulations = widget.accumulations;
     // Keep the counts notifier alive while the panel is visible so an offline
     // add is not racing its own dispose during sync.
     if (detail.presetAccumulatorId.isNotEmpty) {
@@ -1709,45 +1710,28 @@ class _EventAccumulatorPanelState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Text(
-            detail.title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: primaryColor,
+        _AccumulationProgress(
+          title: detail.title,
+          formatLabel: _formatLabel(context, accumulations.first),
+          accumulator: detail,
+          isDark: isDark,
+        ),
+        // Only the first accumulation takes counts; the rest show progress.
+        for (final accumulation in accumulations.skip(1)) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                progressText,
-                style: TextStyle(fontSize: 13, color: secondaryColor),
-              ),
-            ),
-            Text(
-              '${detail.progressPercent}%',
-              style: TextStyle(fontSize: 13, color: secondaryColor),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: detail.progressFraction,
-            minHeight: 6,
-            backgroundColor:
-                isDark ? AppColors.cardBorderDark : AppColors.grey300,
-            color: AppColors.primary,
+          _SecondaryAccumulationRow(
+            accumulation: accumulation,
+            formatLabel: _formatLabel(context, accumulation),
+            isDark: isDark,
           ),
-        ),
+        ],
         const SizedBox(height: 20),
         Row(
           children: [
@@ -1857,6 +1841,20 @@ class _EventAccumulatorPanelState
     );
   }
 
+  String? _formatLabel(
+    BuildContext context,
+    GroupEventAccumulation accumulation,
+  ) {
+    if (!widget.showFormat) return null;
+    return switch (accumulation.format) {
+      GroupEventParticipationType.online =>
+        context.l10n.connect_event_accumulation_online,
+      GroupEventParticipationType.offline =>
+        context.l10n.connect_event_accumulation_in_person,
+      null => null,
+    };
+  }
+
   bool _requireLogin() {
     final authState = ref.read(authProvider);
     if (authState.isGuest || !authState.isLoggedIn) {
@@ -1943,6 +1941,121 @@ class _EventAccumulatorPanelState
         countsNotifier.countFor(detail.id),
       ),
       (fresh) => fresh.user?.totalCount ?? 0,
+    );
+  }
+}
+
+class _AccumulationProgress extends StatelessWidget {
+  final String title;
+  final String? formatLabel;
+
+  /// Null while the counts are still loading.
+  final GroupAccumulator? accumulator;
+  final bool isDark;
+
+  const _AccumulationProgress({
+    required this.title,
+    required this.formatLabel,
+    required this.accumulator,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final secondaryColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final countStyle = TextStyle(fontSize: 13, color: secondaryColor);
+    final numberFormat = NumberFormat.decimalPattern(
+      intlFormatLocaleOf(context),
+    );
+    final counts = accumulator;
+    final label = formatLabel;
+    final progressText =
+        counts == null
+            ? ''
+            : '${numberFormat.format(counts.totalCount)} / ${numberFormat.format(counts.targetCount)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: primaryColor,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (label != null) ...[
+                const SizedBox(width: 12),
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Text(label, style: countStyle),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(child: Text(progressText, style: countStyle)),
+            Text(
+              counts == null ? '' : '${counts.progressPercent}%',
+              style: countStyle,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: counts?.progressFraction ?? 0,
+            minHeight: 6,
+            backgroundColor:
+                isDark ? AppColors.cardBorderDark : AppColors.grey300,
+            color: AppColors.primary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Progress only; counts are logged against the first accumulation.
+class _SecondaryAccumulationRow extends ConsumerWidget {
+  final GroupEventAccumulation accumulation;
+  final String? formatLabel;
+  final bool isDark;
+
+  const _SecondaryAccumulationRow({
+    required this.accumulation,
+    required this.formatLabel,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detail = ref
+        .watch(groupAccumulatorDetailProvider(accumulation.groupAccumulatorId))
+        .valueOrNull
+        ?.fold((_) => null, (detail) => detail);
+    return _AccumulationProgress(
+      title: detail?.title ?? accumulation.groupAccumulator?.name ?? '',
+      formatLabel: formatLabel,
+      accumulator: detail,
+      isDark: isDark,
     );
   }
 }
