@@ -15,7 +15,7 @@ class MantraMarquee extends StatefulWidget {
     required this.style,
     this.speedFactor = 1.0,
     this.basePixelsPerSecond = 40,
-    this.gap = 64,
+    this.gap = 28,
   });
 
   final String text;

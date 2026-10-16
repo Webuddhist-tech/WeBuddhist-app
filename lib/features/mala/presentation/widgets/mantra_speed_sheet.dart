@@ -11,7 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class MantraSpeedSheet extends ConsumerWidget {
   const MantraSpeedSheet({super.key});
 
-  static const presets = [0.5, 0.75, 1.0, 1.25, 1.5];
+  static const presets = [0.5, 0.75, 1.0, 1.5, 2.0];
   static const _step = 0.05;
   static const _accent = Color(0xFFB03027);
 

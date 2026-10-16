@@ -169,7 +169,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     }
     _index = _index.clamp(0, mantras.length - 1);
     final mantra = mantras[_index];
-    final hasDeityImages = mantras.any((m) => m.deityImage != null);
+    final hasDeityImage = mantra.deityImage != null;
 
     ref.watch(
       prefetchBookmarkExistsProvider(
@@ -282,8 +282,10 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Without artwork the switcher is just the band, centred in a
+                // shorter slot so the counter and beads move up to meet it.
                 Expanded(
-                  flex: hasDeityImages ? 48 : 36,
+                  flex: hasDeityImage ? 48 : 26,
                   child: MantraSwitcher(
                     mantras: mantras,
                     language: language,
@@ -309,7 +311,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                   ),
                 const SizedBox(height: 8),
                 Expanded(
-                  flex: hasDeityImages ? 30 : 42,
+                  flex: hasDeityImage ? 30 : 42,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return Align(

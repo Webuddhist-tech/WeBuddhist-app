@@ -4,7 +4,7 @@ import 'package:flutter_pecha/core/storage/storage_keys.dart';
 
 /// Bounds for the mantra marquee speed multiplier.
 const double kMalaMantraSpeedMin = 0.5;
-const double kMalaMantraSpeedMax = 1.5;
+const double kMalaMantraSpeedMax = 2.0;
 const double kMalaMantraSpeedDefault = 1.0;
 
 class MalaSettingsState {
@@ -29,13 +29,12 @@ class MalaSettingsState {
     bool? vibrationEnabled,
     bool? leftHanded,
     double? mantraSpeed,
-  }) =>
-      MalaSettingsState(
-        soundEnabled: soundEnabled ?? this.soundEnabled,
-        vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
-        leftHanded: leftHanded ?? this.leftHanded,
-        mantraSpeed: mantraSpeed ?? this.mantraSpeed,
-      );
+  }) => MalaSettingsState(
+    soundEnabled: soundEnabled ?? this.soundEnabled,
+    vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
+    leftHanded: leftHanded ?? this.leftHanded,
+    mantraSpeed: mantraSpeed ?? this.mantraSpeed,
+  );
 }
 
 class MalaSettingsNotifier extends StateNotifier<MalaSettingsState> {
@@ -46,14 +45,11 @@ class MalaSettingsNotifier extends StateNotifier<MalaSettingsState> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     state = MalaSettingsState(
-      soundEnabled:
-          prefs.getBool(StorageKeys.malaSoundEnabled) ?? true,
-      vibrationEnabled:
-          prefs.getBool(StorageKeys.malaVibrationEnabled) ?? true,
+      soundEnabled: prefs.getBool(StorageKeys.malaSoundEnabled) ?? true,
+      vibrationEnabled: prefs.getBool(StorageKeys.malaVibrationEnabled) ?? true,
       leftHanded: prefs.getBool(StorageKeys.malaLeftHanded) ?? false,
       mantraSpeed: _clampSpeed(
-        prefs.getDouble(StorageKeys.malaMantraSpeed) ??
-            kMalaMantraSpeedDefault,
+        prefs.getDouble(StorageKeys.malaMantraSpeed) ?? kMalaMantraSpeedDefault,
       ),
     );
   }
@@ -89,5 +85,5 @@ class MalaSettingsNotifier extends StateNotifier<MalaSettingsState> {
 
 final malaSettingsProvider =
     StateNotifierProvider<MalaSettingsNotifier, MalaSettingsState>((ref) {
-  return MalaSettingsNotifier();
-});
+      return MalaSettingsNotifier();
+    });

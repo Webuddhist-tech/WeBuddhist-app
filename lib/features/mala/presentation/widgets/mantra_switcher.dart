@@ -18,6 +18,9 @@ import 'package:flutter_pecha/features/mala/presentation/widgets/mantra_marquee.
 /// Tapping either line opens that text in full in place of artwork and band,
 /// with the marquees stopped; the close button brings the carousel back.
 /// With a single mantra the carousel locks (no swipe, chevrons disabled).
+///
+/// A mantra without artwork shows just the band with the chevrons beside it,
+/// centred vertically in whatever height the parent gives.
 class MantraSwitcher extends StatefulWidget {
   const MantraSwitcher({
     super.key,
@@ -56,7 +59,13 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   /// backward effectively "forever". `initialPage % length == index`.
   static const int _loopBase = 1000;
 
-  late final PageController _controller;
+  late PageController _controller;
+
+  /// Controllers replaced mid-life; disposed once their PageView is gone.
+  final List<PageController> _retired = [];
+
+  /// Whether the last build mounted the artwork PageView.
+  bool _pageViewMounted = false;
 
   /// Which line is open in full, or null while the carousel is showing.
   _MantraLine? _expanded;
@@ -66,16 +75,38 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   @override
   void initState() {
     super.initState();
-    final length = widget.mantras.length;
-    final initialPage =
-        _canLoop ? _loopBase * length + widget.index : widget.index;
-    _controller = PageController(initialPage: initialPage);
+    _controller = _newController();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    for (final c in _retired) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  PageController _newController() {
+    final length = widget.mantras.length;
+    return PageController(
+      initialPage: _canLoop ? _loopBase * length + widget.index : widget.index,
+    );
+  }
+
+  /// A PageView that re-mounts would resume from the controller's original
+  /// `initialPage`, not the mantra now selected, so seed a fresh one. The old
+  /// controller is disposed after the frame, once its PageView has detached.
+  void _reseedController() {
+    _retired.add(_controller);
+    _controller = _newController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final c in _retired) {
+        c.dispose();
+      }
+      _retired.clear();
+    });
   }
 
   int _logical(int page) {
@@ -85,8 +116,14 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   }
 
   /// Animate the carousel by [delta] pages (loops via the page → mantra map).
+  /// Without the artwork PageView on screen, the index switches directly.
   void _animateBy(int delta) {
     if (!_canLoop) return;
+    if (!_pageViewMounted || !_controller.hasClients) {
+      final length = widget.mantras.length;
+      widget.onIndexChanged((widget.index + delta) % length);
+      return;
+    }
     final current =
         _controller.hasClients && _controller.page != null
             ? _controller.page!.round()
@@ -117,6 +154,10 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
       color: theme.colorScheme.onSurface,
     );
 
+    final showImage = mantra.deityImage != null;
+    if (showImage && !_pageViewMounted) _reseedController();
+    _pageViewMounted = showImage;
+
     final expanded = _expanded;
     if (expanded != null) {
       final isScript = expanded == _MantraLine.script && script != null;
@@ -128,16 +169,41 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
       );
     }
 
+    final band = _MantraBand(
+      script: script,
+      scriptStyle: scriptStyle,
+      transliteration: transliteration,
+      transliterationStyle: transliterationStyle,
+      speedFactor: widget.speedFactor,
+      onScriptTap: () => setState(() => _expanded = _MantraLine.script),
+      onTransliterationTap:
+          () => setState(() => _expanded = _MantraLine.transliteration),
+    );
+    final leftChevron = _Chevron(
+      icon: AppAssets.caretLeft2,
+      onTap: _canLoop ? () => _animateBy(-1) : null,
+    );
+    final rightChevron = _Chevron(
+      icon: AppAssets.caretRight2,
+      onTap: _canLoop ? () => _animateBy(1) : null,
+    );
+
+    if (!showImage) {
+      return Center(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [leftChevron, Expanded(child: band), rightChevron],
+        ),
+      );
+    }
+
     return Column(
       children: [
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _Chevron(
-                icon: AppAssets.caretLeft2,
-                onTap: _canLoop ? () => _animateBy(-1) : null,
-              ),
+              leftChevron,
               Expanded(
                 child: PageView.builder(
                   controller: _controller,
@@ -165,24 +231,12 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
                   },
                 ),
               ),
-              _Chevron(
-                icon: AppAssets.caretRight2,
-                onTap: _canLoop ? () => _animateBy(1) : null,
-              ),
+              rightChevron,
             ],
           ),
         ),
         const SizedBox(height: 12),
-        _MantraBand(
-          script: script,
-          scriptStyle: scriptStyle,
-          transliteration: transliteration,
-          transliterationStyle: transliterationStyle,
-          speedFactor: widget.speedFactor,
-          onScriptTap: () => setState(() => _expanded = _MantraLine.script),
-          onTransliterationTap:
-              () => setState(() => _expanded = _MantraLine.transliteration),
-        ),
+        band,
       ],
     );
   }
@@ -223,7 +277,7 @@ class _MantraBand extends StatelessWidget {
         Container(
           width: double.infinity,
           color: fill,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -237,7 +291,7 @@ class _MantraBand extends StatelessWidget {
                     speedFactor: speedFactor,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
               ],
               _TappableLine(
                 label: label,
@@ -363,11 +417,24 @@ class _FullMantraCard extends StatelessWidget {
       child: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              primary: false,
-              child: Center(
-                child: Text(text, textAlign: TextAlign.center, style: style),
-              ),
+            // Fill the card height so short text centres; long text scrolls.
+            child: LayoutBuilder(
+              builder:
+                  (context, constraints) => SingleChildScrollView(
+                    primary: false,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Center(
+                        child: Text(
+                          text,
+                          textAlign: TextAlign.center,
+                          style: style,
+                        ),
+                      ),
+                    ),
+                  ),
             ),
           ),
           const SizedBox(height: 12),
