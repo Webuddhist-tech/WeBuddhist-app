@@ -103,16 +103,20 @@ Future<RecitationLivePosition?> _currentLivePosition(
   WidgetRef ref,
   String eventId,
 ) async {
+  // Read before the await: the event page may close meanwhile, and its ref
+  // throws once disposed.
+  final authService = ref.read(authServiceProvider);
+  final baseUrl = ref.read(apiConfigProvider).baseUrl;
   final String? token;
   try {
-    token = await ref.read(authServiceProvider).getValidAccessToken();
+    token = await authService.getValidAccessToken();
   } catch (_) {
     return null;
   }
   if (token == null || token.isEmpty) return null;
 
   final uri = RecitationLiveClient.liveUri(
-    restBaseUrl: ref.read(apiConfigProvider).baseUrl,
+    restBaseUrl: baseUrl,
     token: token,
     eventId: eventId,
   );

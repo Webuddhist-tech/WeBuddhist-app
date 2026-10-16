@@ -370,7 +370,10 @@ class _GroupEventDetailScreenState
         }
         if (event == null || !mounted) return;
         final resolved = await resolveHomeLiveEntry(ref, event);
+        // The live check can take seconds. If the user moved on from this
+        // page meanwhile, don't push the live screen over where they went.
         if (resolved == null || !mounted) return;
+        if (ModalRoute.of(context)?.isCurrent != true) return;
         await _openInitialEntry(resolved);
       case HomeLiveEventOnlineEntry(:final event):
         await _enterPuja(event);
