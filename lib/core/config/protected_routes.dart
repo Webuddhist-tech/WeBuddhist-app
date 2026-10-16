@@ -85,6 +85,9 @@ class ProtectedRoutes {
     '/groups/{groupId}/reports',
     '/groups/{groupId}/reports/{reportId}/resolve',
 
+    // In-app feedback: the backend takes the sender from the token.
+    '/feedback',
+
     // Plans (public endpoints but may need auth for user-specific data)
     '/plans/{planId}',
     '/plans/{planId}/days/{dayNumber}',

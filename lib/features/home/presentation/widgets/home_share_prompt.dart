@@ -43,7 +43,7 @@ class HomeSharePrompt extends ConsumerWidget {
           _PromptButton(
             icon: AppAssets.feedback,
             label: localizations.settings_feedback_row,
-            onTap: () => FeedbackSheet.show(context),
+            onTap: () => FeedbackSheet.open(context, ref),
           ),
         ],
       ),

@@ -1,35 +1,54 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
-import 'package:flutter_pecha/env.dart';
-import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
-import 'package:flutter_pecha/features/feedback/data/discord_feedback_client.dart';
-import 'package:flutter_pecha/features/feedback/data/feedback_report.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/feedback/data/datasource/feedback_remote_datasource.dart';
+import 'package:flutter_pecha/features/feedback/data/repositories/feedback_repository_impl.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/feedback_report.dart';
+import 'package:flutter_pecha/features/feedback/domain/repositories/feedback_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Standalone Dio: the shared app client would attach the user's auth token.
-final _feedbackDioProvider = Provider<Dio>((ref) {
-  return Dio(
-    BaseOptions(
-      connectTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 30),
-    ),
-  );
+enum FeedbackFailure { offline, rateLimited, tooLarge, unavailable, failed }
+
+class FeedbackException implements Exception {
+  const FeedbackException(this.failure, [this.cause]);
+
+  final FeedbackFailure failure;
+  final Object? cause;
+
+  @override
+  String toString() => 'FeedbackException($failure, $cause)';
+}
+
+/// Which message the sheet shows for a failed submit.
+FeedbackFailure feedbackFailureOf(Failure failure) {
+  return switch (failure) {
+    NetworkFailure() => FeedbackFailure.offline,
+    RateLimitFailure() => FeedbackFailure.rateLimited,
+    ValidationFailure(code: FeedbackRemoteDatasource.tooLargeCode) =>
+      FeedbackFailure.tooLarge,
+    // No endpoint on this backend, or the backend is down.
+    NotFoundFailure() || ServerFailure() => FeedbackFailure.unavailable,
+    _ => FeedbackFailure.failed,
+  };
+}
+
+final feedbackRemoteDatasourceProvider = Provider<FeedbackRemoteDatasource>((
+  ref,
+) {
+  return FeedbackRemoteDatasource(dio: ref.watch(dioProvider));
 });
 
-final discordFeedbackClientProvider = Provider<DiscordFeedbackClient>((ref) {
-  return DiscordFeedbackClient(
-    dio: ref.watch(_feedbackDioProvider),
-    webhookUrl: Env.discordFeedbackWebhookUrl,
+final feedbackRepositoryProvider = Provider<FeedbackRepository>((ref) {
+  return FeedbackRepositoryImpl(
+    remote: ref.watch(feedbackRemoteDatasourceProvider),
   );
 });
 
 final sendFeedbackProvider = Provider<SendFeedback>(SendFeedback.new);
 
-/// Attaches the current user, app and device context to a message and sends
-/// it. Throws [FeedbackException] on failure.
+/// Attaches the app and device context to a message and sends it. Throws
+/// [FeedbackException] on failure.
 class SendFeedback {
   SendFeedback(this._ref);
 
@@ -39,23 +58,20 @@ class SendFeedback {
     required String message,
     List<String> imagePaths = const [],
   }) async {
-    final client = _ref.read(discordFeedbackClientProvider);
-    await client.send(
-      FeedbackReport(
-        message: message,
-        imagePaths: imagePaths,
-        reporter: _reporter(),
-        appVersion: await _appVersion(),
-        platform: _platform(),
-      ),
+    final result = await _ref
+        .read(feedbackRepositoryProvider)
+        .submit(
+          FeedbackReport(
+            message: message,
+            imagePaths: imagePaths,
+            appVersion: await _appVersion(),
+            platform: _platform(),
+          ),
+        );
+    result.fold(
+      (failure) => throw FeedbackException(feedbackFailureOf(failure), failure),
+      (_) {},
     );
-  }
-
-  FeedbackReporter? _reporter() {
-    final auth = _ref.read(authProvider);
-    final user = _ref.read(userProvider).user;
-    if (!auth.isLoggedIn || auth.isGuest || user == null) return null;
-    return FeedbackReporter(email: user.email);
   }
 
   Future<String> _appVersion() async {

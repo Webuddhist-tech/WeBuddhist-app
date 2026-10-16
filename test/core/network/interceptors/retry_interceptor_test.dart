@@ -197,4 +197,26 @@ void main() {
       },
     );
   });
+
+  group('network retries', () {
+    test('a request marked no_retry fails at once instead of resending',
+        () async {
+      final options = RequestOptions(
+        path: '/feedback',
+        method: 'POST',
+        extra: {RetryInterceptor.noRetryKey: true},
+      );
+      final err = DioException(
+        requestOptions: options,
+        type: DioExceptionType.receiveTimeout,
+      );
+
+      interceptor.onError(err, handler);
+      await untilCalled(handler.next(any));
+
+      verify(handler.next(err)).called(1);
+      verifyNever(handler.resolve(any));
+      expect(options.extra['retry_count'], isNull);
+    });
+  });
 }
