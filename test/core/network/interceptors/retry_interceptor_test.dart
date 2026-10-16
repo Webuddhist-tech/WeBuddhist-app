@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:auth0_flutter/auth0_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/network/interceptors/retry_interceptor.dart';
@@ -148,6 +150,69 @@ void main() {
       expect(authExpiredCalls, 0);
       verify(handler.next(err)).called(1);
     });
+  });
+
+  group('401 with a refreshed token', () {
+    test(
+      'a no_retry multipart request (feedback) is resent once, whole, '
+      'with the new token',
+      () async {
+        // The replay goes through the interceptor's own Dio, which uses the
+        // platform adapter, so serve both sends from loopback.
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(() => server.close(force: true));
+        final received = <({String? auth, List<int> body})>[];
+        server.listen((request) async {
+          final body = (await request.toList()).expand((c) => c).toList();
+          final auth = request.headers.value(HttpHeaders.authorizationHeader);
+          received.add((auth: auth, body: body));
+          request.response.statusCode = auth == 'Bearer fresh.jwt' ? 201 : 401;
+          await request.response.close();
+        });
+
+        final dio = Dio(
+          BaseOptions(baseUrl: 'http://${server.address.host}:${server.port}'),
+        )..interceptors.add(interceptor);
+        interceptor.configure(dio);
+        when(authService.forceRefreshAccessToken())
+            .thenAnswer((_) async => 'fresh.jwt');
+
+        final form = FormData()
+          ..fields.addAll(const [
+            MapEntry('content', 'The timer stops when the screen locks.'),
+            MapEntry('platform', 'android 14'),
+          ])
+          ..files.add(
+            MapEntry(
+              'images',
+              MultipartFile.fromBytes(
+                List.filled(4096, 7),
+                filename: 'feedback_1.png',
+              ),
+            ),
+          );
+
+        final response = await dio.post<void>(
+          '/feedback',
+          data: form,
+          options: Options(
+            headers: {'Authorization': 'Bearer stale.jwt'},
+            extra: {RetryInterceptor.noRetryKey: true},
+          ),
+        );
+
+        expect(response.statusCode, 201);
+        verify(authService.forceRefreshAccessToken()).called(1);
+        expect(authExpiredCalls, 0);
+        expect(received.map((r) => r.auth), [
+          'Bearer stale.jwt',
+          'Bearer fresh.jwt',
+        ]);
+        // The clone keeps the boundary, so a complete replay is byte-equal.
+        expect(received[1].body.length, greaterThan(4096));
+        expect(received[1].body, received[0].body);
+      },
+    );
   });
 
   group('403 handling', () {
