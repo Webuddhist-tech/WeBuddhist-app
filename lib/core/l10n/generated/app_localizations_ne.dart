@@ -949,6 +949,12 @@ class AppLocalizationsNe extends AppLocalizations {
   String get connect_event_view_online => 'अनलाइन दृश्य';
 
   @override
+  String get connect_event_accumulation_online => 'Online';
+
+  @override
+  String get connect_event_accumulation_in_person => 'In-person';
+
+  @override
   String get connect_event_has_ended => 'This event has ended';
 
   @override
@@ -1539,6 +1545,9 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get reader_languages_title => 'भाषाहरू';
+
+  @override
+  String get reader_sections_title => 'Sections';
 
   @override
   String get reader_original_label => 'मूल';

@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/features/feedback/data/discord_feedback_client.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
+import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/feedback/presentation/providers/feedback_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,6 +28,20 @@ class FeedbackSheet extends ConsumerStatefulWidget {
   /// scroll, so a fraction of the space left above an open keyboard can be
   /// too short to show the composer on a compact phone.
   static const double _minSheetHeight = 380;
+
+  /// The backend has no anonymous feedback: it needs a signed-in account.
+  static bool canSendFeedback(AuthState auth) =>
+      auth.isLoggedIn && !auth.isGuest;
+
+  /// Entry point for the app's Feedback buttons. Guests get the login drawer
+  /// instead of the sheet.
+  static Future<bool?> open(BuildContext context, WidgetRef ref) async {
+    if (!canSendFeedback(ref.read(authProvider))) {
+      await LoginDrawer.show(context, ref, feature: 'feedback');
+      return null;
+    }
+    return show(context);
+  }
 
   static Future<bool?> show(BuildContext context) {
     return showModalBottomSheet<bool>(
@@ -150,10 +166,10 @@ class _FeedbackSheetState extends ConsumerState<FeedbackSheet> {
     } on FeedbackException catch (e) {
       if (!mounted) return;
       _showError(switch (e.failure) {
-        FeedbackFailure.notConfigured => l10n.feedback_error_unavailable,
         FeedbackFailure.offline => l10n.feedback_error_offline,
         FeedbackFailure.rateLimited => l10n.feedback_error_rate_limited,
         FeedbackFailure.tooLarge => l10n.feedback_error_too_large,
+        FeedbackFailure.unavailable => l10n.feedback_error_unavailable,
         FeedbackFailure.failed => l10n.feedback_error_failed,
       });
     } catch (_) {

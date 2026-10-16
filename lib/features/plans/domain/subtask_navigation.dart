@@ -10,7 +10,8 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 /// [PlanTextItem] list used by the reader / plan-text navigation strip.
 ///
 /// Each task yields at most one item:
-/// - First navigable subtask is SOURCE_REFERENCE → a reader item for it.
+/// - First navigable subtask is SOURCE_REFERENCE → one reader item whose
+///   sources are every source subtask of the task, read in turn.
 /// - First navigable subtask is TEXT / IMAGE / VIDEO → one inline item whose
 ///   blocks are every inline subtask of the task, shown on a single page.
 /// - GROUP_ACCUMULATION → not a reader item; opens the group accumulator.
@@ -39,18 +40,11 @@ class PlanSubtaskNavigation {
         subtasks: _sortedByDisplayOrder(task.subTasks, (s) => s.displayOrder),
         title: task.title,
         taskId: task.id,
+        settings: task.settings,
         contentTypeOf: (s) => s.contentType,
-        sourceOf:
-            (s) => _toSourceItemFromUser(
-              s,
-              task.title,
-              task.id,
-              task.settings,
-              withCompletion: withCompletion,
-            ),
+        sourceOf: (s) => _toSourceRefFromUser(s, withCompletion: withCompletion),
         blockOf: (s) => _toBlockFromUser(s, withCompletion: withCompletion),
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
-        isLive: task.settings?.isLive ?? false,
       );
       if (item != null) items.add(item);
     }
@@ -73,12 +67,11 @@ class PlanSubtaskNavigation {
         subtasks: _sortedByDisplayOrder(task.subtasks, (s) => s.displayOrder),
         title: task.title,
         taskId: task.id,
+        settings: task.settings,
         contentTypeOf: (s) => s.contentType,
-        sourceOf:
-            (s) => _toSourceItemFromPlan(s, task.title, task.id, task.settings),
+        sourceOf: _toSourceRefFromPlan,
         blockOf: _toBlockFromPlan,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
-        isLive: task.settings?.isLive ?? false,
       );
       if (item != null) items.add(item);
     }
@@ -118,27 +111,37 @@ class PlanSubtaskNavigation {
 
   // ─── Internal helpers ───────────────────────────────────────────────
 
-  /// One item per task: the first navigable subtask decides the kind. An
-  /// inline item has one audio control, fed by the first inline subtask
-  /// with its own playable audio, else the first inline subtask's day-audio
-  /// window. Blank audio URLs count as absent so day audio still wins.
+  /// One item per task: the first navigable subtask decides the kind. A
+  /// source item reads every source subtask of the task in turn; an inline
+  /// item has one audio control, fed by the first inline subtask with its
+  /// own playable audio, else the first inline subtask's day-audio window.
+  /// Blank audio URLs count as absent so day audio still wins.
   static PlanTextItem? _itemForTask<S>({
     required List<S> subtasks,
     required String title,
     required String taskId,
+    required TaskSettings? settings,
     required String? Function(S) contentTypeOf,
-    required PlanTextItem? Function(S) sourceOf,
+    required PlanSourceRef? Function(S) sourceOf,
     required PlanInlineBlock? Function(S) blockOf,
     required (String? url, int? startMs, int? endMs) Function(S) audioOf,
-    bool isLive = false,
   }) {
+    final isLive = settings?.isLive ?? false;
     for (final subtask in subtasks) {
       final type = PlanContentTypes.parse(contentTypeOf(subtask));
       if (type == null) continue;
       if (type == PlanItemContentType.sourceReference) {
-        final item = sourceOf(subtask);
-        if (item != null) return item;
-        continue;
+        if (sourceOf(subtask) == null) continue;
+        return PlanTextItem.sources(
+          sources: subtasks.map(sourceOf).whereType<PlanSourceRef>().toList(),
+          title: title,
+          taskId: taskId,
+          autoOpenCommentary: settings?.isCommentaryOpen ?? false,
+          commentaryTextId: settings?.commentaryTextId,
+          autoOpenTranslation: settings?.isTranslationOpen ?? false,
+          translationTextId: settings?.translationTextId,
+          isLive: isLive,
+        );
       }
       if (blockOf(subtask) == null) continue;
       final inline = subtasks.where((s) => blockOf(s) != null).toList();
@@ -175,18 +178,13 @@ class PlanSubtaskNavigation {
   }
 
   static bool _isUserSubtaskNavigable(UserSubtasksDto s) =>
-      _toSourceItemFromUser(s, '', null, null) != null ||
-      _toBlockFromUser(s) != null;
+      _toSourceRefFromUser(s) != null || _toBlockFromUser(s) != null;
 
   static bool _isPlanSubtaskNavigable(PlanSubtasksModel s) =>
-      _toSourceItemFromPlan(s, '', null, null) != null ||
-      _toBlockFromPlan(s) != null;
+      _toSourceRefFromPlan(s) != null || _toBlockFromPlan(s) != null;
 
-  static PlanTextItem? _toSourceItemFromUser(
-    UserSubtasksDto subtask,
-    String title,
-    String? taskId,
-    TaskSettings? settings, {
+  static PlanSourceRef? _toSourceRefFromUser(
+    UserSubtasksDto subtask, {
     bool withCompletion = true,
   }) {
     if (PlanContentTypes.parse(subtask.contentType) !=
@@ -194,48 +192,29 @@ class PlanSubtaskNavigation {
       return null;
     }
     if (!_hasSourceText(subtask.sourceTextId)) return null;
-    return PlanTextItem.sourceReference(
+    return PlanSourceRef(
       textId: subtask.sourceTextId!,
-      title: title,
       segmentIds: subtask.segmentIds,
       subtaskId: withCompletion ? subtask.id : null,
-      taskId: taskId,
       isCompleted: withCompletion && subtask.isCompleted,
       audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
-      autoOpenCommentary: settings?.isCommentaryOpen ?? false,
-      commentaryTextId: settings?.commentaryTextId,
-      autoOpenTranslation: settings?.isTranslationOpen ?? false,
-      translationTextId: settings?.translationTextId,
-      isLive: settings?.isLive ?? false,
     );
   }
 
-  static PlanTextItem? _toSourceItemFromPlan(
-    PlanSubtasksModel subtask,
-    String title,
-    String? taskId,
-    TaskSettings? settings,
-  ) {
+  static PlanSourceRef? _toSourceRefFromPlan(PlanSubtasksModel subtask) {
     if (PlanContentTypes.parse(subtask.contentType) !=
         PlanItemContentType.sourceReference) {
       return null;
     }
     if (!_hasSourceText(subtask.sourceTextId)) return null;
-    return PlanTextItem.sourceReference(
+    return PlanSourceRef(
       textId: subtask.sourceTextId!,
-      title: title,
       segmentIds: subtask.segmentIds,
-      taskId: taskId,
       audioUrl: normalizeAudioUrl(subtask.audioUrl),
       startMs: subtask.startMs,
       endMs: subtask.endMs,
-      autoOpenCommentary: settings?.isCommentaryOpen ?? false,
-      commentaryTextId: settings?.commentaryTextId,
-      autoOpenTranslation: settings?.isTranslationOpen ?? false,
-      translationTextId: settings?.translationTextId,
-      isLive: settings?.isLive ?? false,
     );
   }
 

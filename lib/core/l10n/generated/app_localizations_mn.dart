@@ -941,6 +941,12 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_view_online => 'Онлайнаар харах';
 
   @override
+  String get connect_event_accumulation_online => 'Online';
+
+  @override
+  String get connect_event_accumulation_in_person => 'In-person';
+
+  @override
   String get connect_event_has_ended => 'This event has ended';
 
   @override
@@ -1528,6 +1534,9 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get reader_languages_title => 'Хэлүүд';
+
+  @override
+  String get reader_sections_title => 'Sections';
 
   @override
   String get reader_original_label => 'Эх';

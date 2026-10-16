@@ -58,6 +58,7 @@ List<Section> _build(
       Section(
         id: heading.id,
         title: heading.titleFor(language),
+        titles: heading.title,
         sectionNumber: index + 1,
         parentId: parentId,
         segments:

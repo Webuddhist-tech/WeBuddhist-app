@@ -384,6 +384,8 @@
   "connect_event_practice_online": "Practice online",
   "connect_event_view_in_person": "In-person view",
   "connect_event_view_online": "Online view",
+  "connect_event_accumulation_online": "Online",
+  "connect_event_accumulation_in_person": "In-person",
   "connect_event_has_ended": "This event has ended",
   "connect_event_join_to_practice": "Join the event to practice",
   "connect_event_leave": "Leave event",
@@ -710,6 +712,7 @@
   "version": "Versions",
   "parallel_version": "Parallel version",
   "reader_languages_title": "Languages",
+  "reader_sections_title": "Sections",
   "reader_original_label": "Original",
   "reader_translation_label": "Translation",
   "version_not_available": "Not available",
@@ -1541,7 +1544,7 @@
   "event_prayer_empty_title": "No prayer requests yet",
   "event_prayer_empty_body": "Your request and your space's requests will appear here",
   "event_prayer_add": "Add a prayer request",
-  "event_prayer_hint": "Share a prayer for yourself or others…",
+  "event_prayer_hint": "Share a prayer request",
   "event_prayer_hint_intention": "Request a prayer for: {topics}",
   "@event_prayer_hint_intention": {
     "placeholders": {

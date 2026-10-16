@@ -1840,6 +1840,20 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get connect_event_accumulation_online => TolgeeBridge.get(
+    localeName,
+    'connect_event_accumulation_online',
+    () => _fallback.connect_event_accumulation_online,
+  );
+
+  @override
+  String get connect_event_accumulation_in_person => TolgeeBridge.get(
+    localeName,
+    'connect_event_accumulation_in_person',
+    () => _fallback.connect_event_accumulation_in_person,
+  );
+
+  @override
   String get connect_event_has_ended => TolgeeBridge.get(
     localeName,
     'connect_event_has_ended',
@@ -2945,6 +2959,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'reader_languages_title',
     () => _fallback.reader_languages_title,
+  );
+
+  @override
+  String get reader_sections_title => TolgeeBridge.get(
+    localeName,
+    'reader_sections_title',
+    () => _fallback.reader_sections_title,
   );
 
   @override

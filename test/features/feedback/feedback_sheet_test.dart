@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/feedback/presentation/widgets/feedback_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,4 +99,54 @@ void main() {
     expect(send.bottom, lessThanOrEqualTo(640 - 300));
     expect(tester.takeException(), isNull);
   });
+
+  test('only a signed-in account can send feedback', () {
+    expect(
+      FeedbackSheet.canSendFeedback(const AuthState(isLoggedIn: true)),
+      isTrue,
+    );
+    expect(
+      FeedbackSheet.canSendFeedback(
+        const AuthState(isLoggedIn: true, isGuest: true),
+      ),
+      isFalse,
+    );
+    expect(
+      FeedbackSheet.canSendFeedback(const AuthState(isLoggedIn: false)),
+      isFalse,
+    );
+  });
+
+  testWidgets('open shows the sheet to a signed-in user', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authProvider.overrideWith((ref) => _SignedInAuth())],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Consumer(
+              builder:
+                  (context, ref, _) => TextButton(
+                    onPressed: () => FeedbackSheet.open(context, ref),
+                    child: const Text('Open'),
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FeedbackSheet), findsOneWidget);
+  });
+}
+
+class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
+  _SignedInAuth() : super(const AuthState(isLoggedIn: true));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

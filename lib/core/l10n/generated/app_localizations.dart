@@ -1768,6 +1768,18 @@ abstract class AppLocalizations {
   /// **'Online view'**
   String get connect_event_view_online;
 
+  /// No description provided for @connect_event_accumulation_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get connect_event_accumulation_online;
+
+  /// No description provided for @connect_event_accumulation_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'In-person'**
+  String get connect_event_accumulation_in_person;
+
   /// No description provided for @connect_event_has_ended.
   ///
   /// In en, this message translates to:
@@ -2781,6 +2793,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Languages'**
   String get reader_languages_title;
+
+  /// No description provided for @reader_sections_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get reader_sections_title;
 
   /// No description provided for @reader_original_label.
   ///
@@ -5303,7 +5321,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'Share a prayer for yourself or others…'**
+  /// **'Share a prayer request'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_hint_intention.

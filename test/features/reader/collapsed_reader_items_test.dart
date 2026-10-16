@@ -61,6 +61,24 @@ void main() {
     });
   });
 
+  group('nextSegmentToLoad', () {
+    test('names the first verse still missing, in the task order', () {
+      expect(nextSegmentToLoad(_content, ['s1', 's2', 's9', 's10']), 's9');
+    });
+
+    test('is null once every verse is in', () {
+      expect(nextSegmentToLoad(_content, ['s2', 's5']), isNull);
+      expect(nextSegmentToLoad(_content, const []), isNull);
+    });
+
+    test('passes over verses a page did not bring', () {
+      expect(
+        nextSegmentToLoad(_content, ['s9', 's10'], skipped: {'s9'}),
+        's10',
+      );
+    });
+  });
+
   group('collapsedTranslationHeadings', () {
     test("places the translation's enclosing headings above the first verse "
         'that needs them', () {

@@ -165,6 +165,44 @@ class GroupEventPracticeRefModel {
   }
 }
 
+class GroupEventAccumulationModel {
+  final String id;
+  final String groupAccumulatorId;
+  final String? eventFormat;
+  final int displayOrder;
+  final GroupEventPracticeRefModel? groupAccumulator;
+
+  const GroupEventAccumulationModel({
+    required this.id,
+    required this.groupAccumulatorId,
+    this.eventFormat,
+    this.displayOrder = 0,
+    this.groupAccumulator,
+  });
+
+  factory GroupEventAccumulationModel.fromJson(Map<String, dynamic> json) {
+    final ref = GroupEventModel._parsePracticeRef(json['group_accumulator']);
+    return GroupEventAccumulationModel(
+      id: json['id'] as String? ?? '',
+      groupAccumulatorId:
+          json['group_accumulator_id'] as String? ?? ref?.id ?? '',
+      eventFormat: json['event_format'] as String?,
+      displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      groupAccumulator: ref,
+    );
+  }
+
+  GroupEventAccumulation toEntity() {
+    return GroupEventAccumulation(
+      id: id,
+      groupAccumulatorId: groupAccumulatorId,
+      format: GroupEventParticipationType.fromApi(eventFormat),
+      displayOrder: displayOrder,
+      groupAccumulator: groupAccumulator?.toEntity(),
+    );
+  }
+}
+
 class GroupEventRecurrenceModel {
   final String frequency;
   final String? dateSystem;
@@ -228,6 +266,7 @@ class GroupEventModel {
   final GroupEventPracticeRefModel? series;
   final GroupEventPracticeRefModel? accumulator;
   final GroupEventPracticeRefModel? groupAccumulator;
+  final List<GroupEventAccumulationModel> accumulations;
   final GroupEventPracticeRefModel? groupRecitationCollection;
   final String? groupName;
   final String? groupAvatarUrl;
@@ -266,6 +305,7 @@ class GroupEventModel {
     this.series,
     this.accumulator,
     this.groupAccumulator,
+    this.accumulations = const [],
     this.groupRecitationCollection,
     this.groupName,
     this.groupAvatarUrl,
@@ -317,6 +357,7 @@ class GroupEventModel {
       series: _parsePracticeRef(json['series']),
       accumulator: _parsePracticeRef(json['accumulator']),
       groupAccumulator: _parsePracticeRef(json['group_accumulator']),
+      accumulations: _parseAccumulations(json['accumulations']),
       groupRecitationCollection: _parsePracticeRef(
         json['group_recitation_collection'],
       ),
@@ -366,6 +407,7 @@ class GroupEventModel {
       series: series?.toEntity(),
       accumulator: accumulator?.toEntity(),
       groupAccumulator: groupAccumulator?.toEntity(),
+      accumulations: accumulations.map((item) => item.toEntity()).toList(),
       groupRecitationCollection: groupRecitationCollection?.toEntity(),
       groupName: groupName,
       groupAvatarUrl: groupAvatarUrl,
@@ -393,6 +435,16 @@ class GroupEventModel {
     if (value is! Map<String, dynamic>) return null;
     final ref = GroupEventPracticeRefModel.fromJson(value);
     return ref.id.isEmpty ? null : ref;
+  }
+
+  static List<GroupEventAccumulationModel> _parseAccumulations(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .whereType<Map<String, dynamic>>()
+        .map(GroupEventAccumulationModel.fromJson)
+        .where((item) => item.groupAccumulatorId.isNotEmpty)
+        .toList()
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
   }
 
   static DateTime? _parseDate(Object? value) {

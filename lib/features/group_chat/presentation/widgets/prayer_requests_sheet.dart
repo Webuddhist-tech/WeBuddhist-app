@@ -428,7 +428,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: PrayerRequestPrompt(
-                      hintText: context.l10n.event_prayer_hint,
+                      hintText: context.l10n.event_prayer_add,
                       onTap: () => unawaited(_openComposer()),
                     ),
                   ),

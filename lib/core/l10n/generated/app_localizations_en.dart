@@ -934,6 +934,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_view_online => 'Online view';
 
   @override
+  String get connect_event_accumulation_online => 'Online';
+
+  @override
+  String get connect_event_accumulation_in_person => 'In-person';
+
+  @override
   String get connect_event_has_ended => 'This event has ended';
 
   @override
@@ -1516,6 +1522,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reader_languages_title => 'Languages';
+
+  @override
+  String get reader_sections_title => 'Sections';
 
   @override
   String get reader_original_label => 'Original';
@@ -3006,7 +3015,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_add => 'Add a prayer request';
 
   @override
-  String get event_prayer_hint => 'Share a prayer for yourself or others…';
+  String get event_prayer_hint => 'Share a prayer request';
 
   @override
   String event_prayer_hint_intention(String topics) {

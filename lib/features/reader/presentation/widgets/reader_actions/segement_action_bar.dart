@@ -111,7 +111,6 @@ class _SegmentActionBarState extends ConsumerState<SegmentActionBar> {
         SecondaryReaderKey(
           textId: dual.primary.versionId ?? widget.params.textId,
           versionId: versionId,
-          initialSize: widget.params.navigationContext?.initialPageSize,
         ),
       ),
     );
