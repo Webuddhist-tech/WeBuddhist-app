@@ -606,32 +606,49 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
   }
 
-  /// Near the end of the list: the last started source fetches its next
-  /// verses, and once it has them all the next source starts.
+  /// Near the end of a started source's verses, it fetches its next ones.
+  /// Every started source is checked, not only the last: a jump (the
+  /// sections sheet, live) starts later sources before an earlier one has
+  /// all its verses. Once the last started source has them all, or failed,
+  /// the next source starts.
   void _loadForward(int lastVisibleIndex, int totalItems) {
-    if (lastVisibleIndex < totalItems - ReaderConstants.nextLoadThreshold) {
-      return;
-    }
-    final index = _startedCount - 1;
-    final state = ref.read(readerNotifierProvider(widget.sources[index]));
-    final content = state.content;
-    if (state.status != ReaderStatus.loaded || content == null) return;
-    if (state.isLoadingNext || _nextTriggered.contains(index)) return;
+    final entries = _currentEntries();
+    var lastIsDone = false;
+    for (var index = 0; index < _startedCount; index++) {
+      final state = ref.read(readerNotifierProvider(widget.sources[index]));
+      final isLast = index == _startedCount - 1;
+      if (state.isError) {
+        if (isLast) lastIsDone = true;
+        continue;
+      }
+      final content = state.content;
+      if (state.status != ReaderStatus.loaded || content == null) continue;
 
-    final active = _activeSegmentIdsOf(index, state);
-    final missing = nextSegmentToLoad(
-      content,
-      active,
-      skipped: _skippedSegmentIds[index] ?? const {},
-    );
-    final wantsMore =
-        state.hasNextPage && (active.isEmpty || missing != null);
-    if (wantsMore) {
+      final active = _activeSegmentIdsOf(index, state);
+      final missing = nextSegmentToLoad(
+        content,
+        active,
+        skipped: _skippedSegmentIds[index] ?? const {},
+      );
+      final wantsMore =
+          state.hasNextPage && (active.isEmpty || missing != null);
+      if (!wantsMore) {
+        if (isLast) lastIsDone = true;
+        continue;
+      }
+      if (state.isLoadingNext || _nextTriggered.contains(index)) continue;
+
+      final end = entries.lastIndexWhere((e) => e.source == index);
+      if (end >= 0 &&
+          lastVisibleIndex < end - ReaderConstants.nextLoadThreshold) {
+        continue;
+      }
       _logger.debug('Loading source $index forward from ${missing ?? 'end'}');
       _loadNext(index, fromSegmentId: missing);
-      return;
     }
-    if (_startedCount < widget.sources.length) {
+    if (lastIsDone &&
+        _startedCount < widget.sources.length &&
+        lastVisibleIndex >= totalItems - ReaderConstants.nextLoadThreshold) {
       setState(() => _startedCount++);
     }
   }
@@ -1415,13 +1432,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             child: ValueListenableBuilder<String?>(
               valueListenable: _currentSectionKey,
               builder: (context, key, _) {
-                final section = layout.sections.firstWhere(
-                  (s) => s.key == key,
-                  orElse: () => layout.sections.first,
-                );
-                final index = layout.texts.indexWhere(
-                  (t) => t.source == section.source,
-                );
+                // A text none of whose verses are in yet has no sections.
+                final section =
+                    layout.sections.where((s) => s.key == key).firstOrNull ??
+                    layout.sections.firstOrNull;
+                final index =
+                    section == null
+                        ? 0
+                        : layout.texts.indexWhere(
+                          (t) => t.source == section.source,
+                        );
                 final text = layout.texts[index < 0 ? 0 : index];
                 return _SectionsPill(
                   title: text.title,

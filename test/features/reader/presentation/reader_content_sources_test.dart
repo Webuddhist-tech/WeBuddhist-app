@@ -114,8 +114,9 @@ Finder _verse(String segmentId) => find.byWidgetPredicate(
 
 Future<List<TextDetailsParams>> _pump(
   WidgetTester tester,
-  List<ReaderParams> sources,
-) async {
+  List<ReaderParams> sources, {
+  Set<String> failing = const {},
+}) async {
   final fetches = <TextDetailsParams>[];
   await tester.pumpWidget(
     ProviderScope(
@@ -126,6 +127,11 @@ Future<List<TextDetailsParams>> _pump(
         ),
         textDetailsFutureProvider.overrideWith((ref, params) async {
           fetches.add(params);
+          if (failing.contains(params.textId)) {
+            return const Left<Failure, ReaderResponse>(
+              ServerFailure('unavailable'),
+            );
+          }
           return Right<Failure, ReaderResponse>(_page(params));
         }),
       ],
@@ -232,6 +238,72 @@ void main() {
       expect(_verse('A-2'), findsNWidgets(2));
       expect(find.byType(Divider), findsOneWidget);
       expect(fetches.map((f) => f.textId), ['A']);
+    },
+  );
+
+  testWidgets(
+    'an earlier source still pages forward after the sections sheet starts the rest',
+    (tester) async {
+      _totals = {'A': 40, 'B': 2};
+      final fetches = await _pump(
+        tester,
+        _sources(_ids('A', 1, 40), _ids('B', 1, 1)),
+      );
+
+      // The sheet starts every source while A has only its first page.
+      await tester.tap(find.text('Text A').first);
+      await _settle(tester);
+      Navigator.of(tester.element(find.byType(ReaderContentPart))).pop();
+      await _settle(tester);
+      expect(fetches.map((f) => f.textId), ['A', 'B']);
+
+      for (var i = 0; i < 4; i++) {
+        await _scrollToEnd(tester);
+      }
+      expect(
+        fetches.map((f) => (f.textId, f.segmentId)),
+        contains(('A', 'A-21')),
+      );
+    },
+  );
+
+  testWidgets('a failed source does not hold back the sources after it', (
+    tester,
+  ) async {
+    _totals = {'A': 3, 'B': 3, 'C': 3};
+    final fetches = await _pump(
+      tester,
+      _sourcesOf([
+        PlanSourceRef(textId: 'A', segmentIds: _ids('A', 1, 1)),
+        PlanSourceRef(textId: 'B', segmentIds: _ids('B', 1, 1)),
+        PlanSourceRef(textId: 'C', segmentIds: _ids('C', 1, 1)),
+      ]),
+      failing: {'B'},
+    );
+    await _scrollToEnd(tester);
+
+    expect(fetches.map((f) => f.textId), containsAllInOrder(['A', 'B', 'C']));
+    expect(_verse('C-1'), findsOneWidget);
+  });
+
+  testWidgets(
+    'a first source with none of its verses loaded keeps the sections pill',
+    (tester) async {
+      _totals = {'A': 40, 'B': 2};
+      final task = _sources(_ids('A', 1, 2), _ids('B', 1, 1));
+      await _pump(tester, [
+        ReaderParams(
+          textId: 'A',
+          segmentId: 'A-1',
+          // Verse ids this edition does not have.
+          segmentIds: const ['Z-1'],
+          navigationContext: task.first.navigationContext,
+        ),
+        task[1],
+      ]);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Text A'), findsWidgets);
     },
   );
 }
