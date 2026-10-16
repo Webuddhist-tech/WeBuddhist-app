@@ -190,6 +190,9 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get mala_hand_layout_tooltip => 'Switch hand layout';
+
+  @override
   String mala_counter_semantics(int bead, int total, String rounds) {
     return 'गिनती $bead/$total, $rounds';
   }

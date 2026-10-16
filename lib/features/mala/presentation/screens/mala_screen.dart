@@ -170,6 +170,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     }
     _index = _index.clamp(0, mantras.length - 1);
     final mantra = mantras[_index];
+    final hasDeityImages = mantras.any((m) => m.deityImage != null);
 
     ref.watch(
       prefetchBookmarkExistsProvider(
@@ -182,6 +183,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     final counter = ref.watch(malaCounterProvider(mantra));
     final notifier = ref.read(malaCounterProvider(mantra).notifier);
     final settings = ref.watch(malaSettingsProvider);
+    final leftHanded = settings.leftHanded;
     final selection = ref.watch(
       malaAccumulationSelectionProvider(mantra.presetId),
     );
@@ -269,6 +271,10 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
       children: [
         _MalaAppBar(
           title: mantra.displayTitle(language),
+          onHandLayoutPressed:
+              () => ref
+                  .read(malaSettingsProvider.notifier)
+                  .setLeftHanded(!leftHanded),
           onMorePressed: () => _openMalaSettings(context, mantra),
         ),
         Expanded(
@@ -278,7 +284,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  flex: 36,
+                  flex: hasDeityImages ? 48 : 36,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color:
@@ -301,16 +307,21 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (showCountSkeleton)
-                  const MalaCountSkeleton()
+                  MalaCountSkeleton(alignEnd: leftHanded)
                 else
                   _CounterBlock(
                     beadInRound: displayBeadInRound,
                     beadsPerRound: beadsPerRound,
                     rounds: displayRounds,
+                    leftHanded: leftHanded,
+                    addRounds:
+                        widget.openedFromEndedAccumulator
+                            ? null
+                            : AddMalaRoundsButton(mantra: mantra, size: 32),
                   ),
                 const SizedBox(height: 8),
                 Expanded(
-                  flex: 42,
+                  flex: hasDeityImages ? 30 : 42,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       return Align(
@@ -346,17 +357,9 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (!widget.openedFromEndedAccumulator)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GroupAccumulationsBar(
-                          mantra: mantra,
-                          presetTitle: mantra.displayTitle(language),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      AddMalaRoundsButton(mantra: mantra),
-                    ],
+                  GroupAccumulationsBar(
+                    mantra: mantra,
+                    presetTitle: mantra.displayTitle(language),
                   ),
               ],
             ),
@@ -379,31 +382,51 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
 
 }
 
+/// Bead count over a rounds row (`n` + mala icon + optional add button).
+/// Left-aligned for the right-hand layout, right-aligned for the left hand.
 class _CounterBlock extends StatelessWidget {
   const _CounterBlock({
     required this.beadInRound,
     required this.beadsPerRound,
     required this.rounds,
+    required this.leftHanded,
+    this.addRounds,
   });
 
   final int beadInRound;
   final int beadsPerRound;
   final int rounds;
+  final bool leftHanded;
+  final Widget? addRounds;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final useTibetan = context.isTibetanLocale;
-    final beadLabel =
-        useTibetan
-            ? '${toTibetanDigits(beadInRound)}/${toTibetanDigits(beadsPerRound)}'
-            : '$beadInRound/$beadsPerRound';
+    final beadText =
+        useTibetan ? toTibetanDigits(beadInRound) : '$beadInRound';
+    final perRoundText =
+        useTibetan ? toTibetanDigits(beadsPerRound) : '$beadsPerRound';
+    final roundsText = useTibetan ? toTibetanDigits(rounds) : '$rounds';
     final roundsLabel =
         useTibetan
             ? toTibetanDigits(l10n.mala_rounds_count(rounds))
             : l10n.mala_rounds_count(rounds);
     final color = theme.colorScheme.onSurface;
+    final mutedColor = color.withValues(alpha: 0.7);
+    final beadStyle = theme.textTheme.displaySmall?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: color,
+    );
+    final perRoundStyle = theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.w500,
+      color: color,
+    );
+    final roundsStyle = theme.textTheme.titleLarge?.copyWith(
+      color: mutedColor,
+    );
+
     return Semantics(
       label: l10n.mala_counter_semantics(
         beadInRound,
@@ -411,22 +434,37 @@ class _CounterBlock extends StatelessWidget {
         roundsLabel,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            leftHanded ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            beadLabel,
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: color,
+          Text.rich(
+            TextSpan(
+              text: beadText,
+              style: beadStyle,
+              children: [TextSpan(text: '/$perRoundText', style: perRoundStyle)],
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            roundsLabel,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: color.withValues(alpha: 0.7),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(roundsText, style: roundsStyle),
+              const SizedBox(width: 6),
+              ExcludeSemantics(
+                child: Image.asset(
+                  AppAssets.homeMalaIcon,
+                  width: 22,
+                  height: 22,
+                  color: mutedColor,
+                  colorBlendMode: BlendMode.srcIn,
+                ),
+              ),
+              if (addRounds != null) ...[
+                const SizedBox(width: 10),
+                addRounds!,
+              ],
+            ],
           ),
         ],
       ),
@@ -434,10 +472,16 @@ class _CounterBlock extends StatelessWidget {
   }
 }
 
-/// App bar with a back button and the mantra name.
+/// App bar with a back button, the mantra name, the hand-layout toggle and
+/// the settings menu.
 class _MalaAppBar extends StatelessWidget {
-  const _MalaAppBar({required this.title, this.onMorePressed});
+  const _MalaAppBar({
+    required this.title,
+    this.onHandLayoutPressed,
+    this.onMorePressed,
+  });
   final String title;
+  final VoidCallback? onHandLayoutPressed;
   final VoidCallback? onMorePressed;
 
   @override
@@ -454,9 +498,15 @@ class _MalaAppBar extends StatelessWidget {
             child: Center(
               child: Text(
                 title,
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.flip, size: 24),
+            tooltip: context.l10n.mala_hand_layout_tooltip,
+            onPressed: onHandLayoutPressed,
           ),
           IconButton(
             icon: Icon(Icons.more_vert, size: 24),

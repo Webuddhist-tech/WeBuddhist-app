@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
+import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 
 /// Mantra display + chevron switcher as an **infinite, looping carousel**.
 ///
@@ -110,6 +112,7 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
               final mantra = widget.mantras[_logical(page)];
               return _MantraPage(
                 key: ValueKey<int>(page),
+                deityImage: mantra.deityImage,
                 tibetan: mantra.tibetan,
                 tibetanFontFamily: widget.tibetanFontFamily,
                 transliteration:
@@ -129,9 +132,10 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   }
 }
 
-/// One carousel page: smaller script line (when present) above the larger
-/// localized transliteration, both centered. Long content stays scrollable
-/// without a visible scrollbar so it does not clash with the chevrons.
+/// One carousel page: optional deity artwork, then the smaller script line
+/// (when present) above the larger localized transliteration, all centered.
+/// Long text stays scrollable without a visible scrollbar so it does not
+/// clash with the chevrons.
 ///
 /// Each page owns a [ScrollController] and sets `primary: false`. A
 /// controller-less vertical [SingleChildScrollView] would otherwise inherit
@@ -140,12 +144,14 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
 class _MantraPage extends StatefulWidget {
   const _MantraPage({
     super.key,
+    required this.deityImage,
     required this.tibetan,
     required this.tibetanFontFamily,
     required this.transliteration,
     required this.theme,
   });
 
+  final ResponsiveImage? deityImage;
   final String? tibetan;
   final String? tibetanFontFamily;
   final String transliteration;
@@ -166,56 +172,81 @@ class _MantraPageState extends State<_MantraPage> {
 
   @override
   Widget build(BuildContext context) {
+    final deityImage = widget.deityImage;
+    if (deityImage != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: ResponsiveCoverImage(
+                image: deityImage,
+                fit: BoxFit.contain,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Flexible(flex: 2, child: _scrollable(_text(context))),
+          ],
+        ),
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
-        return ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            primary: false,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.tibetan != null) ...[
-                        Semantics(
-                          label: context.l10n.mala_mantra_label,
-                          child: Text(
-                            widget.tibetan!,
-                            textAlign: TextAlign.center,
-                            style: widget.theme.textTheme.titleMedium?.copyWith(
-                              fontFamily: widget.tibetanFontFamily,
-                              height: 1.4,
-                              color: widget.theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      Text(
-                        widget.transliteration,
-                        textAlign: TextAlign.center,
-                        style: widget.theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        return _scrollable(
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Center(child: _text(context)),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _scrollable(Widget child) {
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        primary: false,
+        child: child,
+      ),
+    );
+  }
+
+  Widget _text(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.tibetan != null) ...[
+          Semantics(
+            label: context.l10n.mala_mantra_label,
+            child: Text(
+              widget.tibetan!,
+              textAlign: TextAlign.center,
+              style: widget.theme.textTheme.titleMedium?.copyWith(
+                fontFamily: widget.tibetanFontFamily,
+                height: 1.4,
+                color: widget.theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        Text(
+          widget.transliteration,
+          textAlign: TextAlign.center,
+          style: widget.theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -75,6 +75,7 @@
       }
     }
   },
+  "mala_hand_layout_tooltip": "Switch hand layout",
   "mala_counter_semantics": "Count {bead} of {total}, {rounds}",
   "@mala_counter_semantics": {
     "placeholders": {

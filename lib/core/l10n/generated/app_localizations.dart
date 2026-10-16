@@ -430,6 +430,12 @@ abstract class AppLocalizations {
   /// **'{count, plural,\n=0 {0 rounds}\n=1 {1 round}\nother {{count} rounds}\n}'**
   String mala_rounds_count(int count);
 
+  /// No description provided for @mala_hand_layout_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch hand layout'**
+  String get mala_hand_layout_tooltip;
+
   /// No description provided for @mala_counter_semantics.
   ///
   /// In en, this message translates to:

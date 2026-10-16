@@ -6,18 +6,24 @@ class MalaSettingsState {
   const MalaSettingsState({
     this.soundEnabled = true,
     this.vibrationEnabled = true,
+    this.leftHanded = false,
   });
 
   final bool soundEnabled;
   final bool vibrationEnabled;
 
+  /// Counter sits on the right (thumb-side for a left hand) when true.
+  final bool leftHanded;
+
   MalaSettingsState copyWith({
     bool? soundEnabled,
     bool? vibrationEnabled,
+    bool? leftHanded,
   }) =>
       MalaSettingsState(
         soundEnabled: soundEnabled ?? this.soundEnabled,
         vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
+        leftHanded: leftHanded ?? this.leftHanded,
       );
 }
 
@@ -33,6 +39,7 @@ class MalaSettingsNotifier extends StateNotifier<MalaSettingsState> {
           prefs.getBool(StorageKeys.malaSoundEnabled) ?? true,
       vibrationEnabled:
           prefs.getBool(StorageKeys.malaVibrationEnabled) ?? true,
+      leftHanded: prefs.getBool(StorageKeys.malaLeftHanded) ?? false,
     );
   }
 
@@ -46,6 +53,12 @@ class MalaSettingsNotifier extends StateNotifier<MalaSettingsState> {
     state = state.copyWith(vibrationEnabled: enabled);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(StorageKeys.malaVibrationEnabled, enabled);
+  }
+
+  Future<void> setLeftHanded(bool leftHanded) async {
+    state = state.copyWith(leftHanded: leftHanded);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(StorageKeys.malaLeftHanded, leftHanded);
   }
 }
 

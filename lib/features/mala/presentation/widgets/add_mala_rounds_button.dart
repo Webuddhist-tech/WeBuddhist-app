@@ -13,19 +13,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Circular `+` entry point for adding mala rounds counted outside the app.
 ///
-/// Sits below the bead strand, opposite the group accumulations pill, and runs
-/// the same flow the mala settings sheet used to host: pick a round count in
+/// Sits beside the rounds count under the bead counter and runs the same flow
+/// the mala settings sheet used to host: pick a round count in
 /// [showAddMalaRoundsDialog], then add it to whichever accumulation is
 /// selected (personal or group).
 ///
 /// Disabled — dimmed and unresponsive — while the count is seeding, after a
 /// seed failure, or when no accumulation is selected, mirroring the bead tap.
 class AddMalaRoundsButton extends ConsumerWidget {
-  const AddMalaRoundsButton({super.key, required this.mantra});
+  const AddMalaRoundsButton({
+    super.key,
+    required this.mantra,
+    this.size = defaultSize,
+  });
 
   final Mantra mantra;
+  final double size;
 
-  static const size = 40.0;
+  static const defaultSize = 40.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,7 +61,7 @@ class AddMalaRoundsButton extends ConsumerWidget {
               height: size,
               child: Icon(
                 AppAssets.plus,
-                size: 24,
+                size: size * 0.6,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
             ),

@@ -374,6 +374,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get mala_hand_layout_tooltip => TolgeeBridge.get(
+    localeName,
+    'mala_hand_layout_tooltip',
+    () => _fallback.mala_hand_layout_tooltip,
+  );
+
+  @override
   String mala_counter_semantics(int bead, int total, String rounds) =>
       TolgeeBridge.format(
         localeName,

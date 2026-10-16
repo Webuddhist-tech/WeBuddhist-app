@@ -136,7 +136,9 @@ class MalaLocalDataSource {
   }
 
   String _key(String userId, String presetId) => '$userId:$presetId';
-  String _catalogueKey(String language) => 'catalogue:$language';
+  // Bumped when the cached preset shape gains fields (v2: deity_image), so a
+  // cache written by an older build is skipped instead of served stale.
+  String _catalogueKey(String language) => 'catalogue:v2:$language';
 
   List<PresetAccumulatorModel>? readCatalogue(String language) {
     final raw = _box.get(_catalogueKey(language));
