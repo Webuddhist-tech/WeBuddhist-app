@@ -1544,7 +1544,7 @@
   "event_prayer_empty_title": "No prayer requests yet",
   "event_prayer_empty_body": "Your request and your space's requests will appear here",
   "event_prayer_add": "Add a prayer request",
-  "event_prayer_hint": "Share a prayer for yourself or others…",
+  "event_prayer_hint": "Share a prayer request",
   "event_prayer_hint_intention": "Request a prayer for: {topics}",
   "@event_prayer_hint_intention": {
     "placeholders": {

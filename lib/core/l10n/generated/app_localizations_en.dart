@@ -3015,7 +3015,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_add => 'Add a prayer request';
 
   @override
-  String get event_prayer_hint => 'Share a prayer for yourself or others…';
+  String get event_prayer_hint => 'Share a prayer request';
 
   @override
   String event_prayer_hint_intention(String topics) {

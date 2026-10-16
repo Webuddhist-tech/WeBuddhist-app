@@ -5321,7 +5321,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_hint.
   ///
   /// In en, this message translates to:
-  /// **'Share a prayer for yourself or others…'**
+  /// **'Share a prayer request'**
   String get event_prayer_hint;
 
   /// No description provided for @event_prayer_hint_intention.
