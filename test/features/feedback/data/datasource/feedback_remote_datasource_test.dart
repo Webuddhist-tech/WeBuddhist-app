@@ -126,6 +126,7 @@ void main() {
       expect(sent.data, isA<FormData>());
       expect(sent.extra[RetryInterceptor.noRetryKey], isTrue);
       expect(sent.sendTimeout, const Duration(seconds: 60));
+      expect(sent.receiveTimeout, const Duration(seconds: 60));
     });
 
     test('refuses images over 10 MB before uploading anything', () async {
