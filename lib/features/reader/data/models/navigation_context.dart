@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/utils/audio_url.dart';
-import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 
 /// Navigation source types for reader
 enum NavigationSource {
@@ -99,6 +98,56 @@ class PlanInlineBlock {
   int get hashCode => Object.hash(contentType, content, subtaskId, isCompleted);
 }
 
+/// One SOURCE_REFERENCE subtask: a library text and the verses of it the
+/// task covers. A task's sources are read one after another on one page.
+class PlanSourceRef {
+  final String textId;
+
+  /// The verses to show, in order. Null or empty shows the whole text.
+  final List<String>? segmentIds;
+  final String? subtaskId;
+  final bool isCompleted;
+  final String? audioUrl;
+  final int? startMs;
+  final int? endMs;
+
+  const PlanSourceRef({
+    required this.textId,
+    this.segmentIds,
+    this.subtaskId,
+    this.isCompleted = false,
+    this.audioUrl,
+    this.startMs,
+    this.endMs,
+  });
+
+  String? get firstSegmentId =>
+      segmentIds?.isNotEmpty == true ? segmentIds!.first : null;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlanSourceRef &&
+          other.textId == textId &&
+          listEquals(other.segmentIds, segmentIds) &&
+          other.subtaskId == subtaskId &&
+          other.isCompleted == isCompleted &&
+          other.audioUrl == audioUrl &&
+          other.startMs == startMs &&
+          other.endMs == endMs;
+
+  @override
+  int get hashCode => Object.hash(
+    textId,
+    Object.hashAll(segmentIds ?? const []),
+    subtaskId,
+    isCompleted,
+    audioUrl,
+    startMs,
+    endMs,
+  );
+}
+
 /// Represents a navigable subtask within a plan.
 ///
 /// Plan subtasks come in three flavours, all of which appear in the same
@@ -106,7 +155,8 @@ class PlanInlineBlock {
 ///
 /// - **SOURCE_REFERENCE** — opens `ReaderScreen` for [textId] and scrolls
 ///   to the first segment in [segmentIds]. Has full reader features
-///   (commentary, copy/share, search, language, audio, ...).
+///   (commentary, copy/share, search, language, audio, ...). A task with
+///   several source subtasks is one item whose [sources] are read in turn.
 /// - **TEXT** — opens `PlanTextScreen` and renders [inlineContent] directly.
 ///   Stripped-down view: title in app bar, font size control, no other
 ///   reader features.
@@ -142,6 +192,10 @@ class PlanTextItem {
   /// Inline items only: every TEXT/IMAGE/VIDEO subtask of the task, in
   /// display order. The first block mirrors [inlineContent] / [imageUrl].
   final List<PlanInlineBlock> blocks;
+
+  /// SOURCE_REFERENCE only: every source subtask of the task, in display
+  /// order. The first mirrors [textId], [segmentIds], [subtaskId].
+  final List<PlanSourceRef> sources;
 
   /// Display title used in app bars and bottom-bar progress text.
   final String title;
@@ -207,6 +261,7 @@ class PlanTextItem {
     this.inlineContent,
     this.imageUrl,
     this.blocks = const [],
+    this.sources = const [],
     this.subtaskId,
     this.taskId,
     this.isCompleted = false,
@@ -271,18 +326,66 @@ class PlanTextItem {
     bool isLive = false,
   }) {
     assert(textId.isNotEmpty, 'sourceReference requires non-empty textId');
-    return PlanTextItem._(
-      contentType: PlanItemContentType.sourceReference,
-      textId: textId,
+    return PlanTextItem.sources(
+      sources: [
+        PlanSourceRef(
+          textId: textId,
+          segmentIds: segmentIds,
+          subtaskId: subtaskId,
+          isCompleted: isCompleted,
+          audioUrl: audioUrl,
+          startMs: startMs,
+          endMs: endMs,
+        ),
+      ],
       title: title,
       language: language,
-      segmentIds: segmentIds,
-      subtaskId: subtaskId,
       taskId: taskId,
-      isCompleted: isCompleted,
-      audioUrl: audioUrl,
-      startMs: startMs,
-      endMs: endMs,
+      autoOpenCommentary: autoOpenCommentary,
+      commentaryTextId: commentaryTextId,
+      autoOpenTranslation: autoOpenTranslation,
+      translationTextId: translationTextId,
+      isLive: isLive,
+    );
+  }
+
+  /// Build a SOURCE_REFERENCE item from one or more [sources]. Throws if
+  /// empty. One audio control: the first source with its own playable
+  /// audio, else the first source's day-audio window.
+  factory PlanTextItem.sources({
+    required List<PlanSourceRef> sources,
+    required String title,
+    String? language,
+    String? taskId,
+    bool autoOpenCommentary = false,
+    String? commentaryTextId,
+    bool autoOpenTranslation = false,
+    String? translationTextId,
+    bool isLive = false,
+  }) {
+    assert(sources.isNotEmpty, 'sources requires at least one source');
+    assert(
+      sources.every((s) => s.textId.isNotEmpty),
+      'sources requires non-empty textIds',
+    );
+    final first = sources.first;
+    final audio = sources.firstWhere(
+      (s) => hasPlayableAudio(s.audioUrl),
+      orElse: () => first,
+    );
+    return PlanTextItem._(
+      contentType: PlanItemContentType.sourceReference,
+      textId: first.textId,
+      title: title,
+      language: language,
+      segmentIds: first.segmentIds,
+      sources: List.unmodifiable(sources),
+      subtaskId: first.subtaskId,
+      taskId: taskId,
+      isCompleted: sources.every((s) => s.isCompleted),
+      audioUrl: normalizeAudioUrl(audio.audioUrl),
+      startMs: audio.startMs,
+      endMs: audio.endMs,
       autoOpenCommentary: autoOpenCommentary,
       commentaryTextId: commentaryTextId,
       autoOpenTranslation: autoOpenTranslation,
@@ -376,12 +479,27 @@ class PlanTextItem {
   /// True if this item is an inline VIDEO item.
   bool get isInlineVideo => contentType == PlanItemContentType.inlineVideo;
 
-  /// Subtask ids this item completes: its own plus every block's.
+  /// Subtask ids this item completes: its own plus every block's and
+  /// source's.
   List<String> get subtaskIds => {
     if (subtaskId != null) subtaskId!,
     for (final b in blocks)
       if (b.subtaskId != null) b.subtaskId!,
+    for (final s in sources)
+      if (s.subtaskId != null) s.subtaskId!,
   }.where((id) => id.isNotEmpty).toList();
+
+  /// Those of [subtaskIds] already completed when this item was built.
+  Set<String> get completedSubtaskIds => {
+    for (final b in blocks)
+      if (b.isCompleted && b.subtaskId != null) b.subtaskId!,
+    for (final s in sources)
+      if (s.isCompleted && s.subtaskId != null) s.subtaskId!,
+  };
+
+  /// True when one of this item's sources is the text [textId].
+  bool hasSourceText(String textId) =>
+      sources.any((s) => s.textId == textId);
 
   /// Get the first segment ID for initial scroll position
   /// (SOURCE_REFERENCE only).
@@ -395,6 +513,7 @@ class PlanTextItem {
     String? inlineContent,
     String? imageUrl,
     List<PlanInlineBlock>? blocks,
+    List<PlanSourceRef>? sources,
     String? title,
     String? language,
     String? subtaskId,
@@ -416,6 +535,7 @@ class PlanTextItem {
       inlineContent: inlineContent ?? this.inlineContent,
       imageUrl: imageUrl ?? this.imageUrl,
       blocks: blocks ?? this.blocks,
+      sources: sources ?? this.sources,
       title: title ?? this.title,
       language: language ?? this.language,
       subtaskId: subtaskId ?? this.subtaskId,
@@ -453,7 +573,8 @@ class PlanTextItem {
         other.autoOpenTranslation != autoOpenTranslation ||
         other.translationTextId != translationTextId ||
         other.isLive != isLive ||
-        !listEquals(other.blocks, blocks)) {
+        !listEquals(other.blocks, blocks) ||
+        !listEquals(other.sources, sources)) {
       return false;
     }
     if (segmentIds == null && other.segmentIds == null) return true;
@@ -473,6 +594,7 @@ class PlanTextItem {
     inlineContent,
     imageUrl,
     Object.hashAll(blocks),
+    Object.hashAll(sources),
     title,
     language,
     subtaskId,
@@ -648,23 +770,6 @@ class NavigationContext {
   PlanTextItem? get previousTextItem {
     if (!hasPreviousText) return null;
     return planTextItems![currentTextIndex! - 1];
-  }
-
-  /// Get the current text item's segment IDs for visibility control
-  List<String>? get currentSegmentIds => currentItem?.segmentIds;
-
-  /// Page size for the reader's first fetch so the current item's whole
-  /// segment range arrives at once. See [initialPageSizeFor].
-  int? get initialPageSize => initialPageSizeFor(currentSegmentIds);
-
-  /// Plan subtasks can span more segments than one page. When [segmentIds]
-  /// outgrows [ReaderConstants.pageSize], return its length so the first
-  /// window covers the whole (contiguous) range; otherwise return null and
-  /// let the default page size apply. Shared by the primary and secondary
-  /// readers so both request the same window.
-  static int? initialPageSizeFor(List<String>? segmentIds) {
-    final count = segmentIds?.length ?? 0;
-    return count > ReaderConstants.pageSize ? count : null;
   }
 
   /// Resolve the audio URL for [item], applying precedence: a subtask's own

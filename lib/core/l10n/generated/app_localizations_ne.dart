@@ -1541,6 +1541,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_languages_title => 'भाषाहरू';
 
   @override
+  String get reader_sections_title => 'Sections';
+
+  @override
   String get reader_original_label => 'मूल';
 
   @override

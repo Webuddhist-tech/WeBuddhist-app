@@ -3,6 +3,9 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 class Section {
   final String id;
   final String? title;
+
+  /// [title] in every language the table of contents has it in, by code.
+  final Map<String, String> titles;
   final int sectionNumber;
   final String? parentId;
   final List<Segment> segments;
@@ -14,6 +17,7 @@ class Section {
   const Section({
     required this.id,
     this.title,
+    this.titles = const {},
     required this.sectionNumber,
     this.parentId,
     required this.segments,
@@ -23,10 +27,30 @@ class Section {
     this.publishedDate,
   });
 
+  /// The title in [language], if the table of contents has one.
+  String? titleIn(String language) {
+    final code = language.trim().toLowerCase();
+    for (final entry in titles.entries) {
+      if (entry.key.trim().toLowerCase() == code && entry.value.isNotEmpty) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
   factory Section.fromJson(Map<String, dynamic> json) {
+    final rawTitles = json['titles'];
     return Section(
       id: json['id'] as String,
       title: json['title'] as String?,
+      titles:
+          rawTitles is Map
+              ? {
+                for (final entry in rawTitles.entries)
+                  if (entry.key is String && entry.value is String)
+                    entry.key as String: entry.value as String,
+              }
+              : const {},
       sectionNumber:
           json['section_number'] is int
               ? json['section_number'] as int
@@ -51,6 +75,7 @@ class Section {
     return {
       'id': id,
       'title': title,
+      if (titles.isNotEmpty) 'titles': titles,
       'section_number': sectionNumber,
       'parent_id': parentId,
       'segments': segments.map((e) => e.toJson()).toList(),
@@ -66,6 +91,7 @@ class Section {
   Section copyWith({
     String? id,
     String? title,
+    Map<String, String>? titles,
     int? sectionNumber,
     String? parentId,
     List<Segment>? segments,
@@ -77,6 +103,7 @@ class Section {
     return Section(
       id: id ?? this.id,
       title: title ?? this.title,
+      titles: titles ?? this.titles,
       sectionNumber: sectionNumber ?? this.sectionNumber,
       parentId: parentId ?? this.parentId,
       segments: segments ?? this.segments,

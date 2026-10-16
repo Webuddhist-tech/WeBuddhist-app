@@ -2782,6 +2782,12 @@ abstract class AppLocalizations {
   /// **'Languages'**
   String get reader_languages_title;
 
+  /// No description provided for @reader_sections_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get reader_sections_title;
+
   /// No description provided for @reader_original_label.
   ///
   /// In en, this message translates to:

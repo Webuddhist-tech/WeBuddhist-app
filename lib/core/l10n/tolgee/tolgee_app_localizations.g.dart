@@ -2948,6 +2948,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get reader_sections_title => TolgeeBridge.get(
+    localeName,
+    'reader_sections_title',
+    () => _fallback.reader_sections_title,
+  );
+
+  @override
   String get reader_original_label => TolgeeBridge.get(
     localeName,
     'reader_original_label',

@@ -1518,6 +1518,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_languages_title => 'Languages';
 
   @override
+  String get reader_sections_title => 'Sections';
+
+  @override
   String get reader_original_label => 'Original';
 
   @override
