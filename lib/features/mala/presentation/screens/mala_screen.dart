@@ -271,6 +271,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
       children: [
         _MalaAppBar(
           title: mantra.displayTitle(language),
+          leftHanded: leftHanded,
           onHandLayoutPressed:
               () => ref
                   .read(malaSettingsProvider.notifier)
@@ -344,6 +345,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                                     beadInRound: displayBeadInRound,
                                     beadsPerRound: beadsPerRound,
                                     enabled: countingEnabled,
+                                    mirrored: leftHanded,
                                     beadImageBytes: counter.beadImageBytes,
                                     beadColor: const Color(0xFF8D6E63),
                                     threadColor: const Color(0xFFC62828),
@@ -477,10 +479,12 @@ class _CounterBlock extends StatelessWidget {
 class _MalaAppBar extends StatelessWidget {
   const _MalaAppBar({
     required this.title,
+    this.leftHanded = false,
     this.onHandLayoutPressed,
     this.onMorePressed,
   });
   final String title;
+  final bool leftHanded;
   final VoidCallback? onHandLayoutPressed;
   final VoidCallback? onMorePressed;
 
@@ -504,7 +508,12 @@ class _MalaAppBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.flip, size: 24),
+            // Phosphor fills the left half; mirror it so the filled half is
+            // the active hand (right-hand layout is the default).
+            icon: Transform.flip(
+              flipX: !leftHanded,
+              child: const Icon(AppAssets.flipHorizontal, size: 24),
+            ),
             tooltip: context.l10n.mala_hand_layout_tooltip,
             onPressed: onHandLayoutPressed,
           ),

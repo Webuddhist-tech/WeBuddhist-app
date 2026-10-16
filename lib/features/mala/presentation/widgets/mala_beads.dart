@@ -27,6 +27,7 @@ class MalaBeads extends StatefulWidget {
     required this.threadColor,
     this.enabled = true,
     this.beadImageBytes,
+    this.mirrored = false,
   });
 
   /// Absolute lifetime count — drives continuous forward motion (no wrap jump).
@@ -41,6 +42,10 @@ class MalaBeads extends StatefulWidget {
   final Color threadColor;
   final bool enabled;
   final Uint8List? beadImageBytes;
+
+  /// Left-hand layout: the strand is flipped horizontally, so beads enter
+  /// from the top-left and a rightward swipe counts instead of a leftward one.
+  final bool mirrored;
 
   @override
   State<MalaBeads> createState() => _MalaBeadsState();
@@ -151,11 +156,14 @@ class _MalaBeadsState extends State<MalaBeads>
 
   void _handleDragEnd(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
-    // Right → left only (monotonic: a left → right swipe never decrements).
-    final leftward =
-        _dragDx <= -_kSwipeDistance || velocity <= -_kFlingVelocity;
+    // Only the direction the strand moves (monotonic: the reverse swipe never
+    // decrements). Mirrored flips both the strand and the counting direction.
+    final sign = widget.mirrored ? -1 : 1;
+    final forward =
+        _dragDx * sign <= -_kSwipeDistance ||
+        velocity * sign <= -_kFlingVelocity;
     // One +1 per swipe, same as a tap.
-    if (leftward && widget.enabled) (widget.onSwipe ?? widget.onTap)();
+    if (forward && widget.enabled) (widget.onSwipe ?? widget.onTap)();
   }
 
   @override
@@ -178,6 +186,7 @@ class _MalaBeadsState extends State<MalaBeads>
               beadColor: widget.beadColor,
               threadColor: widget.threadColor,
               beadImage: _beadImage,
+              mirrored: widget.mirrored,
             ),
           );
         },
@@ -192,12 +201,16 @@ class _MalaBeadsPainter extends CustomPainter {
     required this.beadColor,
     required this.threadColor,
     this.beadImage,
+    this.mirrored = false,
   });
 
   /// Continuous slot position (the absolute count, eased).
   final double phase;
   final Color beadColor;
   final Color threadColor;
+
+  /// Flip the whole strand horizontally (left-hand layout).
+  final bool mirrored;
 
   /// Bead artwork (network or bundled asset). Null while loading.
   final ui.Image? beadImage;
@@ -228,6 +241,11 @@ class _MalaBeadsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
+
+    if (mirrored) {
+      canvas.translate(w, 0);
+      canvas.scale(-1, 1);
+    }
 
     // Cut any overflow at the edges, like the design (no overlap-clustering).
     // canvas.clipRect(Offset.zero & size);
@@ -405,5 +423,6 @@ class _MalaBeadsPainter extends CustomPainter {
       old.phase != phase ||
       old.beadColor != beadColor ||
       old.threadColor != threadColor ||
-      old.beadImage != beadImage;
+      old.beadImage != beadImage ||
+      old.mirrored != mirrored;
 }
