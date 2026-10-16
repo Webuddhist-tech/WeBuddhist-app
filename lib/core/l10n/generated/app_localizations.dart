@@ -442,6 +442,36 @@ abstract class AppLocalizations {
   /// **'Switch hand layout'**
   String get mala_hand_layout_tooltip;
 
+  /// No description provided for @mala_settings_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Mala settings'**
+  String get mala_settings_section;
+
+  /// No description provided for @mala_others_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Others'**
+  String get mala_others_section;
+
+  /// No description provided for @mala_mantra_speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mantra speed'**
+  String get mala_mantra_speed;
+
+  /// No description provided for @mala_speed_normal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get mala_speed_normal;
+
+  /// No description provided for @mala_show_full_mantra.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full mantra'**
+  String get mala_show_full_mantra;
+
   /// No description provided for @mala_counter_semantics.
   ///
   /// In en, this message translates to:

@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/group_accumul
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_accumulation_selection_provider.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_settings_provider.dart';
+import 'package:flutter_pecha/features/mala/presentation/widgets/mantra_speed_sheet.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
@@ -89,6 +90,28 @@ class MalaSettingsSheet extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+            _MalaSettingsSectionHeader(label: l10n.mala_settings_section),
+            _MalaSettingsTile(
+              icon: AppAssets.speedometer,
+              label: l10n.mala_mantra_speed,
+              onTap: () => MantraSpeedSheet.show(context),
+            ),
+            Divider(height: 1, color: dividerColor),
+            _MalaSettingsToggleTile(
+              icon: AppAssets.speakerSimpleHigh,
+              label: l10n.mala_sound,
+              value: settings.soundEnabled,
+              onChanged: settingsNotifier.setSoundEnabled,
+            ),
+            Divider(height: 1, color: dividerColor),
+            _MalaSettingsToggleTile(
+              icon: AppAssets.vibrate,
+              label: l10n.mala_vibration,
+              value: settings.vibrationEnabled,
+              onChanged: settingsNotifier.setVibrationEnabled,
+            ),
+            Divider(height: 1, color: dividerColor),
+            _MalaSettingsSectionHeader(label: l10n.mala_others_section),
             if (isPersonal)
               _MalaSettingsTile(
                 icon: AppAssets.plus,
@@ -108,20 +131,6 @@ class MalaSettingsSheet extends ConsumerWidget {
                 onTap: () => _onToggleBookmark(context, ref),
               ),
             if (isPersonal) Divider(height: 1, color: dividerColor),
-            _MalaSettingsToggleTile(
-              icon: AppAssets.speakerSimpleHigh,
-              label: l10n.mala_sound,
-              value: settings.soundEnabled,
-              onChanged: settingsNotifier.setSoundEnabled,
-            ),
-            Divider(height: 1, color: dividerColor),
-            _MalaSettingsToggleTile(
-              icon: AppAssets.vibrate,
-              label: l10n.mala_vibration,
-              value: settings.vibrationEnabled,
-              onChanged: settingsNotifier.setVibrationEnabled,
-            ),
-            Divider(height: 1, color: dividerColor),
             _MalaSettingsTile(
               icon: AppAssets.readerShare,
               label: l10n.share,
@@ -238,6 +247,30 @@ class MalaSettingsSheet extends ConsumerWidget {
         SnackBar(content: Text(l10n.something_went_wrong)),
       );
     }
+  }
+}
+
+class _MalaSettingsSectionHeader extends StatelessWidget {
+  const _MalaSettingsSectionHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+      ),
+    );
   }
 }
 

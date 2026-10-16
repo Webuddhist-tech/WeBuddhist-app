@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/core.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
@@ -179,7 +178,6 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     );
 
     final language = Localizations.localeOf(context).languageCode;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final counter = ref.watch(malaCounterProvider(mantra));
     final notifier = ref.read(malaCounterProvider(mantra).notifier);
     final settings = ref.watch(malaSettingsProvider);
@@ -286,24 +284,13 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
               children: [
                 Expanded(
                   flex: hasDeityImages ? 48 : 36,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color:
-                          isDark
-                              ? const Color(0xCC454545)
-                              : AppColors.surfaceWhite,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: MantraSwitcher(
-                        mantras: mantras,
-                        language: language,
-                        tibetanFontFamily: AppConfig.tibetanContentFont,
-                        index: _index,
-                        onIndexChanged: (next) => _switch(mantras, next),
-                      ),
-                    ),
+                  child: MantraSwitcher(
+                    mantras: mantras,
+                    language: language,
+                    tibetanFontFamily: AppConfig.tibetanContentFont,
+                    index: _index,
+                    speedFactor: settings.mantraSpeed,
+                    onIndexChanged: (next) => _switch(mantras, next),
                   ),
                 ),
                 const SizedBox(height: 16),
