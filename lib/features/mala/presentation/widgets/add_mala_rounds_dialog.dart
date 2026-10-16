@@ -25,7 +25,7 @@ class _AddMalaRoundsDialog extends StatefulWidget {
 
 class _AddMalaRoundsDialogState extends State<_AddMalaRoundsDialog> {
   /// Highest pick on the wheel; it loops back to 0 past this.
-  static const _maxRounds = 99;
+  static const _maxRounds = 20;
   static const _itemExtent = 36.0;
   static const _magnification = 1.25;
 
