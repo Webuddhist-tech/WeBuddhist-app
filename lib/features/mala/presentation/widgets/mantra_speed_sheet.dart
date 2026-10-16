@@ -7,7 +7,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/mala_settings
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Nested sheet from the mala settings: picks the mantra marquee speed with a
-/// slider, ± steps, and preset chips. Writes straight to [malaSettingsProvider].
+/// slider,± steps, and preset chips. Writes straight to [malaSettingsProvider].
 class MantraSpeedSheet extends ConsumerWidget {
   const MantraSpeedSheet({super.key});
 
