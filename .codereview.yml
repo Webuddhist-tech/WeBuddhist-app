@@ -1,0 +1,18 @@
+instructions: |
+  This is a Flutter app. Watch for setState after dispose, missing mounted checks
+  after awaits, unawaited futures, controllers and streams that are never disposed,
+  and widget rebuilds doing heavy work in build().
+
+rules:
+  - rule: Don't log access tokens, passwords or personal data.
+  - rule: Hardcoded user-facing strings should go through the localization layer.
+    paths: ["lib/**"]
+    severity: low
+
+review:
+  skip_drafts: true
+  skip_authors: ["dependabot[bot]"]
+  skip_labels: ["no-ai-review"]
+  ignore: ["**/*.g.dart", "**/*.freezed.dart", "**/*.mocks.dart", "ios/**", "android/**", "assets/**"]
+  min_severity: low
+  max_comments: 15

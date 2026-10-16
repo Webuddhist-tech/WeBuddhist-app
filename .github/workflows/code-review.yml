@@ -1,0 +1,47 @@
+name: Amchi
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  push:
+    branches: [main] # keeps the code-graph cache warm so PR runs only re-index changed files
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: amchi-${{ (github.event.comment.id && !contains(github.event.comment.body, '@amchi review') && format('comment-{0}', github.event.comment.id)) || github.event.pull_request.number || github.event.issue.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  review:
+    if: >-
+      github.event_name == 'pull_request' ||
+      github.event_name == 'push' ||
+      (contains(github.event.comment.body, '@amchi') && github.event.comment.user.type != 'Bot')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
+
+      - uses: actions/cache@v5
+        with:
+          path: .amchi
+          key: amchi-${{ runner.os }}-${{ github.event.pull_request.head.sha || (github.event.issue.number && format('pr-{0}-{1}', github.event.issue.number, github.run_id)) || github.sha }}
+          restore-keys: amchi-${{ runner.os }}-
+
+      - uses: TenzDelek/Amchi@v2
+        timeout-minutes: 18
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # model: claude-haiku-5-5   # uncomment for a cheaper review
+          # min_severity: medium      # fewer, higher-signal comments
