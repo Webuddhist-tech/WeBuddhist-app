@@ -26,6 +26,12 @@ class FeedbackRemoteDatasource {
   /// default.
   static const Duration _sendTimeout = Duration(seconds: 60);
 
+  /// The backend stores the images in S3 and commits the row before it
+  /// answers, and the tail of the upload can still be in flight when Dio
+  /// starts this clock. Timing out after the commit would report a failure
+  /// for saved feedback, and the user's resend would store it twice.
+  static const Duration _receiveTimeout = Duration(seconds: 60);
+
   Future<void> submit(FeedbackReport report) async {
     var totalBytes = 0;
     for (final path in report.imagePaths) {
@@ -44,6 +50,7 @@ class FeedbackRemoteDatasource {
         data: await buildForm(report),
         options: Options(
           sendTimeout: _sendTimeout,
+          receiveTimeout: _receiveTimeout,
           // A timeout after the backend committed the row would store it, and
           // post it to Discord, a second time.
           extra: {RetryInterceptor.noRetryKey: true},
