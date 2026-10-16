@@ -154,6 +154,9 @@ class AppLocalizationsMn extends AppLocalizations {
       'Энэ аппаас гадуур хийсэн эрхийн ээлжийнхээ тоог нэмнэ үү';
 
   @override
+  String get mala_rounds_unit => 'rounds';
+
+  @override
   String get mala_add_to_bookmark => 'Хавчуурга';
 
   @override
@@ -189,6 +192,24 @@ class AppLocalizationsMn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mala_hand_layout_tooltip => 'Switch hand layout';
+
+  @override
+  String get mala_settings_section => 'Mala settings';
+
+  @override
+  String get mala_others_section => 'Others';
+
+  @override
+  String get mala_mantra_speed => 'Mantra speed';
+
+  @override
+  String get mala_speed_normal => 'Normal';
+
+  @override
+  String get mala_show_full_mantra => 'Show full mantra';
 
   @override
   String mala_counter_semantics(int bead, int total, String rounds) {

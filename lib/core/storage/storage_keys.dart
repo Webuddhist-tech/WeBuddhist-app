@@ -112,6 +112,10 @@ class StorageKeys {
   static const String malaSoundEnabled = 'mala_sound_enabled';
   /// Haptic feedback on the mala counter. Default: true.
   static const String malaVibrationEnabled = 'mala_vibration_enabled';
+  /// Mirror the mala counter for left-handed use. Default: false.
+  static const String malaLeftHanded = 'mala_left_handed';
+  /// Scroll speed multiplier for the mantra text marquee. Default: 1.0.
+  static const String malaMantraSpeed = 'mala_mantra_speed';
   /// Per-preset accumulation source: `personal` or `group:{uuid}`.
   static const String malaAccumulationSelectionPrefix =
       'mala_accumulation_selection_';

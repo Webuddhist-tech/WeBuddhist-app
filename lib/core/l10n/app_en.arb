@@ -57,8 +57,9 @@
   "bookmark_group_accumulation": "Space accumulations",
   "mala_add_to_practice": "Add to my practices",
   "mala_add_mala_round": "Add mala round",
-  "mala_add_rounds_title": "Add mala rounds:",
-  "mala_add_rounds_message": "Add the mala rounds you did outside the app",
+  "mala_add_rounds_title": "Add mala rounds",
+  "mala_add_rounds_message": "Add the number of mala rounds you did outside this app",
+  "mala_rounds_unit": "rounds",
   "mala_add_to_bookmark": "Bookmark",
   "mala_sound": "Sound",
   "mala_vibration": "Vibration",
@@ -75,6 +76,12 @@
       }
     }
   },
+  "mala_hand_layout_tooltip": "Switch hand layout",
+  "mala_settings_section": "Mala settings",
+  "mala_others_section": "Others",
+  "mala_mantra_speed": "Mantra speed",
+  "mala_speed_normal": "Normal",
+  "mala_show_full_mantra": "Show full mantra",
   "mala_counter_semantics": "Count {bead} of {total}, {rounds}",
   "@mala_counter_semantics": {
     "placeholders": {

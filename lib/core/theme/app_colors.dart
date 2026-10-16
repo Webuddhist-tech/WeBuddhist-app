@@ -116,6 +116,15 @@ class AppColors {
   static const Color middleCircleColor = Color(0xFF871C1C);
   static const Color innerCircleColor = Color(0xFF611414);
 
+  // ============ Mala mantra band ============
+  /// Tinted band behind the scrolling mantra: #FDAE33 at 10%.
+  static const Color malaMantraBand = Color(0x1AFDAE33);
+  /// Dark mode lifts the same amber to 20% so it still reads over black.
+  static const Color malaMantraBandDark = Color(0x33FDAE33);
+  /// Accent line + dot framing the band.
+  static const Color malaMantraAccent = Color(0xFFFBA216);
+  static const Color malaMantraAccentDark = Color(0xFFFDAE33);
+
   // ============ Group chat bubbles ============
   /// Outgoing message fill: #DC8600 at 10% (`#DC86001A`), a warm tint of the
   /// page rather than a second solid colour.
