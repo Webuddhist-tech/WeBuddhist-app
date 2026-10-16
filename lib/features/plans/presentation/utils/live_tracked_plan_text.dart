@@ -15,13 +15,11 @@ int planItemIndexForLiveEditions({
   Set<String> editionIds = const {},
 }) {
   if (liveTextId.isEmpty) return -1;
-  final exact = items.indexWhere(
-    (item) => item.isSourceReference && item.textId == liveTextId,
-  );
+  final exact = items.indexWhere((item) => item.hasSourceText(liveTextId));
   if (exact >= 0) return exact;
   if (editionIds.isEmpty) return -1;
   return items.indexWhere(
-    (item) => item.isSourceReference && editionIds.contains(item.textId),
+    (item) => item.sources.any((s) => editionIds.contains(s.textId)),
   );
 }
 

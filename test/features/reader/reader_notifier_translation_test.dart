@@ -222,6 +222,7 @@ void main() {
     final params = ReaderParams(
       textId: 'E1',
       segmentId: 'en-1',
+      segmentIds: const ['en-1', 'en-2', 'loose'],
       navigationContext: NavigationContext(
         source: NavigationSource.plan,
         planTextItems: [
@@ -344,6 +345,7 @@ void main() {
       final params = ReaderParams(
         textId: 'E1',
         segmentId: 'en-1',
+        segmentIds: const ['en-1'],
         navigationContext: NavigationContext(
           source: NavigationSource.plan,
           planTextItems: [
@@ -427,6 +429,7 @@ void main() {
     ReaderParams item(String segmentId) => ReaderParams(
       textId: 'E1',
       segmentId: segmentId,
+      segmentIds: [segmentId],
       navigationContext: NavigationContext(
         source: NavigationSource.plan,
         planTextItems: [

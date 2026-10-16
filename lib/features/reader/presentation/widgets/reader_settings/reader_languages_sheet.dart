@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -19,18 +21,38 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settin
 import 'package:flutter_pecha/shared/widgets/app_toggle_switch.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// A text the Languages sheet drives besides the one it shows: its settings
+/// scope and, until a main text is picked for it, the edition on screen.
+class ReaderLanguagesText {
+  final ReaderSettingsScope scope;
+  final ReaderSlotConfig primaryDisplay;
+
+  const ReaderLanguagesText({
+    required this.scope,
+    required this.primaryDisplay,
+  });
+}
+
 /// Languages drawer: an Original section (with a script dropdown when the
 /// text's language can be transliterated on the phone) plus a Translation
 /// toggle with an inline language › versions dropdown.
+///
+/// A page reading several texts (a plan task's sources) opens one sheet for
+/// all of them: it shows one text's state, lists every language any of them
+/// is translated into, and applies each pick to all by language. Each text
+/// then shows its own edition in that language, or no translation when it
+/// has none; editions are not named or picked, since one belongs to one
+/// text only.
 class ReaderLanguagesSheet extends ConsumerStatefulWidget {
   const ReaderLanguagesSheet({
     super.key,
     required this.scope,
     required this.primaryDisplay,
     this.sourceSample,
+    this.others = const [],
   });
 
-  /// The text and context whose settings this sheet edits.
+  /// The text and context whose settings this sheet shows and edits.
   final ReaderSettingsScope scope;
   final ReaderSlotConfig primaryDisplay;
 
@@ -39,6 +61,9 @@ class ReaderLanguagesSheet extends ConsumerStatefulWidget {
   /// which only costs the first row its name. Never the title: titles are
   /// routinely romanised even when the body is not.
   final String? sourceSample;
+
+  /// The page's other texts, which follow every pick made here by language.
+  final List<ReaderLanguagesText> others;
 
   @override
   ConsumerState<ReaderLanguagesSheet> createState() =>
@@ -63,6 +88,17 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   ReaderSlotConfig get _secondary =>
       ref.read(readerDualSettingsProvider(_scope)).secondary;
 
+  /// The other texts following this sheet, never the shown one twice.
+  List<ReaderLanguagesText> get _others => [
+    for (final text in widget.others)
+      if (text.scope != _scope) text,
+  ];
+
+  bool get _isMultiText => _others.isNotEmpty;
+
+  ReaderDualSettingsNotifier _notifierOf(ReaderSettingsScope scope) =>
+      ref.read(readerDualSettingsProvider(scope).notifier);
+
   @override
   void initState() {
     super.initState();
@@ -81,14 +117,29 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     return widget.primaryDisplay;
   }
 
+  /// [_primary] for one of the other texts.
+  ReaderSlotConfig _primaryOf(ReaderLanguagesText text) {
+    if (_notifierOf(text.scope).isPrimaryEdited) {
+      return ref.read(readerDualSettingsProvider(text.scope)).primary;
+    }
+    return text.primaryDisplay;
+  }
+
   Future<void> _onToggle(bool value) async {
     HapticFeedback.lightImpact();
     _notifier.setSecondaryEnabled(value);
+    for (final text in _others) {
+      _notifierOf(text.scope).setSecondaryEnabled(value);
+    }
     if (!value) {
       setState(() => _expanded = false);
       return;
     }
-    if (_secondary.versionId != null) return;
+    final othersFilled = _fillOthersWithoutTranslation();
+    if (_secondary.versionId != null) {
+      unawaited(othersFilled);
+      return;
+    }
 
     setState(() => _filling = true);
     final primary = _primary();
@@ -101,6 +152,7 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
         sourceLanguage: primary.languageCode,
         sourceVersionId: primary.versionId,
       );
+      await othersFilled;
     } finally {
       if (mounted) setState(() => _filling = false);
     }
@@ -111,11 +163,44 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     });
   }
 
+  /// Fills the translation of every other text that has none the way the
+  /// switch does for the shown text. A failed request leaves that text
+  /// without one.
+  Future<void> _fillOthersWithoutTranslation() async {
+    await Future.wait([
+      for (final text in _others)
+        if (ref.read(readerDualSettingsProvider(text.scope)).secondary.versionId ==
+            null)
+          _fillPreferredFor(text),
+    ]);
+  }
+
+  Future<void> _fillPreferredFor(ReaderLanguagesText text) async {
+    final primary = _primaryOf(text);
+    try {
+      await fillPreferredSecondary(
+        ref: ref,
+        context: context,
+        scope: text.scope,
+        sourceLanguage: primary.languageCode,
+        sourceVersionId: primary.versionId,
+      );
+    } catch (_) {
+      // Left without a translation; its own switch asks again.
+    }
+  }
+
   Future<void> _onLanguageTap(ReaderLanguageOption option) async {
     HapticFeedback.selectionClick();
-    final wasOpen = _expandedLanguage == option.code;
+    // With one text the row opens its editions; with several a tap only picks.
+    final wasOpen = !_isMultiText && _expandedLanguage == option.code;
     setState(() => _expandedLanguage = wasOpen ? null : option.code);
     if (wasOpen) return;
+
+    _notifier.rememberTranslationLanguage(option.code);
+    unawaited(
+      Future.wait([for (final text in _others) _applyLanguageTo(text, option)]),
+    );
 
     final current = _secondary;
     final sameLanguage = readerLanguagesMatch(
@@ -131,7 +216,6 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
       languageLabel: getLanguageName(option.code, context),
     );
     _notifier.replaceSecondary(slot);
-    _notifier.rememberTranslationLanguage(option.code);
     final resolveGeneration = _notifier.secondaryResolveGeneration;
     final resolving = ref.read(
       readerSecondaryResolvingProvider(_scope).notifier,
@@ -148,6 +232,32 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     } finally {
       if (mounted) resolving.state = false;
     }
+  }
+
+  /// Picks [option] for one of the other texts: its own edition in that
+  /// language, or no translation when it has none.
+  Future<void> _applyLanguageTo(
+    ReaderLanguagesText text,
+    ReaderLanguageOption option,
+  ) async {
+    final notifier = _notifierOf(text.scope);
+    final current = ref.read(readerDualSettingsProvider(text.scope)).secondary;
+    if (readerLanguagesMatch(current.languageCode, option.code) &&
+        (current.versionId != null || current.versionUnavailable)) {
+      return;
+    }
+    final slot = ReaderSlotConfig(
+      languageCode: option.code,
+      languageLabel: getLanguageName(option.code, context),
+    );
+    notifier.replaceSecondary(slot);
+    await autoSelectSecondaryVersion(
+      ref: ref,
+      scope: text.scope,
+      slot: slot,
+      mainConfig: _primaryOf(text),
+      resolveGeneration: notifier.secondaryResolveGeneration,
+    );
   }
 
   void _onVersionTap(ReaderLanguageOption language, ReaderVersionDetail v) {
@@ -170,6 +280,8 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
     final l10n = context.l10n;
     if (slot.isUnset) return l10n.select_language;
     final language = _languageName(context, slot.languageCode);
+    // Several texts: the edition is one text's, so only the language is named.
+    if (_isMultiText) return language;
     if (slot.versionUnavailable) {
       return '$language (${l10n.version_not_available})';
     }
@@ -205,7 +317,14 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
   Future<void> _onOriginalToggle(bool visible) async {
     HapticFeedback.lightImpact();
     _notifier.setOriginalVisible(visible);
-    if (visible || _secondary.versionId != null) return;
+    for (final text in _others) {
+      _notifierOf(text.scope).setOriginalVisible(visible);
+    }
+    if (visible) return;
+    if (_secondary.versionId != null) {
+      unawaited(_fillOthersWithoutTranslation());
+      return;
+    }
     await _onToggle(true);
   }
 
@@ -334,9 +453,13 @@ class _ReaderLanguagesSheetState extends ConsumerState<ReaderLanguagesSheet> {
                     ),
                     if (enabled && _expanded)
                       _LanguageTree(
-                        textId: _scope.textId,
+                        textIds: [
+                          _scope.textId,
+                          for (final text in _others) text.scope.textId,
+                        ],
                         secondary: settings.secondary,
                         expandedLanguage: _expandedLanguage,
+                        showVersions: !_isMultiText,
                         selectedVersionKey: _selectedVersionKey,
                         onLanguageTap: busy ? null : _onLanguageTap,
                         onVersionTap: _onVersionTap,
@@ -444,17 +567,22 @@ class _DropdownField extends StatelessWidget {
 
 class _LanguageTree extends ConsumerWidget {
   const _LanguageTree({
-    required this.textId,
+    required this.textIds,
     required this.secondary,
     required this.expandedLanguage,
+    required this.showVersions,
     required this.selectedVersionKey,
     required this.onLanguageTap,
     required this.onVersionTap,
   });
 
-  final String textId;
+  /// The shown text first; the languages of all of them are offered.
+  final List<String> textIds;
   final ReaderSlotConfig secondary;
   final String? expandedLanguage;
+
+  /// Whether a language opens its editions to pick from (one text only).
+  final bool showVersions;
   final GlobalKey selectedVersionKey;
   final ValueChanged<ReaderLanguageOption>? onLanguageTap;
   final void Function(ReaderLanguageOption, ReaderVersionDetail) onVersionTap;
@@ -462,17 +590,27 @@ class _LanguageTree extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final textId = textIds.first;
     final asyncLangs = ref.watch(readerLanguagesProvider(textId));
+    // The other texts' languages join the list as they arrive.
+    final otherLangs = [
+      for (final id in textIds.skip(1))
+        ref.watch(readerLanguagesProvider(id)).valueOrNull ?? const [],
+    ];
 
     return asyncLangs.when(
       loading: () => const PickerLoading(),
       error:
           (_, __) => PickerError(
             message: l10n.reader_languages_load_error,
-            onRetry: () => ref.invalidate(readerLanguagesProvider(textId)),
+            onRetry: () {
+              for (final id in textIds) {
+                ref.invalidate(readerLanguagesProvider(id));
+              }
+            },
           ),
       data: (all) {
-        final langs = translationLanguages(all);
+        final langs = mergedTranslationLanguages([all, ...otherLangs]);
         if (langs.isEmpty) {
           return PickerEmpty(message: l10n.reader_no_languages);
         }
@@ -493,13 +631,13 @@ class _LanguageTree extends ConsumerWidget {
                         lang.code,
                         secondary.languageCode,
                       ),
-                      isOpen: expandedLanguage == lang.code,
+                      isOpen: showVersions && expandedLanguage == lang.code,
                       onTap:
                           onLanguageTap == null
                               ? null
                               : () => onLanguageTap!(lang),
                     ),
-                    if (expandedLanguage == lang.code)
+                    if (showVersions && expandedLanguage == lang.code)
                       _VersionList(
                         textId: textId,
                         language: lang,
@@ -774,6 +912,7 @@ Future<void> showReaderLanguagesSheet(
   required ReaderSettingsScope scope,
   required ReaderSlotConfig primaryDisplay,
   String? sourceSample,
+  List<ReaderLanguagesText> others = const [],
 }) {
   return showModalBottomSheet(
     context: context,
@@ -789,6 +928,7 @@ Future<void> showReaderLanguagesSheet(
           scope: scope,
           primaryDisplay: primaryDisplay,
           sourceSample: sourceSample,
+          others: others,
         ),
   );
 }
