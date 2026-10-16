@@ -118,7 +118,6 @@ class AppAssets {
 
   // ========== ACTION ICONS ==========
   static const IconData plus = PhosphorIconsRegular.plus;
-  static const IconData flipHorizontal = PhosphorIconsRegular.flipHorizontal;
   static const IconData speedometer = PhosphorIconsRegular.speedometer;
   static const IconData plusCircle = PhosphorIconsRegular.plusCircle;
   static const IconData minus = PhosphorIconsRegular.minus;

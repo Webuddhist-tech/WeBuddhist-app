@@ -497,12 +497,7 @@ class _MalaAppBar extends StatelessWidget {
             ),
           ),
           IconButton(
-            // Phosphor fills the left half; mirror it so the filled half is
-            // the active hand (right-hand layout is the default).
-            icon: Transform.flip(
-              flipX: !leftHanded,
-              child: const Icon(AppAssets.flipHorizontal, size: 24),
-            ),
+            icon: _HandLayoutIcon(leftHanded: leftHanded),
             tooltip: context.l10n.mala_hand_layout_tooltip,
             onPressed: onHandLayoutPressed,
           ),
@@ -514,6 +509,67 @@ class _MalaAppBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Two mirrored triangles; the solid one marks the active hand.
+class _HandLayoutIcon extends StatelessWidget {
+  const _HandLayoutIcon({required this.leftHanded});
+
+  final bool leftHanded;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size.square(24),
+      painter: _HandLayoutIconPainter(
+        fillLeft: leftHanded,
+        color: IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
+}
+
+class _HandLayoutIconPainter extends CustomPainter {
+  const _HandLayoutIconPainter({required this.fillLeft, required this.color});
+
+  final bool fillLeft;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 24;
+    // Right-angle triangles with their vertical edge at the centre and the
+    // hypotenuse running down to the outer bottom corner.
+    final left =
+        Path()
+          ..moveTo(10 * s, 3 * s)
+          ..lineTo(10 * s, 21 * s)
+          ..lineTo(2 * s, 21 * s)
+          ..close();
+    final right =
+        Path()
+          ..moveTo(14 * s, 3 * s)
+          ..lineTo(14 * s, 21 * s)
+          ..lineTo(22 * s, 21 * s)
+          ..close();
+    final stroke =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.6 * s
+          ..strokeJoin = StrokeJoin.round;
+    final fill =
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill;
+    canvas.drawPath(left, stroke);
+    canvas.drawPath(right, stroke);
+    canvas.drawPath(fillLeft ? left : right, fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HandLayoutIconPainter old) =>
+      old.fillLeft != fillLeft || old.color != color;
 }
 
 /// Wraps non-loaded states with a minimal back-button app bar.
