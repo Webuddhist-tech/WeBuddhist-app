@@ -216,7 +216,6 @@ class GroupEvent {
   /// A plan or a series (never both) marks the event as a puja to enter.
   bool get hasPuja => plan != null || series != null;
 
-  /// By display order, first owns the counts; a legacy single ref is the only one.
   List<GroupEventAccumulation> get allAccumulations {
     if (accumulations.isNotEmpty) return accumulations;
     final legacy = groupAccumulator;
