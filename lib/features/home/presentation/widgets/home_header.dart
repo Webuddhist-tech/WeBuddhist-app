@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/constants/app_config.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/features/home/domain/entities/today_event.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/streak_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/today_events_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_navigation.dart';
@@ -99,7 +100,6 @@ class HomeEventBanner extends ConsumerStatefulWidget {
 
 class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
   Timer? _ticker;
-  bool _opening = false;
 
   @override
   void initState() {
@@ -120,47 +120,43 @@ class _HomeEventBannerState extends ConsumerState<HomeEventBanner> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final todayEvent = ref
+    final events = ref
         .watch(todayEventsFutureProvider)
         .maybeWhen(
           data:
               (eventsEither) => eventsEither.fold(
-                (_) => null,
-                (events) => events.isNotEmpty ? events.first : null,
+                (_) => const <TodayEvent>[],
+                (events) => events,
               ),
-          orElse: () => null,
+          orElse: () => const <TodayEvent>[],
         );
 
-    if (todayEvent == null) {
+    if (events.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final items = [
+      for (final event in events)
+        TodayEventBadgeItem(
+          id: event.id,
+          name: event.name,
+          avatarUrl: event.groupAvatarUrl,
+          isLive: event.isActiveAt(now),
+        ),
+    ];
+    // Live events lead so the collapsed pill shows one that is on now.
+    final liveFirst = [
+      ...items.where((item) => item.isLive),
+      ...items.where((item) => !item.isLive),
+    ];
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       child: TodayEventBadge(
-        label: todayEvent.name,
-        isLive: todayEvent.isActiveAt(now),
-        isBusy: _opening,
-        onTap:
-            todayEvent.id.isEmpty || _opening
-                ? null
-                : () => _openLiveEvent(todayEvent.id),
+        events: liveFirst,
+        onSelect: (eventId) => openHomeLiveEvent(context, eventId),
       ),
     );
-  }
-
-  /// Joined in-person attendees land on the text the live session is reading.
-  /// Joined online attendees land on the same screen as Join online. Anyone
-  /// who has not chosen, and any session that has not started, stays on the
-  /// event page. That page is pushed underneath so Back returns to it.
-  Future<void> _openLiveEvent(String eventId) async {
-    if (_opening) return;
-    setState(() => _opening = true);
-    try {
-      await openHomeLiveEvent(context, ref, eventId);
-    } finally {
-      if (mounted) setState(() => _opening = false);
-    }
   }
 }
 

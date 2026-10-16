@@ -36,6 +36,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_participation_dialog.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
+import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_navigation.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
@@ -357,6 +358,20 @@ class _GroupEventDetailScreenState
 
   Future<void> _openInitialEntry(HomeLiveEventEntry entry) async {
     switch (entry) {
+      case HomeLiveEventResolveEntry():
+        final GroupEvent? event;
+        try {
+          final either = await ref.read(
+            groupEventDetailProvider(widget.eventId).future,
+          );
+          event = either.fold((_) => null, (loaded) => loaded);
+        } catch (_) {
+          return;
+        }
+        if (event == null || !mounted) return;
+        final resolved = await resolveHomeLiveEntry(ref, event);
+        if (resolved == null || !mounted) return;
+        await _openInitialEntry(resolved);
       case HomeLiveEventOnlineEntry(:final event):
         await _enterPuja(event);
       case HomeLiveEventInPersonEntry(
