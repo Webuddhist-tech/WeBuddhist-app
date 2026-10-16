@@ -24,7 +24,9 @@ jobs:
     if: >-
       github.event_name == 'pull_request' ||
       github.event_name == 'push' ||
-      (contains(github.event.comment.body, '@amchi') && github.event.comment.user.type != 'Bot')
+      (contains(github.event.comment.body, '@amchi') &&
+        github.event.comment.user.type != 'Bot' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -39,7 +41,7 @@ jobs:
           key: amchi-${{ runner.os }}-${{ github.event.pull_request.head.sha || (github.event.issue.number && format('pr-{0}-{1}', github.event.issue.number, github.run_id)) || github.sha }}
           restore-keys: amchi-${{ runner.os }}-
 
-      - uses: TenzDelek/Amchi@v2
+      - uses: TenzDelek/Amchi@59e3f0157fd6ad5851299628390954c353ed821a # v2.1.0
         timeout-minutes: 18
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
