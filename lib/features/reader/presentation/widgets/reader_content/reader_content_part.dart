@@ -253,18 +253,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   // ─── Sources and the rendered list ───────────────────────────────────────
 
-  /// Source [index] as the list draws it, read outside build.
-  _SourceView _readView(int index) {
-    final params = widget.sources[index];
-    final state = ref.read(readerNotifierProvider(params));
-    return _SourceView(
-      index: index,
-      params: params,
-      state: state,
-      items: _itemsOf(index, state),
-      dualSettings: ref.read(readerDualSettingsProvider(params.settingsScope)),
-    );
-  }
+  /// Source [index] as the list draws it, read outside build. Built like
+  /// [_watchView], so indices into it match the rendered list's.
+  _SourceView _readView(int index) => _viewOf(index, watch: false);
 
   /// The items of source [index] from [state]: its task verses under the
   /// headings that enclose them, or the whole loaded text.
@@ -276,9 +267,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return collapsedReaderItems(content, active.toSet());
   }
 
-  List<_Entry> _currentEntries() => _layoutFor([
-    for (var i = 0; i < _startedCount; i++) _readView(i),
-  ]).entries;
+  List<_Entry> _currentEntries() =>
+      _layoutFor([
+        for (var i = 0; i < _startedCount; i++) _readView(i),
+      ]).entries;
 
   /// The list, source after source, with the page's table of contents.
   ///
@@ -507,7 +499,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       ),
       isScrollControlled: true,
       builder:
-          (_) => _SectionsSheet(snapshot: _sections, current: _currentSectionKey),
+          (_) =>
+              _SectionsSheet(snapshot: _sections, current: _currentSectionKey),
     );
     if (picked == null || !mounted) return;
     _scrollToEntry(picked);
@@ -856,7 +849,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final params = widget.sources[index];
     for (var i = 0; i < _startedCount; i++) {
       if (i == index) continue;
-      final other = ref.read(readerNotifierProvider(widget.sources[i]).notifier);
+      final other = ref.read(
+        readerNotifierProvider(widget.sources[i]).notifier,
+      );
       other.selectSegment(null);
       other.closeCommentary();
       other.closeTranslation();
@@ -977,19 +972,30 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return index == null ? null : content.items[index].segmentId;
   }
 
-  /// The started source holding [position] and its local id, if loaded.
+  /// Source [index]'s local id for the live segment when it shows it: a
+  /// collapsed source fetches whole pages but shows only its own verses, so
+  /// a later source of the same text may be the one showing it.
+  String? _shownLocalIdFor(int index, ReaderState state, String segmentId) {
+    final content = state.content;
+    if (content == null) return null;
+    final local = _localSegmentIdFor(content, segmentId);
+    if (local == null) return null;
+    final active = _activeSegmentIdsOf(index, state);
+    return active.isEmpty || active.contains(local) ? local : null;
+  }
+
+  /// The started source showing [position] and its local id, if loaded.
   (int, String)? _locateLive(RecitationLivePosition position) {
     for (var i = 0; i < _startedCount; i++) {
-      final content = ref.read(readerNotifierProvider(widget.sources[i])).content;
-      if (content == null) continue;
-      final local = _localSegmentIdFor(content, position.segmentId);
+      final state = ref.read(readerNotifierProvider(widget.sources[i]));
+      final local = _shownLocalIdFor(i, state, position.segmentId);
       if (local != null) return (i, local);
     }
     return null;
   }
 
-  /// Local id of the line to highlight, or null when it is not in the loaded
-  /// content or the user opted out. Also records its rendered index.
+  /// Local id of the line to highlight, or null when no source shows it or
+  /// the user opted out. Also records its rendered index.
   String? _resolveLiveHighlight(
     List<_SourceView> views,
     List<_Entry> entries,
@@ -1001,9 +1007,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       return null;
     }
     for (final view in views) {
-      final content = view.state.content;
-      if (content == null) continue;
-      final localId = _localSegmentIdFor(content, position.segmentId);
+      final localId = _shownLocalIdFor(
+        view.index,
+        view.state,
+        position.segmentId,
+      );
       if (localId == null) continue;
       _liveIndex = _entryIndexForSegment(entries, localId, source: view.index);
       return localId;
@@ -1229,12 +1237,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   // ─── Build ───────────────────────────────────────────────────────────────
 
   /// Source [index] as the list draws it, watched in build.
-  _SourceView _watchView(int index) {
+  _SourceView _watchView(int index) => _viewOf(index, watch: true);
+
+  /// Source [index] as the list draws it: watched in build, read outside it.
+  /// A read takes the translation only once build has subscribed to it.
+  _SourceView _viewOf(int index, {required bool watch}) {
+    T get<T>(ProviderListenable<T> provider) =>
+        watch ? ref.watch(provider) : ref.read(provider);
     final params = widget.sources[index];
-    final state = ref.watch(readerNotifierProvider(params));
-    final dualSettings = ref.watch(
-      readerDualSettingsProvider(params.settingsScope),
-    );
+    final state = get(readerNotifierProvider(params));
+    final dualSettings = get(readerDualSettingsProvider(params.settingsScope));
 
     // Subscribe to the secondary provider only when the user has enabled
     // the secondary AND picked a version. The autoDispose family means we
@@ -1251,19 +1263,22 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // translation aligned against the new primary.
     final effectivePrimaryTextId =
         dualSettings.primary.versionId ?? params.textId;
-    final SecondaryReaderState? secondaryState =
-        secondaryActive
-            ? ref.watch(
-              secondaryReaderProvider(
-                SecondaryReaderKey(
-                  textId: effectivePrimaryTextId,
-                  versionId: secondaryVersionId,
-                  initialSegmentId: _resolveSecondaryInitialSegmentId(index),
-                ),
-              ),
-            )
-            : null;
-    _scheduleSecondarySync(index, secondaryState);
+    SecondaryReaderState? secondaryState;
+    if (secondaryActive) {
+      // The key's identity ignores the anchor; a read leaves it uncomputed.
+      final secondary = secondaryReaderProvider(
+        SecondaryReaderKey(
+          textId: effectivePrimaryTextId,
+          versionId: secondaryVersionId,
+          initialSegmentId:
+              watch
+                  ? _resolveSecondaryInitialSegmentId(index)
+                  : _secondaryInitialSegmentId[index],
+        ),
+      );
+      if (watch || ref.exists(secondary)) secondaryState = get(secondary);
+    }
+    if (watch) _scheduleSecondarySync(index, secondaryState);
 
     final items = _itemsOf(index, state);
     final collapsed = _activeSegmentIdsOf(index, state).isNotEmpty;
@@ -1448,7 +1463,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   language: text.language,
                   position: text.source + 1,
                   // One text: nothing to count.
-                  total: widget.sources.length > 1 ? widget.sources.length : null,
+                  total:
+                      widget.sources.length > 1 ? widget.sources.length : null,
                   onTap: _openSectionsSheet,
                 );
               },
@@ -1557,7 +1573,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         if (view.translationHeadings) return const SizedBox.shrink();
         final (title, headingLanguage) = _headingText(view, section);
         return SectionHeader(
-          section: title == section.title ? section : section.copyWith(title: title),
+          section:
+              title == section.title ? section : section.copyWith(title: title),
           depth: depth,
           language: headingLanguage,
           showDivider: depth > 0 && (previousItem?.isSegment ?? false),
@@ -1775,8 +1792,13 @@ class _PageText {
       listEquals(other.sections, sections);
 
   @override
-  int get hashCode =>
-      Object.hash(source, title, language, entryIndex, Object.hashAll(sections));
+  int get hashCode => Object.hash(
+    source,
+    title,
+    language,
+    entryIndex,
+    Object.hashAll(sections),
+  );
 }
 
 /// The list and its table of contents, as built from the started sources.
@@ -1942,32 +1964,32 @@ class _SectionsSheet extends StatelessWidget {
                       // Full width, or the column centres the header.
                       SizedBox(
                         width: double.infinity,
-                        child:                       Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.reader_sections_title,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (pages.title.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: Text(
-                                  pages.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: muted,
-                                  ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.reader_sections_title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                          ],
+                              if (pages.title.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Text(
+                                    pages.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: muted,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
                       ),
                       Divider(height: 1, color: theme.dividerColor),
                       Flexible(
@@ -2044,7 +2066,12 @@ class _SectionRow extends StatelessWidget {
       onTap: onTap,
       child: Container(
         color: isCurrent ? accent.withValues(alpha: 0.06) : null,
-        padding: EdgeInsets.fromLTRB(nested ? 56 : 20, nested ? 10 : 14, 20, nested ? 10 : 14),
+        padding: EdgeInsets.fromLTRB(
+          nested ? 56 : 20,
+          nested ? 10 : 14,
+          20,
+          nested ? 10 : 14,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
