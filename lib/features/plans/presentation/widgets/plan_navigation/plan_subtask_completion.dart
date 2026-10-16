@@ -50,14 +50,11 @@ class PlanSubtaskCompletionService {
     final currentItem = navContext.currentItem;
     if (currentItem == null || currentItem.isCompleted) return;
 
-    // A combined inline item completes every subtask it shows.
-    final completedBlocks = {
-      for (final b in currentItem.blocks)
-        if (b.isCompleted && b.subtaskId != null) b.subtaskId!,
-    };
+    // A combined item completes every subtask it shows.
+    final alreadyDone = currentItem.completedSubtaskIds;
     final pending =
         currentItem.subtaskIds
-            .where((id) => !completedBlocks.contains(id))
+            .where((id) => !alreadyDone.contains(id))
             .where((id) => !_completedSubtaskIds.contains(id))
             .toList();
     if (pending.isEmpty) return;

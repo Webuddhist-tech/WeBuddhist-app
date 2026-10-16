@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
@@ -30,13 +31,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ReaderParams {
   final String textId;
   final String? segmentId;
+
+  /// The verses shown, in order (a plan task's range); null shows the text.
+  final List<String>? segmentIds;
   final NavigationContext? navigationContext;
 
   const ReaderParams({
     required this.textId,
     this.segmentId,
+    this.segmentIds,
     this.navigationContext,
   });
+
+  /// True when only [segmentIds] are shown, loaded forward from the first.
+  bool get isCollapsed => segmentIds != null && segmentIds!.isNotEmpty;
 
   /// Language requested by navigation (e.g. the All chants picker).
   String? get language => navigationContext?.language;
@@ -54,11 +62,17 @@ class ReaderParams {
     return other is ReaderParams &&
         other.textId == textId &&
         other.segmentId == segmentId &&
+        listEquals(other.segmentIds, segmentIds) &&
         other.language == language;
   }
 
   @override
-  int get hashCode => Object.hash(textId, segmentId, language);
+  int get hashCode => Object.hash(
+    textId,
+    segmentId,
+    Object.hashAll(segmentIds ?? const []),
+    language,
+  );
 }
 
 /// Notifier for managing reader state
@@ -164,8 +178,6 @@ class ReaderNotifier extends StateNotifier<ReaderState>
 
     final requestedSegmentId = useNavParams ? _params.segmentId : null;
     var initialSegmentId = requestedSegmentId;
-    final initialSize =
-        useNavParams ? _params.navigationContext?.initialPageSize : null;
 
     state = state.copyWith(
       status: ReaderStatus.loading,
@@ -184,10 +196,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       );
       _ContentWindow window;
       try {
-        window = await _fetchWindow(
-          segmentId: initialSegmentId,
-          size: initialSize,
-        );
+        window = await _fetchWindow(segmentId: initialSegmentId);
       } catch (e) {
         // The root was found but its page failed: open the edition the user
         // asked for as itself, as when the root cannot be resolved at all.
@@ -196,10 +205,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         }
         _logger.warning('Root of ${_params.textId} failed to load', e);
         initialSegmentId = requestedSegmentId;
-        window = await _fetchWindow(
-          segmentId: initialSegmentId,
-          size: initialSize,
-        );
+        window = await _fetchWindow(segmentId: initialSegmentId);
       }
       if (_isDisposed) return;
       if (state.openedTranslation != null) {
@@ -356,7 +362,6 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         segmentId: _params.segmentId,
         content: content,
       ),
-      initialSize: _params.navigationContext?.initialPageSize,
     );
     try {
       await _ref.read(
@@ -373,7 +378,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   Future<Map<String, String>> _alignNavigationSegments(String rootId) async {
     final ids = <String>{
       if (_params.segmentId != null) _params.segmentId!,
-      ...?_params.navigationContext?.currentSegmentIds,
+      ...?_params.segmentIds,
     };
     if (ids.isEmpty) return const {};
     final texts = _ref.read(textsRepositoryProvider);
@@ -422,17 +427,20 @@ class ReaderNotifier extends StateNotifier<ReaderState>
 
   /// The page at [segmentId] (the first page when null). When the target sits
   /// near the top, the previous page is merged in first so the widget gets
-  /// it at a stable index. Throws when the page itself cannot be fetched.
-  Future<_ContentWindow> _fetchWindow({String? segmentId, int? size}) async {
+  /// it at a stable index; a collapsed reader never shows it, so it is not
+  /// fetched. Throws when the page itself cannot be fetched.
+  Future<_ContentWindow> _fetchWindow({String? segmentId}) async {
     final response = await _fetchContent(
       segmentId: segmentId,
       direction: 'next',
-      size: size,
     );
     var content = _flattener.flatten(response.content.sections);
     var hasPreviousPage = response.currentSegmentPosition > 1;
 
-    if (hasPreviousPage && segmentId != null && !_isDisposed) {
+    if (hasPreviousPage &&
+        segmentId != null &&
+        !_isDisposed &&
+        !_params.isCollapsed) {
       final targetIndex = content.getSegmentIndex(segmentId);
       final firstSegmentId = content.firstSegmentId;
       if (targetIndex != null &&
@@ -480,23 +488,14 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     String? sourceTextId,
   }) async {
     if (_isDisposed) return null;
-    final loaded = _localSegmentId(state.content, segmentId);
-    if (loaded != null) return loaded;
     try {
-      var target = segmentId;
-      if (sourceTextId != null && sourceTextId.isNotEmpty) {
-        final aligned = await _ref
-            .read(textsRepositoryProvider)
-            .alignSegment(
-              segmentId: segmentId,
-              sourceTextId: sourceTextId,
-              targetTextId: await _resolveDetailsTextId(),
-            );
-        if (_isDisposed) return null;
-        if (aligned != null) target = aligned;
-        final alreadyLoaded = _localSegmentId(state.content, target);
-        if (alreadyLoaded != null) return alreadyLoaded;
-      }
+      final target = await resolveSegment(
+        segmentId,
+        sourceTextId: sourceTextId,
+      );
+      if (_isDisposed || target == null) return null;
+      final alreadyLoaded = _localSegmentId(state.content, target);
+      if (alreadyLoaded != null) return alreadyLoaded;
       final window = await _fetchWindow(segmentId: target);
       if (_isDisposed) return null;
       final local = _localSegmentId(window.content, target);
@@ -514,6 +513,34 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       return local;
     } catch (e) {
       _logger.debug('Jump to segment $segmentId failed: $e');
+      return null;
+    }
+  }
+
+  /// This version's id for [segmentId]: the loaded line it names (directly
+  /// or through `mappings`), else its verse aligned from [sourceTextId] when
+  /// the operator reads another edition, else [segmentId] itself. Null when
+  /// the alignment failed. Nothing is fetched.
+  Future<String?> resolveSegment(
+    String segmentId, {
+    String? sourceTextId,
+  }) async {
+    if (_isDisposed) return null;
+    final loaded = _localSegmentId(state.content, segmentId);
+    if (loaded != null) return loaded;
+    if (sourceTextId == null || sourceTextId.isEmpty) return segmentId;
+    try {
+      final aligned = await _ref
+          .read(textsRepositoryProvider)
+          .alignSegment(
+            segmentId: segmentId,
+            sourceTextId: sourceTextId,
+            targetTextId: await _resolveDetailsTextId(),
+          );
+      if (_isDisposed) return null;
+      return aligned ?? segmentId;
+    } catch (e) {
+      _logger.debug('Aligning segment $segmentId failed: $e');
       return null;
     }
   }
@@ -538,7 +565,6 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   Future<ReaderResponse> _fetchContent({
     String? segmentId,
     required String direction,
-    int? size,
   }) async {
     // Note: do NOT update _activeVersionId here. It's the id of the
     // currently-LOADED version (set after a successful initial fetch in
@@ -563,7 +589,6 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       segmentId: segmentId,
       direction: direction,
       language: (language != null && language.isNotEmpty) ? language : null,
-      size: size,
     );
 
     final stopwatch = Stopwatch()..start();
@@ -722,26 +747,27 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     return _params.textId;
   }
 
-  /// Load the next page of content
-  Future<void> loadNextPage() async {
-    if (_isDisposed || state.isLoadingNext || !state.hasNextPage) return;
+  /// Appends the page at [fromSegmentId], or the one after the loaded window.
+  /// True when a page was merged in.
+  Future<bool> loadNextPage({String? fromSegmentId}) async {
+    if (_isDisposed || state.isLoadingNext || !state.hasNextPage) return false;
 
     state = state.copyWith(isLoadingNext: true);
     final fetchVersionId = _activeVersionId;
 
     try {
-      final lastSegmentId = state.content?.lastSegmentId;
-      if (lastSegmentId == null) {
+      final anchorSegmentId = fromSegmentId ?? state.content?.lastSegmentId;
+      if (anchorSegmentId == null) {
         state = state.copyWith(isLoadingNext: false);
-        return;
+        return false;
       }
 
       final response = await _fetchContent(
-        segmentId: lastSegmentId,
+        segmentId: anchorSegmentId,
         direction: 'next',
       );
 
-      if (_isDisposed) return;
+      if (_isDisposed) return false;
       if (_activeVersionId != fetchVersionId) {
         // Primary version changed mid-pagination — discard the stale page.
         // Clear the loading flag so the bottom skeleton doesn't get stuck if
@@ -750,7 +776,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
           'Discarding stale next page from versionId=$fetchVersionId',
         );
         state = state.copyWith(isLoadingNext: false);
-        return;
+        return false;
       }
 
       // Merge new content with existing
@@ -766,10 +792,12 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         hasNextPage: response.hasNextPage,
         totalSegments: response.totalSegments,
       );
+      return true;
     } catch (e, stackTrace) {
       _logger.error('Failed to load next page', e, stackTrace);
-      if (_isDisposed) return;
+      if (_isDisposed) return false;
       state = state.copyWith(isLoadingNext: false);
+      return false;
     }
   }
 
