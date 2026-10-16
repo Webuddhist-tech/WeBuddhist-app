@@ -40,6 +40,7 @@ class TodayEventModel {
   final String? timezone;
   final String? startTime;
   final String? endTime;
+  final String? groupAvatarUrl;
 
   TodayEventModel({
     required this.id,
@@ -49,6 +50,7 @@ class TodayEventModel {
     this.timezone,
     this.startTime,
     this.endTime,
+    this.groupAvatarUrl,
   });
 
   factory TodayEventModel.fromJson(Map<String, dynamic> json) {
@@ -62,6 +64,7 @@ class TodayEventModel {
       timezone: json['timezone'] as String?,
       startTime: json['start_time'] as String?,
       endTime: json['end_time'] as String?,
+      groupAvatarUrl: json['group_avatar_url'] as String?,
     );
   }
 
@@ -74,6 +77,7 @@ class TodayEventModel {
       'timezone': timezone,
       'start_time': startTime,
       'end_time': endTime,
+      'group_avatar_url': groupAvatarUrl,
     };
   }
 
@@ -87,6 +91,7 @@ class TodayEventModel {
       timezone: timezone,
       startTime: startTime,
       endTime: endTime,
+      groupAvatarUrl: groupAvatarUrl,
     );
   }
 

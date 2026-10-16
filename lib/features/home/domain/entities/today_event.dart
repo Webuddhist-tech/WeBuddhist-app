@@ -15,6 +15,9 @@ class TodayEvent {
   final String? startTime;
   final String? endTime;
 
+  /// Avatar of the group hosting the event; null shows a placeholder.
+  final String? groupAvatarUrl;
+
   const TodayEvent({
     required this.id,
     required this.name,
@@ -24,6 +27,7 @@ class TodayEvent {
     this.timezone,
     this.startTime,
     this.endTime,
+    this.groupAvatarUrl,
   });
 
   /// True while [now] is inside the event's dates and its daily window.

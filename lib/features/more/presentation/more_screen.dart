@@ -100,7 +100,7 @@ class MoreScreen extends ConsumerWidget {
               context,
               icon: AppAssets.feedback,
               title: localizations.settings_feedback_row,
-              onTap: () => FeedbackSheet.show(context),
+              onTap: () => FeedbackSheet.open(context, ref),
               showTrailingIcon: false,
             ),
             const SizedBox(height: 24),

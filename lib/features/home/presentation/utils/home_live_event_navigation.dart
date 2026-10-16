@@ -3,7 +3,6 @@ import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
-import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitation_live_client.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitation_live_peek.dart';
@@ -54,86 +53,70 @@ HomeLiveEventKind resolveHomeLiveEventKind({
       : HomeLiveEventKind.inPerson;
 }
 
-/// Opens the event page, or the event page with the live destination above
-/// it. Falls back to the event page when the attendee has not chosen, or
-/// when the live session has no current text. An in-person attendee then
-/// opens today's plan, which opens the text live tracking is on.
-Future<void> openHomeLiveEvent(
-  BuildContext context,
+/// Pushes the event page straight away so it can show its own loading state.
+/// The page then resolves the live destination with [resolveHomeLiveEntry].
+void openHomeLiveEvent(BuildContext context, String eventId) {
+  context.push(
+    AppRoutes.groupEventPath(eventId),
+    extra: const HomeLiveEventResolveEntry(),
+  );
+}
+
+/// The live destination for a joined attendee once the event has loaded.
+/// Null stays on the event page: the attendee has not chosen, or the live
+/// session has no current text. An in-person attendee then opens today's
+/// plan, which opens the text live tracking is on.
+Future<HomeLiveEventEntry?> resolveHomeLiveEntry(
   WidgetRef ref,
-  String eventId,
+  GroupEvent event,
 ) async {
-  final path = AppRoutes.groupEventPath(eventId);
-  void openEventPage() {
-    if (!context.mounted) return;
-    context.push(path);
-  }
-
-  final GroupEvent? event;
-  try {
-    final either = await ref.read(groupEventDetailProvider(eventId).future);
-    event = either.fold((_) => null, (loaded) => loaded);
-  } catch (_) {
-    openEventPage();
-    return;
-  }
-  if (!context.mounted) return;
-  if (event == null) {
-    openEventPage();
-    return;
-  }
-
+  final isHybrid = isGroupEventHybrid(event);
+  final isOnlineFormat = isGroupEventOnline(event);
   final participation = participationForHomeLiveShortcut(
     isJoined: event.isJoined,
     participationType: event.myParticipationType,
-    isHybrid: isGroupEventHybrid(event),
-    isOnlineFormat: isGroupEventOnline(event),
+    isHybrid: isHybrid,
+    isOnlineFormat: isOnlineFormat,
   );
-  if (participation == null) {
-    openEventPage();
-    return;
-  }
+  if (participation == null) return null;
 
-  final position = await _currentLivePosition(ref, eventId);
-  if (!context.mounted) return;
+  final position = await _currentLivePosition(ref, event.id);
   final kind = resolveHomeLiveEventKind(
     isJoined: event.isJoined,
     participationType: event.myParticipationType,
-    isHybrid: isGroupEventHybrid(event),
-    isOnlineFormat: isGroupEventOnline(event),
+    isHybrid: isHybrid,
+    isOnlineFormat: isOnlineFormat,
     liveSessionStarted: position != null,
   );
-  switch (kind) {
-    case HomeLiveEventKind.eventPage:
-      openEventPage();
-    case HomeLiveEventKind.online:
-      context.push(path, extra: HomeLiveEventOnlineEntry(event));
-    case HomeLiveEventKind.inPerson:
-      context.push(
-        path,
-        extra: HomeLiveEventInPersonEntry(
-          event: event,
-          liveTextId: position!.textId,
-          liveSegmentId: position.segmentId,
-        ),
-      );
-  }
+  return switch (kind) {
+    HomeLiveEventKind.eventPage => null,
+    HomeLiveEventKind.online => HomeLiveEventOnlineEntry(event),
+    HomeLiveEventKind.inPerson => HomeLiveEventInPersonEntry(
+      event: event,
+      liveTextId: position!.textId,
+      liveSegmentId: position.segmentId,
+    ),
+  };
 }
 
 Future<RecitationLivePosition?> _currentLivePosition(
   WidgetRef ref,
   String eventId,
 ) async {
+  // Read before the await: the event page may close meanwhile, and its ref
+  // throws once disposed.
+  final authService = ref.read(authServiceProvider);
+  final baseUrl = ref.read(apiConfigProvider).baseUrl;
   final String? token;
   try {
-    token = await ref.read(authServiceProvider).getValidAccessToken();
+    token = await authService.getValidAccessToken();
   } catch (_) {
     return null;
   }
   if (token == null || token.isEmpty) return null;
 
   final uri = RecitationLiveClient.liveUri(
-    restBaseUrl: ref.read(apiConfigProvider).baseUrl,
+    restBaseUrl: baseUrl,
     token: token,
     eventId: eventId,
   );

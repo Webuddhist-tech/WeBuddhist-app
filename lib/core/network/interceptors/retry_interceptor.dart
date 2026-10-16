@@ -33,6 +33,12 @@ class RetryInterceptor extends Interceptor {
   /// Base delay for exponential backoff
   static const baseDelay = Duration(milliseconds: 1000);
 
+  /// Set `extra[noRetryKey] = true` on a request whose replay could repeat
+  /// a side effect: a timeout on a POST the server already committed would
+  /// store it twice. Only network retries are skipped; the 401 refresh still
+  /// replays, since a 401 means nothing was stored.
+  static const noRetryKey = 'no_retry';
+
   /// Currently refreshing token flag
   bool _isRefreshing = false;
 
@@ -190,6 +196,7 @@ class RetryInterceptor extends Interceptor {
 
   /// Check if error should be retried
   bool _shouldRetry(DioException error) {
+    if (error.requestOptions.extra[noRetryKey] == true) return false;
     return error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
