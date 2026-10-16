@@ -141,4 +141,67 @@ void main() {
       expect(event.prayerRequestCount, 0);
     });
   });
+
+  group('GroupEventModel accumulations', () {
+    test('sorts accumulations by display order and keeps their format', () {
+      final event =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'group_accumulator_id': 'a2',
+            'group_accumulator': {'id': 'a2', 'name': 'Good deeds'},
+            'accumulations': [
+              {
+                'id': 'row2',
+                'group_accumulator_id': 'a2',
+                'event_format': 'offline',
+                'display_order': 2,
+                'group_accumulator': {'id': 'a2', 'name': 'Good deeds'},
+              },
+              {
+                'id': 'row1',
+                'group_accumulator_id': 'a1',
+                'event_format': 'online',
+                'display_order': 1,
+                'group_accumulator': {'id': 'a1', 'name': 'Health'},
+              },
+            ],
+          }).toEntity();
+
+      expect(
+        event.allAccumulations.map((a) => a.groupAccumulatorId),
+        ['a1', 'a2'],
+      );
+      expect(event.allAccumulations.first.groupAccumulator?.name, 'Health');
+      expect(
+        event.allAccumulations.first.format,
+        GroupEventParticipationType.online,
+      );
+      expect(
+        event.allAccumulations.last.format,
+        GroupEventParticipationType.offline,
+      );
+    });
+
+    test('falls back to the single group_accumulator', () {
+      final event =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'group_accumulator_id': 'a1',
+            'group_accumulator': {'id': 'a1', 'name': 'Good deeds'},
+          }).toEntity();
+
+      expect(event.accumulations, isEmpty);
+      expect(event.allAccumulations.single.groupAccumulatorId, 'a1');
+      expect(event.allAccumulations.single.format, isNull);
+    });
+
+    test('has no accumulation when the event carries none', () {
+      final event =
+          GroupEventModel.fromJson({'id': 'e1', 'group_id': 'g1'}).toEntity();
+
+      expect(event.allAccumulations, isEmpty);
+    });
+  });
 }

@@ -86,6 +86,23 @@ class GroupEventPracticeRef {
   });
 }
 
+/// One accumulation on an event; the format says which attendance mode feeds it.
+class GroupEventAccumulation {
+  final String id;
+  final String groupAccumulatorId;
+  final GroupEventParticipationType? format;
+  final int displayOrder;
+  final GroupEventPracticeRef? groupAccumulator;
+
+  const GroupEventAccumulation({
+    required this.id,
+    required this.groupAccumulatorId,
+    this.format,
+    this.displayOrder = 0,
+    this.groupAccumulator,
+  });
+}
+
 class GroupEventRecurrence {
   /// "DAILY", "WEEKLY", "MONTHLY" or "YEARLY".
   final String frequency;
@@ -132,6 +149,7 @@ class GroupEvent {
   final GroupEventPracticeRef? series;
   final GroupEventPracticeRef? accumulator;
   final GroupEventPracticeRef? groupAccumulator;
+  final List<GroupEventAccumulation> accumulations;
   final GroupEventPracticeRef? groupRecitationCollection;
   final String? groupName;
   final String? groupAvatarUrl;
@@ -182,6 +200,7 @@ class GroupEvent {
     this.series,
     this.accumulator,
     this.groupAccumulator,
+    this.accumulations = const [],
     this.groupRecitationCollection,
     this.groupName,
     this.groupAvatarUrl,
@@ -196,6 +215,19 @@ class GroupEvent {
 
   /// A plan or a series (never both) marks the event as a puja to enter.
   bool get hasPuja => plan != null || series != null;
+
+  List<GroupEventAccumulation> get allAccumulations {
+    if (accumulations.isNotEmpty) return accumulations;
+    final legacy = groupAccumulator;
+    if (legacy == null) return const [];
+    return [
+      GroupEventAccumulation(
+        id: '',
+        groupAccumulatorId: legacy.id,
+        groupAccumulator: legacy,
+      ),
+    ];
+  }
 
   /// First YouTube stream by display order, or null when the event has none.
   GroupEventLink? get liveYoutubeLink {

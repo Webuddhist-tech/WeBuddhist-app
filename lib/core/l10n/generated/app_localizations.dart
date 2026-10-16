@@ -1768,6 +1768,18 @@ abstract class AppLocalizations {
   /// **'Online view'**
   String get connect_event_view_online;
 
+  /// No description provided for @connect_event_accumulation_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get connect_event_accumulation_online;
+
+  /// No description provided for @connect_event_accumulation_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'In-person'**
+  String get connect_event_accumulation_in_person;
+
   /// No description provided for @connect_event_has_ended.
   ///
   /// In en, this message translates to:
