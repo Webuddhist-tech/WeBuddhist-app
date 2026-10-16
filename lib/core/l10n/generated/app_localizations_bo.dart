@@ -154,6 +154,9 @@ class AppLocalizationsBo extends AppLocalizations {
       'མཉེན་ཆས་འདིའི་ཕྱི་ལ་བགྲངས་པའི་ཕྲེང་འཁོར་འདིར་སྣོན།';
 
   @override
+  String get mala_rounds_unit => 'rounds';
+
+  @override
   String get mala_add_to_bookmark => 'དཔེ་རྟགས།';
 
   @override

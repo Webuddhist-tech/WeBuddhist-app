@@ -154,6 +154,9 @@ class AppLocalizationsMn extends AppLocalizations {
       'Энэ аппаас гадуур хийсэн эрхийн ээлжийнхээ тоог нэмнэ үү';
 
   @override
+  String get mala_rounds_unit => 'rounds';
+
+  @override
   String get mala_add_to_bookmark => 'Хавчуурга';
 
   @override

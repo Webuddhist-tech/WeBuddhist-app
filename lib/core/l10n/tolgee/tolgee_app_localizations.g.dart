@@ -313,6 +313,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get mala_rounds_unit => TolgeeBridge.get(
+    localeName,
+    'mala_rounds_unit',
+    () => _fallback.mala_rounds_unit,
+  );
+
+  @override
   String get mala_add_to_bookmark => TolgeeBridge.get(
     localeName,
     'mala_add_to_bookmark',

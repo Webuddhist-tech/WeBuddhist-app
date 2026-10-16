@@ -153,6 +153,9 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस ऐप के बाहर किए गए माला राउंड की संख्या जोड़ें';
 
   @override
+  String get mala_rounds_unit => 'rounds';
+
+  @override
   String get mala_add_to_bookmark => 'बुकमार्क';
 
   @override

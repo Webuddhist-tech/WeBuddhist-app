@@ -367,14 +367,20 @@ abstract class AppLocalizations {
   /// No description provided for @mala_add_rounds_title.
   ///
   /// In en, this message translates to:
-  /// **'Add mala rounds:'**
+  /// **'Add mala rounds'**
   String get mala_add_rounds_title;
 
   /// No description provided for @mala_add_rounds_message.
   ///
   /// In en, this message translates to:
-  /// **'Add the mala rounds you did outside the app'**
+  /// **'Add the number of mala rounds you did outside this app'**
   String get mala_add_rounds_message;
+
+  /// No description provided for @mala_rounds_unit.
+  ///
+  /// In en, this message translates to:
+  /// **'rounds'**
+  String get mala_rounds_unit;
 
   /// No description provided for @mala_add_to_bookmark.
   ///

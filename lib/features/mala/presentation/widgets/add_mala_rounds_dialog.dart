@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:wheel_picker/wheel_picker.dart';
 
 /// Dialog for adding mala rounds completed outside the app.
 ///
@@ -24,20 +24,25 @@ class _AddMalaRoundsDialog extends StatefulWidget {
 }
 
 class _AddMalaRoundsDialogState extends State<_AddMalaRoundsDialog> {
-  static const _maxRounds = 9;
+  /// Highest pick on the wheel; it loops back to 0 past this.
+  static const _maxRounds = 99;
+  static const _itemExtent = 36.0;
+  static const _magnification = 1.25;
 
+  late final WheelPickerController _controller = WheelPickerController(
+    itemCount: _maxRounds + 1,
+  );
   int _rounds = 0;
 
-  void _decrement() {
-    if (_rounds <= 0) return;
-    HapticFeedback.selectionClick();
-    setState(() => _rounds--);
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  void _increment() {
-    if (_rounds >= _maxRounds) return;
+  void _onIndexChanged(int index, WheelPickerInteractionType _) {
     HapticFeedback.selectionClick();
-    setState(() => _rounds++);
+    setState(() => _rounds = index);
   }
 
   void _confirm() {
@@ -53,6 +58,8 @@ class _AddMalaRoundsDialogState extends State<_AddMalaRoundsDialog> {
     final isDark = theme.brightness == Brightness.dark;
     final backgroundColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.goldLight;
+    final onSurface = theme.colorScheme.onSurface;
+    final useTibetan = context.isTibetanLocale;
 
     return Dialog(
       backgroundColor: backgroundColor,
@@ -73,47 +80,66 @@ class _AddMalaRoundsDialogState extends State<_AddMalaRoundsDialog> {
             const SizedBox(height: 8),
             Text(
               l10n.mala_add_rounds_message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-              ),
+              style: theme.textTheme.bodyMedium?.copyWith(color: onSurface),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _RoundStepButton(
-                  icon: AppAssets.minusCircle,
-                  onPressed: _rounds > 0 ? _decrement : null,
-                ),
-                const SizedBox(width: 20),
-                Container(
-                  width: 72,
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color:
-                        isDark ? AppColors.surfaceDark : AppColors.surfaceWhite,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color:
-                          isDark ? AppColors.cardBorderDark : AppColors.grey300,
+            SizedBox(
+              height: _itemExtent * 5.5,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Selected-row pill behind the wheel.
+                  Container(
+                    height: _itemExtent * _magnification,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surfaceDark : AppColors.grey100,
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    context.isTibetanLocale
-                        ? toTibetanDigits(_rounds)
-                        : '$_rounds',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+                  WheelPicker(
+                    controller: _controller,
+                    looping: true,
+                    onIndexChanged: _onIndexChanged,
+                    selectedIndexColor: onSurface,
+                    style: const WheelPickerStyle(
+                      itemExtent: _itemExtent,
+                      magnification: _magnification,
+                      squeeze: 1.1,
+                      diameterRatio: 1.6,
+                      surroundingOpacity: 0.35,
+                    ),
+                    builder:
+                        (context, index) => Center(
+                          child: Text(
+                            useTibetan ? toTibetanDigits(index) : '$index',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: onSurface,
+                            ),
+                          ),
+                        ),
+                  ),
+                  // Unit label beside the selected number; taps fall through.
+                  IgnorePointer(
+                    child: Row(
+                      children: [
+                        const Spacer(),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 28),
+                            child: Text(
+                              l10n.mala_rounds_unit,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 20),
-                _RoundStepButton(
-                  icon: AppAssets.plusCircle,
-                  onPressed: _rounds < _maxRounds ? _increment : null,
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             FilledButton(
@@ -144,29 +170,6 @@ class _AddMalaRoundsDialogState extends State<_AddMalaRoundsDialog> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _RoundStepButton extends StatelessWidget {
-  const _RoundStepButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final enabled = onPressed != null;
-    final color = enabled ? theme.colorScheme.onSurface : AppColors.grey400;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: Icon(icon, size: 40, color: color),
       ),
     );
   }

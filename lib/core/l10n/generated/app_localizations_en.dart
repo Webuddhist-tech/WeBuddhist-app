@@ -148,11 +148,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_add_mala_round => 'Add mala round';
 
   @override
-  String get mala_add_rounds_title => 'Add mala rounds:';
+  String get mala_add_rounds_title => 'Add mala rounds';
 
   @override
   String get mala_add_rounds_message =>
-      'Add the mala rounds you did outside the app';
+      'Add the number of mala rounds you did outside this app';
+
+  @override
+  String get mala_rounds_unit => 'rounds';
 
   @override
   String get mala_add_to_bookmark => 'Bookmark';
