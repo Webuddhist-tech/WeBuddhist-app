@@ -346,6 +346,7 @@ class _GroupEventDetailScreenState
             _EventTab.about => _AboutPanel(event: event, isDark: isDark),
             _EventTab.accumulations => _EventAccumulatorPanel(
               accumulations: accumulations,
+              primary: event.primaryAccumulation!,
               showFormat: isGroupEventHybrid(event),
               groupTitle: event.groupName,
               isAttending: isAttending,
@@ -1653,8 +1654,12 @@ class _EventLinkText extends ConsumerWidget {
 /// Accumulations tab: progress, leaderboard / own count, and a way to log
 /// recitations done with the livestream or offline.
 class _EventAccumulatorPanel extends ConsumerStatefulWidget {
-  /// First by display order owns the leaderboard, contributions and logging.
+  /// Sorted by display order; rendered bottom-up so the first sits by the
+  /// leaderboard.
   final List<GroupEventAccumulation> accumulations;
+
+  /// Owns the leaderboard, contributions and logging.
+  final GroupEventAccumulation primary;
 
   /// Hybrid events label each row with the attendance mode that feeds it.
   final bool showFormat;
@@ -1667,6 +1672,7 @@ class _EventAccumulatorPanel extends ConsumerStatefulWidget {
 
   const _EventAccumulatorPanel({
     required this.accumulations,
+    required this.primary,
     required this.showFormat,
     required this.groupTitle,
     required this.isAttending,
@@ -1683,7 +1689,7 @@ class _EventAccumulatorPanelState
   bool _showContributions = false;
   bool _isJoining = false;
 
-  String get _primaryId => widget.accumulations.first.groupAccumulatorId;
+  String get _primaryId => widget.primary.groupAccumulatorId;
 
   @override
   Widget build(BuildContext context) {
@@ -1718,7 +1724,7 @@ class _EventAccumulatorPanelState
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final accumulations = widget.accumulations;
+    final rows = widget.accumulations.reversed.toList();
     // Keep the counts notifier alive while the panel is visible so an offline
     // add is not racing its own dispose during sync.
     if (detail.presetAccumulatorId.isNotEmpty) {
@@ -1728,27 +1734,30 @@ class _EventAccumulatorPanelState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AccumulationProgress(
-          title: detail.title,
-          formatLabel: _formatLabel(context, accumulations.first),
-          accumulator: detail,
-          isDark: isDark,
-        ),
-        // Only the first accumulation takes counts; the rest show progress.
-        for (final accumulation in accumulations.skip(1)) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
+        // Only the primary accumulation takes counts; the rest show progress.
+        for (final (index, accumulation) in rows.indexed) ...[
+          if (index > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Divider(
+                height: 1,
+                thickness: 1,
+                color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
+              ),
             ),
-          ),
-          _SecondaryAccumulationRow(
-            accumulation: accumulation,
-            formatLabel: _formatLabel(context, accumulation),
-            isDark: isDark,
-          ),
+          if (accumulation.groupAccumulatorId == _primaryId)
+            _AccumulationProgress(
+              title: detail.title,
+              formatLabel: _formatLabel(context, accumulation),
+              accumulator: detail,
+              isDark: isDark,
+            )
+          else
+            _SecondaryAccumulationRow(
+              accumulation: accumulation,
+              formatLabel: _formatLabel(context, accumulation),
+              isDark: isDark,
+            ),
         ],
         const SizedBox(height: 20),
         Row(

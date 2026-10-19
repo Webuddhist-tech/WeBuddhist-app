@@ -229,6 +229,17 @@ class GroupEvent {
     ];
   }
 
+  /// The first online accumulation takes counts and the leaderboard; without
+  /// one, the first by display order does.
+  GroupEventAccumulation? get primaryAccumulation {
+    final all = allAccumulations;
+    if (all.isEmpty) return null;
+    return all.firstWhere(
+      (item) => item.format == GroupEventParticipationType.online,
+      orElse: () => all.first,
+    );
+  }
+
   /// First YouTube stream by display order, or null when the event has none.
   GroupEventLink? get liveYoutubeLink {
     final playable = youtube.where((link) => link.url.trim().isNotEmpty);

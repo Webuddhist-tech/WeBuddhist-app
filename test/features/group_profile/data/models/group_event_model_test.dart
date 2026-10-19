@@ -183,6 +183,64 @@ void main() {
       );
     });
 
+    test('the first online accumulation is primary whatever its order', () {
+      final event =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'accumulations': [
+              {
+                'id': 'row1',
+                'group_accumulator_id': 'a1',
+                'event_format': 'offline',
+                'display_order': 1,
+              },
+              {
+                'id': 'row2',
+                'group_accumulator_id': 'a2',
+                'event_format': 'online',
+                'display_order': 2,
+              },
+              {
+                'id': 'row3',
+                'group_accumulator_id': 'a3',
+                'event_format': 'online',
+                'display_order': 3,
+              },
+            ],
+          }).toEntity();
+
+      expect(
+        event.allAccumulations.map((a) => a.groupAccumulatorId),
+        ['a1', 'a2', 'a3'],
+      );
+      expect(event.primaryAccumulation?.groupAccumulatorId, 'a2');
+    });
+
+    test('without an online accumulation the first is primary', () {
+      final event =
+          GroupEventModel.fromJson({
+            'id': 'e1',
+            'group_id': 'g1',
+            'accumulations': [
+              {
+                'id': 'row2',
+                'group_accumulator_id': 'a2',
+                'event_format': 'offline',
+                'display_order': 2,
+              },
+              {
+                'id': 'row1',
+                'group_accumulator_id': 'a1',
+                'event_format': 'offline',
+                'display_order': 1,
+              },
+            ],
+          }).toEntity();
+
+      expect(event.primaryAccumulation?.groupAccumulatorId, 'a1');
+    });
+
     test('falls back to the single group_accumulator', () {
       final event =
           GroupEventModel.fromJson({
@@ -195,6 +253,7 @@ void main() {
       expect(event.accumulations, isEmpty);
       expect(event.allAccumulations.single.groupAccumulatorId, 'a1');
       expect(event.allAccumulations.single.format, isNull);
+      expect(event.primaryAccumulation?.groupAccumulatorId, 'a1');
     });
 
     test('has no accumulation when the event carries none', () {
@@ -202,6 +261,7 @@ void main() {
           GroupEventModel.fromJson({'id': 'e1', 'group_id': 'g1'}).toEntity();
 
       expect(event.allAccumulations, isEmpty);
+      expect(event.primaryAccumulation, isNull);
     });
   });
 }
