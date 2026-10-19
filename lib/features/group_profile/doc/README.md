@@ -35,6 +35,7 @@ group_profile/
 | Main screen | `presentation/screens/group_profile_screen.dart` |
 | Provider hub | `presentation/providers/group_profile_providers.dart` |
 | Posts | `group_post_providers.dart`, `group_profile_posts_tab.dart`, `group_post_composer_screen.dart`, `group_post_add_link_sheet.dart`, `group_post_add_in_app_content_sheet.dart` (followed events/practices/chants → `/open/...` deep link via `GroupPostInAppContent`, posted unshortened so the feed's link card can route it in-app via `openLink`) |
+| Events composer | `group_event_composer_screen.dart` (4-step wizard; step 1 "About" in `group_event_about_step.dart`: cover via `group_event_cover_sheet.dart`, per-language name/markdown description via `group_event_languages_sheet.dart` + `group_event_markdown_editor.dart`; languages from `/languages`; draft in `GroupEventDraft`; steps 2–4 and submit pending) |
 | Accumulator | `group_accumulator_providers.dart`, `group_accumulator_screen.dart` |
 | Recitation collection | `group_recitation_collection_screen.dart`, completion providers |
 | Repository | `GroupProfileRepositoryInterface` (note naming) |

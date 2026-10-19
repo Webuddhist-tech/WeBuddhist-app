@@ -6364,6 +6364,266 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_events_empty_message => TolgeeBridge.get(
+    localeName,
+    'group_events_empty_message',
+    () => _fallback.group_events_empty_message,
+  );
+
+  @override
+  String get group_event_create_button => TolgeeBridge.get(
+    localeName,
+    'group_event_create_button',
+    () => _fallback.group_event_create_button,
+  );
+
+  @override
+  String get group_event_new_title => TolgeeBridge.get(
+    localeName,
+    'group_event_new_title',
+    () => _fallback.group_event_new_title,
+  );
+
+  @override
+  String group_event_step_of(int current, int total) => TolgeeBridge.format(
+    localeName,
+    'group_event_step_of',
+    <String, Object>{'current': current, 'total': total},
+    () => _fallback.group_event_step_of(current, total),
+  );
+
+  @override
+  String get group_event_step_about => TolgeeBridge.get(
+    localeName,
+    'group_event_step_about',
+    () => _fallback.group_event_step_about,
+  );
+
+  @override
+  String get group_event_cover_image => TolgeeBridge.get(
+    localeName,
+    'group_event_cover_image',
+    () => _fallback.group_event_cover_image,
+  );
+
+  @override
+  String get group_event_add_cover_photo => TolgeeBridge.get(
+    localeName,
+    'group_event_add_cover_photo',
+    () => _fallback.group_event_add_cover_photo,
+  );
+
+  @override
+  String get group_event_change_cover => TolgeeBridge.get(
+    localeName,
+    'group_event_change_cover',
+    () => _fallback.group_event_change_cover,
+  );
+
+  @override
+  String get group_event_name_and_description => TolgeeBridge.get(
+    localeName,
+    'group_event_name_and_description',
+    () => _fallback.group_event_name_and_description,
+  );
+
+  @override
+  String get group_event_name_label => TolgeeBridge.get(
+    localeName,
+    'group_event_name_label',
+    () => _fallback.group_event_name_label,
+  );
+
+  @override
+  String get group_event_name_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_name_hint',
+    () => _fallback.group_event_name_hint,
+  );
+
+  @override
+  String get group_event_description_label => TolgeeBridge.get(
+    localeName,
+    'group_event_description_label',
+    () => _fallback.group_event_description_label,
+  );
+
+  @override
+  String get group_event_description_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_description_hint',
+    () => _fallback.group_event_description_hint,
+  );
+
+  @override
+  String get group_event_write => TolgeeBridge.get(
+    localeName,
+    'group_event_write',
+    () => _fallback.group_event_write,
+  );
+
+  @override
+  String get group_event_preview => TolgeeBridge.get(
+    localeName,
+    'group_event_preview',
+    () => _fallback.group_event_preview,
+  );
+
+  @override
+  String get group_event_preview_empty => TolgeeBridge.get(
+    localeName,
+    'group_event_preview_empty',
+    () => _fallback.group_event_preview_empty,
+  );
+
+  @override
+  String get group_event_continue => TolgeeBridge.get(
+    localeName,
+    'group_event_continue',
+    () => _fallback.group_event_continue,
+  );
+
+  @override
+  String get group_event_name_required_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_name_required_hint',
+    () => _fallback.group_event_name_required_hint,
+  );
+
+  @override
+  String get group_event_languages_title => TolgeeBridge.get(
+    localeName,
+    'group_event_languages_title',
+    () => _fallback.group_event_languages_title,
+  );
+
+  @override
+  String get group_event_languages_add => TolgeeBridge.get(
+    localeName,
+    'group_event_languages_add',
+    () => _fallback.group_event_languages_add,
+  );
+
+  @override
+  String get group_event_languages_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_languages_hint',
+    () => _fallback.group_event_languages_hint,
+  );
+
+  @override
+  String get group_event_cover_group_cover => TolgeeBridge.get(
+    localeName,
+    'group_event_cover_group_cover',
+    () => _fallback.group_event_cover_group_cover,
+  );
+
+  @override
+  String get group_event_cover_choose_photo => TolgeeBridge.get(
+    localeName,
+    'group_event_cover_choose_photo',
+    () => _fallback.group_event_cover_choose_photo,
+  );
+
+  @override
+  String get group_event_cover_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_cover_hint',
+    () => _fallback.group_event_cover_hint,
+  );
+
+  @override
+  String get group_event_cover_use => TolgeeBridge.get(
+    localeName,
+    'group_event_cover_use',
+    () => _fallback.group_event_cover_use,
+  );
+
+  @override
+  String get group_event_discard_title => TolgeeBridge.get(
+    localeName,
+    'group_event_discard_title',
+    () => _fallback.group_event_discard_title,
+  );
+
+  @override
+  String get group_event_discard_message => TolgeeBridge.get(
+    localeName,
+    'group_event_discard_message',
+    () => _fallback.group_event_discard_message,
+  );
+
+  @override
+  String get group_event_format_bold => TolgeeBridge.get(
+    localeName,
+    'group_event_format_bold',
+    () => _fallback.group_event_format_bold,
+  );
+
+  @override
+  String get group_event_format_italic => TolgeeBridge.get(
+    localeName,
+    'group_event_format_italic',
+    () => _fallback.group_event_format_italic,
+  );
+
+  @override
+  String get group_event_format_heading => TolgeeBridge.get(
+    localeName,
+    'group_event_format_heading',
+    () => _fallback.group_event_format_heading,
+  );
+
+  @override
+  String get group_event_format_bullet_list => TolgeeBridge.get(
+    localeName,
+    'group_event_format_bullet_list',
+    () => _fallback.group_event_format_bullet_list,
+  );
+
+  @override
+  String get group_event_format_numbered_list => TolgeeBridge.get(
+    localeName,
+    'group_event_format_numbered_list',
+    () => _fallback.group_event_format_numbered_list,
+  );
+
+  @override
+  String get group_event_format_link => TolgeeBridge.get(
+    localeName,
+    'group_event_format_link',
+    () => _fallback.group_event_format_link,
+  );
+
+  @override
+  String get group_event_link_title => TolgeeBridge.get(
+    localeName,
+    'group_event_link_title',
+    () => _fallback.group_event_link_title,
+  );
+
+  @override
+  String get group_event_link_text_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_link_text_hint',
+    () => _fallback.group_event_link_text_hint,
+  );
+
+  @override
+  String get group_event_link_url_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_link_url_hint',
+    () => _fallback.group_event_link_url_hint,
+  );
+
+  @override
+  String get group_event_link_insert => TolgeeBridge.get(
+    localeName,
+    'group_event_link_insert',
+    () => _fallback.group_event_link_insert,
+  );
+
+  @override
   String get mala_failed_load_catalogue_error => TolgeeBridge.get(
     localeName,
     'mala_failed_load_catalogue_error',

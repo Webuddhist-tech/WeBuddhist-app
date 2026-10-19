@@ -3084,6 +3084,123 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_events_empty => 'No events yet';
 
   @override
+  String get group_events_empty_message =>
+      'Create your first gathering — members will be notified.';
+
+  @override
+  String get group_event_create_button => 'Create event';
+
+  @override
+  String get group_event_new_title => 'New event';
+
+  @override
+  String group_event_step_of(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get group_event_step_about => 'About';
+
+  @override
+  String get group_event_cover_image => 'Cover image';
+
+  @override
+  String get group_event_add_cover_photo => 'Add cover photo';
+
+  @override
+  String get group_event_change_cover => 'Change';
+
+  @override
+  String get group_event_name_and_description => 'Name & description';
+
+  @override
+  String get group_event_name_label => 'Event name';
+
+  @override
+  String get group_event_name_hint => 'e.g. Wednesday group practice';
+
+  @override
+  String get group_event_description_label => 'Description (optional)';
+
+  @override
+  String get group_event_description_hint =>
+      'What will you practise together? Anything to bring?';
+
+  @override
+  String get group_event_write => 'Write';
+
+  @override
+  String get group_event_preview => 'Preview';
+
+  @override
+  String get group_event_preview_empty => 'Nothing to preview yet';
+
+  @override
+  String get group_event_continue => 'Continue';
+
+  @override
+  String get group_event_name_required_hint => 'Add an event name to continue';
+
+  @override
+  String get group_event_languages_title => 'Event languages';
+
+  @override
+  String get group_event_languages_add => 'Add language';
+
+  @override
+  String get group_event_languages_hint =>
+      'Preselected from your space\'s languages. Readers see the event in their language when it\'s available.';
+
+  @override
+  String get group_event_cover_group_cover => 'Group cover';
+
+  @override
+  String get group_event_cover_choose_photo => 'Choose from photos';
+
+  @override
+  String get group_event_cover_hint =>
+      'Square crops are previewed in the events list.';
+
+  @override
+  String get group_event_cover_use => 'Use this image';
+
+  @override
+  String get group_event_discard_title => 'Discard event?';
+
+  @override
+  String get group_event_discard_message => 'You\'ll lose what you\'ve entered';
+
+  @override
+  String get group_event_format_bold => 'Bold';
+
+  @override
+  String get group_event_format_italic => 'Italic';
+
+  @override
+  String get group_event_format_heading => 'Heading';
+
+  @override
+  String get group_event_format_bullet_list => 'Bullet list';
+
+  @override
+  String get group_event_format_numbered_list => 'Numbered list';
+
+  @override
+  String get group_event_format_link => 'Link';
+
+  @override
+  String get group_event_link_title => 'Insert link';
+
+  @override
+  String get group_event_link_text_hint => 'Text';
+
+  @override
+  String get group_event_link_url_hint => 'https://';
+
+  @override
+  String get group_event_link_insert => 'Insert';
+
+  @override
   String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override

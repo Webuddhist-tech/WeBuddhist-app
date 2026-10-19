@@ -5672,6 +5672,228 @@ abstract class AppLocalizations {
   /// **'No events yet'**
   String get group_events_empty;
 
+  /// No description provided for @group_events_empty_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first gathering — members will be notified.'**
+  String get group_events_empty_message;
+
+  /// No description provided for @group_event_create_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Create event'**
+  String get group_event_create_button;
+
+  /// No description provided for @group_event_new_title.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get group_event_new_title;
+
+  /// No description provided for @group_event_step_of.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String group_event_step_of(int current, int total);
+
+  /// No description provided for @group_event_step_about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get group_event_step_about;
+
+  /// No description provided for @group_event_cover_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover image'**
+  String get group_event_cover_image;
+
+  /// No description provided for @group_event_add_cover_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Add cover photo'**
+  String get group_event_add_cover_photo;
+
+  /// No description provided for @group_event_change_cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get group_event_change_cover;
+
+  /// No description provided for @group_event_name_and_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Name & description'**
+  String get group_event_name_and_description;
+
+  /// No description provided for @group_event_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Event name'**
+  String get group_event_name_label;
+
+  /// No description provided for @group_event_name_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Wednesday group practice'**
+  String get group_event_name_hint;
+
+  /// No description provided for @group_event_description_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get group_event_description_label;
+
+  /// No description provided for @group_event_description_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'What will you practise together? Anything to bring?'**
+  String get group_event_description_hint;
+
+  /// No description provided for @group_event_write.
+  ///
+  /// In en, this message translates to:
+  /// **'Write'**
+  String get group_event_write;
+
+  /// No description provided for @group_event_preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get group_event_preview;
+
+  /// No description provided for @group_event_preview_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to preview yet'**
+  String get group_event_preview_empty;
+
+  /// No description provided for @group_event_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get group_event_continue;
+
+  /// No description provided for @group_event_name_required_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an event name to continue'**
+  String get group_event_name_required_hint;
+
+  /// No description provided for @group_event_languages_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Event languages'**
+  String get group_event_languages_title;
+
+  /// No description provided for @group_event_languages_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add language'**
+  String get group_event_languages_add;
+
+  /// No description provided for @group_event_languages_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Preselected from your space\'s languages. Readers see the event in their language when it\'s available.'**
+  String get group_event_languages_hint;
+
+  /// No description provided for @group_event_cover_group_cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Group cover'**
+  String get group_event_cover_group_cover;
+
+  /// No description provided for @group_event_cover_choose_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from photos'**
+  String get group_event_cover_choose_photo;
+
+  /// No description provided for @group_event_cover_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Square crops are previewed in the events list.'**
+  String get group_event_cover_hint;
+
+  /// No description provided for @group_event_cover_use.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this image'**
+  String get group_event_cover_use;
+
+  /// No description provided for @group_event_discard_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard event?'**
+  String get group_event_discard_title;
+
+  /// No description provided for @group_event_discard_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll lose what you\'ve entered'**
+  String get group_event_discard_message;
+
+  /// No description provided for @group_event_format_bold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get group_event_format_bold;
+
+  /// No description provided for @group_event_format_italic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get group_event_format_italic;
+
+  /// No description provided for @group_event_format_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading'**
+  String get group_event_format_heading;
+
+  /// No description provided for @group_event_format_bullet_list.
+  ///
+  /// In en, this message translates to:
+  /// **'Bullet list'**
+  String get group_event_format_bullet_list;
+
+  /// No description provided for @group_event_format_numbered_list.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbered list'**
+  String get group_event_format_numbered_list;
+
+  /// No description provided for @group_event_format_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get group_event_format_link;
+
+  /// No description provided for @group_event_link_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert link'**
+  String get group_event_link_title;
+
+  /// No description provided for @group_event_link_text_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get group_event_link_text_hint;
+
+  /// No description provided for @group_event_link_url_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://'**
+  String get group_event_link_url_hint;
+
+  /// No description provided for @group_event_link_insert.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert'**
+  String get group_event_link_insert;
+
   /// No description provided for @mala_failed_load_catalogue_error.
   ///
   /// In en, this message translates to:

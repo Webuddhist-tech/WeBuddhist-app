@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
@@ -457,7 +458,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         isPracticesLoading || isEventsLoading || isPostsLoading;
     final tabs = <_GroupProfileTab>[
       if (hasPosts || canPost) _GroupProfileTab.posts,
-      if (hasEvents) _GroupProfileTab.events,
+      if (hasEvents || canPost) _GroupProfileTab.events,
       if (hasPractices) _GroupProfileTab.practices,
       _GroupProfileTab.members,
     ];
@@ -758,6 +759,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         isDark: isDark,
         lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
+        canCreate: canPost,
+        onCreateEvent: () => _onCreateEvent(profile),
       ),
       _GroupProfileTab.practices => _buildPracticesTab(
         profile,
@@ -802,6 +805,20 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     notifier.prependPost(_withGroupFields(result.post, profile));
     notifier.loadInitial();
     if (result.saved) _showPostSnackBar(context.l10n.group_post_published);
+  }
+
+  /// Same gate as posts: `can_create_content` plus confirmed membership.
+  Future<void> _onCreateEvent(GroupProfile profile) async {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+    if (!_canPublishPosts(profile)) return;
+
+    final created = await GroupEventComposerScreen.show(context, profile);
+    if (created == null || !mounted) return;
+    ref.invalidate(groupEventsProvider(profile.id));
   }
 
   Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {

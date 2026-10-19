@@ -131,6 +131,14 @@ class AppAssets {
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
+  static const IconData image = PhosphorIconsRegular.image;
+
+  // ========== MARKDOWN EDITOR ICONS ==========
+  static const IconData textBold = PhosphorIconsRegular.textB;
+  static const IconData textItalic = PhosphorIconsRegular.textItalic;
+  static const IconData textHeading = PhosphorIconsRegular.textH;
+  static const IconData listBullets = PhosphorIconsRegular.listBullets;
+  static const IconData listNumbers = PhosphorIconsRegular.listNumbers;
 
   // ========== TIMER ICONS ==========
   static const IconData timerAmbientSound = PhosphorIconsRegular.waveform;
