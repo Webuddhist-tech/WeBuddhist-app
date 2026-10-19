@@ -18,7 +18,11 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_accumulator_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_detail_screen.dart';
 import 'package:flutter_pecha/features/home/presentation/utils/home_live_event_entry.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
+import 'package:flutter_pecha/features/feedback/presentation/screens/help_contact_screen.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/chats_screen.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/screens/direct_chat_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/group_chat_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_recitation_collection_screen.dart';
@@ -196,6 +200,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.chats,
         name: 'chats',
         builder: (context, state) => const ClarityMask(child: ChatsScreen()),
+      ),
+      GoRoute(
+        path: AppRoutes.directChat,
+        name: 'direct-chat',
+        builder: (context, state) {
+          final extra = state.extra;
+          return ClarityMask(
+            child: DirectChatScreen(
+              roomId: state.pathParameters['roomId'] ?? '',
+              initialRoom: extra is ChatRoomDTO ? extra : null,
+            ),
+          );
+        },
+      ),
+      // Masked like chat: the message can describe the user's own situation.
+      GoRoute(
+        path: AppRoutes.helpContact,
+        name: 'help-contact',
+        builder: (context, state) {
+          final extra = state.extra;
+          return ClarityMask(
+            child: HelpContactScreen(
+              initialTopic: extra is HelpTopic ? extra : null,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.groupChat,

@@ -4,7 +4,8 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/services/app_share/app_share_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/features/feedback/presentation/widgets/feedback_sheet.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
+import 'package:flutter_pecha/features/feedback/presentation/screens/help_contact_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -43,7 +44,12 @@ class HomeSharePrompt extends ConsumerWidget {
           _PromptButton(
             icon: AppAssets.feedback,
             label: localizations.settings_feedback_row,
-            onTap: () => FeedbackSheet.open(context, ref),
+            onTap:
+                () => HelpContactScreen.open(
+                  context,
+                  ref,
+                  topic: HelpTopic.ideaFeedback,
+                ),
           ),
         ],
       ),

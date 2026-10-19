@@ -21,6 +21,11 @@ class ChatRoomDTO extends Equatable {
   final String? otherUserEmail;
   final String? otherUserName;
 
+  /// The viewer's direct chat with the WeBuddhist Team, which the backend
+  /// starts when they send a message from Help & contact. Not in the spec
+  /// yet; absent reads as false, so the room just shows as a plain chat.
+  final bool isOfficial;
+
   const ChatRoomDTO({
     required this.id,
     required this.createdBy,
@@ -38,6 +43,7 @@ class ChatRoomDTO extends Equatable {
     this.otherUserId,
     this.otherUserEmail,
     this.otherUserName,
+    this.isOfficial = false,
   });
 
   factory ChatRoomDTO.fromJson(Map<String, dynamic> json) {
@@ -62,6 +68,7 @@ class ChatRoomDTO extends Equatable {
       otherUserId: json['other_user_id']?.toString(),
       otherUserEmail: json['other_user_email'] as String?,
       otherUserName: json['other_user_name'] as String?,
+      isOfficial: json['is_official'] == true,
     );
   }
 
@@ -83,6 +90,7 @@ class ChatRoomDTO extends Equatable {
       if (otherUserId != null) 'other_user_id': otherUserId,
       if (otherUserEmail != null) 'other_user_email': otherUserEmail,
       if (otherUserName != null) 'other_user_name': otherUserName,
+      if (isOfficial) 'is_official': true,
     };
   }
 
@@ -104,6 +112,7 @@ class ChatRoomDTO extends Equatable {
     otherUserId,
     otherUserEmail,
     otherUserName,
+    isOfficial,
   ];
 }
 

@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/network/interceptors/retry_interceptor.dart';
 import 'package:flutter_pecha/features/feedback/data/datasource/feedback_remote_datasource.dart';
 import 'package:flutter_pecha/features/feedback/domain/entities/feedback_report.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
@@ -100,6 +101,44 @@ void main() {
         'image/jpeg',
       ]);
     });
+
+    test('sends a picked Help & contact topic as its slug', () async {
+      final form = await FeedbackRemoteDatasource.buildForm(
+        const FeedbackReport(
+          message: 'I translate into Nepali',
+          imagePaths: [],
+          appVersion: '2.5.5 (120)',
+          platform: 'android 14',
+          topic: HelpTopic.helpCollaborate,
+        ),
+      );
+
+      expect(Map.fromEntries(form.fields)['topic'], 'help_collaborate');
+    });
+  });
+
+  group('receiptFrom', () {
+    test('reads the Team chat room the backend posted into', () {
+      expect(
+        FeedbackRemoteDatasource.receiptFrom({
+          'id': 'f1',
+          'room_id': ' r1 ',
+        }).roomId,
+        'r1',
+      );
+    });
+
+    test('a body without a usable room_id is a receipt with no room', () {
+      for (final data in <Object?>[
+        null,
+        'ok',
+        {'id': 'f1'},
+        {'room_id': ''},
+        {'room_id': 42},
+      ]) {
+        expect(FeedbackRemoteDatasource.receiptFrom(data).roomId, isNull);
+      }
+    });
   });
 
   test('attachmentName keeps image extensions and falls back to jpg', () {
@@ -127,6 +166,16 @@ void main() {
       expect(sent.extra[RetryInterceptor.noRetryKey], isTrue);
       expect(sent.sendTimeout, const Duration(seconds: 60));
       expect(sent.receiveTimeout, const Duration(seconds: 60));
+    });
+
+    test('returns the room id from the 201 body', () async {
+      final datasource = _datasource(
+        (_) async => _jsonBody({'id': 'f1', 'room_id': 'team-room'}),
+      );
+
+      final receipt = await datasource.submit(_report());
+
+      expect(receipt.roomId, 'team-room');
     });
 
     test('refuses images over 10 MB before uploading anything', () async {

@@ -3226,16 +3226,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get recitation_live_session_ended => 'Шууд хичээл дууссан';
 
   @override
-  String get feedback_title => 'Санал хүсэлт';
-
-  @override
-  String get feedback_hint =>
-      'Юу сайн ажиллаж байгаа, юу ажиллахгүй байгаа, эсвэл юуг харахыг хүсч байгаагаа бидэнд хэлээрэй...';
-
-  @override
-  String get feedback_images => 'Зургууд';
-
-  @override
   String get feedback_add_image => 'Зураг нэмэх';
 
   @override
@@ -3245,9 +3235,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get feedback_send => 'Илгээх';
-
-  @override
-  String get feedback_sent => 'Баярлалаа! Таны санал хүсэлт илгээгдлээ';
 
   @override
   String get feedback_error_offline =>
@@ -3268,6 +3255,99 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get feedback_error_unavailable =>
       'Санал хүсэлт одоогоор боломжгүй байна';
+
+  @override
+  String get settings_help_contact_row => 'Тусламж ба холбоо';
+
+  @override
+  String get help_contact_title => 'Тусламж ба холбоо';
+
+  @override
+  String get help_contact_intro =>
+      'Асуудал мэдээлэх, санаа хуваалцах, эсвэл туслах, хамтран ажиллах санал тавина уу. Бид мессеж бүрийг уншдаг.';
+
+  @override
+  String get help_contact_message => 'Мессеж';
+
+  @override
+  String get help_contact_photos => 'Зураг эсвэл дэлгэцийн агшин (заавал биш)';
+
+  @override
+  String get help_contact_topic => 'Энэ юуны тухай вэ? (заавал биш)';
+
+  @override
+  String get help_contact_hint_default =>
+      'Та бидэнд юу хэлэхийг хүсэж байна вэ?';
+
+  @override
+  String get help_contact_hint_report_problem =>
+      'Юу болсон бэ, тэрний өмнөхөн та юу хийж байсан бэ? Дэлгэцийн агшин тус болно.';
+
+  @override
+  String get help_contact_hint_idea_feedback =>
+      'WeBuddhist-ийг таны дадлагад илүү тустай болгоход юу хэрэгтэй вэ?';
+
+  @override
+  String get help_contact_hint_suggest_content =>
+      'Та энд ямар сургаал, судар, багшийг үзэхийг хүсэж байна вэ? Холбоос оруулж болно.';
+
+  @override
+  String get help_contact_hint_help_collaborate =>
+      'Та хэрхэн туслахыг хүсэж байна вэ? Ур чадвар, хэл, эсвэл зориулж болох цагаа хуваалцаарай.';
+
+  @override
+  String get help_topic_report_problem => 'Асуудал мэдээлэх';
+
+  @override
+  String get help_topic_idea_feedback => 'Санаа эсвэл санал';
+
+  @override
+  String get help_topic_suggest_content => 'Агуулга санал болгох';
+
+  @override
+  String get help_topic_help_collaborate => 'Туслах эсвэл хамтрах';
+
+  @override
+  String get help_contact_footer =>
+      'Хариулт таны Чатууд хэсэгт WeBuddhist багаас ирнэ.';
+
+  @override
+  String get help_contact_sent_title => 'Мессеж илгээгдлээ';
+
+  @override
+  String get help_contact_sent_body =>
+      'Баярлалаа. Бид ихэвчлэн 1 өдрийн дотор хариулдаг. Хариултыг Чатууд хэсгээс WeBuddhist багаас олох болно.';
+
+  @override
+  String help_contact_sent_body_named(String name) {
+    return 'Баярлалаа, $name. Бид ихэвчлэн 1 өдрийн дотор хариулдаг. Хариултыг Чатууд хэсгээс WeBuddhist багаас олох болно.';
+  }
+
+  @override
+  String get help_contact_your_request => 'ТАНЫ ХҮСЭЛТ';
+
+  @override
+  String get help_contact_open_chat => 'Чат нээх';
+
+  @override
+  String get help_context_sent_from => 'Тусламж ба холбооноос илгээсэн';
+
+  @override
+  String help_context_photos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count зураг',
+      one: '1 зураг',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_official_badge => 'Албан ёсны';
+
+  @override
+  String get chat_team_reply_time => 'Ихэвчлэн 1 өдрийн дотор хариулдаг';
 
   @override
   String get connect_failed_load_discover_groups_error =>

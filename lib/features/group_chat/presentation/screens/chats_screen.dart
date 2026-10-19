@@ -5,12 +5,14 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_rooms_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_rooms_list.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/chat_room_tile.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_error_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Every group chat the viewer belongs to, most recently active first.
+/// Every group chat the viewer belongs to, and their direct chats, most
+/// recently active first.
 class ChatsScreen extends ConsumerStatefulWidget {
   const ChatsScreen({super.key});
 
@@ -65,10 +67,14 @@ class _ChatsScreenState extends ConsumerState<ChatsScreen> {
   }
 
   Future<void> _openRoom(ChatRoomDTO room) async {
-    final groupId = room.groupId;
-    if (groupId == null || groupId.isEmpty) return;
-
-    await context.push(AppRoutes.groupChatPath(groupId));
+    final groupId = room.groupId ?? '';
+    if (groupId.isNotEmpty) {
+      await context.push(AppRoutes.groupChatPath(groupId));
+    } else if (isDirectChatRoom(room)) {
+      await context.push(AppRoutes.directChatPath(room.id), extra: room);
+    } else {
+      return;
+    }
     // Reading a thread clears its unread count server side, and messages may
     // have arrived in other rooms meanwhile.
     if (mounted) await ref.read(chatRoomsProvider.notifier).refresh();

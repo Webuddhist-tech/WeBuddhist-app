@@ -143,7 +143,7 @@ void main() {
       );
     });
 
-    test('private CHAT falls back to Home (no private chat screen yet)', () {
+    test('private CHAT opens the direct chat by room id', () {
       final actual = resolvePushTap({
         'notification_type': 'CHAT_MESSAGE',
         'session_type': 'CHAT',
@@ -151,6 +151,17 @@ void main() {
         'room_id': 'room-1',
         'group_id': '',
         'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.directChat);
+      expect(actual.sourceId, 'room-1');
+    });
+
+    test('private CHAT without a room id falls back to Home', () {
+      final actual = resolvePushTap({
+        'notification_type': 'CHAT_MESSAGE',
+        'session_type': 'CHAT',
+        'chat_kind': 'PRIVATE',
+        'source_id': '',
       });
       expect(actual.target, PushTapTarget.home);
     });

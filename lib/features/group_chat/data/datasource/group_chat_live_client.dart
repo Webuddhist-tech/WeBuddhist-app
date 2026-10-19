@@ -123,17 +123,20 @@ class ChatLiveClient {
   final WebSocketChannel Function(Uri uri) _connect;
   WebSocketChannel? _channel;
 
-  /// Exactly one of [groupId] / [eventId] scopes the socket.
+  /// Exactly one of [groupId] / [eventId] / [receiverId] scopes the socket.
+  /// [receiverId] is the other person in a direct chat; the server answers
+  /// with that pair's room in `room_info`.
   static Uri liveUri({
     required String restBaseUrl,
     required String token,
     String? groupId,
     String? eventId,
+    String? receiverId,
     String? roomId,
   }) {
     assert(
-      (groupId != null) != (eventId != null),
-      'liveUri needs exactly one of groupId or eventId',
+      [groupId, eventId, receiverId].where((id) => id != null).length == 1,
+      'liveUri needs exactly one of groupId, eventId or receiverId',
     );
     final rest = Uri.parse(restBaseUrl);
     final scheme = rest.scheme == 'http' ? 'ws' : 'wss';
@@ -145,6 +148,7 @@ class ChatLiveClient {
         'token': token,
         if (groupId != null) 'group_id': groupId,
         if (eventId != null) 'event_id': eventId,
+        if (receiverId != null) 'receiver_id': receiverId,
         if (roomId != null && roomId.isNotEmpty) 'room_id': roomId,
       },
     );
@@ -234,6 +238,12 @@ class ChatLiveClient {
     return jsonEncode({'type': 'typing', 'is_typing': isTyping});
   }
 
+  static String encodePing() => jsonEncode({'type': 'ping'});
+
+  /// How the server closed the socket, once it has. 1008 means the token or
+  /// the room was refused, and reconnecting would only be refused again.
+  int? get closeCode => _channel?.closeCode;
+
   Stream<ChatLiveEvent> connect(Uri uri) {
     _channel = _connect(uri);
     return _channel!.stream.map((event) {
@@ -262,6 +272,11 @@ class ChatLiveClient {
 
   void sendTyping({required bool isTyping}) {
     _channel?.sink.add(encodeTyping(isTyping: isTyping));
+  }
+
+  /// Keeps an idle socket open; the server answers with `pong`.
+  void sendPing() {
+    _channel?.sink.add(encodePing());
   }
 
   Future<void> dispose() async {

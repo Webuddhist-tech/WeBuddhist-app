@@ -4229,12 +4229,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String group_removed_message(String group, String duration) =>
-      TolgeeBridge.format(
-        localeName,
-        'group_removed_message',
-        <String, Object>{'group': group, 'duration': duration},
-        () => _fallback.group_removed_message(group, duration),
-      );
+      TolgeeBridge.format(localeName, 'group_removed_message', <String, Object>{
+        'group': group,
+        'duration': duration,
+      }, () => _fallback.group_removed_message(group, duration));
 
   @override
   String group_removed_message_no_date(String group) => TolgeeBridge.format(
@@ -5915,12 +5913,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
 
   @override
   String event_replay_session(String day, String session) =>
-      TolgeeBridge.format(
-        localeName,
-        'event_replay_session',
-        <String, Object>{'day': day, 'session': session},
-        () => _fallback.event_replay_session(day, session),
-      );
+      TolgeeBridge.format(localeName, 'event_replay_session', <String, Object>{
+        'day': day,
+        'session': session,
+      }, () => _fallback.event_replay_session(day, session));
 
   @override
   String get event_replay_recording => TolgeeBridge.get(
@@ -6280,27 +6276,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get feedback_title => TolgeeBridge.get(
-    localeName,
-    'feedback_title',
-    () => _fallback.feedback_title,
-  );
-
-  @override
-  String get feedback_hint => TolgeeBridge.get(
-    localeName,
-    'feedback_hint',
-    () => _fallback.feedback_hint,
-  );
-
-  @override
-  String get feedback_images => TolgeeBridge.get(
-    localeName,
-    'feedback_images',
-    () => _fallback.feedback_images,
-  );
-
-  @override
   String get feedback_add_image => TolgeeBridge.get(
     localeName,
     'feedback_add_image',
@@ -6320,13 +6295,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'feedback_send',
     () => _fallback.feedback_send,
-  );
-
-  @override
-  String get feedback_sent => TolgeeBridge.get(
-    localeName,
-    'feedback_sent',
-    () => _fallback.feedback_sent,
   );
 
   @override
@@ -6362,6 +6330,183 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'feedback_error_unavailable',
     () => _fallback.feedback_error_unavailable,
+  );
+
+  @override
+  String get settings_help_contact_row => TolgeeBridge.get(
+    localeName,
+    'settings_help_contact_row',
+    () => _fallback.settings_help_contact_row,
+  );
+
+  @override
+  String get help_contact_title => TolgeeBridge.get(
+    localeName,
+    'help_contact_title',
+    () => _fallback.help_contact_title,
+  );
+
+  @override
+  String get help_contact_intro => TolgeeBridge.get(
+    localeName,
+    'help_contact_intro',
+    () => _fallback.help_contact_intro,
+  );
+
+  @override
+  String get help_contact_message => TolgeeBridge.get(
+    localeName,
+    'help_contact_message',
+    () => _fallback.help_contact_message,
+  );
+
+  @override
+  String get help_contact_photos => TolgeeBridge.get(
+    localeName,
+    'help_contact_photos',
+    () => _fallback.help_contact_photos,
+  );
+
+  @override
+  String get help_contact_topic => TolgeeBridge.get(
+    localeName,
+    'help_contact_topic',
+    () => _fallback.help_contact_topic,
+  );
+
+  @override
+  String get help_contact_hint_default => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_default',
+    () => _fallback.help_contact_hint_default,
+  );
+
+  @override
+  String get help_contact_hint_report_problem => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_report_problem',
+    () => _fallback.help_contact_hint_report_problem,
+  );
+
+  @override
+  String get help_contact_hint_idea_feedback => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_idea_feedback',
+    () => _fallback.help_contact_hint_idea_feedback,
+  );
+
+  @override
+  String get help_contact_hint_suggest_content => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_suggest_content',
+    () => _fallback.help_contact_hint_suggest_content,
+  );
+
+  @override
+  String get help_contact_hint_help_collaborate => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_help_collaborate',
+    () => _fallback.help_contact_hint_help_collaborate,
+  );
+
+  @override
+  String get help_topic_report_problem => TolgeeBridge.get(
+    localeName,
+    'help_topic_report_problem',
+    () => _fallback.help_topic_report_problem,
+  );
+
+  @override
+  String get help_topic_idea_feedback => TolgeeBridge.get(
+    localeName,
+    'help_topic_idea_feedback',
+    () => _fallback.help_topic_idea_feedback,
+  );
+
+  @override
+  String get help_topic_suggest_content => TolgeeBridge.get(
+    localeName,
+    'help_topic_suggest_content',
+    () => _fallback.help_topic_suggest_content,
+  );
+
+  @override
+  String get help_topic_help_collaborate => TolgeeBridge.get(
+    localeName,
+    'help_topic_help_collaborate',
+    () => _fallback.help_topic_help_collaborate,
+  );
+
+  @override
+  String get help_contact_footer => TolgeeBridge.get(
+    localeName,
+    'help_contact_footer',
+    () => _fallback.help_contact_footer,
+  );
+
+  @override
+  String get help_contact_sent_title => TolgeeBridge.get(
+    localeName,
+    'help_contact_sent_title',
+    () => _fallback.help_contact_sent_title,
+  );
+
+  @override
+  String get help_contact_sent_body => TolgeeBridge.get(
+    localeName,
+    'help_contact_sent_body',
+    () => _fallback.help_contact_sent_body,
+  );
+
+  @override
+  String help_contact_sent_body_named(String name) => TolgeeBridge.format(
+    localeName,
+    'help_contact_sent_body_named',
+    <String, Object>{'name': name},
+    () => _fallback.help_contact_sent_body_named(name),
+  );
+
+  @override
+  String get help_contact_your_request => TolgeeBridge.get(
+    localeName,
+    'help_contact_your_request',
+    () => _fallback.help_contact_your_request,
+  );
+
+  @override
+  String get help_contact_open_chat => TolgeeBridge.get(
+    localeName,
+    'help_contact_open_chat',
+    () => _fallback.help_contact_open_chat,
+  );
+
+  @override
+  String get help_context_sent_from => TolgeeBridge.get(
+    localeName,
+    'help_context_sent_from',
+    () => _fallback.help_context_sent_from,
+  );
+
+  @override
+  String help_context_photos(int count) => TolgeeBridge.format(
+    localeName,
+    'help_context_photos',
+    <String, Object>{'count': count},
+    () => _fallback.help_context_photos(count),
+  );
+
+  @override
+  String get chat_official_badge => TolgeeBridge.get(
+    localeName,
+    'chat_official_badge',
+    () => _fallback.chat_official_badge,
+  );
+
+  @override
+  String get chat_team_reply_time => TolgeeBridge.get(
+    localeName,
+    'chat_team_reply_time',
+    () => _fallback.chat_team_reply_time,
   );
 
   @override
