@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
@@ -50,9 +52,13 @@ class _FakeRepository implements FeedbackRepository {
   final Failure? failure;
   final sent = <FeedbackReport>[];
 
+  /// When set, a send waits for it, so a test can act while it is in flight.
+  Completer<void>? gate;
+
   @override
   Future<Either<Failure, FeedbackReceipt>> submit(FeedbackReport report) async {
     sent.add(report);
+    await gate?.future;
     final failure = this.failure;
     return failure == null
         ? const Right(FeedbackReceipt(roomId: 'dm-1'))
@@ -83,8 +89,11 @@ Future<void> _pumpApp(
                 builder:
                     (context, ref, _) => TextButton(
                       onPressed:
-                          () =>
-                              HelpContactScreen.open(context, ref, topic: topic),
+                          () => HelpContactScreen.open(
+                            context,
+                            ref,
+                            topic: topic,
+                          ),
                       child: const Text(_openLabel),
                     ),
               ),
@@ -94,9 +103,8 @@ Future<void> _pumpApp(
         path: AppRoutes.helpContact,
         builder:
             (context, state) => HelpContactScreen(
-              initialTopic: state.extra is HelpTopic
-                  ? state.extra! as HelpTopic
-                  : null,
+              initialTopic:
+                  state.extra is HelpTopic ? state.extra! as HelpTopic : null,
             ),
       ),
       GoRoute(
@@ -140,9 +148,13 @@ Future<void> _pumpApp(
   await tester.pumpAndSettle();
 }
 
-ElevatedButton _sendButton(WidgetTester tester) => tester.widget<ElevatedButton>(
-  find.ancestor(of: find.text('Send'), matching: find.byType(ElevatedButton)),
-);
+ElevatedButton _sendButton(WidgetTester tester) =>
+    tester.widget<ElevatedButton>(
+      find.ancestor(
+        of: find.text('Send'),
+        matching: find.byType(ElevatedButton),
+      ),
+    );
 
 void main() {
   testWidgets('shows the form, with Send off until there is a message', (
@@ -252,10 +264,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HelpContactScreen), findsOneWidget);
-    expect(
-      find.text("You're offline. Please try again later"),
-      findsOneWidget,
-    );
+    expect(find.text("You're offline. Please try again later"), findsOneWidget);
     expect(find.text('Message sent'), findsNothing);
+  });
+
+  testWidgets('cannot be left while a send is in flight', (tester) async {
+    final repository = _FakeRepository()..gate = Completer<void>();
+    await _pumpApp(tester, repository);
+
+    await tester.enterText(find.byType(TextField), 'Hello');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pump();
+
+    // The app bar's back button is off, and a system back is swallowed.
+    final back = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(back.onPressed, isNull);
+    await tester.binding.handlePopRoute();
+    // Not pumpAndSettle: the send spinner never settles.
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(HelpContactScreen), findsOneWidget);
+
+    // Once the send lands, the screen closes into the confirmation as usual.
+    repository.gate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(HelpContactScreen), findsNothing);
+    expect(find.text('Message sent'), findsOneWidget);
+    expect(repository.sent, hasLength(1));
+  });
+
+  testWidgets('can be left again after a failed send', (tester) async {
+    await _pumpApp(tester, _FakeRepository(const NetworkFailure('offline')));
+
+    await tester.enterText(find.byType(TextField), 'Hello');
+    await tester.pump();
+    await tester.tap(find.text('Send'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(HelpContactScreen), findsNothing);
+    expect(find.text(_openLabel), findsOneWidget);
   });
 }

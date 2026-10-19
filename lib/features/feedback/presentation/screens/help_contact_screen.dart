@@ -193,54 +193,70 @@ class _HelpContactScreenState extends ConsumerState<HelpContactScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
+    // Leaving mid-send would still store the message but skip the
+    // "Message sent" sheet, inviting a duplicate resend. The send ends
+    // within the request timeout, so the wait is bounded.
+    return PopScope(
+      canPop: !_sending,
+      child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(AppAssets.arrowLeft),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        title: Text(
-          context.l10n.help_contact_title,
-          strutStyle: context.tibetanStrutStyle(18, compact: true),
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: theme.colorScheme.onSurface,
+        appBar: AppBar(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(AppAssets.arrowLeft),
+            onPressed: _sending ? null : () => Navigator.of(context).maybePop(),
+          ),
+          title: Text(
+            context.l10n.help_contact_title,
+            strutStyle: context.tibetanStrutStyle(18, compact: true),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                children: [
-                  _muted(context, isDark, context.l10n.help_contact_intro, 14),
-                  const SizedBox(height: 20),
-                  _label(context, isDark, context.l10n.help_contact_message),
-                  const SizedBox(height: 8),
-                  _buildMessageField(context, isDark),
-                  const SizedBox(height: 24),
-                  _buildImages(context, isDark),
-                  const SizedBox(height: 24),
-                  _label(context, isDark, context.l10n.help_contact_topic),
-                  const SizedBox(height: 4),
-                  _buildTopics(isDark),
-                  const SizedBox(height: 20),
-                  _muted(context, isDark, context.l10n.help_contact_footer, 12),
-                ],
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  children: [
+                    _muted(
+                      context,
+                      isDark,
+                      context.l10n.help_contact_intro,
+                      14,
+                    ),
+                    const SizedBox(height: 20),
+                    _label(context, isDark, context.l10n.help_contact_message),
+                    const SizedBox(height: 8),
+                    _buildMessageField(context, isDark),
+                    const SizedBox(height: 24),
+                    _buildImages(context, isDark),
+                    const SizedBox(height: 24),
+                    _label(context, isDark, context.l10n.help_contact_topic),
+                    const SizedBox(height: 4),
+                    _buildTopics(isDark),
+                    const SizedBox(height: 20),
+                    _muted(
+                      context,
+                      isDark,
+                      context.l10n.help_contact_footer,
+                      12,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            _buildSubmit(context, isDark),
-          ],
+              _buildSubmit(context, isDark),
+            ],
+          ),
         ),
       ),
     );
@@ -275,7 +291,8 @@ class _HelpContactScreenState extends ConsumerState<HelpContactScreen> {
   }
 
   Widget _buildMessageField(BuildContext context, bool isDark) {
-    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final hintColor = isDark ? AppColors.grey500 : AppColors.grey600;
     final borderColor = isDark ? AppColors.cardBorderDark : AppColors.grey300;
     final length = _messageController.text.characters.length;
