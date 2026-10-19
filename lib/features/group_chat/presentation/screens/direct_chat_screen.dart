@@ -39,8 +39,9 @@ class DirectChatScreen extends ConsumerStatefulWidget {
   ConsumerState<DirectChatScreen> createState() => _DirectChatScreenState();
 }
 
-class _DirectChatScreenState extends ConsumerState<DirectChatScreen>
-    with WidgetsBindingObserver {
+/// The thread, its socket and coming back from the background live in
+/// [DirectChatNotifier]; this is the view, the composer and the push hooks.
+class _DirectChatScreenState extends ConsumerState<DirectChatScreen> {
   final _scrollController = ScrollController();
   final _bodyController = TextEditingController();
   final _bodyFocusNode = FocusNode();
@@ -64,7 +65,6 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen>
   void initState() {
     super.initState();
     _providers = ProviderScope.containerOf(context, listen: false);
-    WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onScroll);
     _pushSub = _providers
         .read(pushMessagingRepositoryProvider)
@@ -93,7 +93,6 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen>
   @override
   void dispose() {
     _disposed = true;
-    WidgetsBinding.instance.removeObserver(this);
     unawaited(_pushSub?.cancel());
     _providers.read(foregroundPushFilterProvider).release(this);
     _scrollController
@@ -102,11 +101,6 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen>
     _bodyController.dispose();
     _bodyFocusNode.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_disposed) _notifier.refresh();
   }
 
   bool _showsPush(Map<String, dynamic> data) {
@@ -118,6 +112,9 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen>
     return chatPushTargets(data, roomId: widget.roomId);
   }
 
+  /// The socket should already have delivered the message. A push for this
+  /// room is the backstop for one that went quiet: the refetch picks up
+  /// what it missed and reopens it if it is down.
   void _onForegroundPush(PushMessage message) {
     if (_disposed) return;
     if (!chatPushTargets(message.data, roomId: widget.roomId)) return;

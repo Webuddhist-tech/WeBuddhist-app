@@ -12,6 +12,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_rem
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/direct_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/direct_chat_screen.dart';
 import 'package:flutter_pecha/features/push_notifications/application/foreground_push_filter.dart';
@@ -134,11 +135,16 @@ class _FakeRepository implements GroupChatRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Future<void> _pumpScreen(WidgetTester tester, _FakeRepository repository) async {
+Future<void> _pumpScreen(
+  WidgetTester tester,
+  _FakeRepository repository,
+) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         groupChatRepositoryProvider.overrideWithValue(repository),
+        // REST only here; the socket is covered by the notifier tests.
+        directChatLiveConfigProvider.overrideWithValue(null),
         userProvider.overrideWith((ref) => _Tenzin()),
         pushMessagingRepositoryProvider.overrideWithValue(
           _SilentPushRepository(),
