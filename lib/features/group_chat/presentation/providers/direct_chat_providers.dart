@@ -4,104 +4,27 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_message_time.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
 class DirectChatState extends Equatable {
   /// Null until the room has been fetched or seeded by whoever opened it.
+  /// The messages are not here: they are the room's
+  /// [groupChatThreadProvider], the same thread group chat runs on.
   final ChatRoomDTO? room;
 
-  /// Newest first, as the API returns them and as `ListView(reverse: true)`
-  /// lays them out.
-  final List<ChatMessageDTO> messages;
-  final bool isLoading;
-  final bool isLoadingMore;
-  final bool hasMore;
-  final int skip;
-  final int total;
-  final String? error;
-
-  /// Whether the first fetch has settled, so the empty state never flashes
-  /// before it lands.
-  final bool hasLoaded;
-
-  const DirectChatState({
-    this.room,
-    this.messages = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
-    this.hasMore = true,
-    this.skip = 0,
-    this.total = 0,
-    this.error,
-    this.hasLoaded = false,
-  });
-
-  DirectChatState copyWith({
-    ChatRoomDTO? room,
-    List<ChatMessageDTO>? messages,
-    bool? isLoading,
-    bool? isLoadingMore,
-    bool? hasMore,
-    int? skip,
-    int? total,
-    String? error,
-    bool? hasLoaded,
-    bool clearError = false,
-  }) {
-    return DirectChatState(
-      room: room ?? this.room,
-      messages: messages ?? this.messages,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
-      skip: skip ?? this.skip,
-      total: total ?? this.total,
-      error: clearError ? null : error ?? this.error,
-      hasLoaded: hasLoaded ?? this.hasLoaded,
-    );
-  }
+  const DirectChatState({this.room});
 
   @override
-  List<Object?> get props => [
-    room,
-    messages,
-    isLoading,
-    isLoadingMore,
-    hasMore,
-    skip,
-    total,
-    error,
-    hasLoaded,
-  ];
-}
-
-/// [held] and [incoming] as one newest-first list, one row per message.
-///
-/// The incoming copy wins, so an edit or a delete that happened since [held]
-/// was fetched shows up. Ties on time break by id, so rows sent in the same
-/// instant do not swap places between refreshes.
-List<ChatMessageDTO> mergeDirectMessages(
-  List<ChatMessageDTO> held,
-  List<ChatMessageDTO> incoming,
-) {
-  final byId = <String, ChatMessageDTO>{
-    for (final message in held) message.id: message,
-    for (final message in incoming) message.id: message,
-  };
-  final merged = byId.values.toList();
-  merged.sort((a, b) {
-    final byTime = b.createdAtLocal.compareTo(a.createdAtLocal);
-    if (byTime != 0) return byTime;
-    return b.id.compareTo(a.id);
-  });
-  return merged;
+  List<Object?> get props => [room];
 }
 
 /// Where a direct chat's socket comes from. A null config leaves the chat on
@@ -131,14 +54,19 @@ bool isOwnDirectMessage(ChatMessageDTO message, String otherUserId) {
   return otherUserId.isNotEmpty && message.senderId != otherUserId;
 }
 
-/// One direct chat: its thread over REST, kept live by the chat socket.
+/// One direct chat's session: the room, the chat socket and sending.
+///
+/// The messages live in the room's [groupChatThreadProvider], which brings
+/// reactions, replies, delete and report the way group chat has them. This
+/// keeps that thread live: what the socket delivers goes into it, and after a
+/// gap — a reconnect, a return from the background, a push — it catches up.
 ///
 /// The socket is scoped by the other person (`receiver_id`) and opens once
-/// the room says who that is. It merges what arrives, pings so an idle socket
-/// stays open, reconnects with backoff after a drop and refetches what it
-/// missed, and closes while the app is in the background. A 1008 close means
-/// the token or the room was refused: that is not retried, and the chat
-/// carries on over REST, which reports a room it cannot reach for itself.
+/// the room says who that is. It pings so an idle socket stays open,
+/// reconnects with backoff after a drop, and closes while the app is in the
+/// background. A 1008 close means the token or the room was refused: that is
+/// not retried, and the chat carries on over REST, which reports a room it
+/// cannot reach for itself.
 ///
 /// While the socket is up, sends go over it: a REST send reaches the other
 /// person only as a push, never their open socket. A socket send has no
@@ -157,7 +85,7 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
        _backoff = backoff,
        super(const DirectChatState()) {
     if (_observeLifecycle) WidgetsBinding.instance.addObserver(this);
-    loadInitial();
+    unawaited(_loadRoom());
   }
 
   final Ref ref;
@@ -171,7 +99,6 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
   final bool _observeLifecycle;
   final Duration Function(int attempt) _backoff;
 
-  static const int _limit = 30;
   static const Duration pingInterval = Duration(seconds: 25);
   static const int _policyViolation = 1008;
 
@@ -182,7 +109,7 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
   int _reconnectAttempt = 0;
   bool _connecting = false;
 
-  /// A socket has been up before, so the next one refetches what the gap
+  /// A socket has been up before, so the next one catches up on what the gap
   /// missed.
   bool _hadSession = false;
 
@@ -203,137 +130,57 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
 
   String get _otherUserId => state.room?.otherUserId?.trim() ?? '';
 
+  GroupChatThreadNotifier get _thread =>
+      ref.read(groupChatThreadProvider(roomId).notifier);
+
+  String? get _viewerId => ref.read(userProvider).user?.id?.trim();
+  String? get _viewerEmail => ref.read(userProvider).user?.email;
+
   /// Shows [room] in the header while the fetch is in flight. A fetched room
   /// always wins over a seeded one.
   void seedRoom(ChatRoomDTO room) {
     if (state.room != null) return;
-    state = state.copyWith(room: room);
+    state = DirectChatState(room: room);
     unawaited(_ensureConnected());
   }
 
-  Future<void> loadInitial() async {
-    if (state.isLoading) return;
-    state = state.copyWith(isLoading: true, clearError: true);
-    await _fetchNewest();
+  Future<void> _loadRoom() async {
+    final result = await ref.read(groupChatRepositoryProvider).getRoom(roomId);
+    if (!mounted) return;
+    result.fold((_) {}, (room) => state = DirectChatState(room: room));
+    unawaited(markRead());
+    unawaited(_ensureConnected());
   }
 
-  /// Reloads the newest page and merges it into what is held, so older pages
-  /// the viewer scrolled to stay. Also the way back to a socket that is down.
+  /// Catches the thread up with the server and reopens the socket if it is
+  /// down. For a push about this room and a return to the foreground.
   Future<void> refresh() async {
-    if (state.isLoading) return;
-    state = state.copyWith(isLoading: true, clearError: true);
-    await _fetchNewest();
+    if (_disposed) return;
+    await _catchUp();
+    if (_disposed) return;
+    unawaited(markRead());
+    unawaited(_ensureConnected());
   }
 
-  Future<void> _fetchNewest() async {
-    final repository = ref.read(groupChatRepositoryProvider);
-    // Both in flight at once; the room only refreshes the header, so its
-    // failure costs nothing the seeded or previous room cannot cover.
-    final roomFuture = repository.getRoom(roomId);
-    final pageFuture = repository.listMessages(roomId, limit: _limit);
-    final roomResult = await roomFuture;
-    final pageResult = await pageFuture;
-    if (!mounted) return;
-
-    final room = roomResult.fold((_) => null, (room) => room);
-    pageResult.fold(
-      (failure) {
-        state = state.copyWith(
-          room: room,
-          isLoading: false,
-          hasLoaded: true,
-          error: failure.message,
-        );
-      },
-      (page) {
-        final merged = mergeDirectMessages(state.messages, page.messages);
-        state = state.copyWith(
-          room: room,
-          messages: merged,
-          isLoading: false,
-          hasLoaded: true,
-          skip: merged.length,
-          total: page.total,
-          hasMore: merged.length < page.total,
-          clearError: true,
-        );
-        unawaited(markRead());
-      },
-    );
-    // Just fetched: a socket opened from here has nothing to catch up on.
-    unawaited(_ensureConnected(catchUp: false));
-  }
-
-  Future<void> loadMore() async {
-    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
-    state = state.copyWith(isLoadingMore: true, clearError: true);
-
-    final result = await ref
-        .read(groupChatRepositoryProvider)
-        .listMessages(roomId, skip: state.skip, limit: _limit);
-    if (!mounted) return;
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(isLoadingMore: false, error: failure.message);
-      },
-      (page) {
-        final merged = mergeDirectMessages(state.messages, page.messages);
-        // Rows posted since the last page shift every offset down, so this
-        // page can repeat rows already held. Paging on from what is held
-        // keeps the next page from skipping any.
-        state = state.copyWith(
-          messages: merged,
-          isLoadingMore: false,
-          skip: merged.length,
-          total: page.total,
-          hasMore: page.messages.isNotEmpty && merged.length < page.total,
-        );
-      },
+  Future<void> _catchUp() async {
+    await _thread.refreshLatest(
+      currentUserId: _viewerId,
+      currentUserEmail: _viewerEmail,
     );
   }
 
-  /// Merges a message the socket delivered, new or edited.
-  void applyLive(ChatMessageDTO message) {
-    if (!mounted) return;
-    final isNew = !state.messages.any((held) => held.id == message.id);
-    final merged = mergeDirectMessages(state.messages, [message]);
-    state = state.copyWith(
-      messages: merged,
-      skip: merged.length,
-      total: isNew ? state.total + 1 : state.total,
-    );
-  }
-
-  /// Turns a held message into a tombstone. A delete can come from the other
-  /// person too.
-  void applyDeleted(String messageId, String deletedAt) {
-    if (!mounted || messageId.isEmpty) return;
-    final stamp =
-        deletedAt.isNotEmpty
-            ? deletedAt
-            : DateTime.now().toUtc().toIso8601String();
-    var changed = false;
-    final messages = <ChatMessageDTO>[];
-    for (final held in state.messages) {
-      if (held.id == messageId && held.deletedAt == null) {
-        messages.add(held.copyWith(deletedAt: stamp));
-        changed = true;
-      } else {
-        messages.add(held);
-      }
-    }
-    if (changed) state = state.copyWith(messages: messages);
-  }
-
-  /// Sends [body] to the other person in the room. Nothing is sent before
-  /// the room says who that is.
+  /// Sends [body] to the other person in the room, as a reply to
+  /// [parentMessageId] when given. Nothing is sent before the room says who
+  /// that is.
   ///
   /// Over the socket when it is up, waiting for the echo. When the echo does
-  /// not come, the socket is replaced and the thread refetched, to see
+  /// not come, the socket is replaced and the thread caught up, to see
   /// whether the message landed anyway before it goes again over REST: a
   /// slow echo must not post it twice.
-  Future<Either<Failure, ChatMessageDTO>> send(String body) async {
+  Future<Either<Failure, ChatMessageDTO>> send(
+    String body, {
+    String? parentMessageId,
+  }) async {
     final otherUserId = _otherUserId;
     if (otherUserId.isEmpty) {
       return const Left(ValidationFailure('This chat has no recipient'));
@@ -341,10 +188,11 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
 
     final client = _client;
     if (client != null && _roomConfirmed && _pendingEcho == null) {
-      final heldIds = {for (final message in state.messages) message.id};
+      final held = ref.read(groupChatThreadProvider(roomId)).messages;
+      final heldIds = {for (final message in held) message.id};
       final echo = Completer<Either<Failure, ChatMessageDTO>?>();
       _pendingEcho = echo;
-      client.sendMessage(body: body);
+      client.sendMessage(body: body, parentMessageId: parentMessageId);
 
       final result = await echo.future.timeout(
         echoTimeout,
@@ -358,9 +206,10 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
         await _tearDown();
         _scheduleReconnect();
       }
-      await _fetchNewest();
+      await _catchUp();
       if (!mounted) return const Left(NetworkFailure('The chat was closed'));
-      for (final message in state.messages) {
+      final messages = ref.read(groupChatThreadProvider(roomId)).messages;
+      for (final message in messages) {
         if (!heldIds.contains(message.id) &&
             isOwnDirectMessage(message, otherUserId) &&
             message.body.trim() == body.trim()) {
@@ -371,11 +220,15 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
 
     final result = await ref
         .read(groupChatRepositoryProvider)
-        .sendDirectMessage(otherUserId, body: body);
+        .sendDirectMessage(
+          otherUserId,
+          body: body,
+          parentMessageId: parentMessageId,
+        );
     if (!mounted) return result;
 
     result.fold((_) {}, (message) {
-      applyLive(message);
+      _thread.appendLive(message);
       // The server counts a sender's own message as unread until
       // `last_read_at` passes it, so the Chats list would badge it.
       unawaited(markRead());
@@ -383,17 +236,15 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
     return result;
   }
 
+  /// Best effort: a failed read receipt never surfaces.
   Future<void> markRead() async {
     await ref.read(groupChatRepositoryProvider).markRoomRead(roomId);
   }
 
   /// Opens the socket if it should be open and is not. Never throws: the
-  /// reconnect timer, the lifecycle observer and every fetch call it without
+  /// reconnect timer, the lifecycle observer and every load call it without
   /// an error handler.
-  ///
-  /// A socket that replaces an earlier one refetches what the gap missed,
-  /// unless [catchUp] is off because the caller has just fetched.
-  Future<void> _ensureConnected({bool catchUp = true}) async {
+  Future<void> _ensureConnected() async {
     final live = _live;
     if (live == null || _disposed || _refused || _suspended) return;
     if (_client != null || _connecting) return;
@@ -445,7 +296,7 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
     }
     _pingTimer?.cancel();
     _pingTimer = Timer.periodic(pingInterval, (_) => _client?.sendPing());
-    if (reconnected && catchUp) unawaited(refresh());
+    if (reconnected) unawaited(_catchUp());
   }
 
   void _onLiveEvent(ChatLiveEvent event) {
@@ -455,23 +306,45 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
     switch (event) {
       case ChatLiveRoomInfo(roomId: final id):
         // Scoped by person, the socket should name this room. If it names
-        // another, nothing is sent over it and its messages are filtered out
+        // another, nothing is sent over it and its frames are filtered out
         // below; REST carries the chat.
         _roomConfirmed = id == roomId;
       case ChatLiveMessageCreated(message: final json):
-        _onMessage(json, created: true);
-      case ChatLiveMessageUpdated(message: final json):
-        _onMessage(json, created: false);
+        _onMessageCreated(json);
       case ChatLiveMessageDeleted(
         messageId: final messageId,
         deletedAt: final deletedAt,
       ):
-        applyDeleted(messageId, deletedAt);
+        if (!_roomConfirmed || messageId.isEmpty) return;
+        _thread.applyDeletion(
+          messageId,
+          deletedAt:
+              deletedAt.isNotEmpty
+                  ? deletedAt
+                  : DateTime.now().toUtc().toIso8601String(),
+        );
+      case ChatLiveReactionsUpdated(
+        messageId: final messageId,
+        reactions: final raw,
+      ):
+        if (!_roomConfirmed || messageId.isEmpty) return;
+        // The payload is shared by both people, so `reacted_by_me` is not
+        // the viewer's; the thread re-derives it from the identity passed.
+        _thread.replaceReactions(
+          messageId,
+          raw
+              .whereType<Map<String, dynamic>>()
+              .map(ChatMessageReactionDTO.fromJson)
+              .toList(),
+          currentUserId: _viewerId,
+          currentUserEmail: _viewerEmail,
+        );
       case ChatLiveError(code: final code, message: final message):
         // Only a pending send can be refused; with none, nothing to do.
         _settleEcho(Left(ValidationFailure(message, code: code)));
-      // Text only: no reactions, typing or presence in direct chats yet.
-      case ChatLiveReactionsUpdated():
+      // No edit UI anywhere in chat yet, and no typing or presence in direct
+      // chats.
+      case ChatLiveMessageUpdated():
       case ChatLiveTyping():
       case ChatLivePresence():
       case ChatLivePrayersUpdated():
@@ -481,12 +354,11 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
     }
   }
 
-  void _onMessage(Map<String, dynamic> json, {required bool created}) {
+  void _onMessageCreated(Map<String, dynamic> json) {
     if (json.isEmpty) return;
     final message = ChatMessageDTO.fromJson(json);
     if (message.id.isEmpty || message.roomId != roomId) return;
-    applyLive(message);
-    if (!created) return;
+    _thread.appendFromSocket(message);
     if (isOwnDirectMessage(message, _otherUserId)) {
       _settleEcho(Right(message));
     }
@@ -556,7 +428,7 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
         if (!_suspended) return;
         _suspended = false;
         _reconnectAttempt = 0;
-        // Fetches what the background missed, then reopens the socket.
+        // Catches up on what the background missed, then reopens the socket.
         unawaited(refresh());
       case AppLifecycleState.inactive:
         break;

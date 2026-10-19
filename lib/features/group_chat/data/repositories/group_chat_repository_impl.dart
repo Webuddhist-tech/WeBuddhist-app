@@ -123,9 +123,16 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
     String userId, {
     required String body,
+    String? parentMessageId,
   }) async {
     try {
-      return Right(await _remote.sendDirectMessage(userId, body: body));
+      return Right(
+        await _remote.sendDirectMessage(
+          userId,
+          body: body,
+          parentMessageId: parentMessageId,
+        ),
+      );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'sendDirectMessage'));
     }

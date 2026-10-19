@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
+import 'package:flutter_pecha/features/auth/presentation/state/user_state.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -9,6 +13,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/direct_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -53,8 +58,8 @@ class _FakeRepository implements GroupChatRepository {
 
   ChatRoomDTO room;
   List<ChatMessageDTO> messages;
-  final sentTo = <String>[];
-  final pages = <int>[];
+  final sent = <({String userId, String body, String? parentMessageId})>[];
+  var pageCount = 0;
   var readCount = 0;
 
   @override
@@ -71,7 +76,7 @@ class _FakeRepository implements GroupChatRepository {
     String? intention,
     String? translationLanguage,
   }) async {
-    pages.add(skip);
+    pageCount++;
     return Right(
       ChatMessagesPage(
         messages: messages.skip(skip).take(limit).toList(),
@@ -86,16 +91,17 @@ class _FakeRepository implements GroupChatRepository {
   Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
     String userId, {
     required String body,
+    String? parentMessageId,
   }) async {
-    sentTo.add(userId);
-    final sent = _message(
+    sent.add((userId: userId, body: body, parentMessageId: parentMessageId));
+    final message = _message(
       'rest-sent',
       '2026-10-16T11:00:00Z',
       body: body,
       senderId: 'me',
     );
-    messages = [sent, ...messages];
-    return Right(sent);
+    messages = [message, ...messages];
+    return Right(message);
   }
 
   @override
@@ -103,6 +109,13 @@ class _FakeRepository implements GroupChatRepository {
     readCount++;
     return const Right(unit);
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _Me extends StateNotifier<UserState> implements UserNotifier {
+  _Me() : super(const UserState(user: User(id: 'me', email: 'me@x.org')));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -163,19 +176,13 @@ class _FakeSink implements WebSocketSink {
 class _Sockets {
   final channels = <_FakeChannel>[];
 
-  /// Called for each frame the client sends, on the channel it went out on.
-  void Function(_FakeChannel channel, Map<String, dynamic> frame)? onSent;
-
   DirectChatLiveConfig get config => DirectChatLiveConfig(
     getToken: () async => 'tok',
     restBaseUrl: 'https://api.example.com/api/v1',
     clientFactory:
         () => ChatLiveClient(
           connect: (uri) {
-            late final _FakeChannel channel;
-            channel =
-                _FakeChannel(uri)
-                  ..onSent = (frame) => onSent?.call(channel, frame);
+            final channel = _FakeChannel(uri);
             channels.add(channel);
             return channel;
           },
@@ -188,104 +195,70 @@ Map<String, dynamic> _created(ChatMessageDTO message) => {
   'message': message.toJson(),
 };
 
-/// Holds the autoDispose provider open, then waits for its first load.
-Future<DirectChatNotifier> _notifier(
-  ProviderContainer container, {
-  String roomId = 'dm-1',
-}) async {
-  container.listen(directChatProvider(roomId), (_, _) {});
-  final notifier = container.read(directChatProvider(roomId).notifier);
-  await pumpEventQueue();
-  return notifier;
+const _roomInfo = {'type': 'room_info', 'room_id': 'dm-1'};
+
+/// One open direct chat: the session and its thread, held the way the screen
+/// holds them.
+class _Chat {
+  _Chat(this.container, this.session);
+
+  final ProviderContainer container;
+  final AutoDisposeStateNotifierProvider<DirectChatNotifier, DirectChatState>
+  session;
+
+  DirectChatNotifier get notifier => container.read(session.notifier);
+  DirectChatState get state => container.read(session);
+  List<ChatMessageDTO> get messages =>
+      container.read(groupChatThreadProvider('dm-1')).messages;
 }
 
-/// REST only: the socket config is overridden away.
-ProviderContainer _container(_FakeRepository repository) {
-  final container = ProviderContainer(
-    overrides: [
-      groupChatRepositoryProvider.overrideWithValue(repository),
-      directChatLiveConfigProvider.overrideWithValue(null),
-    ],
-  );
-  addTearDown(container.dispose);
-  return container;
-}
-
-/// A notifier on [sockets], with no lifecycle observer, no backoff delay and
-/// a short echo wait.
-Future<
-  (
-    ProviderContainer,
-    AutoDisposeStateNotifierProvider<DirectChatNotifier, DirectChatState>,
-  )
->
-_live(
-  _FakeRepository repository,
-  _Sockets sockets, {
+/// Opens a chat on [repository]. With [sockets], over the socket, with no
+/// lifecycle observer, no backoff delay and a short echo wait; without, REST
+/// only.
+Future<_Chat> _open(
+  _FakeRepository repository, {
+  _Sockets? sockets,
   Duration echoTimeout = const Duration(milliseconds: 200),
 }) async {
-  final provider = StateNotifierProvider.autoDispose<
+  final session = StateNotifierProvider.autoDispose<
     DirectChatNotifier,
     DirectChatState
   >(
     (ref) => DirectChatNotifier(
       ref: ref,
       roomId: 'dm-1',
-      live: sockets.config,
+      live: sockets?.config,
       observeLifecycle: false,
       backoff: (_) => Duration.zero,
       echoTimeout: echoTimeout,
     ),
   );
   final container = ProviderContainer(
-    overrides: [groupChatRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      groupChatRepositoryProvider.overrideWithValue(repository),
+      userProvider.overrideWith((ref) => _Me()),
+    ],
   );
   addTearDown(container.dispose);
-  container.listen(provider, (_, _) {});
-  container.read(provider);
+  container.listen(groupChatThreadProvider('dm-1'), (_, _) {});
+  container.listen(session, (_, _) {});
   await pumpEventQueue();
-  return (container, provider);
+  return _Chat(container, session);
+}
+
+/// Opens a chat over the socket and waits for `room_info`.
+Future<(_Chat, _FakeChannel)> _openLive(_FakeRepository repository) async {
+  final sockets = _Sockets();
+  final chat = await _open(repository, sockets: sockets);
+  final channel = sockets.channels.single;
+  channel.serverSends(_roomInfo);
+  await pumpEventQueue();
+  return (chat, channel);
 }
 
 void main() {
+  // The provider's own notifier observes the app lifecycle.
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  group('mergeDirectMessages', () {
-    test('one row per message, newest first', () {
-      final merged = mergeDirectMessages(
-        [_message('a', '2026-10-16T10:00:00Z')],
-        [
-          _message('c', '2026-10-16T12:00:00Z'),
-          _message('a', '2026-10-16T10:00:00Z'),
-          _message('b', '2026-10-16T11:00:00Z'),
-        ],
-      );
-
-      expect(merged.map((m) => m.id), ['c', 'b', 'a']);
-    });
-
-    test('the incoming copy wins, so edits and deletes show', () {
-      final merged = mergeDirectMessages(
-        [_message('a', '2026-10-16T10:00:00Z', body: 'old')],
-        [_message('a', '2026-10-16T10:00:00Z', body: 'edited')],
-      );
-
-      expect(merged.single.body, 'edited');
-    });
-
-    test('same-instant messages keep a stable order', () {
-      final first = mergeDirectMessages(
-        [_message('a', '2026-10-16T10:00:00Z')],
-        [_message('b', '2026-10-16T10:00:00Z')],
-      );
-      final second = mergeDirectMessages(
-        [_message('b', '2026-10-16T10:00:00Z')],
-        [_message('a', '2026-10-16T10:00:00Z')],
-      );
-
-      expect(first.map((m) => m.id), second.map((m) => m.id));
-    });
-  });
 
   test('a message is the viewer\'s when it is not from the other person', () {
     final fromTeam = _message('a', '2026-10-16T10:00:00Z');
@@ -298,48 +271,28 @@ void main() {
   });
 
   group('DirectChatNotifier over REST', () {
-    test('loads the room and the newest page, then marks it read', () async {
+    test('loads the room and marks it read', () async {
       final repository = _FakeRepository();
-      final container = _container(repository);
-      await _notifier(container);
+      final chat = await _open(repository);
 
-      final state = container.read(directChatProvider('dm-1'));
-      expect(state.room, _room);
-      expect(state.messages.map((m) => m.id), ['m3', 'm2', 'm1']);
-      expect(state.hasLoaded, isTrue);
-      expect(state.hasMore, isFalse);
-      expect(repository.readCount, 1);
+      expect(chat.state.room, _room);
+      expect(chat.messages.map((m) => m.id), ['m3', 'm2', 'm1']);
+      expect(repository.readCount, greaterThan(0));
     });
 
-    test('pages on from what it holds', () async {
-      final repository = _FakeRepository(messages: _thread(45));
-      final container = _container(repository);
-      final notifier = await _notifier(container);
-
-      expect(
-        container.read(directChatProvider('dm-1')).messages,
-        hasLength(30),
-      );
-      await notifier.loadMore();
-
-      final state = container.read(directChatProvider('dm-1'));
-      expect(repository.pages, [0, 30]);
-      expect(state.messages, hasLength(45));
-      expect(state.hasMore, isFalse);
-    });
-
-    test('a reply goes to the other person and shows at once', () async {
+    test('a reply goes to the other person, with its parent', () async {
       final repository = _FakeRepository();
-      final container = _container(repository);
-      final notifier = await _notifier(container);
+      final chat = await _open(repository);
 
-      final result = await notifier.send('Thank you!');
+      final result = await chat.notifier.send('Yes', parentMessageId: 'm2');
 
       expect(result.isRight(), isTrue);
-      expect(repository.sentTo, ['team']);
-      final state = container.read(directChatProvider('dm-1'));
-      expect(state.messages.first.body, 'Thank you!');
-      expect(state.skip, 4);
+      expect(repository.sent.single, (
+        userId: 'team',
+        body: 'Yes',
+        parentMessageId: 'm2',
+      ));
+      expect(chat.messages.first.body, 'Yes');
     });
 
     test('nothing is sent before the room names the other person', () async {
@@ -352,20 +305,26 @@ void main() {
           updatedAt: '',
         ),
       );
-      final container = _container(repository);
-      final notifier = await _notifier(container);
+      final chat = await _open(repository);
 
-      final result = await notifier.send('Hello?');
+      final result = await chat.notifier.send('Hello?');
 
       expect(result.isLeft(), isTrue);
-      expect(repository.sentTo, isEmpty);
+      expect(repository.sent, isEmpty);
     });
 
     test('a seeded room shows until the fetched one replaces it', () async {
       final repository = _FakeRepository();
-      final container = _container(repository);
-      container.listen(directChatProvider('dm-1'), (_, _) {});
-      final notifier = container.read(directChatProvider('dm-1').notifier);
+      final session = directChatProvider('dm-1');
+      final container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          userProvider.overrideWith((ref) => _Me()),
+          directChatLiveConfigProvider.overrideWithValue(null),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(session, (_, _) {});
 
       const seeded = ChatRoomDTO(
         id: 'dm-1',
@@ -375,48 +334,65 @@ void main() {
         updatedAt: '',
         otherUserId: 'team',
       );
-      notifier.seedRoom(seeded);
-      expect(container.read(directChatProvider('dm-1')).room, seeded);
+      container.read(session.notifier).seedRoom(seeded);
+      expect(container.read(session).room, seeded);
 
       await pumpEventQueue();
-      expect(container.read(directChatProvider('dm-1')).room, _room);
+      expect(container.read(session).room, _room);
     });
   });
 
   group('DirectChatNotifier over the socket', () {
     test('connects by the other person once the room is known', () async {
       final sockets = _Sockets();
-      await _live(_FakeRepository(), sockets);
+      await _open(_FakeRepository(), sockets: sockets);
 
-      expect(sockets.channels, hasLength(1));
       final uri = sockets.channels.single.uri;
       expect(uri.path, '/api/v1/chat/live');
       expect(uri.queryParameters['receiver_id'], 'team');
       expect(uri.queryParameters['token'], 'tok');
     });
 
-    test('a message from the other person shows live and is read', () async {
+    test('a message from the other person lands in the thread', () async {
       final repository = _FakeRepository();
-      final sockets = _Sockets();
-      final (container, provider) = await _live(repository, sockets);
+      final (chat, channel) = await _openLive(repository);
       final readsBefore = repository.readCount;
 
-      sockets.channels.single.serverSends(
+      channel.serverSends(
         _created(_message('live', '2026-10-16T12:00:00Z', body: 'Hello!')),
       );
       await pumpEventQueue();
 
-      final state = container.read(provider);
-      expect(state.messages.first.body, 'Hello!');
-      expect(state.total, 4);
+      expect(chat.messages.first.body, 'Hello!');
       expect(repository.readCount, readsBefore + 1);
     });
 
-    test('a delete turns the message into a tombstone', () async {
-      final sockets = _Sockets();
-      final (container, provider) = await _live(_FakeRepository(), sockets);
+    test('a reaction lands on its message', () async {
+      final (chat, channel) = await _openLive(_FakeRepository());
 
-      sockets.channels.single.serverSends({
+      channel.serverSends({
+        'type': 'reactions_updated',
+        'message_id': 'm2',
+        'reactions': [
+          {
+            'emoji': '🙏',
+            'count': 1,
+            'user_ids': ['team'],
+          },
+        ],
+      });
+      await pumpEventQueue();
+
+      final reacted = chat.messages.firstWhere((m) => m.id == 'm2');
+      expect(reacted.reactions.single.emoji, '🙏');
+      // Not the viewer's: the other person reacted.
+      expect(reacted.reactions.single.reactedByMe, isFalse);
+    });
+
+    test('a delete turns the message into a tombstone', () async {
+      final (chat, channel) = await _openLive(_FakeRepository());
+
+      channel.serverSends({
         'type': 'message_deleted',
         'message_id': 'm2',
         'deleted_by': 'team',
@@ -424,39 +400,27 @@ void main() {
       });
       await pumpEventQueue();
 
-      final deleted = container
-          .read(provider)
-          .messages
-          .firstWhere((m) => m.id == 'm2');
+      final deleted = chat.messages.firstWhere((m) => m.id == 'm2');
       expect(deleted.deletedAt, '2026-10-16T12:00:00Z');
     });
 
     test('a message for another room is ignored', () async {
-      final sockets = _Sockets();
-      final (container, provider) = await _live(_FakeRepository(), sockets);
+      final (chat, channel) = await _openLive(_FakeRepository());
 
-      sockets.channels.single.serverSends(
+      channel.serverSends(
         _created(
           _message('x', '2026-10-16T12:00:00Z', roomId: 'someone-else'),
         ),
       );
       await pumpEventQueue();
 
-      expect(container.read(provider).messages.map((m) => m.id), [
-        'm3',
-        'm2',
-        'm1',
-      ]);
+      expect(chat.messages.map((m) => m.id), ['m3', 'm2', 'm1']);
     });
 
     test('a send goes over the socket and resolves on its echo', () async {
       final repository = _FakeRepository();
-      final sockets = _Sockets();
-      final (container, provider) = await _live(repository, sockets);
-      final channel = sockets.channels.single;
-      channel.serverSends({'type': 'room_info', 'room_id': 'dm-1'});
-      await pumpEventQueue();
-      expect(container.read(provider.notifier).isLive, isTrue);
+      final (chat, channel) = await _openLive(repository);
+      expect(chat.notifier.isLive, isTrue);
 
       channel.onSent = (frame) {
         if (frame['type'] != 'message') return;
@@ -471,23 +435,22 @@ void main() {
           ),
         );
       };
-      final result = await container.read(provider.notifier).send('Thanks!');
+      final result = await chat.notifier.send(
+        'Thanks!',
+        parentMessageId: 'm3',
+      );
 
       expect(result.getRight().toNullable()?.id, 'echo');
       expect(channel.sent.where((f) => f['type'] == 'message'), [
-        {'type': 'message', 'body': 'Thanks!'},
+        {'type': 'message', 'body': 'Thanks!', 'parent_message_id': 'm3'},
       ]);
-      expect(repository.sentTo, isEmpty);
-      expect(container.read(provider).messages.first.id, 'echo');
+      expect(repository.sent, isEmpty);
+      expect(chat.messages.first.id, 'echo');
     });
 
     test('a refused send keeps its reason, and is not retried', () async {
       final repository = _FakeRepository();
-      final sockets = _Sockets();
-      final (container, provider) = await _live(repository, sockets);
-      final channel = sockets.channels.single;
-      channel.serverSends({'type': 'room_info', 'room_id': 'dm-1'});
-      await pumpEventQueue();
+      final (chat, channel) = await _openLive(repository);
 
       channel.onSent = (frame) {
         if (frame['type'] != 'message') return;
@@ -497,33 +460,29 @@ void main() {
           'message': 'Please keep it kind',
         });
       };
-      final result = await container.read(provider.notifier).send('bad');
+      final result = await chat.notifier.send('bad');
 
       final failure = result.getLeft().toNullable();
       expect(failure, isA<ValidationFailure>());
       expect((failure! as ValidationFailure).code, 'INAPPROPRIATE_LANGUAGE');
-      expect(repository.sentTo, isEmpty);
+      expect(repository.sent, isEmpty);
     });
 
     test('before room_info, a send goes over REST', () async {
       final repository = _FakeRepository();
       final sockets = _Sockets();
-      final (container, provider) = await _live(repository, sockets);
+      final chat = await _open(repository, sockets: sockets);
 
-      final result = await container.read(provider.notifier).send('Hello');
+      final result = await chat.notifier.send('Hello');
 
       expect(result.isRight(), isTrue);
-      expect(repository.sentTo, ['team']);
+      expect(repository.sent.single.body, 'Hello');
       expect(sockets.channels.single.sent, isEmpty);
     });
 
     test('with no echo, a message that landed is not sent again', () async {
       final repository = _FakeRepository();
-      final sockets = _Sockets();
-      final (container, provider) = await _live(repository, sockets);
-      final channel = sockets.channels.single;
-      channel.serverSends({'type': 'room_info', 'room_id': 'dm-1'});
-      await pumpEventQueue();
+      final (chat, channel) = await _openLive(repository);
 
       // The server stores it, but the echo never comes back.
       channel.onSent = (frame) {
@@ -538,49 +497,43 @@ void main() {
           ...repository.messages,
         ];
       };
-      final result = await container.read(provider.notifier).send('Once');
+      final result = await chat.notifier.send('Once');
 
       expect(result.getRight().toNullable()?.id, 'stored');
-      expect(repository.sentTo, isEmpty);
+      expect(repository.sent, isEmpty);
     });
 
     test('with no echo and nothing stored, it goes over REST', () async {
       final repository = _FakeRepository();
-      final sockets = _Sockets();
-      final (container, provider) = await _live(repository, sockets);
-      sockets.channels.single.serverSends({
-        'type': 'room_info',
-        'room_id': 'dm-1',
-      });
-      await pumpEventQueue();
+      final (chat, _) = await _openLive(repository);
 
-      final result = await container.read(provider.notifier).send('Lost');
+      final result = await chat.notifier.send('Lost');
 
       expect(result.getRight().toNullable()?.id, 'rest-sent');
-      expect(repository.sentTo, ['team']);
+      expect(repository.sent.single.body, 'Lost');
     });
 
     test('a drop reconnects and catches up on what it missed', () async {
       final repository = _FakeRepository();
       final sockets = _Sockets();
-      await _live(repository, sockets);
-      final fetchesBefore = repository.pages.length;
+      await _open(repository, sockets: sockets);
+      final pagesBefore = repository.pageCount;
 
       await sockets.channels.single.serverCloses(1011);
       await pumpEventQueue();
 
       expect(sockets.channels, hasLength(2));
-      expect(repository.pages.length, greaterThan(fetchesBefore));
+      expect(repository.pageCount, greaterThan(pagesBefore));
     });
 
     test('a refused socket (1008) is not retried', () async {
       final sockets = _Sockets();
-      final (container, provider) = await _live(_FakeRepository(), sockets);
+      final chat = await _open(_FakeRepository(), sockets: sockets);
 
       await sockets.channels.single.serverCloses(1008);
       await pumpEventQueue();
-      // Not even a fetch brings it back.
-      await container.read(provider.notifier).refresh();
+      // Not even a refresh brings it back.
+      await chat.notifier.refresh();
       await pumpEventQueue();
 
       expect(sockets.channels, hasLength(1));

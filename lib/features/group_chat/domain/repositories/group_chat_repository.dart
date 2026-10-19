@@ -47,6 +47,7 @@ abstract class GroupChatRepository {
   Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
     String userId, {
     required String body,
+    String? parentMessageId,
   });
 
   Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions();
