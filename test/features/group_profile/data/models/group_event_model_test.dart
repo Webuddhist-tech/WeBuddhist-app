@@ -3,6 +3,54 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_event
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('GroupEventAccumulations', () {
+    GroupEventAccumulation row(
+      String groupAccumulatorId,
+      GroupEventParticipationType? format,
+    ) => GroupEventAccumulation(
+      id: 'row-$groupAccumulatorId',
+      groupAccumulatorId: groupAccumulatorId,
+      format: format,
+    );
+
+    const online = GroupEventParticipationType.online;
+    const offline = GroupEventParticipationType.offline;
+
+    test('primary sits last so it is next to the leaderboard', () {
+      final rows = [row('a1', offline), row('a2', online), row('a3', online)];
+
+      expect(rows.primary?.groupAccumulatorId, 'a2');
+      expect(rows.displayRows.map((a) => a.groupAccumulatorId), [
+        'a3',
+        'a1',
+        'a2',
+      ]);
+    });
+
+    test('a first online primary keeps the plain reversed order', () {
+      final rows = [row('a1', online), row('a2', offline), row('a3', offline)];
+
+      expect(rows.displayRows.map((a) => a.groupAccumulatorId), [
+        'a3',
+        'a2',
+        'a1',
+      ]);
+    });
+
+    test('online wins over an accumulation without a format', () {
+      final rows = [row('a1', null), row('a2', online)];
+
+      expect(rows.primary?.groupAccumulatorId, 'a2');
+    });
+
+    test('rows sharing an accumulator id appear once each', () {
+      final rows = [row('a1', online), row('a1', offline)];
+
+      expect(rows.displayRows, hasLength(2));
+      expect(identical(rows.displayRows.last, rows.first), isTrue);
+    });
+  });
+
   group('GroupEventModel youtube', () {
     test('parses youtube links and picks the first by display order', () {
       final event =
@@ -114,10 +162,10 @@ void main() {
             'total': 2,
           }).toEntity();
 
-      expect(
-        page.participants.map((p) => p.participationType),
-        [GroupEventParticipationType.online, null],
-      );
+      expect(page.participants.map((p) => p.participationType), [
+        GroupEventParticipationType.online,
+        null,
+      ]);
     });
   });
 
@@ -168,10 +216,10 @@ void main() {
             ],
           }).toEntity();
 
-      expect(
-        event.allAccumulations.map((a) => a.groupAccumulatorId),
-        ['a1', 'a2'],
-      );
+      expect(event.allAccumulations.map((a) => a.groupAccumulatorId), [
+        'a1',
+        'a2',
+      ]);
       expect(event.allAccumulations.first.groupAccumulator?.name, 'Health');
       expect(
         event.allAccumulations.first.format,
@@ -210,14 +258,15 @@ void main() {
             ],
           }).toEntity();
 
-      expect(
-        event.allAccumulations.map((a) => a.groupAccumulatorId),
-        ['a1', 'a2', 'a3'],
-      );
+      expect(event.allAccumulations.map((a) => a.groupAccumulatorId), [
+        'a1',
+        'a2',
+        'a3',
+      ]);
       expect(event.primaryAccumulation?.groupAccumulatorId, 'a2');
     });
 
-    test('without an online accumulation the first is primary', () {
+    test('all in-person accumulations have no primary', () {
       final event =
           GroupEventModel.fromJson({
             'id': 'e1',
@@ -238,7 +287,11 @@ void main() {
             ],
           }).toEntity();
 
-      expect(event.primaryAccumulation?.groupAccumulatorId, 'a1');
+      expect(event.primaryAccumulation, isNull);
+      expect(
+        event.allAccumulations.displayRows.map((a) => a.groupAccumulatorId),
+        ['a2', 'a1'],
+      );
     });
 
     test('falls back to the single group_accumulator', () {

@@ -103,6 +103,29 @@ class GroupEventAccumulation {
   });
 }
 
+/// Rules for an event's accumulations, sorted by display order.
+extension GroupEventAccumulations on List<GroupEventAccumulation> {
+  /// The accumulation that owns the leaderboard and takes logged counts: the
+  /// first online one, else the first without a format (legacy single
+  /// accumulator). Null when every accumulation is in-person, which shows
+  /// progress only.
+  GroupEventAccumulation? get primary =>
+      where(
+        (item) => item.format == GroupEventParticipationType.online,
+      ).firstOrNull ??
+      where((item) => item.format == null).firstOrNull;
+
+  /// Top-to-bottom rows for the accumulations tab: display order reversed,
+  /// with [primary] moved last so it sits right above its leaderboard.
+  List<GroupEventAccumulation> get displayRows {
+    final main = primary;
+    return [
+      ...reversed.where((item) => !identical(item, main)),
+      if (main != null) main,
+    ];
+  }
+}
+
 class GroupEventRecurrence {
   /// "DAILY", "WEEKLY", "MONTHLY" or "YEARLY".
   final String frequency;
@@ -229,16 +252,8 @@ class GroupEvent {
     ];
   }
 
-  /// The first online accumulation takes counts and the leaderboard; without
-  /// one, the first by display order does.
-  GroupEventAccumulation? get primaryAccumulation {
-    final all = allAccumulations;
-    if (all.isEmpty) return null;
-    return all.firstWhere(
-      (item) => item.format == GroupEventParticipationType.online,
-      orElse: () => all.first,
-    );
-  }
+  /// See [GroupEventAccumulations.primary].
+  GroupEventAccumulation? get primaryAccumulation => allAccumulations.primary;
 
   /// First YouTube stream by display order, or null when the event has none.
   GroupEventLink? get liveYoutubeLink {
