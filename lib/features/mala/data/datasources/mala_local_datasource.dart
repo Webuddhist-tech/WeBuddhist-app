@@ -136,10 +136,24 @@ class MalaLocalDataSource {
   }
 
   String _key(String userId, String presetId) => '$userId:$presetId';
-  String _catalogueKey(String language) => 'catalogue:$language';
+  // Bumped when the cached preset shape gains fields (v2: deity_image), so a
+  // cache written by an older build is skipped instead of served stale.
+  String _catalogueKey(String language) => 'catalogue:v2:$language';
 
-  List<PresetAccumulatorModel>? readCatalogue(String language) {
-    final raw = _box.get(_catalogueKey(language));
+  /// Key used before v2. Only read as an offline fallback, and deleted once a
+  /// v2 catalogue is written.
+  String _legacyCatalogueKey(String language) => 'catalogue:$language';
+
+  /// The cached catalogue for [language]. With [allowLegacy], falls back to a
+  /// pre-v2 cache (no deity images) when there is no v2 one — for when the
+  /// network is down and an older cache beats an empty screen.
+  List<PresetAccumulatorModel>? readCatalogue(
+    String language, {
+    bool allowLegacy = false,
+  }) {
+    final raw =
+        _box.get(_catalogueKey(language)) ??
+        (allowLegacy ? _box.get(_legacyCatalogueKey(language)) : null);
     if (raw == null) return null;
     try {
       return (jsonDecode(raw) as List<dynamic>)
@@ -157,11 +171,12 @@ class MalaLocalDataSource {
   Future<void> writeCatalogue(
     String language,
     List<PresetAccumulatorModel> presets,
-  ) {
-    return _box.put(
+  ) async {
+    await _box.put(
       _catalogueKey(language),
       jsonEncode(presets.map((preset) => preset.toJson()).toList()),
     );
+    await _box.delete(_legacyCatalogueKey(language));
   }
 
   LocalMalaState read(String userId, String presetId) {

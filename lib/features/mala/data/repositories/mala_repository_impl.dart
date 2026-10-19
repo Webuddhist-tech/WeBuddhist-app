@@ -39,10 +39,27 @@ class MalaRepositoryImpl implements MalaRepository {
       }
       return Right(presets.map((p) => p.toEntity()).toList());
     } on AppException catch (e) {
-      return Left(_toFailure(e));
+      return _legacyCatalogueOr(canUseLocal, cacheLanguage, _toFailure(e));
     } catch (e) {
-      return Left(UnknownFailure('Failed to load catalogue: $e'));
+      return _legacyCatalogueOr(
+        canUseLocal,
+        cacheLanguage,
+        UnknownFailure('Failed to load catalogue: $e'),
+      );
     }
+  }
+
+  /// Offline right after the cache-key bump: serve the pre-v2 cache (no deity
+  /// images) rather than an error. The next online load replaces it.
+  Either<Failure, List<Mantra>> _legacyCatalogueOr(
+    bool canUseLocal,
+    String language,
+    Failure failure,
+  ) {
+    final legacy =
+        canUseLocal ? local?.readCatalogue(language, allowLegacy: true) : null;
+    if (legacy == null) return Left(failure);
+    return Right(legacy.map((preset) => preset.toEntity()).toList());
   }
 
   Future<void> _refreshCatalogue(String language) async {

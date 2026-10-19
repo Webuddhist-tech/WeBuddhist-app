@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// tapping or swiping the bead area increments the displayed count and the
 /// strand only ever advances forward.
 class _Harness extends StatefulWidget {
-  const _Harness();
+  const _Harness({this.mirrored = false});
+  final bool mirrored;
   @override
   State<_Harness> createState() => _HarnessState();
 }
@@ -28,6 +29,7 @@ class _HarnessState extends State<_Harness> {
                 beadsPerRound: 108,
                 beadColor: const Color(0xFF8D6E63),
                 threadColor: const Color(0xFFC62828),
+                mirrored: widget.mirrored,
                 onTap: () => setState(() => _total++),
               ),
             ),
@@ -101,5 +103,23 @@ void main() {
     await tester.drag(find.byType(MalaBeads), const Offset(-60, 0));
     await tester.pump();
     expect(taps, 0);
+  });
+
+  testWidgets('mirrored strand counts a left-to-right swipe only',
+      (tester) async {
+    await tester.pumpWidget(const _Harness(mirrored: true));
+    expect(find.text('count:0'), findsOneWidget);
+
+    await tester.drag(find.byType(MalaBeads), const Offset(-60, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('count:0'), findsOneWidget);
+
+    await tester.drag(find.byType(MalaBeads), const Offset(60, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('count:1'), findsOneWidget);
+
+    await tester.fling(find.byType(MalaBeads), const Offset(200, 0), 1000);
+    await tester.pumpAndSettle();
+    expect(find.text('count:2'), findsOneWidget);
   });
 }

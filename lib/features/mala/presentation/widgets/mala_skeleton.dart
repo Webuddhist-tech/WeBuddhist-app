@@ -46,27 +46,33 @@ class MalaSkeleton extends StatelessWidget {
 /// Count only — does not include the bead arc. Wraps its own [Skeletonizer]
 /// for use on the loaded [MalaScreen].
 class MalaCountSkeleton extends StatelessWidget {
-  const MalaCountSkeleton({super.key});
+  const MalaCountSkeleton({super.key, this.alignEnd = false});
+
+  /// Right-align the bones (left-handed layout).
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
-    return const Skeletonizer(
+    return Skeletonizer(
       enabled: true,
-      child: _MalaCounterLinesSkeleton(),
+      child: _MalaCounterLinesSkeleton(alignEnd: alignEnd),
     );
   }
 }
 
-/// Two left-aligned horizontal bones matching [_CounterBlock] (n/108 + rounds).
+/// Two horizontal bones matching [_CounterBlock] (n/108 + rounds row).
 class _MalaCounterLinesSkeleton extends StatelessWidget {
-  const _MalaCounterLinesSkeleton();
+  const _MalaCounterLinesSkeleton({this.alignEnd = false});
+
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Bone(
