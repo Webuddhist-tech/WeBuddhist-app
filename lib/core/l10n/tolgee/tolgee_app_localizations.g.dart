@@ -313,6 +313,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String mala_rounds_unit(int count) => TolgeeBridge.format(
+    localeName,
+    'mala_rounds_unit',
+    <String, Object>{'count': count},
+    () => _fallback.mala_rounds_unit(count),
+  );
+
+  @override
   String get mala_add_to_bookmark => TolgeeBridge.get(
     localeName,
     'mala_add_to_bookmark',
@@ -371,6 +379,48 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'mala_rounds_count',
     <String, Object>{'count': count},
     () => _fallback.mala_rounds_count(count),
+  );
+
+  @override
+  String get mala_hand_layout_tooltip => TolgeeBridge.get(
+    localeName,
+    'mala_hand_layout_tooltip',
+    () => _fallback.mala_hand_layout_tooltip,
+  );
+
+  @override
+  String get mala_settings_section => TolgeeBridge.get(
+    localeName,
+    'mala_settings_section',
+    () => _fallback.mala_settings_section,
+  );
+
+  @override
+  String get mala_others_section => TolgeeBridge.get(
+    localeName,
+    'mala_others_section',
+    () => _fallback.mala_others_section,
+  );
+
+  @override
+  String get mala_mantra_speed => TolgeeBridge.get(
+    localeName,
+    'mala_mantra_speed',
+    () => _fallback.mala_mantra_speed,
+  );
+
+  @override
+  String get mala_speed_normal => TolgeeBridge.get(
+    localeName,
+    'mala_speed_normal',
+    () => _fallback.mala_speed_normal,
+  );
+
+  @override
+  String get mala_show_full_mantra => TolgeeBridge.get(
+    localeName,
+    'mala_show_full_mantra',
+    () => _fallback.mala_show_full_mantra,
   );
 
   @override

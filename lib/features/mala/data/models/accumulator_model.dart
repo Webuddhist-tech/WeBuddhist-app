@@ -1,5 +1,6 @@
 import 'package:flutter_pecha/features/mala/domain/entities/mala_count.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
+import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 
 /// `AccumulatorMetadataDTO` — `{language, name, description}`.
 class AccumulatorMetadataModel {
@@ -50,6 +51,7 @@ class PresetMantraModel {
     this.pronunciation,
     this.audioUrl,
     this.beadImageUrl,
+    this.deityImage,
   });
 
   final String id;
@@ -59,7 +61,11 @@ class PresetMantraModel {
   final String? audioUrl;
   final String? beadImageUrl;
 
+  /// Optional `deity_image` (`{thumbnail, medium, original}`).
+  final ResponsiveImage? deityImage;
+
   factory PresetMantraModel.fromJson(Map<String, dynamic> json) {
+    final deityJson = json['deity_image'];
     return PresetMantraModel(
       id: (json['id'] as String?) ?? '',
       mantra: (json['mantra'] as String?) ?? '',
@@ -67,6 +73,10 @@ class PresetMantraModel {
       pronunciation: json['pronunciation'] as String?,
       audioUrl: json['audio_url'] as String?,
       beadImageUrl: json['mala_image_url'] as String?,
+      deityImage:
+          deityJson is Map<String, dynamic>
+              ? ResponsiveImage.fromJson(deityJson)
+              : null,
     );
   }
 
@@ -77,6 +87,7 @@ class PresetMantraModel {
     'pronunciation': pronunciation,
     'audio_url': audioUrl,
     'mala_image_url': beadImageUrl,
+    'deity_image': deityImage?.toJson(),
   };
 
   MantraText toEntity() => MantraText(
@@ -86,6 +97,7 @@ class PresetMantraModel {
     pronunciation: pronunciation,
     audioUrl: audioUrl,
     beadImageUrl: beadImageUrl,
+    deityImage: deityImage,
   );
 }
 
