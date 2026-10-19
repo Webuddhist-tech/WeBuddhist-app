@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/widgets/dashed_rounded_border_painter.dart';
 
 /// The dashed "+" tile that opens the photo picker.
 class FeedbackAddImageTile extends StatelessWidget {
@@ -30,7 +31,11 @@ class FeedbackAddImageTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: CustomPaint(
-            painter: _DashedRoundedBorderPainter(color: color, radius: 12),
+            painter: DashedRoundedBorderPainter(
+              color: color,
+              radius: 12,
+              dashWidth: 5,
+            ),
             child: SizedBox(
               width: size,
               height: size,
@@ -104,51 +109,4 @@ class FeedbackImageThumb extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedRoundedBorderPainter extends CustomPainter {
-  const _DashedRoundedBorderPainter({required this.color, required this.radius});
-
-  final Color color;
-  final double radius;
-
-  static const _strokeWidth = 1.5;
-  static const _dashWidth = 5.0;
-  static const _dashSpace = 4.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = _strokeWidth;
-
-    final rRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        _strokeWidth / 2,
-        _strokeWidth / 2,
-        size.width - _strokeWidth,
-        size.height - _strokeWidth,
-      ),
-      Radius.circular(radius),
-    );
-
-    final dashed = Path();
-    for (final metric in (Path()..addRRect(rRect)).computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final next = distance + _dashWidth;
-        dashed.addPath(
-          metric.extractPath(distance, next.clamp(0, metric.length)),
-          Offset.zero,
-        );
-        distance = next + _dashSpace;
-      }
-    }
-    canvas.drawPath(dashed, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedRoundedBorderPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.radius != radius;
 }
