@@ -1,3 +1,4 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -42,7 +43,8 @@ class MessageSentSheet extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => MessageSentSheet(result: result),
+      // Masked like the Help & contact route: it quotes the message back.
+      builder: (_) => ClarityMask(child: MessageSentSheet(result: result)),
     );
   }
 

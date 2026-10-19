@@ -109,12 +109,26 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
   int _reconnectAttempt = 0;
   bool _connecting = false;
 
+  /// Retries a room fetch that failed. Without the room there is no one to
+  /// send to, so the composer stays disabled until one lands.
+  Timer? _roomRetryTimer;
+  int _roomAttempt = 0;
+
   /// A socket has been up before, so the next one catches up on what the gap
   /// missed.
   bool _hadSession = false;
 
   /// The current socket said, in `room_info`, that it is this room.
   bool _roomConfirmed = false;
+
+  /// No page is pushed on top of the chat, so what lands in it is seen. The
+  /// screen reports this; a sheet or dialog opened from the chat does not
+  /// count as leaving it.
+  bool _onScreen = true;
+
+  /// Something arrived while a page covered the chat, so it is marked read
+  /// once the chat is uncovered rather than behind the viewer's back.
+  bool _unreadWhileAway = false;
 
   /// Closed with 1008. Not retried for the life of the screen.
   bool _refused = false;
@@ -145,25 +159,45 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
   }
 
   Future<void> _loadRoom() async {
+    _roomRetryTimer?.cancel();
     final result = await ref.read(groupChatRepositoryProvider).getRoom(roomId);
     if (!mounted) return;
-    result.fold((_) {}, (room) => state = DirectChatState(room: room));
-    unawaited(markRead());
+    result.fold((_) => _scheduleRoomRetry(), (room) {
+      _roomAttempt = 0;
+      state = DirectChatState(room: room);
+    });
+    _markReadIfOnScreen();
     unawaited(_ensureConnected());
+  }
+
+  /// Only while no room is held: a seeded one already names the recipient,
+  /// and the fetch that failed would only refresh it.
+  void _scheduleRoomRetry() {
+    if (_disposed || _suspended || state.room != null) return;
+    _roomRetryTimer?.cancel();
+    _roomAttempt++;
+    _roomRetryTimer = Timer(_backoff(_roomAttempt), () {
+      if (!_disposed) unawaited(_loadRoom());
+    });
   }
 
   /// Catches the thread up with the server and reopens the socket if it is
-  /// down. For a push about this room and a return to the foreground.
+  /// down. For a push about this room and a return to the foreground. A room
+  /// that never loaded is fetched again first.
   Future<void> refresh() async {
     if (_disposed) return;
+    if (state.room == null) {
+      await _loadRoom();
+      if (_disposed) return;
+    }
     await _catchUp();
     if (_disposed) return;
-    unawaited(markRead());
+    _markReadIfOnScreen();
     unawaited(_ensureConnected());
   }
 
-  Future<void> _catchUp() async {
-    await _thread.refreshLatest(
+  Future<ThreadRefreshResult> _catchUp() {
+    return _thread.refreshLatest(
       currentUserId: _viewerId,
       currentUserEmail: _viewerEmail,
     );
@@ -176,7 +210,9 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
   /// Over the socket when it is up, waiting for the echo. When the echo does
   /// not come, the socket is replaced and the thread caught up, to see
   /// whether the message landed anyway before it goes again over REST: a
-  /// slow echo must not post it twice.
+  /// slow echo must not post it twice. When that check cannot reach the
+  /// server either, nothing is resent: the send fails and the draft stays,
+  /// so posting it again is the sender's call.
   Future<Either<Failure, ChatMessageDTO>> send(
     String body, {
     String? parentMessageId,
@@ -206,8 +242,13 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
         await _tearDown();
         _scheduleReconnect();
       }
-      await _catchUp();
+      final caughtUp = await _catchUp();
       if (!mounted) return const Left(NetworkFailure('The chat was closed'));
+      if (caughtUp == ThreadRefreshResult.failed) {
+        return const Left(
+          NetworkFailure('Could not check whether the message was sent'),
+        );
+      }
       final messages = ref.read(groupChatThreadProvider(roomId)).messages;
       for (final message in messages) {
         if (!heldIds.contains(message.id) &&
@@ -239,6 +280,25 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
   /// Best effort: a failed read receipt never surfaces.
   Future<void> markRead() async {
     await ref.read(groupChatRepositoryProvider).markRoomRead(roomId);
+  }
+
+  /// Whether a page is pushed on top of the chat, from the screen. Coming
+  /// back to it marks read what arrived in the meantime.
+  void setOnScreen(bool onScreen) {
+    if (_disposed || _onScreen == onScreen) return;
+    _onScreen = onScreen;
+    if (onScreen && _unreadWhileAway) {
+      _unreadWhileAway = false;
+      unawaited(markRead());
+    }
+  }
+
+  void _markReadIfOnScreen() {
+    if (_onScreen) {
+      unawaited(markRead());
+    } else {
+      _unreadWhileAway = true;
+    }
   }
 
   /// Opens the socket if it should be open and is not. Never throws: the
@@ -363,8 +423,9 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
       _settleEcho(Right(message));
     }
     // On screen means read, the viewer's own message included: the server
-    // counts it unread until `last_read_at` passes it.
-    unawaited(markRead());
+    // counts it unread until `last_read_at` passes it. Under another page it
+    // waits until the viewer comes back.
+    _markReadIfOnScreen();
   }
 
   void _settleEcho(Either<Failure, ChatMessageDTO>? result) {
@@ -422,6 +483,7 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
       case AppLifecycleState.hidden:
         _suspended = true;
         _reconnectTimer?.cancel();
+        _roomRetryTimer?.cancel();
         _settleEcho(null);
         unawaited(_tearDown());
       case AppLifecycleState.resumed:
@@ -440,6 +502,7 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
     _disposed = true;
     if (_observeLifecycle) WidgetsBinding.instance.removeObserver(this);
     _reconnectTimer?.cancel();
+    _roomRetryTimer?.cancel();
     _settleEcho(null);
     unawaited(_tearDown());
     super.dispose();

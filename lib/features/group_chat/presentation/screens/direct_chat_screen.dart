@@ -94,12 +94,24 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _route ??= ModalRoute.of(context);
+    if (_route != null) return;
+    _route = ModalRoute.of(context);
+    _route?.secondaryAnimation?.addStatusListener(_onCoveredChanged);
+  }
+
+  /// The route's secondary animation runs only while another page is pushed
+  /// on top — a chat opened from a push, say — not for a sheet or dialog
+  /// opened here. So it tells the session when the chat is out of sight,
+  /// without `isCurrent`'s blind spot for popups.
+  void _onCoveredChanged(AnimationStatus status) {
+    if (_disposed) return;
+    _notifier.setOnScreen(status == AnimationStatus.dismissed);
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _route?.secondaryAnimation?.removeStatusListener(_onCoveredChanged);
     unawaited(_pushSub?.cancel());
     _providers.read(foregroundPushFilterProvider).release(this);
     _bodyController.dispose();

@@ -62,9 +62,20 @@ class _FakeRepository implements GroupChatRepository {
   var pageCount = 0;
   var readCount = 0;
 
+  /// How many of the next room fetches fail.
+  var roomFailures = 0;
+
+  /// When set, every page request fails with it.
+  Failure? pageFailure;
+
   @override
-  Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) async =>
-      Right(room);
+  Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) async {
+    if (roomFailures > 0) {
+      roomFailures--;
+      return const Left(NetworkFailure('offline'));
+    }
+    return Right(room);
+  }
 
   @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
@@ -77,6 +88,8 @@ class _FakeRepository implements GroupChatRepository {
     String? translationLanguage,
   }) async {
     pageCount++;
+    final failure = pageFailure;
+    if (failure != null) return Left(failure);
     return Right(
       ChatMessagesPage(
         messages: messages.skip(skip).take(limit).toList(),
@@ -213,12 +226,13 @@ class _Chat {
 }
 
 /// Opens a chat on [repository]. With [sockets], over the socket, with no
-/// lifecycle observer, no backoff delay and a short echo wait; without, REST
-/// only.
+/// lifecycle observer, no backoff delay (unless [backoff] says otherwise) and
+/// a short echo wait; without, REST only.
 Future<_Chat> _open(
   _FakeRepository repository, {
   _Sockets? sockets,
   Duration echoTimeout = const Duration(milliseconds: 200),
+  Duration backoff = Duration.zero,
 }) async {
   final session = StateNotifierProvider.autoDispose<
     DirectChatNotifier,
@@ -229,7 +243,7 @@ Future<_Chat> _open(
       roomId: 'dm-1',
       live: sockets?.config,
       observeLifecycle: false,
-      backoff: (_) => Duration.zero,
+      backoff: (_) => backoff,
       echoTimeout: echoTimeout,
     ),
   );
@@ -339,6 +353,29 @@ void main() {
 
       await pumpEventQueue();
       expect(container.read(session).room, _room);
+    });
+
+    test('a room that failed to load is fetched again', () async {
+      final repository = _FakeRepository()..roomFailures = 1;
+      final sockets = _Sockets();
+      final chat = await _open(repository, sockets: sockets);
+
+      // The retry has run: the recipient is known and the socket opened.
+      expect(chat.state.room, _room);
+      expect(sockets.channels, hasLength(1));
+    });
+
+    test('a refresh fetches a room that never loaded', () async {
+      final repository = _FakeRepository()..roomFailures = 1;
+      // Too long a backoff for the retry timer to be what fetches it.
+      final chat = await _open(repository, backoff: const Duration(hours: 1));
+      expect(chat.state.room, isNull);
+
+      await chat.notifier.refresh();
+
+      expect(chat.state.room, _room);
+      final result = await chat.notifier.send('Hello');
+      expect(result.isRight(), isTrue);
     });
   });
 
@@ -511,6 +548,47 @@ void main() {
 
       expect(result.getRight().toNullable()?.id, 'rest-sent');
       expect(repository.sent.single.body, 'Lost');
+    });
+
+    test('with no echo and no way to check, it is not resent', () async {
+      final repository = _FakeRepository();
+      final (chat, _) = await _openLive(repository);
+
+      // The server may have stored it; the check cannot say.
+      repository.pageFailure = const NetworkFailure('offline');
+      final result = await chat.notifier.send('Maybe');
+
+      expect(result.getLeft().toNullable(), isA<NetworkFailure>());
+      expect(repository.sent, isEmpty);
+    });
+
+    test('a message under another page is marked read on return', () async {
+      final repository = _FakeRepository();
+      final (chat, channel) = await _openLive(repository);
+      final readsBefore = repository.readCount;
+
+      chat.notifier.setOnScreen(false);
+      channel.serverSends(_created(_message('live', '2026-10-16T12:00:00Z')));
+      await pumpEventQueue();
+
+      expect(chat.messages.first.id, 'live');
+      expect(repository.readCount, readsBefore);
+
+      chat.notifier.setOnScreen(true);
+      await pumpEventQueue();
+      expect(repository.readCount, readsBefore + 1);
+    });
+
+    test('coming back with nothing new does not mark read again', () async {
+      final repository = _FakeRepository();
+      final (chat, _) = await _openLive(repository);
+      final readsBefore = repository.readCount;
+
+      chat.notifier.setOnScreen(false);
+      chat.notifier.setOnScreen(true);
+      await pumpEventQueue();
+
+      expect(repository.readCount, readsBefore);
     });
 
     test('a drop reconnects and catches up on what it missed', () async {

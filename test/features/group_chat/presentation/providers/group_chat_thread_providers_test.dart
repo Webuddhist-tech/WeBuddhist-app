@@ -383,6 +383,56 @@ void main() {
       },
     );
 
+    test(
+      'loadInitial keeps what the socket delivered while it was in flight',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [_message('m2'), _message('m1')],
+        );
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        container = buildContainer();
+
+        final notifier = _keepAlive(container);
+        // The page's snapshot was taken before this one arrived.
+        notifier.appendFromSocket(_message('live'));
+        hold.complete();
+        await _settle();
+
+        expect(notifier.state.messages.map((m) => m.id).toList(), [
+          'live',
+          'm2',
+          'm1',
+        ]);
+        expect(notifier.state.total, 3);
+        expect(notifier.state.skip, 3);
+        expect(notifier.state.hasMore, isFalse);
+      },
+    );
+
+    test(
+      'loadInitial does not duplicate an arrival the page also carries',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [_message('live'), _message('m1')],
+        );
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        container = buildContainer();
+
+        final notifier = _keepAlive(container);
+        notifier.appendFromSocket(_message('live'));
+        hold.complete();
+        await _settle();
+
+        expect(notifier.state.messages.map((m) => m.id).toList(), [
+          'live',
+          'm1',
+        ]);
+        expect(notifier.state.total, 2);
+      },
+    );
+
     test('refreshLatest merges what was missed without duplicating', () async {
       repository = _FakeGroupChatRepository(history: [_message('m1')]);
       container = buildContainer();
