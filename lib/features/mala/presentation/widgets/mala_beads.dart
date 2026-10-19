@@ -383,6 +383,12 @@ class _MalaBeadsPainter extends CustomPainter {
     );
     canvas.save();
     canvas.clipPath(Path()..addOval(dst));
+    if (mirrored) {
+      // The strand is flipped for the left-hand layout; flip each bead back
+      // so its artwork is not drawn as a mirror image.
+      canvas.translate(center.dx * 2, 0);
+      canvas.scale(-1, 1);
+    }
     canvas.drawImageRect(
       image,
       src,

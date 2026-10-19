@@ -376,11 +376,11 @@ abstract class AppLocalizations {
   /// **'Add the number of mala rounds you did outside this app'**
   String get mala_add_rounds_message;
 
-  /// No description provided for @mala_rounds_unit.
+  /// Unit shown beside the number picked in the add mala rounds wheel
   ///
   /// In en, this message translates to:
-  /// **'rounds'**
-  String get mala_rounds_unit;
+  /// **'{count, plural, =1 {round} other {rounds}}'**
+  String mala_rounds_unit(int count);
 
   /// No description provided for @mala_add_to_bookmark.
   ///

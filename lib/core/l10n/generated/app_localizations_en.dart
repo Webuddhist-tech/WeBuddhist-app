@@ -155,7 +155,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add the number of mala rounds you did outside this app';
 
   @override
-  String get mala_rounds_unit => 'rounds';
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => 'Bookmark';

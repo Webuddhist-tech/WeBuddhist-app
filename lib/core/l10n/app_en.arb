@@ -59,7 +59,15 @@
   "mala_add_mala_round": "Add mala round",
   "mala_add_rounds_title": "Add mala rounds",
   "mala_add_rounds_message": "Add the number of mala rounds you did outside this app",
-  "mala_rounds_unit": "rounds",
+  "mala_rounds_unit": "{count, plural, =1 {round} other {rounds}}",
+  "@mala_rounds_unit": {
+    "description": "Unit shown beside the number picked in the add mala rounds wheel",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "mala_add_to_bookmark": "Bookmark",
   "mala_sound": "Sound",
   "mala_vibration": "Vibration",

@@ -2,8 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-/// One line of text that scrolls horizontally forever (right to left), with
-/// a copy following after [gap] so the loop never shows a seam.
+/// One line of text that scrolls horizontally (right to left) when it is too
+/// wide to fit, with a copy following after [gap] so the loop never shows a
+/// seam. Text that fits is shown still and centred.
+///
+/// The line also stays still when the system asks for reduced motion
+/// ([MediaQuery.disableAnimationsOf]); overflowing text is then clipped, and
+/// the parent's tap-to-open-in-full shows the rest.
 ///
 /// Speed is [basePixelsPerSecond] × [speedFactor]; changing the factor keeps
 /// the current offset so the text never jumps. Nothing is interactive here:
@@ -38,7 +43,7 @@ class _MantraMarqueeState extends State<MantraMarquee>
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_onTick)..start();
+    _ticker = createTicker(_onTick);
   }
 
   @override
@@ -73,6 +78,20 @@ class _MantraMarqueeState extends State<MantraMarquee>
     )..layout();
   }
 
+  /// Starts or stops the ticker. Called while laying out, which is safe: a
+  /// ticker only schedules a frame callback, it does not mark anything dirty.
+  void _setScrolling(bool scrolling) {
+    if (scrolling == _ticker.isActive) return;
+    if (scrolling) {
+      // A restarted ticker counts elapsed time from zero again.
+      _lastTick = Duration.zero;
+      _ticker.start();
+    } else {
+      _ticker.stop();
+      _offset.value = 0;
+    }
+  }
+
   void _onTick(Duration elapsed) {
     var dt = elapsed - _lastTick;
     _lastTick = elapsed;
@@ -87,21 +106,34 @@ class _MantraMarqueeState extends State<MantraMarquee>
   @override
   Widget build(BuildContext context) {
     final painter = _painter;
-    if (painter == null || widget.text.isEmpty) return const SizedBox.shrink();
+    if (painter == null || widget.text.isEmpty) {
+      _setScrolling(false);
+      return const SizedBox.shrink();
+    }
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: widget.text,
       excludeSemantics: true,
       child: SizedBox(
         height: painter.height,
         width: double.infinity,
-        child: ClipRect(
-          child: CustomPaint(
-            painter: _MarqueePainter(
-              textPainter: painter,
-              offset: _offset,
-              gap: widget.gap,
-            ),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final overflows = painter.width > constraints.maxWidth;
+            final scrolling = overflows && !reduceMotion;
+            _setScrolling(scrolling);
+            return ClipRect(
+              child: CustomPaint(
+                size: Size(constraints.maxWidth, painter.height),
+                painter: _MarqueePainter(
+                  textPainter: painter,
+                  offset: _offset,
+                  gap: widget.gap,
+                  scrolling: scrolling,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -113,14 +145,22 @@ class _MarqueePainter extends CustomPainter {
     required this.textPainter,
     required this.offset,
     required this.gap,
+    required this.scrolling,
   }) : super(repaint: offset);
 
   final TextPainter textPainter;
   final ValueListenable<double> offset;
   final double gap;
+  final bool scrolling;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (!scrolling) {
+      // Centred when it fits; start-aligned (and clipped) when it does not.
+      final x = (size.width - textPainter.width).clamp(0.0, double.infinity);
+      textPainter.paint(canvas, Offset(x / 2, 0));
+      return;
+    }
     final period = textPainter.width + gap;
     if (period <= 0) return;
     var x = -(offset.value % period);
@@ -132,5 +172,8 @@ class _MarqueePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MarqueePainter old) =>
-      old.textPainter != textPainter || old.gap != gap || old.offset != offset;
+      old.textPainter != textPainter ||
+      old.gap != gap ||
+      old.offset != offset ||
+      old.scrolling != scrolling;
 }

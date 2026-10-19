@@ -154,7 +154,15 @@ class AppLocalizationsMn extends AppLocalizations {
       'Энэ аппаас гадуур хийсэн эрхийн ээлжийнхээ тоог нэмнэ үү';
 
   @override
-  String get mala_rounds_unit => 'rounds';
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => 'Хавчуурга';

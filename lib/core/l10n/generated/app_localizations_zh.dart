@@ -148,7 +148,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mala_add_rounds_message => '新增您在此應用程式之外完成的念珠遍數';
 
   @override
-  String get mala_rounds_unit => 'rounds';
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => '書籤';

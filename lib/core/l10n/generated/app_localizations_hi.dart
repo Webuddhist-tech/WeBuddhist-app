@@ -153,7 +153,15 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस ऐप के बाहर किए गए माला राउंड की संख्या जोड़ें';
 
   @override
-  String get mala_rounds_unit => 'rounds';
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => 'बुकमार्क';

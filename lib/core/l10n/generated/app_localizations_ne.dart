@@ -154,7 +154,15 @@ class AppLocalizationsNe extends AppLocalizations {
       'यस एपबाहिर गर्नुभएको माला चक्रको संख्या थप्नुहोस्';
 
   @override
-  String get mala_rounds_unit => 'rounds';
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => 'बुकमार्क';

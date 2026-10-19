@@ -169,7 +169,9 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
     }
     _index = _index.clamp(0, mantras.length - 1);
     final mantra = mantras[_index];
-    final hasDeityImage = mantra.deityImage != null;
+    // Sized for artwork when any mantra has some, so swiping between mantras
+    // with and without an image never resizes the layout mid-carousel.
+    final hasDeityImage = mantras.any((m) => m.deityImage != null);
 
     ref.watch(
       prefetchBookmarkExistsProvider(
@@ -282,8 +284,8 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Without artwork the switcher is just the band, centred in a
-                // shorter slot so the counter and beads move up to meet it.
+                // When no mantra has artwork the switcher is just the band,
+                // centred in a shorter slot so the counter and beads move up.
                 Expanded(
                   flex: hasDeityImage ? 48 : 26,
                   child: MantraSwitcher(

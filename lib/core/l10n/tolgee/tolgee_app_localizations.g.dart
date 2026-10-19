@@ -313,10 +313,11 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get mala_rounds_unit => TolgeeBridge.get(
+  String mala_rounds_unit(int count) => TolgeeBridge.format(
     localeName,
     'mala_rounds_unit',
-    () => _fallback.mala_rounds_unit,
+    <String, Object>{'count': count},
+    () => _fallback.mala_rounds_unit(count),
   );
 
   @override

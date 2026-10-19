@@ -112,7 +112,9 @@ class MantraSpeedSheet extends ConsumerWidget {
                             ((kMalaMantraSpeedMax - kMalaMantraSpeedMin) /
                                     _step)
                                 .round(),
-                        onChanged: notifier.setMantraSpeed,
+                        // Live while dragging; saved once on release.
+                        onChanged: notifier.previewMantraSpeed,
+                        onChangeEnd: notifier.setMantraSpeed,
                       ),
                     ),
                   ),

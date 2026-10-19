@@ -5,22 +5,25 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/widgets/mantra_marquee.dart';
+import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
 
-/// Deity artwork carousel with the mantra band underneath.
+/// Mantra carousel: each page is one mantra's deity artwork (when it has
+/// any) above its mantra band.
 ///
-/// The artwork is an **infinite, looping** [PageView] flanked by chevrons:
-/// swipes and chevrons both advance it and it wraps endlessly (the page is
-/// seeded far from 0 and mapped back with `page % length`). The band below
-/// shows the current mantra's script and transliteration as endless marquees
-/// scrolling at [speedFactor]; it follows [index], so it switches when a page
-/// settles.
+/// The carousel is an **infinite, looping** [PageView]: swipes and the
+/// chevrons both advance it and it wraps endlessly (the page is seeded far
+/// from 0 and mapped back with `page % length`). Every mantra is swipeable,
+/// with or without artwork. A page with artwork shows the image between the
+/// chevrons and the band below it; a page without shows the band between the
+/// chevrons, centred vertically in whatever height the parent gives.
 ///
-/// Tapping either line opens that text in full in place of artwork and band,
-/// with the marquees stopped; the close button brings the carousel back.
+/// The band shows the mantra's script and transliteration as marquees that
+/// scroll at [speedFactor] when the text is too wide to fit.
+///
+/// Tapping either line opens that text in full over the carousel; the close
+/// button brings it back. The carousel stays mounted (hidden, tickers muted)
+/// while the full text is open, so it keeps its page.
 /// With a single mantra the carousel locks (no swipe, chevrons disabled).
-///
-/// A mantra without artwork shows just the band with the chevrons beside it,
-/// centred vertically in whatever height the parent gives.
 class MantraSwitcher extends StatefulWidget {
   const MantraSwitcher({
     super.key,
@@ -59,13 +62,7 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   /// backward effectively "forever". `initialPage % length == index`.
   static const int _loopBase = 1000;
 
-  late PageController _controller;
-
-  /// Controllers replaced mid-life; disposed once their PageView is gone.
-  final List<PageController> _retired = [];
-
-  /// Whether the last build mounted the artwork PageView.
-  bool _pageViewMounted = false;
+  late final PageController _controller;
 
   /// Which line is open in full, or null while the carousel is showing.
   _MantraLine? _expanded;
@@ -75,38 +72,27 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
   @override
   void initState() {
     super.initState();
-    _controller = _newController();
+    final length = widget.mantras.length;
+    _controller = PageController(
+      initialPage: _canLoop ? _loopBase * length + widget.index : widget.index,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant MantraSwitcher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The parent can change the index (or the list) without a swipe, e.g. a
+    // clamp after the catalogue reloads. Move the carousel to match.
+    if (widget.index != oldWidget.index ||
+        widget.mantras.length != oldWidget.mantras.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncToIndex());
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    for (final c in _retired) {
-      c.dispose();
-    }
     super.dispose();
-  }
-
-  PageController _newController() {
-    final length = widget.mantras.length;
-    return PageController(
-      initialPage: _canLoop ? _loopBase * length + widget.index : widget.index,
-    );
-  }
-
-  /// A PageView that re-mounts would resume from the controller's original
-  /// `initialPage`, not the mantra now selected, so seed a fresh one. The old
-  /// controller is disposed after the frame, once its PageView has detached.
-  void _reseedController() {
-    _retired.add(_controller);
-    _controller = _newController();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      for (final c in _retired) {
-        c.dispose();
-      }
-      _retired.clear();
-    });
   }
 
   int _logical(int page) {
@@ -115,19 +101,26 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
     return page % length;
   }
 
+  /// Jumps to the page nearest the current one that shows [widget.index],
+  /// unless it is already showing or a swipe/animation is in flight.
+  void _syncToIndex() {
+    if (!mounted || !_controller.hasClients) return;
+    final position = _controller.position;
+    if (position.isScrollingNotifier.value) return;
+    final page = _controller.page?.round();
+    if (page == null || _logical(page) == widget.index) return;
+    final length = widget.mantras.length;
+    final target =
+        _canLoop
+            ? page - _logical(page) + widget.index
+            : widget.index.clamp(0, length - 1);
+    _controller.jumpToPage(target);
+  }
+
   /// Animate the carousel by [delta] pages (loops via the page → mantra map).
-  /// Without the artwork PageView on screen, the index switches directly.
   void _animateBy(int delta) {
-    if (!_canLoop) return;
-    if (!_pageViewMounted || !_controller.hasClients) {
-      final length = widget.mantras.length;
-      widget.onIndexChanged((widget.index + delta) % length);
-      return;
-    }
-    final current =
-        _controller.hasClients && _controller.page != null
-            ? _controller.page!.round()
-            : _controller.initialPage;
+    if (!_canLoop || !_controller.hasClients) return;
+    final current = _controller.page?.round() ?? _controller.initialPage;
     _controller.animateToPage(
       current + delta,
       duration: const Duration(milliseconds: 300),
@@ -135,14 +128,13 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
     );
   }
 
+  String _transliteration(Mantra mantra) =>
+      mantra.transliteration(widget.language) ??
+      mantra.localizedName(widget.language);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mantra = widget.mantras[widget.index];
-    final script = mantra.tibetan;
-    final transliteration =
-        mantra.transliteration(widget.language) ??
-        mantra.localizedName(widget.language);
     final scriptStyle = theme.textTheme.titleMedium?.copyWith(
       fontFamily: widget.tibetanFontFamily,
       height: 1.4,
@@ -154,41 +146,96 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
       color: theme.colorScheme.onSurface,
     );
 
-    final showImage = mantra.deityImage != null;
-    if (showImage && !_pageViewMounted) _reseedController();
-    _pageViewMounted = showImage;
-
     final expanded = _expanded;
+    final carousel = PageView.builder(
+      controller: _controller,
+      physics:
+          _canLoop
+              ? const PageScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+      onPageChanged: (page) => widget.onIndexChanged(_logical(page)),
+      // Null itemCount = unbounded forward; bounded at 0 backward, but the
+      // large initial page keeps that out of reach.
+      itemCount: _canLoop ? null : widget.mantras.length,
+      itemBuilder: (context, page) {
+        final mantra = widget.mantras[_logical(page)];
+        return _MantraPage(
+          key: ValueKey<int>(page),
+          image: mantra.deityImage,
+          band: _MantraBand(
+            script: mantra.tibetan,
+            scriptStyle: scriptStyle,
+            transliteration: _transliteration(mantra),
+            transliterationStyle: transliterationStyle,
+            speedFactor: widget.speedFactor,
+            onScriptTap: () => setState(() => _expanded = _MantraLine.script),
+            onTransliterationTap:
+                () => setState(() => _expanded = _MantraLine.transliteration),
+          ),
+          leftChevron: _Chevron(
+            icon: AppAssets.caretLeft2,
+            onTap: _canLoop ? () => _animateBy(-1) : null,
+          ),
+          rightChevron: _Chevron(
+            icon: AppAssets.caretRight2,
+            onTap: _canLoop ? () => _animateBy(1) : null,
+          ),
+        );
+      },
+    );
+
+    Widget? fullCard;
     if (expanded != null) {
+      final mantra = widget.mantras[widget.index];
+      final script = mantra.tibetan;
       final isScript = expanded == _MantraLine.script && script != null;
-      return _FullMantraCard(
+      fullCard = _FullMantraCard(
         key: const ValueKey('mantra-full'),
-        text: isScript ? script : transliteration,
-        style: (isScript ? scriptStyle : transliterationStyle) ?? const TextStyle(),
+        text: isScript ? script : _transliteration(mantra),
+        style:
+            (isScript ? scriptStyle : transliterationStyle) ??
+            const TextStyle(),
         onClose: () => setState(() => _expanded = null),
       );
     }
 
-    final band = _MantraBand(
-      script: script,
-      scriptStyle: scriptStyle,
-      transliteration: transliteration,
-      transliterationStyle: transliterationStyle,
-      speedFactor: widget.speedFactor,
-      onScriptTap: () => setState(() => _expanded = _MantraLine.script),
-      onTransliterationTap:
-          () => setState(() => _expanded = _MantraLine.transliteration),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Kept mounted while the full text is open so the PageView keeps its
+        // page; a re-mounted PageView would restart at the controller's
+        // initial page and show the wrong mantra's artwork.
+        Visibility(
+          visible: fullCard == null,
+          maintainState: true,
+          child: carousel,
+        ),
+        if (fullCard != null) fullCard,
+      ],
     );
-    final leftChevron = _Chevron(
-      icon: AppAssets.caretLeft2,
-      onTap: _canLoop ? () => _animateBy(-1) : null,
-    );
-    final rightChevron = _Chevron(
-      icon: AppAssets.caretRight2,
-      onTap: _canLoop ? () => _animateBy(1) : null,
-    );
+  }
+}
 
-    if (!showImage) {
+/// One carousel page. With artwork: image between the chevrons, band below.
+/// Without: band between the chevrons, centred in the page.
+class _MantraPage extends StatelessWidget {
+  const _MantraPage({
+    super.key,
+    required this.image,
+    required this.band,
+    required this.leftChevron,
+    required this.rightChevron,
+  });
+
+  final ResponsiveImage? image;
+  final Widget band;
+  final Widget leftChevron;
+  final Widget rightChevron;
+
+  @override
+  Widget build(BuildContext context) {
+    final art = image;
+    if (art == null) {
       return Center(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -196,7 +243,6 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
         ),
       );
     }
-
     return Column(
       children: [
         Expanded(
@@ -205,30 +251,13 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
             children: [
               leftChevron,
               Expanded(
-                child: PageView.builder(
-                  controller: _controller,
-                  physics:
-                      _canLoop
-                          ? const PageScrollPhysics()
-                          : const NeverScrollableScrollPhysics(),
-                  onPageChanged:
-                      (page) => widget.onIndexChanged(_logical(page)),
-                  // Null itemCount = unbounded forward; bounded at 0 backward,
-                  // but the large initial page keeps that out of reach.
-                  itemCount: _canLoop ? null : widget.mantras.length,
-                  itemBuilder: (context, page) {
-                    final image = widget.mantras[_logical(page)].deityImage;
-                    if (image == null) return const SizedBox.shrink();
-                    return Padding(
-                      key: ValueKey<int>(page),
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: ResponsiveCoverImage(
-                        image: image,
-                        fit: BoxFit.contain,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    );
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: ResponsiveCoverImage(
+                    image: art,
+                    fit: BoxFit.contain,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               rightChevron,
@@ -268,7 +297,8 @@ class _MantraBand extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent =
         isDark ? AppColors.malaMantraAccentDark : AppColors.malaMantraAccent;
-    final fill = isDark ? AppColors.malaMantraBandDark : AppColors.malaMantraBand;
+    final fill =
+        isDark ? AppColors.malaMantraBandDark : AppColors.malaMantraBand;
     final label = context.l10n.mala_show_full_mantra;
 
     return Stack(
@@ -404,7 +434,8 @@ class _FullMantraCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final accent =
         isDark ? AppColors.malaMantraAccentDark : AppColors.malaMantraAccent;
-    final fill = isDark ? AppColors.malaMantraBandDark : AppColors.malaMantraBand;
+    final fill =
+        isDark ? AppColors.malaMantraBandDark : AppColors.malaMantraBand;
 
     return Container(
       width: double.infinity,

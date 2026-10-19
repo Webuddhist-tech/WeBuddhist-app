@@ -128,7 +128,7 @@ class _AddMalaRoundsDialogState extends State<_AddMalaRoundsDialog> {
                           child: Padding(
                             padding: const EdgeInsets.only(left: 28),
                             child: Text(
-                              l10n.mala_rounds_unit,
+                              l10n.mala_rounds_unit(_rounds),
                               style: theme.textTheme.titleLarge?.copyWith(
                                 color: onSurface,
                               ),

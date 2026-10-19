@@ -75,6 +75,12 @@ class MalaSettingsNotifier extends StateNotifier<MalaSettingsState> {
     await prefs.setBool(StorageKeys.malaLeftHanded, leftHanded);
   }
 
+  /// Updates the speed in memory only, for live feedback while a slider is
+  /// dragged. Call [setMantraSpeed] when the drag ends to save it.
+  void previewMantraSpeed(double speed) {
+    state = state.copyWith(mantraSpeed: _clampSpeed(speed));
+  }
+
   Future<void> setMantraSpeed(double speed) async {
     final clamped = _clampSpeed(speed);
     state = state.copyWith(mantraSpeed: clamped);

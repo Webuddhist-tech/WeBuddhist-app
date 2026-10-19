@@ -154,7 +154,15 @@ class AppLocalizationsBo extends AppLocalizations {
       'མཉེན་ཆས་འདིའི་ཕྱི་ལ་བགྲངས་པའི་ཕྲེང་འཁོར་འདིར་སྣོན།';
 
   @override
-  String get mala_rounds_unit => 'rounds';
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => 'དཔེ་རྟགས།';
