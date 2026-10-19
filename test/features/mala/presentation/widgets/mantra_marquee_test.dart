@@ -30,11 +30,11 @@ const _long =
     'Om Mani Padme Hum Om Mani Padme Hum Om Mani Padme Hum Om Mani Padme Hum';
 
 void main() {
-  testWidgets('text that fits stays still', (tester) async {
+  testWidgets('text that fits still scrolls', (tester) async {
     await tester.pumpWidget(_host('Om'));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
-    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(tester.binding.hasScheduledFrame, isTrue);
   });
 
   testWidgets('text that overflows keeps scrolling', (tester) async {

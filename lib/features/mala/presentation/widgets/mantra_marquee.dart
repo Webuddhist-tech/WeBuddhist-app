@@ -2,13 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-/// One line of text that scrolls horizontally (right to left) when it is too
-/// wide to fit, with a copy following after [gap] so the loop never shows a
-/// seam. Text that fits is shown still and centred.
+/// One line of text that always scrolls horizontally (right to left), short
+/// or long, with a copy following after [gap] so the loop never shows a seam.
 ///
-/// The line also stays still when the system asks for reduced motion
-/// ([MediaQuery.disableAnimationsOf]); overflowing text is then clipped, and
-/// the parent's tap-to-open-in-full shows the rest.
+/// The line stays still when the system asks for reduced motion
+/// ([MediaQuery.disableAnimationsOf]): centred if it fits, otherwise clipped,
+/// and the parent's tap-to-open-in-full shows the rest.
 ///
 /// Speed is [basePixelsPerSecond] × [speedFactor]; changing the factor keeps
 /// the current offset so the text never jumps. Nothing is interactive here:
@@ -119,8 +118,7 @@ class _MantraMarqueeState extends State<MantraMarquee>
         width: double.infinity,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final overflows = painter.width > constraints.maxWidth;
-            final scrolling = overflows && !reduceMotion;
+            final scrolling = !reduceMotion;
             _setScrolling(scrolling);
             return ClipRect(
               child: CustomPaint(
