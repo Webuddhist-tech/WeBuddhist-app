@@ -65,5 +65,13 @@ void main() {
       // A user quoting the phrase mid-sentence is not a context line.
       expect(parseHelpContext('Sent from Help & contact, I think?'), isNull);
     });
+
+    test('a photo count too large for an int reads as none', () {
+      final parsed = parseHelpContext(
+        'Sent from Help & contact · 99999999999999999999 photos\n\nHi',
+      );
+      expect(parsed!.context.photoCount, 0);
+      expect(parsed.body, 'Hi');
+    });
   });
 }

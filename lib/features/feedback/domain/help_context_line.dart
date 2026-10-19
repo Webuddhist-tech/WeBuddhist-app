@@ -52,7 +52,9 @@ HelpContextMessage? parseHelpContext(String body) {
   for (final part in parts.skip(1)) {
     final photos = _photoPart.firstMatch(part);
     if (photos != null) {
-      photoCount = int.parse(photos.group(1)!);
+      // tryParse: anyone can type this line, and a count too large for an
+      // int must not throw while a chat row or preview is being built.
+      photoCount = int.tryParse(photos.group(1)!) ?? 0;
       continue;
     }
     topic ??= HelpTopic.fromCanonicalLabel(part);
