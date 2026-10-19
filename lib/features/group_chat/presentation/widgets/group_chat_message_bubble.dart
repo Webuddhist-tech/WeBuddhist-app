@@ -37,6 +37,7 @@ class GroupChatMessageBubble extends StatelessWidget {
     this.isParentOwn = false,
     this.onShowReactions,
     this.onTapQuote,
+    this.showIdentity = true,
   });
 
   final ChatMessageDTO message;
@@ -72,6 +73,10 @@ class GroupChatMessageBubble extends StatelessWidget {
 
   /// Scrolls to the quoted original when it is still on screen.
   final VoidCallback? onTapQuote;
+
+  /// Avatars and the sender name. A direct chat leaves them out: the header
+  /// already says who the other person is, and the side says who wrote what.
+  final bool showIdentity;
 
   static const double _avatarSize = 32;
   static const double _maxWidthFactor = 0.68;
@@ -147,7 +152,7 @@ class GroupChatMessageBubble extends StatelessWidget {
             isSelf ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isSelf)
+          if (!isSelf && showIdentity)
             Padding(
               padding: const EdgeInsets.only(right: _avatarGap),
               child: avatar,
@@ -196,7 +201,7 @@ class GroupChatMessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (isSelf)
+          if (isSelf && showIdentity)
             Padding(
               padding: const EdgeInsets.only(left: _avatarGap),
               child: avatar,
@@ -249,7 +254,7 @@ class GroupChatMessageBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isSelf && isRunStart) ...[
+            if (!isSelf && isRunStart && showIdentity) ...[
               Text(
                 displayName ?? '',
                 maxLines: 1,

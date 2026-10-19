@@ -5558,24 +5558,6 @@ abstract class AppLocalizations {
   /// **'The live session has ended'**
   String get recitation_live_session_ended;
 
-  /// No description provided for @feedback_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Feedback'**
-  String get feedback_title;
-
-  /// No description provided for @feedback_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Tell us what\'s working, what isn\'t, or what you\'d like to see...'**
-  String get feedback_hint;
-
-  /// No description provided for @feedback_images.
-  ///
-  /// In en, this message translates to:
-  /// **'Images'**
-  String get feedback_images;
-
   /// No description provided for @feedback_add_image.
   ///
   /// In en, this message translates to:
@@ -5593,12 +5575,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send'**
   String get feedback_send;
-
-  /// No description provided for @feedback_sent.
-  ///
-  /// In en, this message translates to:
-  /// **'Thank you! Your feedback has been sent'**
-  String get feedback_sent;
 
   /// No description provided for @feedback_error_offline.
   ///
@@ -5629,6 +5605,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Feedback is not available right now'**
   String get feedback_error_unavailable;
+
+  /// No description provided for @settings_help_contact_row.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & contact'**
+  String get settings_help_contact_row;
+
+  /// No description provided for @help_contact_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & contact'**
+  String get help_contact_title;
+
+  /// No description provided for @help_contact_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a problem, share an idea, or offer to help or collaborate. We read every message.'**
+  String get help_contact_intro;
+
+  /// No description provided for @help_contact_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get help_contact_message;
+
+  /// No description provided for @help_contact_photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos or screenshots (optional)'**
+  String get help_contact_photos;
+
+  /// No description provided for @help_contact_topic.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s this about? (optional)'**
+  String get help_contact_topic;
+
+  /// No description provided for @help_contact_hint_default.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to tell us?'**
+  String get help_contact_hint_default;
+
+  /// No description provided for @help_contact_hint_report_problem.
+  ///
+  /// In en, this message translates to:
+  /// **'What happened, and what were you doing just before? A screenshot helps.'**
+  String get help_contact_hint_report_problem;
+
+  /// No description provided for @help_contact_hint_idea_feedback.
+  ///
+  /// In en, this message translates to:
+  /// **'What would make WeBuddhist more helpful for your practice?'**
+  String get help_contact_hint_idea_feedback;
+
+  /// No description provided for @help_contact_hint_suggest_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Which teaching, text, or teacher would you like to see here? Links are welcome.'**
+  String get help_contact_hint_suggest_content;
+
+  /// No description provided for @help_contact_hint_help_collaborate.
+  ///
+  /// In en, this message translates to:
+  /// **'How would you like to help? Share your skills, languages, or the time you can offer.'**
+  String get help_contact_hint_help_collaborate;
+
+  /// No description provided for @help_topic_report_problem.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a problem'**
+  String get help_topic_report_problem;
+
+  /// No description provided for @help_topic_idea_feedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Idea or feedback'**
+  String get help_topic_idea_feedback;
+
+  /// No description provided for @help_topic_suggest_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest content'**
+  String get help_topic_suggest_content;
+
+  /// No description provided for @help_topic_help_collaborate.
+  ///
+  /// In en, this message translates to:
+  /// **'Help or collaborate'**
+  String get help_topic_help_collaborate;
+
+  /// No description provided for @help_contact_footer.
+  ///
+  /// In en, this message translates to:
+  /// **'Replies come from the WeBuddhist Team in your Chats.'**
+  String get help_contact_footer;
+
+  /// No description provided for @help_contact_sent_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent'**
+  String get help_contact_sent_title;
+
+  /// No description provided for @help_contact_sent_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks. We usually reply within 1 day. You\'ll find the reply in your Chats, from the WeBuddhist Team.'**
+  String get help_contact_sent_body;
+
+  /// No description provided for @help_contact_sent_body_named.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks, {name}. We usually reply within 1 day. You\'ll find the reply in your Chats, from the WeBuddhist Team.'**
+  String help_contact_sent_body_named(String name);
+
+  /// No description provided for @help_contact_your_request.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR REQUEST'**
+  String get help_contact_your_request;
+
+  /// No description provided for @help_contact_open_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Open chat'**
+  String get help_contact_open_chat;
+
+  /// No description provided for @help_context_sent_from.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent from Help & contact'**
+  String get help_context_sent_from;
+
+  /// No description provided for @help_context_photos.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 photo} other{{count} photos}}'**
+  String help_context_photos(int count);
+
+  /// No description provided for @chat_official_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Official'**
+  String get chat_official_badge;
+
+  /// No description provided for @chat_team_reply_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Usually replies within 1 day'**
+  String get chat_team_reply_time;
 
   /// No description provided for @connect_failed_load_discover_groups_error.
   ///

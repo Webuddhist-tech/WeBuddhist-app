@@ -1626,9 +1626,6 @@
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",
-  "feedback_title": "Feedback",
-  "feedback_hint": "Tell us what's working, what isn't, or what you'd like to see...",
-  "feedback_images": "Images",
   "feedback_add_image": "Add image",
   "feedback_image_limit": "You can attach up to {count} images",
   "@feedback_image_limit": {
@@ -1639,12 +1636,50 @@
     }
   },
   "feedback_send": "Send",
-  "feedback_sent": "Thank you! Your feedback has been sent",
   "feedback_error_offline": "You're offline. Please try again later",
   "feedback_error_rate_limited": "Too many requests. Wait a moment and try again",
   "feedback_error_too_large": "Images are too large. Remove one and try again",
   "feedback_error_failed": "Couldn't send feedback. Please try again",
   "feedback_error_unavailable": "Feedback is not available right now",
+  "settings_help_contact_row": "Help & contact",
+  "help_contact_title": "Help & contact",
+  "help_contact_intro": "Report a problem, share an idea, or offer to help or collaborate. We read every message.",
+  "help_contact_message": "Message",
+  "help_contact_photos": "Photos or screenshots (optional)",
+  "help_contact_topic": "What's this about? (optional)",
+  "help_contact_hint_default": "What would you like to tell us?",
+  "help_contact_hint_report_problem": "What happened, and what were you doing just before? A screenshot helps.",
+  "help_contact_hint_idea_feedback": "What would make WeBuddhist more helpful for your practice?",
+  "help_contact_hint_suggest_content": "Which teaching, text, or teacher would you like to see here? Links are welcome.",
+  "help_contact_hint_help_collaborate": "How would you like to help? Share your skills, languages, or the time you can offer.",
+  "help_topic_report_problem": "Report a problem",
+  "help_topic_idea_feedback": "Idea or feedback",
+  "help_topic_suggest_content": "Suggest content",
+  "help_topic_help_collaborate": "Help or collaborate",
+  "help_contact_footer": "Replies come from the WeBuddhist Team in your Chats.",
+  "help_contact_sent_title": "Message sent",
+  "help_contact_sent_body": "Thanks. We usually reply within 1 day. You'll find the reply in your Chats, from the WeBuddhist Team.",
+  "help_contact_sent_body_named": "Thanks, {name}. We usually reply within 1 day. You'll find the reply in your Chats, from the WeBuddhist Team.",
+  "@help_contact_sent_body_named": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "help_contact_your_request": "YOUR REQUEST",
+  "help_contact_open_chat": "Open chat",
+  "help_context_sent_from": "Sent from Help & contact",
+  "help_context_photos": "{count, plural, =1{1 photo} other{{count} photos}}",
+  "@help_context_photos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chat_official_badge": "Official",
+  "chat_team_reply_time": "Usually replies within 1 day",
   "connect_failed_load_discover_groups_error": "Unable to load spaces",
   "connect_failed_like_post_error": "Unable to like post",
   "connect_failed_unlike_post_error": "Unable to unlike post",

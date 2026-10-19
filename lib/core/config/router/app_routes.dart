@@ -63,6 +63,17 @@ class AppRoutes {
   /// [groupChat] — it is not guest-accessible.
   static const String chats = '/chats';
 
+  /// A direct chat, keyed by room id. The room can travel in `extra` so the
+  /// header shows before the room is fetched. Top-level and not
+  /// guest-accessible, like [chats].
+  static const String directChat = '/direct-chat/:roomId';
+
+  static String directChatPath(String roomId) => '/direct-chat/$roomId';
+
+  /// Help & contact. Top-level and not guest-accessible: what it sends needs
+  /// an account.
+  static const String helpContact = '/help-contact';
+
   // ========== PRACTICE SUB ROUTES ==========
   static const String practiceEditRoutine = '/practice/edit-routine';
   static const String practiceMyPractices = '/practice/my-practices';

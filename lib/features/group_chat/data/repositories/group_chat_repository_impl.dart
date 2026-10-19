@@ -120,6 +120,18 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
+    String userId, {
+    required String body,
+  }) async {
+    try {
+      return Right(await _remote.sendDirectMessage(userId, body: body));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'sendDirectMessage'));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async {
     try {
       return Right(await _remote.listIntentions());

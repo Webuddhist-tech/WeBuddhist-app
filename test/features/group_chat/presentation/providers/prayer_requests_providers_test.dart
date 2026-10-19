@@ -163,6 +163,12 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
+    String userId, {
+    required String body,
+  }) async => const Left(NotFoundFailure('not used'));
+
+  @override
   Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async =>
       const Right([]);
 
