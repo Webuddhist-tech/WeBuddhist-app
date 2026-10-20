@@ -6711,34 +6711,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get group_event_cover_group_cover => TolgeeBridge.get(
-    localeName,
-    'group_event_cover_group_cover',
-    () => _fallback.group_event_cover_group_cover,
-  );
-
-  @override
-  String get group_event_cover_choose_photo => TolgeeBridge.get(
-    localeName,
-    'group_event_cover_choose_photo',
-    () => _fallback.group_event_cover_choose_photo,
-  );
-
-  @override
-  String get group_event_cover_hint => TolgeeBridge.get(
-    localeName,
-    'group_event_cover_hint',
-    () => _fallback.group_event_cover_hint,
-  );
-
-  @override
-  String get group_event_cover_use => TolgeeBridge.get(
-    localeName,
-    'group_event_cover_use',
-    () => _fallback.group_event_cover_use,
-  );
-
-  @override
   String get group_event_discard_title => TolgeeBridge.get(
     localeName,
     'group_event_discard_title',

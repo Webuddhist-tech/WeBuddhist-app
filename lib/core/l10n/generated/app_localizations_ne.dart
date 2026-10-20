@@ -3446,19 +3446,6 @@ class AppLocalizationsNe extends AppLocalizations {
       'Preselected from your space\'s languages. Readers see the event in their language when it\'s available.';
 
   @override
-  String get group_event_cover_group_cover => 'Group cover';
-
-  @override
-  String get group_event_cover_choose_photo => 'Choose from photos';
-
-  @override
-  String get group_event_cover_hint =>
-      'Square crops are previewed in the events list.';
-
-  @override
-  String get group_event_cover_use => 'Use this image';
-
-  @override
   String get group_event_discard_title => 'Discard event?';
 
   @override

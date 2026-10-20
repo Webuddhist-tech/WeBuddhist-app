@@ -231,11 +231,7 @@ class _GroupEventComposerScreenState
 
   Future<void> _pickCover() async {
     FocusScope.of(context).unfocus();
-    final cover = await GroupEventCoverSheet.show(
-      context,
-      groupCoverUrl: widget.profile.bannerUrl,
-      current: _draft.cover,
-    );
+    final cover = await GroupEventCoverPicker.pick();
     if (cover == null || !mounted) return;
     setState(() => _draft = _draft.copyWith(cover: cover));
   }

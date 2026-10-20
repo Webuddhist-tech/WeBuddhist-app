@@ -5966,30 +5966,6 @@ abstract class AppLocalizations {
   /// **'Preselected from your space\'s languages. Readers see the event in their language when it\'s available.'**
   String get group_event_languages_hint;
 
-  /// No description provided for @group_event_cover_group_cover.
-  ///
-  /// In en, this message translates to:
-  /// **'Group cover'**
-  String get group_event_cover_group_cover;
-
-  /// No description provided for @group_event_cover_choose_photo.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose from photos'**
-  String get group_event_cover_choose_photo;
-
-  /// No description provided for @group_event_cover_hint.
-  ///
-  /// In en, this message translates to:
-  /// **'Square crops are previewed in the events list.'**
-  String get group_event_cover_hint;
-
-  /// No description provided for @group_event_cover_use.
-  ///
-  /// In en, this message translates to:
-  /// **'Use this image'**
-  String get group_event_cover_use;
-
   /// No description provided for @group_event_discard_title.
   ///
   /// In en, this message translates to:
