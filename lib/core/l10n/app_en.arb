@@ -1724,5 +1724,9 @@
   "timer_delete_message": "This timer will be removed from your timers.",
   "timer_duration_must_be_greater_than_error": "Duration must be greater than 0",
   "splash_tagline_1": "We Buddhists practice together",
-  "splash_tagline_2": "We Buddhists practice daily"
+  "splash_tagline_2": "We Buddhists practice daily",
+  "timer_list_subtitle": "Tap play to begin, or build your own.",
+  "timer_create_custom": "Create a custom timer",
+  "timer_create_custom_subtitle": "Set duration, bells and ambient sound",
+  "timer_starting": "Starting..."
 }

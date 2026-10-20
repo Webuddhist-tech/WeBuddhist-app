@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
@@ -20,39 +21,23 @@ class PresetTimersScreen extends ConsumerWidget {
   const PresetTimersScreen({super.key});
 
   static const _horizontalPadding = 16.0;
-  static const _gridSpacing = 12.0;
-  static const _sectionSpacing = 24.0;
-
-  void _onAddCustomTimer(BuildContext context) {
-    context.push('/home/timers/new');
-  }
+  static const _sectionSpacing = 28.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final timersAsync = ref.watch(presetTimersFutureProvider);
-    final hasUserCreatedTimers = timersAsync.maybeWhen(
-      data:
-          (timersEither) => timersEither.fold(
-            (_) => false,
-            (timers) => timers.any((timer) => timer.isUserCreated),
-          ),
-      orElse: () => false,
-    );
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton:
-          hasUserCreatedTimers
-              ? _CustomTimerFab(
-                label: l10n.timer_custom_timer,
-                onPressed: () => _onAddCustomTimer(context),
-              )
-              : null,
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildAppBar(context, l10n.meditation_timer),
+            _TimersHeader(
+              title: l10n.meditation_timer,
+              subtitle: l10n.timer_list_subtitle,
+            ),
             Expanded(
               child: timersAsync.when(
                 data: (timersEither) {
@@ -65,25 +50,18 @@ class PresetTimersScreen extends ConsumerWidget {
                       final presetTimers = _sortedPresetTimers(
                         timers.where((timer) => timer.isPreset).toList(),
                       );
-                      // User-created timers (type == "user_created"). The
-                      // dashed "+ Custom timer" card is shown only until the
-                      // first one exists; after that the FAB takes over.
+                      // User-created timers (type == "user_created") sit under
+                      // the dashed create row, which stays so another timer
+                      // can be added.
                       final customTimers =
                           timers.where((timer) => timer.isUserCreated).toList();
 
-                      // An empty list falls through rather than showing an
-                      // empty-state message: the only useful action on this
-                      // screen is creating a timer, so "Your timers" plus the
-                      // dashed add card is what belongs on screen. Showing the
-                      // message instead left the user with no way to create
-                      // one, since the FAB is gated on already having one.
                       return RefreshIndicator(
                         onRefresh: () => _refreshPresetTimers(ref),
                         child: _TimersContent(
                           presetTimers: presetTimers,
                           customTimers: customTimers,
                           minLabel: l10n.timer_min,
-                          showAddCard: customTimers.isEmpty,
                         ),
                       );
                     },
@@ -119,38 +97,62 @@ class PresetTimersScreen extends ConsumerWidget {
     ref.invalidate(presetTimersFutureProvider);
   }
 
-  Widget _buildAppBar(BuildContext context, String title) {
+  List<PresetTimer> _sortedPresetTimers(List<PresetTimer> timers) {
+    final sorted = List<PresetTimer>.from(timers)
+      ..sort((a, b) => a.durationMs.compareTo(b.durationMs));
+    return sorted;
+  }
+}
+
+class _TimersHeader extends StatelessWidget {
+  const _TimersHeader({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subtitleColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           IconButton(
             icon: const Icon(AppAssets.arrowLeft),
             onPressed: () => context.pop(),
           ),
-          Expanded(
-            child: Center(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.only(left: 12, right: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    height: 1.35,
+                    color: subtitleColor,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 48, height: 48),
         ],
       ),
     );
-  }
-
-  List<PresetTimer> _sortedPresetTimers(List<PresetTimer> timers) {
-    final sorted = List<PresetTimer>.from(timers)
-      ..sort((a, b) => a.durationMs.compareTo(b.durationMs));
-    return sorted;
   }
 }
 
@@ -159,13 +161,11 @@ class _TimersContent extends ConsumerWidget {
     required this.presetTimers,
     required this.customTimers,
     required this.minLabel,
-    required this.showAddCard,
   });
 
   final List<PresetTimer> presetTimers;
   final List<PresetTimer> customTimers;
   final String minLabel;
-  final bool showAddCard;
 
   void _openMoreSheet(BuildContext context, WidgetRef ref, PresetTimer timer) {
     showTimerMoreBottomSheet(
@@ -182,19 +182,23 @@ class _TimersContent extends ConsumerWidget {
   PresetTimerCard _buildTimerCard({
     required PresetTimer timer,
     required Map<String, AmbientSound> ambientSoundsById,
+    required String noSoundLabel,
     required BuildContext context,
     required WidgetRef ref,
   }) {
-    final ambientSound =
-        timer.ambientSoundId != null
-            ? ambientSoundsById[timer.ambientSoundId]
-            : null;
+    final soundId = timer.ambientSoundId;
+    final String? soundLabel;
+    if (soundId == null || soundId.isEmpty) {
+      soundLabel = noSoundLabel;
+    } else {
+      soundLabel = ambientSoundsById[soundId]?.name;
+    }
 
     return PresetTimerCard(
       timer: timer,
       minLabel: minLabel,
-      ambientSoundName: ambientSound?.name,
-      onTap: () => context.push('/home/timers/active', extra: timer),
+      soundLabel: soundLabel,
+      onPlay: () => context.push('/home/timers/active', extra: timer),
       onMoreTap: () => _openMoreSheet(context, ref, timer),
     );
   }
@@ -212,57 +216,88 @@ class _TimersContent extends ConsumerWidget {
       );
     }
 
-    final yourTimersItemCount = customTimers.length + (showAddCard ? 1 : 0);
-
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         PresetTimersScreen._horizontalPadding,
+        20,
         PresetTimersScreen._horizontalPadding,
-        PresetTimersScreen._horizontalPadding,
-        showAddCard ? PresetTimersScreen._horizontalPadding : 88,
+        24,
       ),
       children: [
-        if (yourTimersItemCount > 0) ...[
-          _SectionTitle(title: context.l10n.timer_your_timers),
-          const SizedBox(height: PresetTimersScreen._gridSpacing),
-          _TimersGrid(
-            itemCount: yourTimersItemCount,
-            itemBuilder: (context, index) {
-              if (showAddCard && index == 0) {
-                return CustomTimerCard(
-                  label: context.l10n.timer_custom_timer,
-                  onTap: () => context.push('/home/timers/new'),
-                );
-              }
-              final timer = customTimers[index - (showAddCard ? 1 : 0)];
-              return _buildTimerCard(
-                timer: timer,
-                ambientSoundsById: ambientSoundsById,
-                context: context,
-                ref: ref,
-              );
-            },
+        _SectionTitle(title: l10n.timer_your_timers),
+        const SizedBox(height: 12),
+        CustomTimerCard(
+          title: l10n.timer_create_custom,
+          subtitle: l10n.timer_create_custom_subtitle,
+          onTap: () => context.push('/home/timers/new'),
+        ),
+        if (customTimers.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _TimerGroup(
+            children: [
+              for (final timer in customTimers)
+                _buildTimerCard(
+                  timer: timer,
+                  ambientSoundsById: ambientSoundsById,
+                  noSoundLabel: l10n.timer_ambient_sound_none,
+                  context: context,
+                  ref: ref,
+                ),
+            ],
           ),
         ],
         if (presetTimers.isNotEmpty) ...[
           const SizedBox(height: PresetTimersScreen._sectionSpacing),
           _SectionTitle(title: l10n.preset_timers),
-          const SizedBox(height: PresetTimersScreen._gridSpacing),
-          _TimersGrid(
-            itemCount: presetTimers.length,
-            itemBuilder: (context, index) {
-              final timer = presetTimers[index];
-              return _buildTimerCard(
-                timer: timer,
-                ambientSoundsById: ambientSoundsById,
-                context: context,
-                ref: ref,
-              );
-            },
+          const SizedBox(height: 12),
+          _TimerGroup(
+            children: [
+              for (final timer in presetTimers)
+                _buildTimerCard(
+                  timer: timer,
+                  ambientSoundsById: ambientSoundsById,
+                  noSoundLabel: l10n.timer_ambient_sound_none,
+                  context: context,
+                  ref: ref,
+                ),
+            ],
           ),
         ],
       ],
+    );
+  }
+}
+
+class _TimerGroup extends StatelessWidget {
+  const _TimerGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dividerColor = isDark ? AppColors.cardBorderDark : AppColors.grey100;
+
+    return Material(
+      color: isDark ? AppColors.surfaceDark : AppColors.surfaceWhite,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                thickness: 1,
+                indent: 20,
+                endIndent: 20,
+                color: dividerColor,
+              ),
+            children[i],
+          ],
+        ],
+      ),
     );
   }
 }
@@ -274,32 +309,21 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    final isTibetan = AppFontConfig.isTibetanLanguage(
+      Localizations.localeOf(context).languageCode,
     );
-  }
-}
+    final color = Theme.of(
+      context,
+    ).colorScheme.onSurface.withValues(alpha: 0.45);
 
-class _TimersGrid extends StatelessWidget {
-  const _TimersGrid({required this.itemCount, required this.itemBuilder});
-
-  final int itemCount;
-  final Widget Function(BuildContext, int) itemBuilder;
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: PresetTimersScreen._gridSpacing,
-        mainAxisSpacing: PresetTimersScreen._gridSpacing,
-        childAspectRatio: 1,
+    return Text(
+      isTibetan ? title : title.toUpperCase(),
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: isTibetan ? 0 : 1.1,
+        color: color,
       ),
-      itemCount: itemCount,
-      itemBuilder: itemBuilder,
     );
   }
 }
@@ -314,20 +338,26 @@ class _TimersContentSkeleton extends StatelessWidget {
       enabled: true,
       child: ListView(
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(PresetTimersScreen._horizontalPadding),
+        padding: const EdgeInsets.fromLTRB(
+          PresetTimersScreen._horizontalPadding,
+          20,
+          PresetTimersScreen._horizontalPadding,
+          24,
+        ),
         children: [
-          _SectionTitle(title: context.l10n.timer_your_timers),
-          const SizedBox(height: PresetTimersScreen._gridSpacing),
-          _TimersGrid(
-            itemCount: 1,
-            itemBuilder: (context, index) => const _CardSkeleton(),
-          ),
+          _SectionTitle(title: l10n.timer_your_timers),
+          const SizedBox(height: 12),
+          const _RowSkeleton(),
           const SizedBox(height: PresetTimersScreen._sectionSpacing),
           _SectionTitle(title: l10n.preset_timers),
-          const SizedBox(height: PresetTimersScreen._gridSpacing),
-          _TimersGrid(
-            itemCount: 4,
-            itemBuilder: (context, index) => const _CardSkeleton(),
+          const SizedBox(height: 12),
+          const _TimerGroup(
+            children: [
+              _RowSkeleton(),
+              _RowSkeleton(),
+              _RowSkeleton(),
+              _RowSkeleton(),
+            ],
           ),
         ],
       ),
@@ -335,78 +365,27 @@ class _TimersContentSkeleton extends StatelessWidget {
   }
 }
 
-class _CustomTimerFab extends StatelessWidget {
-  const _CustomTimerFab({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback? onPressed;
+class _RowSkeleton extends StatelessWidget {
+  const _RowSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor =
-        isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
-    final foregroundColor =
-        isDark ? AppColors.textPrimary : AppColors.onPrimary;
-
-    return Material(
-      color: backgroundColor,
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: isDark ? 0.4 : 0.25),
-      shape: const StadiumBorder(),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const StadiumBorder(),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 12, 14, 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: foregroundColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(AppAssets.plus, size: 20, color: foregroundColor),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CardSkeleton extends StatelessWidget {
-  const _CardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFE4E4E4)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: const AspectRatio(
-        aspectRatio: 1,
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(20, 18, 20, 18),
+      child: Row(
+        children: [
+          Expanded(
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Bone(width: 56, height: 58),
+                Bone(width: 96, height: 28),
                 SizedBox(height: 8),
-                Bone(width: 36, height: 20),
+                Bone(width: 140, height: 14),
               ],
             ),
           ),
-        ),
+          Bone.circle(size: 48),
+        ],
       ),
     );
   }

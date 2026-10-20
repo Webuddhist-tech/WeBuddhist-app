@@ -9,9 +9,9 @@ Preset meditation timers with countdown, pause/resume, lock-screen display, sess
 ## User-facing functionality
 
 - Browse preset timers + user-created ("Your timers") (authenticated)
-- Create a custom timer (duration, ambient sound) via "+ Custom timer"
+- Create a custom timer (duration, ambient sound) via the dashed "Create a custom timer" row, which stays at the top of "Your timers"
 - Edit or delete your own timers from the card's ⋮ menu
-- 5-second countdown → running phase
+- 3-second countdown (Cancel leaves immediately) → running phase
 - Pause/resume with **wall-clock** remaining time (survives backgrounding)
 - Completion bell (in-app + scheduled local notification)
 - Android ongoing lock-screen notification
@@ -161,11 +161,10 @@ offering an undo it cannot honour.
 
 ### Empty list
 
-An empty timer list is **not** an empty state. The only useful action on this
-screen is creating a timer, so it renders "Your timers" with the dashed
-"+ Custom timer" card. Showing a "nothing here" message instead left the user
-with no way to create one, because the pill FAB only appears once a custom
-timer already exists.
+An empty timer list is **not** an empty state. "Your timers" always starts
+with the dashed "Create a custom timer" row, and timers the user has created
+are listed under it in the same row layout as the presets (play and the ⋮
+menu). A timer with no `ambient_sound_id` is labeled "Default (no sound)".
 
 The bundled `assets/audios/meditation.wav` bell (`TimerSoundPlayer`) always
 plays at session start and completion, and the scheduled start/completion

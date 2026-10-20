@@ -6715,4 +6715,32 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'splash_tagline_2',
     () => _fallback.splash_tagline_2,
   );
+
+  @override
+  String get timer_list_subtitle => TolgeeBridge.get(
+    localeName,
+    'timer_list_subtitle',
+    () => _fallback.timer_list_subtitle,
+  );
+
+  @override
+  String get timer_create_custom => TolgeeBridge.get(
+    localeName,
+    'timer_create_custom',
+    () => _fallback.timer_create_custom,
+  );
+
+  @override
+  String get timer_create_custom_subtitle => TolgeeBridge.get(
+    localeName,
+    'timer_create_custom_subtitle',
+    () => _fallback.timer_create_custom_subtitle,
+  );
+
+  @override
+  String get timer_starting => TolgeeBridge.get(
+    localeName,
+    'timer_starting',
+    () => _fallback.timer_starting,
+  );
 }
