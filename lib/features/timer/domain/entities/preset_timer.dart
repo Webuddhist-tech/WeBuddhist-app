@@ -66,9 +66,21 @@ class PresetTimer {
 
   int get durationMinutes => durationMs ~/ 60000;
 
-  /// Whole minutes for labels. The session itself keeps [durationMs].
-  static int roundedMinutesFromMs(int durationMs) =>
-      (durationMs / 60000).round();
+  /// Whether labels count seconds rather than minutes. Below one minute,
+  /// rounding to minutes would read "0 min".
+  static bool labelsInSeconds(int durationMs) =>
+      durationMs < Duration.millisecondsPerMinute;
 
-  int get displayMinutes => roundedMinutesFromMs(durationMs);
+  /// The number shown in labels: seconds under one minute, otherwise minutes
+  /// rounded to the nearest whole one. The session itself keeps [durationMs].
+  static int labelValueFromMs(int durationMs) =>
+      labelsInSeconds(durationMs)
+          ? (durationMs / Duration.millisecondsPerSecond).round()
+          : (durationMs / Duration.millisecondsPerMinute).round();
+
+  /// See [labelsInSeconds].
+  bool get displaysSeconds => labelsInSeconds(durationMs);
+
+  /// See [labelValueFromMs].
+  int get displayValue => labelValueFromMs(durationMs);
 }

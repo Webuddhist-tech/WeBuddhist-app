@@ -635,7 +635,7 @@ class _TimersTab extends ConsumerWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '${timer.displayMinutes} ${localizations.timer_min}',
+                                '${timer.displayValue} ${timer.displaysSeconds ? localizations.timer_duration_sec : localizations.timer_min}',
                                 style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,

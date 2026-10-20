@@ -23,8 +23,8 @@ import 'package:go_router/go_router.dart';
 /// `group_id` and `parent_preset_id` are never sent (no app concept for
 /// either yet). `name`/`description` have no input fields in this design, so
 /// they're derived: name is "{n} minutes" from the duration rounded to whole
-/// minutes, description is always "". The saved duration keeps hours, minutes,
-/// and seconds.
+/// minutes ("{n} seconds" under one minute), description is always "". The
+/// saved duration keeps hours, minutes, and seconds.
 class NewTimerScreen extends ConsumerStatefulWidget {
   const NewTimerScreen({super.key, this.timer});
 
@@ -39,7 +39,7 @@ class NewTimerScreen extends ConsumerStatefulWidget {
 
 class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   /// What gets saved, including seconds. Labels use this rounded to whole
-  /// minutes. An edit that only changes the ambient sound resends this value
+  /// minutes, or in seconds under one minute. An edit that only changes the ambient sound resends this value
   /// unchanged.
   late int _durationMs;
   late String? _ambientSoundId;
@@ -69,7 +69,9 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     return id == null ? null : soundsById[id]?.name;
   }
 
-  int get _roundedMinutes => PresetTimer.roundedMinutesFromMs(_durationMs);
+  bool get _labelsInSeconds => PresetTimer.labelsInSeconds(_durationMs);
+
+  int get _labelValue => PresetTimer.labelValueFromMs(_durationMs);
 
   Future<void> _pickDuration() async {
     final selected = await DurationPickerSheet.show(
@@ -99,7 +101,9 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   /// name so a timer of e.g. 90s isn't renamed to "1 minutes" by an edit that
   /// only changed the ambient sound.
   String get _timerName =>
-      _didChangeDuration ? '$_roundedMinutes minutes' : widget.timer!.name;
+      _didChangeDuration
+          ? '$_labelValue ${_labelsInSeconds ? 'seconds' : 'minutes'}'
+          : widget.timer!.name;
 
   String _failureMessage(Failure failure) =>
       failure is ValidationFailure && _durationMs <= 0
@@ -182,7 +186,8 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
                 children: [
                   _SettingsRow(
                     label: context.l10n.timer_duration_label,
-                    value: '$_roundedMinutes min',
+                    value:
+                        '$_labelValue ${_labelsInSeconds ? context.l10n.timer_duration_sec : context.l10n.timer_min}',
                     onTap: _pickDuration,
                   ),
                   const SizedBox(height: 12),

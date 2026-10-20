@@ -75,7 +75,7 @@ timer/
 `POST /timers/user` (`TimersRemoteDatasource.createUserTimer`) intentionally
 **never sends** `group_id` or `parent_preset_id` — no app concept for either
 yet. The New Timer screen has no name/description inputs, so those are
-derived: `name` = `"{n} minutes"`, `description` = `""` (always sent).
+derived: `name` = `"{n} minutes"` (`"{n} seconds"` under one minute), `description` = `""` (always sent).
 Start/end bells are always on (backend default); the create flow does not
 expose or accept them as user-configurable params. After a
 successful create (and after a successful edit or delete) the repository
@@ -101,7 +101,8 @@ Only `name`, `duration` and `ambient_sound_id` are sent — nothing else on the
 timer is user-owned yet. The name keeps tracking the duration (`"{n} minutes"`)
 so the card label stays truthful, but **only when the duration actually
 changed**: the picker saves exact hours, minutes, and seconds, while the
-label and the derived name are rounded to whole minutes. An edit that touches
+label and the derived name are rounded to whole minutes (or shown in seconds
+under one minute, so a short timer never reads "0 min"). An edit that touches
 just the sound must resend the stored `durationMs` (and stored name) verbatim
 rather than a re-derived value, which would quietly change e.g. a 90s timer. `ambient_sound_id` is **always** in the body,
 including as `null`, which is how "Default (no sound)" clears an existing

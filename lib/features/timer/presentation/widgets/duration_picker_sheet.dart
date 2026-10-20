@@ -13,14 +13,19 @@ class DurationPickerSheet extends StatefulWidget {
   const DurationPickerSheet({
     super.key,
     required this.initialDuration,
-    required this.selected,
+    required this.onChanged,
   });
 
   final Duration initialDuration;
 
-  /// Latest time on the wheels. [show] reads this after the sheet closes, so a
-  /// barrier tap or drag-down commits the same value as the X button.
-  final ValueNotifier<Duration> selected;
+  /// Called with the time on the wheels whenever it changes. [show] keeps the
+  /// latest value, so a barrier tap or drag-down commits the same value as the
+  /// X button.
+  ///
+  /// A plain callback rather than a notifier [show] owns: a wheel still
+  /// settling during the close animation can report after [show] has
+  /// returned, and must not touch anything disposed.
+  final ValueChanged<Duration> onChanged;
 
   static const maxHours = 23;
 
@@ -28,25 +33,21 @@ class DurationPickerSheet extends StatefulWidget {
     BuildContext context, {
     required Duration initialDuration,
   }) async {
-    final selected = ValueNotifier<Duration>(_clampDuration(initialDuration));
-    try {
-      await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (_) => DurationPickerSheet(
-          initialDuration: initialDuration,
-          selected: selected,
-        ),
-      );
-      final value = selected.value;
-      return value == Duration.zero ? null : value;
-    } finally {
-      selected.dispose();
-    }
+    var selected = _clampDuration(initialDuration);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (_) => DurationPickerSheet(
+            initialDuration: initialDuration,
+            onChanged: (value) => selected = value,
+          ),
+    );
+    return selected == Duration.zero ? null : selected;
   }
 
   static Duration _clampDuration(Duration duration) {
@@ -77,7 +78,6 @@ class _DurationPickerSheetState extends State<DurationPickerSheet> {
     _hours = initial.inHours;
     _minutes = initial.inMinutes.remainder(60);
     _seconds = initial.inSeconds.remainder(60);
-    widget.selected.value = _selected;
     _hoursController = FixedExtentScrollController(initialItem: _hours);
     _minutesController = FixedExtentScrollController(initialItem: _minutes);
     _secondsController = FixedExtentScrollController(initialItem: _seconds);
@@ -88,17 +88,17 @@ class _DurationPickerSheetState extends State<DurationPickerSheet> {
 
   void _setHours(int value) {
     setState(() => _hours = value);
-    widget.selected.value = _selected;
+    widget.onChanged(_selected);
   }
 
   void _setMinutes(int value) {
     setState(() => _minutes = value);
-    widget.selected.value = _selected;
+    widget.onChanged(_selected);
   }
 
   void _setSeconds(int value) {
     setState(() => _seconds = value);
-    widget.selected.value = _selected;
+    widget.onChanged(_selected);
   }
 
   void _close() => Navigator.of(context).pop();
