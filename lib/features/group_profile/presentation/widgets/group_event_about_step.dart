@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/localization/app_language.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/dashed_rounded_border_painter.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_markdown_editor.dart';
 
@@ -229,7 +230,7 @@ class _EmptyCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isDark ? AppColors.grey500 : AppColors.grey600;
     return CustomPaint(
-      painter: _DashedBorderPainter(
+      painter: DashedRoundedBorderPainter(
         color: isDark ? AppColors.cardBorderDark : AppColors.grey400,
         radius: 12,
       ),
@@ -256,40 +257,6 @@ class _EmptyCover extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter({required this.color, required this.radius});
-
-  final Color color;
-  final double radius;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-    final rrect = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      Radius.circular(radius),
-    );
-    const dash = 6.0;
-    const gap = 4.0;
-    for (final metric in (Path()..addRRect(rrect)).computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final end = (distance + dash).clamp(0.0, metric.length);
-        canvas.drawPath(metric.extractPath(distance, end), paint);
-        distance += dash + gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
-      color != oldDelegate.color || radius != oldDelegate.radius;
 }
 
 class _LanguageChips extends StatelessWidget {

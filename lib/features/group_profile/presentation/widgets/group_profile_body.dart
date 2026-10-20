@@ -816,9 +816,10 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     }
     if (!_canPublishPosts(profile)) return;
 
-    final created = await GroupEventComposerScreen.show(context, profile);
-    if (created == null || !mounted) return;
+    final result = await GroupEventComposerScreen.show(context, profile);
+    if (result == null || !mounted) return;
     ref.invalidate(groupEventsProvider(profile.id));
+    if (result.openEvent) context.push('/home/events/${result.event.id}');
   }
 
   Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {

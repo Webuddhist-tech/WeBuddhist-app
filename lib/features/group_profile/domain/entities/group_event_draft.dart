@@ -49,6 +49,13 @@ class GroupEventDraft {
   final GroupEventFormat format;
   final GroupEventVenueDraft? venue;
   final String liveLink;
+  final List<GroupEventPracticePick> practices;
+  final List<GroupEventVideoDraft> videos;
+  final bool chatEnabled;
+  final bool notificationsEnabled;
+
+  /// Empty allows every intention.
+  final List<String> intentionIds;
 
   const GroupEventDraft({
     this.metadata = const [],
@@ -57,6 +64,11 @@ class GroupEventDraft {
     this.format = GroupEventFormat.offline,
     this.venue,
     this.liveLink = '',
+    this.practices = const [],
+    this.videos = const [],
+    this.chatEnabled = true,
+    this.notificationsEnabled = true,
+    this.intentionIds = const [],
   });
 
   List<String> get languages => [for (final m in metadata) m.language];
@@ -69,6 +81,8 @@ class GroupEventDraft {
       schedule.startDate != null ||
       venue != null ||
       liveLink.trim().isNotEmpty ||
+      practices.isNotEmpty ||
+      videos.isNotEmpty ||
       metadata.any((m) => m.hasName || m.description.trim().isNotEmpty);
 
   GroupEventDraftMetadata? metadataFor(String language) =>
@@ -83,6 +97,11 @@ class GroupEventDraft {
     GroupEventVenueDraft? venue,
     bool clearVenue = false,
     String? liveLink,
+    List<GroupEventPracticePick>? practices,
+    List<GroupEventVideoDraft>? videos,
+    bool? chatEnabled,
+    bool? notificationsEnabled,
+    List<String>? intentionIds,
   }) {
     return GroupEventDraft(
       metadata: metadata ?? this.metadata,
@@ -91,6 +110,11 @@ class GroupEventDraft {
       format: format ?? this.format,
       venue: clearVenue ? null : (venue ?? this.venue),
       liveLink: liveLink ?? this.liveLink,
+      practices: practices ?? this.practices,
+      videos: videos ?? this.videos,
+      chatEnabled: chatEnabled ?? this.chatEnabled,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      intentionIds: intentionIds ?? this.intentionIds,
     );
   }
 }
@@ -257,4 +281,75 @@ class GroupEventVenueDraft {
     longitude: longitude,
     address: address,
   );
+}
+
+enum GroupEventPracticeKind { plan, series, collection, accumulator }
+
+/// Who records an accumulation's count; maps to the row's `event_format`.
+enum GroupEventCountMode {
+  attendees('online', 'offline_participants'),
+  admin('offline', 'manual_in_person');
+
+  const GroupEventCountMode(this.eventFormat, this.countMode);
+
+  final String eventFormat;
+  final String countMode;
+}
+
+/// A practice linked to the event. Plans/series and chant collections are
+/// single slots on the API; accumulations are a list.
+class GroupEventPracticePick {
+  final String id;
+  final GroupEventPracticeKind kind;
+  final String title;
+  final String? imageUrl;
+  final GroupEventCountMode countMode;
+
+  const GroupEventPracticePick({
+    required this.id,
+    required this.kind,
+    required this.title,
+    this.imageUrl,
+    this.countMode = GroupEventCountMode.admin,
+  });
+
+  bool get isContent =>
+      kind == GroupEventPracticeKind.plan ||
+      kind == GroupEventPracticeKind.series;
+
+  GroupEventPracticePick copyWith({GroupEventCountMode? countMode}) {
+    return GroupEventPracticePick(
+      id: id,
+      kind: kind,
+      title: title,
+      imageUrl: imageUrl,
+      countMode: countMode ?? this.countMode,
+    );
+  }
+}
+
+/// A YouTube link shown on the event's About page (`links` type `video`).
+class GroupEventVideoDraft {
+  final String url;
+  final String? title;
+  final String? thumbnailUrl;
+
+  const GroupEventVideoDraft({
+    required this.url,
+    this.title,
+    this.thumbnailUrl,
+  });
+}
+
+/// A prayer intention an event can be limited to.
+class GroupEventIntention {
+  final String id;
+  final String slug;
+  final String label;
+
+  const GroupEventIntention({
+    required this.id,
+    required this.slug,
+    required this.label,
+  });
 }

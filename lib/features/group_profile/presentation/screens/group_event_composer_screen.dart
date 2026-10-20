@@ -12,13 +12,31 @@ import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart'
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_request_builder.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_schedule_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_about_step.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_cover_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_languages_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_practices_step.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_published_view.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_review_step.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_settings_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_when_where_step.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_posting_to_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// What the composer pops with once an event exists.
+class GroupEventComposerResult {
+  final GroupEvent event;
+
+  /// True when the reader tapped "View event".
+  final bool openEvent;
+
+  const GroupEventComposerResult(this.event, {this.openEvent = false});
+}
 
 /// Multi-step event composer. Pops with the created event, or null.
 class GroupEventComposerScreen extends ConsumerStatefulWidget {
@@ -28,8 +46,11 @@ class GroupEventComposerScreen extends ConsumerStatefulWidget {
 
   static const int stepCount = 4;
 
-  static Future<GroupEvent?> show(BuildContext context, GroupProfile profile) {
-    return Navigator.of(context).push<GroupEvent>(
+  static Future<GroupEventComposerResult?> show(
+    BuildContext context,
+    GroupProfile profile,
+  ) {
+    return Navigator.of(context).push<GroupEventComposerResult>(
       MaterialPageRoute(
         fullscreenDialog: true,
         settings: const RouteSettings(name: 'group-event-composer'),
@@ -53,6 +74,8 @@ class _GroupEventComposerScreenState
 
   int _step = 0;
   GroupEventDraft _draft = const GroupEventDraft();
+  bool _isPublishing = false;
+  GroupEvent? _published;
   String _activeLanguage = AppConfig.englishLanguageCode;
   bool get _isAboutStep => _step == 0;
 
@@ -170,10 +193,16 @@ class _GroupEventComposerScreenState
   }
 
   void _onLiveLinkChanged() {
-    setState(() => _draft = _draft.copyWith(liveLink: _liveLinkController.text));
+    setState(
+      () => _draft = _draft.copyWith(liveLink: _liveLinkController.text),
+    );
   }
 
   bool get _isWhenWhereStep => _step == 1;
+
+  bool get _isPracticesStep => _step == 2;
+
+  bool get _isReviewStep => _step == 3;
 
   GroupEventScheduleIssue? get _scheduleIssue =>
       GroupEventScheduleUtils.validateSchedule(_draft.schedule);
@@ -182,10 +211,13 @@ class _GroupEventComposerScreenState
       GroupEventScheduleUtils.validateWhere(_draft);
 
   bool get _canContinue {
+    if (_isPublishing) return false;
     return switch (_step) {
       0 => _draft.hasName,
       1 => _scheduleIssue == null && _whereIssue == null,
-      _ => _step < GroupEventComposerScreen.stepCount - 1,
+      2 => true,
+      3 => _draft.hasName,
+      _ => false,
     };
   }
 
@@ -218,15 +250,127 @@ class _GroupEventComposerScreenState
   void _continue() {
     if (!_canContinue) return;
     FocusScope.of(context).unfocus();
+    if (_isReviewStep) {
+      _publish();
+      return;
+    }
     setState(() => _step += 1);
   }
 
   void _back() {
-    if (_step == 0) return;
+    if (_step == 0 || _isPublishing) return;
     setState(() => _step -= 1);
   }
 
+  Future<void> _onReviewEdit(GroupEventReviewTarget target) async {
+    if (_isPublishing) return;
+    switch (target) {
+      case GroupEventReviewTarget.about:
+        setState(() => _step = 0);
+      case GroupEventReviewTarget.whenWhere:
+        setState(() => _step = 1);
+      case GroupEventReviewTarget.practices:
+        setState(() => _step = 2);
+      case GroupEventReviewTarget.settings:
+        final updated = await GroupEventSettingsSheet.show(
+          context,
+          draft: _draft,
+        );
+        if (updated == null || !mounted) return;
+        setState(() => _draft = updated);
+    }
+  }
+
+  /// Cover upload, then the venue, then the event; each failure is reported
+  /// and the reader can retry from the review.
+  Future<void> _publish() async {
+    final l10n = context.l10n;
+    setState(() => _isPublishing = true);
+
+    String? imageUrl;
+    switch (_draft.cover) {
+      case GroupEventCoverFile(:final file):
+        final upload = await ref
+            .read(groupPostRepositoryProvider)
+            .uploadMedia(file);
+        imageUrl = upload.fold((_) => null, (key) => key);
+        if (imageUrl == null) {
+          _publishFailed(l10n.group_post_upload_error);
+          return;
+        }
+      case GroupEventCoverUrl(:final url):
+        imageUrl = url;
+      case null:
+        break;
+    }
+
+    final repository = ref.read(groupEventComposerRepositoryProvider);
+    String? locationId;
+    final venue = _draft.venue;
+    if (_draft.format.needsVenue && venue != null) {
+      final created = await repository.createLocation(
+        widget.profile.id,
+        CreateGroupLocationRequest(
+          name: venue.name,
+          latitude: venue.latitude,
+          longitude: venue.longitude,
+        ),
+      );
+      locationId = created.fold((_) => null, (id) => id);
+      if (locationId == null) {
+        _publishFailed(created.fold((f) => f.message, (_) => ''));
+        return;
+      }
+    }
+
+    final request = GroupEventRequestBuilder.build(
+      _draft,
+      groupId: widget.profile.id,
+      imageUrl: imageUrl,
+      locationId: locationId,
+    );
+    final result = await repository.createEvent(request);
+    if (!mounted) return;
+    result.fold(
+      (failure) => _publishFailed(
+        failure.message.isNotEmpty
+            ? failure.message
+            : l10n.group_event_publish_error,
+      ),
+      (event) => setState(() {
+        _isPublishing = false;
+        _published = event;
+      }),
+    );
+  }
+
+  void _publishFailed(String message) {
+    if (!mounted) return;
+    setState(() => _isPublishing = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message.isNotEmpty ? message : context.l10n.group_event_publish_error,
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _finish({required bool openEvent}) {
+    final event = _published;
+    if (event == null) return;
+    Navigator.of(
+      context,
+    ).pop(GroupEventComposerResult(event, openEvent: openEvent));
+  }
+
   Future<void> _onClose() async {
+    if (_isPublishing) return;
+    if (_published != null) {
+      _finish(openEvent: false);
+      return;
+    }
     if (!_draft.hasContent) {
       Navigator.of(context).pop();
       return;
@@ -261,31 +405,49 @@ class _GroupEventComposerScreenState
     final dividerColor = isDark ? AppColors.cardBorderDark : AppColors.grey300;
     final languages = ref.watch(resolvedContentLanguagesProvider);
 
+    final published = _published;
+
     return PopScope(
-      canPop: !_draft.hasContent,
+      canPop: !_draft.hasContent && published == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+        if (didPop || _isPublishing) return;
+        if (published != null) {
+          _finish(openEvent: false);
+          return;
+        }
         _confirmDiscard();
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
-          child: Column(
-            children: [
-              _buildTopBar(l10n, isDark),
-              _StepProgress(
-                step: _step,
-                total: GroupEventComposerScreen.stepCount,
-                isDark: isDark,
-                label: _stepLabel(l10n),
-              ),
-              Divider(height: 1, thickness: 1, color: dividerColor),
-              GroupPostingToRow(profile: widget.profile, isDark: isDark),
-              Divider(height: 1, thickness: 1, color: dividerColor),
-              Expanded(child: _buildStep(languages)),
-              _buildBottomBar(l10n, isDark, dividerColor),
-            ],
-          ),
+          child:
+              published != null
+                  ? GroupEventPublishedView(
+                    event: published,
+                    draft: _draft,
+                    groupTitle: widget.profile.title,
+                    onViewEvent: () => _finish(openEvent: true),
+                    onClose: () => _finish(openEvent: false),
+                  )
+                  : Column(
+                    children: [
+                      _buildTopBar(l10n, isDark),
+                      _StepProgress(
+                        step: _step,
+                        total: GroupEventComposerScreen.stepCount,
+                        isDark: isDark,
+                        label: _stepLabel(l10n),
+                      ),
+                      Divider(height: 1, thickness: 1, color: dividerColor),
+                      GroupPostingToRow(
+                        profile: widget.profile,
+                        isDark: isDark,
+                      ),
+                      Divider(height: 1, thickness: 1, color: dividerColor),
+                      Expanded(child: _buildStep(languages)),
+                      _buildBottomBar(l10n, isDark, dividerColor),
+                    ],
+                  ),
         ),
       ),
     );
@@ -301,6 +463,10 @@ class _GroupEventComposerScreenState
             ? l10n.group_event_step_about
             : _isWhenWhereStep
             ? l10n.group_event_step_when_where
+            : _isPracticesStep
+            ? l10n.group_event_step_practices
+            : _isReviewStep
+            ? l10n.group_event_step_review
             : null;
     return name == null ? step : '$step · $name';
   }
@@ -328,15 +494,35 @@ class _GroupEventComposerScreenState
             (schedule) =>
                 setState(() => _draft = _draft.copyWith(schedule: schedule)),
         onFormatChanged:
-            (format) => setState(() => _draft = _draft.copyWith(format: format)),
+            (format) =>
+                setState(() => _draft = _draft.copyWith(format: format)),
         onVenueChanged:
             (venue) => setState(
-              () => _draft = _draft.copyWith(venue: venue, clearVenue: venue == null),
+              () =>
+                  _draft = _draft.copyWith(
+                    venue: venue,
+                    clearVenue: venue == null,
+                  ),
             ),
       );
     }
-    // Later steps land here in follow-up work.
-    return const SizedBox.expand();
+    if (_isPracticesStep) {
+      return GroupEventPracticesStep(
+        draft: _draft,
+        groupId: widget.profile.id,
+        onPracticesChanged:
+            (practices) =>
+                setState(() => _draft = _draft.copyWith(practices: practices)),
+        onVideosChanged:
+            (videos) =>
+                setState(() => _draft = _draft.copyWith(videos: videos)),
+      );
+    }
+    return GroupEventReviewStep(
+      draft: _draft,
+      languages: languages,
+      onEdit: _onReviewEdit,
+    );
   }
 
   Widget _buildTopBar(AppLocalizations l10n, bool isDark) {
@@ -357,7 +543,7 @@ class _GroupEventComposerScreenState
             Positioned(
               left: 4,
               child: IconButton(
-                onPressed: _back,
+                onPressed: _isPublishing ? null : _back,
                 tooltip: l10n.back,
                 icon: Icon(AppAssets.arrowLeft, color: secondaryColor),
               ),
@@ -365,7 +551,7 @@ class _GroupEventComposerScreenState
           Positioned(
             right: 4,
             child: IconButton(
-              onPressed: _onClose,
+              onPressed: _isPublishing ? null : _onClose,
               tooltip: l10n.cancel,
               icon: Icon(AppAssets.x, color: secondaryColor),
             ),
@@ -382,7 +568,12 @@ class _GroupEventComposerScreenState
   ) {
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final hint = _continueHint(l10n);
+    final hint =
+        _isReviewStep
+            ? (_draft.notificationsEnabled
+                ? l10n.group_event_review_notify_hint
+                : null)
+            : _continueHint(l10n);
 
     return Container(
       decoration: BoxDecoration(
@@ -403,34 +594,81 @@ class _GroupEventComposerScreenState
                 ),
                 const SizedBox(height: 8),
               ],
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _canContinue ? _continue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-                    foregroundColor:
-                        isDark ? AppColors.textPrimary : AppColors.surfaceWhite,
-                    disabledBackgroundColor:
-                        isDark
-                            ? AppColors.surfaceVariantDark
-                            : AppColors.grey100,
-                    disabledForegroundColor:
-                        isDark ? AppColors.grey500 : AppColors.grey600,
-                    shape: const StadiumBorder(),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    l10n.group_event_continue,
-                    strutStyle: context.tibetanStrutStyle(16),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+              if (_isPracticesStep &&
+                  _draft.practices.isEmpty &&
+                  _draft.videos.isEmpty)
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: _continue,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor:
+                          isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimary,
+                      side: BorderSide(
+                        color: isDark ? AppColors.grey800 : AppColors.grey400,
+                      ),
+                      shape: const StadiumBorder(),
+                    ),
+                    child: Text(
+                      l10n.group_event_skip,
+                      strutStyle: context.tibetanStrutStyle(16),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
+                )
+              else
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _canContinue ? _continue : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isDark
+                              ? AppColors.surfaceWhite
+                              : AppColors.textPrimary,
+                      foregroundColor:
+                          isDark
+                              ? AppColors.textPrimary
+                              : AppColors.surfaceWhite,
+                      disabledBackgroundColor:
+                          isDark
+                              ? AppColors.surfaceVariantDark
+                              : AppColors.grey100,
+                      disabledForegroundColor:
+                          isDark ? AppColors.grey500 : AppColors.grey600,
+                      shape: const StadiumBorder(),
+                      elevation: 0,
+                    ),
+                    child:
+                        _isPublishing
+                            ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color:
+                                    isDark
+                                        ? AppColors.textPrimary
+                                        : AppColors.surfaceWhite,
+                              ),
+                            )
+                            : Text(
+                              _isReviewStep
+                                  ? l10n.group_event_publish
+                                  : l10n.group_event_continue,
+                              strutStyle: context.tibetanStrutStyle(16),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                  ),
                 ),
-              ),
             ],
           ),
         ),

@@ -3,7 +3,18 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/localization/app_language.dart';
 import 'package:flutter_pecha/core/localization/languages_providers.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/group_profile/domain/repositories/group_event_composer_repository.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +25,78 @@ const _languages = [
   AppLanguage(code: 'hi', name: 'Hindi', nativeName: 'हिन्दी'),
   AppLanguage(code: 'zh', name: 'Chinese', nativeName: '中文'),
 ];
+
+const _practices = [
+  GroupPractice(
+    type: GroupPracticeType.plan,
+    plan: GroupPracticePlan(
+      id: 'p1',
+      title: '21 Days of the 21 Taras',
+      description: '',
+      language: 'en',
+    ),
+  ),
+  GroupPractice(
+    type: GroupPracticeType.series,
+    series: GroupProfileSeries(id: 's1', title: 'Lamrim teachings'),
+  ),
+  GroupPractice(
+    type: GroupPracticeType.collection,
+    collection: GroupRecitationCollection(
+      id: 'c1',
+      groupId: 'g1',
+      name: 'Praises to Tara',
+    ),
+  ),
+  GroupPractice(
+    type: GroupPracticeType.accumulator,
+    accumulator: GroupAccumulator(
+      id: 'a1',
+      presetAccumulatorId: '',
+      groupId: 'g1',
+      title: 'Green Tara mantra',
+      targetCount: 0,
+    ),
+  ),
+];
+
+class _FakeComposerRepository extends Fake
+    implements GroupEventComposerRepositoryInterface {
+  CreateGroupEventRequest? created;
+  CreateGroupLocationRequest? location;
+
+  @override
+  Future<Either<Failure, List<GroupEventIntention>>> getIntentions() async =>
+      const Right([
+        GroupEventIntention(id: 'i1', slug: 'peace', label: 'Peace'),
+        GroupEventIntention(id: 'i2', slug: 'healing', label: 'Healing'),
+      ]);
+
+  @override
+  Future<Either<Failure, String>> createLocation(
+    String groupId,
+    CreateGroupLocationRequest request,
+  ) async {
+    location = request;
+    return const Right('loc-1');
+  }
+
+  @override
+  Future<Either<Failure, GroupEvent>> createEvent(
+    CreateGroupEventRequest request,
+  ) async {
+    created = request;
+    return Right(
+      GroupEvent(
+        id: 'ev-1',
+        groupId: 'g1',
+        title: request.metadata.first.name,
+      ),
+    );
+  }
+}
+
+final _composerRepository = _FakeComposerRepository();
 
 class _FixedContentLanguage extends StateNotifier<String>
     implements ContentLanguageNotifier {
@@ -37,13 +120,24 @@ Future<void> _pump(WidgetTester tester, {String contentLanguage = 'bo'}) async {
         contentLanguageProvider.overrideWith(
           (ref) => _FixedContentLanguage(contentLanguage),
         ),
+        groupEventPracticeOptionsProvider.overrideWith(
+          (ref, groupId) async => _practices,
+        ),
+        groupEventComposerRepositoryProvider.overrideWithValue(
+          _composerRepository,
+        ),
+        chatLinkPreviewProvider.overrideWith(
+          // No thumbnail: a network image would keep pumpAndSettle waiting.
+          (ref, url) async =>
+              ChatLinkPreview(url: url, title: 'Guided sitting — introduction'),
+        ),
       ],
-      child: const MaterialApp(
-        locale: Locale('en'),
+      child: MaterialApp(
+        locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: GroupEventComposerScreen(
-          profile: GroupProfile(
+        home: _Launcher(
+          profile: const GroupProfile(
             id: 'g1',
             title: 'Lodhen Warlord',
             socialLinks: [
@@ -59,6 +153,31 @@ Future<void> _pump(WidgetTester tester, {String contentLanguage = 'bo'}) async {
     ),
   );
   await tester.pumpAndSettle();
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle();
+}
+
+GroupEventComposerResult? _lastResult;
+
+/// Opens the composer through its `show` so the pop result can be read.
+class _Launcher extends StatelessWidget {
+  const _Launcher({required this.profile});
+
+  final GroupProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: TextButton(
+          onPressed: () async {
+            _lastResult = await GroupEventComposerScreen.show(context, profile);
+          },
+          child: const Text('open'),
+        ),
+      ),
+    );
+  }
 }
 
 ElevatedButton _continueButton(WidgetTester tester) {
@@ -152,6 +271,8 @@ void main() {
   });
 
   whenWhereTests();
+  practicesTests();
+  reviewTests();
 }
 
 Future<void> _goToStepTwo(WidgetTester tester) async {
@@ -235,5 +356,162 @@ void whenWhereTests() {
     await tester.pumpAndSettle();
     expect(find.text('Start time'), findsNothing);
     expect(find.text('Shown as all day on the event page.'), findsOneWidget);
+  });
+}
+
+Future<void> _goToStepThree(WidgetTester tester) async {
+  await _goToStepTwo(tester);
+  await tester.tap(find.text('Live'));
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find.widgetWithText(TextField, 'youtube.com/… or a meeting link'),
+    'https://youtube.com/@lodhenwarlord/live',
+  );
+  await tester.pump();
+  await tester.ensureVisible(find.text('Choose a date'));
+  await tester.tap(find.text('Choose a date'));
+  await tester.pumpAndSettle();
+  final tomorrow = DateTime.now().add(const Duration(days: 1));
+  await tester.tap(find.text('${tomorrow.day}').last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Continue'));
+  await tester.pumpAndSettle();
+}
+
+void practicesTests() {
+  testWidgets('step three can be skipped until something is added', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _goToStepThree(tester);
+
+    expect(find.text('Step 3 of 4 · Practices & videos'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
+    expect(find.text('Continue'), findsNothing);
+
+    await tester.tap(find.text('Add practice'));
+    await tester.pumpAndSettle();
+    expect(find.text('Add practices'), findsOneWidget);
+
+    await tester.tap(find.text('21 Days of the 21 Taras'));
+    await tester.tap(find.text('Green Tara mantra'));
+    await tester.pump();
+    expect(find.text('Add 2 practices'), findsOneWidget);
+
+    // A series takes the plan's single slot.
+    await tester.tap(find.text('Lamrim teachings'));
+    await tester.pump();
+    expect(find.text('Add 2 practices'), findsOneWidget);
+    expect(
+      find.text('Choosing Lamrim teachings replaced 21 Days of the 21 Taras.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Add 2 practices'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Skip'), findsNothing);
+    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Lamrim teachings'), findsOneWidget);
+    expect(find.text('21 Days of the 21 Taras'), findsNothing);
+    expect(find.text('Admin adds'), findsOneWidget);
+
+    await tester.tap(find.text('Admin adds'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attendees add in app'));
+    await tester.pumpAndSettle();
+    expect(find.text('Attendees add in app'), findsOneWidget);
+    expect(find.text('Admin adds'), findsNothing);
+  });
+
+  testWidgets('a youtube link becomes an About video', (tester) async {
+    await _pump(tester);
+    await _goToStepThree(tester);
+
+    await tester.tap(find.text('Add video'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'https://youtu.be/…'),
+      'https://example.org/talk',
+    );
+    await tester.pump();
+    expect(find.textContaining("doesn't look like a YouTube link"), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'https://youtu.be/…'),
+      'https://youtu.be/8sN0mLpQdT4',
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Guided sitting — introduction'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Add video'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guided sitting — introduction'), findsOneWidget);
+    expect(find.text('YouTube'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
+  });
+}
+
+void reviewTests() {
+  testWidgets('review reads the draft back and publishes it', (tester) async {
+    _lastResult = null;
+    _composerRepository.created = null;
+    await _pump(tester);
+    await _goToStepThree(tester);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Step 4 of 4 · Review & publish'), findsOneWidget);
+    expect(find.text('Wednesday'), findsOneWidget);
+    expect(find.text('བོད་ཡིག'), findsOneWidget);
+    expect(find.text('Online'), findsOneWidget);
+    expect(find.text('YouTube live · @lodhenwarlord'), findsOneWidget);
+    expect(find.text('Chat on · Notifications on · All intentions'), findsOneWidget);
+    expect(find.text('Members are notified when you publish.'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Event settings'));
+    await tester.tap(find.text('Event settings'));
+    await tester.pumpAndSettle();
+    expect(find.text('Peace'), findsOneWidget);
+    await tester.tap(find.text('Peace'));
+    await tester.tap(find.byType(Switch).last);
+    await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chat on · Notifications off · 1 intention'), findsOneWidget);
+    expect(find.text('Members are notified when you publish.'), findsNothing);
+
+    await tester.tap(find.text('Publish'));
+    await tester.pumpAndSettle();
+
+    final created = _composerRepository.created!;
+    expect(created.metadata.map((m) => m.language), ['BO']);
+    expect(created.youtube.single.url, 'https://youtube.com/@lodhenwarlord/live');
+    expect(created.eventFormat, 'online');
+    expect(created.notificationsEnabled, isFalse);
+    expect(created.intentionIds, ['i1']);
+    expect(_composerRepository.location, isNull);
+
+    expect(find.text('Published'), findsOneWidget);
+    expect(find.text('Wednesday is live'), findsOneWidget);
+    expect(find.text('You can edit it any time from the event page.'), findsOneWidget);
+
+    await tester.tap(find.text('View event'));
+    await tester.pumpAndSettle();
+    expect(_lastResult?.event.id, 'ev-1');
+    expect(_lastResult?.openEvent, isTrue);
+  });
+
+  testWidgets('a review row jumps back to its step', (tester) async {
+    await _pump(tester);
+    await _goToStepThree(tester);
+    await tester.tap(find.text('Skip'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Name'));
+    await tester.pumpAndSettle();
+    expect(find.text('Step 1 of 4 · About'), findsOneWidget);
   });
 }

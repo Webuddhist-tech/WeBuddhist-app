@@ -6458,6 +6458,454 @@ abstract class AppLocalizations {
   /// **'© OpenStreetMap contributors'**
   String get group_event_map_attribution;
 
+  /// No description provided for @group_event_step_practices.
+  ///
+  /// In en, this message translates to:
+  /// **'Practices & videos'**
+  String get group_event_step_practices;
+
+  /// No description provided for @group_event_optional_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything here is optional. You can add these details later.'**
+  String get group_event_optional_note;
+
+  /// No description provided for @group_event_practices_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Event practices'**
+  String get group_event_practices_section;
+
+  /// No description provided for @group_event_add_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Add practice'**
+  String get group_event_add_practice;
+
+  /// No description provided for @group_event_practice_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search your space\'s practices'**
+  String get group_event_practice_search_hint;
+
+  /// No description provided for @group_event_practice_filter_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get group_event_practice_filter_all;
+
+  /// No description provided for @group_event_practice_filter_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Plans & series'**
+  String get group_event_practice_filter_content;
+
+  /// No description provided for @group_event_practice_filter_collections.
+  ///
+  /// In en, this message translates to:
+  /// **'Chant collections'**
+  String get group_event_practice_filter_collections;
+
+  /// No description provided for @group_event_practice_filter_accumulators.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulations'**
+  String get group_event_practice_filter_accumulators;
+
+  /// No description provided for @group_event_practice_rule.
+  ///
+  /// In en, this message translates to:
+  /// **'One plan or series and one chant collection per event. Add as many accumulations as you need.'**
+  String get group_event_practice_rule;
+
+  /// No description provided for @group_event_practice_replaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Choosing {chosen} replaced {previous}.'**
+  String group_event_practice_replaced(String chosen, String previous);
+
+  /// No description provided for @group_event_practices_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No practices in this space yet'**
+  String get group_event_practices_empty;
+
+  /// No description provided for @group_event_practices_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load practices. Please try again.'**
+  String get group_event_practices_load_error;
+
+  /// No description provided for @group_event_practices_none_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No practices match'**
+  String get group_event_practices_none_match;
+
+  /// No description provided for @group_event_add_practices_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Add practices} =1{Add 1 practice} other{Add {count} practices}}'**
+  String group_event_add_practices_count(int count);
+
+  /// No description provided for @group_event_counted_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted by'**
+  String get group_event_counted_by;
+
+  /// No description provided for @group_event_count_mode_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Who adds the count?'**
+  String get group_event_count_mode_title;
+
+  /// No description provided for @group_event_count_mode_attendees.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendees add in app'**
+  String get group_event_count_mode_attendees;
+
+  /// No description provided for @group_event_count_mode_attendees_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each person adds their own recitations, during or after the event'**
+  String get group_event_count_mode_attendees_hint;
+
+  /// No description provided for @group_event_count_mode_admin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin adds for in-person attendees'**
+  String get group_event_count_mode_admin;
+
+  /// No description provided for @group_event_count_mode_admin_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'You enter the group\'s count, i.e. people × rounds'**
+  String get group_event_count_mode_admin_hint;
+
+  /// No description provided for @group_event_count_mode_admin_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin adds'**
+  String get group_event_count_mode_admin_short;
+
+  /// No description provided for @group_event_remove_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {title}'**
+  String group_event_remove_practice(String title);
+
+  /// No description provided for @group_event_videos_section.
+  ///
+  /// In en, this message translates to:
+  /// **'About videos'**
+  String get group_event_videos_section;
+
+  /// No description provided for @group_event_videos_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown on the event\'s About page. Use them to introduce the event or explain what to expect.'**
+  String get group_event_videos_hint;
+
+  /// No description provided for @group_event_add_video.
+  ///
+  /// In en, this message translates to:
+  /// **'Add video'**
+  String get group_event_add_video;
+
+  /// No description provided for @group_event_video_link.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube link'**
+  String get group_event_video_link;
+
+  /// No description provided for @group_event_video_link_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'https://youtu.be/…'**
+  String get group_event_video_link_hint;
+
+  /// No description provided for @group_event_paste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get group_event_paste;
+
+  /// No description provided for @group_event_video_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting video details…'**
+  String get group_event_video_loading;
+
+  /// No description provided for @group_event_video_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That doesn\'t look like a YouTube link. Paste a link from YouTube.'**
+  String get group_event_video_invalid;
+
+  /// No description provided for @group_event_video_source.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube'**
+  String get group_event_video_source;
+
+  /// No description provided for @group_event_video_untitled.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube video'**
+  String get group_event_video_untitled;
+
+  /// No description provided for @group_event_remove_video.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove video'**
+  String get group_event_remove_video;
+
+  /// No description provided for @group_event_skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get group_event_skip;
+
+  /// No description provided for @group_event_step_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review & publish'**
+  String get group_event_step_review;
+
+  /// No description provided for @group_event_review_event.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get group_event_review_event;
+
+  /// No description provided for @group_event_review_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get group_event_review_settings;
+
+  /// No description provided for @group_event_review_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get group_event_review_name;
+
+  /// No description provided for @group_event_review_languages.
+  ///
+  /// In en, this message translates to:
+  /// **'Languages'**
+  String get group_event_review_languages;
+
+  /// No description provided for @group_event_review_when.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get group_event_review_when;
+
+  /// No description provided for @group_event_review_where.
+  ///
+  /// In en, this message translates to:
+  /// **'Where'**
+  String get group_event_review_where;
+
+  /// No description provided for @group_event_review_live_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Live link'**
+  String get group_event_review_live_link;
+
+  /// No description provided for @group_event_review_practices.
+  ///
+  /// In en, this message translates to:
+  /// **'Practices'**
+  String get group_event_review_practices;
+
+  /// No description provided for @group_event_review_videos.
+  ///
+  /// In en, this message translates to:
+  /// **'About videos'**
+  String get group_event_review_videos;
+
+  /// No description provided for @group_event_review_event_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Event settings'**
+  String get group_event_review_event_settings;
+
+  /// No description provided for @group_event_review_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get group_event_review_none;
+
+  /// No description provided for @group_event_review_tap_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap any row to change it.'**
+  String get group_event_review_tap_hint;
+
+  /// No description provided for @group_event_review_notify_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Members are notified when you publish.'**
+  String get group_event_review_notify_hint;
+
+  /// No description provided for @group_event_review_more.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} + {count} more'**
+  String group_event_review_more(String first, int count);
+
+  /// No description provided for @group_event_review_recurring_from.
+  ///
+  /// In en, this message translates to:
+  /// **'{rule} · {times} · from {date}'**
+  String group_event_review_recurring_from(
+    String rule,
+    String times,
+    String date,
+  );
+
+  /// No description provided for @group_event_review_youtube_live.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube live'**
+  String get group_event_review_youtube_live;
+
+  /// No description provided for @group_event_review_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get group_event_review_online;
+
+  /// No description provided for @group_event_chat_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat on'**
+  String get group_event_chat_on;
+
+  /// No description provided for @group_event_chat_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat off'**
+  String get group_event_chat_off;
+
+  /// No description provided for @group_event_notifications_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications on'**
+  String get group_event_notifications_on;
+
+  /// No description provided for @group_event_notifications_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications off'**
+  String get group_event_notifications_off;
+
+  /// No description provided for @group_event_all_intentions.
+  ///
+  /// In en, this message translates to:
+  /// **'All intentions'**
+  String get group_event_all_intentions;
+
+  /// No description provided for @group_event_intentions_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 intention} other{{count} intentions}}'**
+  String group_event_intentions_count(int count);
+
+  /// No description provided for @group_event_publish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get group_event_publish;
+
+  /// No description provided for @group_event_publish_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to publish the event. Please try again'**
+  String get group_event_publish_error;
+
+  /// No description provided for @group_event_settings_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Event settings'**
+  String get group_event_settings_title;
+
+  /// No description provided for @group_event_settings_chat.
+  ///
+  /// In en, this message translates to:
+  /// **'Event chat'**
+  String get group_event_settings_chat;
+
+  /// No description provided for @group_event_settings_chat_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Gives the event its own chat, where members can talk and post prayer requests.'**
+  String get group_event_settings_chat_hint;
+
+  /// No description provided for @group_event_settings_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get group_event_settings_notifications;
+
+  /// No description provided for @group_event_settings_notifications_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'The notice when you publish, the reminder before it starts, and any you send yourself.'**
+  String get group_event_settings_notifications_hint;
+
+  /// No description provided for @group_event_settings_intentions.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer intentions'**
+  String get group_event_settings_intentions;
+
+  /// No description provided for @group_event_settings_intentions_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave all unchecked to allow every intention.'**
+  String get group_event_settings_intentions_hint;
+
+  /// No description provided for @group_event_settings_intentions_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load intentions right now.'**
+  String get group_event_settings_intentions_error;
+
+  /// No description provided for @group_event_published_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get group_event_published_title;
+
+  /// No description provided for @group_event_published_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is live'**
+  String group_event_published_headline(String name);
+
+  /// No description provided for @group_event_published_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Members of {group} have been notified. You can edit it any time from the event page.'**
+  String group_event_published_message(String group);
+
+  /// No description provided for @group_event_published_message_silent.
+  ///
+  /// In en, this message translates to:
+  /// **'You can edit it any time from the event page.'**
+  String get group_event_published_message_silent;
+
+  /// No description provided for @group_event_view_event.
+  ///
+  /// In en, this message translates to:
+  /// **'View event'**
+  String get group_event_view_event;
+
   /// No description provided for @mala_failed_load_catalogue_error.
   ///
   /// In en, this message translates to:

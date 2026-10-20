@@ -1846,6 +1846,124 @@
   "group_event_venue_hint": "Choose a venue to continue",
   "group_event_link_required_hint": "Add a meeting link to continue",
   "group_event_map_attribution": "© OpenStreetMap contributors",
+  "group_event_step_practices": "Practices & videos",
+  "group_event_optional_note": "Everything here is optional. You can add these details later.",
+  "group_event_practices_section": "Event practices",
+  "group_event_add_practice": "Add practice",
+  "group_event_practice_search_hint": "Search your space's practices",
+  "group_event_practice_filter_all": "All",
+  "group_event_practice_filter_content": "Plans & series",
+  "group_event_practice_filter_collections": "Chant collections",
+  "group_event_practice_filter_accumulators": "Accumulations",
+  "group_event_practice_rule": "One plan or series and one chant collection per event. Add as many accumulations as you need.",
+  "group_event_practice_replaced": "Choosing {chosen} replaced {previous}.",
+  "@group_event_practice_replaced": {
+    "placeholders": {
+      "chosen": {"type": "String"},
+      "previous": {"type": "String"}
+    }
+  },
+  "group_event_practices_empty": "No practices in this space yet",
+  "group_event_practices_load_error": "Unable to load practices. Please try again.",
+  "group_event_practices_none_match": "No practices match",
+  "group_event_add_practices_count": "{count, plural, =0{Add practices} =1{Add 1 practice} other{Add {count} practices}}",
+  "@group_event_add_practices_count": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "group_event_counted_by": "Counted by",
+  "group_event_count_mode_title": "Who adds the count?",
+  "group_event_count_mode_attendees": "Attendees add in app",
+  "group_event_count_mode_attendees_hint": "Each person adds their own recitations, during or after the event",
+  "group_event_count_mode_admin": "Admin adds for in-person attendees",
+  "group_event_count_mode_admin_hint": "You enter the group's count, i.e. people × rounds",
+  "group_event_count_mode_admin_short": "Admin adds",
+  "group_event_remove_practice": "Remove {title}",
+  "@group_event_remove_practice": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "group_event_videos_section": "About videos",
+  "group_event_videos_hint": "Shown on the event's About page. Use them to introduce the event or explain what to expect.",
+  "group_event_add_video": "Add video",
+  "group_event_video_link": "YouTube link",
+  "group_event_video_link_hint": "https://youtu.be/…",
+  "group_event_paste": "Paste",
+  "group_event_video_loading": "Getting video details…",
+  "group_event_video_invalid": "That doesn't look like a YouTube link. Paste a link from YouTube.",
+  "group_event_video_source": "YouTube",
+  "group_event_video_untitled": "YouTube video",
+  "group_event_remove_video": "Remove video",
+  "group_event_skip": "Skip",
+  "group_event_step_review": "Review & publish",
+  "group_event_review_event": "Event",
+  "group_event_review_settings": "Settings",
+  "group_event_review_name": "Name",
+  "group_event_review_languages": "Languages",
+  "group_event_review_when": "When",
+  "group_event_review_where": "Where",
+  "group_event_review_live_link": "Live link",
+  "group_event_review_practices": "Practices",
+  "group_event_review_videos": "About videos",
+  "group_event_review_event_settings": "Event settings",
+  "group_event_review_none": "None",
+  "group_event_review_tap_hint": "Tap any row to change it.",
+  "group_event_review_notify_hint": "Members are notified when you publish.",
+  "group_event_review_more": "{first} + {count} more",
+  "@group_event_review_more": {
+    "placeholders": {
+      "first": {"type": "String"},
+      "count": {"type": "int"}
+    }
+  },
+  "group_event_review_recurring_from": "{rule} · {times} · from {date}",
+  "@group_event_review_recurring_from": {
+    "placeholders": {
+      "rule": {"type": "String"},
+      "times": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "group_event_review_youtube_live": "YouTube live",
+  "group_event_review_online": "Online",
+  "group_event_chat_on": "Chat on",
+  "group_event_chat_off": "Chat off",
+  "group_event_notifications_on": "Notifications on",
+  "group_event_notifications_off": "Notifications off",
+  "group_event_all_intentions": "All intentions",
+  "group_event_intentions_count": "{count, plural, =1{1 intention} other{{count} intentions}}",
+  "@group_event_intentions_count": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "group_event_publish": "Publish",
+  "group_event_publish_error": "Unable to publish the event. Please try again",
+  "group_event_settings_title": "Event settings",
+  "group_event_settings_chat": "Event chat",
+  "group_event_settings_chat_hint": "Gives the event its own chat, where members can talk and post prayer requests.",
+  "group_event_settings_notifications": "Notifications",
+  "group_event_settings_notifications_hint": "The notice when you publish, the reminder before it starts, and any you send yourself.",
+  "group_event_settings_intentions": "Prayer intentions",
+  "group_event_settings_intentions_hint": "Leave all unchecked to allow every intention.",
+  "group_event_settings_intentions_error": "Unable to load intentions right now.",
+  "group_event_published_title": "Published",
+  "group_event_published_headline": "{name} is live",
+  "@group_event_published_headline": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "group_event_published_message": "Members of {group} have been notified. You can edit it any time from the event page.",
+  "@group_event_published_message": {
+    "placeholders": {
+      "group": {"type": "String"}
+    }
+  },
+  "group_event_published_message_silent": "You can edit it any time from the event page.",
+  "group_event_view_event": "View event",
   "mala_failed_load_catalogue_error": "Unable to load catalogue",
   "chant_collection_reload_error": "Unable to reload collection to reorder",
   "chant_collection_reorder_error": "Unable to reorder chants",

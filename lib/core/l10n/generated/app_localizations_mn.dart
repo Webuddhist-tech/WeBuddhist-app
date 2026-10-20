@@ -3715,6 +3715,277 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_event_map_attribution => '© OpenStreetMap contributors';
 
   @override
+  String get group_event_step_practices => 'Practices & videos';
+
+  @override
+  String get group_event_optional_note =>
+      'Everything here is optional. You can add these details later.';
+
+  @override
+  String get group_event_practices_section => 'Event practices';
+
+  @override
+  String get group_event_add_practice => 'Add practice';
+
+  @override
+  String get group_event_practice_search_hint =>
+      'Search your space\'s practices';
+
+  @override
+  String get group_event_practice_filter_all => 'All';
+
+  @override
+  String get group_event_practice_filter_content => 'Plans & series';
+
+  @override
+  String get group_event_practice_filter_collections => 'Chant collections';
+
+  @override
+  String get group_event_practice_filter_accumulators => 'Accumulations';
+
+  @override
+  String get group_event_practice_rule =>
+      'One plan or series and one chant collection per event. Add as many accumulations as you need.';
+
+  @override
+  String group_event_practice_replaced(String chosen, String previous) {
+    return 'Choosing $chosen replaced $previous.';
+  }
+
+  @override
+  String get group_event_practices_empty => 'No practices in this space yet';
+
+  @override
+  String get group_event_practices_load_error =>
+      'Unable to load practices. Please try again.';
+
+  @override
+  String get group_event_practices_none_match => 'No practices match';
+
+  @override
+  String group_event_add_practices_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count practices',
+      one: 'Add 1 practice',
+      zero: 'Add practices',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_event_counted_by => 'Counted by';
+
+  @override
+  String get group_event_count_mode_title => 'Who adds the count?';
+
+  @override
+  String get group_event_count_mode_attendees => 'Attendees add in app';
+
+  @override
+  String get group_event_count_mode_attendees_hint =>
+      'Each person adds their own recitations, during or after the event';
+
+  @override
+  String get group_event_count_mode_admin =>
+      'Admin adds for in-person attendees';
+
+  @override
+  String get group_event_count_mode_admin_hint =>
+      'You enter the group\'s count, i.e. people × rounds';
+
+  @override
+  String get group_event_count_mode_admin_short => 'Admin adds';
+
+  @override
+  String group_event_remove_practice(String title) {
+    return 'Remove $title';
+  }
+
+  @override
+  String get group_event_videos_section => 'About videos';
+
+  @override
+  String get group_event_videos_hint =>
+      'Shown on the event\'s About page. Use them to introduce the event or explain what to expect.';
+
+  @override
+  String get group_event_add_video => 'Add video';
+
+  @override
+  String get group_event_video_link => 'YouTube link';
+
+  @override
+  String get group_event_video_link_hint => 'https://youtu.be/…';
+
+  @override
+  String get group_event_paste => 'Paste';
+
+  @override
+  String get group_event_video_loading => 'Getting video details…';
+
+  @override
+  String get group_event_video_invalid =>
+      'That doesn\'t look like a YouTube link. Paste a link from YouTube.';
+
+  @override
+  String get group_event_video_source => 'YouTube';
+
+  @override
+  String get group_event_video_untitled => 'YouTube video';
+
+  @override
+  String get group_event_remove_video => 'Remove video';
+
+  @override
+  String get group_event_skip => 'Skip';
+
+  @override
+  String get group_event_step_review => 'Review & publish';
+
+  @override
+  String get group_event_review_event => 'Event';
+
+  @override
+  String get group_event_review_settings => 'Settings';
+
+  @override
+  String get group_event_review_name => 'Name';
+
+  @override
+  String get group_event_review_languages => 'Languages';
+
+  @override
+  String get group_event_review_when => 'When';
+
+  @override
+  String get group_event_review_where => 'Where';
+
+  @override
+  String get group_event_review_live_link => 'Live link';
+
+  @override
+  String get group_event_review_practices => 'Practices';
+
+  @override
+  String get group_event_review_videos => 'About videos';
+
+  @override
+  String get group_event_review_event_settings => 'Event settings';
+
+  @override
+  String get group_event_review_none => 'None';
+
+  @override
+  String get group_event_review_tap_hint => 'Tap any row to change it.';
+
+  @override
+  String get group_event_review_notify_hint =>
+      'Members are notified when you publish.';
+
+  @override
+  String group_event_review_more(String first, int count) {
+    return '$first + $count more';
+  }
+
+  @override
+  String group_event_review_recurring_from(
+    String rule,
+    String times,
+    String date,
+  ) {
+    return '$rule · $times · from $date';
+  }
+
+  @override
+  String get group_event_review_youtube_live => 'YouTube live';
+
+  @override
+  String get group_event_review_online => 'Online';
+
+  @override
+  String get group_event_chat_on => 'Chat on';
+
+  @override
+  String get group_event_chat_off => 'Chat off';
+
+  @override
+  String get group_event_notifications_on => 'Notifications on';
+
+  @override
+  String get group_event_notifications_off => 'Notifications off';
+
+  @override
+  String get group_event_all_intentions => 'All intentions';
+
+  @override
+  String group_event_intentions_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count intentions',
+      one: '1 intention',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get group_event_publish => 'Publish';
+
+  @override
+  String get group_event_publish_error =>
+      'Unable to publish the event. Please try again';
+
+  @override
+  String get group_event_settings_title => 'Event settings';
+
+  @override
+  String get group_event_settings_chat => 'Event chat';
+
+  @override
+  String get group_event_settings_chat_hint =>
+      'Gives the event its own chat, where members can talk and post prayer requests.';
+
+  @override
+  String get group_event_settings_notifications => 'Notifications';
+
+  @override
+  String get group_event_settings_notifications_hint =>
+      'The notice when you publish, the reminder before it starts, and any you send yourself.';
+
+  @override
+  String get group_event_settings_intentions => 'Prayer intentions';
+
+  @override
+  String get group_event_settings_intentions_hint =>
+      'Leave all unchecked to allow every intention.';
+
+  @override
+  String get group_event_settings_intentions_error =>
+      'Unable to load intentions right now.';
+
+  @override
+  String get group_event_published_title => 'Published';
+
+  @override
+  String group_event_published_headline(String name) {
+    return '$name is live';
+  }
+
+  @override
+  String group_event_published_message(String group) {
+    return 'Members of $group have been notified. You can edit it any time from the event page.';
+  }
+
+  @override
+  String get group_event_published_message_silent =>
+      'You can edit it any time from the event page.';
+
+  @override
+  String get group_event_view_event => 'View event';
+
+  @override
   String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override
