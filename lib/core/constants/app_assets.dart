@@ -185,6 +185,9 @@ class AppAssets {
   static const IconData bookOpenText = PhosphorIconsRegular.bookOpenText;
   static const IconData bookOpen = PhosphorIconsRegular.bookOpen;
   static const IconData calendarDots = PhosphorIconsRegular.calendarDots;
+  static const IconData calendarBlank = PhosphorIconsRegular.calendarBlank;
+  static const IconData hourglass = PhosphorIconsRegular.hourglass;
+  static const IconData mapPinFill = PhosphorIconsFill.mapPin;
   static const IconData mapPin = PhosphorIconsRegular.mapPin;
   static const IconData videoCamera = PhosphorIconsRegular.videoCamera;
   static const IconData clock = PhosphorIconsRegular.clock;

@@ -1695,6 +1695,107 @@
   "group_event_link_text_hint": "Text",
   "group_event_link_url_hint": "https://",
   "group_event_link_insert": "Insert",
+  "group_event_step_when_where": "When & where",
+  "group_event_when": "When",
+  "group_event_where": "Where",
+  "group_event_one_time": "One-time",
+  "group_event_recurring": "Recurring",
+  "group_event_date": "Date",
+  "group_event_start_date": "Start date",
+  "group_event_end_date": "End date",
+  "group_event_first_date": "First date",
+  "group_event_choose_date": "Choose a date",
+  "group_event_multi_day": "Multi-day event",
+  "group_event_all_day": "All day",
+  "group_event_all_day_hint": "Shown as all day on the event page.",
+  "group_event_start_time": "Start time",
+  "group_event_end_time": "End time",
+  "group_event_add_start_time": "Add start time",
+  "group_event_add_end_time": "Add end time",
+  "group_event_time_starts": "starts {time}",
+  "@group_event_time_starts": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "group_event_time_ends": "ends {time}",
+  "@group_event_time_ends": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "group_event_timezone": "Timezone",
+  "group_event_repeats": "Repeats",
+  "group_event_choose_repeats": "Choose how it repeats",
+  "group_event_duration": "Duration",
+  "group_event_duration_days": "{count, plural, =1{1 day} other{{count} days}}",
+  "@group_event_duration_days": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "group_event_repeats_weekly": "Weekly on {weekday}",
+  "@group_event_repeats_weekly": {
+    "placeholders": {
+      "weekday": {"type": "String"}
+    }
+  },
+  "group_event_repeats_monthly": "Monthly on the {day}",
+  "@group_event_repeats_monthly": {
+    "placeholders": {
+      "day": {"type": "String"}
+    }
+  },
+  "group_event_repeats_monthly_lunar": "Monthly on the {day} lunar day",
+  "@group_event_repeats_monthly_lunar": {
+    "placeholders": {
+      "day": {"type": "String"}
+    }
+  },
+  "group_event_repeats_yearly": "Yearly on {date}",
+  "@group_event_repeats_yearly": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "group_event_repeats_yearly_lunar": "Yearly on this lunar date",
+  "group_event_full_moon": "Full moon",
+  "group_event_new_moon": "New moon",
+  "group_event_gregorian": "Gregorian",
+  "group_event_tibetan_lunar": "Tibetan Lunar",
+  "group_event_next_dates": "Next dates",
+  "group_event_repeats_hint": "Options are based on the first date.",
+  "group_event_in_person": "In person",
+  "group_event_live": "Live",
+  "group_event_both": "Both",
+  "group_event_venue": "Venue",
+  "group_event_add_venue": "Add venue location",
+  "group_event_venue_search_hint": "Search area, street or landmark",
+  "group_event_venue_no_results": "No places found",
+  "group_event_venue_search_error": "Search isn't available right now",
+  "group_event_drop_pin": "Drop a pin",
+  "group_event_drop_pin_hint": "Choose the spot on a map",
+  "group_event_pin_marker": "Event venue",
+  "group_event_selected_location": "Selected location",
+  "group_event_pin_unnamed": "Pinned location",
+  "group_event_confirm_location": "Confirm location",
+  "group_event_name_location": "Name the location",
+  "group_event_venue_name": "Venue name",
+  "group_event_venue_name_hint": "e.g. Vajrasattva Dharma Center",
+  "group_event_save_venue": "Save venue",
+  "group_event_live_link": "Live link",
+  "group_event_live_link_hint": "youtube.com/… or a meeting link",
+  "group_event_use_channel_link": "Use channel link",
+  "group_event_live_link_youtube_help": "Your space's YouTube live. It plays inside WeBuddhist. Paste a different link to change it.",
+  "group_event_live_link_custom_help": "Custom link. Viewers open it outside WeBuddhist.",
+  "group_event_live_link_invalid": "That doesn't look like a link yet",
+  "group_event_pick_date_hint": "Pick a date to continue",
+  "group_event_pick_repeats_hint": "Choose how it repeats to continue",
+  "group_event_end_date_hint": "End date must be after the start date",
+  "group_event_end_time_hint": "End time must be after the start time",
+  "group_event_venue_hint": "Choose a venue to continue",
+  "group_event_link_required_hint": "Add a meeting link to continue",
+  "group_event_map_attribution": "© OpenStreetMap contributors",
   "mala_failed_load_catalogue_error": "Unable to load catalogue",
   "chant_collection_reload_error": "Unable to reload collection to reorder",
   "chant_collection_reorder_error": "Unable to reorder chants",

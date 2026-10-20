@@ -3339,6 +3339,231 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_event_link_insert => 'Insert';
 
   @override
+  String get group_event_step_when_where => 'When & where';
+
+  @override
+  String get group_event_when => 'When';
+
+  @override
+  String get group_event_where => 'Where';
+
+  @override
+  String get group_event_one_time => 'One-time';
+
+  @override
+  String get group_event_recurring => 'Recurring';
+
+  @override
+  String get group_event_date => 'Date';
+
+  @override
+  String get group_event_start_date => 'Start date';
+
+  @override
+  String get group_event_end_date => 'End date';
+
+  @override
+  String get group_event_first_date => 'First date';
+
+  @override
+  String get group_event_choose_date => 'Choose a date';
+
+  @override
+  String get group_event_multi_day => 'Multi-day event';
+
+  @override
+  String get group_event_all_day => 'All day';
+
+  @override
+  String get group_event_all_day_hint => 'Shown as all day on the event page.';
+
+  @override
+  String get group_event_start_time => 'Start time';
+
+  @override
+  String get group_event_end_time => 'End time';
+
+  @override
+  String get group_event_add_start_time => 'Add start time';
+
+  @override
+  String get group_event_add_end_time => 'Add end time';
+
+  @override
+  String group_event_time_starts(String time) {
+    return 'starts $time';
+  }
+
+  @override
+  String group_event_time_ends(String time) {
+    return 'ends $time';
+  }
+
+  @override
+  String get group_event_timezone => 'Timezone';
+
+  @override
+  String get group_event_repeats => 'Repeats';
+
+  @override
+  String get group_event_choose_repeats => 'Choose how it repeats';
+
+  @override
+  String get group_event_duration => 'Duration';
+
+  @override
+  String group_event_duration_days(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String group_event_repeats_weekly(String weekday) {
+    return 'Weekly on $weekday';
+  }
+
+  @override
+  String group_event_repeats_monthly(String day) {
+    return 'Monthly on the $day';
+  }
+
+  @override
+  String group_event_repeats_monthly_lunar(String day) {
+    return 'Monthly on the $day lunar day';
+  }
+
+  @override
+  String group_event_repeats_yearly(String date) {
+    return 'Yearly on $date';
+  }
+
+  @override
+  String get group_event_repeats_yearly_lunar => 'Yearly on this lunar date';
+
+  @override
+  String get group_event_full_moon => 'Full moon';
+
+  @override
+  String get group_event_new_moon => 'New moon';
+
+  @override
+  String get group_event_gregorian => 'Gregorian';
+
+  @override
+  String get group_event_tibetan_lunar => 'Tibetan Lunar';
+
+  @override
+  String get group_event_next_dates => 'Next dates';
+
+  @override
+  String get group_event_repeats_hint => 'Options are based on the first date.';
+
+  @override
+  String get group_event_in_person => 'In person';
+
+  @override
+  String get group_event_live => 'Live';
+
+  @override
+  String get group_event_both => 'Both';
+
+  @override
+  String get group_event_venue => 'Venue';
+
+  @override
+  String get group_event_add_venue => 'Add venue location';
+
+  @override
+  String get group_event_venue_search_hint => 'Search area, street or landmark';
+
+  @override
+  String get group_event_venue_no_results => 'No places found';
+
+  @override
+  String get group_event_venue_search_error =>
+      'Search isn\'t available right now';
+
+  @override
+  String get group_event_drop_pin => 'Drop a pin';
+
+  @override
+  String get group_event_drop_pin_hint => 'Choose the spot on a map';
+
+  @override
+  String get group_event_pin_marker => 'Event venue';
+
+  @override
+  String get group_event_selected_location => 'Selected location';
+
+  @override
+  String get group_event_pin_unnamed => 'Pinned location';
+
+  @override
+  String get group_event_confirm_location => 'Confirm location';
+
+  @override
+  String get group_event_name_location => 'Name the location';
+
+  @override
+  String get group_event_venue_name => 'Venue name';
+
+  @override
+  String get group_event_venue_name_hint => 'e.g. Vajrasattva Dharma Center';
+
+  @override
+  String get group_event_save_venue => 'Save venue';
+
+  @override
+  String get group_event_live_link => 'Live link';
+
+  @override
+  String get group_event_live_link_hint => 'youtube.com/… or a meeting link';
+
+  @override
+  String get group_event_use_channel_link => 'Use channel link';
+
+  @override
+  String get group_event_live_link_youtube_help =>
+      'Your space\'s YouTube live. It plays inside WeBuddhist. Paste a different link to change it.';
+
+  @override
+  String get group_event_live_link_custom_help =>
+      'Custom link. Viewers open it outside WeBuddhist.';
+
+  @override
+  String get group_event_live_link_invalid =>
+      'That doesn\'t look like a link yet';
+
+  @override
+  String get group_event_pick_date_hint => 'Pick a date to continue';
+
+  @override
+  String get group_event_pick_repeats_hint =>
+      'Choose how it repeats to continue';
+
+  @override
+  String get group_event_end_date_hint =>
+      'End date must be after the start date';
+
+  @override
+  String get group_event_end_time_hint =>
+      'End time must be after the start time';
+
+  @override
+  String get group_event_venue_hint => 'Choose a venue to continue';
+
+  @override
+  String get group_event_link_required_hint => 'Add a meeting link to continue';
+
+  @override
+  String get group_event_map_attribution => '© OpenStreetMap contributors';
+
+  @override
   String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override

@@ -6624,6 +6624,475 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_event_step_when_where => TolgeeBridge.get(
+    localeName,
+    'group_event_step_when_where',
+    () => _fallback.group_event_step_when_where,
+  );
+
+  @override
+  String get group_event_when => TolgeeBridge.get(
+    localeName,
+    'group_event_when',
+    () => _fallback.group_event_when,
+  );
+
+  @override
+  String get group_event_where => TolgeeBridge.get(
+    localeName,
+    'group_event_where',
+    () => _fallback.group_event_where,
+  );
+
+  @override
+  String get group_event_one_time => TolgeeBridge.get(
+    localeName,
+    'group_event_one_time',
+    () => _fallback.group_event_one_time,
+  );
+
+  @override
+  String get group_event_recurring => TolgeeBridge.get(
+    localeName,
+    'group_event_recurring',
+    () => _fallback.group_event_recurring,
+  );
+
+  @override
+  String get group_event_date => TolgeeBridge.get(
+    localeName,
+    'group_event_date',
+    () => _fallback.group_event_date,
+  );
+
+  @override
+  String get group_event_start_date => TolgeeBridge.get(
+    localeName,
+    'group_event_start_date',
+    () => _fallback.group_event_start_date,
+  );
+
+  @override
+  String get group_event_end_date => TolgeeBridge.get(
+    localeName,
+    'group_event_end_date',
+    () => _fallback.group_event_end_date,
+  );
+
+  @override
+  String get group_event_first_date => TolgeeBridge.get(
+    localeName,
+    'group_event_first_date',
+    () => _fallback.group_event_first_date,
+  );
+
+  @override
+  String get group_event_choose_date => TolgeeBridge.get(
+    localeName,
+    'group_event_choose_date',
+    () => _fallback.group_event_choose_date,
+  );
+
+  @override
+  String get group_event_multi_day => TolgeeBridge.get(
+    localeName,
+    'group_event_multi_day',
+    () => _fallback.group_event_multi_day,
+  );
+
+  @override
+  String get group_event_all_day => TolgeeBridge.get(
+    localeName,
+    'group_event_all_day',
+    () => _fallback.group_event_all_day,
+  );
+
+  @override
+  String get group_event_all_day_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_all_day_hint',
+    () => _fallback.group_event_all_day_hint,
+  );
+
+  @override
+  String get group_event_start_time => TolgeeBridge.get(
+    localeName,
+    'group_event_start_time',
+    () => _fallback.group_event_start_time,
+  );
+
+  @override
+  String get group_event_end_time => TolgeeBridge.get(
+    localeName,
+    'group_event_end_time',
+    () => _fallback.group_event_end_time,
+  );
+
+  @override
+  String get group_event_add_start_time => TolgeeBridge.get(
+    localeName,
+    'group_event_add_start_time',
+    () => _fallback.group_event_add_start_time,
+  );
+
+  @override
+  String get group_event_add_end_time => TolgeeBridge.get(
+    localeName,
+    'group_event_add_end_time',
+    () => _fallback.group_event_add_end_time,
+  );
+
+  @override
+  String group_event_time_starts(String time) => TolgeeBridge.format(
+    localeName,
+    'group_event_time_starts',
+    <String, Object>{'time': time},
+    () => _fallback.group_event_time_starts(time),
+  );
+
+  @override
+  String group_event_time_ends(String time) => TolgeeBridge.format(
+    localeName,
+    'group_event_time_ends',
+    <String, Object>{'time': time},
+    () => _fallback.group_event_time_ends(time),
+  );
+
+  @override
+  String get group_event_timezone => TolgeeBridge.get(
+    localeName,
+    'group_event_timezone',
+    () => _fallback.group_event_timezone,
+  );
+
+  @override
+  String get group_event_repeats => TolgeeBridge.get(
+    localeName,
+    'group_event_repeats',
+    () => _fallback.group_event_repeats,
+  );
+
+  @override
+  String get group_event_choose_repeats => TolgeeBridge.get(
+    localeName,
+    'group_event_choose_repeats',
+    () => _fallback.group_event_choose_repeats,
+  );
+
+  @override
+  String get group_event_duration => TolgeeBridge.get(
+    localeName,
+    'group_event_duration',
+    () => _fallback.group_event_duration,
+  );
+
+  @override
+  String group_event_duration_days(int count) => TolgeeBridge.format(
+    localeName,
+    'group_event_duration_days',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_duration_days(count),
+  );
+
+  @override
+  String group_event_repeats_weekly(String weekday) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_weekly',
+    <String, Object>{'weekday': weekday},
+    () => _fallback.group_event_repeats_weekly(weekday),
+  );
+
+  @override
+  String group_event_repeats_monthly(String day) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_monthly',
+    <String, Object>{'day': day},
+    () => _fallback.group_event_repeats_monthly(day),
+  );
+
+  @override
+  String group_event_repeats_monthly_lunar(String day) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_monthly_lunar',
+    <String, Object>{'day': day},
+    () => _fallback.group_event_repeats_monthly_lunar(day),
+  );
+
+  @override
+  String group_event_repeats_yearly(String date) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_yearly',
+    <String, Object>{'date': date},
+    () => _fallback.group_event_repeats_yearly(date),
+  );
+
+  @override
+  String get group_event_repeats_yearly_lunar => TolgeeBridge.get(
+    localeName,
+    'group_event_repeats_yearly_lunar',
+    () => _fallback.group_event_repeats_yearly_lunar,
+  );
+
+  @override
+  String get group_event_full_moon => TolgeeBridge.get(
+    localeName,
+    'group_event_full_moon',
+    () => _fallback.group_event_full_moon,
+  );
+
+  @override
+  String get group_event_new_moon => TolgeeBridge.get(
+    localeName,
+    'group_event_new_moon',
+    () => _fallback.group_event_new_moon,
+  );
+
+  @override
+  String get group_event_gregorian => TolgeeBridge.get(
+    localeName,
+    'group_event_gregorian',
+    () => _fallback.group_event_gregorian,
+  );
+
+  @override
+  String get group_event_tibetan_lunar => TolgeeBridge.get(
+    localeName,
+    'group_event_tibetan_lunar',
+    () => _fallback.group_event_tibetan_lunar,
+  );
+
+  @override
+  String get group_event_next_dates => TolgeeBridge.get(
+    localeName,
+    'group_event_next_dates',
+    () => _fallback.group_event_next_dates,
+  );
+
+  @override
+  String get group_event_repeats_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_repeats_hint',
+    () => _fallback.group_event_repeats_hint,
+  );
+
+  @override
+  String get group_event_in_person => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person',
+    () => _fallback.group_event_in_person,
+  );
+
+  @override
+  String get group_event_live => TolgeeBridge.get(
+    localeName,
+    'group_event_live',
+    () => _fallback.group_event_live,
+  );
+
+  @override
+  String get group_event_both => TolgeeBridge.get(
+    localeName,
+    'group_event_both',
+    () => _fallback.group_event_both,
+  );
+
+  @override
+  String get group_event_venue => TolgeeBridge.get(
+    localeName,
+    'group_event_venue',
+    () => _fallback.group_event_venue,
+  );
+
+  @override
+  String get group_event_add_venue => TolgeeBridge.get(
+    localeName,
+    'group_event_add_venue',
+    () => _fallback.group_event_add_venue,
+  );
+
+  @override
+  String get group_event_venue_search_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_search_hint',
+    () => _fallback.group_event_venue_search_hint,
+  );
+
+  @override
+  String get group_event_venue_no_results => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_no_results',
+    () => _fallback.group_event_venue_no_results,
+  );
+
+  @override
+  String get group_event_venue_search_error => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_search_error',
+    () => _fallback.group_event_venue_search_error,
+  );
+
+  @override
+  String get group_event_drop_pin => TolgeeBridge.get(
+    localeName,
+    'group_event_drop_pin',
+    () => _fallback.group_event_drop_pin,
+  );
+
+  @override
+  String get group_event_drop_pin_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_drop_pin_hint',
+    () => _fallback.group_event_drop_pin_hint,
+  );
+
+  @override
+  String get group_event_pin_marker => TolgeeBridge.get(
+    localeName,
+    'group_event_pin_marker',
+    () => _fallback.group_event_pin_marker,
+  );
+
+  @override
+  String get group_event_selected_location => TolgeeBridge.get(
+    localeName,
+    'group_event_selected_location',
+    () => _fallback.group_event_selected_location,
+  );
+
+  @override
+  String get group_event_pin_unnamed => TolgeeBridge.get(
+    localeName,
+    'group_event_pin_unnamed',
+    () => _fallback.group_event_pin_unnamed,
+  );
+
+  @override
+  String get group_event_confirm_location => TolgeeBridge.get(
+    localeName,
+    'group_event_confirm_location',
+    () => _fallback.group_event_confirm_location,
+  );
+
+  @override
+  String get group_event_name_location => TolgeeBridge.get(
+    localeName,
+    'group_event_name_location',
+    () => _fallback.group_event_name_location,
+  );
+
+  @override
+  String get group_event_venue_name => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_name',
+    () => _fallback.group_event_venue_name,
+  );
+
+  @override
+  String get group_event_venue_name_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_name_hint',
+    () => _fallback.group_event_venue_name_hint,
+  );
+
+  @override
+  String get group_event_save_venue => TolgeeBridge.get(
+    localeName,
+    'group_event_save_venue',
+    () => _fallback.group_event_save_venue,
+  );
+
+  @override
+  String get group_event_live_link => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link',
+    () => _fallback.group_event_live_link,
+  );
+
+  @override
+  String get group_event_live_link_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_hint',
+    () => _fallback.group_event_live_link_hint,
+  );
+
+  @override
+  String get group_event_use_channel_link => TolgeeBridge.get(
+    localeName,
+    'group_event_use_channel_link',
+    () => _fallback.group_event_use_channel_link,
+  );
+
+  @override
+  String get group_event_live_link_youtube_help => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_youtube_help',
+    () => _fallback.group_event_live_link_youtube_help,
+  );
+
+  @override
+  String get group_event_live_link_custom_help => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_custom_help',
+    () => _fallback.group_event_live_link_custom_help,
+  );
+
+  @override
+  String get group_event_live_link_invalid => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_invalid',
+    () => _fallback.group_event_live_link_invalid,
+  );
+
+  @override
+  String get group_event_pick_date_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_pick_date_hint',
+    () => _fallback.group_event_pick_date_hint,
+  );
+
+  @override
+  String get group_event_pick_repeats_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_pick_repeats_hint',
+    () => _fallback.group_event_pick_repeats_hint,
+  );
+
+  @override
+  String get group_event_end_date_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_end_date_hint',
+    () => _fallback.group_event_end_date_hint,
+  );
+
+  @override
+  String get group_event_end_time_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_end_time_hint',
+    () => _fallback.group_event_end_time_hint,
+  );
+
+  @override
+  String get group_event_venue_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_hint',
+    () => _fallback.group_event_venue_hint,
+  );
+
+  @override
+  String get group_event_link_required_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_link_required_hint',
+    () => _fallback.group_event_link_required_hint,
+  );
+
+  @override
+  String get group_event_map_attribution => TolgeeBridge.get(
+    localeName,
+    'group_event_map_attribution',
+    () => _fallback.group_event_map_attribution,
+  );
+
+  @override
   String get mala_failed_load_catalogue_error => TolgeeBridge.get(
     localeName,
     'mala_failed_load_catalogue_error',

@@ -12,9 +12,11 @@ import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart'
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_schedule_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_about_step.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_cover_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_languages_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_when_where_step.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_posting_to_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,6 +49,7 @@ class _GroupEventComposerScreenState
     extends ConsumerState<GroupEventComposerScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _liveLinkController = TextEditingController();
 
   int _step = 0;
   GroupEventDraft _draft = const GroupEventDraft();
@@ -58,6 +61,7 @@ class _GroupEventComposerScreenState
     super.initState();
     _nameController.addListener(_onFieldChanged);
     _descriptionController.addListener(_onFieldChanged);
+    _liveLinkController.addListener(_onLiveLinkChanged);
     _seedLanguages();
   }
 
@@ -165,10 +169,49 @@ class _GroupEventComposerScreenState
     setState(() => _draft = _draft.copyWith(cover: cover));
   }
 
+  void _onLiveLinkChanged() {
+    setState(() => _draft = _draft.copyWith(liveLink: _liveLinkController.text));
+  }
+
+  bool get _isWhenWhereStep => _step == 1;
+
+  GroupEventScheduleIssue? get _scheduleIssue =>
+      GroupEventScheduleUtils.validateSchedule(_draft.schedule);
+
+  GroupEventWhereIssue? get _whereIssue =>
+      GroupEventScheduleUtils.validateWhere(_draft);
+
   bool get _canContinue {
     return switch (_step) {
       0 => _draft.hasName,
+      1 => _scheduleIssue == null && _whereIssue == null,
       _ => _step < GroupEventComposerScreen.stepCount - 1,
+    };
+  }
+
+  /// Why Continue is disabled on the current step, if it is.
+  String? _continueHint(AppLocalizations l10n) {
+    if (_isAboutStep) {
+      return _draft.hasName ? null : l10n.group_event_name_required_hint;
+    }
+    if (!_isWhenWhereStep) return null;
+    switch (_scheduleIssue) {
+      case GroupEventScheduleIssue.missingDate:
+        return l10n.group_event_pick_date_hint;
+      case GroupEventScheduleIssue.missingRecurrence:
+        return l10n.group_event_pick_repeats_hint;
+      case GroupEventScheduleIssue.endDateBeforeStart:
+        return l10n.group_event_end_date_hint;
+      case GroupEventScheduleIssue.endTimeBeforeStart:
+        return l10n.group_event_end_time_hint;
+      case null:
+        break;
+    }
+    return switch (_whereIssue) {
+      GroupEventWhereIssue.missingVenue => l10n.group_event_venue_hint,
+      GroupEventWhereIssue.missingLink ||
+      GroupEventWhereIssue.invalidLink => l10n.group_event_link_required_hint,
+      null => null,
     };
   }
 
@@ -207,6 +250,7 @@ class _GroupEventComposerScreenState
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _liveLinkController.dispose();
     super.dispose();
   }
 
@@ -252,7 +296,13 @@ class _GroupEventComposerScreenState
       _step + 1,
       GroupEventComposerScreen.stepCount,
     );
-    return _isAboutStep ? '$step · ${l10n.group_event_step_about}' : step;
+    final name =
+        _isAboutStep
+            ? l10n.group_event_step_about
+            : _isWhenWhereStep
+            ? l10n.group_event_step_when_where
+            : null;
+    return name == null ? step : '$step · $name';
   }
 
   Widget _buildStep(List<AppLanguage> languages) {
@@ -267,6 +317,22 @@ class _GroupEventComposerScreenState
         onPickCover: _pickCover,
         onLanguageTap: _switchLanguage,
         onAddLanguage: _addLanguage,
+      );
+    }
+    if (_isWhenWhereStep) {
+      return GroupEventWhenWhereStep(
+        draft: _draft,
+        profile: widget.profile,
+        liveLinkController: _liveLinkController,
+        onScheduleChanged:
+            (schedule) =>
+                setState(() => _draft = _draft.copyWith(schedule: schedule)),
+        onFormatChanged:
+            (format) => setState(() => _draft = _draft.copyWith(format: format)),
+        onVenueChanged:
+            (venue) => setState(
+              () => _draft = _draft.copyWith(venue: venue, clearVenue: venue == null),
+            ),
       );
     }
     // Later steps land here in follow-up work.
@@ -316,7 +382,7 @@ class _GroupEventComposerScreenState
   ) {
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final showHint = _isAboutStep && !_draft.hasName;
+    final hint = _continueHint(l10n);
 
     return Container(
       decoration: BoxDecoration(
@@ -329,9 +395,9 @@ class _GroupEventComposerScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (showHint) ...[
+              if (hint != null) ...[
                 Text(
-                  l10n.group_event_name_required_hint,
+                  hint,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: secondaryColor),
                 ),
