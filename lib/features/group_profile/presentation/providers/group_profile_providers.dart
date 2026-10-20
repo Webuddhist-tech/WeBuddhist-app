@@ -1407,8 +1407,9 @@ final groupJoinRequestsProvider = StateNotifierProvider.autoDispose
 
 final groupEventsProvider = FutureProvider.autoDispose
     .family<Either<Failure, GroupEventsPage>, String>((ref, groupId) async {
+      final language = ref.watch(contentLanguageProvider);
       final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.getGroupEvents(groupId);
+      return repository.getGroupEvents(groupId, language: language);
     });
 
 final groupEventDetailProvider = FutureProvider.autoDispose

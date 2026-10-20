@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_event_composer_remote_datasource.dart';
@@ -58,8 +59,9 @@ final groupEventIntentionsProvider =
 /// The CMS view of a group's events, drafts included; for people who may post.
 final groupCmsEventsProvider = FutureProvider.autoDispose
     .family<List<GroupEventCmsItem>, String>((ref, groupId) async {
+      final language = ref.watch(contentLanguageProvider);
       final result = await ref
           .watch(groupEventComposerRepositoryProvider)
-          .getCmsEvents(groupId);
+          .getCmsEvents(groupId, language: language);
       return result.fold((failure) => throw failure, (items) => items);
     });

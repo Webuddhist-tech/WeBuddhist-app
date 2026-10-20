@@ -52,10 +52,11 @@ class GroupEventComposerRepositoryImpl
 
   @override
   Future<Either<Failure, List<GroupEventCmsItem>>> getCmsEvents(
-    String groupId,
-  ) {
+    String groupId, {
+    required String language,
+  }) {
     return _guard(
-      () => remote.fetchCmsEvents(groupId),
+      () => remote.fetchCmsEvents(groupId, language: language),
       'Failed to load events',
     );
   }

@@ -233,8 +233,13 @@ class GroupEventComposerRemoteDatasource {
     return null;
   }
 
-  /// Every event of the group as the CMS sees it, drafts included.
-  Future<List<GroupEventCmsItem>> fetchCmsEvents(String groupId) async {
+  /// Every event of the group as the CMS sees it, drafts included. The
+  /// title follows [language]; the request stays unfiltered so `raw` keeps
+  /// every language for editing.
+  Future<List<GroupEventCmsItem>> fetchCmsEvents(
+    String groupId, {
+    required String language,
+  }) async {
     const limit = 50;
     const maxItems = 200;
     final items = <GroupEventCmsItem>[];
@@ -253,7 +258,7 @@ class GroupEventComposerRemoteDatasource {
                 .whereType<Map<String, dynamic>>()
                 .toList();
         for (final json in page) {
-          items.add(GroupEventCmsItem.fromJson(json));
+          items.add(GroupEventCmsItem.fromJson(json, language: language));
         }
         final total = (data['total'] as num?)?.toInt() ?? items.length;
         skip += page.length;

@@ -452,11 +452,14 @@ class GroupProfileRemoteDatasource {
     }
   }
 
-  Future<GroupEventsPageModel> fetchGroupEvents(String groupId) async {
+  Future<GroupEventsPageModel> fetchGroupEvents(
+    String groupId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/events',
-        queryParameters: {'group_id': groupId},
+        queryParameters: {'group_id': groupId, 'language': language},
         // Participant counts and join state change frequently; always fetch fresh.
         options: Options(extra: {'no_cache': true}),
       );
@@ -464,6 +467,7 @@ class GroupProfileRemoteDatasource {
       if (response.statusCode == 200) {
         return GroupEventsPageModel.fromJson(
           response.data as Map<String, dynamic>,
+          language: language,
         );
       } else {
         _logger.error(

@@ -17,9 +17,12 @@ class GroupEventCmsItem {
   /// Events from before statuses existed are live.
   bool get isDraft => status == 'draft';
 
-  factory GroupEventCmsItem.fromJson(Map<String, dynamic> json) {
+  factory GroupEventCmsItem.fromJson(
+    Map<String, dynamic> json, {
+    String? language,
+  }) {
     return GroupEventCmsItem(
-      event: GroupEventModel.fromJson(json).toEntity(),
+      event: GroupEventModel.fromJson(json, language: language).toEntity(),
       status: (json['status'] as String? ?? 'published').toLowerCase(),
       raw: json,
     );

@@ -21,7 +21,10 @@ abstract class GroupEventComposerRepositoryInterface {
     CreateGroupEventRequest request,
   );
 
-  Future<Either<Failure, List<GroupEventCmsItem>>> getCmsEvents(String groupId);
+  Future<Either<Failure, List<GroupEventCmsItem>>> getCmsEvents(
+    String groupId, {
+    required String language,
+  });
 
   Future<Either<Failure, GroupEvent>> updateEvent(
     String eventId,

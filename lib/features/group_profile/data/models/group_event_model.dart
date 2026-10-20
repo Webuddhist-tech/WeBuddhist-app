@@ -464,10 +464,16 @@ class GroupEventModel {
     }
     if (value is List<dynamic>) {
       final items = value.whereType<Map<String, dynamic>>().toList();
-      if (language != null && language.isNotEmpty) {
-        final match = items
-            .where((item) => item['language'] == language)
-            .firstOrNull;
+      for (final code in [language, 'en']) {
+        if (code == null || code.isEmpty) continue;
+        final match =
+            items
+                .where(
+                  (item) =>
+                      (item['language'] as String? ?? '').toLowerCase() ==
+                      code.toLowerCase(),
+                )
+                .firstOrNull;
         if (match != null) {
           return GroupEventMetadataModel.fromJson(match);
         }
