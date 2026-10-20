@@ -448,8 +448,8 @@ class _GroupEventComposerScreenState
       _finish(openEvent: false);
       return;
     }
-    // Past step 1 the date is what is missing; point at it instead of
-    // offering to throw the event away.
+    // Step 1 has no date yet, so it only asks keep/discard; from step 2 the
+    // date is what is missing, so point at it instead.
     if (!_isAboutStep && _draft.hasName && _scheduleIssue != null) {
       setState(() {
         _dateRequired = true;
@@ -457,7 +457,7 @@ class _GroupEventComposerScreenState
       });
       return;
     }
-    if (_canSaveDraft && await _saveDraft()) return;
+    if (!_isAboutStep && _canSaveDraft && await _saveDraft()) return;
     if (!mounted) return;
     if (!_draft.hasContent) {
       Navigator.of(context).pop();
@@ -638,16 +638,14 @@ class _GroupEventComposerScreenState
                 icon: Icon(AppAssets.arrowLeft, color: secondaryColor),
               ),
             ),
-          // Step 1 cannot become a draft yet (no date), so it has no close.
-          if (!_isAboutStep)
-            Positioned(
-              right: 4,
-              child: IconButton(
-                onPressed: _isPublishing ? null : _onClose,
-                tooltip: l10n.cancel,
-                icon: Icon(AppAssets.x, color: secondaryColor),
-              ),
+          Positioned(
+            right: 4,
+            child: IconButton(
+              onPressed: _isPublishing ? null : _onClose,
+              tooltip: l10n.cancel,
+              icon: Icon(AppAssets.x, color: secondaryColor),
             ),
+          ),
         ],
       ),
     );

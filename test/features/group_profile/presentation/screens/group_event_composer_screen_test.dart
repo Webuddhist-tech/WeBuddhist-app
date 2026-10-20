@@ -575,14 +575,24 @@ void draftTests() {
     expect(_lastResult?.event.id, 'ev-1');
   });
 
-  testWidgets('step one has no close; step two insists on a date', (
+  testWidgets('step one only asks to discard; step two insists on a date', (
     tester,
   ) async {
     _lastResult = null;
     _composerRepository.created = null;
     await _pump(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'e.g. Wednesday group practice'),
+      'Wednesday',
+    );
+    await tester.pump();
 
-    expect(find.byTooltip('Cancel'), findsNothing);
+    await tester.tap(find.byTooltip('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Discard event?'), findsOneWidget);
+    expect(_composerRepository.created, isNull);
+    await tester.tap(find.text('Keep editing'));
+    await tester.pumpAndSettle();
 
     await _goToStepTwo(tester);
     expect(find.byTooltip('Cancel'), findsOneWidget);
