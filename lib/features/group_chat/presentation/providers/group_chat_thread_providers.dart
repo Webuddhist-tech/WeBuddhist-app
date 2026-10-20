@@ -289,13 +289,28 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         );
       },
       (page) {
+        // The list was empty when the request went out — the constructor and
+        // `retry` only load into an empty thread — so anything held now came
+        // over the socket meanwhile. It is newer than the page and the count
+        // that came with it, so it stays on top rather than being replaced
+        // by a snapshot taken before it.
+        final pageIds = {for (final message in page.messages) message.id};
+        final arrived =
+            state.messages
+                .where((message) => !pageIds.contains(message.id))
+                .toList();
+        final messages = [
+          ...arrived,
+          ...page.messages.map(_withPendingUpdates),
+        ];
+        final total = page.total + arrived.length;
         state = state.copyWith(
-          messages: page.messages.map(_withPendingUpdates).toList(),
+          messages: messages,
           isLoading: false,
           hasLoaded: true,
-          hasMore: page.messages.length < page.total,
-          skip: page.messages.length,
-          total: page.total,
+          hasMore: messages.length < total,
+          skip: messages.length,
+          total: total,
           clearError: true,
         );
       },

@@ -1653,7 +1653,9 @@ class _EventLinkText extends ConsumerWidget {
 /// Accumulations tab: progress, leaderboard / own count, and a way to log
 /// recitations done with the livestream or offline.
 class _EventAccumulatorPanel extends ConsumerStatefulWidget {
-  /// First by display order owns the leaderboard, contributions and logging.
+  /// Sorted by display order. The primary one (see
+  /// [GroupEventAccumulations.primary]) owns the leaderboard, contributions
+  /// and logging; without one the tab shows progress only.
   final List<GroupEventAccumulation> accumulations;
 
   /// Hybrid events label each row with the attendance mode that feeds it.
@@ -1683,12 +1685,21 @@ class _EventAccumulatorPanelState
   bool _showContributions = false;
   bool _isJoining = false;
 
-  String get _primaryId => widget.accumulations.first.groupAccumulatorId;
-
   @override
   Widget build(BuildContext context) {
-    final detailAsync = ref.watch(groupAccumulatorDetailProvider(_primaryId));
-    void retry() => ref.invalidate(groupAccumulatorDetailProvider(_primaryId));
+    final primary = widget.accumulations.primary;
+    // All in-person: no live counts to log, so no leaderboard or button.
+    if (primary == null) {
+      return _AccumulationRows(
+        accumulations: widget.accumulations,
+        formatLabel: (accumulation) => _formatLabel(context, accumulation),
+        isDark: widget.isDark,
+      );
+    }
+
+    final primaryId = primary.groupAccumulatorId;
+    final detailAsync = ref.watch(groupAccumulatorDetailProvider(primaryId));
+    void retry() => ref.invalidate(groupAccumulatorDetailProvider(primaryId));
 
     return detailAsync.when(
       loading:
@@ -1718,7 +1729,6 @@ class _EventAccumulatorPanelState
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-    final accumulations = widget.accumulations;
     // Keep the counts notifier alive while the panel is visible so an offline
     // add is not racing its own dispose during sync.
     if (detail.presetAccumulatorId.isNotEmpty) {
@@ -1728,28 +1738,12 @@ class _EventAccumulatorPanelState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AccumulationProgress(
-          title: detail.title,
-          formatLabel: _formatLabel(context, accumulations.first),
-          accumulator: detail,
+        _AccumulationRows(
+          accumulations: widget.accumulations,
+          primaryDetail: detail,
+          formatLabel: (accumulation) => _formatLabel(context, accumulation),
           isDark: isDark,
         ),
-        // Only the first accumulation takes counts; the rest show progress.
-        for (final accumulation in accumulations.skip(1)) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
-            ),
-          ),
-          _SecondaryAccumulationRow(
-            accumulation: accumulation,
-            formatLabel: _formatLabel(context, accumulation),
-            isDark: isDark,
-          ),
-        ],
         const SizedBox(height: 20),
         Row(
           children: [
@@ -1963,6 +1957,59 @@ class _EventAccumulatorPanelState
   }
 }
 
+/// The event's accumulations as progress rows, in
+/// [GroupEventAccumulations.displayRows] order. The primary row draws from
+/// [primaryDetail], which the panel already loaded for the leaderboard.
+class _AccumulationRows extends StatelessWidget {
+  final List<GroupEventAccumulation> accumulations;
+  final GroupAccumulatorDetail? primaryDetail;
+  final String? Function(GroupEventAccumulation) formatLabel;
+  final bool isDark;
+
+  const _AccumulationRows({
+    required this.accumulations,
+    required this.formatLabel,
+    required this.isDark,
+    this.primaryDetail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = accumulations.primary;
+    final detail = primaryDetail;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final (index, accumulation)
+            in accumulations.displayRows.indexed) ...[
+          if (index > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Divider(
+                height: 1,
+                thickness: 1,
+                color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
+              ),
+            ),
+          if (detail != null && identical(accumulation, primary))
+            _AccumulationProgress(
+              title: detail.title,
+              formatLabel: formatLabel(accumulation),
+              accumulator: detail,
+              isDark: isDark,
+            )
+          else
+            _SecondaryAccumulationRow(
+              accumulation: accumulation,
+              formatLabel: formatLabel(accumulation),
+              isDark: isDark,
+            ),
+        ],
+      ],
+    );
+  }
+}
+
 class _AccumulationProgress extends StatelessWidget {
   final String title;
   final String? formatLabel;
@@ -2051,7 +2098,7 @@ class _AccumulationProgress extends StatelessWidget {
   }
 }
 
-/// Progress only; counts are logged against the first accumulation.
+/// Progress only; counts are logged against the primary accumulation.
 class _SecondaryAccumulationRow extends ConsumerWidget {
   final GroupEventAccumulation accumulation;
   final String? formatLabel;

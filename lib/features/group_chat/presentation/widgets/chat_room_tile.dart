@@ -9,9 +9,10 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_rooms_list.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_thread_rows.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/direct_chat_identity.dart';
 import 'package:intl/intl.dart';
 
-/// One group chat in the Chats list.
+/// One chat in the Chats list, group or direct.
 class ChatRoomTile extends StatelessWidget {
   const ChatRoomTile({super.key, required this.room, this.onTap, this.now});
 
@@ -48,19 +49,29 @@ class ChatRoomTile extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          room.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          strutStyle: context.tibetanStrutStyle(
-                            16,
-                            compact: true,
-                          ),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: titleColor,
-                          ),
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                chatRoomTitle(room),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                strutStyle: context.tibetanStrutStyle(
+                                  16,
+                                  compact: true,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: titleColor,
+                                ),
+                              ),
+                            ),
+                            if (room.isOfficial) ...[
+                              const SizedBox(width: 6),
+                              const OfficialChatBadge(),
+                            ],
+                          ],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -190,6 +201,10 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isDirectChatRoom(room)) {
+      return DirectChatAvatar(room: room, size: ChatRoomTile._avatarSize);
+    }
+
     final url = room.imgUrl;
     final hasUrl = url != null && url.isNotEmpty;
 

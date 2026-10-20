@@ -1,33 +1,62 @@
+import 'package:flutter_pecha/features/feedback/domain/help_context_line.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_message_time.dart';
 
-/// The group rooms among [rooms], most recently active first.
+/// Whether [room] is a direct chat between two people.
 ///
-/// `/chat/rooms` also returns direct messages — the DTO carries `sender_id`,
-/// `receiver_id` and `other_user_*` — and this list is group chats only.
-/// Membership is decided by `group_id` rather than `kind`: the spec types
-/// `kind` as a bare string with no enum and nothing in the app reads it, while
-/// `resolve_group_chat_room` already identifies a group room by its `group_id`.
-/// One rule, already proven.
+/// Decided by what the room carries rather than `kind`, for the same reason
+/// [chatListRooms] uses `group_id`: the spec types `kind` as a bare string.
+/// A direct room has no group or event and names the other person, and that
+/// person's id is what a reply is sent to.
+bool isDirectChatRoom(ChatRoomDTO room) {
+  return (room.groupId ?? '').isEmpty &&
+      (room.eventId ?? '').isEmpty &&
+      (room.otherUserId ?? '').isNotEmpty;
+}
+
+/// The name to show for [room]. A direct room is named after the other
+/// person when the server says who that is.
+String chatRoomTitle(ChatRoomDTO room) {
+  if (isDirectChatRoom(room)) {
+    final other = room.otherUserName?.trim() ?? '';
+    if (other.isNotEmpty) return other;
+  }
+  return room.name;
+}
+
+/// The rooms the Chats list shows among [rooms], most recently active first:
+/// group chats and direct chats.
+///
+/// `/chat/rooms` also returns event rooms, which hold an event's prayer
+/// requests and open from the event, so they are left out. Group membership is
+/// decided by `group_id` rather than `kind`: the spec types `kind` as a bare
+/// string with no enum, while `resolve_group_chat_room` already identifies a
+/// group room by its `group_id`. One rule, already proven.
+///
+/// Direct chats are in because the app cannot start one: the only ones a
+/// member has are the WeBuddhist Team chats the backend opens from Help &
+/// contact, and the Team account answers from this same list.
 ///
 /// Sorted here rather than trusted from the server: the endpoint documents no
 /// ordering, and "most recent first" is the requirement.
-List<ChatRoomDTO> groupChatRooms(List<ChatRoomDTO> rooms) {
-  final groups =
+List<ChatRoomDTO> chatListRooms(List<ChatRoomDTO> rooms) {
+  final listed =
       rooms
           .where(
-            (room) => (room.groupId ?? '').isNotEmpty && room.id.isNotEmpty,
+            (room) =>
+                room.id.isNotEmpty &&
+                ((room.groupId ?? '').isNotEmpty || isDirectChatRoom(room)),
           )
           .toList();
 
-  groups.sort((a, b) {
+  listed.sort((a, b) {
     final byRecency = chatRoomSortKey(b).compareTo(chatRoomSortKey(a));
     if (byRecency != 0) return byRecency;
     // A stable tiebreak, so rooms with identical timestamps do not swap
     // places between refreshes.
     return a.id.compareTo(b.id);
   });
-  return groups;
+  return listed;
 }
 
 /// When a room last changed, for ordering.
@@ -47,9 +76,9 @@ DateTime chatRoomSortKey(ChatRoomDTO room) {
 /// Whether the room has anything unread.
 bool chatRoomIsUnread(ChatRoomDTO room) => room.unreadCount > 0;
 
-/// Whether any group room has something unread — the Connect dot.
+/// Whether any listed room has something unread — the Connect dot.
 bool hasUnreadChatRooms(List<ChatRoomDTO> rooms) {
-  return groupChatRooms(rooms).any(chatRoomIsUnread);
+  return chatListRooms(rooms).any(chatRoomIsUnread);
 }
 
 /// Whether an FCM payload is a chat message.
@@ -95,12 +124,14 @@ bool chatPushTargets(
 /// Returns null when the room has never been written in, and [deletedLabel]
 /// when the last message has been deleted — a deleted message still arrives
 /// carrying its body, and showing that here would contradict the tombstone one
-/// tap away.
+/// tap away. A Help & contact message previews what the user wrote, not the
+/// "Sent from Help & contact" line above it.
 String? chatRoomPreviewBody(ChatRoomDTO room, {required String deletedLabel}) {
   final message = room.lastMessage;
   if (message == null) return null;
   if (message.deletedAt != null) return deletedLabel;
 
-  final body = message.body.replaceAll(RegExp(r'\s*\n\s*'), ' ').trim();
+  final text = parseHelpContext(message.body)?.body ?? message.body;
+  final body = text.replaceAll(RegExp(r'\s*\n\s*'), ' ').trim();
   return body.isEmpty ? null : body;
 }

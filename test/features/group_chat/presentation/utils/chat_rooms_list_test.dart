@@ -25,6 +25,8 @@ ChatMessageDTO _message({
 ChatRoomDTO _room({
   required String id,
   String? groupId = 'g1',
+  String? eventId,
+  String? otherUserId,
   String updatedAt = '2026-09-01T10:00:00Z',
   int unreadCount = 0,
   ChatMessageDTO? lastMessage,
@@ -33,29 +35,75 @@ ChatRoomDTO _room({
     id: id,
     createdBy: 'u9',
     groupId: groupId,
+    eventId: eventId,
     kind: 'group',
     name: 'Room $id',
     memberCount: 3,
     updatedAt: updatedAt,
     unreadCount: unreadCount,
     lastMessage: lastMessage,
+    otherUserId: otherUserId,
   );
 }
 
+ChatRoomDTO _direct({required String id, int unreadCount = 0}) =>
+    _room(id: id, groupId: null, otherUserId: 'team', unreadCount: unreadCount);
+
 void main() {
-  group('groupChatRooms', () {
-    test('drops direct rooms, which have no group', () {
+  group('isDirectChatRoom', () {
+    test('is a room with no group or event that names the other person', () {
+      expect(isDirectChatRoom(_direct(id: 'd')), isTrue);
+    });
+
+    test('a group or event room is not direct', () {
+      expect(isDirectChatRoom(_room(id: 'g', otherUserId: 'u2')), isFalse);
+      expect(
+        isDirectChatRoom(
+          _room(id: 'e', groupId: null, eventId: 'ev1', otherUserId: 'u2'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('a room without the other person cannot be replied to', () {
+      expect(isDirectChatRoom(_room(id: 'x', groupId: null)), isFalse);
+      expect(
+        isDirectChatRoom(_room(id: 'x', groupId: null, otherUserId: '')),
+        isFalse,
+      );
+    });
+  });
+
+  group('chatListRooms', () {
+    test('keeps group and direct rooms, drops event rooms', () {
       final rooms = [
         _room(id: 'a'),
         _room(id: 'b', groupId: null),
         _room(id: 'c', groupId: ''),
+        _room(id: 'e', groupId: null, eventId: 'ev1'),
+        _direct(id: 'd'),
       ];
 
-      expect(groupChatRooms(rooms).map((r) => r.id), ['a']);
+      expect(chatListRooms(rooms).map((r) => r.id), ['a', 'd']);
     });
 
     test('drops a room with no id, which cannot be opened', () {
-      expect(groupChatRooms([_room(id: '')]), isEmpty);
+      expect(chatListRooms([_room(id: '')]), isEmpty);
+      expect(chatListRooms([_direct(id: '')]), isEmpty);
+    });
+
+    test('orders direct and group rooms together by recency', () {
+      final rooms = [
+        _room(id: 'group', updatedAt: '2026-09-01T10:00:00Z'),
+        _room(
+          id: 'team',
+          groupId: null,
+          otherUserId: 'team',
+          updatedAt: '2026-09-02T10:00:00Z',
+        ),
+      ];
+
+      expect(chatListRooms(rooms).map((r) => r.id), ['team', 'group']);
     });
 
     test('orders most recently active first', () {
@@ -65,7 +113,7 @@ void main() {
         _room(id: 'mid', updatedAt: '2026-09-01T10:00:00Z'),
       ];
 
-      expect(groupChatRooms(rooms).map((r) => r.id), ['new', 'mid', 'old']);
+      expect(chatListRooms(rooms).map((r) => r.id), ['new', 'mid', 'old']);
     });
 
     test('a newer last message outranks a stale updated_at', () {
@@ -79,14 +127,14 @@ void main() {
         ),
       ];
 
-      expect(groupChatRooms(rooms).map((r) => r.id), ['busy', 'quiet']);
+      expect(chatListRooms(rooms).map((r) => r.id), ['busy', 'quiet']);
     });
 
     test('ties break stably rather than shuffling between refreshes', () {
       final rooms = [_room(id: 'b'), _room(id: 'a')];
 
-      expect(groupChatRooms(rooms).map((r) => r.id), ['a', 'b']);
-      expect(groupChatRooms(rooms.reversed.toList()).map((r) => r.id), [
+      expect(chatListRooms(rooms).map((r) => r.id), ['a', 'b']);
+      expect(chatListRooms(rooms.reversed.toList()).map((r) => r.id), [
         'a',
         'b',
       ]);
@@ -101,9 +149,15 @@ void main() {
       );
     });
 
-    test('ignores unread direct rooms — this list is group chats', () {
+    test('counts an unread direct room, such as a reply from the Team', () {
+      expect(hasUnreadChatRooms([_direct(id: 'd', unreadCount: 1)]), isTrue);
+    });
+
+    test('ignores unread event rooms, which are not in the list', () {
       expect(
-        hasUnreadChatRooms([_room(id: 'a', groupId: null, unreadCount: 5)]),
+        hasUnreadChatRooms([
+          _room(id: 'e', groupId: null, eventId: 'ev1', unreadCount: 5),
+        ]),
         isFalse,
       );
     });
@@ -226,6 +280,24 @@ void main() {
       final room = _room(id: 'a', lastMessage: _message(body: '   \n  '));
 
       expect(chatRoomPreviewBody(room, deletedLabel: 'deleted'), isNull);
+    });
+
+    test('a Help & contact message previews what the user wrote', () {
+      final room = _room(
+        id: 'd',
+        groupId: null,
+        otherUserId: 'team',
+        lastMessage: _message(
+          body:
+              'Sent from Help & contact · Help or collaborate\n\n'
+              'I translate dharma texts into Nepali',
+        ),
+      );
+
+      expect(
+        chatRoomPreviewBody(room, deletedLabel: 'deleted'),
+        'I translate dharma texts into Nepali',
+      );
     });
   });
 }

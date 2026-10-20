@@ -117,7 +117,6 @@ void main() {
             home: Scaffold(
               body: GroupChatThread(
                 roomId: 'room-1',
-                groupId: 'group-1',
                 onReply: (_) {},
                 onSelectionChanged: (next) => selection = next,
               ),

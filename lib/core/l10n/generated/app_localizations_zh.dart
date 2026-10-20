@@ -148,6 +148,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mala_add_rounds_message => '新增您在此應用程式之外完成的念珠遍數';
 
   @override
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mala_add_to_bookmark => '書籤';
 
   @override
@@ -182,6 +193,24 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mala_hand_layout_tooltip => 'Switch hand layout';
+
+  @override
+  String get mala_settings_section => 'Mala settings';
+
+  @override
+  String get mala_others_section => 'Others';
+
+  @override
+  String get mala_mantra_speed => 'Mantra speed';
+
+  @override
+  String get mala_speed_normal => 'Normal';
+
+  @override
+  String get mala_show_full_mantra => 'Show full mantra';
 
   @override
   String mala_counter_semantics(int bead, int total, String rounds) {
@@ -3024,15 +3053,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recitation_live_session_ended => '直播已結束';
 
   @override
-  String get feedback_title => '意見回饋';
-
-  @override
-  String get feedback_hint => '告訴我們哪些地方好用、哪些不好用，或您希望看到什麼...';
-
-  @override
-  String get feedback_images => '圖片';
-
-  @override
   String get feedback_add_image => '新增圖片';
 
   @override
@@ -3042,9 +3062,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feedback_send => '傳送';
-
-  @override
-  String get feedback_sent => '謝謝！您的意見回饋已送出';
 
   @override
   String get feedback_error_offline => '您目前離線。請稍後再試';
@@ -3060,6 +3077,92 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get feedback_error_unavailable => '目前無法使用意見回饋';
+
+  @override
+  String get settings_help_contact_row => '協助與聯絡';
+
+  @override
+  String get help_contact_title => '協助與聯絡';
+
+  @override
+  String get help_contact_intro => '回報問題、分享想法，或提供協助與合作。我們會閱讀每一則訊息。';
+
+  @override
+  String get help_contact_message => '訊息';
+
+  @override
+  String get help_contact_photos => '照片或螢幕截圖（選填）';
+
+  @override
+  String get help_contact_topic => '這是關於什麼？（選填）';
+
+  @override
+  String get help_contact_hint_default => '您想告訴我們什麼？';
+
+  @override
+  String get help_contact_hint_report_problem => '發生了什麼事？您在那之前正在做什麼？附上截圖會很有幫助。';
+
+  @override
+  String get help_contact_hint_idea_feedback => '怎樣能讓 WeBuddhist 對您的修行更有幫助？';
+
+  @override
+  String get help_contact_hint_suggest_content => '您希望在這裡看到哪些教法、經文或老師？歡迎附上連結。';
+
+  @override
+  String get help_contact_hint_help_collaborate =>
+      '您想如何協助？請分享您的技能、語言能力，或能提供的時間。';
+
+  @override
+  String get help_topic_report_problem => '回報問題';
+
+  @override
+  String get help_topic_idea_feedback => '想法或意見';
+
+  @override
+  String get help_topic_suggest_content => '建議內容';
+
+  @override
+  String get help_topic_help_collaborate => '協助或合作';
+
+  @override
+  String get help_contact_footer => '回覆會由 WeBuddhist 團隊傳送到您的聊天室。';
+
+  @override
+  String get help_contact_sent_title => '訊息已送出';
+
+  @override
+  String get help_contact_sent_body =>
+      '謝謝。我們通常會在 1 天內回覆。您可以在聊天室中看到 WeBuddhist 團隊的回覆。';
+
+  @override
+  String help_contact_sent_body_named(String name) {
+    return '謝謝，$name。我們通常會在 1 天內回覆。您可以在聊天室中看到 WeBuddhist 團隊的回覆。';
+  }
+
+  @override
+  String get help_contact_your_request => '您的請求';
+
+  @override
+  String get help_contact_open_chat => '開啟聊天室';
+
+  @override
+  String get help_context_sent_from => '來自協助與聯絡';
+
+  @override
+  String help_context_photos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 張照片',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_official_badge => '官方';
+
+  @override
+  String get chat_team_reply_time => '通常在 1 天內回覆';
 
   @override
   String get connect_failed_load_discover_groups_error => '無法下載社群清單';

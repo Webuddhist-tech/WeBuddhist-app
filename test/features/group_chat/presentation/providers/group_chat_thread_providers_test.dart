@@ -117,6 +117,13 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Left(NotFoundFailure('not used'));
 
   @override
+  Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
+    String userId, {
+    required String body,
+    String? parentMessageId,
+  }) async => const Left(NotFoundFailure('not used'));
+
+  @override
   Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(
     String roomId, {
     required List<String> messageIds,
@@ -373,6 +380,56 @@ void main() {
         expect(notifier.state.error, 'offline');
         expect(notifier.state.hasLoaded, isTrue);
         expect(notifier.state.messages, isEmpty);
+      },
+    );
+
+    test(
+      'loadInitial keeps what the socket delivered while it was in flight',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [_message('m2'), _message('m1')],
+        );
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        container = buildContainer();
+
+        final notifier = _keepAlive(container);
+        // The page's snapshot was taken before this one arrived.
+        notifier.appendFromSocket(_message('live'));
+        hold.complete();
+        await _settle();
+
+        expect(notifier.state.messages.map((m) => m.id).toList(), [
+          'live',
+          'm2',
+          'm1',
+        ]);
+        expect(notifier.state.total, 3);
+        expect(notifier.state.skip, 3);
+        expect(notifier.state.hasMore, isFalse);
+      },
+    );
+
+    test(
+      'loadInitial does not duplicate an arrival the page also carries',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [_message('live'), _message('m1')],
+        );
+        final hold = Completer<void>();
+        repository.holdNextList = hold;
+        container = buildContainer();
+
+        final notifier = _keepAlive(container);
+        notifier.appendFromSocket(_message('live'));
+        hold.complete();
+        await _settle();
+
+        expect(notifier.state.messages.map((m) => m.id).toList(), [
+          'live',
+          'm1',
+        ]);
+        expect(notifier.state.total, 2);
       },
     );
 

@@ -153,6 +153,17 @@ class AppLocalizationsHi extends AppLocalizations {
       'इस ऐप के बाहर किए गए माला राउंड की संख्या जोड़ें';
 
   @override
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mala_add_to_bookmark => 'बुकमार्क';
 
   @override
@@ -188,6 +199,24 @@ class AppLocalizationsHi extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mala_hand_layout_tooltip => 'Switch hand layout';
+
+  @override
+  String get mala_settings_section => 'Mala settings';
+
+  @override
+  String get mala_others_section => 'Others';
+
+  @override
+  String get mala_mantra_speed => 'Mantra speed';
+
+  @override
+  String get mala_speed_normal => 'Normal';
+
+  @override
+  String get mala_show_full_mantra => 'Show full mantra';
 
   @override
   String mala_counter_semantics(int bead, int total, String rounds) {
@@ -3185,16 +3214,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get recitation_live_session_ended => 'लाइव सत्र समाप्त हो गया है';
 
   @override
-  String get feedback_title => 'फ़ीडबैक';
-
-  @override
-  String get feedback_hint =>
-      'हमें बताएँ क्या अच्छा चल रहा है, क्या नहीं, या आप क्या देखना चाहेंगे...';
-
-  @override
-  String get feedback_images => 'चित्र';
-
-  @override
   String get feedback_add_image => 'चित्र जोड़ें';
 
   @override
@@ -3204,9 +3223,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedback_send => 'भेजें';
-
-  @override
-  String get feedback_sent => 'धन्यवाद! आपका फ़ीडबैक भेज दिया गया है';
 
   @override
   String get feedback_error_offline =>
@@ -3226,6 +3242,98 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get feedback_error_unavailable => 'फ़ीडबैक अभी उपलब्ध नहीं है';
+
+  @override
+  String get settings_help_contact_row => 'सहायता और संपर्क';
+
+  @override
+  String get help_contact_title => 'सहायता और संपर्क';
+
+  @override
+  String get help_contact_intro =>
+      'कोई समस्या बताएँ, कोई विचार साझा करें, या मदद या सहयोग की पेशकश करें। हम हर संदेश पढ़ते हैं।';
+
+  @override
+  String get help_contact_message => 'संदेश';
+
+  @override
+  String get help_contact_photos => 'फ़ोटो या स्क्रीनशॉट (वैकल्पिक)';
+
+  @override
+  String get help_contact_topic => 'यह किस बारे में है? (वैकल्पिक)';
+
+  @override
+  String get help_contact_hint_default => 'आप हमें क्या बताना चाहेंगे?';
+
+  @override
+  String get help_contact_hint_report_problem =>
+      'क्या हुआ, और उससे ठीक पहले आप क्या कर रहे थे? एक स्क्रीनशॉट मदद करता है।';
+
+  @override
+  String get help_contact_hint_idea_feedback =>
+      'WeBuddhist को आपके अभ्यास के लिए और उपयोगी क्या बना सकता है?';
+
+  @override
+  String get help_contact_hint_suggest_content =>
+      'आप यहाँ कौन-सी शिक्षा, ग्रंथ या शिक्षक देखना चाहेंगे? लिंक का स्वागत है।';
+
+  @override
+  String get help_contact_hint_help_collaborate =>
+      'आप कैसे मदद करना चाहेंगे? अपने कौशल, भाषाएँ, या जो समय दे सकते हैं, साझा करें।';
+
+  @override
+  String get help_topic_report_problem => 'समस्या बताएँ';
+
+  @override
+  String get help_topic_idea_feedback => 'विचार या फ़ीडबैक';
+
+  @override
+  String get help_topic_suggest_content => 'सामग्री सुझाएँ';
+
+  @override
+  String get help_topic_help_collaborate => 'मदद या सहयोग';
+
+  @override
+  String get help_contact_footer =>
+      'जवाब आपकी चैट में WeBuddhist टीम से आते हैं।';
+
+  @override
+  String get help_contact_sent_title => 'संदेश भेज दिया गया';
+
+  @override
+  String get help_contact_sent_body =>
+      'धन्यवाद। हम आमतौर पर 1 दिन के भीतर जवाब देते हैं। जवाब आपको अपनी चैट में WeBuddhist टीम से मिलेगा।';
+
+  @override
+  String help_contact_sent_body_named(String name) {
+    return 'धन्यवाद, $name। हम आमतौर पर 1 दिन के भीतर जवाब देते हैं। जवाब आपको अपनी चैट में WeBuddhist टीम से मिलेगा।';
+  }
+
+  @override
+  String get help_contact_your_request => 'आपका अनुरोध';
+
+  @override
+  String get help_contact_open_chat => 'चैट खोलें';
+
+  @override
+  String get help_context_sent_from => 'सहायता और संपर्क से भेजा गया';
+
+  @override
+  String help_context_photos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count फ़ोटो',
+      one: '1 फ़ोटो',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_official_badge => 'आधिकारिक';
+
+  @override
+  String get chat_team_reply_time => 'आमतौर पर 1 दिन के भीतर जवाब देते हैं';
 
   @override
   String get connect_failed_load_discover_groups_error =>

@@ -148,11 +148,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_add_mala_round => 'Add mala round';
 
   @override
-  String get mala_add_rounds_title => 'Add mala rounds:';
+  String get mala_add_rounds_title => 'Add mala rounds';
 
   @override
   String get mala_add_rounds_message =>
-      'Add the mala rounds you did outside the app';
+      'Add the number of mala rounds you did outside this app';
+
+  @override
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get mala_add_to_bookmark => 'Bookmark';
@@ -190,6 +201,24 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mala_hand_layout_tooltip => 'Switch hand layout';
+
+  @override
+  String get mala_settings_section => 'Mala settings';
+
+  @override
+  String get mala_others_section => 'Others';
+
+  @override
+  String get mala_mantra_speed => 'Mantra speed';
+
+  @override
+  String get mala_speed_normal => 'Normal';
+
+  @override
+  String get mala_show_full_mantra => 'Show full mantra';
 
   @override
   String mala_counter_semantics(int bead, int total, String rounds) {
@@ -3155,16 +3184,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recitation_live_session_ended => 'The live session has ended';
 
   @override
-  String get feedback_title => 'Feedback';
-
-  @override
-  String get feedback_hint =>
-      'Tell us what\'s working, what isn\'t, or what you\'d like to see...';
-
-  @override
-  String get feedback_images => 'Images';
-
-  @override
   String get feedback_add_image => 'Add image';
 
   @override
@@ -3174,9 +3193,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedback_send => 'Send';
-
-  @override
-  String get feedback_sent => 'Thank you! Your feedback has been sent';
 
   @override
   String get feedback_error_offline =>
@@ -3197,6 +3213,98 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get feedback_error_unavailable =>
       'Feedback is not available right now';
+
+  @override
+  String get settings_help_contact_row => 'Help & contact';
+
+  @override
+  String get help_contact_title => 'Help & contact';
+
+  @override
+  String get help_contact_intro =>
+      'Report a problem, share an idea, or offer to help or collaborate. We read every message.';
+
+  @override
+  String get help_contact_message => 'Message';
+
+  @override
+  String get help_contact_photos => 'Photos or screenshots (optional)';
+
+  @override
+  String get help_contact_topic => 'What\'s this about? (optional)';
+
+  @override
+  String get help_contact_hint_default => 'What would you like to tell us?';
+
+  @override
+  String get help_contact_hint_report_problem =>
+      'What happened, and what were you doing just before? A screenshot helps.';
+
+  @override
+  String get help_contact_hint_idea_feedback =>
+      'What would make WeBuddhist more helpful for your practice?';
+
+  @override
+  String get help_contact_hint_suggest_content =>
+      'Which teaching, text, or teacher would you like to see here? Links are welcome.';
+
+  @override
+  String get help_contact_hint_help_collaborate =>
+      'How would you like to help? Share your skills, languages, or the time you can offer.';
+
+  @override
+  String get help_topic_report_problem => 'Report a problem';
+
+  @override
+  String get help_topic_idea_feedback => 'Idea or feedback';
+
+  @override
+  String get help_topic_suggest_content => 'Suggest content';
+
+  @override
+  String get help_topic_help_collaborate => 'Help or collaborate';
+
+  @override
+  String get help_contact_footer =>
+      'Replies come from the WeBuddhist Team in your Chats.';
+
+  @override
+  String get help_contact_sent_title => 'Message sent';
+
+  @override
+  String get help_contact_sent_body =>
+      'Thanks. We usually reply within 1 day. You\'ll find the reply in your Chats, from the WeBuddhist Team.';
+
+  @override
+  String help_contact_sent_body_named(String name) {
+    return 'Thanks, $name. We usually reply within 1 day. You\'ll find the reply in your Chats, from the WeBuddhist Team.';
+  }
+
+  @override
+  String get help_contact_your_request => 'YOUR REQUEST';
+
+  @override
+  String get help_contact_open_chat => 'Open chat';
+
+  @override
+  String get help_context_sent_from => 'Sent from Help & contact';
+
+  @override
+  String help_context_photos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos',
+      one: '1 photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_official_badge => 'Official';
+
+  @override
+  String get chat_team_reply_time => 'Usually replies within 1 day';
 
   @override
   String get connect_failed_load_discover_groups_error =>

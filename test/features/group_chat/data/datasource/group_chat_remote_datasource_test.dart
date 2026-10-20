@@ -41,6 +41,51 @@ GroupChatRemoteDatasource _datasource(
 }
 
 void main() {
+  group('GroupChatRemoteDatasource.sendDirectMessage', () {
+    test('posts the body to the other user and reads the message', () async {
+      late RequestOptions sent;
+      final ds = _datasource((options) async {
+        sent = options;
+        return _status(200, {
+          'id': 'm1',
+          'room_id': 'dm-1',
+          'sender_id': 'me',
+          'sender_email': 'me@example.com',
+          'sender_name': 'Me',
+          'body': 'Thank you!',
+          'created_at': '2026-10-16T10:00:00Z',
+        });
+      });
+
+      final message = await ds.sendDirectMessage('team', body: 'Thank you!');
+
+      expect(sent.method, 'POST');
+      expect(sent.path, '/chat/users/team/messages');
+      expect(sent.data, {'body': 'Thank you!'});
+      expect(message.roomId, 'dm-1');
+    });
+
+    test('a reply carries the message it answers', () async {
+      late RequestOptions sent;
+      final ds = _datasource((options) async {
+        sent = options;
+        return _status(200, {
+          'id': 'm2',
+          'room_id': 'dm-1',
+          'sender_id': 'me',
+          'sender_email': 'me@example.com',
+          'sender_name': 'Me',
+          'body': 'Yes',
+          'created_at': '2026-10-16T10:01:00Z',
+        });
+      });
+
+      await ds.sendDirectMessage('team', body: 'Yes', parentMessageId: 'm1');
+
+      expect(sent.data, {'body': 'Yes', 'parent_message_id': 'm1'});
+    });
+  });
+
   group('GroupChatRemoteDatasource.deleteMessages', () {
     test('sends the ids in a JSON body on the collection, expects 204', () async {
       late RequestOptions sent;

@@ -1,7 +1,9 @@
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/feedback/data/datasource/feedback_remote_datasource.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/feedback_receipt.dart';
 import 'package:flutter_pecha/features/feedback/domain/entities/feedback_report.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
 import 'package:flutter_pecha/features/feedback/domain/repositories/feedback_repository.dart';
 import 'package:flutter_pecha/features/feedback/presentation/providers/feedback_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,10 +18,12 @@ class _FakeRepository implements FeedbackRepository {
   final sent = <FeedbackReport>[];
 
   @override
-  Future<Either<Failure, void>> submit(FeedbackReport report) async {
+  Future<Either<Failure, FeedbackReceipt>> submit(FeedbackReport report) async {
     sent.add(report);
     final failure = this.failure;
-    return failure == null ? const Right(null) : Left(failure);
+    return failure == null
+        ? const Right(FeedbackReceipt(roomId: 'team-room'))
+        : Left(failure);
   }
 }
 
@@ -106,6 +110,20 @@ void main() {
       expect(report.imagePaths, ['/tmp/a.jpg']);
       expect(report.appVersion, '2.5.5 (120)');
       expect(report.platform, isNotEmpty);
+      expect(report.topic, isNull);
+    });
+
+    test('passes the topic on and returns the Team chat room', () async {
+      final repository = _FakeRepository();
+      final container = _container(repository);
+
+      final receipt = await container.read(sendFeedbackProvider)(
+        message: 'I can translate into Nepali',
+        topic: HelpTopic.helpCollaborate,
+      );
+
+      expect(repository.sent.single.topic, HelpTopic.helpCollaborate);
+      expect(receipt.roomId, 'team-room');
     });
 
     test('throws the mapped FeedbackException on failure', () async {

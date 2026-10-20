@@ -154,6 +154,17 @@ class AppLocalizationsBo extends AppLocalizations {
       'མཉེན་ཆས་འདིའི་ཕྱི་ལ་བགྲངས་པའི་ཕྲེང་འཁོར་འདིར་སྣོན།';
 
   @override
+  String mala_rounds_unit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'rounds',
+      one: 'round',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get mala_add_to_bookmark => 'དཔེ་རྟགས།';
 
   @override
@@ -189,6 +200,24 @@ class AppLocalizationsBo extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get mala_hand_layout_tooltip => 'Switch hand layout';
+
+  @override
+  String get mala_settings_section => 'Mala settings';
+
+  @override
+  String get mala_others_section => 'Others';
+
+  @override
+  String get mala_mantra_speed => 'Mantra speed';
+
+  @override
+  String get mala_speed_normal => 'Normal';
+
+  @override
+  String get mala_show_full_mantra => 'Show full mantra';
 
   @override
   String mala_counter_semantics(int bead, int total, String rounds) {
@@ -3200,16 +3229,6 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཐད་གཏོང་གི་སྐབས་ཚོགས་མཇུག་བསྡུས་ཟིན།';
 
   @override
-  String get feedback_title => 'བསམ་འཆར།';
-
-  @override
-  String get feedback_hint =>
-      'ག་རེ་ཡག་པོ་འགྲོ་གི་ཡོད་པ་དང་། ག་རེ་མི་འགྲོ་བ། ཡང་ན་ཁྱེད་ཀྱིས་ག་རེ་མཐོང་འདོད་ཡོད་པ་ང་ཚོར་གསུངས་རོགས།...';
-
-  @override
-  String get feedback_images => 'པར་རིས།';
-
-  @override
   String get feedback_add_image => 'པར་རིས་སྣོན།';
 
   @override
@@ -3219,9 +3238,6 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get feedback_send => 'གཏོང་།';
-
-  @override
-  String get feedback_sent => 'ཐུགས་རྗེ་ཆེ། ཁྱེད་ཀྱི་བསམ་འཆར་བཏང་ཟིན།';
 
   @override
   String get feedback_error_offline =>
@@ -3241,6 +3257,97 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get feedback_error_unavailable => 'ད་ལྟ་བསམ་འཆར་སྤྲོད་ཐབས་མི་འདུག';
+
+  @override
+  String get settings_help_contact_row => 'རོགས་རམ་དང་འབྲེལ་བ།';
+
+  @override
+  String get help_contact_title => 'རོགས་རམ་དང་འབྲེལ་བ།';
+
+  @override
+  String get help_contact_intro =>
+      'དཀའ་ངལ་སྙན་ཞུ་དང་། བསམ་འཆར་མཉམ་སྤྱོད། ཡང་ན་རོགས་རམ་དང་མཉམ་ལས་ཞུ་འདོད་ཡོད་ན་ང་ཚོར་བརྡ་སྤྲོད་གནང་རོགས། ང་ཚོས་འཕྲིན་ཡིག་རེ་རེ་བཞིན་ཀློག་གི་ཡོད།';
+
+  @override
+  String get help_contact_message => 'འཕྲིན་ཡིག';
+
+  @override
+  String get help_contact_photos => 'པར་རིས། (གདམ་ཀ)';
+
+  @override
+  String get help_contact_topic => 'འདི་ག་རེའི་སྐོར་ཡིན་ནམ། (གདམ་ཀ)';
+
+  @override
+  String get help_contact_hint_default => 'ང་ཚོར་ག་རེ་ཞུ་འདོད་ཡོད་དམ།';
+
+  @override
+  String get help_contact_hint_report_problem =>
+      'ག་རེ་བྱུང་སོང་ངམ། དེའི་སྔོན་ལ་ཁྱེད་ཀྱིས་ག་རེ་བྱེད་ཀྱི་ཡོད་དམ། པར་རིས་ཤིག་ཡོད་ན་ཕན་ཐོགས་ཆེ།';
+
+  @override
+  String get help_contact_hint_idea_feedback =>
+      'WeBuddhist ཁྱེད་ཀྱི་ཉམས་ལེན་ལ་དེ་བས་ཕན་ཐོགས་ཆེ་རུ་གཏོང་བར་ག་རེ་དགོས་སམ།';
+
+  @override
+  String get help_contact_hint_suggest_content =>
+      'ཁྱེད་ཀྱིས་འདིར་ཆོས་བཤད་དམ་གཞུང་། ཡང་ན་བླ་མ་སུ་ཞིག་མཐོང་འདོད་ཡོད་དམ། དྲ་འབྲེལ་སྦྱར་ཆོག';
+
+  @override
+  String get help_contact_hint_help_collaborate =>
+      'ཁྱེད་ཀྱིས་རོགས་རམ་ག་འདྲ་བྱེད་འདོད་ཡོད་དམ། ཁྱེད་ཀྱི་ལག་རྩལ་དང་སྐད་ཡིག ཡང་ན་སྤྲོད་ཐུབ་པའི་དུས་ཚོད་ང་ཚོར་གསུངས་རོགས།';
+
+  @override
+  String get help_topic_report_problem => 'དཀའ་ངལ་སྙན་ཞུ།';
+
+  @override
+  String get help_topic_idea_feedback => 'བསམ་ཚུལ་ཡང་ན་བསམ་འཆར།';
+
+  @override
+  String get help_topic_suggest_content => 'ནང་དོན་གྲོས་འདེབས།';
+
+  @override
+  String get help_topic_help_collaborate => 'རོགས་རམ་ཡང་ན་མཉམ་ལས།';
+
+  @override
+  String get help_contact_footer =>
+      'ལན་རྣམས་ཁྱེད་ཀྱི་གླེང་མོལ་ནང་ WeBuddhist ཚོགས་པ་ནས་ཡོང་གི་རེད།';
+
+  @override
+  String get help_contact_sent_title => 'འཕྲིན་ཡིག་བཏང་ཟིན།';
+
+  @override
+  String get help_contact_sent_body =>
+      'ཐུགས་རྗེ་ཆེ། ང་ཚོས་སྤྱིར་བཏང་ཉིན་ ༡ ནང་ལན་འདེབས་ཀྱི་ཡོད། ལན་དེ་ཁྱེད་ཀྱི་གླེང་མོལ་ནང་ WeBuddhist ཚོགས་པ་ནས་རྙེད་ཐུབ།';
+
+  @override
+  String help_contact_sent_body_named(String name) {
+    return '$name ལགས། ཐུགས་རྗེ་ཆེ། ང་ཚོས་སྤྱིར་བཏང་ཉིན་ ༡ ནང་ལན་འདེབས་ཀྱི་ཡོད། ལན་དེ་ཁྱེད་ཀྱི་གླེང་མོལ་ནང་ WeBuddhist ཚོགས་པ་ནས་རྙེད་ཐུབ།';
+  }
+
+  @override
+  String get help_contact_your_request => 'ཁྱེད་ཀྱི་རེ་ཞུ།';
+
+  @override
+  String get help_contact_open_chat => 'གླེང་མོལ་ཁ་ཕྱེ།';
+
+  @override
+  String get help_context_sent_from => 'རོགས་རམ་དང་འབྲེལ་བ་ནས་བཏང་བ།';
+
+  @override
+  String help_context_photos(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'པར་རིས་ $count',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chat_official_badge => 'ཁུངས་ལྡན།';
+
+  @override
+  String get chat_team_reply_time => 'སྤྱིར་བཏང་ཉིན་ ༡ ནང་ལན་འདེབས་བྱེད།';
 
   @override
   String get connect_failed_load_discover_groups_error =>
