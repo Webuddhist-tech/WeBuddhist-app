@@ -6906,6 +6906,84 @@ abstract class AppLocalizations {
   /// **'View event'**
   String get group_event_view_event;
 
+  /// No description provided for @group_event_drafts_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts'**
+  String get group_event_drafts_section;
+
+  /// No description provided for @group_event_draft_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get group_event_draft_label;
+
+  /// No description provided for @group_event_draft_untitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled event'**
+  String get group_event_draft_untitled;
+
+  /// No description provided for @group_event_draft_menu_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue editing'**
+  String get group_event_draft_menu_continue;
+
+  /// No description provided for @group_event_draft_menu_delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete draft'**
+  String get group_event_draft_menu_delete;
+
+  /// No description provided for @group_event_draft_menu_delete_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone'**
+  String get group_event_draft_menu_delete_hint;
+
+  /// No description provided for @group_event_draft_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved as draft'**
+  String get group_event_draft_saved;
+
+  /// No description provided for @group_event_draft_save_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to save the draft. Please try again'**
+  String get group_event_draft_save_error;
+
+  /// No description provided for @group_event_draft_deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft deleted'**
+  String get group_event_draft_deleted;
+
+  /// No description provided for @group_event_draft_delete_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to delete the draft. Please try again'**
+  String get group_event_draft_delete_error;
+
+  /// No description provided for @group_event_draft_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete draft?'**
+  String get group_event_draft_delete_title;
+
+  /// No description provided for @group_event_draft_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This draft will be permanently removed'**
+  String get group_event_draft_delete_message;
+
+  /// No description provided for @group_event_edit_draft_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit draft'**
+  String get group_event_edit_draft_title;
+
   /// No description provided for @mala_failed_load_catalogue_error.
   ///
   /// In en, this message translates to:

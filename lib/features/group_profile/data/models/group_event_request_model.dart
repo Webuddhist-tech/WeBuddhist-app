@@ -1,8 +1,14 @@
 /// `POST /cms/events` body, mirroring the studio's `CreateEventRequest`.
+/// Also sent whole on `PUT /cms/events/{id}`; the API keeps omitted fields.
 class CreateGroupEventRequest {
   final String groupId;
-  final String startDate;
-  final String endDate;
+
+  /// `draft` or `published`.
+  final String status;
+
+  /// Null while a draft has no date yet; the API allows that.
+  final String? startDate;
+  final String? endDate;
   final String timezone;
   final List<GroupEventMetadataRequest> metadata;
   final List<GroupEventLinkRequest> links;
@@ -21,8 +27,9 @@ class CreateGroupEventRequest {
 
   const CreateGroupEventRequest({
     required this.groupId,
-    required this.startDate,
-    required this.endDate,
+    this.status = 'draft',
+    this.startDate,
+    this.endDate,
     required this.timezone,
     required this.metadata,
     this.links = const [],
@@ -42,8 +49,8 @@ class CreateGroupEventRequest {
 
   Map<String, dynamic> toJson() => {
     'group_id': groupId,
-    'start_date': startDate,
-    'end_date': endDate,
+    if (startDate != null) 'start_date': startDate,
+    if (endDate != null) 'end_date': endDate,
     'timezone': timezone,
     'metadata': metadata.map((item) => item.toJson()).toList(),
     if (links.isNotEmpty) 'links': links.map((item) => item.toJson()).toList(),
@@ -58,6 +65,7 @@ class CreateGroupEventRequest {
       'accumulations': accumulations.map((item) => item.toJson()).toList(),
     if (locationId != null) 'location_id': locationId,
     'event_format': eventFormat,
+    'status': status,
     'chat_enabled': chatEnabled,
     'notifications_enabled': notificationsEnabled,
     if (intentionIds.isNotEmpty) 'intention_ids': intentionIds,

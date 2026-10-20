@@ -15,6 +15,7 @@ class GroupEventRequestBuilder {
   static CreateGroupEventRequest build(
     GroupEventDraft draft, {
     required String groupId,
+    String status = 'draft',
     String? imageUrl,
     String? locationId,
     DateTime? now,
@@ -42,8 +43,8 @@ class GroupEventRequestBuilder {
             ? GroupEventScheduleUtils.defaultEnd
             : (schedule.endTime ?? GroupEventScheduleUtils.defaultEnd);
 
-    final String startDate;
-    final String endDate;
+    String? startDate;
+    String? endDate;
     GroupEventRecurrenceRequest? recurrence;
     final rule = schedule.recurrence;
     if (schedule.isRecurring && rule != null) {
@@ -63,12 +64,13 @@ class GroupEventRequestBuilder {
         dayOfWeek: rule.dayOfWeek,
         durationDays: rule.durationDays,
       );
-    } else {
-      final start = schedule.startDate ?? (now ?? DateTime.now());
+    } else if (schedule.startDate != null) {
+      final start = schedule.startDate!;
       final end = schedule.effectiveEndDate ?? start;
       startDate = toBackendIso(start, startTime, timezone);
       endDate = toBackendIso(end, endTime, timezone);
     }
+    // No date yet: a draft can be saved without one.
 
     final links = <GroupEventLinkRequest>[];
     final youtube = <GroupEventYoutubeRequest>[];
@@ -135,6 +137,7 @@ class GroupEventRequestBuilder {
 
     return CreateGroupEventRequest(
       groupId: groupId,
+      status: status,
       startDate: startDate,
       endDate: endDate,
       timezone: timezone,
@@ -183,6 +186,31 @@ class GroupEventRequestBuilder {
       time.minute,
     );
     return local.toUtc().toIso8601String();
+  }
+
+  /// The wall-clock date and time of a stored UTC instant in [timezone].
+  static (DateTime, GroupEventTime)? fromBackendIso(
+    String? iso,
+    String timezone,
+  ) {
+    if (iso == null || iso.isEmpty) return null;
+    final instant = DateTime.tryParse(iso);
+    if (instant == null) return null;
+    if (!_tzReady) {
+      tz_data.initializeTimeZones();
+      _tzReady = true;
+    }
+    tz.Location location;
+    try {
+      location = tz.getLocation(timezone);
+    } catch (_) {
+      location = tz.UTC;
+    }
+    final local = tz.TZDateTime.from(instant.toUtc(), location);
+    return (
+      DateTime(local.year, local.month, local.day),
+      GroupEventTime(local.hour, local.minute),
+    );
   }
 
   /// Studio link types: Google Meet and Zoom by host, otherwise a website.

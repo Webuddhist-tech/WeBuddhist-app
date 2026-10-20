@@ -3986,6 +3986,48 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_event_view_event => 'View event';
 
   @override
+  String get group_event_drafts_section => 'Drafts';
+
+  @override
+  String get group_event_draft_label => 'Draft';
+
+  @override
+  String get group_event_draft_untitled => 'Untitled event';
+
+  @override
+  String get group_event_draft_menu_continue => 'Continue editing';
+
+  @override
+  String get group_event_draft_menu_delete => 'Delete draft';
+
+  @override
+  String get group_event_draft_menu_delete_hint => 'This can\'t be undone';
+
+  @override
+  String get group_event_draft_saved => 'Saved as draft';
+
+  @override
+  String get group_event_draft_save_error =>
+      'Unable to save the draft. Please try again';
+
+  @override
+  String get group_event_draft_deleted => 'Draft deleted';
+
+  @override
+  String get group_event_draft_delete_error =>
+      'Unable to delete the draft. Please try again';
+
+  @override
+  String get group_event_draft_delete_title => 'Delete draft?';
+
+  @override
+  String get group_event_draft_delete_message =>
+      'This draft will be permanently removed';
+
+  @override
+  String get group_event_edit_draft_title => 'Edit draft';
+
+  @override
   String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override

@@ -7824,6 +7824,97 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_event_drafts_section => TolgeeBridge.get(
+    localeName,
+    'group_event_drafts_section',
+    () => _fallback.group_event_drafts_section,
+  );
+
+  @override
+  String get group_event_draft_label => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_label',
+    () => _fallback.group_event_draft_label,
+  );
+
+  @override
+  String get group_event_draft_untitled => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_untitled',
+    () => _fallback.group_event_draft_untitled,
+  );
+
+  @override
+  String get group_event_draft_menu_continue => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_menu_continue',
+    () => _fallback.group_event_draft_menu_continue,
+  );
+
+  @override
+  String get group_event_draft_menu_delete => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_menu_delete',
+    () => _fallback.group_event_draft_menu_delete,
+  );
+
+  @override
+  String get group_event_draft_menu_delete_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_menu_delete_hint',
+    () => _fallback.group_event_draft_menu_delete_hint,
+  );
+
+  @override
+  String get group_event_draft_saved => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_saved',
+    () => _fallback.group_event_draft_saved,
+  );
+
+  @override
+  String get group_event_draft_save_error => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_save_error',
+    () => _fallback.group_event_draft_save_error,
+  );
+
+  @override
+  String get group_event_draft_deleted => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_deleted',
+    () => _fallback.group_event_draft_deleted,
+  );
+
+  @override
+  String get group_event_draft_delete_error => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_delete_error',
+    () => _fallback.group_event_draft_delete_error,
+  );
+
+  @override
+  String get group_event_draft_delete_title => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_delete_title',
+    () => _fallback.group_event_draft_delete_title,
+  );
+
+  @override
+  String get group_event_draft_delete_message => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_delete_message',
+    () => _fallback.group_event_draft_delete_message,
+  );
+
+  @override
+  String get group_event_edit_draft_title => TolgeeBridge.get(
+    localeName,
+    'group_event_edit_draft_title',
+    () => _fallback.group_event_edit_draft_title,
+  );
+
+  @override
   String get mala_failed_load_catalogue_error => TolgeeBridge.get(
     localeName,
     'mala_failed_load_catalogue_error',

@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_event
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_event_composer_repository.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_draft_mapper.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
@@ -63,7 +64,26 @@ const _practices = [
 class _FakeComposerRepository extends Fake
     implements GroupEventComposerRepositoryInterface {
   CreateGroupEventRequest? created;
+  CreateGroupEventRequest? updated;
+  String? updatedId;
   CreateGroupLocationRequest? location;
+  bool failCreate = false;
+
+  @override
+  Future<Either<Failure, GroupEvent>> updateEvent(
+    String eventId,
+    CreateGroupEventRequest request,
+  ) async {
+    updatedId = eventId;
+    updated = request;
+    return Right(
+      GroupEvent(
+        id: eventId,
+        groupId: 'g1',
+        title: request.metadata.first.name,
+      ),
+    );
+  }
 
   @override
   Future<Either<Failure, List<GroupEventIntention>>> getIntentions() async =>
@@ -85,13 +105,10 @@ class _FakeComposerRepository extends Fake
   Future<Either<Failure, GroupEvent>> createEvent(
     CreateGroupEventRequest request,
   ) async {
+    if (failCreate) return const Left(ServerFailure('Validation failed'));
     created = request;
     return Right(
-      GroupEvent(
-        id: 'ev-1',
-        groupId: 'g1',
-        title: request.metadata.first.name,
-      ),
+      GroupEvent(id: 'ev-1', groupId: 'g1', title: request.metadata.first.name),
     );
   }
 }
@@ -106,7 +123,11 @@ class _FixedContentLanguage extends StateNotifier<String>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester, {String contentLanguage = 'bo'}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  String contentLanguage = 'bo',
+  GroupEventEditSource? existing,
+}) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.resetPhysicalSize);
@@ -137,6 +158,7 @@ Future<void> _pump(WidgetTester tester, {String contentLanguage = 'bo'}) async {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: _Launcher(
+          existing: existing,
           profile: const GroupProfile(
             id: 'g1',
             title: 'Lodhen Warlord',
@@ -161,9 +183,10 @@ GroupEventComposerResult? _lastResult;
 
 /// Opens the composer through its `show` so the pop result can be read.
 class _Launcher extends StatelessWidget {
-  const _Launcher({required this.profile});
+  const _Launcher({required this.profile, this.existing});
 
   final GroupProfile profile;
+  final GroupEventEditSource? existing;
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +194,11 @@ class _Launcher extends StatelessWidget {
       body: Center(
         child: TextButton(
           onPressed: () async {
-            _lastResult = await GroupEventComposerScreen.show(context, profile);
+            _lastResult = await GroupEventComposerScreen.show(
+              context,
+              profile,
+              existing: existing,
+            );
           },
           child: const Text('open'),
         ),
@@ -273,6 +300,7 @@ void main() {
   whenWhereTests();
   practicesTests();
   reviewTests();
+  draftTests();
 }
 
 Future<void> _goToStepTwo(WidgetTester tester) async {
@@ -436,7 +464,10 @@ void practicesTests() {
       'https://example.org/talk',
     );
     await tester.pump();
-    expect(find.textContaining("doesn't look like a YouTube link"), findsOneWidget);
+    expect(
+      find.textContaining("doesn't look like a YouTube link"),
+      findsOneWidget,
+    );
 
     await tester.enterText(
       find.widgetWithText(TextField, 'https://youtu.be/…'),
@@ -468,7 +499,10 @@ void reviewTests() {
     expect(find.text('བོད་ཡིག'), findsOneWidget);
     expect(find.text('Online'), findsOneWidget);
     expect(find.text('YouTube live · @lodhenwarlord'), findsOneWidget);
-    expect(find.text('Chat on · Notifications on · All intentions'), findsOneWidget);
+    expect(
+      find.text('Chat on · Notifications on · All intentions'),
+      findsOneWidget,
+    );
     expect(find.text('Members are notified when you publish.'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Event settings'));
@@ -480,15 +514,22 @@ void reviewTests() {
     await tester.pump();
     await tester.tap(find.text('Done'));
     await tester.pumpAndSettle();
-    expect(find.text('Chat on · Notifications off · 1 intention'), findsOneWidget);
+    expect(
+      find.text('Chat on · Notifications off · 1 intention'),
+      findsOneWidget,
+    );
     expect(find.text('Members are notified when you publish.'), findsNothing);
 
     await tester.tap(find.text('Publish'));
     await tester.pumpAndSettle();
 
     final created = _composerRepository.created!;
+    expect(created.status, 'published');
     expect(created.metadata.map((m) => m.language), ['BO']);
-    expect(created.youtube.single.url, 'https://youtube.com/@lodhenwarlord/live');
+    expect(
+      created.youtube.single.url,
+      'https://youtube.com/@lodhenwarlord/live',
+    );
     expect(created.eventFormat, 'online');
     expect(created.notificationsEnabled, isFalse);
     expect(created.intentionIds, ['i1']);
@@ -496,7 +537,10 @@ void reviewTests() {
 
     expect(find.text('Published'), findsOneWidget);
     expect(find.text('Wednesday is live'), findsOneWidget);
-    expect(find.text('You can edit it any time from the event page.'), findsOneWidget);
+    expect(
+      find.text('You can edit it any time from the event page.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('View event'));
     await tester.pumpAndSettle();
@@ -513,5 +557,107 @@ void reviewTests() {
     await tester.tap(find.text('Name'));
     await tester.pumpAndSettle();
     expect(find.text('Step 1 of 4 · About'), findsOneWidget);
+  });
+}
+
+void draftTests() {
+  testWidgets('closing with a name and date saves a draft', (tester) async {
+    _lastResult = null;
+    _composerRepository.created = null;
+    await _pump(tester);
+    await _goToStepThree(tester);
+
+    await tester.tap(find.byTooltip('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(_composerRepository.created?.status, 'draft');
+    expect(_lastResult?.isDraft, isTrue);
+    expect(_lastResult?.event.id, 'ev-1');
+  });
+
+  testWidgets('closing with only a name saves a dateless draft', (
+    tester,
+  ) async {
+    _lastResult = null;
+    _composerRepository.created = null;
+    await _pump(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'e.g. Wednesday group practice'),
+      'Wednesday',
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Cancel'));
+    await tester.pumpAndSettle();
+
+    final created = _composerRepository.created!;
+    expect(created.status, 'draft');
+    expect(created.startDate, isNull);
+    expect(created.toJson().containsKey('start_date'), isFalse);
+    expect(_lastResult?.isDraft, isTrue);
+  });
+
+  testWidgets('a refused draft falls back to the discard dialog', (
+    tester,
+  ) async {
+    _lastResult = null;
+    _composerRepository.created = null;
+    _composerRepository.failCreate = true;
+    addTearDown(() => _composerRepository.failCreate = false);
+    await _pump(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'e.g. Wednesday group practice'),
+      'Wednesday',
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Validation failed'), findsOneWidget);
+    expect(find.text('Discard event?'), findsOneWidget);
+    expect(_lastResult, isNull);
+  });
+
+  testWidgets('a draft opens prefilled and publishes through update', (
+    tester,
+  ) async {
+    _lastResult = null;
+    _composerRepository.updated = null;
+    await _pump(
+      tester,
+      existing: GroupEventDraftMapper.fromJson({
+        'id': 'ev-9',
+        'status': 'draft',
+        'timezone': 'Asia/Kolkata',
+        'start_date': '2099-10-07T12:30:00Z',
+        'end_date': '2099-10-07T13:30:00Z',
+        'event_format': 'online',
+        'metadata': [
+          {'language': 'EN', 'name': 'Saved draft'},
+        ],
+        'youtube': [
+          {'url': 'https://www.youtube.com/@x/live', 'display_order': 1},
+        ],
+      }),
+    );
+
+    expect(find.text('Edit draft'), findsOneWidget);
+    expect(find.text('Saved draft'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('བོད་ཡིག'), findsNothing);
+
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.text(i == 2 ? 'Skip' : 'Continue'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Step 4 of 4 · Review & publish'), findsOneWidget);
+    await tester.tap(find.text('Publish'));
+    await tester.pumpAndSettle();
+
+    expect(_composerRepository.updatedId, 'ev-9');
+    expect(_composerRepository.updated?.status, 'published');
+    expect(_composerRepository.created, isNull);
+    expect(find.text('Saved draft is live'), findsOneWidget);
   });
 }

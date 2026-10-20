@@ -226,6 +226,19 @@ void main() {
     ]);
   });
 
+  test('a draft without a date sends no dates or recurrence', () {
+    final json =
+        GroupEventRequestBuilder.build(
+          const GroupEventDraft(metadata: metadata),
+          groupId: 'g1',
+        ).toJson();
+    expect(json.containsKey('start_date'), isFalse);
+    expect(json.containsKey('end_date'), isFalse);
+    expect(json.containsKey('recurrence'), isFalse);
+    expect(json['status'], 'draft');
+    expect(json['timezone'], 'Asia/Kolkata');
+  });
+
   test('link types follow the host', () {
     expect(GroupEventRequestBuilder.linkTypeFor('https://zoom.us/j/1'), 'zoom');
     expect(

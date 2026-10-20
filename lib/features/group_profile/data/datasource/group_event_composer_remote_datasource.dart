@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 
 /// CMS endpoints the event composer writes to, as the studio does.
@@ -58,6 +59,69 @@ class GroupEventComposerRemoteDatasource {
     } on DioException catch (e) {
       _logger.error('Dio error in createLocation', e);
       throw _dioToException(e, 'Failed to create location');
+    }
+  }
+
+  /// Every event of the group as the CMS sees it, drafts included.
+  Future<List<GroupEventCmsItem>> fetchCmsEvents(String groupId) async {
+    const limit = 50;
+    const maxItems = 200;
+    final items = <GroupEventCmsItem>[];
+    var skip = 0;
+    try {
+      while (items.length < maxItems) {
+        final response = await dio.get(
+          '/cms/events',
+          queryParameters: {'group_id': groupId, 'skip': skip, 'limit': limit},
+          options: Options(extra: {'no_cache': true}),
+        );
+        final data = response.data;
+        if (data is! Map<String, dynamic>) break;
+        final page =
+            (data['events'] as List<dynamic>? ?? const [])
+                .whereType<Map<String, dynamic>>()
+                .toList();
+        for (final json in page) {
+          items.add(GroupEventCmsItem.fromJson(json));
+        }
+        final total = (data['total'] as num?)?.toInt() ?? items.length;
+        skip += page.length;
+        if (page.isEmpty || skip >= total) break;
+      }
+      return items;
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchCmsEvents', e);
+      throw _dioToException(e, 'Failed to load events');
+    }
+  }
+
+  Future<GroupEventModel> updateEvent(
+    String eventId,
+    CreateGroupEventRequest request,
+  ) async {
+    try {
+      final response = await dio.put(
+        '/cms/events/$eventId',
+        data: request.toJson()..remove('group_id'),
+      );
+      final data = response.data;
+      if (data is! Map<String, dynamic> ||
+          (data['id'] as String? ?? '').isEmpty) {
+        throw const ServerException('Event update returned no id');
+      }
+      return GroupEventModel.fromJson(data);
+    } on DioException catch (e) {
+      _logger.error('Dio error in updateEvent', e);
+      throw _dioToException(e, 'Failed to update event');
+    }
+  }
+
+  Future<void> deleteEvent(String eventId) async {
+    try {
+      await dio.delete('/cms/events/$eventId');
+    } on DioException catch (e) {
+      _logger.error('Dio error in deleteEvent', e);
+      throw _dioToException(e, 'Failed to delete event');
     }
   }
 

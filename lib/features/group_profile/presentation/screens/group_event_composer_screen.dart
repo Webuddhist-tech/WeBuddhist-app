@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_draft_mapper.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_request_builder.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_schedule_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_about_step.dart';
@@ -35,28 +36,47 @@ class GroupEventComposerResult {
   /// True when the reader tapped "View event".
   final bool openEvent;
 
-  const GroupEventComposerResult(this.event, {this.openEvent = false});
+  /// True when the event was saved as a draft on close, not published.
+  final bool isDraft;
+
+  const GroupEventComposerResult(
+    this.event, {
+    this.openEvent = false,
+    this.isDraft = false,
+  });
 }
 
 /// Multi-step event composer. Pops with the created event, or null.
 class GroupEventComposerScreen extends ConsumerStatefulWidget {
   final GroupProfile profile;
 
-  const GroupEventComposerScreen({super.key, required this.profile});
+  /// A draft from the CMS to continue; null composes a new event.
+  final GroupEventEditSource? existing;
+
+  const GroupEventComposerScreen({
+    super.key,
+    required this.profile,
+    this.existing,
+  });
 
   static const int stepCount = 4;
 
   static Future<GroupEventComposerResult?> show(
     BuildContext context,
-    GroupProfile profile,
-  ) {
+    GroupProfile profile, {
+    GroupEventEditSource? existing,
+  }) {
     return Navigator.of(context).push<GroupEventComposerResult>(
       MaterialPageRoute(
         fullscreenDialog: true,
         settings: const RouteSettings(name: 'group-event-composer'),
         builder:
-            (_) =>
-                ClarityMask(child: GroupEventComposerScreen(profile: profile)),
+            (_) => ClarityMask(
+              child: GroupEventComposerScreen(
+                profile: profile,
+                existing: existing,
+              ),
+            ),
       ),
     );
   }
@@ -85,14 +105,42 @@ class _GroupEventComposerScreenState
     _nameController.addListener(_onFieldChanged);
     _descriptionController.addListener(_onFieldChanged);
     _liveLinkController.addListener(_onLiveLinkChanged);
+    final existing = widget.existing;
+    if (existing != null) {
+      _draft = existing.draft;
+      _liveLinkController.text = existing.draft.liveLink;
+      _resolveIntentions(existing.intentionSlugs);
+    }
     _seedLanguages();
+  }
+
+  bool get _isEditing => widget.existing != null;
+
+  /// The CMS lists an event's intentions by slug; ids come from the catalog.
+  Future<void> _resolveIntentions(List<String> slugs) async {
+    if (slugs.isEmpty) return;
+    try {
+      final catalog = await ref.read(groupEventIntentionsProvider.future);
+      if (!mounted) return;
+      final ids = [
+        for (final intention in catalog)
+          if (slugs.contains(intention.slug)) intention.id,
+      ];
+      setState(() => _draft = _draft.copyWith(intentionIds: ids));
+    } catch (_) {
+      // Leaving them empty allows every intention; the sheet shows that.
+    }
   }
 
   /// English plus the reader's content language, in API list order.
   void _seedLanguages() {
     final contentLanguage = ref.read(contentLanguageProvider);
-    final preselected = {AppConfig.englishLanguageCode, contentLanguage};
     final available = ref.read(resolvedContentLanguagesProvider);
+    // A draft keeps the languages it was saved with.
+    final preselected =
+        _draft.metadata.isNotEmpty
+            ? _draft.languages.toSet()
+            : {AppConfig.englishLanguageCode, contentLanguage};
     _applyLanguages(_ordered(preselected, available));
     _activeLanguage =
         _draft.languages.contains(contentLanguage)
@@ -262,6 +310,11 @@ class _GroupEventComposerScreenState
     setState(() => _step -= 1);
   }
 
+  /// The API needs only a name for a draft; a half-set schedule is skipped.
+  bool get _canSaveDraft =>
+      _draft.hasName &&
+      (_draft.schedule.startDate == null || _scheduleIssue == null);
+
   Future<void> _onReviewEdit(GroupEventReviewTarget target) async {
     if (_isPublishing) return;
     switch (target) {
@@ -281,10 +334,28 @@ class _GroupEventComposerScreenState
     }
   }
 
-  /// Cover upload, then the venue, then the event; each failure is reported
-  /// and the reader can retry from the review.
   Future<void> _publish() async {
+    final event = await _submit(status: 'published');
+    if (event == null || !mounted) return;
+    setState(() {
+      _isPublishing = false;
+      _published = event;
+    });
+  }
+
+  /// True when the draft was saved and the composer closed.
+  Future<bool> _saveDraft() async {
+    final event = await _submit(status: 'draft');
+    if (event == null || !mounted) return false;
+    Navigator.of(context).pop(GroupEventComposerResult(event, isDraft: true));
+    return true;
+  }
+
+  /// Cover upload, then the venue, then the event; each failure is reported
+  /// and the reader can retry. Returns null on failure.
+  Future<GroupEvent?> _submit({required String status}) async {
     final l10n = context.l10n;
+    final existing = widget.existing;
     setState(() => _isPublishing = true);
 
     String? imageUrl;
@@ -296,10 +367,11 @@ class _GroupEventComposerScreenState
         imageUrl = upload.fold((_) => null, (key) => key);
         if (imageUrl == null) {
           _publishFailed(l10n.group_post_upload_error);
-          return;
+          return null;
         }
       case GroupEventCoverUrl(:final url):
-        imageUrl = url;
+        // The stored cover is resent only when it changed.
+        imageUrl = existing?.imageUrl == url ? null : url;
       case null:
         break;
     }
@@ -308,40 +380,47 @@ class _GroupEventComposerScreenState
     String? locationId;
     final venue = _draft.venue;
     if (_draft.format.needsVenue && venue != null) {
-      final created = await repository.createLocation(
-        widget.profile.id,
-        CreateGroupLocationRequest(
-          name: venue.name,
-          latitude: venue.latitude,
-          longitude: venue.longitude,
-        ),
-      );
-      locationId = created.fold((_) => null, (id) => id);
-      if (locationId == null) {
-        _publishFailed(created.fold((f) => f.message, (_) => ''));
-        return;
+      if (existing != null && existing.sameVenue(venue)) {
+        locationId = existing.locationId;
+      } else {
+        final created = await repository.createLocation(
+          widget.profile.id,
+          CreateGroupLocationRequest(
+            name: venue.name,
+            latitude: venue.latitude,
+            longitude: venue.longitude,
+          ),
+        );
+        locationId = created.fold((_) => null, (id) => id);
+        if (locationId == null) {
+          _publishFailed(created.fold((f) => f.message, (_) => ''));
+          return null;
+        }
       }
     }
 
     final request = GroupEventRequestBuilder.build(
       _draft,
       groupId: widget.profile.id,
+      status: status,
       imageUrl: imageUrl,
       locationId: locationId,
     );
-    final result = await repository.createEvent(request);
-    if (!mounted) return;
-    result.fold(
-      (failure) => _publishFailed(
+    final result =
+        existing == null
+            ? await repository.createEvent(request)
+            : await repository.updateEvent(existing.eventId, request);
+    if (!mounted) return null;
+    return result.fold((failure) {
+      _publishFailed(
         failure.message.isNotEmpty
             ? failure.message
+            : status == 'draft'
+            ? l10n.group_event_draft_save_error
             : l10n.group_event_publish_error,
-      ),
-      (event) => setState(() {
-        _isPublishing = false;
-        _published = event;
-      }),
-    );
+      );
+      return null;
+    }, (event) => event);
   }
 
   void _publishFailed(String message) {
@@ -365,12 +444,15 @@ class _GroupEventComposerScreenState
     ).pop(GroupEventComposerResult(event, openEvent: openEvent));
   }
 
+  /// Like a mail draft: closing keeps the event when the API can hold it.
   Future<void> _onClose() async {
     if (_isPublishing) return;
     if (_published != null) {
       _finish(openEvent: false);
       return;
     }
+    if (_canSaveDraft && await _saveDraft()) return;
+    if (!mounted) return;
     if (!_draft.hasContent) {
       Navigator.of(context).pop();
       return;
@@ -410,12 +492,8 @@ class _GroupEventComposerScreenState
     return PopScope(
       canPop: !_draft.hasContent && published == null,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || _isPublishing) return;
-        if (published != null) {
-          _finish(openEvent: false);
-          return;
-        }
-        _confirmDiscard();
+        if (didPop) return;
+        _onClose();
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -529,12 +607,15 @@ class _GroupEventComposerScreenState
     final secondaryColor =
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     return SizedBox(
+      width: double.infinity,
       height: 52,
       child: Stack(
         alignment: Alignment.center,
         children: [
           Text(
-            l10n.group_event_new_title,
+            _isEditing
+                ? l10n.group_event_edit_draft_title
+                : l10n.group_event_new_title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),

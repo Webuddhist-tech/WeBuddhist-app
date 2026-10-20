@@ -66,6 +66,7 @@ class GroupEventPublishedView extends ConsumerWidget {
     return Column(
       children: [
         SizedBox(
+          width: double.infinity,
           height: 52,
           child: Stack(
             alignment: Alignment.center,
