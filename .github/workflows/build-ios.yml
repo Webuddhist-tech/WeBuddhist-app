@@ -221,6 +221,15 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: 💾 Keep dSYMs as a build artifact
+        if: ${{ inputs.upload_to_store }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ inputs.flavor }}-dSYMs
+          path: build/ios/archive/Runner.xcarchive/dSYMs
+          if-no-files-found: warn
+          retention-days: 90
+
       - name: 🔥 Upload Crashlytics dSYMs
         if: ${{ inputs.upload_to_store }}
         run: |
@@ -239,15 +248,6 @@ jobs:
           else
             echo "::warning::Skipping dSYM upload (upload-symbols=$UPLOAD gsp=$GSP dsyms=$DSYMS)"
           fi
-
-      - name: 💾 Keep dSYMs as a build artifact
-        if: ${{ inputs.upload_to_store }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-${{ inputs.flavor }}-dSYMs
-          path: build/ios/archive/Runner.xcarchive/dSYMs
-          if-no-files-found: warn
-          retention-days: 90
 
       - name: 🛫 Upload to TestFlight
         if: ${{ inputs.upload_to_store }}
