@@ -62,6 +62,177 @@ class GroupEventComposerRemoteDatasource {
     }
   }
 
+  /// What an event can link to, from the same CMS lists the studio's pickers
+  /// read: published plans and series (partner series included), the group's
+  /// chant collections and its accumulators.
+  Future<List<GroupEventPracticePick>> fetchPracticeOptions(
+    String groupId,
+  ) async {
+    try {
+      final results = await Future.wait([
+        _fetchContent(groupId),
+        _fetchCollections(groupId),
+        _fetchAccumulators(groupId),
+      ]);
+      return [for (final list in results) ...list];
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchPracticeOptions', e);
+      throw _dioToException(e, 'Failed to load practices');
+    }
+  }
+
+  Future<List<GroupEventPracticePick>> _fetchContent(String groupId) async {
+    const pageSize = 50;
+    final picks = <GroupEventPracticePick>[];
+    for (var page = 1; page <= 4; page++) {
+      final response = await dio.get(
+        '/cms/dashboard/items',
+        queryParameters: {
+          'tab': 'all',
+          'group_id': groupId,
+          'status': 'PUBLISHED',
+          'include_partner_groups': true,
+          'page': page,
+          'page_size': pageSize,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+      final data = response.data;
+      if (data is! Map<String, dynamic>) break;
+      final items =
+          (data['items'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>()
+              .toList();
+      for (final item in items) {
+        final id = item['id'] as String? ?? '';
+        if (id.isEmpty) continue;
+        final kind =
+            (item['type'] as String? ?? '').toLowerCase() == 'series'
+                ? GroupEventPracticeKind.series
+                : GroupEventPracticeKind.plan;
+        picks.add(
+          GroupEventPracticePick(
+            id: id,
+            kind: kind,
+            title: _dashboardTitle(item),
+            imageUrl: _imageUrl(item),
+          ),
+        );
+      }
+      final pagination = data['pagination'];
+      final totalPages =
+          pagination is Map<String, dynamic>
+              ? (pagination['total_pages'] as num?)?.toInt() ?? 1
+              : 1;
+      if (items.isEmpty || page >= totalPages) break;
+    }
+    return picks;
+  }
+
+  Future<List<GroupEventPracticePick>> _fetchCollections(String groupId) async {
+    final picks = <GroupEventPracticePick>[];
+    await _paginate('/cms/author/groups/$groupId/recitation-collections', (
+      data,
+    ) {
+      final items =
+          (data['collections'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>();
+      for (final item in items) {
+        final id = item['id'] as String? ?? '';
+        if (id.isEmpty) continue;
+        picks.add(
+          GroupEventPracticePick(
+            id: id,
+            kind: GroupEventPracticeKind.collection,
+            title: (item['name'] as String? ?? '').trim(),
+            imageUrl: item['img_url'] as String?,
+          ),
+        );
+      }
+      return items.length;
+    });
+    return picks;
+  }
+
+  Future<List<GroupEventPracticePick>> _fetchAccumulators(
+    String groupId,
+  ) async {
+    final picks = <GroupEventPracticePick>[];
+    await _paginate('/cms/groups/$groupId/accumulators', (data) {
+      final items =
+          (data['accumulators'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>();
+      for (final item in items) {
+        final id = item['id'] as String? ?? '';
+        if (id.isEmpty) continue;
+        picks.add(
+          GroupEventPracticePick(
+            id: id,
+            kind: GroupEventPracticeKind.accumulator,
+            title: (item['title'] as String? ?? '').trim(),
+            imageUrl: _imageUrl(item),
+          ),
+        );
+      }
+      return items.length;
+    });
+    return picks;
+  }
+
+  /// Walks a skip/limit list; [consume] returns how many rows a page held.
+  Future<void> _paginate(
+    String path,
+    int Function(Map<String, dynamic> data) consume,
+  ) async {
+    const limit = 50;
+    const maxItems = 300;
+    var skip = 0;
+    while (skip < maxItems) {
+      final response = await dio.get(
+        path,
+        queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
+      );
+      final data = response.data;
+      if (data is! Map<String, dynamic>) break;
+      final count = consume(data);
+      final total = (data['total'] as num?)?.toInt() ?? skip + count;
+      skip += count;
+      if (count == 0 || skip >= total) break;
+    }
+  }
+
+  /// A plan carries `title`; a series may only have per-language metadata.
+  static String _dashboardTitle(Map<String, dynamic> item) {
+    final title = (item['title'] as String?)?.trim();
+    if (title != null && title.isNotEmpty) return title;
+    final metadata = item['metadata'];
+    final rows =
+        metadata is List
+            ? metadata.whereType<Map<String, dynamic>>().toList()
+            : metadata is Map<String, dynamic>
+            ? [metadata]
+            : const <Map<String, dynamic>>[];
+    for (final row in rows) {
+      final value = (row['title'] as String?)?.trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return '';
+  }
+
+  static String? _imageUrl(Map<String, dynamic> item) {
+    final direct = (item['image_url'] as String?)?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final image = item['image'];
+    if (image is Map<String, dynamic>) {
+      for (final key in const ['thumbnail', 'medium', 'original']) {
+        final value = (image[key] as String?)?.trim();
+        if (value != null && value.isNotEmpty) return value;
+      }
+    }
+    return null;
+  }
+
   /// Every event of the group as the CMS sees it, drafts included.
   Future<List<GroupEventCmsItem>> fetchCmsEvents(String groupId) async {
     const limit = 50;

@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/env.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_event_composer_remote_datasource.dart';
@@ -7,9 +6,7 @@ import 'package:flutter_pecha/features/group_profile/data/datasource/place_searc
 import 'package:flutter_pecha/features/group_profile/data/repositories/group_event_composer_repository_impl.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_event_composer_repository.dart';
-import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Null when no LocationIQ token is configured; the venue sheet then offers
@@ -26,29 +23,14 @@ final placeSearchDatasourceProvider = Provider<PlaceSearchRemoteDatasource?>((
   );
 });
 
-/// Everything the group's practices feed lists, across every page, so the
-/// picker can filter by kind and search locally.
+/// What the picker offers, from the CMS lists the studio reads. The public
+/// practices feed was tried first but hides items the CMS still lists.
 final groupEventPracticeOptionsProvider = FutureProvider.autoDispose
-    .family<List<GroupPractice>, String>((ref, groupId) async {
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      final language = ref.watch(contentLanguageProvider);
-      const limit = 50;
-      const maxItems = 300;
-      final all = <GroupPractice>[];
-      var skip = 0;
-      while (all.length < maxItems) {
-        final result = await repository.getGroupPractices(
-          groupId,
-          language: language,
-          skip: skip,
-          limit: limit,
-        );
-        final page = result.fold((failure) => throw failure, (page) => page);
-        all.addAll(page.practices);
-        if (!page.hasMore || page.practices.isEmpty) break;
-        skip += page.practices.length;
-      }
-      return all;
+    .family<List<GroupEventPracticePick>, String>((ref, groupId) async {
+      final result = await ref
+          .watch(groupEventComposerRepositoryProvider)
+          .getPracticeOptions(groupId);
+      return result.fold((failure) => throw failure, (picks) => picks);
     });
 
 final groupEventComposerRemoteDatasourceProvider =

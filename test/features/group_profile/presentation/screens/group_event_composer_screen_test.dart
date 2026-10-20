@@ -5,8 +5,6 @@ import 'package:flutter_pecha/core/localization/app_language.dart';
 import 'package:flutter_pecha/core/localization/languages_providers.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_preview_service.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
@@ -28,36 +26,25 @@ const _languages = [
 ];
 
 const _practices = [
-  GroupPractice(
-    type: GroupPracticeType.plan,
-    plan: GroupPracticePlan(
-      id: 'p1',
-      title: '21 Days of the 21 Taras',
-      description: '',
-      language: 'en',
-    ),
+  GroupEventPracticePick(
+    id: 'p1',
+    kind: GroupEventPracticeKind.plan,
+    title: '21 Days of the 21 Taras',
   ),
-  GroupPractice(
-    type: GroupPracticeType.series,
-    series: GroupProfileSeries(id: 's1', title: 'Lamrim teachings'),
+  GroupEventPracticePick(
+    id: 's1',
+    kind: GroupEventPracticeKind.series,
+    title: 'Lamrim teachings',
   ),
-  GroupPractice(
-    type: GroupPracticeType.collection,
-    collection: GroupRecitationCollection(
-      id: 'c1',
-      groupId: 'g1',
-      name: 'Praises to Tara',
-    ),
+  GroupEventPracticePick(
+    id: 'c1',
+    kind: GroupEventPracticeKind.collection,
+    title: 'Praises to Tara',
   ),
-  GroupPractice(
-    type: GroupPracticeType.accumulator,
-    accumulator: GroupAccumulator(
-      id: 'a1',
-      presetAccumulatorId: '',
-      groupId: 'g1',
-      title: 'Green Tara mantra',
-      targetCount: 0,
-    ),
+  GroupEventPracticePick(
+    id: 'a1',
+    kind: GroupEventPracticeKind.accumulator,
+    title: 'Green Tara mantra',
   ),
 ];
 

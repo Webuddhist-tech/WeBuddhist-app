@@ -5,54 +5,11 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum _Filter { all, content, collections, accumulators }
-
-/// Turns a practices-feed item into a pick; null for items with no id.
-GroupEventPracticePick? practicePickFrom(GroupPractice practice) {
-  switch (practice.type) {
-    case GroupPracticeType.plan:
-      final plan = practice.plan;
-      if (plan == null || plan.id.isEmpty) return null;
-      return GroupEventPracticePick(
-        id: plan.id,
-        kind: GroupEventPracticeKind.plan,
-        title: plan.title,
-        imageUrl: plan.imageUrl,
-      );
-    case GroupPracticeType.series:
-      final series = practice.series;
-      if (series == null || series.id.isEmpty) return null;
-      return GroupEventPracticePick(
-        id: series.id,
-        kind: GroupEventPracticeKind.series,
-        title: series.title,
-        imageUrl: series.image?.displayUrl,
-      );
-    case GroupPracticeType.collection:
-      final collection = practice.collection;
-      if (collection == null || collection.id.isEmpty) return null;
-      return GroupEventPracticePick(
-        id: collection.id,
-        kind: GroupEventPracticeKind.collection,
-        title: collection.name,
-        imageUrl: collection.imageUrl,
-      );
-    case GroupPracticeType.accumulator:
-      final accumulator = practice.accumulator;
-      if (accumulator == null || accumulator.id.isEmpty) return null;
-      return GroupEventPracticePick(
-        id: accumulator.id,
-        kind: GroupEventPracticeKind.accumulator,
-        title: accumulator.title,
-        imageUrl: accumulator.image?.displayUrl,
-      );
-  }
-}
 
 /// Adds [pick] to [current], replacing the single-slot kinds. Returns the new
 /// list and what was replaced, if anything.
@@ -269,22 +226,21 @@ class _GroupEventAddPracticeSheetState
                           ),
                     ),
                   ),
-              data: (practices) {
+              data: (options) {
                 final seen = <String>{};
                 final picks = [
-                  for (final practice in practices)
-                    if (practicePickFrom(practice) case final pick?)
-                      if (seen.add(pick.id) &&
-                          _matchesFilter(pick) &&
-                          (needle.isEmpty ||
-                              pick.title.toLowerCase().contains(needle)))
-                        pick,
+                  for (final pick in options)
+                    if (seen.add(pick.id) &&
+                        _matchesFilter(pick) &&
+                        (needle.isEmpty ||
+                            pick.title.toLowerCase().contains(needle)))
+                      pick,
                 ];
                 if (picks.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                     child: Text(
-                      practices.isEmpty
+                      options.isEmpty
                           ? l10n.group_event_practices_empty
                           : l10n.group_event_practices_none_match,
                       textAlign: TextAlign.center,

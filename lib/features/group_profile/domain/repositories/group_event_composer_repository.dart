@@ -8,6 +8,10 @@ import 'package:fpdart/fpdart.dart';
 abstract class GroupEventComposerRepositoryInterface {
   Future<Either<Failure, List<GroupEventIntention>>> getIntentions();
 
+  Future<Either<Failure, List<GroupEventPracticePick>>> getPracticeOptions(
+    String groupId,
+  );
+
   Future<Either<Failure, String>> createLocation(
     String groupId,
     CreateGroupLocationRequest request,

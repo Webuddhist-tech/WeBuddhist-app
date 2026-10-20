@@ -20,6 +20,16 @@ class GroupEventComposerRepositoryImpl
   }
 
   @override
+  Future<Either<Failure, List<GroupEventPracticePick>>> getPracticeOptions(
+    String groupId,
+  ) {
+    return _guard(
+      () => remote.fetchPracticeOptions(groupId),
+      'Failed to load practices',
+    );
+  }
+
+  @override
   Future<Either<Failure, String>> createLocation(
     String groupId,
     CreateGroupLocationRequest request,
