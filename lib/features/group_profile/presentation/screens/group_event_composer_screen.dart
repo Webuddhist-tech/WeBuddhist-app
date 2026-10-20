@@ -53,10 +53,14 @@ class GroupEventComposerScreen extends ConsumerStatefulWidget {
   /// A draft from the CMS to continue; null composes a new event.
   final GroupEventEditSource? existing;
 
+  /// Step to open on, 0 to 3; the manage screen lands on the row's step.
+  final int initialStep;
+
   const GroupEventComposerScreen({
     super.key,
     required this.profile,
     this.existing,
+    this.initialStep = 0,
   });
 
   static const int stepCount = 4;
@@ -65,6 +69,7 @@ class GroupEventComposerScreen extends ConsumerStatefulWidget {
     BuildContext context,
     GroupProfile profile, {
     GroupEventEditSource? existing,
+    int initialStep = 0,
   }) {
     return Navigator.of(context).push<GroupEventComposerResult>(
       MaterialPageRoute(
@@ -75,6 +80,7 @@ class GroupEventComposerScreen extends ConsumerStatefulWidget {
               child: GroupEventComposerScreen(
                 profile: profile,
                 existing: existing,
+                initialStep: initialStep,
               ),
             ),
       ),
@@ -113,11 +119,18 @@ class _GroupEventComposerScreenState
       _draft = existing.draft;
       _liveLinkController.text = existing.draft.liveLink;
       _resolveIntentions(existing.intentionSlugs);
+      _step = widget.initialStep.clamp(
+        0,
+        GroupEventComposerScreen.stepCount - 1,
+      );
     }
     _seedLanguages();
   }
 
   bool get _isEditing => widget.existing != null;
+
+  /// Editing a live event: changes save in place, nothing is drafted.
+  bool get _isEditingPublished => widget.existing?.isPublished ?? false;
 
   /// The CMS lists an event's intentions by slug; ids come from the catalog.
   Future<void> _resolveIntentions(List<String> slugs) async {
@@ -334,6 +347,11 @@ class _GroupEventComposerScreenState
   Future<void> _publish() async {
     final event = await _submit(status: 'published');
     if (event == null || !mounted) return;
+    if (_isEditingPublished) {
+      // Already live: no celebration, straight back to where it was opened.
+      Navigator.of(context).pop(GroupEventComposerResult(event));
+      return;
+    }
     setState(() {
       _isPublishing = false;
       _published = event;
@@ -446,6 +464,10 @@ class _GroupEventComposerScreenState
     if (_isPublishing) return;
     if (_published != null) {
       _finish(openEvent: false);
+      return;
+    }
+    if (_isEditingPublished) {
+      await _confirmDiscard();
       return;
     }
     // Step 1 has no date yet, so it only asks keep/discard; from step 2 the
@@ -622,7 +644,9 @@ class _GroupEventComposerScreenState
         alignment: Alignment.center,
         children: [
           Text(
-            _isEditing
+            _isEditingPublished
+                ? l10n.group_event_edit_title
+                : _isEditing
                 ? l10n.group_event_edit_draft_title
                 : l10n.group_event_new_title,
             maxLines: 1,
@@ -755,7 +779,9 @@ class _GroupEventComposerScreenState
                             )
                             : Text(
                               _isReviewStep
-                                  ? l10n.group_event_publish
+                                  ? (_isEditingPublished
+                                      ? l10n.group_event_save_changes
+                                      : l10n.group_event_publish)
                                   : l10n.group_event_continue,
                               strutStyle: context.tibetanStrutStyle(16),
                               style: const TextStyle(

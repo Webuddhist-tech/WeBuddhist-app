@@ -14,6 +14,9 @@ class GroupEventEditSource {
   /// Intentions arrive as slugs; the composer resolves them to ids.
   final List<String> intentionSlugs;
 
+  /// A live event: saving keeps it published and closing never drafts it.
+  final bool isPublished;
+
   const GroupEventEditSource({
     required this.eventId,
     required this.draft,
@@ -21,6 +24,7 @@ class GroupEventEditSource {
     this.venue,
     this.imageUrl,
     this.intentionSlugs = const [],
+    this.isPublished = false,
   });
 
   bool sameVenue(GroupEventVenueDraft? other) {
@@ -188,6 +192,9 @@ class GroupEventDraftMapper {
 
     return GroupEventEditSource(
       eventId: json['id'] as String? ?? '',
+      isPublished:
+          (json['status'] as String? ?? 'published').toLowerCase() !=
+          'draft',
       locationId: json['location_id'] as String?,
       venue: venue,
       imageUrl: imageUrl,

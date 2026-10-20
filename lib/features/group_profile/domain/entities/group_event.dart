@@ -91,6 +91,10 @@ class GroupEventAccumulation {
   final String id;
   final String groupAccumulatorId;
   final GroupEventParticipationType? format;
+
+  /// `count_mode` from the API: "manual_in_person" (an admin records the
+  /// counts) or "offline_participants" (attendees log them in the app).
+  final String? countMode;
   final int displayOrder;
   final GroupEventPracticeRef? groupAccumulator;
 
@@ -98,9 +102,21 @@ class GroupEventAccumulation {
     required this.id,
     required this.groupAccumulatorId,
     this.format,
+    this.countMode,
     this.displayOrder = 0,
     this.groupAccumulator,
   });
+
+  static const manualInPersonCountMode = 'manual_in_person';
+
+  /// True when an admin records this accumulation's counts day by day;
+  /// older rows without a mode fall back to the in-person format.
+  bool get isAdminCounted =>
+      countMode == null
+          ? format == GroupEventParticipationType.offline
+          : countMode == manualInPersonCountMode;
+
+  String get title => groupAccumulator?.name.trim() ?? '';
 }
 
 /// Rules for an event's accumulations, sorted by display order.

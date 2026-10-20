@@ -24,7 +24,9 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_re
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_manage_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_actions.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_analytics.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_link_utils.dart';
@@ -175,6 +177,16 @@ class _GroupEventDetailScreenState
                 )
             ? event
             : null;
+    // Group admins manage the event whether or not they attend it.
+    final manageEvent =
+        event != null &&
+                (ref
+                        .watch(groupMyPermissionProvider(event.groupId))
+                        .valueOrNull
+                        ?.isGroupAdmin ??
+                    false)
+            ? event
+            : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -206,7 +218,7 @@ class _GroupEventDetailScreenState
                 onPressed: _shareEvent,
                 iconSize: 22,
               ),
-              if (menuEvent != null)
+              if (menuEvent != null || manageEvent != null)
                 IconButton(
                   icon: const Icon(AppAssets.dotsThreeVertical),
                   iconSize: 22,
@@ -217,7 +229,14 @@ class _GroupEventDetailScreenState
                           ? null
                           : () => showGroupEventMoreSheet(
                             context,
-                            onLeave: () => _confirmLeave(menuEvent),
+                            onManage:
+                                manageEvent == null
+                                    ? null
+                                    : () => _openManage(manageEvent),
+                            onLeave:
+                                menuEvent == null
+                                    ? null
+                                    : () => _confirmLeave(menuEvent),
                           ),
                 ),
             ],
@@ -388,6 +407,18 @@ class _GroupEventDetailScreenState
           liveTextId: liveTextId,
           liveSegmentId: liveSegmentId,
         );
+    }
+  }
+
+  Future<void> _openManage(GroupEvent event) async {
+    await GroupEventManageScreen.show(context, event: event);
+    if (!mounted) return;
+    // Edits and in-person counts change what the page shows.
+    ref.invalidate(groupEventDetailProvider(event.id));
+    for (final accumulation in event.allAccumulations) {
+      ref.invalidate(
+        groupAccumulatorDetailProvider(accumulation.groupAccumulatorId),
+      );
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_in_person_count_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
@@ -314,6 +315,104 @@ class GroupEventComposerRemoteDatasource {
       _logger.error('Dio error in createEvent', e);
       throw _dioToException(e, 'Failed to create event');
     }
+  }
+
+  /// The counts an admin recorded for [eventAccumulationId], newest day
+  /// first, with the linked group accumulation's totals.
+  Future<GroupEventInPersonCountListModel> fetchInPersonCounts(
+    String eventId, {
+    required String eventAccumulationId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/cms/events/$eventId/in-person-counts',
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+          ..._accumulationParam(eventAccumulationId),
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw const ServerException('Unexpected in-person counts payload');
+      }
+      return GroupEventInPersonCountListModel.fromJson(data);
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchInPersonCounts', e);
+      throw _dioToException(e, 'Failed to load in-person counts');
+    }
+  }
+
+  Future<GroupEventInPersonCountModel> createInPersonCount(
+    String eventId, {
+    required String eventAccumulationId,
+    required String day,
+    required int count,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/cms/events/$eventId/in-person-counts',
+        queryParameters: _accumulationParam(eventAccumulationId),
+        data: {'day': day, 'count': count},
+      );
+      return _inPersonCount(response.data);
+    } on DioException catch (e) {
+      _logger.error('Dio error in createInPersonCount', e);
+      throw _dioToException(e, 'Failed to add in-person count');
+    }
+  }
+
+  Future<GroupEventInPersonCountModel> updateInPersonCount(
+    String eventId,
+    String countId, {
+    required String eventAccumulationId,
+    required String day,
+    required int count,
+  }) async {
+    try {
+      final response = await dio.put(
+        '/cms/events/$eventId/in-person-counts/$countId',
+        queryParameters: _accumulationParam(eventAccumulationId),
+        data: {'day': day, 'count': count},
+      );
+      return _inPersonCount(response.data);
+    } on DioException catch (e) {
+      _logger.error('Dio error in updateInPersonCount', e);
+      throw _dioToException(e, 'Failed to update in-person count');
+    }
+  }
+
+  Future<void> deleteInPersonCount(
+    String eventId,
+    String countId, {
+    required String eventAccumulationId,
+  }) async {
+    try {
+      await dio.delete(
+        '/cms/events/$eventId/in-person-counts/$countId',
+        queryParameters: _accumulationParam(eventAccumulationId),
+      );
+    } on DioException catch (e) {
+      _logger.error('Dio error in deleteInPersonCount', e);
+      throw _dioToException(e, 'Failed to delete in-person count');
+    }
+  }
+
+  /// Legacy single-accumulator events have no link id; the API then picks
+  /// the event's manual in-person accumulation itself.
+  static Map<String, dynamic> _accumulationParam(String eventAccumulationId) =>
+      eventAccumulationId.isEmpty
+          ? const {}
+          : {'event_accumulation_id': eventAccumulationId};
+
+  static GroupEventInPersonCountModel _inPersonCount(Object? data) {
+    if (data is! Map<String, dynamic> || (data['id'] as String? ?? '').isEmpty) {
+      throw const ServerException('In-person count returned no id');
+    }
+    return GroupEventInPersonCountModel.fromJson(data);
   }
 
   Exception _dioToException(DioException e, String label) {

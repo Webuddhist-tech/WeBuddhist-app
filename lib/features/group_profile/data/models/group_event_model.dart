@@ -169,6 +169,7 @@ class GroupEventAccumulationModel {
   final String id;
   final String groupAccumulatorId;
   final String? eventFormat;
+  final String? countMode;
   final int displayOrder;
   final GroupEventPracticeRefModel? groupAccumulator;
 
@@ -176,6 +177,7 @@ class GroupEventAccumulationModel {
     required this.id,
     required this.groupAccumulatorId,
     this.eventFormat,
+    this.countMode,
     this.displayOrder = 0,
     this.groupAccumulator,
   });
@@ -187,6 +189,7 @@ class GroupEventAccumulationModel {
       groupAccumulatorId:
           json['group_accumulator_id'] as String? ?? ref?.id ?? '',
       eventFormat: json['event_format'] as String?,
+      countMode: json['count_mode'] as String?,
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
       groupAccumulator: ref,
     );
@@ -197,6 +200,7 @@ class GroupEventAccumulationModel {
       id: id,
       groupAccumulatorId: groupAccumulatorId,
       format: GroupEventParticipationType.fromApi(eventFormat),
+      countMode: countMode,
       displayOrder: displayOrder,
       groupAccumulator: groupAccumulator?.toEntity(),
     );

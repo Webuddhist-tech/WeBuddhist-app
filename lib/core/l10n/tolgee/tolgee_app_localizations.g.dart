@@ -7887,6 +7887,238 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_event_edit_title => TolgeeBridge.get(
+    localeName,
+    'group_event_edit_title',
+    () => _fallback.group_event_edit_title,
+  );
+
+  @override
+  String get group_event_save_changes => TolgeeBridge.get(
+    localeName,
+    'group_event_save_changes',
+    () => _fallback.group_event_save_changes,
+  );
+
+  @override
+  String get group_event_changes_saved => TolgeeBridge.get(
+    localeName,
+    'group_event_changes_saved',
+    () => _fallback.group_event_changes_saved,
+  );
+
+  @override
+  String get group_event_manage => TolgeeBridge.get(
+    localeName,
+    'group_event_manage',
+    () => _fallback.group_event_manage,
+  );
+
+  @override
+  String get group_event_manage_details => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_details',
+    () => _fallback.group_event_manage_details,
+  );
+
+  @override
+  String get group_event_manage_counts => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_counts',
+    () => _fallback.group_event_manage_counts,
+  );
+
+  @override
+  String get group_event_manage_accumulations => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_accumulations',
+    () => _fallback.group_event_manage_accumulations,
+  );
+
+  @override
+  String get group_event_manage_admin_adds_pending => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_admin_adds_pending',
+    () => _fallback.group_event_manage_admin_adds_pending,
+  );
+
+  @override
+  String group_event_manage_admin_adds(String count) => TolgeeBridge.format(
+    localeName,
+    'group_event_manage_admin_adds',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_manage_admin_adds(count),
+  );
+
+  @override
+  String get group_event_manage_attendees_add_pending => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_attendees_add_pending',
+    () => _fallback.group_event_manage_attendees_add_pending,
+  );
+
+  @override
+  String group_event_manage_attendees_add(String count, int people) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_manage_attendees_add',
+        <String, Object>{'count': count, 'people': people},
+        () => _fallback.group_event_manage_attendees_add(count, people),
+      );
+
+  @override
+  String get group_event_manage_add_count => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_add_count',
+    () => _fallback.group_event_manage_add_count,
+  );
+
+  @override
+  String get group_event_manage_no_accumulations => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_no_accumulations',
+    () => _fallback.group_event_manage_no_accumulations,
+  );
+
+  @override
+  String get group_event_manage_recurring_note => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_recurring_note',
+    () => _fallback.group_event_manage_recurring_note,
+  );
+
+  @override
+  String group_event_in_person_of_target(String count, String target) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_in_person_of_target',
+        <String, Object>{'count': count, 'target': target},
+        () => _fallback.group_event_in_person_of_target(count, target),
+      );
+
+  @override
+  String group_event_in_person_in_total(String count) => TolgeeBridge.format(
+    localeName,
+    'group_event_in_person_in_total',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_in_person_in_total(count),
+  );
+
+  @override
+  String get group_event_in_person_legend_app => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_legend_app',
+    () => _fallback.group_event_in_person_legend_app,
+  );
+
+  @override
+  String get group_event_in_person_legend_in_person => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_legend_in_person',
+    () => _fallback.group_event_in_person_legend_in_person,
+  );
+
+  @override
+  String get group_event_in_person_add_day => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_add_day',
+    () => _fallback.group_event_in_person_add_day,
+  );
+
+  @override
+  String get group_event_in_person_day => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_day',
+    () => _fallback.group_event_in_person_day,
+  );
+
+  @override
+  String get group_event_in_person_count => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_count',
+    () => _fallback.group_event_in_person_count,
+  );
+
+  @override
+  String get group_event_in_person_empty => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_empty',
+    () => _fallback.group_event_in_person_empty,
+  );
+
+  @override
+  String get group_event_in_person_invalid_count => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_invalid_count',
+    () => _fallback.group_event_in_person_invalid_count,
+  );
+
+  @override
+  String get group_event_in_person_added => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_added',
+    () => _fallback.group_event_in_person_added,
+  );
+
+  @override
+  String get group_event_in_person_updated => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_updated',
+    () => _fallback.group_event_in_person_updated,
+  );
+
+  @override
+  String get group_event_in_person_deleted => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_deleted',
+    () => _fallback.group_event_in_person_deleted,
+  );
+
+  @override
+  String get group_event_in_person_delete_title => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_delete_title',
+    () => _fallback.group_event_in_person_delete_title,
+  );
+
+  @override
+  String group_event_in_person_delete_message(String count, String day) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_in_person_delete_message',
+        <String, Object>{'count': count, 'day': day},
+        () => _fallback.group_event_in_person_delete_message(count, day),
+      );
+
+  @override
+  String get group_event_in_person_exists => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_exists',
+    () => _fallback.group_event_in_person_exists,
+  );
+
+  @override
+  String get group_event_in_person_no_accumulation => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_no_accumulation',
+    () => _fallback.group_event_in_person_no_accumulation,
+  );
+
+  @override
+  String get group_event_in_person_save_error => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_save_error',
+    () => _fallback.group_event_in_person_save_error,
+  );
+
+  @override
+  String get group_event_in_person_load_more => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_load_more',
+    () => _fallback.group_event_in_person_load_more,
+  );
+
+  @override
   String get mala_failed_load_catalogue_error => TolgeeBridge.get(
     localeName,
     'mala_failed_load_catalogue_error',

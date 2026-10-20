@@ -3972,6 +3972,123 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_event_edit_draft_title => 'Edit draft';
 
   @override
+  String get group_event_edit_title => 'Edit event';
+
+  @override
+  String get group_event_save_changes => 'Save changes';
+
+  @override
+  String get group_event_changes_saved => 'Changes saved';
+
+  @override
+  String get group_event_manage => 'Manage event';
+
+  @override
+  String get group_event_manage_details => 'Details';
+
+  @override
+  String get group_event_manage_counts => 'Counts';
+
+  @override
+  String get group_event_manage_accumulations => 'Accumulations';
+
+  @override
+  String get group_event_manage_admin_adds_pending => 'Admin adds';
+
+  @override
+  String group_event_manage_admin_adds(String count) {
+    return 'Admin adds · $count so far';
+  }
+
+  @override
+  String get group_event_manage_attendees_add_pending => 'Attendees add in app';
+
+  @override
+  String group_event_manage_attendees_add(String count, int people) {
+    String _temp0 = intl.Intl.pluralLogic(
+      people,
+      locale: localeName,
+      other: '$people people',
+      one: '1 person',
+    );
+    return 'Attendees add in app · $count from $_temp0';
+  }
+
+  @override
+  String get group_event_manage_add_count => 'Add count';
+
+  @override
+  String get group_event_manage_no_accumulations =>
+      'This event has no accumulations.';
+
+  @override
+  String get group_event_manage_recurring_note =>
+      'Attendee lists aren\'t kept for recurring events. Counts add up across all sessions.';
+
+  @override
+  String group_event_in_person_of_target(String count, String target) {
+    return '$count of $target';
+  }
+
+  @override
+  String group_event_in_person_in_total(String count) {
+    return '$count in total';
+  }
+
+  @override
+  String get group_event_in_person_legend_app => 'App';
+
+  @override
+  String get group_event_in_person_legend_in_person => 'In person';
+
+  @override
+  String get group_event_in_person_add_day => 'Add day';
+
+  @override
+  String get group_event_in_person_day => 'Day';
+
+  @override
+  String get group_event_in_person_count => 'Count';
+
+  @override
+  String get group_event_in_person_empty => 'No in-person counts yet.';
+
+  @override
+  String get group_event_in_person_invalid_count =>
+      'Enter a whole number of at least 1';
+
+  @override
+  String get group_event_in_person_added => 'In-person count added';
+
+  @override
+  String get group_event_in_person_updated => 'In-person count updated';
+
+  @override
+  String get group_event_in_person_deleted => 'In-person count deleted';
+
+  @override
+  String get group_event_in_person_delete_title => 'Delete in-person count?';
+
+  @override
+  String group_event_in_person_delete_message(String count, String day) {
+    return '$count for $day will be taken off the accumulation\'s total.';
+  }
+
+  @override
+  String get group_event_in_person_exists =>
+      'That day already has a count. Edit it instead.';
+
+  @override
+  String get group_event_in_person_no_accumulation =>
+      'Link a group accumulation to this event to record in-person counts.';
+
+  @override
+  String get group_event_in_person_save_error => 'Could not save the count.';
+
+  @override
+  String get group_event_in_person_load_more => 'Load more';
+
+  @override
   String get mala_failed_load_catalogue_error => 'Unable to load catalogue';
 
   @override

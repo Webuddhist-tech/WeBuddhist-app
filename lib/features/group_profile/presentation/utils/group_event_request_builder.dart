@@ -188,6 +188,22 @@ class GroupEventRequestBuilder {
     return local.toUtc().toIso8601String();
   }
 
+  /// Today's calendar date in [timezone], UTC when the zone is unknown.
+  static DateTime todayIn(String timezone) {
+    if (!_tzReady) {
+      tz_data.initializeTimeZones();
+      _tzReady = true;
+    }
+    tz.Location location;
+    try {
+      location = tz.getLocation(timezone);
+    } catch (_) {
+      location = tz.UTC;
+    }
+    final now = tz.TZDateTime.now(location);
+    return DateTime(now.year, now.month, now.day);
+  }
+
   /// The wall-clock date and time of a stored UTC instant in [timezone].
   static (DateTime, GroupEventTime)? fromBackendIso(
     String? iso,

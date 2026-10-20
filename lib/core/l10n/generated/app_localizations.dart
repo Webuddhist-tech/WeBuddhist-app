@@ -6960,6 +6960,198 @@ abstract class AppLocalizations {
   /// **'Edit draft'**
   String get group_event_edit_draft_title;
 
+  /// No description provided for @group_event_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit event'**
+  String get group_event_edit_title;
+
+  /// No description provided for @group_event_save_changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get group_event_save_changes;
+
+  /// No description provided for @group_event_changes_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved'**
+  String get group_event_changes_saved;
+
+  /// No description provided for @group_event_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage event'**
+  String get group_event_manage;
+
+  /// No description provided for @group_event_manage_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get group_event_manage_details;
+
+  /// No description provided for @group_event_manage_counts.
+  ///
+  /// In en, this message translates to:
+  /// **'Counts'**
+  String get group_event_manage_counts;
+
+  /// No description provided for @group_event_manage_accumulations.
+  ///
+  /// In en, this message translates to:
+  /// **'Accumulations'**
+  String get group_event_manage_accumulations;
+
+  /// No description provided for @group_event_manage_admin_adds_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin adds'**
+  String get group_event_manage_admin_adds_pending;
+
+  /// No description provided for @group_event_manage_admin_adds.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin adds · {count} so far'**
+  String group_event_manage_admin_adds(String count);
+
+  /// No description provided for @group_event_manage_attendees_add_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendees add in app'**
+  String get group_event_manage_attendees_add_pending;
+
+  /// No description provided for @group_event_manage_attendees_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendees add in app · {count} from {people, plural, =1{1 person} other{{people} people}}'**
+  String group_event_manage_attendees_add(String count, int people);
+
+  /// No description provided for @group_event_manage_add_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Add count'**
+  String get group_event_manage_add_count;
+
+  /// No description provided for @group_event_manage_no_accumulations.
+  ///
+  /// In en, this message translates to:
+  /// **'This event has no accumulations.'**
+  String get group_event_manage_no_accumulations;
+
+  /// No description provided for @group_event_manage_recurring_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendee lists aren\'t kept for recurring events. Counts add up across all sessions.'**
+  String get group_event_manage_recurring_note;
+
+  /// No description provided for @group_event_in_person_of_target.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {target}'**
+  String group_event_in_person_of_target(String count, String target);
+
+  /// No description provided for @group_event_in_person_in_total.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in total'**
+  String group_event_in_person_in_total(String count);
+
+  /// No description provided for @group_event_in_person_legend_app.
+  ///
+  /// In en, this message translates to:
+  /// **'App'**
+  String get group_event_in_person_legend_app;
+
+  /// No description provided for @group_event_in_person_legend_in_person.
+  ///
+  /// In en, this message translates to:
+  /// **'In person'**
+  String get group_event_in_person_legend_in_person;
+
+  /// No description provided for @group_event_in_person_add_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Add day'**
+  String get group_event_in_person_add_day;
+
+  /// No description provided for @group_event_in_person_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get group_event_in_person_day;
+
+  /// No description provided for @group_event_in_person_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Count'**
+  String get group_event_in_person_count;
+
+  /// No description provided for @group_event_in_person_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No in-person counts yet.'**
+  String get group_event_in_person_empty;
+
+  /// No description provided for @group_event_in_person_invalid_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number of at least 1'**
+  String get group_event_in_person_invalid_count;
+
+  /// No description provided for @group_event_in_person_added.
+  ///
+  /// In en, this message translates to:
+  /// **'In-person count added'**
+  String get group_event_in_person_added;
+
+  /// No description provided for @group_event_in_person_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'In-person count updated'**
+  String get group_event_in_person_updated;
+
+  /// No description provided for @group_event_in_person_deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'In-person count deleted'**
+  String get group_event_in_person_deleted;
+
+  /// No description provided for @group_event_in_person_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete in-person count?'**
+  String get group_event_in_person_delete_title;
+
+  /// No description provided for @group_event_in_person_delete_message.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} for {day} will be taken off the accumulation\'s total.'**
+  String group_event_in_person_delete_message(String count, String day);
+
+  /// No description provided for @group_event_in_person_exists.
+  ///
+  /// In en, this message translates to:
+  /// **'That day already has a count. Edit it instead.'**
+  String get group_event_in_person_exists;
+
+  /// No description provided for @group_event_in_person_no_accumulation.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a group accumulation to this event to record in-person counts.'**
+  String get group_event_in_person_no_accumulation;
+
+  /// No description provided for @group_event_in_person_save_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the count.'**
+  String get group_event_in_person_save_error;
+
+  /// No description provided for @group_event_in_person_load_more.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get group_event_in_person_load_more;
+
   /// No description provided for @mala_failed_load_catalogue_error.
   ///
   /// In en, this message translates to:

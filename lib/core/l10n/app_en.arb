@@ -1973,6 +1973,66 @@
   "group_event_draft_delete_title": "Delete draft?",
   "group_event_draft_delete_message": "This draft will be permanently removed",
   "group_event_edit_draft_title": "Edit draft",
+  "group_event_edit_title": "Edit event",
+  "group_event_save_changes": "Save changes",
+  "group_event_changes_saved": "Changes saved",
+  "group_event_manage": "Manage event",
+  "group_event_manage_details": "Details",
+  "group_event_manage_counts": "Counts",
+  "group_event_manage_accumulations": "Accumulations",
+  "group_event_manage_admin_adds_pending": "Admin adds",
+  "group_event_manage_admin_adds": "Admin adds · {count} so far",
+  "@group_event_manage_admin_adds": {
+    "placeholders": {
+      "count": {"type": "String"}
+    }
+  },
+  "group_event_manage_attendees_add_pending": "Attendees add in app",
+  "group_event_manage_attendees_add": "Attendees add in app · {count} from {people, plural, =1{1 person} other{{people} people}}",
+  "@group_event_manage_attendees_add": {
+    "placeholders": {
+      "count": {"type": "String"},
+      "people": {"type": "int"}
+    }
+  },
+  "group_event_manage_add_count": "Add count",
+  "group_event_manage_no_accumulations": "This event has no accumulations.",
+  "group_event_manage_recurring_note": "Attendee lists aren't kept for recurring events. Counts add up across all sessions.",
+  "group_event_in_person_of_target": "{count} of {target}",
+  "@group_event_in_person_of_target": {
+    "placeholders": {
+      "count": {"type": "String"},
+      "target": {"type": "String"}
+    }
+  },
+  "group_event_in_person_in_total": "{count} in total",
+  "@group_event_in_person_in_total": {
+    "placeholders": {
+      "count": {"type": "String"}
+    }
+  },
+  "group_event_in_person_legend_app": "App",
+  "group_event_in_person_legend_in_person": "In person",
+  "group_event_in_person_add_day": "Add day",
+  "group_event_in_person_day": "Day",
+  "group_event_in_person_count": "Count",
+  "group_event_in_person_empty": "No in-person counts yet.",
+  "group_event_in_person_invalid_count": "Enter a whole number of at least 1",
+  "group_event_in_person_added": "In-person count added",
+  "group_event_in_person_updated": "In-person count updated",
+  "group_event_in_person_deleted": "In-person count deleted",
+  "group_event_in_person_delete_title": "Delete in-person count?",
+  "group_event_in_person_delete_message": "{count} for {day} will be taken off the accumulation's total.",
+  "@group_event_in_person_delete_message": {
+    "placeholders": {
+      "count": {"type": "String"},
+      "day": {"type": "String"}
+    }
+  },
+  "group_event_in_person_exists": "That day already has a count. Edit it instead.",
+  "group_event_in_person_no_accumulation": "Link a group accumulation to this event to record in-person counts.",
+  "group_event_in_person_save_error": "Could not save the count.",
+  "group_event_in_person_load_more": "Load more",
   "mala_failed_load_catalogue_error": "Unable to load catalogue",
   "chant_collection_reload_error": "Unable to reload collection to reorder",
   "chant_collection_reorder_error": "Unable to reorder chants",

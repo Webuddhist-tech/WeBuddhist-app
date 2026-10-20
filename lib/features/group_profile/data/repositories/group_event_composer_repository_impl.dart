@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_profile/data/models/group_event_req
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_in_person_count.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_event_composer_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -47,6 +48,81 @@ class GroupEventComposerRepositoryImpl
     return _guard(
       () async => (await remote.createEvent(request)).toEntity(),
       'Failed to create event',
+    );
+  }
+
+  @override
+  Future<Either<Failure, GroupEventInPersonCountList>> getInPersonCounts(
+    String eventId, {
+    required String eventAccumulationId,
+    int skip = 0,
+    int limit = 20,
+  }) {
+    return _guard(
+      () async =>
+          (await remote.fetchInPersonCounts(
+            eventId,
+            eventAccumulationId: eventAccumulationId,
+            skip: skip,
+            limit: limit,
+          )).toEntity(),
+      'Failed to load in-person counts',
+    );
+  }
+
+  @override
+  Future<Either<Failure, GroupEventInPersonCount>> addInPersonCount(
+    String eventId, {
+    required String eventAccumulationId,
+    required String day,
+    required int count,
+  }) {
+    return _guard(
+      () async =>
+          (await remote.createInPersonCount(
+            eventId,
+            eventAccumulationId: eventAccumulationId,
+            day: day,
+            count: count,
+          )).toEntity(),
+      'Failed to add in-person count',
+    );
+  }
+
+  @override
+  Future<Either<Failure, GroupEventInPersonCount>> updateInPersonCount(
+    String eventId,
+    String countId, {
+    required String eventAccumulationId,
+    required String day,
+    required int count,
+  }) {
+    return _guard(
+      () async =>
+          (await remote.updateInPersonCount(
+            eventId,
+            countId,
+            eventAccumulationId: eventAccumulationId,
+            day: day,
+            count: count,
+          )).toEntity(),
+      'Failed to update in-person count',
+    );
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteInPersonCount(
+    String eventId,
+    String countId, {
+    required String eventAccumulationId,
+  }) {
+    return _guard(
+      () => remote.deleteInPersonCount(
+        eventId,
+        countId,
+        eventAccumulationId: eventAccumulationId,
+      ),
+      'Failed to delete in-person count',
     );
   }
 
