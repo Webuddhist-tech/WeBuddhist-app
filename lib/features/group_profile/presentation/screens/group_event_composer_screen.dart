@@ -95,6 +95,9 @@ class _GroupEventComposerScreenState
   int _step = 0;
   GroupEventDraft _draft = const GroupEventDraft();
   bool _isPublishing = false;
+
+  /// Set when closing was refused for a missing date; the row shows it.
+  bool _dateRequired = false;
   GroupEvent? _published;
   String _activeLanguage = AppConfig.englishLanguageCode;
   bool get _isAboutStep => _step == 0;
@@ -306,10 +309,8 @@ class _GroupEventComposerScreenState
     setState(() => _step -= 1);
   }
 
-  /// The API needs only a name for a draft; a half-set schedule is skipped.
-  bool get _canSaveDraft =>
-      _draft.hasName &&
-      (_draft.schedule.startDate == null || _scheduleIssue == null);
+  /// A draft needs a name and a date; the rest can wait.
+  bool get _canSaveDraft => _draft.hasName && _scheduleIssue == null;
 
   Future<void> _onReviewEdit(GroupEventReviewTarget target) async {
     if (_isPublishing) return;
@@ -447,6 +448,15 @@ class _GroupEventComposerScreenState
       _finish(openEvent: false);
       return;
     }
+    // Past step 1 the date is what is missing; point at it instead of
+    // offering to throw the event away.
+    if (!_isAboutStep && _draft.hasName && _scheduleIssue != null) {
+      setState(() {
+        _dateRequired = true;
+        _step = 1;
+      });
+      return;
+    }
     if (_canSaveDraft && await _saveDraft()) return;
     if (!mounted) return;
     if (!_draft.hasContent) {
@@ -564,9 +574,12 @@ class _GroupEventComposerScreenState
         draft: _draft,
         profile: widget.profile,
         liveLinkController: _liveLinkController,
+        dateRequired: _dateRequired,
         onScheduleChanged:
-            (schedule) =>
-                setState(() => _draft = _draft.copyWith(schedule: schedule)),
+            (schedule) => setState(() {
+              _draft = _draft.copyWith(schedule: schedule);
+              if (schedule.startDate != null) _dateRequired = false;
+            }),
         onFormatChanged:
             (format) =>
                 setState(() => _draft = _draft.copyWith(format: format)),
@@ -625,14 +638,16 @@ class _GroupEventComposerScreenState
                 icon: Icon(AppAssets.arrowLeft, color: secondaryColor),
               ),
             ),
-          Positioned(
-            right: 4,
-            child: IconButton(
-              onPressed: _isPublishing ? null : _onClose,
-              tooltip: l10n.cancel,
-              icon: Icon(AppAssets.x, color: secondaryColor),
+          // Step 1 cannot become a draft yet (no date), so it has no close.
+          if (!_isAboutStep)
+            Positioned(
+              right: 4,
+              child: IconButton(
+                onPressed: _isPublishing ? null : _onClose,
+                tooltip: l10n.cancel,
+                icon: Icon(AppAssets.x, color: secondaryColor),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -667,7 +682,13 @@ class _GroupEventComposerScreenState
                 Text(
                   hint,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: secondaryColor),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color:
+                        _dateRequired && _isWhenWhereStep
+                            ? AppColors.danger
+                            : secondaryColor,
+                  ),
                 ),
                 const SizedBox(height: 8),
               ],

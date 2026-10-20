@@ -575,26 +575,55 @@ void draftTests() {
     expect(_lastResult?.event.id, 'ev-1');
   });
 
-  testWidgets('closing with only a name saves a dateless draft', (
+  testWidgets('step one has no close; step two insists on a date', (
     tester,
   ) async {
     _lastResult = null;
     _composerRepository.created = null;
     await _pump(tester);
-    await tester.enterText(
-      find.widgetWithText(TextField, 'e.g. Wednesday group practice'),
-      'Wednesday',
-    );
-    await tester.pump();
+
+    expect(find.byTooltip('Cancel'), findsNothing);
+
+    await _goToStepTwo(tester);
+    expect(find.byTooltip('Cancel'), findsOneWidget);
+    expect(find.text('Pick a date to continue'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cancel'));
     await tester.pumpAndSettle();
 
-    final created = _composerRepository.created!;
-    expect(created.status, 'draft');
-    expect(created.startDate, isNull);
-    expect(created.toJson().containsKey('start_date'), isFalse);
-    expect(_lastResult?.isDraft, isTrue);
+    expect(find.text('Step 2 of 4 · When & where'), findsOneWidget);
+    expect(find.text('Discard event?'), findsNothing);
+    expect(find.text('Pick a date to continue'), findsNWidgets(2));
+    expect(_composerRepository.created, isNull);
+    expect(_lastResult, isNull);
+
+    await tester.tap(find.text('Choose a date'));
+    await tester.pumpAndSettle();
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    await tester.tap(find.text('${tomorrow.day}').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Pick a date to continue'), findsNothing);
+  });
+
+  testWidgets('closing a later step without a date returns to step two', (
+    tester,
+  ) async {
+    _lastResult = null;
+    _composerRepository.created = null;
+    await _pump(tester);
+    await _goToStepThree(tester);
+    // Go back and clear the schedule by switching to recurring with no rule.
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Recurring'));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose how it repeats to continue'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Discard event?'), findsNothing);
+    expect(find.text('Step 2 of 4 · When & where'), findsOneWidget);
+    expect(_composerRepository.created, isNull);
   });
 
   testWidgets('a refused draft falls back to the discard dialog', (
@@ -605,11 +634,7 @@ void draftTests() {
     _composerRepository.failCreate = true;
     addTearDown(() => _composerRepository.failCreate = false);
     await _pump(tester);
-    await tester.enterText(
-      find.widgetWithText(TextField, 'e.g. Wednesday group practice'),
-      'Wednesday',
-    );
-    await tester.pump();
+    await _goToStepThree(tester);
 
     await tester.tap(find.byTooltip('Cancel'));
     await tester.pumpAndSettle();

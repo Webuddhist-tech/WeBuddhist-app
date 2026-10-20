@@ -22,6 +22,9 @@ class GroupEventWhenWhereStep extends StatelessWidget {
   final ValueChanged<GroupEventFormat> onFormatChanged;
   final ValueChanged<GroupEventVenueDraft?> onVenueChanged;
 
+  /// Marks the date row after a close was refused for lack of a date.
+  final bool dateRequired;
+
   const GroupEventWhenWhereStep({
     super.key,
     required this.draft,
@@ -30,6 +33,7 @@ class GroupEventWhenWhereStep extends StatelessWidget {
     required this.onScheduleChanged,
     required this.onFormatChanged,
     required this.onVenueChanged,
+    this.dateRequired = false,
   });
 
   GroupEventScheduleDraft get _schedule => draft.schedule;
@@ -191,6 +195,11 @@ class GroupEventWhenWhereStep extends StatelessWidget {
                     ? null
                     : formatDate(schedule.startDate!, locale),
             placeholder: l10n.group_event_choose_date,
+            isError: dateRequired && schedule.startDate == null,
+            errorText:
+                dateRequired && schedule.startDate == null
+                    ? l10n.group_event_pick_date_hint
+                    : null,
             onTap: () => _pickDate(context, isEnd: false),
           ),
           if (schedule.isRecurring) ...[
@@ -432,6 +441,7 @@ class _Row extends StatelessWidget {
     this.onTap,
     this.trailing,
     this.isError = false,
+    this.errorText,
   });
 
   final IconData icon;
@@ -441,6 +451,7 @@ class _Row extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? trailing;
   final bool isError;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -459,7 +470,12 @@ class _Row extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: dividerColor)),
+          color: isError ? AppColors.danger.withValues(alpha: 0.06) : null,
+          border: Border(
+            bottom: BorderSide(
+              color: isError ? AppColors.danger : dividerColor,
+            ),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
         child: Row(
@@ -481,6 +497,16 @@ class _Row extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 16, color: valueColor),
                   ),
+                  if (errorText != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      errorText!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
