@@ -100,10 +100,10 @@ through `UpdateUserTimerUseCase`. Route: `/home/timers/edit` with the
 Only `name`, `duration` and `ambient_sound_id` are sent — nothing else on the
 timer is user-owned yet. The name keeps tracking the duration (`"{n} minutes"`)
 so the card label stays truthful, but **only when the duration actually
-changed**: the picker is minute-granular while `duration` is milliseconds, so
-an edit that touches just the sound must resend the stored `durationMs` (and
-stored name) verbatim rather than a re-derived `minutes * 60000`, which would
-quietly shorten e.g. a 90s timer to 60s. `ambient_sound_id` is **always** in the body,
+changed**: the picker saves exact hours, minutes, and seconds, while the
+label and the derived name are rounded to whole minutes. An edit that touches
+just the sound must resend the stored `durationMs` (and stored name) verbatim
+rather than a re-derived value, which would quietly change e.g. a 90s timer. `ambient_sound_id` is **always** in the body,
 including as `null`, which is how "Default (no sound)" clears an existing
 sound.
 

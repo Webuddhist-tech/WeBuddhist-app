@@ -3461,4 +3461,10 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get timer_starting => 'Starting...';
+
+  @override
+  String get timer_duration_hours => 'hours';
+
+  @override
+  String get timer_duration_sec => 'sec';
 }

@@ -6743,4 +6743,18 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'timer_starting',
     () => _fallback.timer_starting,
   );
+
+  @override
+  String get timer_duration_hours => TolgeeBridge.get(
+    localeName,
+    'timer_duration_hours',
+    () => _fallback.timer_duration_hours,
+  );
+
+  @override
+  String get timer_duration_sec => TolgeeBridge.get(
+    localeName,
+    'timer_duration_sec',
+    () => _fallback.timer_duration_sec,
+  );
 }

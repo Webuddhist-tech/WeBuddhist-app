@@ -1728,5 +1728,7 @@
   "timer_list_subtitle": "Tap play to begin, or build your own.",
   "timer_create_custom": "Create a custom timer",
   "timer_create_custom_subtitle": "Set duration, bells and ambient sound",
-  "timer_starting": "Starting..."
+  "timer_starting": "Starting...",
+  "timer_duration_hours": "hours",
+  "timer_duration_sec": "sec"
 }

@@ -66,7 +66,9 @@ class PresetTimer {
 
   int get durationMinutes => durationMs ~/ 60000;
 
-  int get displayMinutes {
-    return durationMinutes;
-  }
+  /// Whole minutes for labels. The session itself keeps [durationMs].
+  static int roundedMinutesFromMs(int durationMs) =>
+      (durationMs / 60000).round();
+
+  int get displayMinutes => roundedMinutesFromMs(durationMs);
 }

@@ -22,7 +22,9 @@ import 'package:go_router/go_router.dart';
 ///
 /// `group_id` and `parent_preset_id` are never sent (no app concept for
 /// either yet). `name`/`description` have no input fields in this design, so
-/// they're derived: name is "{n} minutes", description is always "".
+/// they're derived: name is "{n} minutes" from the duration rounded to whole
+/// minutes, description is always "". The saved duration keeps hours, minutes,
+/// and seconds.
 class NewTimerScreen extends ConsumerStatefulWidget {
   const NewTimerScreen({super.key, this.timer});
 
@@ -36,11 +38,10 @@ class NewTimerScreen extends ConsumerStatefulWidget {
 }
 
 class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
-  /// What gets saved. Kept separate from [_durationMinutes] so editing a timer
-  /// whose duration isn't a whole number of minutes doesn't round it down when
-  /// the user only changed the ambient sound.
+  /// What gets saved, including seconds. Labels use this rounded to whole
+  /// minutes. An edit that only changes the ambient sound resends this value
+  /// unchanged.
   late int _durationMs;
-  late int _durationMinutes;
   late String? _ambientSoundId;
   String? _ambientSoundName;
   bool _isSubmitting = false;
@@ -56,10 +57,6 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     final timer = widget.timer;
     _durationMs =
         timer?.durationMs ?? NewTimerScreen._defaultDurationMinutes * 60000;
-    _durationMinutes =
-        timer == null
-            ? NewTimerScreen._defaultDurationMinutes
-            : (timer.durationMinutes < 1 ? 1 : timer.durationMinutes);
     _ambientSoundId = timer?.ambientSoundId;
   }
 
@@ -72,16 +69,15 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     return id == null ? null : soundsById[id]?.name;
   }
 
+  int get _roundedMinutes => PresetTimer.roundedMinutesFromMs(_durationMs);
+
   Future<void> _pickDuration() async {
     final selected = await DurationPickerSheet.show(
       context,
-      initialMinutes: _durationMinutes,
+      initialDuration: Duration(milliseconds: _durationMs),
     );
     if (selected != null && mounted) {
-      setState(() {
-        _durationMinutes = selected;
-        _durationMs = selected * 60000;
-      });
+      setState(() => _durationMs = selected.inMilliseconds);
     }
   }
 
@@ -103,7 +99,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   /// name so a timer of e.g. 90s isn't renamed to "1 minutes" by an edit that
   /// only changed the ambient sound.
   String get _timerName =>
-      _didChangeDuration ? '$_durationMinutes minutes' : widget.timer!.name;
+      _didChangeDuration ? '$_roundedMinutes minutes' : widget.timer!.name;
 
   String _failureMessage(Failure failure) =>
       failure is ValidationFailure && _durationMs <= 0
@@ -125,9 +121,9 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     setState(() => _isSubmitting = false);
 
     return result.fold((failure) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_failureMessage(failure))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_failureMessage(failure))));
       return null;
     }, (timer) => timer);
   }
@@ -186,7 +182,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
                 children: [
                   _SettingsRow(
                     label: context.l10n.timer_duration_label,
-                    value: '$_durationMinutes min',
+                    value: '$_roundedMinutes min',
                     onTap: _pickDuration,
                   ),
                   const SizedBox(height: 12),

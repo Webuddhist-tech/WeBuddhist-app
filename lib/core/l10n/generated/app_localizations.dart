@@ -6001,6 +6001,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Starting...'**
   String get timer_starting;
+
+  /// No description provided for @timer_duration_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get timer_duration_hours;
+
+  /// No description provided for @timer_duration_sec.
+  ///
+  /// In en, this message translates to:
+  /// **'sec'**
+  String get timer_duration_sec;
 }
 
 class _AppLocalizationsDelegate
