@@ -34,6 +34,18 @@ class _PlanAudioButtonState extends State<PlanAudioButton>
   }
 
   @override
+  void didUpdateWidget(covariant PlanAudioButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The reader swaps controllers when the user picks another recording.
+    // Follow the new one, or the button never hears it start playing.
+    if (oldWidget.controller == widget.controller) return;
+    oldWidget.controller.removeListener(_onControllerChanged);
+    widget.controller.addListener(_onControllerChanged);
+    _iconController.value =
+        widget.controller.buttonState == PlanAudioButtonState.pause ? 1.0 : 0.0;
+  }
+
+  @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
     _iconController.dispose();
