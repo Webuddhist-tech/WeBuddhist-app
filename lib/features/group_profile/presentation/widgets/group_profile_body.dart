@@ -11,24 +11,29 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
 import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/widgets/destructive_confirmation_dialog.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practice_card.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_post_composer_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_request_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_join_requests_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_reports_row.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_events_tab.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_draft_mapper.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_profile_link_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_links_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_members_tab.dart';
@@ -457,7 +462,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         isPracticesLoading || isEventsLoading || isPostsLoading;
     final tabs = <_GroupProfileTab>[
       if (hasPosts || canPost) _GroupProfileTab.posts,
-      if (hasEvents) _GroupProfileTab.events,
+      if (hasEvents || canPost) _GroupProfileTab.events,
       if (hasPractices) _GroupProfileTab.practices,
       _GroupProfileTab.members,
     ];
@@ -758,6 +763,10 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         isDark: isDark,
         lineHeight: lineHeight,
         pageStorageKey: pageStorageKey,
+        canCreate: canPost,
+        onCreateEvent: () => _onCreateEvent(profile),
+        onEditDraft: (item) => _onEditDraft(profile, item),
+        onDeleteDraft: (item) => _onDeleteDraft(profile, item),
       ),
       _GroupProfileTab.practices => _buildPracticesTab(
         profile,
@@ -802,6 +811,68 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
     notifier.prependPost(_withGroupFields(result.post, profile));
     notifier.loadInitial();
     if (result.saved) _showPostSnackBar(context.l10n.group_post_published);
+  }
+
+  /// Same gate as posts: `can_create_content` plus confirmed membership.
+  Future<void> _onCreateEvent(GroupProfile profile) async {
+    final authState = ref.read(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) {
+      LoginDrawer.show(context, ref);
+      return;
+    }
+    if (!_canPublishPosts(profile)) return;
+
+    await _openEventComposer(profile);
+  }
+
+  Future<void> _onEditDraft(GroupProfile profile, GroupEventCmsItem item) async {
+    if (!_canPublishPosts(profile)) return;
+    await _openEventComposer(
+      profile,
+      existing: GroupEventDraftMapper.fromJson(item.raw),
+    );
+  }
+
+  Future<void> _openEventComposer(
+    GroupProfile profile, {
+    GroupEventEditSource? existing,
+  }) async {
+    final result = await GroupEventComposerScreen.show(
+      context,
+      profile,
+      existing: existing,
+    );
+    if (result == null || !mounted) return;
+    ref.invalidate(groupEventsProvider(profile.id));
+    ref.invalidate(groupCmsEventsProvider(profile.id));
+    if (result.isDraft) _showPostSnackBar(context.l10n.group_event_draft_saved);
+    if (result.openEvent) context.push('/home/events/${result.event.id}');
+  }
+
+  Future<void> _onDeleteDraft(
+    GroupProfile profile,
+    GroupEventCmsItem item,
+  ) async {
+    final l10n = context.l10n;
+    final success = await showDestructiveConfirmationDialog(
+      context,
+      title: l10n.group_event_draft_delete_title,
+      message: l10n.group_event_draft_delete_message,
+      onConfirmed: () async {
+        final result = await ref
+            .read(groupEventComposerRepositoryProvider)
+            .deleteEvent(item.event.id);
+        return result.isRight();
+      },
+    );
+    if (!mounted || success == null) return;
+    if (success) {
+      ref.invalidate(groupCmsEventsProvider(profile.id));
+      ref.invalidate(groupEventsProvider(profile.id));
+      _showPostSnackBar(l10n.group_event_draft_deleted);
+    } else {
+      _showPostSnackBar(l10n.group_event_draft_delete_error);
+    }
   }
 
   Future<void> _onEditPost(GroupProfile profile, ConnectPost post) async {

@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_profi
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_post_add_in_app_content_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_post_add_link_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_posting_to_row.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -502,7 +503,7 @@ class _GroupPostComposerScreenState
           child: Column(
             children: [
               _buildTopBar(l10n, isDark, secondaryColor),
-              _buildPostingTo(l10n, isDark, secondaryColor),
+              GroupPostingToRow(profile: widget.profile, isDark: isDark),
               Divider(height: 1, thickness: 1, color: dividerColor),
               Expanded(
                 child: SingleChildScrollView(
@@ -633,64 +634,6 @@ class _GroupPostComposerScreenState
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPostingTo(
-    AppLocalizations l10n,
-    bool isDark,
-    Color secondaryColor,
-  ) {
-    final profile = widget.profile;
-    final avatarUrl = profile.avatarUrl;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-      child: Row(
-        children: [
-          Text(
-            l10n.group_post_posting_to,
-            style: TextStyle(fontSize: 13, color: secondaryColor),
-          ),
-          const SizedBox(width: 8),
-          ClipOval(
-            child: SizedBox(
-              width: 22,
-              height: 22,
-              child:
-                  avatarUrl != null && avatarUrl.isNotEmpty
-                      ? CachedNetworkImageWidget(
-                        imageUrl: avatarUrl,
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.cover,
-                        errorWidget: _avatarFallback(isDark),
-                      )
-                      : _avatarFallback(isDark),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              profile.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _avatarFallback(bool isDark) {
-    return ColoredBox(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-      child: Icon(
-        AppAssets.usersThree,
-        size: 12,
-        color: isDark ? AppColors.grey500 : AppColors.grey600,
       ),
     );
   }

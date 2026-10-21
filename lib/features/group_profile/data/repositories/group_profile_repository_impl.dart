@@ -345,10 +345,11 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
 
   @override
   Future<Either<Failure, GroupEventsPage>> getGroupEvents(
-    String groupId,
-  ) async {
+    String groupId, {
+    required String language,
+  }) async {
     try {
-      final model = await remote.fetchGroupEvents(groupId);
+      final model = await remote.fetchGroupEvents(groupId, language: language);
       return Right(model.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

@@ -28,6 +28,10 @@ class Env {
   /// same datasource also serves the user's collections).
   static String? get libraryChantsTagId => _nonEmpty('LIBRARY_CHANTS_TAG_ID');
 
+  /// LocationIQ key for venue search; address search is hidden when unset.
+  static String? get locationIqToken =>
+      dotenv.isInitialized ? _nonEmpty('LOCATIONIQ_TOKEN') : null;
+
   static String? _nonEmpty(String key) {
     final value = dotenv.env[key]?.trim();
     return value == null || value.isEmpty ? null : value;
