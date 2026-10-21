@@ -2278,6 +2278,12 @@ abstract class AppLocalizations {
   /// **'Bookmark'**
   String get bookmark;
 
+  /// No description provided for @collection_audio_versions.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio versions'**
+  String get collection_audio_versions;
+
   /// No description provided for @image.
   ///
   /// In en, this message translates to:

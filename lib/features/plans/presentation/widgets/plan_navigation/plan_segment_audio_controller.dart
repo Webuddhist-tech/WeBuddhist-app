@@ -199,6 +199,8 @@ class PlanSegmentAudioController extends ChangeNotifier {
     if (_hasCompleted) return;
     _hasCompleted = true;
     onSegmentComplete();
+    // Idle again so a caller that does not navigate away can replay or resume.
+    _setButtonState(PlanAudioButtonState.play);
   }
 
   /// Tears down all audio resources synchronously. Safe to call from
@@ -213,14 +215,31 @@ class PlanSegmentAudioController extends ChangeNotifier {
     _positionSub?.cancel();
     _playerStateSub = null;
     _positionSub = null;
-    _player?.stop(); // fire-and-forget; dispose() cleans up the player
+    final player = _player;
+    if (player != null) {
+      // Fire-and-forget; dispose() waits for it before freeing the player.
+      _pendingStop = player.stop().catchError((Object _) {});
+    }
   }
+
+  /// The last [cancel]'s stop, still switching the player's platform.
+  Future<void>? _pendingStop;
 
   @override
   void dispose() {
     _isDisposed = true;
     cancel();
-    _player?.dispose();
+    final player = _player;
+    _player = null;
+    if (player != null) {
+      // just_audio 0.9.x throws "Cannot complete a future with itself" when
+      // dispose() lands while stop() is still swapping platforms, so let the
+      // stop finish first. The timeout keeps a stuck stop from leaking it.
+      final stopped = (_pendingStop ?? Future<void>.value())
+          .timeout(const Duration(seconds: 2), onTimeout: () {})
+          .catchError((Object _) {});
+      unawaited(stopped.whenComplete(() => player.dispose()));
+    }
     super.dispose();
   }
 }

@@ -18,6 +18,7 @@ import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_recitation_collection_row.dart';
+import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -101,6 +102,9 @@ class _GroupRecitationCollectionScreenState
                         onOpenItem:
                             (item) =>
                                 _openReaderAndComplete(key, item, collection),
+                        onPlayItem:
+                            (item) =>
+                                _openReaderOnFirstAudio(key, item, collection),
                         onShare: () => _onShare(collection),
                       ),
                     ),
@@ -152,11 +156,28 @@ class _GroupRecitationCollectionScreenState
     });
   }
 
-  Future<void> _openReaderAndComplete(
+  /// Opens the reader and starts the first recording on this chant.
+  Future<void> _openReaderOnFirstAudio(
     GroupRecitationCollectionKey key,
     GroupRecitationCollectionItem item,
     GroupRecitationCollection collection,
-  ) async {
+  ) {
+    final tracks = collectionAudioTracksFor(item);
+    if (tracks.isEmpty) return Future.value();
+    return _openReaderAndComplete(
+      key,
+      item,
+      collection,
+      initialAudio: tracks.first,
+    );
+  }
+
+  Future<void> _openReaderAndComplete(
+    GroupRecitationCollectionKey key,
+    GroupRecitationCollectionItem item,
+    GroupRecitationCollection collection, {
+    CollectionAudioTrack? initialAudio,
+  }) async {
     final textId = item.textId.trim();
     final chantId = item.id.trim();
     if (textId.isEmpty || chantId.isEmpty) return;
@@ -168,6 +189,7 @@ class _GroupRecitationCollectionScreenState
       completionState: ref.read(
         groupRecitationCollectionCompletionProvider(key),
       ),
+      initialAudio: initialAudio,
     );
 
     await context.push('/reader/$textId', extra: navigationContext);
@@ -295,6 +317,7 @@ class _CollectionContent extends StatelessWidget {
     required this.completionState,
     required this.isDark,
     required this.onOpenItem,
+    required this.onPlayItem,
     required this.onShare,
   });
 
@@ -302,6 +325,7 @@ class _CollectionContent extends StatelessWidget {
   final GroupRecitationCollectionCompletionState completionState;
   final bool isDark;
   final ValueChanged<GroupRecitationCollectionItem> onOpenItem;
+  final ValueChanged<GroupRecitationCollectionItem> onPlayItem;
   final VoidCallback onShare;
 
   @override
@@ -332,6 +356,8 @@ class _CollectionContent extends StatelessWidget {
                       isCompleted: completionState.isCompleted(item.id),
                       isSubmitting: completionState.isSubmitting(item.id),
                       onTap: () => onOpenItem(item),
+                      onPlay:
+                          item.audio.isEmpty ? null : () => onPlayItem(item),
                     ),
                   )
                 else

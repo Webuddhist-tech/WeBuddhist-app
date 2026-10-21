@@ -84,6 +84,7 @@ class NavigationService {
         navigationDirection: resolvedDirection,
         groupId: currentContext.groupId,
         collectionId: currentContext.collectionId,
+        collectionAudioTracks: currentContext.collectionAudioTracks,
         language: target.language,
         eventId: currentContext.eventId,
       );

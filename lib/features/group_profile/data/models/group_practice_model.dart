@@ -1,8 +1,35 @@
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_accumulator_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart';
+
+class GroupRecitationAudioModel {
+  final String id;
+  final String title;
+  final String assetUrl;
+
+  GroupRecitationAudioModel({
+    required this.id,
+    required this.title,
+    required this.assetUrl,
+  });
+
+  factory GroupRecitationAudioModel.fromJson(Map<String, dynamic> json) {
+    final title = (json['title'] as String?)?.trim() ?? '';
+    final fileName = (json['file_name'] as String?)?.trim() ?? '';
+    return GroupRecitationAudioModel(
+      id: json['id'] as String? ?? '',
+      title: title.isNotEmpty ? title : fileName,
+      assetUrl: json['asset_url'] as String? ?? '',
+    );
+  }
+
+  GroupRecitationAudio toEntity() {
+    return GroupRecitationAudio(id: id, title: title, assetUrl: assetUrl);
+  }
+}
 
 class GroupRecitationCollectionItemModel {
   final String id;
@@ -11,6 +38,7 @@ class GroupRecitationCollectionItemModel {
   final String language;
   final String type;
   final int displayOrder;
+  final List<GroupRecitationAudioModel> audio;
 
   GroupRecitationCollectionItemModel({
     required this.id,
@@ -19,6 +47,7 @@ class GroupRecitationCollectionItemModel {
     required this.language,
     required this.type,
     required this.displayOrder,
+    this.audio = const [],
   });
 
   factory GroupRecitationCollectionItemModel.fromJson(
@@ -31,7 +60,19 @@ class GroupRecitationCollectionItemModel {
       language: json['language'] as String? ?? 'en',
       type: json['type'] as String? ?? '',
       displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+      audio: _parseAudio(json['audio']),
     );
+  }
+
+  /// Keeps recordings that have a playable URL. The title is kept as sent,
+  /// including a trailing `.mp3`.
+  static List<GroupRecitationAudioModel> _parseAudio(Object? raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map(GroupRecitationAudioModel.fromJson)
+        .where((audio) => hasPlayableAudio(audio.assetUrl))
+        .toList();
   }
 
   GroupRecitationCollectionItem toEntity() {
@@ -42,6 +83,7 @@ class GroupRecitationCollectionItemModel {
       language: language,
       type: type,
       displayOrder: displayOrder,
+      audio: audio.map((track) => track.toEntity()).toList(),
     );
   }
 }
@@ -66,7 +108,8 @@ class GroupRecitationCollectionModel {
   });
 
   factory GroupRecitationCollectionModel.fromJson(Map<String, dynamic> json) {
-    final items = (json['items'] as List<dynamic>?)
+    final items =
+        (json['items'] as List<dynamic>?)
             ?.whereType<Map<String, dynamic>>()
             .map(GroupRecitationCollectionItemModel.fromJson)
             .toList() ??

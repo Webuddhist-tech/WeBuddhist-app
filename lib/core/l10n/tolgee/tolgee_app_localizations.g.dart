@@ -2433,6 +2433,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
       TolgeeBridge.get(localeName, 'bookmark', () => _fallback.bookmark);
 
   @override
+  String get collection_audio_versions => TolgeeBridge.get(
+    localeName,
+    'collection_audio_versions',
+    () => _fallback.collection_audio_versions,
+  );
+
+  @override
   String get image =>
       TolgeeBridge.get(localeName, 'image', () => _fallback.image);
 

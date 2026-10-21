@@ -1183,6 +1183,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get bookmark => '書籤';
 
   @override
+  String get collection_audio_versions => 'Audio versions';
+
+  @override
   String get image => '圖片';
 
   @override

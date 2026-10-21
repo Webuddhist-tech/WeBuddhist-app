@@ -1247,6 +1247,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get bookmark => 'དཔེ་རྟགས།';
 
   @override
+  String get collection_audio_versions => 'Audio versions';
+
+  @override
   String get image => 'འདྲ་པར།';
 
   @override
