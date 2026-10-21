@@ -145,6 +145,8 @@ class _GroupEventVenueSheetState extends ConsumerState<GroupEventVenueSheet> {
               child: TextField(
                 controller: _query,
                 autofocus: true,
+                autocorrect: false,
+                enableSuggestions: false,
                 textInputAction: TextInputAction.search,
                 onChanged: _onChanged,
                 style: const TextStyle(fontSize: 15),
