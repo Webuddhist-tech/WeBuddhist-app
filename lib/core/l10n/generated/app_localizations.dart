@@ -367,19 +367,19 @@ abstract class AppLocalizations {
   /// No description provided for @mala_add_rounds_title.
   ///
   /// In en, this message translates to:
-  /// **'Add mala rounds'**
+  /// **'Add mala rounds:'**
   String get mala_add_rounds_title;
 
   /// No description provided for @mala_add_rounds_message.
   ///
   /// In en, this message translates to:
-  /// **'Add the number of mala rounds you did outside this app'**
+  /// **'Add the mala rounds you did outside the app'**
   String get mala_add_rounds_message;
 
   /// Unit shown beside the number picked in the add mala rounds wheel
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1 {round} other {rounds}}'**
+  /// **'{count, plural,\n=1 {round}\nother {rounds}\n}'**
   String mala_rounds_unit(int count);
 
   /// No description provided for @mala_add_to_bookmark.
@@ -5789,7 +5789,7 @@ abstract class AppLocalizations {
   /// No description provided for @help_context_photos.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 photo} other{{count} photos}}'**
+  /// **'{count, plural,\n=1 {1 photo}\nother {{count} photos}\n}'**
   String help_context_photos(int count);
 
   /// No description provided for @chat_official_badge.
@@ -6185,7 +6185,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_event_duration_days.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 day} other{{count} days}}'**
+  /// **'{count, plural,\n=1 {1 day}\nother {{count} days}\n}'**
   String group_event_duration_days(int count);
 
   /// No description provided for @group_event_repeats_weekly.
@@ -6527,7 +6527,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_event_add_practices_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =0{Add practices} =1{Add 1 practice} other{Add {count} practices}}'**
+  /// **'{count, plural,\n=0 {Add practices}\n=1 {Add 1 practice}\nother {Add {count} practices}\n}'**
   String group_event_add_practices_count(int count);
 
   /// No description provided for @group_event_counted_by.
@@ -6801,7 +6801,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_event_intentions_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 intention} other{{count} intentions}}'**
+  /// **'{count, plural,\n=1 {1 intention}\nother {{count} intentions}\n}'**
   String group_event_intentions_count(int count);
 
   /// No description provided for @group_event_publish.
@@ -7035,7 +7035,7 @@ abstract class AppLocalizations {
   /// No description provided for @group_event_manage_attendees_add.
   ///
   /// In en, this message translates to:
-  /// **'Attendees add in app · {count} from {people, plural, =1{1 person} other{{people} people}}'**
+  /// **'{people, plural,\n=1 {Attendees add in app · {count} from 1 person}\nother {Attendees add in app · {count} from {people} people}\n}'**
   String group_event_manage_attendees_add(String count, int people);
 
   /// No description provided for @group_event_manage_add_count.

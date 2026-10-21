@@ -4044,10 +4044,10 @@ class AppLocalizationsHi extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       people,
       locale: localeName,
-      other: '$people people',
-      one: '1 person',
+      other: 'Attendees add in app · $count from $people people',
+      one: 'Attendees add in app · $count from 1 person',
     );
-    return 'Attendees add in app · $count from $_temp0';
+    return '$_temp0';
   }
 
   @override

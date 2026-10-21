@@ -148,11 +148,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mala_add_mala_round => 'Add mala round';
 
   @override
-  String get mala_add_rounds_title => 'Add mala rounds';
+  String get mala_add_rounds_title => 'Add mala rounds:';
 
   @override
   String get mala_add_rounds_message =>
-      'Add the number of mala rounds you did outside this app';
+      'Add the mala rounds you did outside the app';
 
   @override
   String mala_rounds_unit(int count) {
@@ -4015,10 +4015,10 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       people,
       locale: localeName,
-      other: '$people people',
-      one: '1 person',
+      other: 'Attendees add in app · $count from $people people',
+      one: 'Attendees add in app · $count from 1 person',
     );
-    return 'Attendees add in app · $count from $_temp0';
+    return '$_temp0';
   }
 
   @override
