@@ -40,7 +40,11 @@ class GroupEventTimeSheet extends StatefulWidget {
 }
 
 class _GroupEventTimeSheetState extends State<GroupEventTimeSheet> {
-  late GroupEventTime _value = widget.initial;
+  // The wheel steps by 5 minutes, so start from the minute it shows.
+  late GroupEventTime _value = GroupEventTime(
+    widget.initial.hour,
+    widget.initial.minute - widget.initial.minute % 5,
+  );
 
   @override
   Widget build(BuildContext context) {

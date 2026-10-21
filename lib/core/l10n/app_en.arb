@@ -1876,6 +1876,7 @@
   "group_event_count_mode_admin": "Admin adds for in-person attendees",
   "group_event_count_mode_admin_hint": "You enter the group's count, i.e. people × rounds",
   "group_event_count_mode_admin_short": "Admin adds",
+  "group_event_count_mode_attendees_taken": "Another accumulation already uses this. Attendees can add counts to only one accumulation per event.",
   "group_event_remove_practice": "Remove {title}",
   "@group_event_remove_practice": {
     "placeholders": {

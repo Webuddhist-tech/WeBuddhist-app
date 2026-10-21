@@ -6572,6 +6572,12 @@ abstract class AppLocalizations {
   /// **'Admin adds'**
   String get group_event_count_mode_admin_short;
 
+  /// No description provided for @group_event_count_mode_attendees_taken.
+  ///
+  /// In en, this message translates to:
+  /// **'Another accumulation already uses this. Attendees can add counts to only one accumulation per event.'**
+  String get group_event_count_mode_attendees_taken;
+
   /// No description provided for @group_event_remove_practice.
   ///
   /// In en, this message translates to:

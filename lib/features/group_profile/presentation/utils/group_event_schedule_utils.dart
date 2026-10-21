@@ -124,7 +124,7 @@ class GroupEventScheduleUtils {
     switch (rule.frequency) {
       case GroupEventRecurrenceFrequency.weekly:
         for (var i = 1; i <= count; i++) {
-          results.add(start.add(Duration(days: 7 * i)));
+          results.add(DateTime(start.year, start.month, start.day + 7 * i));
         }
       case GroupEventRecurrenceFrequency.monthly:
         final day = rule.day ?? start.day;
@@ -166,7 +166,8 @@ class GroupEventScheduleUtils {
     final limit = yearly ? 400 * count : 40 * count;
     var cursor = start;
     for (var i = 0; i < limit && results.length < count; i++) {
-      cursor = cursor.add(const Duration(days: 1));
+      // Calendar days, not 24h steps, so a DST change cannot shift the date.
+      cursor = DateTime(cursor.year, cursor.month, cursor.day + 1);
       final lunar = calendar.fromWestern(cursor);
       if (lunar.day != rule.day || lunar.isLeapDay) continue;
       if (yearly && (lunar.month != rule.month || lunar.isLeapMonth)) continue;

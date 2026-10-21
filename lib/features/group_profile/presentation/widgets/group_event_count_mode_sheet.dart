@@ -8,15 +8,29 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 class GroupEventCountModeSheet extends StatelessWidget {
   final GroupEventCountMode selected;
 
-  const GroupEventCountModeSheet({super.key, required this.selected});
+  /// True when another accumulation on the event already takes attendee
+  /// counts. The event page only offers count entry for one, so the
+  /// attendees option is disabled.
+  final bool attendeesTaken;
+
+  const GroupEventCountModeSheet({
+    super.key,
+    required this.selected,
+    this.attendeesTaken = false,
+  });
 
   static Future<GroupEventCountMode?> show(
     BuildContext context, {
     required GroupEventCountMode selected,
+    bool attendeesTaken = false,
   }) {
     return GroupEventSheet.show<GroupEventCountMode>(
       context,
-      builder: (_) => GroupEventCountModeSheet(selected: selected),
+      builder:
+          (_) => GroupEventCountModeSheet(
+            selected: selected,
+            attendeesTaken: attendeesTaken,
+          ),
     );
   }
 
@@ -29,10 +43,15 @@ class GroupEventCountModeSheet extends StatelessWidget {
         isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final activeColor = isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
 
-    Widget option(GroupEventCountMode mode, String title, String hint) {
+    Widget option(
+      GroupEventCountMode mode,
+      String title,
+      String hint, {
+      bool enabled = true,
+    }) {
       final isSelected = mode == selected;
-      return InkWell(
-        onTap: () => Navigator.of(context).pop(mode),
+      final row = InkWell(
+        onTap: enabled ? () => Navigator.of(context).pop(mode) : null,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 12, 20, 12),
           child: Row(
@@ -66,7 +85,11 @@ class GroupEventCountModeSheet extends StatelessWidget {
           ),
         ),
       );
+      return enabled ? row : Opacity(opacity: 0.5, child: row);
     }
+
+    final attendeesDisabled =
+        attendeesTaken && selected != GroupEventCountMode.attendees;
 
     return GroupEventSheet(
       title: l10n.group_event_count_mode_title,
@@ -76,7 +99,10 @@ class GroupEventCountModeSheet extends StatelessWidget {
           option(
             GroupEventCountMode.attendees,
             l10n.group_event_count_mode_attendees,
-            l10n.group_event_count_mode_attendees_hint,
+            attendeesDisabled
+                ? l10n.group_event_count_mode_attendees_taken
+                : l10n.group_event_count_mode_attendees_hint,
+            enabled: !attendeesDisabled,
           ),
           Divider(height: 1, thickness: 1, color: dividerColor),
           option(

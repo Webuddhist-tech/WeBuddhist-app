@@ -49,6 +49,34 @@ class CreateGroupEventRequest {
     this.recurrence,
   });
 
+  CreateGroupEventRequest copyWith({
+    List<GroupEventLinkRequest>? links,
+    List<GroupEventYoutubeRequest>? youtube,
+    List<GroupEventAccumulationRequest>? accumulations,
+  }) {
+    return CreateGroupEventRequest(
+      groupId: groupId,
+      status: status,
+      startDate: startDate,
+      endDate: endDate,
+      timezone: timezone,
+      metadata: metadata,
+      links: links ?? this.links,
+      youtube: youtube ?? this.youtube,
+      imageUrl: imageUrl,
+      planId: planId,
+      seriesId: seriesId,
+      groupRecitationCollectionId: groupRecitationCollectionId,
+      accumulations: accumulations ?? this.accumulations,
+      locationId: locationId,
+      eventFormat: eventFormat,
+      chatEnabled: chatEnabled,
+      notificationsEnabled: notificationsEnabled,
+      intentionIds: intentionIds,
+      recurrence: recurrence,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'group_id': groupId,
     if (startDate != null) 'start_date': startDate,

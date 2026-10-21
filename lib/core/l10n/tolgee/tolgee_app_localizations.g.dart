@@ -7428,6 +7428,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_event_count_mode_attendees_taken => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_attendees_taken',
+    () => _fallback.group_event_count_mode_attendees_taken,
+  );
+
+  @override
   String group_event_remove_practice(String title) => TolgeeBridge.format(
     localeName,
     'group_event_remove_practice',

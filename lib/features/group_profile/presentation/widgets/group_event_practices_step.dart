@@ -45,6 +45,13 @@ class GroupEventPracticesStep extends StatelessWidget {
     final mode = await GroupEventCountModeSheet.show(
       context,
       selected: pick.countMode,
+      // The event page takes attendee counts for one accumulation only.
+      attendeesTaken: draft.practices.any(
+        (item) =>
+            item.id != pick.id &&
+            item.kind == GroupEventPracticeKind.accumulator &&
+            item.countMode == GroupEventCountMode.attendees,
+      ),
     );
     if (mode == null) return;
     onPracticesChanged([

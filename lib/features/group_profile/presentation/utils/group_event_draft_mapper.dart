@@ -17,6 +17,13 @@ class GroupEventEditSource {
   /// A live event: saving keeps it published and closing never drafts it.
   final bool isPublished;
 
+  /// The `links`, `youtube` and `accumulations` rows as loaded, sorted by
+  /// display order. The draft keeps only part of them (one live link, no
+  /// languages), so a save merges the user's changes back into these.
+  final List<Map<String, dynamic>> serverLinks;
+  final List<Map<String, dynamic>> serverYoutube;
+  final List<Map<String, dynamic>> serverAccumulations;
+
   const GroupEventEditSource({
     required this.eventId,
     required this.draft,
@@ -25,6 +32,9 @@ class GroupEventEditSource {
     this.imageUrl,
     this.intentionSlugs = const [],
     this.isPublished = false,
+    this.serverLinks = const [],
+    this.serverYoutube = const [],
+    this.serverAccumulations = const [],
   });
 
   bool sameVenue(GroupEventVenueDraft? other) {
@@ -107,11 +117,13 @@ class GroupEventDraftMapper {
 
     final videos = <GroupEventVideoDraft>[];
     String liveLink = '';
-    for (final link in _sortedLinks(json['youtube'])) {
+    final serverYoutube = _sortedLinks(json['youtube']);
+    final serverLinks = _sortedLinks(json['links']);
+    for (final link in serverYoutube) {
       final url = (link['url'] as String? ?? '').trim();
       if (url.isNotEmpty && liveLink.isEmpty) liveLink = url;
     }
-    for (final link in _sortedLinks(json['links'])) {
+    for (final link in serverLinks) {
       final url = (link['url'] as String? ?? '').trim();
       if (url.isEmpty) continue;
       final type = (link['type'] as String? ?? '').trim().toLowerCase();
@@ -175,10 +187,7 @@ class GroupEventDraftMapper {
           kind: GroupEventPracticeKind.accumulator,
           title: (map?['name'] as String? ?? '').trim(),
           imageUrl: map?['image_url'] as String?,
-          countMode:
-              row['event_format'] == 'online'
-                  ? GroupEventCountMode.attendees
-                  : GroupEventCountMode.admin,
+          countMode: _countMode(row),
         ),
       );
     }
@@ -193,12 +202,14 @@ class GroupEventDraftMapper {
     return GroupEventEditSource(
       eventId: json['id'] as String? ?? '',
       isPublished:
-          (json['status'] as String? ?? 'published').toLowerCase() !=
-          'draft',
+          (json['status'] as String? ?? 'published').toLowerCase() != 'draft',
       locationId: json['location_id'] as String?,
       venue: venue,
       imageUrl: imageUrl,
       intentionSlugs: intentionSlugs,
+      serverLinks: serverLinks,
+      serverYoutube: serverYoutube,
+      serverAccumulations: accumulations,
       draft: GroupEventDraft(
         metadata: metadata,
         cover: imageUrl == null ? null : GroupEventCoverUrl(imageUrl),
@@ -259,6 +270,18 @@ class GroupEventDraftMapper {
       dayOfWeek: (value['day_of_week'] as num?)?.toInt(),
       durationDays: (value['duration_days'] as num?)?.toInt() ?? 1,
     );
+  }
+
+  /// `count_mode` decides; older rows without one fall back to the format.
+  static GroupEventCountMode _countMode(Map<String, dynamic> row) {
+    final saved =
+        GroupEventCountMode.values
+            .where((mode) => mode.countMode == row['count_mode'])
+            .firstOrNull;
+    if (saved != null) return saved;
+    return row['event_format'] == 'online'
+        ? GroupEventCountMode.attendees
+        : GroupEventCountMode.admin;
   }
 
   static List<Map<String, dynamic>> _sortedLinks(Object? value) {

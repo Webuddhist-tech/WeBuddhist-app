@@ -30,6 +30,22 @@ void main() {
   });
 
   group('nextOccurrences', () {
+    test('lunar dates are whole calendar days, without repeats', () {
+      final rules = GroupEventScheduleUtils.rulesForDate(monday, calendar);
+      final next = GroupEventScheduleUtils.nextOccurrences(
+        rules[2],
+        monday,
+        calendar,
+        count: 6,
+      );
+      expect(next, hasLength(6));
+      expect(next.toSet(), hasLength(6));
+      for (final date in next) {
+        expect(date, DateTime(date.year, date.month, date.day));
+        expect(calendar.fromWestern(date).day, rules[2].day);
+      }
+    });
+
     test('weekly steps seven days', () {
       final rules = GroupEventScheduleUtils.rulesForDate(monday, calendar);
       final next = GroupEventScheduleUtils.nextOccurrences(

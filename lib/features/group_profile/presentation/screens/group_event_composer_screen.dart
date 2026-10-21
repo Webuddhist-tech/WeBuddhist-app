@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_draft_mapper.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_request_builder.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_update_merge.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_schedule_utils.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_about_step.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_event_cover_sheet.dart';
@@ -439,20 +440,29 @@ class _GroupEventComposerScreenState
       locationId: locationId,
       now: now,
     );
-    final result =
+    // Built the same way as [request], so only the user's changes differ.
+    final original =
         existing == null
+            ? null
+            : GroupEventRequestBuilder.build(
+              _loadedDraft ?? existing.draft,
+              groupId: widget.profile.id,
+              status: existing.isPublished ? 'published' : 'draft',
+              locationId: existing.locationId,
+              now: now,
+            );
+    final result =
+        existing == null || original == null
             ? await repository.createEvent(request)
             : await repository.updateEvent(
               existing.eventId,
-              request,
-              // Built the same way, so only the user's changes differ.
-              original: GroupEventRequestBuilder.build(
-                _loadedDraft ?? existing.draft,
-                groupId: widget.profile.id,
-                status: existing.isPublished ? 'published' : 'draft',
-                locationId: existing.locationId,
-                now: now,
+              // Keeps saved studio data the draft does not model.
+              GroupEventUpdateMerge.apply(
+                request,
+                original: original,
+                source: existing,
               ),
+              original: original,
             );
     if (!mounted) return null;
     return result.fold((failure) {

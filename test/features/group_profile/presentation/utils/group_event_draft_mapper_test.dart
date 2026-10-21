@@ -163,4 +163,35 @@ void main() {
     expect(source.draft.cover, isNull);
     expect(source.draft.format, GroupEventFormat.hybrid);
   });
+
+  test('count_mode decides the counting mode, the format only without one', () {
+    final source = GroupEventDraftMapper.fromJson({
+      'id': 'ev-2',
+      'accumulations': [
+        {
+          'group_accumulator_id': 'a1',
+          'event_format': 'offline',
+          'count_mode': 'offline_participants',
+          'display_order': 1,
+        },
+        {
+          'group_accumulator_id': 'a2',
+          'event_format': 'online',
+          'count_mode': 'manual_in_person',
+          'display_order': 2,
+        },
+        {
+          'group_accumulator_id': 'a3',
+          'event_format': 'online',
+          'display_order': 3,
+        },
+      ],
+    });
+    expect(source.draft.practices.map((p) => p.countMode).toList(), [
+      GroupEventCountMode.attendees,
+      GroupEventCountMode.admin,
+      GroupEventCountMode.attendees,
+    ]);
+    expect(source.serverAccumulations, hasLength(3));
+  });
 }

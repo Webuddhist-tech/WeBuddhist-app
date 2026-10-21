@@ -83,9 +83,10 @@ class _GroupEventVenueSheetState extends ConsumerState<GroupEventVenueSheet> {
 
   void _onChanged(String value) {
     _debounce?.cancel();
+    // Any edit makes an in-flight search stale.
+    _generation++;
     final trimmed = value.trim();
     if (trimmed.length < PlaceSearchRemoteDatasource.minQueryLength) {
-      _generation++;
       setState(() {
         _results = const [];
         _isSearching = false;

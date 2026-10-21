@@ -3746,6 +3746,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_event_count_mode_admin_short => 'Admin adds';
 
   @override
+  String get group_event_count_mode_attendees_taken =>
+      'Another accumulation already uses this. Attendees can add counts to only one accumulation per event.';
+
+  @override
   String group_event_remove_practice(String title) {
     return 'Remove $title';
   }
