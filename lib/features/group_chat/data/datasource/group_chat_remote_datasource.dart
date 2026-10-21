@@ -198,6 +198,21 @@ class GroupChatRemoteDatasource {
     );
   }
 
+  /// Sends [body] to [userId]'s direct room with the viewer, as a reply to
+  /// [parentMessageId] when given. The server creates that room on the first
+  /// message and reuses it after.
+  Future<ChatMessageDTO> sendDirectMessage(
+    String userId, {
+    required String body,
+    String? parentMessageId,
+  }) async {
+    return _sendMessage(
+      '/chat/users/$userId/messages',
+      body: body,
+      parentMessageId: parentMessageId,
+    );
+  }
+
   Future<ChatMessageDTO> _sendMessage(
     String path, {
     required String body,

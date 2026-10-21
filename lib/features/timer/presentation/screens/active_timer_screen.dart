@@ -51,7 +51,7 @@ class ActiveTimerScreen extends ConsumerStatefulWidget {
 
 class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     with WidgetsBindingObserver {
-  static const _countdownStart = 5;
+  static const _countdownStart = 3;
   static const _ringSize = 280.0;
   static const _controlsSpacing = 48.0;
   static const _controlsHeight = 56.0;
@@ -75,12 +75,17 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   /// once finished.
   DateTime? _endsAt;
 
-  /// Same idea for the 5-second pre-roll.
+  /// Same idea for the 3-second pre-roll.
   DateTime? _countdownEndsAt;
 
   /// Elapsed time of the last reported stop, so pausing and then finishing does
   /// not post the same session twice.
   int? _lastReportedMs;
+
+  /// Finish, discard, and countdown Cancel all pop this route. A second leave
+  /// (system back landing in the same frame as the button) must not pop the
+  /// screen underneath.
+  bool _hasLeft = false;
 
   /// Carried on `timer_completed`.
   bool _wasBackgrounded = false;
@@ -343,10 +348,9 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     );
     _showRunningNotification(endsAt);
     _armCompletionBellIfBackgrounded(endsAt);
-    ref.read(timerAnalyticsProvider).timerStarted(
-      presetId: _presetId,
-      durationSeconds: _totalMs ~/ 1000,
-    );
+    ref
+        .read(timerAnalyticsProvider)
+        .timerStarted(presetId: _presetId, durationSeconds: _totalMs ~/ 1000);
   }
 
   /// Fetches the sound catalogue for this session.
@@ -478,12 +482,14 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     unawaited(_ambientPlayer.stop());
     _clearBackgroundSurfaces();
     _reportTimerStop();
-    ref.read(timerAnalyticsProvider).timerCompleted(
-      presetId: _presetId,
-      durationSeconds: _totalMs ~/ 1000,
-      wasBackgrounded: _wasBackgrounded,
-      pauseCount: _pauseCount,
-    );
+    ref
+        .read(timerAnalyticsProvider)
+        .timerCompleted(
+          presetId: _presetId,
+          durationSeconds: _totalMs ~/ 1000,
+          wasBackgrounded: _wasBackgrounded,
+          pauseCount: _pauseCount,
+        );
   }
 
   /// Rings the completion bell, holding the app awake until it has finished.
@@ -546,6 +552,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _finish() {
+    if (_hasLeft) return;
+    _hasLeft = true;
     _timer?.cancel();
     unawaited(_keepAlive.stop());
     unawaited(_ambientPlayer.stop());
@@ -558,6 +566,8 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   }
 
   void _discardSession() {
+    if (_hasLeft) return;
+    _hasLeft = true;
     _timer?.cancel();
     unawaited(_keepAlive.stop());
     unawaited(_ambientPlayer.stop());
@@ -569,12 +579,14 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
   /// The session ended before the bell, by Finish or Discard.
   void _trackDiscarded() {
     final elapsedMs = _elapsedMs;
-    ref.read(timerAnalyticsProvider).timerDiscarded(
-      presetId: _presetId,
-      elapsedSeconds: elapsedMs ~/ 1000,
-      pctComplete:
-          _totalMs <= 0 ? 100 : (elapsedMs * 100 ~/ _totalMs).clamp(0, 100),
-    );
+    ref
+        .read(timerAnalyticsProvider)
+        .timerDiscarded(
+          presetId: _presetId,
+          elapsedSeconds: elapsedMs ~/ 1000,
+          pctComplete:
+              _totalMs <= 0 ? 100 : (elapsedMs * 100 ~/ _totalMs).clamp(0, 100),
+        );
   }
 
   void _reportTimerStop() {
@@ -747,8 +759,15 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
     final textColor = Theme.of(context).colorScheme.onSurface;
     final finishFontSize = textTheme.labelLarge?.fontSize ?? 16.0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isCountdown = _phase == _TimerPhase.countdown;
+
     return PopScope(
       canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || _phase != _TimerPhase.countdown) return;
+        _discardSession();
+      },
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
@@ -764,38 +783,76 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
                         progress: _elapsedProgress,
                         child: _buildCenterContent(textColor),
                       ),
-                      const SizedBox(height: _controlsSpacing),
-                      SizedBox(
-                        height: _controlsHeight,
-                        child:
-                            _phase == _TimerPhase.running
-                                ? IconButton(
-                                  onPressed: _togglePause,
-                                  iconSize: 40,
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: _controlsHeight,
-                                    minHeight: _controlsHeight,
-                                  ),
-                                  icon: Icon(
-                                    _isPaused
-                                        ? AppAssets.play
-                                        : AppAssets.pause,
-                                    color: textColor,
-                                  ),
-                                )
-                                : null,
-                      ),
+                      if (isCountdown) ...[
+                        const SizedBox(height: 28),
+                        Text(
+                          l10n.timer_starting,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color:
+                                isDark
+                                    ? AppColors.textTertiaryDark
+                                    : AppColors.textSecondary,
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: _controlsSpacing),
+                        SizedBox(
+                          height: _controlsHeight,
+                          child:
+                              _phase == _TimerPhase.running
+                                  ? IconButton(
+                                    onPressed: _togglePause,
+                                    iconSize: 40,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: _controlsHeight,
+                                      minHeight: _controlsHeight,
+                                    ),
+                                    icon: Icon(
+                                      _isPaused
+                                          ? AppAssets.play
+                                          : AppAssets.pause,
+                                      color: textColor,
+                                    ),
+                                  )
+                                  : null,
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-              Visibility(
-                visible: _phase != _TimerPhase.countdown,
-                maintainSize: true,
-                maintainAnimation: true,
-                maintainState: true,
-                child: Padding(
+              if (isCountdown)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                  child: Center(
+                    child: FilledButton(
+                      onPressed: _discardSession,
+                      style: FilledButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor:
+                            isDark
+                                ? AppColors.chipBackgroundDark
+                                : AppColors.grey100,
+                        foregroundColor: textColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 36,
+                          vertical: 14,
+                        ),
+                        shape: const StadiumBorder(),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      child: Text(l10n.cancel),
+                    ),
+                  ),
+                )
+              else
+                Padding(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -865,7 +922,6 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
                     ],
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -880,16 +936,18 @@ class _ActiveTimerScreenState extends ConsumerState<ActiveTimerScreen>
             ? '$_countdownValue'
             : _formatDuration(_remainingMs);
 
+    final isCountdown = _phase == _TimerPhase.countdown;
+
     return SizedBox(
-      height: _centerTextHeight,
+      height: isCountdown ? 64 : _centerTextHeight,
       child: Center(
         child: Text(
           text,
           style: textTheme.displaySmall?.copyWith(
-            fontSize: _durationFontSize,
-            fontWeight: FontWeight.w600,
+            fontSize: isCountdown ? 56 : _durationFontSize,
+            fontWeight: isCountdown ? FontWeight.w500 : FontWeight.w600,
             height: 1,
-            letterSpacing: 1,
+            letterSpacing: isCountdown ? 0 : 1,
             color: textColor,
           ),
         ),

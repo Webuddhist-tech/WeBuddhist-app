@@ -759,7 +759,6 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
               ? _buildLoading()
               : GroupChatThread(
                 roomId: roomId,
-                groupId: widget.groupId,
                 targetMessageId: widget.targetMessageId,
                 onReply: _startReply,
                 onSelectionChanged: _onSelectionChanged,

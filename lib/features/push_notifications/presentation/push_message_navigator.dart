@@ -80,6 +80,9 @@ enum PushTapTarget {
   seriesDetail,
   timers,
   groupChat,
+
+  /// A direct chat, keyed by room id.
+  directChat,
   postDetail,
   eventDetail,
   groupProfile,
@@ -137,15 +140,18 @@ PushTapResolution resolvePushTap(Map<String, dynamic> data) {
     case PushSessionType.chat:
       final prayer = _eventRoomResolution(data, roomId: sourceId);
       if (prayer != null) return prayer;
-      // The payload's `source_id` is the *room* id, but the only chat screen
-      // in the app is keyed by group id, so route with `group_id`.
+      // The payload's `source_id` is the *room* id, but group chat is keyed
+      // by group id, so route with `group_id`.
       final groupId = (data['group_id'] as String?)?.trim() ?? '';
       if (_chatKindOf(data) == PushChatKind.group && groupId.isNotEmpty) {
         return PushTapResolution(PushTapTarget.groupChat, sourceId: groupId);
       }
-      // Private chats (and group chats missing a group id) fall back to Home:
-      // the app has no private/1:1 chat screen yet, so there is nowhere else
-      // to send them. Don't "fix" this to a chat route until one exists.
+      // Direct chat is keyed by room, which is exactly `source_id`.
+      if (_chatKindOf(data) == PushChatKind.private && sourceId.isNotEmpty) {
+        return PushTapResolution(PushTapTarget.directChat, sourceId: sourceId);
+      }
+      // Group chats missing a group id, and private ones missing a room id,
+      // have nowhere to go but Home.
       return const PushTapResolution(PushTapTarget.home);
     case PushSessionType.groupPost when sourceId.isNotEmpty:
       return PushTapResolution(PushTapTarget.postDetail, sourceId: sourceId);
@@ -311,6 +317,10 @@ class PushMessageNavigator {
         // Group chat is a top-level route, outside the /home shell, so it is
         // pushed directly — same as the in-app call sites on group profile.
         router.push(AppRoutes.groupChatPath(sourceId));
+
+      case PushTapTarget.directChat:
+        // Top-level as well, so pushed directly like group chat.
+        router.push(AppRoutes.directChatPath(sourceId));
 
       case PushTapTarget.postDetail:
         router.go(AppRoutes.home);

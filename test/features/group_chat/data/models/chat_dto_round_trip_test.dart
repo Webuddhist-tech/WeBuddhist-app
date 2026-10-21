@@ -202,5 +202,33 @@ void main() {
       expect(encoded['other_user_email'], 'ada@example.com');
       expect(ChatRoomDTO.fromJson(encoded), first);
     });
+
+    test('ChatRoomDTO is_official marks the WeBuddhist Team chat', () {
+      const json = {
+        'id': 'r3',
+        'created_by': 'team',
+        'kind': 'PRIVATE',
+        'name': 'WeBuddhist Team',
+        'updated_at': '2026-01-03T00:00:00Z',
+        'other_user_id': 'team',
+        'is_official': true,
+      };
+      final first = ChatRoomDTO.fromJson(json);
+      expect(first.isOfficial, isTrue);
+      expect(ChatRoomDTO.fromJson(first.toJson()), first);
+    });
+
+    test('ChatRoomDTO without is_official, or with junk, is not official', () {
+      const base = {'id': 'r4', 'kind': 'PRIVATE', 'updated_at': ''};
+      expect(ChatRoomDTO.fromJson(base).isOfficial, isFalse);
+      expect(
+        ChatRoomDTO.fromJson({...base, 'is_official': 'yes'}).isOfficial,
+        isFalse,
+      );
+      expect(
+        ChatRoomDTO.fromJson(base).toJson(),
+        isNot(contains('is_official')),
+      );
+    });
   });
 }

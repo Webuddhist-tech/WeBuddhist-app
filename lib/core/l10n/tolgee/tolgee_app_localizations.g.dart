@@ -313,6 +313,14 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String mala_rounds_unit(int count) => TolgeeBridge.format(
+    localeName,
+    'mala_rounds_unit',
+    <String, Object>{'count': count},
+    () => _fallback.mala_rounds_unit(count),
+  );
+
+  @override
   String get mala_add_to_bookmark => TolgeeBridge.get(
     localeName,
     'mala_add_to_bookmark',
@@ -371,6 +379,48 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'mala_rounds_count',
     <String, Object>{'count': count},
     () => _fallback.mala_rounds_count(count),
+  );
+
+  @override
+  String get mala_hand_layout_tooltip => TolgeeBridge.get(
+    localeName,
+    'mala_hand_layout_tooltip',
+    () => _fallback.mala_hand_layout_tooltip,
+  );
+
+  @override
+  String get mala_settings_section => TolgeeBridge.get(
+    localeName,
+    'mala_settings_section',
+    () => _fallback.mala_settings_section,
+  );
+
+  @override
+  String get mala_others_section => TolgeeBridge.get(
+    localeName,
+    'mala_others_section',
+    () => _fallback.mala_others_section,
+  );
+
+  @override
+  String get mala_mantra_speed => TolgeeBridge.get(
+    localeName,
+    'mala_mantra_speed',
+    () => _fallback.mala_mantra_speed,
+  );
+
+  @override
+  String get mala_speed_normal => TolgeeBridge.get(
+    localeName,
+    'mala_speed_normal',
+    () => _fallback.mala_speed_normal,
+  );
+
+  @override
+  String get mala_show_full_mantra => TolgeeBridge.get(
+    localeName,
+    'mala_show_full_mantra',
+    () => _fallback.mala_show_full_mantra,
   );
 
   @override
@@ -2381,6 +2431,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   @override
   String get bookmark =>
       TolgeeBridge.get(localeName, 'bookmark', () => _fallback.bookmark);
+
+  @override
+  String get collection_audio_versions => TolgeeBridge.get(
+    localeName,
+    'collection_audio_versions',
+    () => _fallback.collection_audio_versions,
+  );
 
   @override
   String get image =>
@@ -6230,27 +6287,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
-  String get feedback_title => TolgeeBridge.get(
-    localeName,
-    'feedback_title',
-    () => _fallback.feedback_title,
-  );
-
-  @override
-  String get feedback_hint => TolgeeBridge.get(
-    localeName,
-    'feedback_hint',
-    () => _fallback.feedback_hint,
-  );
-
-  @override
-  String get feedback_images => TolgeeBridge.get(
-    localeName,
-    'feedback_images',
-    () => _fallback.feedback_images,
-  );
-
-  @override
   String get feedback_add_image => TolgeeBridge.get(
     localeName,
     'feedback_add_image',
@@ -6270,13 +6306,6 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'feedback_send',
     () => _fallback.feedback_send,
-  );
-
-  @override
-  String get feedback_sent => TolgeeBridge.get(
-    localeName,
-    'feedback_sent',
-    () => _fallback.feedback_sent,
   );
 
   @override
@@ -6312,6 +6341,183 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'feedback_error_unavailable',
     () => _fallback.feedback_error_unavailable,
+  );
+
+  @override
+  String get settings_help_contact_row => TolgeeBridge.get(
+    localeName,
+    'settings_help_contact_row',
+    () => _fallback.settings_help_contact_row,
+  );
+
+  @override
+  String get help_contact_title => TolgeeBridge.get(
+    localeName,
+    'help_contact_title',
+    () => _fallback.help_contact_title,
+  );
+
+  @override
+  String get help_contact_intro => TolgeeBridge.get(
+    localeName,
+    'help_contact_intro',
+    () => _fallback.help_contact_intro,
+  );
+
+  @override
+  String get help_contact_message => TolgeeBridge.get(
+    localeName,
+    'help_contact_message',
+    () => _fallback.help_contact_message,
+  );
+
+  @override
+  String get help_contact_photos => TolgeeBridge.get(
+    localeName,
+    'help_contact_photos',
+    () => _fallback.help_contact_photos,
+  );
+
+  @override
+  String get help_contact_topic => TolgeeBridge.get(
+    localeName,
+    'help_contact_topic',
+    () => _fallback.help_contact_topic,
+  );
+
+  @override
+  String get help_contact_hint_default => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_default',
+    () => _fallback.help_contact_hint_default,
+  );
+
+  @override
+  String get help_contact_hint_report_problem => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_report_problem',
+    () => _fallback.help_contact_hint_report_problem,
+  );
+
+  @override
+  String get help_contact_hint_idea_feedback => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_idea_feedback',
+    () => _fallback.help_contact_hint_idea_feedback,
+  );
+
+  @override
+  String get help_contact_hint_suggest_content => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_suggest_content',
+    () => _fallback.help_contact_hint_suggest_content,
+  );
+
+  @override
+  String get help_contact_hint_help_collaborate => TolgeeBridge.get(
+    localeName,
+    'help_contact_hint_help_collaborate',
+    () => _fallback.help_contact_hint_help_collaborate,
+  );
+
+  @override
+  String get help_topic_report_problem => TolgeeBridge.get(
+    localeName,
+    'help_topic_report_problem',
+    () => _fallback.help_topic_report_problem,
+  );
+
+  @override
+  String get help_topic_idea_feedback => TolgeeBridge.get(
+    localeName,
+    'help_topic_idea_feedback',
+    () => _fallback.help_topic_idea_feedback,
+  );
+
+  @override
+  String get help_topic_suggest_content => TolgeeBridge.get(
+    localeName,
+    'help_topic_suggest_content',
+    () => _fallback.help_topic_suggest_content,
+  );
+
+  @override
+  String get help_topic_help_collaborate => TolgeeBridge.get(
+    localeName,
+    'help_topic_help_collaborate',
+    () => _fallback.help_topic_help_collaborate,
+  );
+
+  @override
+  String get help_contact_footer => TolgeeBridge.get(
+    localeName,
+    'help_contact_footer',
+    () => _fallback.help_contact_footer,
+  );
+
+  @override
+  String get help_contact_sent_title => TolgeeBridge.get(
+    localeName,
+    'help_contact_sent_title',
+    () => _fallback.help_contact_sent_title,
+  );
+
+  @override
+  String get help_contact_sent_body => TolgeeBridge.get(
+    localeName,
+    'help_contact_sent_body',
+    () => _fallback.help_contact_sent_body,
+  );
+
+  @override
+  String help_contact_sent_body_named(String name) => TolgeeBridge.format(
+    localeName,
+    'help_contact_sent_body_named',
+    <String, Object>{'name': name},
+    () => _fallback.help_contact_sent_body_named(name),
+  );
+
+  @override
+  String get help_contact_your_request => TolgeeBridge.get(
+    localeName,
+    'help_contact_your_request',
+    () => _fallback.help_contact_your_request,
+  );
+
+  @override
+  String get help_contact_open_chat => TolgeeBridge.get(
+    localeName,
+    'help_contact_open_chat',
+    () => _fallback.help_contact_open_chat,
+  );
+
+  @override
+  String get help_context_sent_from => TolgeeBridge.get(
+    localeName,
+    'help_context_sent_from',
+    () => _fallback.help_context_sent_from,
+  );
+
+  @override
+  String help_context_photos(int count) => TolgeeBridge.format(
+    localeName,
+    'help_context_photos',
+    <String, Object>{'count': count},
+    () => _fallback.help_context_photos(count),
+  );
+
+  @override
+  String get chat_official_badge => TolgeeBridge.get(
+    localeName,
+    'chat_official_badge',
+    () => _fallback.chat_official_badge,
+  );
+
+  @override
+  String get chat_team_reply_time => TolgeeBridge.get(
+    localeName,
+    'chat_team_reply_time',
+    () => _fallback.chat_team_reply_time,
   );
 
   @override
@@ -6361,6 +6567,1583 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'group_events_empty',
     () => _fallback.group_events_empty,
+  );
+
+  @override
+  String get group_events_empty_message => TolgeeBridge.get(
+    localeName,
+    'group_events_empty_message',
+    () => _fallback.group_events_empty_message,
+  );
+
+  @override
+  String get group_event_create_button => TolgeeBridge.get(
+    localeName,
+    'group_event_create_button',
+    () => _fallback.group_event_create_button,
+  );
+
+  @override
+  String get group_event_new_title => TolgeeBridge.get(
+    localeName,
+    'group_event_new_title',
+    () => _fallback.group_event_new_title,
+  );
+
+  @override
+  String group_event_step_of(int current, int total) => TolgeeBridge.format(
+    localeName,
+    'group_event_step_of',
+    <String, Object>{'current': current, 'total': total},
+    () => _fallback.group_event_step_of(current, total),
+  );
+
+  @override
+  String get group_event_step_about => TolgeeBridge.get(
+    localeName,
+    'group_event_step_about',
+    () => _fallback.group_event_step_about,
+  );
+
+  @override
+  String get group_event_cover_image => TolgeeBridge.get(
+    localeName,
+    'group_event_cover_image',
+    () => _fallback.group_event_cover_image,
+  );
+
+  @override
+  String get group_event_add_cover_photo => TolgeeBridge.get(
+    localeName,
+    'group_event_add_cover_photo',
+    () => _fallback.group_event_add_cover_photo,
+  );
+
+  @override
+  String get group_event_change_cover => TolgeeBridge.get(
+    localeName,
+    'group_event_change_cover',
+    () => _fallback.group_event_change_cover,
+  );
+
+  @override
+  String get group_event_name_and_description => TolgeeBridge.get(
+    localeName,
+    'group_event_name_and_description',
+    () => _fallback.group_event_name_and_description,
+  );
+
+  @override
+  String get group_event_name_label => TolgeeBridge.get(
+    localeName,
+    'group_event_name_label',
+    () => _fallback.group_event_name_label,
+  );
+
+  @override
+  String get group_event_name_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_name_hint',
+    () => _fallback.group_event_name_hint,
+  );
+
+  @override
+  String get group_event_description_label => TolgeeBridge.get(
+    localeName,
+    'group_event_description_label',
+    () => _fallback.group_event_description_label,
+  );
+
+  @override
+  String get group_event_description_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_description_hint',
+    () => _fallback.group_event_description_hint,
+  );
+
+  @override
+  String get group_event_write => TolgeeBridge.get(
+    localeName,
+    'group_event_write',
+    () => _fallback.group_event_write,
+  );
+
+  @override
+  String get group_event_preview => TolgeeBridge.get(
+    localeName,
+    'group_event_preview',
+    () => _fallback.group_event_preview,
+  );
+
+  @override
+  String get group_event_preview_empty => TolgeeBridge.get(
+    localeName,
+    'group_event_preview_empty',
+    () => _fallback.group_event_preview_empty,
+  );
+
+  @override
+  String get group_event_continue => TolgeeBridge.get(
+    localeName,
+    'group_event_continue',
+    () => _fallback.group_event_continue,
+  );
+
+  @override
+  String get group_event_name_required_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_name_required_hint',
+    () => _fallback.group_event_name_required_hint,
+  );
+
+  @override
+  String get group_event_languages_title => TolgeeBridge.get(
+    localeName,
+    'group_event_languages_title',
+    () => _fallback.group_event_languages_title,
+  );
+
+  @override
+  String get group_event_languages_add => TolgeeBridge.get(
+    localeName,
+    'group_event_languages_add',
+    () => _fallback.group_event_languages_add,
+  );
+
+  @override
+  String get group_event_languages_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_languages_hint',
+    () => _fallback.group_event_languages_hint,
+  );
+
+  @override
+  String get group_event_discard_title => TolgeeBridge.get(
+    localeName,
+    'group_event_discard_title',
+    () => _fallback.group_event_discard_title,
+  );
+
+  @override
+  String get group_event_discard_message => TolgeeBridge.get(
+    localeName,
+    'group_event_discard_message',
+    () => _fallback.group_event_discard_message,
+  );
+
+  @override
+  String get group_event_format_bold => TolgeeBridge.get(
+    localeName,
+    'group_event_format_bold',
+    () => _fallback.group_event_format_bold,
+  );
+
+  @override
+  String get group_event_format_italic => TolgeeBridge.get(
+    localeName,
+    'group_event_format_italic',
+    () => _fallback.group_event_format_italic,
+  );
+
+  @override
+  String get group_event_format_heading => TolgeeBridge.get(
+    localeName,
+    'group_event_format_heading',
+    () => _fallback.group_event_format_heading,
+  );
+
+  @override
+  String get group_event_format_bullet_list => TolgeeBridge.get(
+    localeName,
+    'group_event_format_bullet_list',
+    () => _fallback.group_event_format_bullet_list,
+  );
+
+  @override
+  String get group_event_format_numbered_list => TolgeeBridge.get(
+    localeName,
+    'group_event_format_numbered_list',
+    () => _fallback.group_event_format_numbered_list,
+  );
+
+  @override
+  String get group_event_format_link => TolgeeBridge.get(
+    localeName,
+    'group_event_format_link',
+    () => _fallback.group_event_format_link,
+  );
+
+  @override
+  String get group_event_link_title => TolgeeBridge.get(
+    localeName,
+    'group_event_link_title',
+    () => _fallback.group_event_link_title,
+  );
+
+  @override
+  String get group_event_link_text_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_link_text_hint',
+    () => _fallback.group_event_link_text_hint,
+  );
+
+  @override
+  String get group_event_link_url_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_link_url_hint',
+    () => _fallback.group_event_link_url_hint,
+  );
+
+  @override
+  String get group_event_link_insert => TolgeeBridge.get(
+    localeName,
+    'group_event_link_insert',
+    () => _fallback.group_event_link_insert,
+  );
+
+  @override
+  String get group_event_step_when_where => TolgeeBridge.get(
+    localeName,
+    'group_event_step_when_where',
+    () => _fallback.group_event_step_when_where,
+  );
+
+  @override
+  String get group_event_when => TolgeeBridge.get(
+    localeName,
+    'group_event_when',
+    () => _fallback.group_event_when,
+  );
+
+  @override
+  String get group_event_where => TolgeeBridge.get(
+    localeName,
+    'group_event_where',
+    () => _fallback.group_event_where,
+  );
+
+  @override
+  String get group_event_one_time => TolgeeBridge.get(
+    localeName,
+    'group_event_one_time',
+    () => _fallback.group_event_one_time,
+  );
+
+  @override
+  String get group_event_recurring => TolgeeBridge.get(
+    localeName,
+    'group_event_recurring',
+    () => _fallback.group_event_recurring,
+  );
+
+  @override
+  String get group_event_date => TolgeeBridge.get(
+    localeName,
+    'group_event_date',
+    () => _fallback.group_event_date,
+  );
+
+  @override
+  String get group_event_start_date => TolgeeBridge.get(
+    localeName,
+    'group_event_start_date',
+    () => _fallback.group_event_start_date,
+  );
+
+  @override
+  String get group_event_end_date => TolgeeBridge.get(
+    localeName,
+    'group_event_end_date',
+    () => _fallback.group_event_end_date,
+  );
+
+  @override
+  String get group_event_first_date => TolgeeBridge.get(
+    localeName,
+    'group_event_first_date',
+    () => _fallback.group_event_first_date,
+  );
+
+  @override
+  String get group_event_choose_date => TolgeeBridge.get(
+    localeName,
+    'group_event_choose_date',
+    () => _fallback.group_event_choose_date,
+  );
+
+  @override
+  String get group_event_multi_day => TolgeeBridge.get(
+    localeName,
+    'group_event_multi_day',
+    () => _fallback.group_event_multi_day,
+  );
+
+  @override
+  String get group_event_all_day => TolgeeBridge.get(
+    localeName,
+    'group_event_all_day',
+    () => _fallback.group_event_all_day,
+  );
+
+  @override
+  String get group_event_all_day_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_all_day_hint',
+    () => _fallback.group_event_all_day_hint,
+  );
+
+  @override
+  String get group_event_start_time => TolgeeBridge.get(
+    localeName,
+    'group_event_start_time',
+    () => _fallback.group_event_start_time,
+  );
+
+  @override
+  String get group_event_end_time => TolgeeBridge.get(
+    localeName,
+    'group_event_end_time',
+    () => _fallback.group_event_end_time,
+  );
+
+  @override
+  String get group_event_add_start_time => TolgeeBridge.get(
+    localeName,
+    'group_event_add_start_time',
+    () => _fallback.group_event_add_start_time,
+  );
+
+  @override
+  String get group_event_add_end_time => TolgeeBridge.get(
+    localeName,
+    'group_event_add_end_time',
+    () => _fallback.group_event_add_end_time,
+  );
+
+  @override
+  String group_event_time_starts(String time) => TolgeeBridge.format(
+    localeName,
+    'group_event_time_starts',
+    <String, Object>{'time': time},
+    () => _fallback.group_event_time_starts(time),
+  );
+
+  @override
+  String group_event_time_ends(String time) => TolgeeBridge.format(
+    localeName,
+    'group_event_time_ends',
+    <String, Object>{'time': time},
+    () => _fallback.group_event_time_ends(time),
+  );
+
+  @override
+  String get group_event_timezone => TolgeeBridge.get(
+    localeName,
+    'group_event_timezone',
+    () => _fallback.group_event_timezone,
+  );
+
+  @override
+  String get group_event_repeats => TolgeeBridge.get(
+    localeName,
+    'group_event_repeats',
+    () => _fallback.group_event_repeats,
+  );
+
+  @override
+  String get group_event_choose_repeats => TolgeeBridge.get(
+    localeName,
+    'group_event_choose_repeats',
+    () => _fallback.group_event_choose_repeats,
+  );
+
+  @override
+  String get group_event_duration => TolgeeBridge.get(
+    localeName,
+    'group_event_duration',
+    () => _fallback.group_event_duration,
+  );
+
+  @override
+  String get group_event_duration_decrease => TolgeeBridge.get(
+    localeName,
+    'group_event_duration_decrease',
+    () => _fallback.group_event_duration_decrease,
+  );
+
+  @override
+  String get group_event_duration_increase => TolgeeBridge.get(
+    localeName,
+    'group_event_duration_increase',
+    () => _fallback.group_event_duration_increase,
+  );
+
+  @override
+  String group_event_duration_days(int count) => TolgeeBridge.format(
+    localeName,
+    'group_event_duration_days',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_duration_days(count),
+  );
+
+  @override
+  String group_event_repeats_weekly(String weekday) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_weekly',
+    <String, Object>{'weekday': weekday},
+    () => _fallback.group_event_repeats_weekly(weekday),
+  );
+
+  @override
+  String group_event_repeats_monthly(String day) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_monthly',
+    <String, Object>{'day': day},
+    () => _fallback.group_event_repeats_monthly(day),
+  );
+
+  @override
+  String group_event_repeats_monthly_lunar(String day) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_monthly_lunar',
+    <String, Object>{'day': day},
+    () => _fallback.group_event_repeats_monthly_lunar(day),
+  );
+
+  @override
+  String group_event_repeats_yearly(String date) => TolgeeBridge.format(
+    localeName,
+    'group_event_repeats_yearly',
+    <String, Object>{'date': date},
+    () => _fallback.group_event_repeats_yearly(date),
+  );
+
+  @override
+  String get group_event_repeats_yearly_lunar => TolgeeBridge.get(
+    localeName,
+    'group_event_repeats_yearly_lunar',
+    () => _fallback.group_event_repeats_yearly_lunar,
+  );
+
+  @override
+  String get group_event_full_moon => TolgeeBridge.get(
+    localeName,
+    'group_event_full_moon',
+    () => _fallback.group_event_full_moon,
+  );
+
+  @override
+  String get group_event_new_moon => TolgeeBridge.get(
+    localeName,
+    'group_event_new_moon',
+    () => _fallback.group_event_new_moon,
+  );
+
+  @override
+  String get group_event_gregorian => TolgeeBridge.get(
+    localeName,
+    'group_event_gregorian',
+    () => _fallback.group_event_gregorian,
+  );
+
+  @override
+  String get group_event_tibetan_lunar => TolgeeBridge.get(
+    localeName,
+    'group_event_tibetan_lunar',
+    () => _fallback.group_event_tibetan_lunar,
+  );
+
+  @override
+  String get group_event_next_dates => TolgeeBridge.get(
+    localeName,
+    'group_event_next_dates',
+    () => _fallback.group_event_next_dates,
+  );
+
+  @override
+  String get group_event_repeats_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_repeats_hint',
+    () => _fallback.group_event_repeats_hint,
+  );
+
+  @override
+  String get group_event_in_person => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person',
+    () => _fallback.group_event_in_person,
+  );
+
+  @override
+  String get group_event_live => TolgeeBridge.get(
+    localeName,
+    'group_event_live',
+    () => _fallback.group_event_live,
+  );
+
+  @override
+  String get group_event_both => TolgeeBridge.get(
+    localeName,
+    'group_event_both',
+    () => _fallback.group_event_both,
+  );
+
+  @override
+  String get group_event_venue => TolgeeBridge.get(
+    localeName,
+    'group_event_venue',
+    () => _fallback.group_event_venue,
+  );
+
+  @override
+  String get group_event_add_venue => TolgeeBridge.get(
+    localeName,
+    'group_event_add_venue',
+    () => _fallback.group_event_add_venue,
+  );
+
+  @override
+  String get group_event_venue_search_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_search_hint',
+    () => _fallback.group_event_venue_search_hint,
+  );
+
+  @override
+  String get group_event_venue_no_results => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_no_results',
+    () => _fallback.group_event_venue_no_results,
+  );
+
+  @override
+  String get group_event_venue_search_error => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_search_error',
+    () => _fallback.group_event_venue_search_error,
+  );
+
+  @override
+  String get group_event_drop_pin => TolgeeBridge.get(
+    localeName,
+    'group_event_drop_pin',
+    () => _fallback.group_event_drop_pin,
+  );
+
+  @override
+  String get group_event_drop_pin_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_drop_pin_hint',
+    () => _fallback.group_event_drop_pin_hint,
+  );
+
+  @override
+  String get group_event_pin_marker => TolgeeBridge.get(
+    localeName,
+    'group_event_pin_marker',
+    () => _fallback.group_event_pin_marker,
+  );
+
+  @override
+  String get group_event_selected_location => TolgeeBridge.get(
+    localeName,
+    'group_event_selected_location',
+    () => _fallback.group_event_selected_location,
+  );
+
+  @override
+  String get group_event_pin_unnamed => TolgeeBridge.get(
+    localeName,
+    'group_event_pin_unnamed',
+    () => _fallback.group_event_pin_unnamed,
+  );
+
+  @override
+  String get group_event_confirm_location => TolgeeBridge.get(
+    localeName,
+    'group_event_confirm_location',
+    () => _fallback.group_event_confirm_location,
+  );
+
+  @override
+  String get group_event_name_location => TolgeeBridge.get(
+    localeName,
+    'group_event_name_location',
+    () => _fallback.group_event_name_location,
+  );
+
+  @override
+  String get group_event_venue_name => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_name',
+    () => _fallback.group_event_venue_name,
+  );
+
+  @override
+  String get group_event_venue_name_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_name_hint',
+    () => _fallback.group_event_venue_name_hint,
+  );
+
+  @override
+  String get group_event_save_venue => TolgeeBridge.get(
+    localeName,
+    'group_event_save_venue',
+    () => _fallback.group_event_save_venue,
+  );
+
+  @override
+  String get group_event_live_link => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link',
+    () => _fallback.group_event_live_link,
+  );
+
+  @override
+  String get group_event_live_link_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_hint',
+    () => _fallback.group_event_live_link_hint,
+  );
+
+  @override
+  String get group_event_use_channel_link => TolgeeBridge.get(
+    localeName,
+    'group_event_use_channel_link',
+    () => _fallback.group_event_use_channel_link,
+  );
+
+  @override
+  String get group_event_live_link_youtube_help => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_youtube_help',
+    () => _fallback.group_event_live_link_youtube_help,
+  );
+
+  @override
+  String get group_event_live_link_custom_help => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_custom_help',
+    () => _fallback.group_event_live_link_custom_help,
+  );
+
+  @override
+  String get group_event_live_link_invalid => TolgeeBridge.get(
+    localeName,
+    'group_event_live_link_invalid',
+    () => _fallback.group_event_live_link_invalid,
+  );
+
+  @override
+  String get group_event_pick_date_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_pick_date_hint',
+    () => _fallback.group_event_pick_date_hint,
+  );
+
+  @override
+  String get group_event_pick_repeats_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_pick_repeats_hint',
+    () => _fallback.group_event_pick_repeats_hint,
+  );
+
+  @override
+  String get group_event_end_date_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_end_date_hint',
+    () => _fallback.group_event_end_date_hint,
+  );
+
+  @override
+  String get group_event_end_time_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_end_time_hint',
+    () => _fallback.group_event_end_time_hint,
+  );
+
+  @override
+  String get group_event_venue_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_venue_hint',
+    () => _fallback.group_event_venue_hint,
+  );
+
+  @override
+  String get group_event_link_required_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_link_required_hint',
+    () => _fallback.group_event_link_required_hint,
+  );
+
+  @override
+  String get group_event_map_attribution => TolgeeBridge.get(
+    localeName,
+    'group_event_map_attribution',
+    () => _fallback.group_event_map_attribution,
+  );
+
+  @override
+  String get group_event_step_practices => TolgeeBridge.get(
+    localeName,
+    'group_event_step_practices',
+    () => _fallback.group_event_step_practices,
+  );
+
+  @override
+  String get group_event_optional_note => TolgeeBridge.get(
+    localeName,
+    'group_event_optional_note',
+    () => _fallback.group_event_optional_note,
+  );
+
+  @override
+  String get group_event_practices_section => TolgeeBridge.get(
+    localeName,
+    'group_event_practices_section',
+    () => _fallback.group_event_practices_section,
+  );
+
+  @override
+  String get group_event_add_practice => TolgeeBridge.get(
+    localeName,
+    'group_event_add_practice',
+    () => _fallback.group_event_add_practice,
+  );
+
+  @override
+  String get group_event_practice_search_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_practice_search_hint',
+    () => _fallback.group_event_practice_search_hint,
+  );
+
+  @override
+  String get group_event_practice_filter_all => TolgeeBridge.get(
+    localeName,
+    'group_event_practice_filter_all',
+    () => _fallback.group_event_practice_filter_all,
+  );
+
+  @override
+  String get group_event_practice_filter_content => TolgeeBridge.get(
+    localeName,
+    'group_event_practice_filter_content',
+    () => _fallback.group_event_practice_filter_content,
+  );
+
+  @override
+  String get group_event_practice_filter_collections => TolgeeBridge.get(
+    localeName,
+    'group_event_practice_filter_collections',
+    () => _fallback.group_event_practice_filter_collections,
+  );
+
+  @override
+  String get group_event_practice_filter_accumulators => TolgeeBridge.get(
+    localeName,
+    'group_event_practice_filter_accumulators',
+    () => _fallback.group_event_practice_filter_accumulators,
+  );
+
+  @override
+  String get group_event_practice_rule => TolgeeBridge.get(
+    localeName,
+    'group_event_practice_rule',
+    () => _fallback.group_event_practice_rule,
+  );
+
+  @override
+  String group_event_practice_replaced(String chosen, String previous) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_practice_replaced',
+        <String, Object>{'chosen': chosen, 'previous': previous},
+        () => _fallback.group_event_practice_replaced(chosen, previous),
+      );
+
+  @override
+  String get group_event_practices_empty => TolgeeBridge.get(
+    localeName,
+    'group_event_practices_empty',
+    () => _fallback.group_event_practices_empty,
+  );
+
+  @override
+  String get group_event_practices_load_error => TolgeeBridge.get(
+    localeName,
+    'group_event_practices_load_error',
+    () => _fallback.group_event_practices_load_error,
+  );
+
+  @override
+  String get group_event_practices_none_match => TolgeeBridge.get(
+    localeName,
+    'group_event_practices_none_match',
+    () => _fallback.group_event_practices_none_match,
+  );
+
+  @override
+  String group_event_add_practices_count(int count) => TolgeeBridge.format(
+    localeName,
+    'group_event_add_practices_count',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_add_practices_count(count),
+  );
+
+  @override
+  String get group_event_counted_by => TolgeeBridge.get(
+    localeName,
+    'group_event_counted_by',
+    () => _fallback.group_event_counted_by,
+  );
+
+  @override
+  String get group_event_count_mode_title => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_title',
+    () => _fallback.group_event_count_mode_title,
+  );
+
+  @override
+  String get group_event_count_mode_attendees => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_attendees',
+    () => _fallback.group_event_count_mode_attendees,
+  );
+
+  @override
+  String get group_event_count_mode_attendees_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_attendees_hint',
+    () => _fallback.group_event_count_mode_attendees_hint,
+  );
+
+  @override
+  String get group_event_count_mode_admin => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_admin',
+    () => _fallback.group_event_count_mode_admin,
+  );
+
+  @override
+  String get group_event_count_mode_admin_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_admin_hint',
+    () => _fallback.group_event_count_mode_admin_hint,
+  );
+
+  @override
+  String get group_event_count_mode_admin_short => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_admin_short',
+    () => _fallback.group_event_count_mode_admin_short,
+  );
+
+  @override
+  String get group_event_count_mode_attendees_taken => TolgeeBridge.get(
+    localeName,
+    'group_event_count_mode_attendees_taken',
+    () => _fallback.group_event_count_mode_attendees_taken,
+  );
+
+  @override
+  String group_event_remove_practice(String title) => TolgeeBridge.format(
+    localeName,
+    'group_event_remove_practice',
+    <String, Object>{'title': title},
+    () => _fallback.group_event_remove_practice(title),
+  );
+
+  @override
+  String get group_event_videos_section => TolgeeBridge.get(
+    localeName,
+    'group_event_videos_section',
+    () => _fallback.group_event_videos_section,
+  );
+
+  @override
+  String get group_event_videos_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_videos_hint',
+    () => _fallback.group_event_videos_hint,
+  );
+
+  @override
+  String get group_event_add_video => TolgeeBridge.get(
+    localeName,
+    'group_event_add_video',
+    () => _fallback.group_event_add_video,
+  );
+
+  @override
+  String get group_event_video_link => TolgeeBridge.get(
+    localeName,
+    'group_event_video_link',
+    () => _fallback.group_event_video_link,
+  );
+
+  @override
+  String get group_event_video_link_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_video_link_hint',
+    () => _fallback.group_event_video_link_hint,
+  );
+
+  @override
+  String get group_event_paste => TolgeeBridge.get(
+    localeName,
+    'group_event_paste',
+    () => _fallback.group_event_paste,
+  );
+
+  @override
+  String get group_event_video_loading => TolgeeBridge.get(
+    localeName,
+    'group_event_video_loading',
+    () => _fallback.group_event_video_loading,
+  );
+
+  @override
+  String get group_event_video_invalid => TolgeeBridge.get(
+    localeName,
+    'group_event_video_invalid',
+    () => _fallback.group_event_video_invalid,
+  );
+
+  @override
+  String get group_event_video_source => TolgeeBridge.get(
+    localeName,
+    'group_event_video_source',
+    () => _fallback.group_event_video_source,
+  );
+
+  @override
+  String get group_event_video_untitled => TolgeeBridge.get(
+    localeName,
+    'group_event_video_untitled',
+    () => _fallback.group_event_video_untitled,
+  );
+
+  @override
+  String get group_event_remove_video => TolgeeBridge.get(
+    localeName,
+    'group_event_remove_video',
+    () => _fallback.group_event_remove_video,
+  );
+
+  @override
+  String get group_event_skip => TolgeeBridge.get(
+    localeName,
+    'group_event_skip',
+    () => _fallback.group_event_skip,
+  );
+
+  @override
+  String get group_event_step_review => TolgeeBridge.get(
+    localeName,
+    'group_event_step_review',
+    () => _fallback.group_event_step_review,
+  );
+
+  @override
+  String get group_event_review_event => TolgeeBridge.get(
+    localeName,
+    'group_event_review_event',
+    () => _fallback.group_event_review_event,
+  );
+
+  @override
+  String get group_event_review_settings => TolgeeBridge.get(
+    localeName,
+    'group_event_review_settings',
+    () => _fallback.group_event_review_settings,
+  );
+
+  @override
+  String get group_event_review_name => TolgeeBridge.get(
+    localeName,
+    'group_event_review_name',
+    () => _fallback.group_event_review_name,
+  );
+
+  @override
+  String get group_event_review_languages => TolgeeBridge.get(
+    localeName,
+    'group_event_review_languages',
+    () => _fallback.group_event_review_languages,
+  );
+
+  @override
+  String get group_event_review_when => TolgeeBridge.get(
+    localeName,
+    'group_event_review_when',
+    () => _fallback.group_event_review_when,
+  );
+
+  @override
+  String get group_event_review_where => TolgeeBridge.get(
+    localeName,
+    'group_event_review_where',
+    () => _fallback.group_event_review_where,
+  );
+
+  @override
+  String get group_event_review_live_link => TolgeeBridge.get(
+    localeName,
+    'group_event_review_live_link',
+    () => _fallback.group_event_review_live_link,
+  );
+
+  @override
+  String get group_event_review_practices => TolgeeBridge.get(
+    localeName,
+    'group_event_review_practices',
+    () => _fallback.group_event_review_practices,
+  );
+
+  @override
+  String get group_event_review_videos => TolgeeBridge.get(
+    localeName,
+    'group_event_review_videos',
+    () => _fallback.group_event_review_videos,
+  );
+
+  @override
+  String get group_event_review_event_settings => TolgeeBridge.get(
+    localeName,
+    'group_event_review_event_settings',
+    () => _fallback.group_event_review_event_settings,
+  );
+
+  @override
+  String get group_event_review_none => TolgeeBridge.get(
+    localeName,
+    'group_event_review_none',
+    () => _fallback.group_event_review_none,
+  );
+
+  @override
+  String get group_event_review_tap_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_review_tap_hint',
+    () => _fallback.group_event_review_tap_hint,
+  );
+
+  @override
+  String get group_event_review_notify_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_review_notify_hint',
+    () => _fallback.group_event_review_notify_hint,
+  );
+
+  @override
+  String group_event_review_more(String first, int count) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_review_more',
+        <String, Object>{'first': first, 'count': count},
+        () => _fallback.group_event_review_more(first, count),
+      );
+
+  @override
+  String group_event_review_recurring_from(
+    String rule,
+    String times,
+    String date,
+  ) => TolgeeBridge.format(
+    localeName,
+    'group_event_review_recurring_from',
+    <String, Object>{'rule': rule, 'times': times, 'date': date},
+    () => _fallback.group_event_review_recurring_from(rule, times, date),
+  );
+
+  @override
+  String get group_event_review_youtube_live => TolgeeBridge.get(
+    localeName,
+    'group_event_review_youtube_live',
+    () => _fallback.group_event_review_youtube_live,
+  );
+
+  @override
+  String get group_event_review_online => TolgeeBridge.get(
+    localeName,
+    'group_event_review_online',
+    () => _fallback.group_event_review_online,
+  );
+
+  @override
+  String get group_event_chat_on => TolgeeBridge.get(
+    localeName,
+    'group_event_chat_on',
+    () => _fallback.group_event_chat_on,
+  );
+
+  @override
+  String get group_event_chat_off => TolgeeBridge.get(
+    localeName,
+    'group_event_chat_off',
+    () => _fallback.group_event_chat_off,
+  );
+
+  @override
+  String get group_event_notifications_on => TolgeeBridge.get(
+    localeName,
+    'group_event_notifications_on',
+    () => _fallback.group_event_notifications_on,
+  );
+
+  @override
+  String get group_event_notifications_off => TolgeeBridge.get(
+    localeName,
+    'group_event_notifications_off',
+    () => _fallback.group_event_notifications_off,
+  );
+
+  @override
+  String get group_event_all_intentions => TolgeeBridge.get(
+    localeName,
+    'group_event_all_intentions',
+    () => _fallback.group_event_all_intentions,
+  );
+
+  @override
+  String group_event_intentions_count(int count) => TolgeeBridge.format(
+    localeName,
+    'group_event_intentions_count',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_intentions_count(count),
+  );
+
+  @override
+  String get group_event_publish => TolgeeBridge.get(
+    localeName,
+    'group_event_publish',
+    () => _fallback.group_event_publish,
+  );
+
+  @override
+  String get group_event_publish_error => TolgeeBridge.get(
+    localeName,
+    'group_event_publish_error',
+    () => _fallback.group_event_publish_error,
+  );
+
+  @override
+  String get group_event_settings_title => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_title',
+    () => _fallback.group_event_settings_title,
+  );
+
+  @override
+  String get group_event_settings_chat => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_chat',
+    () => _fallback.group_event_settings_chat,
+  );
+
+  @override
+  String get group_event_settings_chat_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_chat_hint',
+    () => _fallback.group_event_settings_chat_hint,
+  );
+
+  @override
+  String get group_event_settings_notifications => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_notifications',
+    () => _fallback.group_event_settings_notifications,
+  );
+
+  @override
+  String get group_event_settings_notifications_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_notifications_hint',
+    () => _fallback.group_event_settings_notifications_hint,
+  );
+
+  @override
+  String get group_event_settings_intentions => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_intentions',
+    () => _fallback.group_event_settings_intentions,
+  );
+
+  @override
+  String get group_event_settings_intentions_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_intentions_hint',
+    () => _fallback.group_event_settings_intentions_hint,
+  );
+
+  @override
+  String get group_event_settings_intentions_error => TolgeeBridge.get(
+    localeName,
+    'group_event_settings_intentions_error',
+    () => _fallback.group_event_settings_intentions_error,
+  );
+
+  @override
+  String get group_event_published_title => TolgeeBridge.get(
+    localeName,
+    'group_event_published_title',
+    () => _fallback.group_event_published_title,
+  );
+
+  @override
+  String group_event_published_headline(String name) => TolgeeBridge.format(
+    localeName,
+    'group_event_published_headline',
+    <String, Object>{'name': name},
+    () => _fallback.group_event_published_headline(name),
+  );
+
+  @override
+  String group_event_published_message(String group) => TolgeeBridge.format(
+    localeName,
+    'group_event_published_message',
+    <String, Object>{'group': group},
+    () => _fallback.group_event_published_message(group),
+  );
+
+  @override
+  String get group_event_published_message_silent => TolgeeBridge.get(
+    localeName,
+    'group_event_published_message_silent',
+    () => _fallback.group_event_published_message_silent,
+  );
+
+  @override
+  String get group_event_view_event => TolgeeBridge.get(
+    localeName,
+    'group_event_view_event',
+    () => _fallback.group_event_view_event,
+  );
+
+  @override
+  String get group_event_drafts_section => TolgeeBridge.get(
+    localeName,
+    'group_event_drafts_section',
+    () => _fallback.group_event_drafts_section,
+  );
+
+  @override
+  String get group_event_draft_label => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_label',
+    () => _fallback.group_event_draft_label,
+  );
+
+  @override
+  String get group_event_draft_untitled => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_untitled',
+    () => _fallback.group_event_draft_untitled,
+  );
+
+  @override
+  String get group_event_draft_menu_continue => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_menu_continue',
+    () => _fallback.group_event_draft_menu_continue,
+  );
+
+  @override
+  String get group_event_draft_menu_delete => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_menu_delete',
+    () => _fallback.group_event_draft_menu_delete,
+  );
+
+  @override
+  String get group_event_draft_menu_delete_hint => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_menu_delete_hint',
+    () => _fallback.group_event_draft_menu_delete_hint,
+  );
+
+  @override
+  String get group_event_draft_saved => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_saved',
+    () => _fallback.group_event_draft_saved,
+  );
+
+  @override
+  String get group_event_draft_save_error => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_save_error',
+    () => _fallback.group_event_draft_save_error,
+  );
+
+  @override
+  String get group_event_draft_deleted => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_deleted',
+    () => _fallback.group_event_draft_deleted,
+  );
+
+  @override
+  String get group_event_draft_delete_error => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_delete_error',
+    () => _fallback.group_event_draft_delete_error,
+  );
+
+  @override
+  String get group_event_draft_delete_title => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_delete_title',
+    () => _fallback.group_event_draft_delete_title,
+  );
+
+  @override
+  String get group_event_draft_delete_message => TolgeeBridge.get(
+    localeName,
+    'group_event_draft_delete_message',
+    () => _fallback.group_event_draft_delete_message,
+  );
+
+  @override
+  String get group_event_edit_draft_title => TolgeeBridge.get(
+    localeName,
+    'group_event_edit_draft_title',
+    () => _fallback.group_event_edit_draft_title,
+  );
+
+  @override
+  String get group_event_edit_title => TolgeeBridge.get(
+    localeName,
+    'group_event_edit_title',
+    () => _fallback.group_event_edit_title,
+  );
+
+  @override
+  String get group_event_save_changes => TolgeeBridge.get(
+    localeName,
+    'group_event_save_changes',
+    () => _fallback.group_event_save_changes,
+  );
+
+  @override
+  String get group_event_changes_saved => TolgeeBridge.get(
+    localeName,
+    'group_event_changes_saved',
+    () => _fallback.group_event_changes_saved,
+  );
+
+  @override
+  String get group_event_manage => TolgeeBridge.get(
+    localeName,
+    'group_event_manage',
+    () => _fallback.group_event_manage,
+  );
+
+  @override
+  String get group_event_manage_details => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_details',
+    () => _fallback.group_event_manage_details,
+  );
+
+  @override
+  String get group_event_manage_counts => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_counts',
+    () => _fallback.group_event_manage_counts,
+  );
+
+  @override
+  String get group_event_manage_accumulations => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_accumulations',
+    () => _fallback.group_event_manage_accumulations,
+  );
+
+  @override
+  String get group_event_manage_admin_adds_pending => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_admin_adds_pending',
+    () => _fallback.group_event_manage_admin_adds_pending,
+  );
+
+  @override
+  String group_event_manage_admin_adds(String count) => TolgeeBridge.format(
+    localeName,
+    'group_event_manage_admin_adds',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_manage_admin_adds(count),
+  );
+
+  @override
+  String get group_event_manage_attendees_add_pending => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_attendees_add_pending',
+    () => _fallback.group_event_manage_attendees_add_pending,
+  );
+
+  @override
+  String group_event_manage_attendees_add(String count, int people) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_manage_attendees_add',
+        <String, Object>{'count': count, 'people': people},
+        () => _fallback.group_event_manage_attendees_add(count, people),
+      );
+
+  @override
+  String get group_event_manage_add_count => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_add_count',
+    () => _fallback.group_event_manage_add_count,
+  );
+
+  @override
+  String get group_event_manage_no_accumulations => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_no_accumulations',
+    () => _fallback.group_event_manage_no_accumulations,
+  );
+
+  @override
+  String get group_event_manage_recurring_note => TolgeeBridge.get(
+    localeName,
+    'group_event_manage_recurring_note',
+    () => _fallback.group_event_manage_recurring_note,
+  );
+
+  @override
+  String group_event_in_person_of_target(String count, String target) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_in_person_of_target',
+        <String, Object>{'count': count, 'target': target},
+        () => _fallback.group_event_in_person_of_target(count, target),
+      );
+
+  @override
+  String group_event_in_person_in_total(String count) => TolgeeBridge.format(
+    localeName,
+    'group_event_in_person_in_total',
+    <String, Object>{'count': count},
+    () => _fallback.group_event_in_person_in_total(count),
+  );
+
+  @override
+  String get group_event_in_person_legend_app => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_legend_app',
+    () => _fallback.group_event_in_person_legend_app,
+  );
+
+  @override
+  String get group_event_in_person_legend_in_person => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_legend_in_person',
+    () => _fallback.group_event_in_person_legend_in_person,
+  );
+
+  @override
+  String get group_event_in_person_add_day => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_add_day',
+    () => _fallback.group_event_in_person_add_day,
+  );
+
+  @override
+  String get group_event_in_person_day => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_day',
+    () => _fallback.group_event_in_person_day,
+  );
+
+  @override
+  String get group_event_in_person_count => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_count',
+    () => _fallback.group_event_in_person_count,
+  );
+
+  @override
+  String get group_event_in_person_empty => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_empty',
+    () => _fallback.group_event_in_person_empty,
+  );
+
+  @override
+  String get group_event_in_person_invalid_count => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_invalid_count',
+    () => _fallback.group_event_in_person_invalid_count,
+  );
+
+  @override
+  String get group_event_in_person_added => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_added',
+    () => _fallback.group_event_in_person_added,
+  );
+
+  @override
+  String get group_event_in_person_updated => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_updated',
+    () => _fallback.group_event_in_person_updated,
+  );
+
+  @override
+  String get group_event_in_person_deleted => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_deleted',
+    () => _fallback.group_event_in_person_deleted,
+  );
+
+  @override
+  String get group_event_in_person_delete_title => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_delete_title',
+    () => _fallback.group_event_in_person_delete_title,
+  );
+
+  @override
+  String group_event_in_person_delete_message(String count, String day) =>
+      TolgeeBridge.format(
+        localeName,
+        'group_event_in_person_delete_message',
+        <String, Object>{'count': count, 'day': day},
+        () => _fallback.group_event_in_person_delete_message(count, day),
+      );
+
+  @override
+  String get group_event_in_person_exists => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_exists',
+    () => _fallback.group_event_in_person_exists,
+  );
+
+  @override
+  String get group_event_in_person_no_accumulation => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_no_accumulation',
+    () => _fallback.group_event_in_person_no_accumulation,
+  );
+
+  @override
+  String get group_event_in_person_save_error => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_save_error',
+    () => _fallback.group_event_in_person_save_error,
+  );
+
+  @override
+  String get group_event_in_person_load_more => TolgeeBridge.get(
+    localeName,
+    'group_event_in_person_load_more',
+    () => _fallback.group_event_in_person_load_more,
   );
 
   @override
@@ -6519,5 +8302,47 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'splash_tagline_2',
     () => _fallback.splash_tagline_2,
+  );
+
+  @override
+  String get timer_list_subtitle => TolgeeBridge.get(
+    localeName,
+    'timer_list_subtitle',
+    () => _fallback.timer_list_subtitle,
+  );
+
+  @override
+  String get timer_create_custom => TolgeeBridge.get(
+    localeName,
+    'timer_create_custom',
+    () => _fallback.timer_create_custom,
+  );
+
+  @override
+  String get timer_create_custom_subtitle => TolgeeBridge.get(
+    localeName,
+    'timer_create_custom_subtitle',
+    () => _fallback.timer_create_custom_subtitle,
+  );
+
+  @override
+  String get timer_starting => TolgeeBridge.get(
+    localeName,
+    'timer_starting',
+    () => _fallback.timer_starting,
+  );
+
+  @override
+  String get timer_duration_hours => TolgeeBridge.get(
+    localeName,
+    'timer_duration_hours',
+    () => _fallback.timer_duration_hours,
+  );
+
+  @override
+  String get timer_duration_sec => TolgeeBridge.get(
+    localeName,
+    'timer_duration_sec',
+    () => _fallback.timer_duration_sec,
   );
 }

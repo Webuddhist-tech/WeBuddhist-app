@@ -62,6 +62,7 @@ jobs:
           DEV_POSTHOG_API_KEY:     ${{ secrets.DEV_POSTHOG_API_KEY }}
           STAGING_POSTHOG_API_KEY: ${{ secrets.STAGING_POSTHOG_API_KEY }}
           POSTHOG_API_KEY:         ${{ secrets.POSTHOG_API_KEY }}
+          LOCATIONIQ_TOKEN:        ${{ secrets.LOCATIONIQ_TOKEN }}
         run: bash ci/scripts/create_env_files.sh
 
       - name: 🔐 Create ios/Flutter/Secrets.xcconfig (Airbridge)
@@ -221,6 +222,15 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: 💾 Keep dSYMs as a build artifact
+        if: ${{ inputs.upload_to_store }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ inputs.flavor }}-dSYMs
+          path: build/ios/archive/Runner.xcarchive/dSYMs
+          if-no-files-found: warn
+          retention-days: 90
+
       - name: 🔥 Upload Crashlytics dSYMs
         if: ${{ inputs.upload_to_store }}
         run: |
@@ -229,12 +239,15 @@ jobs:
           # CocoaPods run/upload-symbols tooling reliably exists.
           UPLOAD=ios/Pods/FirebaseCrashlytics/upload-symbols
           GSP=ios/Runner/GoogleService-Info.plist
-          DSYM=$(find build/ios -name "*.dSYM" -path "*Runner*" | head -n1 || true)
-          if [ -x "$UPLOAD" ] && [ -f "$GSP" ] && [ -n "$DSYM" ]; then
-            echo "Uploading dSYM: $DSYM"
-            "$UPLOAD" -gsp "$GSP" -p ios "$DSYM"
+          # Upload every dSYM in the archive (Runner, App/Flutter frameworks,
+          # TimerWidget, embedded frameworks). Crashlytics needs all of them
+          # to symbolicate a crash, not just Runner.app.dSYM.
+          DSYMS=build/ios/archive/Runner.xcarchive/dSYMs
+          if [ -x "$UPLOAD" ] && [ -f "$GSP" ] && [ -d "$DSYMS" ]; then
+            echo "Uploading dSYMs:"; ls -1 "$DSYMS"
+            "$UPLOAD" -gsp "$GSP" -p ios "$DSYMS"
           else
-            echo "Skipping dSYM upload (upload-symbols=$UPLOAD gsp=$GSP dsym=$DSYM)"
+            echo "::warning::Skipping dSYM upload (upload-symbols=$UPLOAD gsp=$GSP dsyms=$DSYMS)"
           fi
 
       - name: 🛫 Upload to TestFlight

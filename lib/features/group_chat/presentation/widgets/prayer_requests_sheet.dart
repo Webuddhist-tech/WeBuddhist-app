@@ -24,6 +24,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_re
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_filter_bar.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_sort_sheet.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_supporters_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Bottom sheet listing an event's prayer requests, with a prompt on top
@@ -369,10 +371,21 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final state = ref.watch(prayerRequestsProvider(widget.eventId));
     _syncRoom(state);
 
-    final canCompose = state.roomStatus == PrayerRoomStatus.ready;
+    // Requests stay readable after the event, but no new ones are taken.
+    final hasEnded =
+        ref
+            .watch(groupEventDetailProvider(widget.eventId))
+            .valueOrNull
+            ?.fold(
+              (_) => false,
+              (event) => GroupEventLiveUtils.hasEnded(event, DateTime.now()),
+            ) ??
+        false;
+    final roomReady = state.roomStatus == PrayerRoomStatus.ready;
+    final canCompose = roomReady && !hasEnded;
     // The filter row only makes sense once the room is open: a failed or
     // closed room shows its notice alone.
-    final canFilter = canCompose;
+    final canFilter = roomReady;
 
     return DraggableScrollableSheet(
       controller: _sheetController,

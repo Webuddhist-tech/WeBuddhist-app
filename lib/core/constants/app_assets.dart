@@ -118,6 +118,7 @@ class AppAssets {
 
   // ========== ACTION ICONS ==========
   static const IconData plus = PhosphorIconsRegular.plus;
+  static const IconData speedometer = PhosphorIconsRegular.speedometer;
   static const IconData plusCircle = PhosphorIconsRegular.plusCircle;
   static const IconData minus = PhosphorIconsRegular.minus;
   static const IconData minusCircle = PhosphorIconsRegular.minusCircle;
@@ -131,6 +132,14 @@ class AppAssets {
   static const IconData fileText = PhosphorIconsRegular.fileText;
   static const IconData bookmarkSimple = PhosphorIconsRegular.bookmarkSimple;
   static const IconData bookmarkSimpleFill = PhosphorIconsFill.bookmarkSimple;
+  static const IconData image = PhosphorIconsRegular.image;
+
+  // ========== MARKDOWN EDITOR ICONS ==========
+  static const IconData textBold = PhosphorIconsRegular.textB;
+  static const IconData textItalic = PhosphorIconsRegular.textItalic;
+  static const IconData textHeading = PhosphorIconsRegular.textH;
+  static const IconData listBullets = PhosphorIconsRegular.listBullets;
+  static const IconData listNumbers = PhosphorIconsRegular.listNumbers;
 
   // ========== TIMER ICONS ==========
   static const IconData timerAmbientSound = PhosphorIconsRegular.waveform;
@@ -177,6 +186,9 @@ class AppAssets {
   static const IconData bookOpenText = PhosphorIconsRegular.bookOpenText;
   static const IconData bookOpen = PhosphorIconsRegular.bookOpen;
   static const IconData calendarDots = PhosphorIconsRegular.calendarDots;
+  static const IconData calendarBlank = PhosphorIconsRegular.calendarBlank;
+  static const IconData hourglass = PhosphorIconsRegular.hourglass;
+  static const IconData mapPinFill = PhosphorIconsFill.mapPin;
   static const IconData mapPin = PhosphorIconsRegular.mapPin;
   static const IconData videoCamera = PhosphorIconsRegular.videoCamera;
   static const IconData clock = PhosphorIconsRegular.clock;

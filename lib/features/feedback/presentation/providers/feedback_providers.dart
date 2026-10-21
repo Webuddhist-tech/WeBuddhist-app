@@ -4,7 +4,9 @@ import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/feedback/data/datasource/feedback_remote_datasource.dart';
 import 'package:flutter_pecha/features/feedback/data/repositories/feedback_repository_impl.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/feedback_receipt.dart';
 import 'package:flutter_pecha/features/feedback/domain/entities/feedback_report.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/help_topic.dart';
 import 'package:flutter_pecha/features/feedback/domain/repositories/feedback_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -49,14 +51,19 @@ final sendFeedbackProvider = Provider<SendFeedback>(SendFeedback.new);
 
 /// Attaches the app and device context to a message and sends it. Throws
 /// [FeedbackException] on failure.
+///
+/// This is the whole of Help & contact's send: the backend also posts the
+/// message into the user's WeBuddhist Team chat, so the app sends no chat
+/// message of its own.
 class SendFeedback {
   SendFeedback(this._ref);
 
   final Ref _ref;
 
-  Future<void> call({
+  Future<FeedbackReceipt> call({
     required String message,
     List<String> imagePaths = const [],
+    HelpTopic? topic,
   }) async {
     final result = await _ref
         .read(feedbackRepositoryProvider)
@@ -66,11 +73,12 @@ class SendFeedback {
             imagePaths: imagePaths,
             appVersion: await _appVersion(),
             platform: _platform(),
+            topic: topic,
           ),
         );
-    result.fold(
+    return result.fold(
       (failure) => throw FeedbackException(feedbackFailureOf(failure), failure),
-      (_) {},
+      (receipt) => receipt,
     );
   }
 

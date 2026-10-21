@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/network/interceptors/retry_interceptor.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/feedback_receipt.dart';
 import 'package:flutter_pecha/features/feedback/domain/entities/feedback_report.dart';
 
 /// `POST /feedback`: stores the signed-in user's feedback. The backend then
@@ -32,7 +33,7 @@ class FeedbackRemoteDatasource {
   /// for saved feedback, and the user's resend would store it twice.
   static const Duration _receiveTimeout = Duration(seconds: 60);
 
-  Future<void> submit(FeedbackReport report) async {
+  Future<FeedbackReceipt> submit(FeedbackReport report) async {
     var totalBytes = 0;
     for (final path in report.imagePaths) {
       totalBytes += await File(path).length();
@@ -45,7 +46,7 @@ class FeedbackRemoteDatasource {
     }
 
     try {
-      await dio.post<void>(
+      final response = await dio.post<Object?>(
         '/feedback',
         data: await buildForm(report),
         options: Options(
@@ -56,6 +57,7 @@ class FeedbackRemoteDatasource {
           extra: {RetryInterceptor.noRetryKey: true},
         ),
       );
+      return receiptFrom(response.data);
     } on DioException catch (e) {
       _logger.error('Dio error in submit', e);
       // The error interceptor turns a 413 into a generic server error.
@@ -69,16 +71,32 @@ class FeedbackRemoteDatasource {
     }
   }
 
+  /// Reads the 201 body. Only `room_id` is used, and the backend does not
+  /// send it yet, so anything else — no body, no field, a non-string — is a
+  /// receipt without a room rather than an error: the feedback is stored
+  /// either way.
+  static FeedbackReceipt receiptFrom(Object? data) {
+    if (data is! Map) return const FeedbackReceipt();
+    final roomId = data['room_id'];
+    if (roomId is! String || roomId.trim().isEmpty) {
+      return const FeedbackReceipt();
+    }
+    return FeedbackReceipt(roomId: roomId.trim());
+  }
+
   /// The multipart body. Every image goes under the plain field name
   /// `images`, one part per file: the backend ignores `images[]` and
-  /// `files[0]`.
+  /// `files[0]`. `topic` is a slug; a backend that does not know the field
+  /// yet ignores it.
   static Future<FormData> buildForm(FeedbackReport report) async {
+    final topic = report.topic;
     final form =
         FormData()
           ..fields.addAll([
             MapEntry('content', report.message),
             MapEntry('platform', report.platform),
             MapEntry('app_version', report.appVersion),
+            if (topic != null) MapEntry('topic', topic.slug),
           ]);
     for (final (i, path) in report.imagePaths.indexed) {
       final name = attachmentName(i, path);

@@ -43,6 +43,13 @@ abstract class GroupChatRepository {
     String? intention,
   });
 
+  /// Sends [body] to the direct room the viewer shares with [userId].
+  Future<Either<Failure, ChatMessageDTO>> sendDirectMessage(
+    String userId, {
+    required String body,
+    String? parentMessageId,
+  });
+
   Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions();
 
   Future<Either<Failure, List<ChatPrayerSummaryDTO>>> prayFor(

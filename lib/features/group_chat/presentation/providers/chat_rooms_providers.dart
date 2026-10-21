@@ -14,7 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart' show Left, Right;
 
 class ChatRoomsState extends Equatable {
-  /// Group rooms only, most recently active first.
+  /// Group and direct rooms, most recently active first (see
+  /// [chatListRooms]).
   final List<ChatRoomDTO> rooms;
   final bool isLoading;
   final bool isLoadingMore;
@@ -27,7 +28,7 @@ class ChatRoomsState extends Equatable {
   /// before the initial request lands.
   final bool hasLoaded;
 
-  /// Whether an unread group room sits past the end of [rooms].
+  /// Whether an unread listed room sits past the end of [rooms].
   ///
   /// The list stops walking the server once it has a page to show, but the
   /// dot has to answer for every room. Set by a scan that carries on from
@@ -111,7 +112,7 @@ class _RoomsWalk {
   final Failure? failure;
 }
 
-/// The viewer's group chats.
+/// The viewer's group chats and direct chats.
 ///
 /// Read by both the Connect app-bar dot and the Chats screen, so the dot's
 /// fetch doubles as the screen's prefetch — there is no unread endpoint, and
@@ -126,12 +127,11 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   final Ref ref;
   static const int _limit = 20;
 
-  /// How many server pages one load will walk once it has a group room to
-  /// show.
+  /// How many server pages one load will walk once it has a room to show.
   ///
-  /// `/chat/rooms` has no kind filter and mixes direct messages in, so a page
-  /// can be all DMs and contribute nothing to this list. The cap keeps a
-  /// DM-heavy account from turning every load into a crawl of the whole
+  /// `/chat/rooms` has no kind filter and mixes event rooms in, so a page can
+  /// be all event rooms and contribute nothing to this list. The cap keeps
+  /// such an account from turning every load into a crawl of the whole
   /// endpoint — but it only applies once the walk has found something. A walk
   /// that has found nothing keeps going until the server runs out: with no
   /// list on screen there is nothing to scroll, so a load that stopped short
@@ -174,8 +174,8 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     if (state.isLoading) return;
     _generation++;
     // `hasLoaded` waits for the whole walk, not the first page: with a first
-    // page of DMs the list is still empty when it lands, and marking it loaded
-    // there would flash the empty state before the group rooms arrive.
+    // page of event rooms the list is still empty when it lands, and marking
+    // it loaded there would flash the empty state before the chats arrive.
     //
     // `isLoadingMore` is cleared here rather than when the orphaned page
     // lands: the bump above has already made that page a no-op, and `isLoading`
@@ -208,7 +208,7 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     // may have been read since.
     _unreadBeyondOffset = null;
     state = state.copyWith(
-      rooms: groupChatRooms(walk.rooms),
+      rooms: chatListRooms(walk.rooms),
       isLoading: false,
       hasLoaded: true,
       hasMore: walk.hasMore,
@@ -266,7 +266,7 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     if (caughtUp) _unreadBeyondOffset = null;
 
     state = state.copyWith(
-      rooms: groupChatRooms(merged),
+      rooms: chatListRooms(merged),
       isLoadingMore: false,
       hasMore: walk.hasMore,
       skip: walk.skip,
@@ -301,9 +301,9 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     }
   }
 
-  /// Pages forward from [skip] until a page's worth of group rooms has been
+  /// Pages forward from [skip] until a page's worth of listed rooms has been
   /// collected, the server runs out, a page fails, or [_maxPagesPerLoad] is
-  /// reached with at least one group room in hand — whichever comes first.
+  /// reached with at least one listed room in hand — whichever comes first.
   ///
   /// Never returns empty-handed while the server still has rooms: an empty
   /// result with `hasMore` set is a dead end for the caller, since nothing on
@@ -316,7 +316,7 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     var hasMore = true;
 
     for (var page = 0; hasMore; page++) {
-      final found = groupChatRooms(rooms).length;
+      final found = chatListRooms(rooms).length;
       if (found >= _limit) break;
       if (page >= _maxPagesPerLoad && found > 0) break;
 
@@ -348,8 +348,8 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
       // Against the raw page, not the kept rows: the offset is the server's.
       skip += loaded.rooms.length;
       total = loaded.total;
-      // Against the raw page, not the filtered list: direct rooms count
-      // towards the server's total, so a page that is all DMs still means
+      // Against the raw page, not the filtered list: event rooms count
+      // towards the server's total, so a page that is all of them still means
       // there is more to walk.
       hasMore = loaded.rooms.isNotEmpty && skip < total;
     }
@@ -358,7 +358,7 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   }
 
   /// Pages on from [skip] — where the list's walk stopped — looking only for
-  /// an unread group room, and stops at the first one.
+  /// an unread listed room, and stops at the first one.
   ///
   /// There is no unread endpoint and `/chat/rooms` has no sort or filter, so
   /// the only way to be sure nothing is unread is to see every room. That is

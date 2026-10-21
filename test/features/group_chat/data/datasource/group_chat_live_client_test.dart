@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_chat/chat_moderation.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
   group('ChatLiveClient', () {
@@ -40,6 +41,43 @@ void main() {
         groupId: 'g1',
       );
       expect(uri.scheme, 'ws');
+    });
+
+    test('liveUri scopes a direct chat by the other person', () {
+      final uri = ChatLiveClient.liveUri(
+        restBaseUrl: 'https://api.example.com/api/v1',
+        token: 'tok',
+        receiverId: 'u2',
+      );
+      expect(uri.path, '/api/v1/chat/live');
+      expect(uri.queryParameters['receiver_id'], 'u2');
+      expect(uri.queryParameters.containsKey('group_id'), isFalse);
+      expect(uri.queryParameters.containsKey('event_id'), isFalse);
+    });
+
+    test('liveUri refuses more than one scope', () {
+      expect(
+        () => ChatLiveClient.liveUri(
+          restBaseUrl: 'https://api.example.com/api/v1',
+          token: 'tok',
+          groupId: 'g1',
+          receiverId: 'u2',
+        ),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('ping is a bare ping frame', () {
+      expect(ChatLiveClient.encodePing(), '{"type":"ping"}');
+    });
+
+    test('closeCode reports how the server closed the channel', () {
+      final channel = _ClosedChannel(1008);
+      final client = ChatLiveClient(connect: (_) => channel);
+
+      expect(client.closeCode, isNull);
+      client.connect(Uri.parse('wss://example.test/chat/live'));
+      expect(client.closeCode, 1008);
     });
 
     test('parses a message_deleted frame', () {
@@ -121,4 +159,18 @@ void main() {
       );
     });
   });
+}
+
+/// A channel the server has already closed with [closeCode].
+class _ClosedChannel implements WebSocketChannel {
+  _ClosedChannel(this.closeCode);
+
+  @override
+  final int? closeCode;
+
+  @override
+  Stream<dynamic> get stream => const Stream.empty();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

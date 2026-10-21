@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/feedback/data/datasource/feedback_remote_datasource.dart';
 import 'package:flutter_pecha/features/feedback/data/repositories/feedback_repository_impl.dart';
+import 'package:flutter_pecha/features/feedback/domain/entities/feedback_receipt.dart';
 import 'package:flutter_pecha/features/feedback/domain/entities/feedback_report.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,9 +14,10 @@ class _FakeDatasource extends FeedbackRemoteDatasource {
   final sent = <FeedbackReport>[];
 
   @override
-  Future<void> submit(FeedbackReport report) async {
+  Future<FeedbackReceipt> submit(FeedbackReport report) async {
     sent.add(report);
     if (error != null) throw error!;
+    return const FeedbackReceipt(roomId: 'team-room');
   }
 }
 
@@ -38,7 +40,7 @@ void main() {
     final remote = _FakeDatasource();
     final result = await FeedbackRepositoryImpl(remote: remote).submit(_report);
 
-    expect(result.isRight(), isTrue);
+    expect(result.getRight().toNullable()?.roomId, 'team-room');
     expect(remote.sent, [_report]);
   });
 

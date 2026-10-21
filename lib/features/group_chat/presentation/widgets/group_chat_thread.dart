@@ -57,14 +57,15 @@ class GroupChatThread extends ConsumerStatefulWidget {
   const GroupChatThread({
     super.key,
     required this.roomId,
-    required this.groupId,
     required this.onReply,
     required this.onSelectionChanged,
     this.targetMessageId,
+    this.showIdentity = true,
+    this.presentMessage,
+    this.messageHeader,
   });
 
   final String roomId;
-  final String groupId;
 
   /// A message to open on instead of the newest one, chased down once the
   /// first page is in. Reached from the reports queue's "View message".
@@ -76,6 +77,19 @@ class GroupChatThread extends ConsumerStatefulWidget {
   /// The selection as it stands, or null once cleared. The screen swaps its
   /// header for the selection bar while this is non-null.
   final ValueChanged<ChatSelection?> onSelectionChanged;
+
+  /// Avatars and sender names on the bubbles. A direct chat turns them off.
+  final bool showIdentity;
+
+  /// The message a bubble shows, when that differs from the one held — a
+  /// direct chat strips the "Sent from Help & contact" line it draws above.
+  /// Selection, reactions and replies still act on the message as held.
+  final ChatMessageDTO Function(ChatMessageDTO message)? presentMessage;
+
+  /// A line drawn above a message's row, outside the row itself, so the
+  /// emoji pill and quote jumps still measure the bubble alone.
+  final Widget? Function(BuildContext context, ChatMessageDTO message)?
+  messageHeader;
 
   @override
   ConsumerState<GroupChatThread> createState() => _GroupChatThreadState();
@@ -1081,7 +1095,8 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
             final parent = message.parent;
 
             final bubble = GroupChatMessageBubble(
-              message: message,
+              message: widget.presentMessage?.call(message) ?? message,
+              showIdentity: widget.showIdentity,
               isSelf: isSelfChatMessage(
                 senderId: message.senderId,
                 senderEmail: message.senderEmail,
@@ -1113,14 +1128,17 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
             // — fires. A tombstone swallows the tap so it neither joins the
             // selection nor clears it by falling through to the thread.
             if (selecting) {
-              return KeyedSubtree(
-                key: _rowKey(message.id),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: isDeleted ? () {} : () => _onTapRow(message),
-                  onLongPress:
-                      isDeleted ? null : () => _onLongPressRow(message),
-                  child: AbsorbPointer(child: bubble),
+              return _withHeader(
+                message,
+                KeyedSubtree(
+                  key: _rowKey(message.id),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: isDeleted ? () {} : () => _onTapRow(message),
+                    onLongPress:
+                        isDeleted ? null : () => _onLongPressRow(message),
+                    child: AbsorbPointer(child: bubble),
+                  ),
                 ),
               );
             }
@@ -1128,30 +1146,48 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
             // Nothing on offer for a message that is gone: nothing to react
             // to, quote, copy or select.
             if (isDeleted) {
-              return KeyedSubtree(key: _rowKey(message.id), child: bubble);
+              return _withHeader(
+                message,
+                KeyedSubtree(key: _rowKey(message.id), child: bubble),
+              );
             }
 
-            return KeyedSubtree(
-              key: _rowKey(message.id),
-              // Long-press anywhere on the row — bubble, avatar or the space
-              // beside them — starts a selection. Translucent, so the taps
-              // inside the bubble (badge, quote, links) keep working, and
-              // only a still press wins the arena against the swipe and the
-              // scroll.
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onLongPress: () => _onLongPressRow(message),
-                // Swipe and the selection header reach the same reply path,
-                // so the two gestures cannot disagree about what a reply
-                // means.
-                child: GroupChatSwipeToReply(
-                  onReply: () => widget.onReply(message),
-                  child: bubble,
+            return _withHeader(
+              message,
+              KeyedSubtree(
+                key: _rowKey(message.id),
+                // Long-press anywhere on the row — bubble, avatar or the
+                // space beside them — starts a selection. Translucent, so the
+                // taps inside the bubble (badge, quote, links) keep working,
+                // and only a still press wins the arena against the swipe and
+                // the scroll.
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onLongPress: () => _onLongPressRow(message),
+                  // Swipe and the selection header reach the same reply
+                  // path, so the two gestures cannot disagree about what a
+                  // reply means.
+                  child: GroupChatSwipeToReply(
+                    onReply: () => widget.onReply(message),
+                    child: bubble,
+                  ),
                 ),
               ),
             );
         }
       },
+    );
+  }
+
+  /// [row] under the screen's [GroupChatThread.messageHeader] for [message],
+  /// when it draws one.
+  Widget _withHeader(ChatMessageDTO message, Widget row) {
+    final header = widget.messageHeader?.call(context, message);
+    if (header == null) return row;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [header, row],
     );
   }
 

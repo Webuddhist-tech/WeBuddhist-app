@@ -135,7 +135,6 @@ Future<void> _pumpThread(
     home: Scaffold(
       body: GroupChatThread(
         roomId: 'room-1',
-        groupId: 'group-1',
         targetMessageId: targetMessageId,
         onReply: (_) {},
         onSelectionChanged: (_) {},

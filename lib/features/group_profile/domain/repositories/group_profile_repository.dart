@@ -93,7 +93,10 @@ abstract class GroupProfileRepositoryInterface {
     String? reason,
   });
 
-  Future<Either<Failure, GroupEventsPage>> getGroupEvents(String groupId);
+  Future<Either<Failure, GroupEventsPage>> getGroupEvents(
+    String groupId, {
+    required String language,
+  });
 
   Future<Either<Failure, GroupEventsPage>> getConnectEvents({
     required bool includeUnfollowed,

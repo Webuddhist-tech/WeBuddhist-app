@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/add_offline_chants_dialog.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_bar.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_chant_footer.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_recitation_audio_sheet.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulation_chant_counter.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
@@ -164,7 +166,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   PlanSegmentAudioController? _audioController;
   bool _isAdvancing = false;
 
-  bool get _hasAudio => _audioController?.hasAudio ?? false;
+  /// Recording chosen from Audio versions on this screen. Null means the
+  /// first recording of the chant on screen.
+  CollectionAudioTrack? _selectedCollectionTrack;
+
+  bool get _hasCollectionAudioChoices =>
+      widget.navigationContext?.hasCollectionAudioChoices ?? false;
+
+  bool get _hasAudio =>
+      (_audioController?.hasAudio ?? false) || _hasCollectionAudioChoices;
 
   @override
   void initState() {
@@ -181,7 +191,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   List<ReaderParams> _sourceParams() {
     final ctx = widget.navigationContext;
     final item = ctx?.currentItem;
-    if (item == null || !item.isSourceReference || item.textId != widget.textId) {
+    if (item == null ||
+        !item.isSourceReference ||
+        item.textId != widget.textId) {
       return [
         ReaderParams(
           textId: widget.textId,
@@ -358,32 +370,107 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// Create the audio controller when the reader was opened from a plan and the
   /// current item has resolvable audio (its own `audioUrl` wins over the
   /// day-level track). Auto-plays when the navigation requested it.
+  ///
+  /// A group recitation collection plays the recording passed in with the
+  /// route (the chant's first one, from the list play circle). The reader's
+  /// own play button starts that same first recording when nothing was passed.
   void _initAudio() {
     final ctx = widget.navigationContext;
-    if (ctx == null || ctx.source != NavigationSource.plan) return;
-    final item = ctx.currentItem;
-    if (item == null) return;
-    final url = ctx.effectiveAudioUrlFor(item);
-    if (url == null) return;
+    if (ctx == null) return;
+    if (ctx.source == NavigationSource.plan) {
+      final item = ctx.currentItem;
+      if (item == null) return;
+      final url = ctx.effectiveAudioUrlFor(item);
+      if (url == null) return;
 
-    _audioController = PlanSegmentAudioController(
-      url: url,
-      startMs: item.startMs,
-      endMs: item.endMs,
-      onSegmentComplete: _onAudioSegmentComplete,
-    );
-
-    if (ctx.autoPlay) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _audioController?.maybeAutoPlay(),
+      _audioController = PlanSegmentAudioController(
+        url: url,
+        startMs: item.startMs,
+        endMs: item.endMs,
+        onSegmentComplete: _onAudioSegmentComplete,
       );
+
+      if (ctx.autoPlay) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _audioController?.maybeAutoPlay(),
+        );
+      }
+      return;
     }
+
+    if (ctx.source != NavigationSource.groupRecitationCollection) return;
+    final track = ctx.initialCollectionAudio;
+    if (!ctx.autoPlay || track == null) return;
+    if (!ctx.currentCollectionAudioTracks.any(
+      (option) => option.id == track.id,
+    )) {
+      return;
+    }
+    _selectedCollectionTrack = track;
+    _replaceCollectionAudio(track);
+  }
+
+  /// The recording play will start: the menu choice, or the first one.
+  CollectionAudioTrack? get _currentCollectionTrack {
+    final tracks =
+        widget.navigationContext?.currentCollectionAudioTracks ?? const [];
+    if (tracks.isEmpty) return null;
+    final selected = _selectedCollectionTrack;
+    if (selected != null && tracks.any((track) => track.id == selected.id)) {
+      return selected;
+    }
+    return tracks.first;
   }
 
   @override
   void dispose() {
     _audioController?.dispose();
     super.dispose();
+  }
+
+  /// Swaps in [track] and starts it. When the file ends, playback stops
+  /// and the play button can start the same recording again.
+  void _replaceCollectionAudio(CollectionAudioTrack track) {
+    final url = normalizeAudioUrl(track.url);
+    if (url == null) return;
+
+    final previous = _audioController;
+    _audioController = PlanSegmentAudioController(
+      url: url,
+      startMs: 0,
+      endMs: null,
+      onSegmentComplete: () {},
+    );
+    previous?.dispose();
+    unawaited(_audioController!.maybeAutoPlay());
+  }
+
+  /// Starts the chant's current recording. The list play circle passes the
+  /// first one in; this is the reader's own play button.
+  void _playCurrentCollectionAudio() {
+    final track = _currentCollectionTrack;
+    if (track == null) return;
+    _selectedCollectionTrack = track;
+    _replaceCollectionAudio(track);
+    setState(() {});
+  }
+
+  Future<void> _openCollectionAudioSheet() async {
+    final tracks =
+        widget.navigationContext?.currentCollectionAudioTracks ?? const [];
+    if (tracks.isEmpty || !mounted) return;
+    // The ⋮ sheet has just closed. Let that route finish before opening this one.
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    final picked = await showGroupRecitationAudioSheet(
+      context,
+      tracks: tracks,
+      selectedTrackId: _currentCollectionTrack?.id,
+    );
+    if (!mounted || picked == null) return;
+    _selectedCollectionTrack = picked;
+    _replaceCollectionAudio(picked);
+    setState(() {});
   }
 
   /// Called when the current item's audio finishes. Mirrors
@@ -825,9 +912,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           ReaderFontSizeButton(
             onPressed: () => showFontSizeBottomSheet(context),
           ),
-          ReaderLanguagesButton(
-            onPressed: () => _openLanguagesSheet(context),
-          ),
+          ReaderLanguagesButton(onPressed: () => _openLanguagesSheet(context)),
         ],
       );
     }
@@ -863,9 +948,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     PlanNavigator.pop(context);
   }
 
-  /// The floating plan audio play/pause control. Keyed so its animation state
-  /// survives reparenting between the behind-panel slot and the bottom overlay.
+  /// The floating play control. Plan audio toggles the current segment.
+  /// A group collection plays its current recording: the first one, or the
+  /// one picked from Audio versions. Pause and a later play stay on that file.
   Widget _buildAudioButton() {
+    if (_hasCollectionAudioChoices) {
+      final controller = _audioController;
+      if (controller != null) {
+        return PlanAudioButton(key: _audioButtonKey, controller: controller);
+      }
+      return CollectionAudioPlayButton(onPressed: _playCurrentCollectionAudio);
+    }
     return PlanAudioButton(key: _audioButtonKey, controller: _audioController!);
   }
 
@@ -1011,7 +1104,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     _clearTransientState();
 
     // Adds the edition the user opened, not the original it is shown under.
-    final openedText = ref.read(readerNotifierProvider(_activeParams)).openedText;
+    final openedText =
+        ref.read(readerNotifierProvider(_activeParams)).openedText;
     final showAddToPractices =
         (widget.navigationContext?.source == NavigationSource.recitationList ||
             widget.navigationContext?.source == NavigationSource.routine) &&
@@ -1028,6 +1122,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
               : null,
       onAddOfflineRecitation:
           _isGroupAccumulatorChant ? _addOfflineChantCount : null,
+      onAudioVersions:
+          _hasCollectionAudioChoices ? () => _openCollectionAudioSheet() : null,
     );
   }
 

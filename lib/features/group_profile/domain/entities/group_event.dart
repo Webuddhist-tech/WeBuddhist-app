@@ -91,6 +91,10 @@ class GroupEventAccumulation {
   final String id;
   final String groupAccumulatorId;
   final GroupEventParticipationType? format;
+
+  /// `count_mode` from the API: "manual_in_person" (an admin records the
+  /// counts) or "offline_participants" (attendees log them in the app).
+  final String? countMode;
   final int displayOrder;
   final GroupEventPracticeRef? groupAccumulator;
 
@@ -98,9 +102,44 @@ class GroupEventAccumulation {
     required this.id,
     required this.groupAccumulatorId,
     this.format,
+    this.countMode,
     this.displayOrder = 0,
     this.groupAccumulator,
   });
+
+  static const manualInPersonCountMode = 'manual_in_person';
+
+  /// True when an admin records this accumulation's counts day by day;
+  /// older rows without a mode fall back to the in-person format.
+  bool get isAdminCounted =>
+      countMode == null
+          ? format == GroupEventParticipationType.offline
+          : countMode == manualInPersonCountMode;
+
+  String get title => groupAccumulator?.name.trim() ?? '';
+}
+
+/// Rules for an event's accumulations, sorted by display order.
+extension GroupEventAccumulations on List<GroupEventAccumulation> {
+  /// The accumulation that owns the leaderboard and takes logged counts: the
+  /// first online one, else the first without a format (legacy single
+  /// accumulator). Null when every accumulation is in-person, which shows
+  /// progress only.
+  GroupEventAccumulation? get primary =>
+      where(
+        (item) => item.format == GroupEventParticipationType.online,
+      ).firstOrNull ??
+      where((item) => item.format == null).firstOrNull;
+
+  /// Top-to-bottom rows for the accumulations tab: display order reversed,
+  /// with [primary] moved last so it sits right above its leaderboard.
+  List<GroupEventAccumulation> get displayRows {
+    final main = primary;
+    return [
+      ...reversed.where((item) => !identical(item, main)),
+      if (main != null) main,
+    ];
+  }
 }
 
 class GroupEventRecurrence {
@@ -228,6 +267,9 @@ class GroupEvent {
       ),
     ];
   }
+
+  /// See [GroupEventAccumulations.primary].
+  GroupEventAccumulation? get primaryAccumulation => allAccumulations.primary;
 
   /// First YouTube stream by display order, or null when the event has none.
   GroupEventLink? get liveYoutubeLink {

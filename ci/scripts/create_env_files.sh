@@ -33,6 +33,7 @@ fi
   echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${DEV_CLARITY_ENABLED-}"
+  echo "LOCATIONIQ_TOKEN=${LOCATIONIQ_TOKEN-}"
 } > .env.dev
 
 # --- Staging ---------------------------------------------------------------
@@ -47,6 +48,7 @@ fi
   echo "POSTHOG_HOST=${POSTHOG_HOST-https://us.i.posthog.com}"
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${STAGING_CLARITY_ENABLED-}"
+  echo "LOCATIONIQ_TOKEN=${LOCATIONIQ_TOKEN-}"
 } > .env.staging
 
 # --- Production ------------------------------------------------------------
@@ -65,6 +67,8 @@ fi
   # without Clarity.
   echo "CLARITY_PROJECT_ID=${CLARITY_PROJECT_ID-yn5na4zbuc}"
   echo "CLARITY_ENABLED=${CLARITY_ENABLED-}"
+  # Venue search; it is hidden while the key is empty.
+  echo "LOCATIONIQ_TOKEN=${LOCATIONIQ_TOKEN-}"
 } > .env.prod
 
 echo "Created .env.dev, .env.staging, .env.prod"
