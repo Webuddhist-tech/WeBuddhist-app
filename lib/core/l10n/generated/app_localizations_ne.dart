@@ -1253,6 +1253,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get bookmark => 'बुकमार्क';
 
   @override
+  String get collection_audio_versions => 'Audio versions';
+
+  @override
   String get image => 'तस्बिर';
 
   @override

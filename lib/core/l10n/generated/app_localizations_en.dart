@@ -1233,6 +1233,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookmark => 'Bookmark';
 
   @override
+  String get collection_audio_versions => 'Audio versions';
+
+  @override
   String get image => 'Image';
 
   @override

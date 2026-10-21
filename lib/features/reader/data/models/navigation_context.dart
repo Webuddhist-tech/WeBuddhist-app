@@ -481,13 +481,14 @@ class PlanTextItem {
 
   /// Subtask ids this item completes: its own plus every block's and
   /// source's.
-  List<String> get subtaskIds => {
-    if (subtaskId != null) subtaskId!,
-    for (final b in blocks)
-      if (b.subtaskId != null) b.subtaskId!,
-    for (final s in sources)
-      if (s.subtaskId != null) s.subtaskId!,
-  }.where((id) => id.isNotEmpty).toList();
+  List<String> get subtaskIds =>
+      {
+        if (subtaskId != null) subtaskId!,
+        for (final b in blocks)
+          if (b.subtaskId != null) b.subtaskId!,
+        for (final s in sources)
+          if (s.subtaskId != null) s.subtaskId!,
+      }.where((id) => id.isNotEmpty).toList();
 
   /// Those of [subtaskIds] already completed when this item was built.
   Set<String> get completedSubtaskIds => {
@@ -498,8 +499,7 @@ class PlanTextItem {
   };
 
   /// True when one of this item's sources is the text [textId].
-  bool hasSourceText(String textId) =>
-      sources.any((s) => s.textId == textId);
+  bool hasSourceText(String textId) => sources.any((s) => s.textId == textId);
 
   /// Get the first segment ID for initial scroll position
   /// (SOURCE_REFERENCE only).
@@ -620,6 +620,30 @@ class PlanTextItem {
 
 enum SwipeDirection { next, previous } // Direction for swipe/button navigation
 
+/// One recording the user can pick for a group recitation chant.
+class CollectionAudioTrack {
+  final String id;
+  final String title;
+  final String url;
+
+  const CollectionAudioTrack({
+    required this.id,
+    required this.title,
+    required this.url,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CollectionAudioTrack &&
+          other.id == id &&
+          other.title == title &&
+          other.url == url;
+
+  @override
+  int get hashCode => Object.hash(id, title, url);
+}
+
 /// Context for navigation to reader / plan-text screens.
 /// Contains information about the navigation source and the linear list
 /// of plan subtasks for swipe / arrow navigation between them.
@@ -661,6 +685,15 @@ class NavigationContext {
   /// [NavigationSource.groupRecitationCollection].
   final String? collectionId;
 
+  /// Recordings for each chant id in a group recitation collection.
+  /// Empty for every other navigation source. Swipe navigation keeps this
+  /// map so the destination chant can offer its own tracks.
+  final Map<String, List<CollectionAudioTrack>> collectionAudioTracks;
+
+  /// The recording the user picked before this reader opened. Playback
+  /// starts only when this is set. Swipe navigation does not carry it.
+  final CollectionAudioTrack? initialCollectionAudio;
+
   /// The group event this task was opened from.
   final String? eventId;
 
@@ -692,6 +725,8 @@ class NavigationContext {
     this.groupAccumulatorEnded = false,
     this.language,
     this.collectionId,
+    this.collectionAudioTracks = const <String, List<CollectionAudioTrack>>{},
+    this.initialCollectionAudio,
     this.eventId,
     this.isOnlineAttendee = false,
     this.taskIsLive,
@@ -743,7 +778,8 @@ class NavigationContext {
   /// Check if this navigation context supports swipe navigation
   /// (more than one item to move between).
   bool get canSwipe =>
-      (hasPlanItems || hasRecitationCollectionItems) && planTextItems!.length > 1;
+      (hasPlanItems || hasRecitationCollectionItems) &&
+      planTextItems!.length > 1;
 
   /// Check if there is a next text in the plan
   bool get hasNextText =>
@@ -782,6 +818,17 @@ class NavigationContext {
   /// Whether [item] has any playable audio once precedence is applied.
   bool hasAudioFor(PlanTextItem item) => effectiveAudioUrlFor(item) != null;
 
+  /// Recordings offered for the chant currently on screen.
+  List<CollectionAudioTrack> get currentCollectionAudioTracks {
+    if (source != NavigationSource.groupRecitationCollection) return const [];
+    final chantId = currentItem?.subtaskId;
+    if (chantId == null || chantId.isEmpty) return const [];
+    return collectionAudioTracks[chantId] ?? const [];
+  }
+
+  /// True when the current group-collection chant has at least one recording.
+  bool get hasCollectionAudioChoices => currentCollectionAudioTracks.isNotEmpty;
+
   /// The resolved audio URL for the current item, if any.
   String? get currentAudioUrl {
     final item = currentItem;
@@ -806,6 +853,8 @@ class NavigationContext {
     bool? groupAccumulatorEnded,
     String? language,
     String? collectionId,
+    Map<String, List<CollectionAudioTrack>>? collectionAudioTracks,
+    CollectionAudioTrack? initialCollectionAudio,
     String? eventId,
     bool? isOnlineAttendee,
     bool? taskIsLive,
@@ -830,6 +879,10 @@ class NavigationContext {
           groupAccumulatorEnded ?? this.groupAccumulatorEnded,
       language: language ?? this.language,
       collectionId: collectionId ?? this.collectionId,
+      collectionAudioTracks:
+          collectionAudioTracks ?? this.collectionAudioTracks,
+      initialCollectionAudio:
+          initialCollectionAudio ?? this.initialCollectionAudio,
       eventId: eventId ?? this.eventId,
       isOnlineAttendee: isOnlineAttendee ?? this.isOnlineAttendee,
       taskIsLive: taskIsLive ?? this.taskIsLive,

@@ -6,6 +6,22 @@ import 'package:flutter_pecha/shared/domain/value_objects/responsive_image.dart'
 
 enum GroupPracticeType { accumulator, series, collection, plan }
 
+/// One recording attached to a group recitation chant.
+class GroupRecitationAudio extends Equatable {
+  final String id;
+  final String title;
+  final String assetUrl;
+
+  const GroupRecitationAudio({
+    required this.id,
+    required this.title,
+    required this.assetUrl,
+  });
+
+  @override
+  List<Object?> get props => [id, title, assetUrl];
+}
+
 class GroupRecitationCollectionItem extends Equatable {
   final String id;
   final String textId;
@@ -13,6 +29,7 @@ class GroupRecitationCollectionItem extends Equatable {
   final String language;
   final String type;
   final int displayOrder;
+  final List<GroupRecitationAudio> audio;
 
   const GroupRecitationCollectionItem({
     required this.id,
@@ -21,10 +38,19 @@ class GroupRecitationCollectionItem extends Equatable {
     required this.language,
     required this.type,
     required this.displayOrder,
+    this.audio = const [],
   });
 
   @override
-  List<Object?> get props => [id, textId, title, language, type, displayOrder];
+  List<Object?> get props => [
+    id,
+    textId,
+    title,
+    language,
+    type,
+    displayOrder,
+    audio,
+  ];
 }
 
 class GroupRecitationCollection extends Equatable {

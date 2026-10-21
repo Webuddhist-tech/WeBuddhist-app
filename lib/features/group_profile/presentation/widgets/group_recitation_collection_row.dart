@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
 /// Reader context for one chant of a collection, carrying its siblings so
 /// the reader can step through and mark them complete.
+/// Playable recordings for [item], titles kept exactly as the API sent them.
+List<CollectionAudioTrack> collectionAudioTracksFor(
+  GroupRecitationCollectionItem item,
+) {
+  return [
+    for (final audio in item.audio)
+      if (hasPlayableAudio(audio.assetUrl))
+        CollectionAudioTrack(
+          id: audio.id,
+          title: audio.title,
+          url: audio.assetUrl.trim(),
+        ),
+  ];
+}
+
 NavigationContext groupRecitationCollectionNavigationContext({
   required GroupRecitationCollectionKey key,
   required GroupRecitationCollection collection,
   required GroupRecitationCollectionItem item,
   required GroupRecitationCollectionCompletionState completionState,
+  CollectionAudioTrack? initialAudio,
 }) {
   final currentIndex = collection.items.indexWhere((i) => i.id == item.id);
   final planTextItems =
@@ -24,6 +41,11 @@ NavigationContext groupRecitationCollectionNavigationContext({
           isCompleted: completionState.isCompleted(collectionItem.id),
         );
       }).toList();
+  final tracks = <String, List<CollectionAudioTrack>>{};
+  for (final collectionItem in collection.items) {
+    final itemTracks = collectionAudioTracksFor(collectionItem);
+    if (itemTracks.isNotEmpty) tracks[collectionItem.id] = itemTracks;
+  }
 
   return NavigationContext(
     source: NavigationSource.groupRecitationCollection,
@@ -32,6 +54,9 @@ NavigationContext groupRecitationCollectionNavigationContext({
     groupId: key.groupId,
     collectionId: key.collectionId,
     language: item.language,
+    collectionAudioTracks: tracks,
+    autoPlay: initialAudio != null,
+    initialCollectionAudio: initialAudio,
   );
 }
 
@@ -43,6 +68,7 @@ class GroupRecitationCollectionRow extends StatelessWidget {
     required this.isCompleted,
     required this.isSubmitting,
     required this.onTap,
+    this.onPlay,
   });
 
   final GroupRecitationCollectionItem item;
@@ -50,6 +76,9 @@ class GroupRecitationCollectionRow extends StatelessWidget {
   final bool isCompleted;
   final bool isSubmitting;
   final VoidCallback onTap;
+
+  /// Opens the recording list. Set only when [item] has playable audio.
+  final VoidCallback? onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -83,20 +112,59 @@ class GroupRecitationCollectionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: borderColor, width: 1),
-              ),
-              child: Icon(
-                AppAssets.caretRight,
-                size: 18,
+            if (onPlay != null)
+              _RoundIconButton(
+                icon: AppAssets.play,
+                iconSize: 14,
                 color: secondaryColor,
+                borderColor: borderColor,
+                onTap: isSubmitting ? null : onPlay,
+              )
+            else
+              _RoundIconButton(
+                icon: AppAssets.caretRight,
+                iconSize: 18,
+                color: secondaryColor,
+                borderColor: borderColor,
               ),
-            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({
+    required this.icon,
+    required this.iconSize,
+    required this.color,
+    required this.borderColor,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final double iconSize;
+  final Color color;
+  final Color borderColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          child: Icon(icon, size: iconSize, color: color),
         ),
       ),
     );

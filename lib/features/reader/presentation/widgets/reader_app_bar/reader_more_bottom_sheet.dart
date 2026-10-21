@@ -19,6 +19,7 @@ import 'package:share_plus/share_plus.dart';
 ///
 /// Contains:
 ///   • Font-size A / A buttons
+///   • Audio versions, when this chant has recordings
 ///   • "+ Add to my practices" action
 ///   • Bookmark toggle action
 class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
@@ -29,6 +30,7 @@ class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
     this.showOfflineRecitation = false,
     this.onAddToPractices,
     this.onAddOfflineRecitation,
+    this.onAudioVersions,
   });
 
   final String textId;
@@ -36,6 +38,9 @@ class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
   final bool showOfflineRecitation;
   final VoidCallback? onAddToPractices;
   final VoidCallback? onAddOfflineRecitation;
+
+  /// Opens the recording list for a group recitation chant. Hidden when null.
+  final VoidCallback? onAudioVersions;
 
   @override
   ConsumerState<ReaderMoreBottomSheet> createState() =>
@@ -194,6 +199,30 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
               ],
             ),
           ),
+
+          if (widget.onAudioVersions != null) ...[
+            _SectionDivider(theme: theme),
+            ListTile(
+              leading: Icon(
+                AppAssets.speakerSimpleHigh,
+                color: theme.colorScheme.onSurface,
+              ),
+              title: Text(
+                l10n.collection_audio_versions,
+                style: theme.textTheme.bodyLarge,
+              ),
+              trailing: Icon(
+                AppAssets.caretRight,
+                size: 18,
+                color: theme.colorScheme.onSurface,
+              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop();
+                widget.onAudioVersions?.call();
+              },
+            ),
+          ],
 
           if (widget.showAddToPractices) ...[
             // ── Add to my practices ──────────────────────────────────────
@@ -355,6 +384,7 @@ void showReaderMoreBottomSheet(
   bool showOfflineRecitation = false,
   VoidCallback? onAddToPractices,
   VoidCallback? onAddOfflineRecitation,
+  VoidCallback? onAudioVersions,
 }) {
   showModalBottomSheet(
     context: context,
@@ -369,6 +399,7 @@ void showReaderMoreBottomSheet(
           showOfflineRecitation: showOfflineRecitation,
           onAddToPractices: onAddToPractices,
           onAddOfflineRecitation: onAddOfflineRecitation,
+          onAudioVersions: onAudioVersions,
         ),
   );
 }

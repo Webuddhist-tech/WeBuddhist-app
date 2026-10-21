@@ -199,6 +199,8 @@ class PlanSegmentAudioController extends ChangeNotifier {
     if (_hasCompleted) return;
     _hasCompleted = true;
     onSegmentComplete();
+    // Idle again so a caller that does not navigate away can replay or resume.
+    _setButtonState(PlanAudioButtonState.play);
   }
 
   /// Tears down all audio resources synchronously. Safe to call from

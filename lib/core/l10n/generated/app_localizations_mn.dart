@@ -1244,6 +1244,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get bookmark => 'Хавчууруулга';
 
   @override
+  String get collection_audio_versions => 'Audio versions';
+
+  @override
   String get image => 'Зураг';
 
   @override
