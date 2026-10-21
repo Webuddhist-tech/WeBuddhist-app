@@ -619,9 +619,17 @@ class _Stepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        button(AppAssets.minus, onDecrement, '-'),
+        button(
+          AppAssets.minus,
+          onDecrement,
+          context.l10n.group_event_duration_decrease,
+        ),
         const SizedBox(width: 8),
-        button(AppAssets.plus, onIncrement, '+'),
+        button(
+          AppAssets.plus,
+          onIncrement,
+          context.l10n.group_event_duration_increase,
+        ),
       ],
     );
   }

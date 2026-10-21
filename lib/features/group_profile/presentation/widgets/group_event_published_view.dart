@@ -33,6 +33,8 @@ class GroupEventPublishedView extends ConsumerWidget {
     final longUrl = DeepLinkUrlBuilder.eventLink(eventId: event.id).toString();
     final shareUrl = await resolveShareUrlRef(ref, longUrl);
     if (!context.mounted) return;
+    // Read before the share sheet: the view may be gone when it closes.
+    final shareAnalytics = ref.read(shareAnalyticsProvider);
     final result = await SharePlus.instance.share(
       ShareParams(
         text: shareUrl,
@@ -40,14 +42,12 @@ class GroupEventPublishedView extends ConsumerWidget {
       ),
     );
     if (ShareAnalytics.wasUsed(result)) {
-      ref
-          .read(shareAnalyticsProvider)
-          .contentShared(
-            surface: ShareSurface.event,
-            targetId: event.id,
-            format: 'text',
-            groupId: event.groupId,
-          );
+      shareAnalytics.contentShared(
+        surface: ShareSurface.event,
+        targetId: event.id,
+        format: 'text',
+        groupId: event.groupId,
+      );
     }
   }
 

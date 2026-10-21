@@ -1783,6 +1783,8 @@
   "group_event_repeats": "Repeats",
   "group_event_choose_repeats": "Choose how it repeats",
   "group_event_duration": "Duration",
+  "group_event_duration_decrease": "Decrease duration",
+  "group_event_duration_increase": "Increase duration",
   "group_event_duration_days": "{count, plural,\n=1 {1 day}\nother {{count} days}\n}",
   "@group_event_duration_days": {
     "placeholders": {

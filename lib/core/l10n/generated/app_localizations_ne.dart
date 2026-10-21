@@ -3558,6 +3558,12 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_event_duration => 'Duration';
 
   @override
+  String get group_event_duration_decrease => 'Decrease duration';
+
+  @override
+  String get group_event_duration_increase => 'Increase duration';
+
+  @override
   String group_event_duration_days(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

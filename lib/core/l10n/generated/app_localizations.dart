@@ -6182,6 +6182,18 @@ abstract class AppLocalizations {
   /// **'Duration'**
   String get group_event_duration;
 
+  /// No description provided for @group_event_duration_decrease.
+  ///
+  /// In en, this message translates to:
+  /// **'Decrease duration'**
+  String get group_event_duration_decrease;
+
+  /// No description provided for @group_event_duration_increase.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase duration'**
+  String get group_event_duration_increase;
+
   /// No description provided for @group_event_duration_days.
   ///
   /// In en, this message translates to:

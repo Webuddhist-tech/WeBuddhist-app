@@ -6965,6 +6965,20 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_event_duration_decrease => TolgeeBridge.get(
+    localeName,
+    'group_event_duration_decrease',
+    () => _fallback.group_event_duration_decrease,
+  );
+
+  @override
+  String get group_event_duration_increase => TolgeeBridge.get(
+    localeName,
+    'group_event_duration_increase',
+    () => _fallback.group_event_duration_increase,
+  );
+
+  @override
   String group_event_duration_days(int count) => TolgeeBridge.format(
     localeName,
     'group_event_duration_days',
