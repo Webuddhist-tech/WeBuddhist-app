@@ -67,59 +67,37 @@ class GroupProfileEventsTab extends ConsumerWidget {
                 child: _EmptyEvents(
                   isDark: isDark,
                   lineHeight: lineHeight,
-                  canCreate: canCreate,
+                  canCreate: false,
                   onCreateEvent: onCreateEvent,
                 ),
               );
             }
 
-            return Stack(
-              children: [
-                GroupProfileNestedTabScrollView(
-                  pageStorageKey: pageStorageKey,
-                  slivers: [
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(
-                        0,
-                        8,
-                        0,
-                        canCreate ? 96 : 32,
-                      ),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final event = page.events[index];
-                          final isLast = index == page.events.length - 1;
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              bottom:
-                                  isLast
-                                      ? 0
-                                      : ConnectFeedCardLayout.listItemGap,
-                            ),
-                            child: GroupEventListTile(
-                              event: event,
-                              showGroup: event.groupId != groupId,
-                              isDark: isDark,
-                              lineHeight: lineHeight,
-                              onTap:
-                                  () =>
-                                      context.push('/home/events/${event.id}'),
-                            ),
-                          );
-                        }, childCount: page.events.length),
-                      ),
-                    ),
-                  ],
-                ),
-                if (canCreate)
-                  Positioned(
-                    right: 16,
-                    bottom: 24,
-                    child: _CreateEventFab(
-                      isDark: isDark,
-                      onTap: onCreateEvent,
-                    ),
+            return GroupProfileNestedTabScrollView(
+              pageStorageKey: pageStorageKey,
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final event = page.events[index];
+                      final isLast = index == page.events.length - 1;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom:
+                              isLast ? 0 : ConnectFeedCardLayout.listItemGap,
+                        ),
+                        child: GroupEventListTile(
+                          event: event,
+                          showGroup: event.groupId != groupId,
+                          isDark: isDark,
+                          lineHeight: lineHeight,
+                          onTap: () => context.push('/home/events/${event.id}'),
+                        ),
+                      );
+                    }, childCount: page.events.length),
                   ),
+                ),
               ],
             );
           },

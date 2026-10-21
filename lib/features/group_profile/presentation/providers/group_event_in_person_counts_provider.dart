@@ -71,7 +71,11 @@ class GroupEventInPersonCountsNotifier
   Future<void> loadInitial() async {
     if (state.isLoading) return;
     final generation = ++_generation;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isLoadingMore: false,
+      clearError: true,
+    );
     final result = await _repository.getInPersonCounts(
       _key.eventId,
       eventAccumulationId: _key.eventAccumulationId,

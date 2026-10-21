@@ -11,16 +11,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
-GroupEventCmsItem? _edited;
-GroupEventCmsItem? _deleted;
-
-Future<int> _pump(
+Future<void> _pump(
   WidgetTester tester, {
   required List<GroupEvent> events,
   required bool canCreate,
   List<GroupEventCmsItem> cmsItems = const [],
+  VoidCallback? onCreateEvent,
+  ValueChanged<GroupEventCmsItem>? onEditDraft,
+  ValueChanged<GroupEventCmsItem>? onDeleteDraft,
 }) async {
-  var taps = 0;
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -51,9 +50,9 @@ Future<int> _pump(
               isDark: false,
               pageStorageKey: 'events',
               canCreate: canCreate,
-              onCreateEvent: () => taps++,
-              onEditDraft: (item) => _edited = item,
-              onDeleteDraft: (item) => _deleted = item,
+              onCreateEvent: onCreateEvent ?? () {},
+              onEditDraft: onEditDraft ?? (_) {},
+              onDeleteDraft: onDeleteDraft ?? (_) {},
             ),
           ),
         ),
@@ -61,7 +60,6 @@ Future<int> _pump(
     ),
   );
   await tester.pumpAndSettle();
-  return taps;
 }
 
 void main() {
@@ -74,7 +72,13 @@ void main() {
     expect(find.text('Create event'), findsNothing);
     expect(find.byTooltip('New event'), findsNothing);
 
-    await _pump(tester, events: const [], canCreate: true);
+    var taps = 0;
+    await _pump(
+      tester,
+      events: const [],
+      canCreate: true,
+      onCreateEvent: () => taps++,
+    );
 
     expect(find.text('No events yet'), findsOneWidget);
     expect(
@@ -83,6 +87,10 @@ void main() {
     );
     expect(find.text('Create event'), findsOneWidget);
     expect(find.byTooltip('New event'), findsNothing);
+
+    await tester.tap(find.text('Create event'));
+    await tester.pump();
+    expect(taps, 1);
   });
 
   testWidgets('list shows the plus button only to publishers', (tester) async {
@@ -93,15 +101,21 @@ void main() {
     expect(find.text('Wednesday'), findsOneWidget);
     expect(find.byTooltip('New event'), findsNothing);
 
+    var taps = 0;
     await _pump(
       tester,
       events: const [],
       canCreate: true,
       cmsItems: const [cms],
+      onCreateEvent: () => taps++,
     );
     expect(find.text('Wednesday'), findsOneWidget);
     expect(find.byTooltip('New event'), findsOneWidget);
     expect(find.text('DRAFTS'), findsNothing);
+
+    await tester.tap(find.byTooltip('New event'));
+    await tester.pump();
+    expect(taps, 1);
   });
 
   testWidgets('publishers see drafts first with a menu', (tester) async {
@@ -111,10 +125,17 @@ void main() {
       GroupEventCmsItem(event: live, status: 'published', raw: {}),
       GroupEventCmsItem(event: draft, status: 'draft', raw: {'id': 'e2'}),
     ];
-    _edited = null;
-    _deleted = null;
+    GroupEventCmsItem? edited;
+    GroupEventCmsItem? deleted;
 
-    await _pump(tester, events: const [], canCreate: true, cmsItems: items);
+    await _pump(
+      tester,
+      events: const [],
+      canCreate: true,
+      cmsItems: items,
+      onEditDraft: (item) => edited = item,
+      onDeleteDraft: (item) => deleted = item,
+    );
 
     expect(find.text('DRAFTS'), findsOneWidget);
     expect(find.text('Half done'), findsOneWidget);
@@ -126,10 +147,10 @@ void main() {
     expect(find.text('Continue editing'), findsOneWidget);
     await tester.tap(find.text('Delete draft'));
     await tester.pumpAndSettle();
-    expect(_deleted?.event.id, 'e2');
+    expect(deleted?.event.id, 'e2');
 
     await tester.tap(find.text('Half done'));
     await tester.pumpAndSettle();
-    expect(_edited?.event.id, 'e2');
+    expect(edited?.event.id, 'e2');
   });
 }

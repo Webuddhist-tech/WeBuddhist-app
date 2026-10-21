@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -418,6 +420,10 @@ class _AccumulationCard extends StatelessWidget {
         target != null && target > 0 && total != null
             ? total / target * 100
             : null;
+    // Flex shares out of 1000 so the filled segments plus the track fill the bar.
+    final appFlex = _segmentFlex(app, scale);
+    final inPersonFlex = min(_segmentFlex(inPerson, scale), 1000 - appFlex);
+    final trackFlex = max(0, 1000 - appFlex - inPersonFlex);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -499,17 +505,9 @@ class _AccumulationCard extends StatelessWidget {
                 height: 8,
                 child: Row(
                   children: [
-                    _Segment(
-                      value: app,
-                      scale: scale,
-                      color: AppColors.primary,
-                    ),
-                    _Segment(
-                      value: inPerson,
-                      scale: scale,
-                      color: AppColors.warning,
-                    ),
-                    Expanded(flex: 1000, child: ColoredBox(color: trackColor)),
+                    _Segment(flex: appFlex, color: AppColors.primary),
+                    _Segment(flex: inPersonFlex, color: AppColors.warning),
+                    _Segment(flex: trackFlex, color: trackColor),
                   ],
                 ),
               ),
@@ -540,23 +538,22 @@ class _AccumulationCard extends StatelessWidget {
   }
 }
 
-/// A bar segment sized as its share of [scale], kept visible when non-zero.
+/// [value]'s share of [scale] out of 1000, kept visible when non-zero.
+int _segmentFlex(int value, int scale) {
+  if (value <= 0) return 0;
+  return (value / scale * 1000).clamp(8, 1000).round();
+}
+
 class _Segment extends StatelessWidget {
-  final int value;
-  final int scale;
+  final int flex;
   final Color color;
 
-  const _Segment({
-    required this.value,
-    required this.scale,
-    required this.color,
-  });
+  const _Segment({required this.flex, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    if (value <= 0) return const SizedBox.shrink();
-    final share = (value / scale * 1000).clamp(8, 1000).round();
-    return Expanded(flex: share, child: ColoredBox(color: color));
+    if (flex <= 0) return const SizedBox.shrink();
+    return Expanded(flex: flex, child: ColoredBox(color: color));
   }
 }
 

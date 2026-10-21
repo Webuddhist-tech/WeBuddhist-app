@@ -83,10 +83,12 @@ class _GroupEventPinScreenState extends ConsumerState<GroupEventPinScreen> {
   void _onMoved(MapCamera camera, bool hasGesture) {
     if (!hasGesture) return;
     final center = camera.center;
+    _lookupGeneration++;
     setState(() {
       _center = center;
       _name = null;
       _address = null;
+      _isLookingUp = false;
     });
     _lookupTimer?.cancel();
     _lookupTimer = Timer(
