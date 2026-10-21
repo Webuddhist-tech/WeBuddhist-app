@@ -192,9 +192,12 @@ class _MantraSwitcherState extends State<MantraSwitcher> {
       fullCard = _FullMantraCard(
         key: const ValueKey('mantra-full'),
         text: isScript ? script : _transliteration(mantra),
+        // The band keeps the script small; in full it reads at display size.
         style:
-            (isScript ? scriptStyle : transliterationStyle) ??
-            const TextStyle(),
+            (isScript
+                    ? scriptStyle?.copyWith(fontSize: 28, height: 1.6)
+                    : transliterationStyle) ??
+                const TextStyle(),
         onClose: () => setState(() => _expanded = null),
       );
     }
@@ -266,6 +269,8 @@ class _MantraPage extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         band,
+        // Room for the band's bottom dot, which overhangs by half its size.
+        const SizedBox(height: _AccentDivider.dotSize / 2),
       ],
     );
   }
