@@ -6,8 +6,6 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_pract
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
-/// Reader context for one chant of a collection, carrying its siblings so
-/// the reader can step through and mark them complete.
 /// Playable recordings for [item], titles kept exactly as the API sent them.
 List<CollectionAudioTrack> collectionAudioTracksFor(
   GroupRecitationCollectionItem item,
@@ -23,6 +21,8 @@ List<CollectionAudioTrack> collectionAudioTracksFor(
   ];
 }
 
+/// Reader context for one chant of a collection, carrying its siblings so
+/// the reader can step through and mark them complete.
 NavigationContext groupRecitationCollectionNavigationContext({
   required GroupRecitationCollectionKey key,
   required GroupRecitationCollection collection,
