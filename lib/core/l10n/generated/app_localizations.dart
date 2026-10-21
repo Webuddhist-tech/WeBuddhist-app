@@ -7289,6 +7289,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'We Buddhists practice daily'**
   String get splash_tagline_2;
+
+  /// No description provided for @timer_list_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap play to begin, or build your own.'**
+  String get timer_list_subtitle;
+
+  /// No description provided for @timer_create_custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a custom timer'**
+  String get timer_create_custom;
+
+  /// No description provided for @timer_create_custom_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set duration, bells and ambient sound'**
+  String get timer_create_custom_subtitle;
+
+  /// No description provided for @timer_starting.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting...'**
+  String get timer_starting;
+
+  /// No description provided for @timer_duration_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get timer_duration_hours;
+
+  /// No description provided for @timer_duration_sec.
+  ///
+  /// In en, this message translates to:
+  /// **'sec'**
+  String get timer_duration_sec;
 }
 
 class _AppLocalizationsDelegate

@@ -375,7 +375,7 @@ void main() {
         notifier: notifier,
         soundPlayer: _FakeTimerBellPlayer(),
       );
-      final startsAt = clock.now().add(const Duration(seconds: 5));
+      final startsAt = clock.now().add(const Duration(seconds: 3));
 
       await _lockScreen(tester);
 
@@ -433,10 +433,10 @@ void main() {
         await tester.pump();
 
         expect(soundPlayer.playCount, 0);
-        expect(find.text('00 : 07'), findsOneWidget);
+        expect(find.text('00 : 05'), findsOneWidget);
         expect(notifier.cancelCompletionCount, 1);
 
-        await _advanceBy(tester, clock, const Duration(seconds: 7));
+        await _advanceBy(tester, clock, const Duration(seconds: 5));
         expect(soundPlayer.playCount, 1);
       },
     );
@@ -462,7 +462,7 @@ void main() {
       await tester.pump();
 
       expect(soundPlayer.playCount, 1);
-      expect(find.text('00 : 07'), findsOneWidget);
+      expect(find.text('00 : 05'), findsOneWidget);
     });
 
     testWidgets(
@@ -511,6 +511,41 @@ void main() {
       await tester.pump();
 
       expect(soundPlayer.playCount, 1);
+    });
+  });
+
+  group('countdown cancel', () {
+    testWidgets('cancel leaves immediately without starting the session', (
+      tester,
+    ) async {
+      final clock = _FakeClock();
+      final analytics = RecordingAnalyticsService();
+
+      await _pumpRoutedScreen(tester, clock: clock, analytics: analytics);
+
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('Starting...'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Starting...'), findsNothing);
+      expect(analytics.events, isEmpty);
+    });
+
+    testWidgets('system back during the countdown leaves immediately', (
+      tester,
+    ) async {
+      final clock = _FakeClock();
+      final analytics = RecordingAnalyticsService();
+
+      await _pumpRoutedScreen(tester, clock: clock, analytics: analytics);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Starting...'), findsNothing);
+      expect(analytics.events, isEmpty);
     });
   });
 
@@ -744,7 +779,7 @@ Future<void> _advanceThroughCountdown(
   WidgetTester tester,
   _FakeClock clock,
 ) async {
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 3; i++) {
     clock.advance(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
   }

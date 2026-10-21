@@ -1,154 +1,151 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/features/timer/domain/entities/preset_timer.dart';
 
+/// One timer in the presets / your-timers list: duration, sound, play, and
+/// the ⋮ menu.
 class PresetTimerCard extends StatelessWidget {
   const PresetTimerCard({
     super.key,
     required this.timer,
     required this.minLabel,
-    this.ambientSoundName,
-    this.onTap,
+    this.soundLabel,
+    this.onPlay,
     this.onMoreTap,
   });
 
   final PresetTimer timer;
   final String minLabel;
-  final String? ambientSoundName;
-  final VoidCallback? onTap;
-  final VoidCallback? onMoreTap;
 
-  static const _borderRadius = 16.0;
-  static const _contentPadding = EdgeInsets.symmetric(
-    horizontal: 12,
-    vertical: 8,
-  );
-  static const _labelSpacing = 8.0;
+  /// Ambient sound name, or the "no sound" label. Null while a sound id is
+  /// set but its name has not loaded yet.
+  final String? soundLabel;
+  final VoidCallback? onPlay;
+  final VoidCallback? onMoreTap;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surfaceWhite;
     final textColor = Theme.of(context).colorScheme.onSurface;
+    final mutedColor = textColor.withValues(alpha: 0.55);
     final isTibetan = AppFontConfig.isTibetanLanguage(
       Localizations.localeOf(context).languageCode,
     );
 
-    final minuteText = Text(
-      '${timer.displayMinutes}',
-      style: TextStyle(
-        fontSize: 48,
-        fontWeight: FontWeight.w600,
-        height: isTibetan ? AppFontConfig.tibetanCompactLineHeight : null,
-        leadingDistribution:
-            isTibetan ? AppFontConfig.tibetanLeadingDistribution : null,
-        color: textColor,
-      ),
+    final minuteStyle = TextStyle(
+      fontSize: 32,
+      fontWeight: FontWeight.w600,
+      height: isTibetan ? AppFontConfig.tibetanCompactLineHeight : 1,
+      leadingDistribution:
+          isTibetan ? AppFontConfig.tibetanLeadingDistribution : null,
+      color: textColor,
+    );
+    final unitStyle = TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w400,
+      height: isTibetan ? AppFontConfig.tibetanCompactLineHeight : 1,
+      leadingDistribution:
+          isTibetan ? AppFontConfig.tibetanLeadingDistribution : null,
+      color: textColor,
     );
 
-    final minLabelText = Text(
-      minLabel,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        height: isTibetan ? AppFontConfig.tibetanCompactLineHeight : 1.2,
-        leadingDistribution:
-            isTibetan ? AppFontConfig.tibetanLeadingDistribution : null,
-        color: textColor,
-      ),
+    final minutes = TextSpan(text: '${timer.displayValue}', style: minuteStyle);
+    final unit = TextSpan(
+      text: timer.displaysSeconds ? context.l10n.timer_duration_sec : minLabel,
+      style: unitStyle,
     );
+    final gap = const TextSpan(text: ' ');
 
-    final showAmbientSound =
-        timer.ambientSoundId != null && ambientSoundName != null;
-
-    return Material(
-      color: cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(_borderRadius),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Stack(
-            children: [
-              Center(
-                child: Padding(
-                  padding: _contentPadding,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 8, 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text.rich(
+                  TextSpan(
                     children:
-                        isTibetan
-                            ? [
-                              minLabelText,
-                              const SizedBox(height: _labelSpacing),
-                              minuteText,
-                              if (showAmbientSound) ...[
-                                const SizedBox(height: _labelSpacing),
-                                _AmbientSoundRow(label: ambientSoundName!),
-                              ],
-                            ]
-                            : [
-                              minuteText,
-                              const SizedBox(height: _labelSpacing),
-                              minLabelText,
-                              if (showAmbientSound) ...[
-                                const SizedBox(height: _labelSpacing),
-                                _AmbientSoundRow(label: ambientSoundName!),
-                              ],
-                            ],
+                        isTibetan ? [unit, gap, minutes] : [minutes, gap, unit],
                   ),
                 ),
-              ),
-              if (onMoreTap != null)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: textColor,
-                      size: 20,
-                    ),
-                    onPressed: onMoreTap,
-                  ),
-                ),
-            ],
+                if (soundLabel != null) ...[
+                  const SizedBox(height: 4),
+                  _SoundLabel(label: soundLabel!, color: mutedColor),
+                ],
+              ],
+            ),
           ),
-        ),
+          if (onMoreTap != null)
+            IconButton(
+              icon: Icon(
+                AppAssets.dotsThreeVertical,
+                color: textColor,
+                size: 22,
+              ),
+              onPressed: onMoreTap,
+            ),
+          _PlayButton(isDark: isDark, onPressed: onPlay),
+          const SizedBox(width: 8),
+        ],
       ),
     );
   }
 }
 
-class _AmbientSoundRow extends StatelessWidget {
-  const _AmbientSoundRow({required this.label});
+class _SoundLabel extends StatelessWidget {
+  const _SoundLabel({required this.label, required this.color});
 
   final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(
-      context,
-    ).colorScheme.onSurface.withValues(alpha: 0.6);
-
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(AppAssets.timerAmbientSound, size: 14, color: color),
-        const SizedBox(width: 4),
+        const SizedBox(width: 6),
         Flexible(
           child: Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12, color: color),
+            style: TextStyle(fontSize: 14, color: color),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PlayButton extends StatelessWidget {
+  const _PlayButton({required this.isDark, this.onPressed});
+
+  final bool isDark;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
+    final iconColor = isDark ? AppColors.textPrimary : AppColors.onPrimary;
+
+    return Material(
+      color: background,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(AppAssets.play, size: 18, color: iconColor),
+        ),
+      ),
     );
   }
 }

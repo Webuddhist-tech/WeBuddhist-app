@@ -9,9 +9,9 @@ Preset meditation timers with countdown, pause/resume, lock-screen display, sess
 ## User-facing functionality
 
 - Browse preset timers + user-created ("Your timers") (authenticated)
-- Create a custom timer (duration, ambient sound) via "+ Custom timer"
+- Create a custom timer (duration, ambient sound) via the dashed "Create a custom timer" row, which stays at the top of "Your timers"
 - Edit or delete your own timers from the card's ⋮ menu
-- 5-second countdown → running phase
+- 3-second countdown (Cancel leaves immediately) → running phase
 - Pause/resume with **wall-clock** remaining time (survives backgrounding)
 - Completion bell (in-app + scheduled local notification)
 - Android ongoing lock-screen notification
@@ -75,7 +75,7 @@ timer/
 `POST /timers/user` (`TimersRemoteDatasource.createUserTimer`) intentionally
 **never sends** `group_id` or `parent_preset_id` — no app concept for either
 yet. The New Timer screen has no name/description inputs, so those are
-derived: `name` = `"{n} minutes"`, `description` = `""` (always sent).
+derived: `name` = `"{n} minutes"` (`"{n} seconds"` under one minute), `description` = `""` (always sent).
 Start/end bells are always on (backend default); the create flow does not
 expose or accept them as user-configurable params. After a
 successful create (and after a successful edit or delete) the repository
@@ -100,10 +100,11 @@ through `UpdateUserTimerUseCase`. Route: `/home/timers/edit` with the
 Only `name`, `duration` and `ambient_sound_id` are sent — nothing else on the
 timer is user-owned yet. The name keeps tracking the duration (`"{n} minutes"`)
 so the card label stays truthful, but **only when the duration actually
-changed**: the picker is minute-granular while `duration` is milliseconds, so
-an edit that touches just the sound must resend the stored `durationMs` (and
-stored name) verbatim rather than a re-derived `minutes * 60000`, which would
-quietly shorten e.g. a 90s timer to 60s. `ambient_sound_id` is **always** in the body,
+changed**: the picker saves exact hours, minutes, and seconds, while the
+label and the derived name are rounded to whole minutes (or shown in seconds
+under one minute, so a short timer never reads "0 min"). An edit that touches
+just the sound must resend the stored `durationMs` (and stored name) verbatim
+rather than a re-derived value, which would quietly change e.g. a 90s timer. `ambient_sound_id` is **always** in the body,
 including as `null`, which is how "Default (no sound)" clears an existing
 sound.
 
@@ -161,11 +162,10 @@ offering an undo it cannot honour.
 
 ### Empty list
 
-An empty timer list is **not** an empty state. The only useful action on this
-screen is creating a timer, so it renders "Your timers" with the dashed
-"+ Custom timer" card. Showing a "nothing here" message instead left the user
-with no way to create one, because the pill FAB only appears once a custom
-timer already exists.
+An empty timer list is **not** an empty state. "Your timers" always starts
+with the dashed "Create a custom timer" row, and timers the user has created
+are listed under it in the same row layout as the presets (play and the ⋮
+menu). A timer with no `ambient_sound_id` is labeled "Default (no sound)".
 
 The bundled `assets/audios/meditation.wav` bell (`TimerSoundPlayer`) always
 plays at session start and completion, and the scheduled start/completion

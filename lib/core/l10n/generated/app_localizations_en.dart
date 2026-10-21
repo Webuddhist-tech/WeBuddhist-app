@@ -4159,4 +4159,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get splash_tagline_2 => 'We Buddhists practice daily';
+
+  @override
+  String get timer_list_subtitle => 'Tap play to begin, or build your own.';
+
+  @override
+  String get timer_create_custom => 'Create a custom timer';
+
+  @override
+  String get timer_create_custom_subtitle =>
+      'Set duration, bells and ambient sound';
+
+  @override
+  String get timer_starting => 'Starting...';
+
+  @override
+  String get timer_duration_hours => 'hours';
+
+  @override
+  String get timer_duration_sec => 'sec';
 }
