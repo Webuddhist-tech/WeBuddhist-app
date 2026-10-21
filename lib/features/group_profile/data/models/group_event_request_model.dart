@@ -1,5 +1,7 @@
+import 'dart:convert';
+
 /// `POST /cms/events` body, mirroring the studio's `CreateEventRequest`.
-/// Also sent whole on `PUT /cms/events/{id}`; the API keeps omitted fields.
+/// `PUT /cms/events/{id}` sends only the changes, see [toUpdateJson].
 class CreateGroupEventRequest {
   final String groupId;
 
@@ -70,6 +72,59 @@ class CreateGroupEventRequest {
     'notifications_enabled': notificationsEnabled,
     if (intentionIds.isNotEmpty) 'intention_ids': intentionIds,
     if (recurrence != null) 'recurrence': recurrence!.toJson(),
+  };
+
+  /// `PUT /cms/events/{id}` body: only the fields that differ from
+  /// [original], the event as it was loaded. The API leaves omitted fields
+  /// alone and clears a field sent as null or an empty list, so a removed
+  /// plan, link or venue has to be sent explicitly. Untouched fields are
+  /// left out, which keeps studio data the app does not load (extra links,
+  /// labels) intact.
+  Map<String, dynamic> toUpdateJson(CreateGroupEventRequest original) {
+    final next = _fullJson();
+    final before = original._fullJson();
+    final body = <String, dynamic>{
+      for (final key in next.keys)
+        if (key != 'group_id' &&
+            jsonEncode(next[key]) != jsonEncode(before[key]))
+          key: next[key],
+    };
+    // The API reads the schedule as one unit: turning a recurring event
+    // into a one-time one needs its dates even when they did not change.
+    const schedule = ['start_date', 'end_date', 'timezone', 'recurrence'];
+    if (schedule.any(body.containsKey)) {
+      for (final key in schedule) {
+        body[key] = next[key];
+      }
+    }
+    // The API cannot clear these, so a null would only be noise.
+    for (final key in const ['image_url', 'start_date', 'end_date']) {
+      if (body.containsKey(key) && body[key] == null) body.remove(key);
+    }
+    return body;
+  }
+
+  /// Every field, with explicit nulls and empty lists, for diffing.
+  Map<String, dynamic> _fullJson() => {
+    'group_id': groupId,
+    'start_date': startDate,
+    'end_date': endDate,
+    'timezone': timezone,
+    'metadata': metadata.map((item) => item.toJson()).toList(),
+    'links': links.map((item) => item.toJson()).toList(),
+    'youtube': youtube.map((item) => item.toJson()).toList(),
+    'image_url': imageUrl,
+    'plan_id': planId,
+    'series_id': seriesId,
+    'group_recitation_collection_id': groupRecitationCollectionId,
+    'accumulations': accumulations.map((item) => item.toJson()).toList(),
+    'location_id': locationId,
+    'event_format': eventFormat,
+    'status': status,
+    'chat_enabled': chatEnabled,
+    'notifications_enabled': notificationsEnabled,
+    'intention_ids': intentionIds,
+    'recurrence': recurrence?.toJson(),
   };
 }
 

@@ -16,6 +16,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_pract
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/domain/usecases/get_group_profile_usecase.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
@@ -1757,6 +1758,14 @@ Future<void> refreshGroupProfilePage({
   if (ref.exists(groupEventsProvider(groupId))) {
     refreshTasks.add(
       ref.refresh(groupEventsProvider(groupId).future).then((_) {}),
+    );
+  }
+  // Publishers see the CMS list (drafts included) instead of /events.
+  if (ref.exists(groupCmsEventsProvider(groupId))) {
+    refreshTasks.add(
+      ref
+          .refresh(groupCmsEventsProvider(groupId).future)
+          .then((_) {}, onError: (_) {}),
     );
   }
   if (ref.exists(groupMembersProvider(groupId))) {

@@ -68,8 +68,9 @@ class GroupEventInPersonCountsNotifier
   static const int pageSize = 20;
   int _generation = 0;
 
+  /// A newer call wins: a reload after a write must not be skipped because
+  /// an earlier one is still running, or its totals would miss the write.
   Future<void> loadInitial() async {
-    if (state.isLoading) return;
     final generation = ++_generation;
     state = state.copyWith(
       isLoading: true,

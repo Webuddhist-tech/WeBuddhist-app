@@ -100,6 +100,13 @@ class _GroupEventComposerScreenState
 
   int _step = 0;
   GroupEventDraft _draft = const GroupEventDraft();
+
+  /// The event as it was loaded; an update sends only what differs from it.
+  GroupEventDraft? _loadedDraft;
+
+  /// A venue created by an earlier attempt that then failed, so a retry
+  /// reuses it instead of creating another.
+  ({GroupEventVenueDraft venue, String id})? _createdLocation;
   bool _isPublishing = false;
 
   /// Set when closing was refused for a missing date; the row shows it.
@@ -117,6 +124,7 @@ class _GroupEventComposerScreenState
     final existing = widget.existing;
     if (existing != null) {
       _draft = existing.draft;
+      _loadedDraft = existing.draft;
       _liveLinkController.text = existing.draft.liveLink;
       _resolveIntentions(existing.intentionSlugs);
       _step = widget.initialStep.clamp(
@@ -142,7 +150,10 @@ class _GroupEventComposerScreenState
         for (final intention in catalog)
           if (slugs.contains(intention.slug)) intention.id,
       ];
-      setState(() => _draft = _draft.copyWith(intentionIds: ids));
+      setState(() {
+        _draft = _draft.copyWith(intentionIds: ids);
+        _loadedDraft = _loadedDraft?.copyWith(intentionIds: ids);
+      });
     } catch (_) {
       // Leaving them empty allows every intention; the sheet shows that.
     }
@@ -276,7 +287,8 @@ class _GroupEventComposerScreenState
       0 => _draft.hasName,
       1 => _scheduleIssue == null && _whereIssue == null,
       2 => true,
-      3 => _draft.hasName,
+      // Editing can open on a later step, so publishing checks again.
+      3 => _draft.hasName && _scheduleIssue == null && _whereIssue == null,
       _ => false,
     };
   }
@@ -286,7 +298,7 @@ class _GroupEventComposerScreenState
     if (_isAboutStep) {
       return _draft.hasName ? null : l10n.group_event_name_required_hint;
     }
-    if (!_isWhenWhereStep) return null;
+    if (!_isWhenWhereStep && !_isReviewStep) return null;
     switch (_scheduleIssue) {
       case GroupEventScheduleIssue.missingDate:
         return l10n.group_event_pick_date_hint;
@@ -395,8 +407,11 @@ class _GroupEventComposerScreenState
     String? locationId;
     final venue = _draft.venue;
     if (_draft.format.needsVenue && venue != null) {
+      final reusable = _createdLocation;
       if (existing != null && existing.sameVenue(venue)) {
         locationId = existing.locationId;
+      } else if (reusable != null && _sameVenue(reusable.venue, venue)) {
+        locationId = reusable.id;
       } else {
         final created = await repository.createLocation(
           widget.profile.id,
@@ -411,20 +426,34 @@ class _GroupEventComposerScreenState
           _publishFailed(created.fold((f) => f.message, (_) => ''));
           return null;
         }
+        _createdLocation = (venue: venue, id: locationId);
       }
     }
 
+    final now = DateTime.now();
     final request = GroupEventRequestBuilder.build(
       _draft,
       groupId: widget.profile.id,
       status: status,
       imageUrl: imageUrl,
       locationId: locationId,
+      now: now,
     );
     final result =
         existing == null
             ? await repository.createEvent(request)
-            : await repository.updateEvent(existing.eventId, request);
+            : await repository.updateEvent(
+              existing.eventId,
+              request,
+              // Built the same way, so only the user's changes differ.
+              original: GroupEventRequestBuilder.build(
+                _loadedDraft ?? existing.draft,
+                groupId: widget.profile.id,
+                status: existing.isPublished ? 'published' : 'draft',
+                locationId: existing.locationId,
+                now: now,
+              ),
+            );
     if (!mounted) return null;
     return result.fold((failure) {
       _publishFailed(
@@ -437,6 +466,11 @@ class _GroupEventComposerScreenState
       return null;
     }, (event) => event);
   }
+
+  static bool _sameVenue(GroupEventVenueDraft a, GroupEventVenueDraft b) =>
+      a.name == b.name &&
+      a.latitude == b.latitude &&
+      a.longitude == b.longitude;
 
   void _publishFailed(String message) {
     if (!mounted) return;

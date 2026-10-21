@@ -52,6 +52,7 @@ class _FakeComposerRepository extends Fake
     implements GroupEventComposerRepositoryInterface {
   CreateGroupEventRequest? created;
   CreateGroupEventRequest? updated;
+  CreateGroupEventRequest? updatedOriginal;
   String? updatedId;
   CreateGroupLocationRequest? location;
   bool failCreate = false;
@@ -59,10 +60,12 @@ class _FakeComposerRepository extends Fake
   @override
   Future<Either<Failure, GroupEvent>> updateEvent(
     String eventId,
-    CreateGroupEventRequest request,
-  ) async {
+    CreateGroupEventRequest request, {
+    CreateGroupEventRequest? original,
+  }) async {
     updatedId = eventId;
     updated = request;
+    updatedOriginal = original;
     return Right(
       GroupEvent(
         id: eventId,
@@ -679,6 +682,13 @@ void draftTests() {
 
     expect(_composerRepository.updatedId, 'ev-9');
     expect(_composerRepository.updated?.status, 'published');
+    // Nothing else was touched, so only the status goes out.
+    expect(
+      _composerRepository.updated!.toUpdateJson(
+        _composerRepository.updatedOriginal!,
+      ),
+      {'status': 'published'},
+    );
     expect(_composerRepository.created, isNull);
     expect(find.text('Saved draft is live'), findsOneWidget);
   });

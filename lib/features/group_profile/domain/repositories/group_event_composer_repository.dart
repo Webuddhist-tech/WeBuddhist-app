@@ -55,10 +55,13 @@ abstract class GroupEventComposerRepositoryInterface {
     required String language,
   });
 
+  /// [original] is the event as it was loaded; when given, only the
+  /// fields that changed are sent, and removed ones are cleared.
   Future<Either<Failure, GroupEvent>> updateEvent(
     String eventId,
-    CreateGroupEventRequest request,
-  );
+    CreateGroupEventRequest request, {
+    CreateGroupEventRequest? original,
+  });
 
   Future<Either<Failure, void>> deleteEvent(String eventId);
 }

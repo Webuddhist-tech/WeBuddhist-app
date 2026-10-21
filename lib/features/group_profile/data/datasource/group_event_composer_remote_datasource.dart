@@ -272,14 +272,20 @@ class GroupEventComposerRemoteDatasource {
     }
   }
 
+  /// With [original], only the changed fields are sent (see
+  /// [CreateGroupEventRequest.toUpdateJson]).
   Future<GroupEventModel> updateEvent(
     String eventId,
-    CreateGroupEventRequest request,
-  ) async {
+    CreateGroupEventRequest request, {
+    CreateGroupEventRequest? original,
+  }) async {
     try {
       final response = await dio.put(
         '/cms/events/$eventId',
-        data: request.toJson()..remove('group_id'),
+        data:
+            original != null
+                ? request.toUpdateJson(original)
+                : (request.toJson()..remove('group_id')),
       );
       final data = response.data;
       if (data is! Map<String, dynamic> ||
@@ -409,7 +415,8 @@ class GroupEventComposerRemoteDatasource {
           : {'event_accumulation_id': eventAccumulationId};
 
   static GroupEventInPersonCountModel _inPersonCount(Object? data) {
-    if (data is! Map<String, dynamic> || (data['id'] as String? ?? '').isEmpty) {
+    if (data is! Map<String, dynamic> ||
+        (data['id'] as String? ?? '').isEmpty) {
       throw const ServerException('In-person count returned no id');
     }
     return GroupEventInPersonCountModel.fromJson(data);

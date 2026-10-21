@@ -140,10 +140,16 @@ class GroupEventComposerRepositoryImpl
   @override
   Future<Either<Failure, GroupEvent>> updateEvent(
     String eventId,
-    CreateGroupEventRequest request,
-  ) {
+    CreateGroupEventRequest request, {
+    CreateGroupEventRequest? original,
+  }) {
     return _guard(
-      () async => (await remote.updateEvent(eventId, request)).toEntity(),
+      () async =>
+          (await remote.updateEvent(
+            eventId,
+            request,
+            original: original,
+          )).toEntity(),
       'Failed to update event',
     );
   }

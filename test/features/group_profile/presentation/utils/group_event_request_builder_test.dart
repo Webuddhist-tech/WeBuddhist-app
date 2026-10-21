@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_request_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_request_builder.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -250,5 +251,79 @@ void main() {
       'google-meet',
     );
     expect(GroupEventRequestBuilder.linkTypeFor('https://example.org'), 'web');
+  });
+
+  group('update body', () {
+    final now = DateTime(2026, 10, 1);
+    final loaded = GroupEventDraft(
+      metadata: const [GroupEventDraftMetadata(language: 'en', name: 'Puja')],
+      schedule: schedule,
+      format: GroupEventFormat.online,
+      liveLink: 'https://zoom.us/j/1',
+      videos: const [GroupEventVideoDraft(url: 'https://youtu.be/abc')],
+      practices: const [
+        GroupEventPracticePick(
+          id: 'p1',
+          kind: GroupEventPracticeKind.plan,
+          title: 'Plan',
+        ),
+      ],
+      intentionIds: const ['i1'],
+    );
+    CreateGroupEventRequest build(GroupEventDraft draft, {String? location}) =>
+        GroupEventRequestBuilder.build(
+          draft,
+          groupId: 'g1',
+          status: 'published',
+          locationId: location,
+          now: now,
+        );
+
+    test('an untouched event sends nothing', () {
+      expect(build(loaded).toUpdateJson(build(loaded)), isEmpty);
+    });
+
+    test('removed items are cleared explicitly', () {
+      final edited = loaded.copyWith(
+        practices: const [],
+        videos: const [],
+        intentionIds: const [],
+      );
+      final body = build(edited).toUpdateJson(build(loaded));
+      expect(body['plan_id'], isNull);
+      expect(body.containsKey('plan_id'), isTrue);
+      expect(body['intention_ids'], isEmpty);
+      // The live link stays, so links still carries it, without the video.
+      expect(body['links'], [containsPair('url', 'https://zoom.us/j/1')]);
+      expect(body.containsKey('metadata'), isFalse);
+      expect(body.containsKey('start_date'), isFalse);
+    });
+
+    test('switching live to in-person drops the link and sets the venue', () {
+      final edited = loaded.copyWith(
+        format: GroupEventFormat.offline,
+        videos: const [],
+      );
+      final body = build(edited, location: 'loc-1').toUpdateJson(build(loaded));
+      expect(body['event_format'], 'offline');
+      expect(body['links'], isEmpty);
+      expect(body['location_id'], 'loc-1');
+    });
+
+    test('a recurring event turned one-time clears the rule with dates', () {
+      const rule = GroupEventRecurrenceDraft(
+        frequency: GroupEventRecurrenceFrequency.weekly,
+        dateSystem: GroupEventDateSystem.gregorian,
+        dayOfWeek: 3,
+      );
+      final recurring = loaded.copyWith(
+        schedule: schedule.copyWith(isRecurring: true, recurrence: rule),
+      );
+      final body = build(loaded).toUpdateJson(build(recurring));
+      expect(body.containsKey('recurrence'), isTrue);
+      expect(body['recurrence'], isNull);
+      expect(body['start_date'], isNotNull);
+      expect(body['end_date'], isNotNull);
+    });
   });
 }
