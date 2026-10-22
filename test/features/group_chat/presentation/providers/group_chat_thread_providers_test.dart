@@ -44,6 +44,9 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Failure? listFailure;
   int listCallCount = 0;
 
+  /// `message_type` of every list call, in call order.
+  final List<String?> listedTypes = [];
+
   /// Holds the next list call until completed, so a later one can overtake it.
   Completer<void>? holdNextList;
 
@@ -65,6 +68,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String? translationLanguage,
   }) async {
     listCallCount++;
+    listedTypes.add(messageType);
     // Cleared before awaiting, so only this call is held.
     final hold = holdNextList;
     holdNextList = null;
@@ -318,6 +322,45 @@ void main() {
         expect(notifier.state.total, 50);
       },
     );
+
+    test('every page asks for TEXT only, leaving prayer requests out', () async {
+      repository = _FakeGroupChatRepository(
+        history: List.generate(50, (i) => _message('m$i')),
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.loadMore();
+      await _settle();
+      await notifier.refreshLatest();
+      await _settle();
+
+      expect(repository.listedTypes, ['TEXT', 'TEXT', 'TEXT']);
+    });
+
+    test('a live prayer request is not appended to the thread', () async {
+      repository = _FakeGroupChatRepository(history: [_message('m0')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.appendFromSocket(
+        ChatMessageDTO(
+          id: 'p1',
+          roomId: 'room-1',
+          senderId: 'b',
+          senderEmail: 'b@example.com',
+          body: 'Please pray',
+          createdAt: '2026-08-28T12:01:00Z',
+          messageType: ChatMessageDTO.typePrayer,
+        ),
+      );
+
+      expect(notifier.state.messages.map((m) => m.id), ['m0']);
+      expect(notifier.state.skip, 1);
+    });
 
     test('loadMore appends older messages and stops at total', () async {
       repository = _FakeGroupChatRepository(
