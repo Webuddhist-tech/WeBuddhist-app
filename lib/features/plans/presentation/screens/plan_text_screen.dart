@@ -16,7 +16,6 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/shared/widgets/reusable_youtube_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -129,7 +128,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
   @override
   Widget build(BuildContext context) {
     final currentItem = widget.navigationContext.currentItem;
-    final fontSize = ref.watch(fontSizeProvider);
+    final fontSize = ReaderTypography.resolve(ref).planTextSize;
     final readerTheme = _readerTheme(context);
 
     if (currentItem == null || !_hasRenderableContent(currentItem)) {
