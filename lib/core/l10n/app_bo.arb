@@ -1302,5 +1302,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "reader_display_title": "མངོན་ཚུལ།",
+  "reader_more_settings": "སྒྲིག་འགོད་གཞན།",
+  "reader_spacing": "བར་ཐག",
+  "reader_spacing_compact": "དམ་པོ།",
+  "reader_spacing_normal": "རྒྱུན་ལྡན།",
+  "reader_spacing_relaxed": "ལྷོད་པོ།",
+  "reader_background": "རྒྱབ་ལྗོངས།",
+  "reader_background_rice_paper": "ཤོག་བུ།",
+  "reader_background_gold": "གསེར་མདོག",
+  "reader_background_sky": "ནམ་མཁའི་མདོག",
+  "reader_background_white": "དཀར་པོ།",
+  "reader_background_plum": "སྨུག་པོ།",
+  "reader_background_temple_red": "ལྷ་ཁང་དམར་པོ།",
+  "reader_background_robe_saffron": "ཆོས་གོས་ངུར་སྨྲིག",
+  "reader_in_the_text": "དཔེ་ཆའི་ནང་།",
+  "reader_ritual_instructions": "ཆོ་གའི་ལམ་སྟོན།",
+  "reader_verse_numbers": "ཚིགས་བཅད་ཀྱི་ཨང་།",
+  "reader_change_languages": "སྐད་ཡིག་བརྗེ།",
+  "reader_live_paused": "མཚམས་འཇོག",
+  "reader_section_position": "ས་བཅད། {current} / {total}",
+  "reader_round_position": "སྐོར། {current} / {total}",
+  "reader_round_number": "སྐོར། {current}",
+  "reader_count_position": "{current} / {total}",
+  "reader_show_script_in": "{language} སྟོན་སྟངས།",
+  "reader_verse_label": "ཚིགས་བཅད། {number}",
+  "reader_tab_commentary": "འགྲེལ་བ།",
+  "reader_tab_versions": "པར་གཞི།"
 }

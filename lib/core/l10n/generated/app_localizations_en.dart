@@ -4303,4 +4303,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timer_duration_sec => 'sec';
+
+  @override
+  String get reader_display_title => 'Display';
+
+  @override
+  String get reader_more_settings => 'More settings';
+
+  @override
+  String get reader_spacing => 'Spacing';
+
+  @override
+  String get reader_spacing_compact => 'Compact';
+
+  @override
+  String get reader_spacing_normal => 'Normal';
+
+  @override
+  String get reader_spacing_relaxed => 'Relaxed';
+
+  @override
+  String get reader_background => 'Background';
+
+  @override
+  String get reader_background_rice_paper => 'Rice Paper';
+
+  @override
+  String get reader_background_gold => 'Gold';
+
+  @override
+  String get reader_background_sky => 'Sky';
+
+  @override
+  String get reader_background_white => 'White';
+
+  @override
+  String get reader_background_plum => 'Plum';
+
+  @override
+  String get reader_background_temple_red => 'Temple Red';
+
+  @override
+  String get reader_background_robe_saffron => 'Robe Saffron';
+
+  @override
+  String get reader_in_the_text => 'In the text';
+
+  @override
+  String get reader_ritual_instructions => 'Ritual instructions';
+
+  @override
+  String get reader_verse_numbers => 'Verse numbers';
+
+  @override
+  String get reader_change_languages => 'Change languages';
+
+  @override
+  String get reader_live_paused => 'Paused';
+
+  @override
+  String reader_section_position(String current, String total) {
+    return 'Section $current / $total';
+  }
+
+  @override
+  String reader_round_position(String current, String total) {
+    return 'Round $current / $total';
+  }
+
+  @override
+  String reader_round_number(String current) {
+    return 'Round $current';
+  }
+
+  @override
+  String reader_count_position(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String reader_show_script_in(String language) {
+    return 'Show $language in';
+  }
+
+  @override
+  String reader_verse_label(String number) {
+    return 'Verse $number';
+  }
+
+  @override
+  String get reader_tab_commentary => 'Commentary';
+
+  @override
+  String get reader_tab_versions => 'Versions';
 }

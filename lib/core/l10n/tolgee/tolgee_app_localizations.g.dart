@@ -8553,4 +8553,198 @@ class TolgeeAppLocalizations extends AppLocalizations {
     'timer_duration_sec',
     () => _fallback.timer_duration_sec,
   );
+
+  @override
+  String get reader_display_title => TolgeeBridge.get(
+    localeName,
+    'reader_display_title',
+    () => _fallback.reader_display_title,
+  );
+
+  @override
+  String get reader_more_settings => TolgeeBridge.get(
+    localeName,
+    'reader_more_settings',
+    () => _fallback.reader_more_settings,
+  );
+
+  @override
+  String get reader_spacing => TolgeeBridge.get(
+    localeName,
+    'reader_spacing',
+    () => _fallback.reader_spacing,
+  );
+
+  @override
+  String get reader_spacing_compact => TolgeeBridge.get(
+    localeName,
+    'reader_spacing_compact',
+    () => _fallback.reader_spacing_compact,
+  );
+
+  @override
+  String get reader_spacing_normal => TolgeeBridge.get(
+    localeName,
+    'reader_spacing_normal',
+    () => _fallback.reader_spacing_normal,
+  );
+
+  @override
+  String get reader_spacing_relaxed => TolgeeBridge.get(
+    localeName,
+    'reader_spacing_relaxed',
+    () => _fallback.reader_spacing_relaxed,
+  );
+
+  @override
+  String get reader_background => TolgeeBridge.get(
+    localeName,
+    'reader_background',
+    () => _fallback.reader_background,
+  );
+
+  @override
+  String get reader_background_rice_paper => TolgeeBridge.get(
+    localeName,
+    'reader_background_rice_paper',
+    () => _fallback.reader_background_rice_paper,
+  );
+
+  @override
+  String get reader_background_gold => TolgeeBridge.get(
+    localeName,
+    'reader_background_gold',
+    () => _fallback.reader_background_gold,
+  );
+
+  @override
+  String get reader_background_sky => TolgeeBridge.get(
+    localeName,
+    'reader_background_sky',
+    () => _fallback.reader_background_sky,
+  );
+
+  @override
+  String get reader_background_white => TolgeeBridge.get(
+    localeName,
+    'reader_background_white',
+    () => _fallback.reader_background_white,
+  );
+
+  @override
+  String get reader_background_plum => TolgeeBridge.get(
+    localeName,
+    'reader_background_plum',
+    () => _fallback.reader_background_plum,
+  );
+
+  @override
+  String get reader_background_temple_red => TolgeeBridge.get(
+    localeName,
+    'reader_background_temple_red',
+    () => _fallback.reader_background_temple_red,
+  );
+
+  @override
+  String get reader_background_robe_saffron => TolgeeBridge.get(
+    localeName,
+    'reader_background_robe_saffron',
+    () => _fallback.reader_background_robe_saffron,
+  );
+
+  @override
+  String get reader_in_the_text => TolgeeBridge.get(
+    localeName,
+    'reader_in_the_text',
+    () => _fallback.reader_in_the_text,
+  );
+
+  @override
+  String get reader_ritual_instructions => TolgeeBridge.get(
+    localeName,
+    'reader_ritual_instructions',
+    () => _fallback.reader_ritual_instructions,
+  );
+
+  @override
+  String get reader_verse_numbers => TolgeeBridge.get(
+    localeName,
+    'reader_verse_numbers',
+    () => _fallback.reader_verse_numbers,
+  );
+
+  @override
+  String get reader_change_languages => TolgeeBridge.get(
+    localeName,
+    'reader_change_languages',
+    () => _fallback.reader_change_languages,
+  );
+
+  @override
+  String get reader_live_paused => TolgeeBridge.get(
+    localeName,
+    'reader_live_paused',
+    () => _fallback.reader_live_paused,
+  );
+
+  @override
+  String reader_section_position(String current, String total) =>
+      TolgeeBridge.format(
+        localeName,
+        'reader_section_position',
+        <String, Object>{'current': current, 'total': total},
+        () => _fallback.reader_section_position(current, total),
+      );
+
+  @override
+  String reader_round_position(String current, String total) =>
+      TolgeeBridge.format(localeName, 'reader_round_position', <String, Object>{
+        'current': current,
+        'total': total,
+      }, () => _fallback.reader_round_position(current, total));
+
+  @override
+  String reader_round_number(String current) => TolgeeBridge.format(
+    localeName,
+    'reader_round_number',
+    <String, Object>{'current': current},
+    () => _fallback.reader_round_number(current),
+  );
+
+  @override
+  String reader_count_position(String current, String total) =>
+      TolgeeBridge.format(localeName, 'reader_count_position', <String, Object>{
+        'current': current,
+        'total': total,
+      }, () => _fallback.reader_count_position(current, total));
+
+  @override
+  String reader_show_script_in(String language) => TolgeeBridge.format(
+    localeName,
+    'reader_show_script_in',
+    <String, Object>{'language': language},
+    () => _fallback.reader_show_script_in(language),
+  );
+
+  @override
+  String reader_verse_label(String number) => TolgeeBridge.format(
+    localeName,
+    'reader_verse_label',
+    <String, Object>{'number': number},
+    () => _fallback.reader_verse_label(number),
+  );
+
+  @override
+  String get reader_tab_commentary => TolgeeBridge.get(
+    localeName,
+    'reader_tab_commentary',
+    () => _fallback.reader_tab_commentary,
+  );
+
+  @override
+  String get reader_tab_versions => TolgeeBridge.get(
+    localeName,
+    'reader_tab_versions',
+    () => _fallback.reader_tab_versions,
+  );
 }
