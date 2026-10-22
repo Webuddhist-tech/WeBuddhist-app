@@ -22,7 +22,8 @@ class SegmentNumber extends ConsumerWidget {
         label.replaceAll('-', '.'),
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: style.type.verseNumberSize,
+          // The numerals are Western digits, so Latin metrics.
+          fontSize: style.type.verseNumberSize(),
           fontWeight: FontWeight.w500,
           fontFamily: style.type.family(language),
           color: style.palette.verseNumber,

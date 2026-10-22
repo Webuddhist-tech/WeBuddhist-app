@@ -28,6 +28,8 @@ class SectionHeader extends ConsumerWidget {
 
     final style = ReaderStyle.of(context, ref);
     final fontFamily = style.type.family(language);
+    final script = ReaderScript.of(title, language: language);
+    final metrics = style.type.heading(depth, script);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -51,7 +53,7 @@ class SectionHeader extends ConsumerWidget {
             Text(
               '${section.sectionNumber}',
               style: TextStyle(
-                fontSize: style.type.sectionNumberSize,
+                fontSize: style.type.sectionNumberSize(script),
                 fontFamily: fontFamily,
                 color: style.palette.heading,
               ),
@@ -67,11 +69,11 @@ class SectionHeader extends ConsumerWidget {
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: style.type.headingSize(depth),
-              fontWeight: FontWeight.w600,
+              fontSize: metrics.fontSize,
+              fontWeight: metrics.fontWeight,
               fontFamily: fontFamily,
               color: style.palette.heading,
-              height: style.type.headingHeight(language),
+              height: metrics.height,
             ),
           ),
         ],

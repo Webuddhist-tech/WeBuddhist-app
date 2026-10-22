@@ -1834,6 +1834,11 @@ class _SourceTitle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (title.isEmpty) return const SizedBox.shrink();
     final style = ReaderStyle.of(context, ref);
+    // A top-level heading's size.
+    final metrics = style.type.heading(
+      0,
+      ReaderScript.of(title, language: language),
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         ReaderConstants.segmentHorizontalPadding,
@@ -1845,11 +1850,11 @@ class _SourceTitle extends ConsumerWidget {
         title,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: style.type.textTitleSize,
-          fontWeight: FontWeight.w600,
+          fontSize: metrics.fontSize,
+          fontWeight: metrics.fontWeight,
           fontFamily: style.type.family(language),
           color: style.palette.heading,
-          height: style.type.headingHeight(language),
+          height: metrics.height,
         ),
       ),
     );

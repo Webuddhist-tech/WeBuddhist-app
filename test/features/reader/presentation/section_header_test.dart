@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,8 +9,8 @@ import '../fakes/fake_local_storage.dart';
 
 Widget _app(Widget child) => ProviderScope(
   overrides: [
-    fontSizeProvider.overrideWith(
-      (ref) => FontSizeNotifier(localStorageService: FakeLocalStorage()),
+    readerTextSizeProvider.overrideWith(
+      (ref) => ReaderTextSizeNotifier(localStorageService: FakeLocalStorage()),
     ),
   ],
   child: MaterialApp(home: Scaffold(body: child)),

@@ -45,6 +45,10 @@ class SegmentItem extends ConsumerWidget {
       scope: scope,
     );
     final typeStyle = SegmentTypeStyle.of(segment.type);
+    final metrics = style.type.line(
+      ReaderTextRole.originalAlone,
+      ReaderScript.of(primary.html, language: primary.fontLanguage),
+    );
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -83,13 +87,13 @@ class SegmentItem extends ConsumerWidget {
                   SegmentHtmlWidget(
                     htmlContent: primary.html,
                     segmentIndex: segment.segmentNumber,
-                    fontSize: style.type.originalSize,
-                    lineHeight: style.type.verseHeight(primary.fontLanguage),
+                    fontSize: metrics.fontSize,
+                    lineHeight: metrics.height,
                     language: primary.fontLanguage,
                     isSelected: isSelected,
                     textColor: style.palette.text,
-                    fontStyle: typeStyle.fontStyle,
-                    fontWeight: typeStyle.fontWeight,
+                    fontStyle: typeStyle.fontStyle ?? metrics.fontStyle,
+                    fontWeight: typeStyle.fontWeight ?? metrics.fontWeight,
                   ),
                 ],
               ),
