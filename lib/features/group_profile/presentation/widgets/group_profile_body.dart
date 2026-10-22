@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/analytics/share_analytics.dart';
@@ -17,6 +19,8 @@ import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.da
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_feed_card_layout.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_practice_card.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
@@ -1690,31 +1694,29 @@ class _GroupFollowButton extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
+          // Chat and prayer requests share the space's room; both need an
+          // account, like the ⋮ member menu.
           if (showChat) ...[
-            ElevatedButton.icon(
-              onPressed:
-                  () => context.push(AppRoutes.groupChatPath(profile.id)),
-              icon: const Icon(AppAssets.chatCircleDots, size: 22),
-              label: Text(
-                context.l10n.group_chat_open,
-                strutStyle: context.tibetanStrutStyle(fontSize),
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: getSystemFontFamily(locale.languageCode),
-                ),
-              ),
-              style: buttonStyle.copyWith(
-                padding: const WidgetStatePropertyAll(
-                  EdgeInsets.symmetric(horizontal: 20),
-                ),
-                backgroundColor: WidgetStatePropertyAll(
-                  isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
-                ),
-                foregroundColor: WidgetStatePropertyAll(
-                  isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-                ),
-              ),
+            _RoundActionButton(
+              icon: AppAssets.chatCircleDots,
+              tooltip: context.l10n.group_chat_open,
+              size: buttonHeight,
+              isDark: isDark,
+              onTap: () => context.push(AppRoutes.groupChatPath(profile.id)),
+            ),
+            const SizedBox(width: 12),
+            _RoundActionButton(
+              icon: AppAssets.handsPraying,
+              tooltip: context.l10n.event_prayer_requests,
+              size: buttonHeight,
+              isDark: isDark,
+              onTap:
+                  () => unawaited(
+                    PrayerRequestsSheet.show(
+                      context,
+                      scope: PrayerRoomScope.group(profile.id),
+                    ),
+                  ),
             ),
             const SizedBox(width: 12),
           ],
@@ -1990,5 +1992,46 @@ class _GroupProfileTabBarDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _GroupProfileTabBarDelegate oldDelegate) {
     return tabBar != oldDelegate.tabBar ||
         backgroundColor != oldDelegate.backgroundColor;
+  }
+}
+
+/// Round icon button beside Invite, the same height as it.
+class _RoundActionButton extends StatelessWidget {
+  const _RoundActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.size,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final double size;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Icon(
+              icon,
+              size: 22,
+              color: isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_liv
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
@@ -28,14 +29,17 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_live_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Bottom sheet listing an event's prayer requests, with a prompt on top
-/// that opens the composer.
+/// Bottom sheet listing an event's or a space's prayer requests, with a
+/// prompt on top that opens the composer.
 class PrayerRequestsSheet extends ConsumerStatefulWidget {
-  const PrayerRequestsSheet({super.key, required this.eventId});
+  const PrayerRequestsSheet({super.key, required this.scope});
 
-  final String eventId;
+  final PrayerRoomScope scope;
 
-  static Future<void> show(BuildContext context, {required String eventId}) {
+  static Future<void> show(
+    BuildContext context, {
+    required PrayerRoomScope scope,
+  }) {
     return showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
@@ -44,7 +48,7 @@ class PrayerRequestsSheet extends ConsumerStatefulWidget {
       isDismissible: true,
       enableDrag: true,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => PrayerRequestsSheet(eventId: eventId),
+      builder: (_) => PrayerRequestsSheet(scope: scope),
     );
   }
 
@@ -84,7 +88,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   static const double _loadMoreThreshold = 200;
 
   PrayerRequestsNotifier get _notifier =>
-      _providers.read(prayerRequestsProvider(widget.eventId).notifier);
+      _providers.read(prayerRequestsProvider(widget.scope).notifier);
 
   String get _viewerId => _providers.read(userProvider).user?.id?.trim() ?? '';
 
@@ -169,7 +173,8 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     );
   }
 
-  /// Connects once the room is known; the socket is event-scoped. A closed
+  /// Connects once the room is known; the socket is scoped to the event or
+  /// space. A closed
   /// room keeps its id so the loaded requests still render, so the status has
   /// to be checked too — otherwise the rebuild that follows `markClosed`
   /// reconnects to the room the server just shut.
@@ -213,7 +218,8 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final uri = ChatLiveClient.liveUri(
       restBaseUrl: _providers.read(apiConfigProvider).baseUrl,
       token: token,
-      eventId: widget.eventId,
+      eventId: widget.scope.eventId,
+      groupId: widget.scope.groupId,
       roomId: _roomId,
     );
     final client = ChatLiveClient();
@@ -302,7 +308,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     try {
       final result = await NewPrayerRequestSheet.show(
         context,
-        eventId: widget.eventId,
+        scope: widget.scope,
         editing: editing,
       );
       if (!mounted || result == null || editing != null) return;
@@ -340,7 +346,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final confirmed = await confirmChatMessageDelete(
       context,
       title: l10n.event_prayer_delete_title,
-      body: l10n.event_prayer_delete_body,
+      body:
+          widget.scope.isEvent
+              ? l10n.event_prayer_delete_body
+              : l10n.group_prayer_delete_body,
     );
     if (!confirmed || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -368,19 +377,23 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final state = ref.watch(prayerRequestsProvider(widget.eventId));
+    final state = ref.watch(prayerRequestsProvider(widget.scope));
     _syncRoom(state);
 
-    // Requests stay readable after the event, but no new ones are taken.
+    // Requests stay readable after the event, but no new ones are taken. A
+    // space has no end.
+    final eventId = widget.scope.eventId;
     final hasEnded =
-        ref
-            .watch(groupEventDetailProvider(widget.eventId))
-            .valueOrNull
-            ?.fold(
-              (_) => false,
-              (event) => GroupEventLiveUtils.hasEnded(event, DateTime.now()),
-            ) ??
-        false;
+        eventId != null &&
+        (ref
+                .watch(groupEventDetailProvider(eventId))
+                .valueOrNull
+                ?.fold(
+                  (_) => false,
+                  (event) =>
+                      GroupEventLiveUtils.hasEnded(event, DateTime.now()),
+                ) ??
+            false);
     final roomReady = state.roomStatus == PrayerRoomStatus.ready;
     final canCompose = roomReady && !hasEnded;
     // The filter row only makes sense once the room is open: a failed or
@@ -481,7 +494,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final Widget? placeholder;
     if (state.roomStatus == PrayerRoomStatus.closed) {
       placeholder = _Notice(
-        text: context.l10n.event_prayer_closed,
+        text:
+            widget.scope.isEvent
+                ? context.l10n.event_prayer_closed
+                : context.l10n.group_prayer_closed,
         color: mutedColor,
       );
     } else if (state.roomStatus == PrayerRoomStatus.failed ||
@@ -570,7 +586,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                   ? () => unawaited(
                     PrayerSupportersSheet.show(
                       context,
-                      eventId: widget.eventId,
+                      scope: widget.scope,
                       request: request,
                     ),
                   )

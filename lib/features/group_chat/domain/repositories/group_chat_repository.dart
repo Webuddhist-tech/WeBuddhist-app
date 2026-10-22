@@ -17,6 +17,8 @@ abstract class GroupChatRepository {
 
   Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId);
 
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId);
+
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
     int skip = 0,

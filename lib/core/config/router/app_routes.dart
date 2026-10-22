@@ -59,6 +59,19 @@ class AppRoutes {
     return '$path?$eventPrayersQuery=1';
   }
 
+  /// Query on `/home/group/:groupId`. When `1`, the space page opens its
+  /// prayer-request sheet after it is showing.
+  static const String groupPrayersQuery = 'prayers';
+
+  static String groupProfilePath(
+    String groupId, {
+    bool openPrayerRequests = false,
+  }) {
+    final path = '/home/group/$groupId';
+    if (!openPrayerRequests) return path;
+    return '$path?$groupPrayersQuery=1';
+  }
+
   /// Every group chat the viewer belongs to. Top-level for the same reason as
   /// [groupChat] — it is not guest-accessible.
   static const String chats = '/chats';

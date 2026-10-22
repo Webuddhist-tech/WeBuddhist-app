@@ -122,6 +122,20 @@ class GroupChatRemoteDatasource {
     }
   }
 
+  /// Resolves a space's room, creating it on first use. Members and
+  /// followers only.
+  Future<ChatRoomDTO> getGroupRoom(String groupId) async {
+    try {
+      final response = await _dio.get(
+        '/chat/groups/$groupId/room',
+        options: _noCache,
+      );
+      return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
   /// [messageType] narrows the page to one kind, e.g. `PRAYER`. [sort] and
   /// [intention] (a slug) only apply to prayer requests. [translationLanguage]
   /// (`EN`, `ZH`, `BO`) asks for each body in that language as well.

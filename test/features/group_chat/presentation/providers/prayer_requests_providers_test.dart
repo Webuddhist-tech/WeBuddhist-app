@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summar
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
@@ -67,11 +68,20 @@ ChatMessageDTO _translated(String id, {int count = 0}) {
   );
 }
 
+const _eventScope = PrayerRoomScope.event('e1');
+const _groupScope = PrayerRoomScope.group('g1');
+
 class _FakeGroupChatRepository implements GroupChatRepository {
   _FakeGroupChatRepository({this.history = const []});
 
   List<ChatMessageDTO> history;
   Failure? roomFailure;
+
+  /// Which room endpoint was asked, `event:<id>` or `group:<id>`.
+  final List<String> roomLookups = [];
+
+  /// Which send endpoint was used, `event:<id>` or `group:<id>`.
+  final List<String> sentTo = [];
   Failure? prayFailure;
 
   /// Answers the next pray call only, then clears itself.
@@ -102,6 +112,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
 
   @override
   Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
+    roomLookups.add('event:$eventId');
     final failure = roomFailure;
     if (failure != null) return Left(failure);
     return const Right(
@@ -111,6 +122,23 @@ class _FakeGroupChatRepository implements GroupChatRepository {
         kind: 'EVENT',
         eventId: 'e1',
         name: 'Tara',
+        updatedAt: '',
+      ),
+    );
+  }
+
+  @override
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async {
+    roomLookups.add('group:$groupId');
+    final failure = roomFailure;
+    if (failure != null) return Left(failure);
+    return const Right(
+      ChatRoomDTO(
+        id: 'room-1',
+        createdBy: 'u1',
+        kind: 'GROUP',
+        groupId: 'g1',
+        name: 'Sangha',
         updatedAt: '',
       ),
     );
@@ -157,6 +185,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String? messageType,
     String? intention,
   }) async {
+    sentTo.add('event:$eventId');
     sentTypes.add(messageType);
     sentIntentions.add(intention);
     return Right(_prayer('sent'));
@@ -242,7 +271,12 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String? parentMessageId,
     String? messageType,
     String? intention,
-  }) async => const Left(NotFoundFailure('not used'));
+  }) async {
+    sentTo.add('group:$groupId');
+    sentTypes.add(messageType);
+    sentIntentions.add(intention);
+    return Right(_prayer('sent'));
+  }
 
   @override
   Future<Either<Failure, ChatRoomMembersPage>> listRoomMembers(
@@ -317,8 +351,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
 }
 
 PrayerRequestsNotifier _keepAlive(ProviderContainer container) {
-  container.listen(prayerRequestsProvider('e1'), (_, _) {});
-  return container.read(prayerRequestsProvider('e1').notifier);
+  container.listen(prayerRequestsProvider(_eventScope), (_, _) {});
+  return container.read(prayerRequestsProvider(_eventScope).notifier);
 }
 
 Future<void> _settle({int ticks = 5}) async {
@@ -374,6 +408,45 @@ void main() {
       expect(notifier.state.hasLoaded, isTrue);
       expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
       expect(repository.listedTypes, ['PRAYER']);
+      expect(repository.roomLookups, ['event:e1']);
+    });
+
+    test('a space scope resolves the group room instead', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      container.listen(prayerRequestsProvider(_groupScope), (_, _) {});
+      final notifier = container.read(
+        prayerRequestsProvider(_groupScope).notifier,
+      );
+      await _settle();
+
+      expect(repository.roomLookups, ['group:g1']);
+      expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
+      expect(notifier.state.roomId, 'room-1');
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+      expect(repository.listedTypes, ['PRAYER']);
+    });
+
+    test('a space scope posts to the group endpoint and counts it', () async {
+      repository = _FakeGroupChatRepository();
+      container = buildContainer();
+
+      container.listen(prayerRequestsProvider(_groupScope), (_, _) {});
+      container.listen(prayerRequestCountProvider(_groupScope), (_, _) {});
+      final notifier = container.read(
+        prayerRequestsProvider(_groupScope).notifier,
+      );
+      await _settle();
+
+      final result = await notifier.send('Please', intention: 'healing');
+      expect(result.isRight(), isTrue);
+      expect(repository.sentTo, ['group:g1']);
+      expect(repository.sentTypes, ['PRAYER']);
+      expect(notifier.state.requests.map((r) => r.id), ['sent']);
+      expect(container.read(prayerRequestCountProvider(_groupScope)), 1);
+      // The event keyed by the same id is a different room.
+      expect(container.read(prayerRequestCountProvider(_eventScope)), isNull);
     });
 
     test('the first page is listed newest, with no intention', () async {
@@ -433,7 +506,7 @@ void main() {
       );
       container = buildContainer();
       final countSub = container.listen(
-        prayerRequestCountProvider('e1'),
+        prayerRequestCountProvider(_eventScope),
         (_, _) {},
       );
       addTearDown(countSub.close);
@@ -497,7 +570,7 @@ void main() {
       );
       container = buildContainer();
       final countSub = container.listen(
-        prayerRequestCountProvider('e1'),
+        prayerRequestCountProvider(_eventScope),
         (_, _) {},
       );
       addTearDown(countSub.close);
@@ -525,7 +598,7 @@ void main() {
       );
       container = buildContainer();
       final countSub = container.listen(
-        prayerRequestCountProvider('e1'),
+        prayerRequestCountProvider(_eventScope),
         (_, _) {},
       );
       addTearDown(countSub.close);
@@ -582,7 +655,7 @@ void main() {
       repository = _FakeGroupChatRepository(history: history);
       container = buildContainer();
       final countSub = container.listen(
-        prayerRequestCountProvider('e1'),
+        prayerRequestCountProvider(_eventScope),
         (_, _) {},
       );
       addTearDown(countSub.close);
@@ -684,7 +757,7 @@ void main() {
       );
       container = buildContainer();
       final countSub = container.listen(
-        prayerRequestCountProvider('e1'),
+        prayerRequestCountProvider(_eventScope),
         (_, _) {},
       );
       addTearDown(countSub.close);
@@ -1207,7 +1280,7 @@ void main() {
       container = buildContainer();
       // The chip's watch is what keeps the auto-disposed count alive.
       final countSub = container.listen(
-        prayerRequestCountProvider('e1'),
+        prayerRequestCountProvider(_eventScope),
         (_, _) {},
       );
       addTearDown(countSub.close);

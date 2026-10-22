@@ -73,6 +73,25 @@ void main() {
       expect(room.eventId, 'e1');
     });
 
+    test('getGroupRoom resolves the space room', () async {
+      final ds = _datasource((options) async {
+        expect(options.method, 'GET');
+        expect(options.path, '/chat/groups/g1/room');
+        return _status(200, {
+          'id': 'r2',
+          'created_by': 'u1',
+          'kind': 'GROUP',
+          'group_id': 'g1',
+          'name': 'Sangha',
+          'updated_at': '2026-09-11T10:04:00+00:00',
+        });
+      });
+
+      final room = await ds.getGroupRoom('g1');
+      expect(room.id, 'r2');
+      expect(room.groupId, 'g1');
+    });
+
     test('sendEventMessage posts the body with its message_type', () async {
       Object? sent;
       final ds = _datasource((options) async {

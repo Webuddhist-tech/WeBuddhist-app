@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_translation_language.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
@@ -17,7 +18,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/pending
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
-/// Where the event room stands: 404 on resolve means chat is switched off.
+/// Where the room stands: 404 on resolve means chat is switched off.
 enum PrayerRoomStatus { resolving, ready, closed, failed }
 
 /// How taps turn into pray calls: batched, at most ten prayers a second.
@@ -287,9 +288,9 @@ class PrayerRequestsState extends Equatable {
   ];
 }
 
-/// The prayer requests of one event room.
+/// The prayer requests of one event or space room.
 class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
-  PrayerRequestsNotifier({required this.ref, required this.eventId})
+  PrayerRequestsNotifier({required this.ref, required this.scope})
     : _repository = ref.read(groupChatRepositoryProvider),
       _pacing = ref.read(prayerPacingProvider),
       _sends = ref.read(pendingPrayerSendsProvider),
@@ -298,7 +299,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   final Ref ref;
-  final String eventId;
+  final PrayerRoomScope scope;
   static const int _limit = 30;
 
   String get _translationLanguage =>
@@ -372,7 +373,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       clearError: true,
     );
 
-    final roomResult = await _repository.getEventRoom(eventId);
+    final roomResult =
+        scope.isEvent
+            ? await _repository.getEventRoom(scope.id)
+            : await _repository.getGroupRoom(scope.id);
     if (!mounted) return;
 
     final roomId = roomResult.fold((failure) {
@@ -463,14 +467,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   void _publishCount(int count) {
-    ref.read(prayerRequestCountProvider(eventId).notifier).state = count;
+    ref.read(prayerRequestCountProvider(scope).notifier).state = count;
   }
 
   /// Moves the room's count on the event screen; [inList] moves the
   /// filtered total shown above the list too.
   void _shiftCount(int delta, {bool inList = true}) {
     if (inList) state = state.copyWith(total: _clampCount(state.total + delta));
-    final current = ref.read(prayerRequestCountProvider(eventId));
+    final current = ref.read(prayerRequestCountProvider(scope));
     if (current == null) return;
     _publishCount(_clampCount(current + delta));
   }
@@ -574,12 +578,20 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     String body, {
     required String intention,
   }) async {
-    final result = await _repository.sendEventMessage(
-      eventId,
-      body: body,
-      messageType: ChatMessageDTO.typePrayer,
-      intention: intention,
-    );
+    final result =
+        scope.isEvent
+            ? await _repository.sendEventMessage(
+              scope.id,
+              body: body,
+              messageType: ChatMessageDTO.typePrayer,
+              intention: intention,
+            )
+            : await _repository.sendGroupMessage(
+              scope.id,
+              body: body,
+              messageType: ChatMessageDTO.typePrayer,
+              intention: intention,
+            );
     if (!mounted) return result;
     result.fold((_) {}, appendLive);
     return result;
@@ -1040,8 +1052,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 }
 
 final prayerRequestsProvider = StateNotifierProvider.autoDispose
-    .family<PrayerRequestsNotifier, PrayerRequestsState, String>(
-      (ref, eventId) => PrayerRequestsNotifier(ref: ref, eventId: eventId),
+    .family<PrayerRequestsNotifier, PrayerRequestsState, PrayerRoomScope>(
+      (ref, scope) => PrayerRequestsNotifier(ref: ref, scope: scope),
     );
 
 /// The intention picker's choices, in display order.
@@ -1195,12 +1207,12 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
   }
 }
 
-/// Live prayer-request count per event, kept by [PrayerRequestsNotifier] so
+/// Live prayer-request count per room, kept by [PrayerRequestsNotifier] so
 /// the chip on the event screen moves with the sheet instead of waiting for
 /// the next event fetch. Null until the sheet has loaded once. Lives only
 /// while a chip watches it, so a later visit starts from the server count.
 final prayerRequestCountProvider = StateProvider.autoDispose
-    .family<int?, String>((ref, eventId) => null);
+    .family<int?, PrayerRoomScope>((ref, scope) => null);
 
 final prayerSupportersProvider = StateNotifierProvider.autoDispose
     .family<PrayerSupportersNotifier, PrayerSupportersState, String>(

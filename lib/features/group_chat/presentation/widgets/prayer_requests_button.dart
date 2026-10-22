@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
@@ -42,25 +43,30 @@ class PrayerRequestsIconButton extends ConsumerWidget {
           LoginDrawer.show(context, ref);
           return;
         }
-        unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
+        unawaited(
+          PrayerRequestsSheet.show(
+            context,
+            scope: PrayerRoomScope.event(eventId),
+          ),
+        );
       },
     );
   }
 }
 
-/// Chip that opens the event's prayer requests, under the live stream or in
+/// Chip that opens a room's prayer requests, under the live stream or in
 /// the app bar.
 class PrayerRequestsButton extends ConsumerStatefulWidget {
   const PrayerRequestsButton({
     super.key,
-    required this.eventId,
+    required this.scope,
     required this.onTap,
     this.count = 0,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.outlined = false,
   });
 
-  final String eventId;
+  final PrayerRoomScope scope;
   final VoidCallback onTap;
 
   /// Count from the event fetch. Once the sheet has loaded, the live count
@@ -83,12 +89,12 @@ class _PrayerRequestsButtonState extends ConsumerState<PrayerRequestsButton> {
     if (oldWidget.count == widget.count) return;
     // A fresh event fetch is newer than the count the sheet kept, so the
     // live count restarts from it. Deferred: providers can't change mid-build.
-    final eventId = widget.eventId;
+    final scope = widget.scope;
     final serverCount = widget.count;
-    final seen = ref.read(prayerRequestCountProvider(eventId));
+    final seen = ref.read(prayerRequestCountProvider(scope));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final live = ref.read(prayerRequestCountProvider(eventId).notifier);
+      final live = ref.read(prayerRequestCountProvider(scope).notifier);
       // It only moves while the sheet is open, and then it is the fresher
       // of the two; a request that landed this frame must not be undone.
       if (live.state != null && live.state == seen) live.state = serverCount;
@@ -101,7 +107,7 @@ class _PrayerRequestsButtonState extends ConsumerState<PrayerRequestsButton> {
     final foreground =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final count =
-        ref.watch(prayerRequestCountProvider(widget.eventId)) ?? widget.count;
+        ref.watch(prayerRequestCountProvider(widget.scope)) ?? widget.count;
     final label =
         count > 0
             ? context.l10n.event_prayer_request_count(count)

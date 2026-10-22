@@ -3101,6 +3101,13 @@ class AppLocalizationsMn extends AppLocalizations {
       'Энэ арга хэмжээний залбирлын хүсэлт хаагдсан';
 
   @override
+  String get group_prayer_closed => 'Prayer requests are closed for this space';
+
+  @override
+  String get group_prayer_delete_body =>
+      'It will be removed for everyone in this space.';
+
+  @override
   String get event_prayer_pray => 'Залбирах';
 
   @override

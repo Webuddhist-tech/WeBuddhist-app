@@ -5390,6 +5390,18 @@ abstract class AppLocalizations {
   /// **'Prayer requests are closed for this event'**
   String get event_prayer_closed;
 
+  /// No description provided for @group_prayer_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests are closed for this space'**
+  String get group_prayer_closed;
+
+  /// No description provided for @group_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in this space.'**
+  String get group_prayer_delete_body;
+
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:

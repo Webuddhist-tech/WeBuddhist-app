@@ -47,6 +47,15 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async {
+    try {
+      return Right(await _remote.getGroupRoom(groupId));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'getGroupRoom'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
     int skip = 0,

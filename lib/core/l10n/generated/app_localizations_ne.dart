@@ -3106,6 +3106,13 @@ class AppLocalizationsNe extends AppLocalizations {
       'यस कार्यक्रमका लागि प्रार्थना अनुरोधहरू बन्द छन्';
 
   @override
+  String get group_prayer_closed => 'Prayer requests are closed for this space';
+
+  @override
+  String get group_prayer_delete_body =>
+      'It will be removed for everyone in this space.';
+
+  @override
   String get event_prayer_pray => 'प्रार्थना गर्नुहोस्';
 
   @override

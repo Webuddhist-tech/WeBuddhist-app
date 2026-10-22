@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_l10n.dart';
@@ -16,9 +17,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Compose a prayer request: body plus one intention. Pops with the created
 /// (or, given [editing], updated) message, or null when dismissed.
 class NewPrayerRequestSheet extends ConsumerStatefulWidget {
-  const NewPrayerRequestSheet({super.key, required this.eventId, this.editing});
+  const NewPrayerRequestSheet({super.key, required this.scope, this.editing});
 
-  final String eventId;
+  final PrayerRoomScope scope;
 
   /// The viewer's own request to edit; null composes a new one.
   final ChatMessageDTO? editing;
@@ -28,7 +29,7 @@ class NewPrayerRequestSheet extends ConsumerStatefulWidget {
 
   static Future<ChatMessageDTO?> show(
     BuildContext context, {
-    required String eventId,
+    required PrayerRoomScope scope,
     ChatMessageDTO? editing,
   }) {
     return showModalBottomSheet<ChatMessageDTO>(
@@ -37,7 +38,7 @@ class NewPrayerRequestSheet extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => NewPrayerRequestSheet(eventId: eventId, editing: editing),
+      builder: (_) => NewPrayerRequestSheet(scope: scope, editing: editing),
     );
   }
 
@@ -118,7 +119,7 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     setState(() => _sending = true);
     try {
       final notifier = ref.read(
-        prayerRequestsProvider(widget.eventId).notifier,
+        prayerRequestsProvider(widget.scope).notifier,
       );
       final editing = widget.editing;
       final result =

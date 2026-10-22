@@ -367,7 +367,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
                   final groupId = state.pathParameters['groupId'] ?? '';
-                  return GroupProfileScreen(groupId: groupId);
+                  final openPrayerRequests =
+                      state.uri.queryParameters[AppRoutes.groupPrayersQuery] ==
+                      '1';
+                  return GroupProfileScreen(
+                    groupId: groupId,
+                    openPrayerRequests: openPrayerRequests,
+                  );
                 },
               ),
               GoRoute(

@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
@@ -17,19 +18,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class PrayerSupportersSheet extends ConsumerStatefulWidget {
   const PrayerSupportersSheet({
     super.key,
-    required this.eventId,
+    required this.scope,
     required this.request,
   });
 
-  final String eventId;
+  final PrayerRoomScope scope;
 
   /// The request as it was when opened; an edit made while the sheet is up
-  /// is picked up from the event's request list.
+  /// is picked up from the room's request list.
   final ChatMessageDTO request;
 
   static Future<void> show(
     BuildContext context, {
-    required String eventId,
+    required PrayerRoomScope scope,
     required ChatMessageDTO request,
   }) {
     return showModalBottomSheet<void>(
@@ -39,7 +40,7 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder:
-          (_) => PrayerSupportersSheet(eventId: eventId, request: request),
+          (_) => PrayerSupportersSheet(scope: scope, request: request),
     );
   }
 
@@ -80,7 +81,7 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
   ChatMessageDTO _currentRequest() {
     final id = widget.request.id;
     return ref.watch(
-          prayerRequestsProvider(widget.eventId).select(
+          prayerRequestsProvider(widget.scope).select(
             (state) =>
                 state.requests.where((request) => request.id == id).firstOrNull,
           ),

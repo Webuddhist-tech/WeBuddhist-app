@@ -6030,6 +6030,20 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_prayer_closed => TolgeeBridge.get(
+    localeName,
+    'group_prayer_closed',
+    () => _fallback.group_prayer_closed,
+  );
+
+  @override
+  String get group_prayer_delete_body => TolgeeBridge.get(
+    localeName,
+    'group_prayer_delete_body',
+    () => _fallback.group_prayer_delete_body,
+  );
+
+  @override
   String get event_prayer_pray => TolgeeBridge.get(
     localeName,
     'event_prayer_pray',
