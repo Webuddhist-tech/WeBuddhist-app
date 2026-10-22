@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_palette.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,6 +12,10 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
   final String htmlContent;
   final int segmentIndex;
   final double fontSize;
+
+  /// Line height of the text, as a multiple of [fontSize]; null leaves the
+  /// font's own.
+  final double? lineHeight;
   final String language;
   final bool isSelected;
 
@@ -29,6 +33,7 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
     required this.htmlContent,
     required this.segmentIndex,
     required this.fontSize,
+    this.lineHeight,
     required this.language,
     this.isSelected = false,
     this.textColor,
@@ -47,31 +52,32 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
   @override
   Widget build(BuildContext context) {
     int footnoteCounter = 0;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = ReaderPalette.resolve(Theme.of(context), ref);
+    final lineHeight = widget.lineHeight;
     return Html(
       data: widget.htmlContent,
       style: {
         ".$libraryYigchungClass": Style(
-          color:
-              isDark ? AppColors.readerYigchungDark : AppColors.readerYigchung,
+          color: palette.yigchung,
           fontStyle: FontStyle.italic,
           fontSize: FontSize(widget.fontSize * _yigchungScale),
         ),
         ".footnote-marker": Style(
-          color: const Color(0xFF007bff),
+          color: palette.footnoteMarker,
           fontWeight: FontWeight.w700,
           verticalAlign: VerticalAlign.top,
         ),
         ".footnote": Style(
           fontStyle: FontStyle.italic,
-          color: const Color(0xFF8a8a8a),
+          color: palette.footnoteText,
           margin: Margins.only(left: 4),
-          backgroundColor: const Color(0xFFF0F0F0),
+          backgroundColor: palette.footnoteBackground,
           padding: HtmlPaddings.symmetric(horizontal: 5, vertical: 2),
           fontSize: FontSize(widget.fontSize),
         ),
         "body": Style(
           fontSize: FontSize(widget.fontSize),
+          lineHeight: lineHeight == null ? null : LineHeight(lineHeight),
           margin: Margins.zero,
           color: widget.textColor,
           fontFamily: getFontFamily(widget.language),
@@ -120,7 +126,7 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
                       ),
                       child: DefaultTextStyle.merge(
                         style: TextStyle(
-                          color: const Color(0xFF007bff),
+                          color: palette.footnoteMarker,
                           fontWeight: FontWeight.w700,
                           fontSize: widget.fontSize * 0.85,
                         ),
@@ -153,13 +159,13 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF0F0F0),
+                            color: palette.footnoteBackground,
                             borderRadius: BorderRadius.circular(3),
                           ),
                           child: DefaultTextStyle.merge(
                             style: TextStyle(
                               fontStyle: FontStyle.italic,
-                              color: Color(0xFF8a8a8a),
+                              color: palette.footnoteText,
                               fontSize: widget.fontSize,
                             ),
                             child:
