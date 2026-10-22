@@ -31,6 +31,7 @@ import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
@@ -688,15 +689,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  ThemeData _readerTheme(BuildContext context) {
-    final theme = Theme.of(context);
-    if (theme.brightness != Brightness.light) return theme;
-
-    return theme.copyWith(
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: theme.appBarTheme.copyWith(backgroundColor: Colors.white),
-    );
-  }
+  ThemeData _readerTheme(BuildContext context) =>
+      ReaderStyle.theme(context, ref);
 
   /// [state] is the first source's, which gates loading and errors;
   /// [active] is the tapped source's, which owns the selection and panels.

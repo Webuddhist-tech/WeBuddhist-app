@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
@@ -18,9 +16,13 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_pill.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
@@ -30,9 +32,7 @@ import 'package:flutter_pecha/features/recitation/presentation/providers/recitat
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
-import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -113,8 +113,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   _PageLayout? _layout;
 
   /// The table of contents for the sections sheet, refreshed after each build.
-  final ValueNotifier<_SectionsSnapshot> _sections = ValueNotifier(
-    const _SectionsSnapshot.empty(),
+  final ValueNotifier<ReaderSectionsSnapshot> _sections = ValueNotifier(
+    const ReaderSectionsSnapshot.empty(),
   );
 
   /// Key of the section at the top of the viewport.
@@ -285,8 +285,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   _PageLayout _layoutFor(List<_SourceView> views) {
     final entries = <_Entry>[];
     final sectionOfEntry = <int>[];
-    final sections = <_PageSection>[];
-    final texts = <_PageText>[];
+    final sections = <ReaderPageSection>[];
+    final texts = <ReaderPageText>[];
     final sectionIndexByKey = <String, int>{};
     // Headings drawn so far, by the source and entry they were drawn at.
     final drawn = <String, (int, int)>{};
@@ -302,7 +302,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       int entry,
     ) => sectionIndexByKey.putIfAbsent('$source:$id', () {
       sections.add(
-        _PageSection(
+        ReaderPageSection(
           source: source,
           id: id,
           title: title,
@@ -338,7 +338,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           titled && !view.translationHeadings
               ? _headingText(view, heading)
               : (textTitle, textLanguage);
-      final text = _PageText(
+      final text = ReaderPageText(
         source: view.index,
         title: title,
         language: titleLanguage,
@@ -500,7 +500,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       isScrollControlled: true,
       builder:
           (_) =>
-              _SectionsSheet(snapshot: _sections, current: _currentSectionKey),
+              ReaderSectionsSheet(snapshot: _sections, current: _currentSectionKey),
     );
     if (picked == null || !mounted) return;
     _scrollToEntry(picked);
@@ -1423,7 +1423,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     // Texts not started yet are listed as loading until they are.
     final pending = widget.sources.length - _startedCount;
-    final snapshot = _SectionsSnapshot(
+    final snapshot = ReaderSectionsSnapshot(
       title: _pageTitle(first),
       texts: layout.texts,
       pendingSources: pending,
@@ -1458,7 +1458,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                           (t) => t.source == section.source,
                         );
                 final text = layout.texts[index < 0 ? 0 : index];
-                return _SectionsPill(
+                return ReaderSectionsPill(
                   title: text.title,
                   language: text.language,
                   position: text.source + 1,
@@ -1728,84 +1728,11 @@ class _Entry {
       headings = const [];
 }
 
-/// A section of the page's table of contents: the innermost titled heading
-/// over a run of verses, or a text's title when it has none.
-class _PageSection {
-  final int source;
-  final String id;
-  final String title;
-  final String language;
-
-  /// The entry to bring to the top: the heading, or the first verse when
-  /// the heading was drawn for an earlier source.
-  final int entryIndex;
-
-  const _PageSection({
-    required this.source,
-    required this.id,
-    required this.title,
-    required this.language,
-    required this.entryIndex,
-  });
-
-  String get key => '$source:$id';
-
-  @override
-  bool operator ==(Object other) =>
-      other is _PageSection &&
-      other.source == source &&
-      other.id == id &&
-      other.title == title &&
-      other.language == language &&
-      other.entryIndex == entryIndex;
-
-  @override
-  int get hashCode => Object.hash(source, id, title, language, entryIndex);
-}
-
-/// A text of the page as the navigator lists it, with its sections nested.
-class _PageText {
-  final int source;
-  final String title;
-  final String language;
-  final int entryIndex;
-
-  /// The section the text is named after, left out of [sections].
-  final String titleSectionId;
-  final List<_PageSection> sections = [];
-
-  _PageText({
-    required this.source,
-    required this.title,
-    required this.language,
-    required this.entryIndex,
-    required this.titleSectionId,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is _PageText &&
-      other.source == source &&
-      other.title == title &&
-      other.language == language &&
-      other.entryIndex == entryIndex &&
-      listEquals(other.sections, sections);
-
-  @override
-  int get hashCode => Object.hash(
-    source,
-    title,
-    language,
-    entryIndex,
-    Object.hashAll(sections),
-  );
-}
-
 /// The list and its table of contents, as built from the started sources.
 class _PageLayout {
   final List<_Entry> entries;
-  final List<_PageSection> sections;
-  final List<_PageText> texts;
+  final List<ReaderPageSection> sections;
+  final List<ReaderPageText> texts;
 
   /// Each entry's section, -1 for one past the last section.
   final List<int> sectionOfEntry;
@@ -1816,330 +1743,6 @@ class _PageLayout {
     required this.texts,
     required this.sectionOfEntry,
   });
-}
-
-/// What the sections sheet shows.
-class _SectionsSnapshot {
-  final String title;
-  final List<_PageText> texts;
-
-  /// Texts of the page not loaded yet.
-  final int pendingSources;
-
-  const _SectionsSnapshot({
-    required this.title,
-    required this.texts,
-    required this.pendingSources,
-  });
-
-  const _SectionsSnapshot.empty()
-    : title = '',
-      texts = const [],
-      pendingSources = 0;
-
-  @override
-  bool operator ==(Object other) =>
-      other is _SectionsSnapshot &&
-      other.title == title &&
-      other.pendingSources == pendingSources &&
-      listEquals(other.texts, texts);
-
-  @override
-  int get hashCode => Object.hash(title, pendingSources, Object.hashAll(texts));
-}
-
-/// The text at the top of the page and, among several, its place; opens the
-/// sections sheet.
-class _SectionsPill extends StatelessWidget {
-  final String title;
-  final String language;
-  final int position;
-  final int? total;
-  final VoidCallback onTap;
-
-  const _SectionsPill({
-    required this.title,
-    required this.language,
-    required this.position,
-    required this.total,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = theme.colorScheme.onSurface;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Center(
-        child: Material(
-          color: accent.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(20),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontFamily: getFontFamily(language),
-                        color: accent,
-                      ),
-                    ),
-                  ),
-                  if (total != null) ...[
-                    const SizedBox(width: 6),
-                    Text(
-                      '· $position / $total',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: accent.withValues(alpha: 0.55),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(width: 4),
-                  Icon(AppAssets.caretDown, size: 16, color: accent),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The page's texts with their sections nested: the text on screen marked,
-/// those before it ticked, the section on screen marked under its text.
-/// Pops with the entry index to go to.
-class _SectionsSheet extends StatelessWidget {
-  final ValueListenable<_SectionsSnapshot> snapshot;
-  final ValueListenable<String?> current;
-
-  const _SectionsSheet({required this.snapshot, required this.current});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.55);
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: ValueListenableBuilder<_SectionsSnapshot>(
-          valueListenable: snapshot,
-          builder:
-              (context, pages, _) => ValueListenableBuilder<String?>(
-                valueListenable: current,
-                builder: (context, currentKey, _) {
-                  // A section key is "<source>:<id>".
-                  final currentSource = int.tryParse(
-                    (currentKey ?? '').split(':').first,
-                  );
-                  final currentText = pages.texts.indexWhere(
-                    (t) => t.source == currentSource,
-                  );
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 10),
-                      Container(
-                        width: ReaderPanelConstants.dragHandleWidth,
-                        height: ReaderPanelConstants.dragHandleHeight,
-                        decoration: BoxDecoration(
-                          color: ReaderPanelConstants.dragHandleColor(context),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      // Full width, or the column centres the header.
-                      SizedBox(
-                        width: double.infinity,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.reader_sections_title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              if (pages.title.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    pages.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: muted,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Divider(height: 1, color: theme.dividerColor),
-                      Flexible(
-                        child: ListView(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.only(bottom: 16),
-                          children: [
-                            for (var i = 0; i < pages.texts.length; i++) ...[
-                              _SectionRow(
-                                index: i,
-                                title: pages.texts[i].title,
-                                language: pages.texts[i].language,
-                                isCurrent: i == currentText,
-                                isRead: i < currentText,
-                                onTap:
-                                    () => Navigator.of(
-                                      context,
-                                    ).pop(pages.texts[i].entryIndex),
-                              ),
-                              for (final section in pages.texts[i].sections)
-                                _SectionRow(
-                                  title: section.title,
-                                  language: section.language,
-                                  isCurrent: section.key == currentKey,
-                                  nested: true,
-                                  onTap:
-                                      () => Navigator.of(
-                                        context,
-                                      ).pop(section.entryIndex),
-                                ),
-                            ],
-                            for (var i = 0; i < pages.pendingSources; i++)
-                              _PendingSectionRow(label: l10n.loading),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A text row, numbered or ticked once read, or one of its sections
-/// ([nested]) indented under it.
-class _SectionRow extends StatelessWidget {
-  final int? index;
-  final String title;
-  final String language;
-  final bool isCurrent;
-  final bool isRead;
-  final bool nested;
-  final VoidCallback onTap;
-
-  const _SectionRow({
-    this.index,
-    required this.title,
-    required this.language,
-    required this.isCurrent,
-    this.isRead = false,
-    this.nested = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = theme.colorScheme.onSurface;
-    final muted = accent.withValues(alpha: 0.55);
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        color: isCurrent ? accent.withValues(alpha: 0.06) : null,
-        padding: EdgeInsets.fromLTRB(
-          nested ? 56 : 20,
-          nested ? 10 : 14,
-          20,
-          nested ? 10 : 14,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!nested) ...[
-              SizedBox(
-                width: 24,
-                child:
-                    isRead
-                        ? Icon(AppAssets.check, size: 18, color: muted)
-                        : Text(
-                          '${(index ?? 0) + 1}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: muted,
-                          ),
-                        ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: Text(
-                title,
-                style: (nested
-                        ? theme.textTheme.bodyMedium
-                        : theme.textTheme.bodyLarge)
-                    ?.copyWith(
-                      fontFamily: getFontFamily(language),
-                      fontWeight: isCurrent ? FontWeight.w700 : null,
-                      height: getLineHeight(language),
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A text of the page still loading its first page.
-class _PendingSectionRow extends StatelessWidget {
-  final String label;
-
-  const _PendingSectionRow({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.55);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 24,
-            child: Center(
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: muted),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(label, style: theme.textTheme.bodyLarge?.copyWith(color: muted)),
-        ],
-      ),
-    );
-  }
 }
 
 /// Applies a text's first-visit language layout once the text and its
@@ -2195,11 +1798,11 @@ class _ReaderSourceSetupState extends ConsumerState<_ReaderSourceSetup> {
 }
 
 /// The rule between two source texts of a task.
-class _SourceDivider extends StatelessWidget {
+class _SourceDivider extends ConsumerWidget {
   const _SourceDivider();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: ReaderConstants.segmentHorizontalPadding,
@@ -2208,7 +1811,7 @@ class _SourceDivider extends StatelessWidget {
       child: Divider(
         height: 1,
         thickness: 1,
-        color: Theme.of(context).dividerColor,
+        color: ReaderStyle.of(context, ref).palette.divider,
       ),
     );
   }
@@ -2225,7 +1828,7 @@ class _SourceTitle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (title.isEmpty) return const SizedBox.shrink();
-    final fontSize = ref.watch(fontSizeProvider);
+    final style = ReaderStyle.of(context, ref);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         ReaderConstants.segmentHorizontalPadding,
@@ -2237,11 +1840,11 @@ class _SourceTitle extends ConsumerWidget {
         title,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: fontSize * 1.2,
+          fontSize: style.type.textTitleSize,
           fontWeight: FontWeight.w600,
-          fontFamily: getFontFamily(language),
-          color: Theme.of(context).textTheme.bodyMedium?.color,
-          height: getLineHeight(language),
+          fontFamily: style.type.family(language),
+          color: style.palette.heading,
+          height: style.type.headingHeight(language),
         ),
       ),
     );

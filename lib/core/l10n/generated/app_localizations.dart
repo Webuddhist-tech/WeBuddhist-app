@@ -7349,6 +7349,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'sec'**
   String get timer_duration_sec;
+
+  /// No description provided for @reader_display_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get reader_display_title;
+
+  /// No description provided for @reader_more_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'More settings'**
+  String get reader_more_settings;
+
+  /// No description provided for @reader_spacing.
+  ///
+  /// In en, this message translates to:
+  /// **'Spacing'**
+  String get reader_spacing;
+
+  /// No description provided for @reader_spacing_compact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get reader_spacing_compact;
+
+  /// No description provided for @reader_spacing_normal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get reader_spacing_normal;
+
+  /// No description provided for @reader_spacing_relaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed'**
+  String get reader_spacing_relaxed;
+
+  /// No description provided for @reader_background.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get reader_background;
+
+  /// No description provided for @reader_background_rice_paper.
+  ///
+  /// In en, this message translates to:
+  /// **'Rice Paper'**
+  String get reader_background_rice_paper;
+
+  /// No description provided for @reader_background_gold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get reader_background_gold;
+
+  /// No description provided for @reader_background_sky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky'**
+  String get reader_background_sky;
+
+  /// No description provided for @reader_background_white.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get reader_background_white;
+
+  /// No description provided for @reader_background_plum.
+  ///
+  /// In en, this message translates to:
+  /// **'Plum'**
+  String get reader_background_plum;
+
+  /// No description provided for @reader_background_temple_red.
+  ///
+  /// In en, this message translates to:
+  /// **'Temple Red'**
+  String get reader_background_temple_red;
+
+  /// No description provided for @reader_background_robe_saffron.
+  ///
+  /// In en, this message translates to:
+  /// **'Robe Saffron'**
+  String get reader_background_robe_saffron;
+
+  /// No description provided for @reader_in_the_text.
+  ///
+  /// In en, this message translates to:
+  /// **'In the text'**
+  String get reader_in_the_text;
+
+  /// No description provided for @reader_ritual_instructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Ritual instructions'**
+  String get reader_ritual_instructions;
+
+  /// No description provided for @reader_verse_numbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Verse numbers'**
+  String get reader_verse_numbers;
+
+  /// No description provided for @reader_change_languages.
+  ///
+  /// In en, this message translates to:
+  /// **'Change languages'**
+  String get reader_change_languages;
+
+  /// No description provided for @reader_live_paused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get reader_live_paused;
+
+  /// No description provided for @reader_section_position.
+  ///
+  /// In en, this message translates to:
+  /// **'Section {current} / {total}'**
+  String reader_section_position(String current, String total);
+
+  /// No description provided for @reader_round_position.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {current} / {total}'**
+  String reader_round_position(String current, String total);
+
+  /// No description provided for @reader_round_number.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {current}'**
+  String reader_round_number(String current);
+
+  /// No description provided for @reader_count_position.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {total}'**
+  String reader_count_position(String current, String total);
+
+  /// No description provided for @reader_show_script_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {language} in'**
+  String reader_show_script_in(String language);
+
+  /// No description provided for @reader_verse_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Verse {number}'**
+  String reader_verse_label(String number);
+
+  /// No description provided for @reader_tab_commentary.
+  ///
+  /// In en, this message translates to:
+  /// **'Commentary'**
+  String get reader_tab_commentary;
+
+  /// No description provided for @reader_tab_versions.
+  ///
+  /// In en, this message translates to:
+  /// **'Versions'**
+  String get reader_tab_versions;
 }
 
 class _AppLocalizationsDelegate

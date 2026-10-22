@@ -4234,4 +4234,97 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get timer_duration_sec => 'sec';
+
+  @override
+  String get reader_display_title => 'Харагдац';
+
+  @override
+  String get reader_more_settings => 'Бусад тохиргоо';
+
+  @override
+  String get reader_spacing => 'Зай';
+
+  @override
+  String get reader_spacing_compact => 'Нягт';
+
+  @override
+  String get reader_spacing_normal => 'Ердийн';
+
+  @override
+  String get reader_spacing_relaxed => 'Сул';
+
+  @override
+  String get reader_background => 'Дэвсгэр';
+
+  @override
+  String get reader_background_rice_paper => 'Будааны цаас';
+
+  @override
+  String get reader_background_gold => 'Алтан';
+
+  @override
+  String get reader_background_sky => 'Тэнгэр';
+
+  @override
+  String get reader_background_white => 'Цагаан';
+
+  @override
+  String get reader_background_plum => 'Чавга';
+
+  @override
+  String get reader_background_temple_red => 'Сүмийн улаан';
+
+  @override
+  String get reader_background_robe_saffron => 'Нөмрөгийн шар';
+
+  @override
+  String get reader_in_the_text => 'Эх бичвэрт';
+
+  @override
+  String get reader_ritual_instructions => 'Зан үйлийн заавар';
+
+  @override
+  String get reader_verse_numbers => 'Шүлгийн дугаар';
+
+  @override
+  String get reader_change_languages => 'Хэл солих';
+
+  @override
+  String get reader_live_paused => 'Түр зогссон';
+
+  @override
+  String reader_section_position(String current, String total) {
+    return 'Бүлэг $current / $total';
+  }
+
+  @override
+  String reader_round_position(String current, String total) {
+    return 'Тойрог $current / $total';
+  }
+
+  @override
+  String reader_round_number(String current) {
+    return 'Тойрог $current';
+  }
+
+  @override
+  String reader_count_position(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String reader_show_script_in(String language) {
+    return '$language-г харуулах';
+  }
+
+  @override
+  String reader_verse_label(String number) {
+    return 'Шүлэг $number';
+  }
+
+  @override
+  String get reader_tab_commentary => 'Тайлбар';
+
+  @override
+  String get reader_tab_versions => 'Хувилбарууд';
 }

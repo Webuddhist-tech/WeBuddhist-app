@@ -2123,5 +2123,83 @@
   "timer_create_custom_subtitle": "Set duration, bells and ambient sound",
   "timer_starting": "Starting...",
   "timer_duration_hours": "hours",
-  "timer_duration_sec": "sec"
+  "timer_duration_sec": "sec",
+  "reader_display_title": "Display",
+  "reader_more_settings": "More settings",
+  "reader_spacing": "Spacing",
+  "reader_spacing_compact": "Compact",
+  "reader_spacing_normal": "Normal",
+  "reader_spacing_relaxed": "Relaxed",
+  "reader_background": "Background",
+  "reader_background_rice_paper": "Rice Paper",
+  "reader_background_gold": "Gold",
+  "reader_background_sky": "Sky",
+  "reader_background_white": "White",
+  "reader_background_plum": "Plum",
+  "reader_background_temple_red": "Temple Red",
+  "reader_background_robe_saffron": "Robe Saffron",
+  "reader_in_the_text": "In the text",
+  "reader_ritual_instructions": "Ritual instructions",
+  "reader_verse_numbers": "Verse numbers",
+  "reader_change_languages": "Change languages",
+  "reader_live_paused": "Paused",
+  "reader_section_position": "Section {current} / {total}",
+  "@reader_section_position": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_round_position": "Round {current} / {total}",
+  "@reader_round_position": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_round_number": "Round {current}",
+  "@reader_round_number": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_count_position": "{current} / {total}",
+  "@reader_count_position": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_show_script_in": "Show {language} in",
+  "@reader_show_script_in": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_verse_label": "Verse {number}",
+  "@reader_verse_label": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_tab_commentary": "Commentary",
+  "reader_tab_versions": "Versions"
 }
