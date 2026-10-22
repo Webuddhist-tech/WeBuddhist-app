@@ -617,7 +617,7 @@ class _VerseCommentComposer extends ConsumerWidget {
       child: Row(
         children: [
           VerseUserAvatar(
-            name: user?.firstName ?? user?.username ?? '',
+            name: user?.visibleNameOrNull ?? user?.username ?? '',
             avatarUrl: user?.avatarUrl,
             isDark: isDark,
           ),

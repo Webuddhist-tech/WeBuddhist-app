@@ -584,6 +584,7 @@
   "edit_profile_save": "Хадгалах",
   "edit_profile_first_name": "Нэр",
   "edit_profile_last_name": "Овог",
+  "edit_profile_display_name": "Харагдах нэр",
   "edit_profile_bio": "Танилцуулга",
   "edit_profile_bio_hint": "Өөрийнхөө тухай бага зэрэг хуваалцана уу",
   "edit_profile_delete_account": "Бүртгэл устгах",

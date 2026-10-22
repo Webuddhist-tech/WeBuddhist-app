@@ -7,6 +7,7 @@ import 'package:fpdart/fpdart.dart';
 class UpdateUserInfoParams {
   final String? firstName;
   final String? lastName;
+  final String? displayName;
   final String? title;
   final String? organization;
   final String? location;
@@ -18,6 +19,7 @@ class UpdateUserInfoParams {
   const UpdateUserInfoParams({
     this.firstName,
     this.lastName,
+    this.displayName,
     this.title,
     this.organization,
     this.location,
@@ -39,6 +41,7 @@ class UpdateUserInfoUseCase extends UseCase<User, UpdateUserInfoParams> {
     return _repository.updateUserInfo(
       firstName: params.firstName,
       lastName: params.lastName,
+      displayName: params.displayName,
       title: params.title,
       organization: params.organization,
       location: params.location,

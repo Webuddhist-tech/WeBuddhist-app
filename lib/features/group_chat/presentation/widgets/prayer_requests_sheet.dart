@@ -360,7 +360,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     if (id.isEmpty) return null;
     return ChatPrayerUserDTO(
       userId: id,
-      name: joinChatName(user?.firstName, user?.lastName),
+      name: user?.visibleNameOrNull,
       avatarUrl: user?.avatarUrl,
     );
   }
@@ -399,9 +399,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
         return Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.cardDark : AppColors.surfaceWhite,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
             top: false,
@@ -524,7 +522,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     }
 
     final user = ref.watch(userProvider).user;
-    final selfName = joinChatName(user?.firstName, user?.lastName);
+    final selfName = user?.visibleNameOrNull;
     final viewerId = _viewerId;
     final viewerEmail = user?.email;
     final canEdit = state.roomStatus == PrayerRoomStatus.ready;

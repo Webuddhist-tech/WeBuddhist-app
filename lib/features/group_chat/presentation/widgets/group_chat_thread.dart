@@ -1105,7 +1105,7 @@ class _GroupChatThreadState extends ConsumerState<GroupChatThread> {
               ),
               isRunStart: isRunStart,
               selfAvatarUrl: user?.avatarUrl,
-              selfDisplayName: joinChatName(user?.firstName, user?.lastName),
+              selfDisplayName: user?.visibleNameOrNull,
               isHighlighted: message.id == _highlightedId,
               isSelected: _selectedIds.contains(message.id),
               isParentDeleted: parent != null && deletedIds.contains(parent.id),
