@@ -760,6 +760,7 @@
   "edit_profile_save": "Save",
   "edit_profile_first_name": "First name",
   "edit_profile_last_name": "Last name",
+  "edit_profile_display_name": "Display name",
   "edit_profile_bio": "Bio",
   "edit_profile_bio_hint": "Share a little about yourself",
   "edit_profile_delete_account": "Delete account",

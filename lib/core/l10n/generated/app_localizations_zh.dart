@@ -1561,6 +1561,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get edit_profile_last_name => '姓氏';
 
   @override
+  String get edit_profile_display_name => '显示名称';
+
+  @override
   String get edit_profile_bio => '自我介紹';
 
   @override

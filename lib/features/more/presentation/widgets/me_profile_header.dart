@@ -17,12 +17,7 @@ class MeProfileHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textTheme = Theme.of(context).textTheme;
     final avatarUrl = user.avatarUrl ?? '';
-    final displayName =
-        [
-          if (user.firstName?.isNotEmpty == true) user.firstName,
-          if (user.lastName?.isNotEmpty == true) user.lastName,
-        ].where((name) => name != null && name.isNotEmpty).join(' ').trim();
-
+    final username = user.username?.trim() ?? '';
     final email = user.email ?? '';
     final bio = user.aboutMe ?? '';
 
@@ -44,14 +39,15 @@ class MeProfileHeader extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          displayName,
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
+                        if (username.isNotEmpty)
+                          Text(
+                            username,
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
                         if (email.isNotEmpty) ...[
-                          const SizedBox(height: 4),
+                          if (username.isNotEmpty) const SizedBox(height: 4),
                           Text(
                             email,
                             style: textTheme.bodyMedium?.copyWith(

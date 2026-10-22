@@ -222,6 +222,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, User>> updateUserInfo({
     String? firstName,
     String? lastName,
+    String? displayName,
     String? title,
     String? organization,
     String? location,
@@ -233,6 +234,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final body = <String, dynamic>{
       if (firstName != null) 'firstname': firstName,
       if (lastName != null) 'lastname': lastName,
+      if (displayName != null) 'display_name': displayName,
       if (title != null) 'title': title,
       if (organization != null) 'organization': organization,
       if (location != null) 'location': location,

@@ -584,6 +584,7 @@
   "edit_profile_save": "सेव करें",
   "edit_profile_first_name": "पहला नाम",
   "edit_profile_last_name": "अंतिम नाम",
+  "edit_profile_display_name": "प्रदर्शन नाम",
   "edit_profile_bio": "बायो",
   "edit_profile_bio_hint": "अपने बारे में थोड़ा बताएँ",
   "edit_profile_delete_account": "अकाउंट हटाएँ",

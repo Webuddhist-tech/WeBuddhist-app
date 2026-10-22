@@ -1643,6 +1643,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get edit_profile_last_name => 'རུས་མིང་།';
 
   @override
+  String get edit_profile_display_name => 'མངོན་མིང་།';
+
+  @override
   String get edit_profile_bio => 'རང་ངོ་སྤྲོད།';
 
   @override
