@@ -110,7 +110,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
 
     // The translation reads as supporting text beneath the original. Without
     // the original it is the text, so it takes the text's colour.
-    final Color? secondaryColor =
+    final Color secondaryColor =
         layers.original ? style.palette.translation : style.palette.text;
     final originalMetrics = style.type.line(
       layers.translation
