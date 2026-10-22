@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/analytics/share_analytics.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -1977,7 +1978,10 @@ class _EventAccumulatorPanelState
   ) async {
     final result = await ref
         .read(groupAccumulatorRepositoryProvider)
-        .getGroupAccumulator(detail.id);
+        .getGroupAccumulator(
+          detail.id,
+          language: ref.read(contentLanguageProvider),
+        );
     return result.fold(
       (_) => math.max(
         detail.user?.totalCount ?? 0,

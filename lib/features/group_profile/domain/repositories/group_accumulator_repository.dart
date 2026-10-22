@@ -7,11 +7,13 @@ abstract class GroupAccumulatorRepositoryInterface {
     String groupId, {
     required int skip,
     required int limit,
+    required String language,
   });
 
   Future<Either<Failure, GroupAccumulatorDetail>> getGroupAccumulator(
-    String accumulatorId,
-  );
+    String accumulatorId, {
+    required String language,
+  });
 
   Future<Either<Failure, void>> joinGroupAccumulator(String accumulatorId);
 
