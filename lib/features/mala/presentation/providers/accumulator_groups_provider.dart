@@ -35,10 +35,12 @@ final joinedGroupUserCountsProvider = FutureProvider.autoDispose
       if (groups.isEmpty) return const {};
 
       final repository = ref.watch(groupAccumulatorRepositoryProvider);
+      final language = ref.read(contentLanguageProvider);
       final entries = await Future.wait(
         groups.map((group) async {
           final result = await repository.getGroupAccumulator(
             group.groupAccumulatorId,
+            language: language,
           );
           return result.fold(
             (_) => null,

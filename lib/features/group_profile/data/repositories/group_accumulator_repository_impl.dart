@@ -16,12 +16,14 @@ class GroupAccumulatorRepositoryImpl
     String groupId, {
     required int skip,
     required int limit,
+    required String language,
   }) async {
     try {
       final model = await remote.fetchGroupAccumulators(
         groupId,
         skip: skip,
         limit: limit,
+        language: language,
       );
       return Right(model.toEntity());
     } on ServerException catch (e) {
@@ -41,10 +43,14 @@ class GroupAccumulatorRepositoryImpl
 
   @override
   Future<Either<Failure, GroupAccumulatorDetail>> getGroupAccumulator(
-    String accumulatorId,
-  ) async {
+    String accumulatorId, {
+    required String language,
+  }) async {
     try {
-      final model = await remote.fetchGroupAccumulator(accumulatorId);
+      final model = await remote.fetchGroupAccumulator(
+        accumulatorId,
+        language: language,
+      );
       return Right(model.toDetailEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
