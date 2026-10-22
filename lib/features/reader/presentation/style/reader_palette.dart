@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_background_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+export 'package:flutter_pecha/features/reader/presentation/style/reader_background.dart';
 
 /// Every colour the reader page and its sheets draw with.
 ///
-/// Reader widgets take their colours from here rather than from the theme,
-/// so the page background and the colours derived from it are decided in
-/// one place.
+/// Reader text is [ink]; every other reader colour is the ink at a set
+/// strength over the page, blended into one solid colour rather than drawn
+/// with transparency. Reader widgets take their colours from here rather
+/// than from the theme.
 class ReaderPalette {
   const ReaderPalette({
     required this.background,
+    required this.ink,
     required this.text,
     required this.translation,
     required this.heading,
     required this.headingRule,
     required this.verseNumber,
+    required this.pastVerse,
+    required this.instruction,
     required this.divider,
     required this.liveHighlight,
+    required this.liveOriginal,
     required this.yigchung,
     required this.footnoteMarker,
     required this.footnoteText,
@@ -24,31 +32,53 @@ class ReaderPalette {
     required this.pillBackground,
     required this.pillText,
     required this.pillMuted,
+    required this.drawerBackground,
+    required this.drawerChip,
+    required this.drawerDivider,
+    required this.drawerHandle,
     required this.sheetMuted,
     required this.sheetCurrentRow,
+    required this.selectedChip,
+    required this.selectedChipText,
+    required this.livePill,
+    required this.livePillText,
+    required this.pausedPill,
+    required this.pausedPillText,
   });
 
-  /// The page behind the text; null keeps the app theme's.
-  final Color? background;
+  /// The page behind the text.
+  final Color background;
 
-  /// A verse's original line; null inherits the theme's text colour.
-  final Color? text;
+  /// Reader text at full strength.
+  final Color ink;
+
+  /// A verse's original line.
+  final Color text;
 
   /// A translation shown under its original.
   final Color translation;
 
   /// Section headings, their numbers and text titles.
-  final Color? heading;
+  final Color heading;
 
   /// The short rule under a top-level heading's number.
-  final Color? headingRule;
-  final Color? verseNumber;
+  final Color headingRule;
+  final Color verseNumber;
 
-  /// Rules between headings and between the texts of a page.
+  /// Verses before and after the live one, both lines.
+  final Color pastVerse;
+
+  /// Ritual directions between verses.
+  final Color instruction;
+
+  /// Rules on the page and the progress track.
   final Color divider;
 
-  /// The band behind the line the puja leader is on.
+  /// The card behind the line the puja leader is on.
   final Color liveHighlight;
+
+  /// The live verse's original line.
+  final Color liveOriginal;
   final Color yigchung;
   final Color footnoteMarker;
   final Color footnoteText;
@@ -59,37 +89,91 @@ class ReaderPalette {
   final Color pillText;
   final Color pillMuted;
 
+  /// Sheets over the page, and their chips, size buttons, rules and handle.
+  final Color drawerBackground;
+  final Color drawerChip;
+  final Color drawerDivider;
+  final Color drawerHandle;
+
   /// The sections sheet: secondary text and the row on screen.
   final Color sheetMuted;
   final Color sheetCurrentRow;
 
-  /// The palette for [theme]. Reader settings that pick colours are read
-  /// through [ref].
-  static ReaderPalette resolve(ThemeData theme, WidgetRef ref) {
-    final isDark = theme.brightness == Brightness.dark;
-    final onSurface = theme.colorScheme.onSurface;
+  /// A selected chip or toggle, and its label.
+  final Color selectedChip;
+  final Color selectedChipText;
+
+  /// The pill shown while following a live recitation, and its label.
+  final Color livePill;
+  final Color livePillText;
+
+  /// The pill shown when the person stopped following, and its label.
+  final Color pausedPill;
+  final Color pausedPillText;
+
+  static const Color inkLight = Color(0xFF222222);
+  static const Color inkDark = Color(0xFFFFFFFF);
+  static const Color plum = Color(0xFF4D1B3B);
+  static const Color gold = Color(0xFFDA9F3E);
+  static const Color liveRed = Color(0xFFD63A3D);
+  static const Color yigchungLight = Color(0xFF1F4E9C);
+  static const Color yigchungDark = Color(0xFF9CBFF9);
+
+  /// The palette for the reader's picked background and [theme]'s
+  /// brightness.
+  static ReaderPalette resolve(ThemeData theme, WidgetRef ref) =>
+      of(ref.watch(readerBackgroundProvider), theme.brightness);
+
+  /// The palette for [background] in [brightness].
+  static ReaderPalette of(ReaderBackground background, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final page = background.of(brightness);
+    final ink = isDark ? inkDark : inkLight;
+    final drawer =
+        isDark ? Color.alphaBlend(Colors.black.withValues(alpha: 0.32), page) : page;
+
+    // The ink at [light] or [dark] strength (0-1) over [over].
+    Color shade(double light, double dark, {Color? over}) => Color.alphaBlend(
+      ink.withValues(alpha: isDark ? dark : light),
+      over ?? page,
+    );
+
+    final past = shade(0.70, 0.66);
+    final translation = shade(0.72, 0.76);
     return ReaderPalette(
-      // White pages in light mode; dark mode keeps the app's.
-      background: isDark ? null : Colors.white,
-      text: null,
-      translation: isDark ? const Color(0xFFE0E0E0) : const Color(0xFF707070),
-      heading: theme.textTheme.bodyMedium?.color,
-      headingRule: theme.textTheme.bodySmall?.color,
-      verseNumber: theme.textTheme.bodySmall?.color,
-      divider: theme.dividerColor,
-      liveHighlight:
-          isDark
-              ? AppColors.liveSegmentHighlightDark
-              : AppColors.liveSegmentHighlight,
-      yigchung: isDark ? AppColors.readerYigchungDark : AppColors.readerYigchung,
+      background: page,
+      ink: ink,
+      text: ink,
+      translation: translation,
+      heading: ink,
+      headingRule: past,
+      verseNumber: past,
+      pastVerse: past,
+      instruction: past,
+      divider: shade(0.10, 0.10),
+      liveHighlight: shade(0.08, 0.10),
+      liveOriginal: shade(1.0, 0.87),
+      yigchung: isDark ? yigchungDark : yigchungLight,
       footnoteMarker: const Color(0xFF007bff),
       footnoteText: const Color(0xFF8a8a8a),
       footnoteBackground: const Color(0xFFF0F0F0),
-      pillBackground: onSurface.withValues(alpha: 0.06),
-      pillText: onSurface,
-      pillMuted: onSurface.withValues(alpha: 0.55),
-      sheetMuted: onSurface.withValues(alpha: 0.55),
-      sheetCurrentRow: onSurface.withValues(alpha: 0.06),
+      pillBackground: shade(0.06, 0.14),
+      pillText: ink,
+      // The past-verse strength falls under 4.5:1 on the pill's darker fill
+      // (dark Gold, Sky, Robe Saffron); the translation's does not.
+      pillMuted: translation,
+      drawerBackground: drawer,
+      drawerChip: shade(0.06, 0.12, over: drawer),
+      drawerDivider: shade(0.10, 0.12, over: drawer),
+      drawerHandle: shade(0.55, 0.40, over: drawer),
+      sheetMuted: shade(0.70, 0.66, over: drawer),
+      sheetCurrentRow: shade(0.06, 0.12, over: drawer),
+      selectedChip: isDark ? gold : plum,
+      selectedChipText: isDark ? inkLight : inkDark,
+      livePill: liveRed,
+      livePillText: Colors.white,
+      pausedPill: past,
+      pausedPillText: isDark ? inkLight : Colors.white,
     );
   }
 }

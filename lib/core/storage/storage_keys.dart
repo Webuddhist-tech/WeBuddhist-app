@@ -38,6 +38,8 @@ class StorageKeys {
   // ========== USER PREFERENCES ==========
   /// Theme mode preference (light/dark/system)
   static const String themeMode = 'theme_mode';
+  /// Reader page background (a ReaderBackground name, e.g. ricePaper)
+  static const String readerBackground = 'reader_background';
   /// App UI language/locale preference (bounded to bundled ARB translations)
   static const String preferredLanguage = 'locale';
   /// Content language code sent to backend APIs. May be a language the app has
