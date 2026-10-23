@@ -5702,6 +5702,42 @@ abstract class AppLocalizations {
   /// **'Couldn\'t find a prayer'**
   String get event_prayer_random_failed;
 
+  /// No description provided for @event_prayer_people_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 person}\nother {{count} people}\n}'**
+  String event_prayer_people_count(int count);
+
+  /// No description provided for @event_prayer_prayers_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 prayer}\nother {{count} prayers}\n}'**
+  String event_prayer_prayers_count(int count);
+
+  /// No description provided for @me_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayer requests'**
+  String get me_prayer_requests;
+
+  /// No description provided for @me_prayer_requests_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests yet'**
+  String get me_prayer_requests_empty_title;
+
+  /// No description provided for @me_prayer_requests_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you post in spaces and events will appear here'**
+  String get me_prayer_requests_empty_body;
+
+  /// No description provided for @me_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in that space or event.'**
+  String get me_prayer_delete_body;
+
   /// No description provided for @recitation_live_sync.
   ///
   /// In en, this message translates to:

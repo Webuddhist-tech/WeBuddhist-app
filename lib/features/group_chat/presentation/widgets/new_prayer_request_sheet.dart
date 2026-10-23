@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -13,24 +14,44 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_l10n.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart' show Either;
+
+/// Saves an edit outside a room's own sheet, where no room notifier holds
+/// the request.
+typedef PrayerRequestSubmit =
+    Future<Either<Failure, ChatMessageDTO>> Function(
+      String body,
+      ChatPrayerIntentionDTO intention,
+    );
 
 /// Compose a prayer request: body plus one intention. Pops with the created
 /// (or, given [editing], updated) message, or null when dismissed.
 class NewPrayerRequestSheet extends ConsumerStatefulWidget {
-  const NewPrayerRequestSheet({super.key, required this.scope, this.editing});
+  const NewPrayerRequestSheet({
+    super.key,
+    this.scope,
+    this.editing,
+    this.submit,
+  }) : assert(scope != null || submit != null, 'a room, or a way to save');
 
-  final PrayerRoomScope scope;
+  /// The room the request belongs to; it saves through that room's notifier
+  /// unless [submit] is given.
+  final PrayerRoomScope? scope;
 
   /// The viewer's own request to edit; null composes a new one.
   final ChatMessageDTO? editing;
+
+  /// Saves instead of the room's notifier, for a list outside the room.
+  final PrayerRequestSubmit? submit;
 
   static const int _choicesPerRow = 5;
   static const double _minChoiceWidth = 64;
 
   static Future<ChatMessageDTO?> show(
     BuildContext context, {
-    required PrayerRoomScope scope,
+    PrayerRoomScope? scope,
     ChatMessageDTO? editing,
+    PrayerRequestSubmit? submit,
   }) {
     return showModalBottomSheet<ChatMessageDTO>(
       context: context,
@@ -38,7 +59,12 @@ class NewPrayerRequestSheet extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => NewPrayerRequestSheet(scope: scope, editing: editing),
+      builder:
+          (_) => NewPrayerRequestSheet(
+            scope: scope,
+            editing: editing,
+            submit: submit,
+          ),
     );
   }
 
@@ -118,18 +144,23 @@ class _NewPrayerRequestSheetState extends ConsumerState<NewPrayerRequestSheet> {
     if (intention == null || body.isEmpty || _sending) return;
     setState(() => _sending = true);
     try {
-      final notifier = ref.read(
-        prayerRequestsProvider(widget.scope).notifier,
-      );
+      final submit = widget.submit;
+      final scope = widget.scope;
       final editing = widget.editing;
-      final result =
-          editing == null
-              ? await notifier.send(body, intention: intention.slug)
-              : await notifier.edit(
-                editing.id,
-                body: body,
-                intention: intention,
-              );
+      final Either<Failure, ChatMessageDTO> result;
+      if (submit != null) {
+        result = await submit(body, intention);
+      } else {
+        final notifier = ref.read(prayerRequestsProvider(scope!).notifier);
+        result =
+            editing == null
+                ? await notifier.send(body, intention: intention.slug)
+                : await notifier.edit(
+                  editing.id,
+                  body: body,
+                  intention: intention,
+                );
+      }
       if (!mounted) return;
       result.fold(
         (failure) => presentChatSendError(context, failure),

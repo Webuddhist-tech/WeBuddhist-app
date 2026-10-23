@@ -87,6 +87,10 @@ class AppRoutes {
   /// an account.
   static const String helpContact = '/help-contact';
 
+  /// The viewer's prayer requests across every space and event, from Me.
+  /// Top-level and not guest-accessible, like [chats].
+  static const String myPrayerRequests = '/my-prayer-requests';
+
   // ========== PRACTICE SUB ROUTES ==========
   static const String practiceEditRoutine = '/practice/edit-routine';
   static const String practiceMyPractices = '/practice/my-practices';

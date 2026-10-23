@@ -3269,6 +3269,42 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_prayer_random_failed => 'Couldn\'t find a prayer';
 
   @override
+  String event_prayer_people_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people',
+      one: '1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String event_prayer_prayers_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count prayers',
+      one: '1 prayer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get me_prayer_requests => 'My prayer requests';
+
+  @override
+  String get me_prayer_requests_empty_title => 'No prayer requests yet';
+
+  @override
+  String get me_prayer_requests_empty_body =>
+      'Requests you post in spaces and events will appear here';
+
+  @override
+  String get me_prayer_delete_body =>
+      'It will be removed for everyone in that space or event.';
+
+  @override
   String get recitation_live_sync => 'सिंक';
 
   @override

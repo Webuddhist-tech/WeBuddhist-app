@@ -6399,6 +6399,50 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String event_prayer_people_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_people_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_people_count(count),
+  );
+
+  @override
+  String event_prayer_prayers_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_prayers_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_prayers_count(count),
+  );
+
+  @override
+  String get me_prayer_requests => TolgeeBridge.get(
+    localeName,
+    'me_prayer_requests',
+    () => _fallback.me_prayer_requests,
+  );
+
+  @override
+  String get me_prayer_requests_empty_title => TolgeeBridge.get(
+    localeName,
+    'me_prayer_requests_empty_title',
+    () => _fallback.me_prayer_requests_empty_title,
+  );
+
+  @override
+  String get me_prayer_requests_empty_body => TolgeeBridge.get(
+    localeName,
+    'me_prayer_requests_empty_body',
+    () => _fallback.me_prayer_requests_empty_body,
+  );
+
+  @override
+  String get me_prayer_delete_body => TolgeeBridge.get(
+    localeName,
+    'me_prayer_delete_body',
+    () => _fallback.me_prayer_delete_body,
+  );
+
+  @override
   String get recitation_live_sync => TolgeeBridge.get(
     localeName,
     'recitation_live_sync',

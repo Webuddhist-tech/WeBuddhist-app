@@ -208,6 +208,7 @@ class PrayerRequestTile extends StatelessWidget {
     if (count > 0) {
       supporters = _SupportersSummary(
         count: count,
+        total: request.totalPrayerCount,
         recent: request.recentPrayers,
         accent: accent,
         cardColor: cardColor,
@@ -575,6 +576,7 @@ class PrayerAvatar extends StatelessWidget {
 class _SupportersSummary extends StatelessWidget {
   const _SupportersSummary({
     required this.count,
+    required this.total,
     required this.recent,
     required this.accent,
     required this.cardColor,
@@ -583,6 +585,9 @@ class _SupportersSummary extends StatelessWidget {
   });
 
   final int count;
+
+  /// Every prayer, repeats included; 0 from a server that sends none.
+  final int total;
   final List<ChatPrayerUserDTO> recent;
   final Color accent;
   final Color cardColor;
@@ -597,10 +602,16 @@ class _SupportersSummary extends StatelessWidget {
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final shown = recent.take(3).toList();
     final extra = count - shown.length;
+    final l10n = context.l10n;
+    // "12 people · 31 prayers" once the server counts prayers; the older
+    // wording stays for one that only counts people.
     final label =
-        shown.isNotEmpty && extra > 0
-            ? context.l10n.event_prayer_more_praying(extra)
-            : context.l10n.event_prayer_people_praying(count);
+        total > 0
+            ? '${l10n.event_prayer_people_count(count)} · '
+                '${l10n.event_prayer_prayers_count(total)}'
+            : shown.isNotEmpty && extra > 0
+            ? l10n.event_prayer_more_praying(extra)
+            : l10n.event_prayer_people_praying(count);
 
     return InkWell(
       onTap: onTap,

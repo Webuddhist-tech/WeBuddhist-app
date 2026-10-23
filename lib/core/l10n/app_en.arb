@@ -1658,6 +1658,26 @@
   "event_prayer_random_empty_title": "No prayers to find yet",
   "event_prayer_random_empty_body": "No one else has posted a request here yet",
   "event_prayer_random_failed": "Couldn't find a prayer",
+  "event_prayer_people_count": "{count, plural,\n=1 {1 person}\nother {{count} people}\n}",
+  "@event_prayer_people_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_prayers_count": "{count, plural,\n=1 {1 prayer}\nother {{count} prayers}\n}",
+  "@event_prayer_prayers_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "me_prayer_requests": "My prayer requests",
+  "me_prayer_requests_empty_title": "No prayer requests yet",
+  "me_prayer_requests_empty_body": "Requests you post in spaces and events will appear here",
+  "me_prayer_delete_body": "It will be removed for everyone in that space or event.",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",

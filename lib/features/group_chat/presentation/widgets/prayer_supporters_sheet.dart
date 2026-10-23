@@ -16,13 +16,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Who is praying for one of the viewer's own requests, and how many times.
 class PrayerSupportersSheet extends ConsumerStatefulWidget {
-  const PrayerSupportersSheet({
-    super.key,
-    required this.scope,
-    required this.request,
-  });
+  const PrayerSupportersSheet({super.key, this.scope, required this.request});
 
-  final PrayerRoomScope scope;
+  /// The room whose notifier keeps [request] current; null shows it as given.
+  final PrayerRoomScope? scope;
 
   /// The request as it was when opened; an edit made while the sheet is up
   /// is picked up from the room's request list.
@@ -30,7 +27,7 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
 
   static Future<void> show(
     BuildContext context, {
-    required PrayerRoomScope scope,
+    PrayerRoomScope? scope,
     required ChatMessageDTO request,
   }) {
     return showModalBottomSheet<void>(
@@ -39,8 +36,7 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder:
-          (_) => PrayerSupportersSheet(scope: scope, request: request),
+      builder: (_) => PrayerSupportersSheet(scope: scope, request: request),
     );
   }
 
@@ -80,8 +76,10 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
 
   ChatMessageDTO _currentRequest() {
     final id = widget.request.id;
+    final scope = widget.scope;
+    if (scope == null) return widget.request;
     return ref.watch(
-          prayerRequestsProvider(widget.scope).select(
+          prayerRequestsProvider(scope).select(
             (state) =>
                 state.requests.where((request) => request.id == id).firstOrNull,
           ),
