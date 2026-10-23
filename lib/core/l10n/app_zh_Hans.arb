@@ -97,7 +97,7 @@
     }
   },
   "mala_group_accumulations": "加入持诵计数",
-  "mala_groups_section": "Groups",
+  "mala_groups_section": "社群",
   "mala_group_untitled": "未命名社群",
   "mala_all_time_accumulation": "我的累计总数",
   "mala_personal_practice": "个人修持",
@@ -237,7 +237,7 @@
     }
   },
   "bookmarks_empty_chant_collections_title": "尚无加入书签的法本",
-  "bookmarks_empty_chant_collections_subtitle": "将法本加入书签，，即可收藏于此",
+  "bookmarks_empty_chant_collections_subtitle": "将法本加入书签，即可收藏于此",
   "notification_allow_title": "允许通知",
   "notification_allow_subtitle_disabled": "需要权限。请点此前往「设置」授权",
   "notification_snack_permission_denied": "通知已被封锁。请在「设置」中打开",
@@ -539,7 +539,7 @@
   "copied": "已复制",
   "share": "分享",
   "bookmark": "书签",
-  "collection_audio_versions": "Audio versions",
+  "collection_audio_versions": "音频版本",
   "image": "图片",
   "feedback": "意见回馈",
   "author": "作者",

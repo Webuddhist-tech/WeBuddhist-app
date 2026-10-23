@@ -4267,7 +4267,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get mala_group_accumulations => '加入持诵计数';
 
   @override
-  String get mala_groups_section => 'Groups';
+  String get mala_groups_section => '社群';
 
   @override
   String get mala_group_untitled => '未命名社群';
@@ -4587,7 +4587,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get bookmarks_empty_chant_collections_title => '尚无加入书签的法本';
 
   @override
-  String get bookmarks_empty_chant_collections_subtitle => '将法本加入书签，，即可收藏于此';
+  String get bookmarks_empty_chant_collections_subtitle => '将法本加入书签，即可收藏于此';
 
   @override
   String get notification_allow_title => '允许通知';
@@ -5229,7 +5229,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get bookmark => '书签';
 
   @override
-  String get collection_audio_versions => 'Audio versions';
+  String get collection_audio_versions => '音频版本';
 
   @override
   String get image => '图片';
