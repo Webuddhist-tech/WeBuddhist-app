@@ -6343,6 +6343,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_prayer_random => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random',
+    () => _fallback.event_prayer_random,
+  );
+
+  @override
   String get event_prayer_finding => TolgeeBridge.get(
     localeName,
     'event_prayer_finding',

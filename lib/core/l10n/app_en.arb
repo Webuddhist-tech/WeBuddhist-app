@@ -1650,6 +1650,7 @@
   "event_prayer_mine_empty_body": "Requests you post here will appear in this list",
   "event_prayer_update_failed": "The prayer request couldn't be updated",
   "event_prayer_find": "Find a prayer for you",
+  "event_prayer_random": "Random",
   "event_prayer_finding": "Finding a prayer...",
   "event_prayer_found": "A prayer for you",
   "event_prayer_skip": "Skip",

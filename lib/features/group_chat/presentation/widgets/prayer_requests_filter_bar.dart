@@ -19,7 +19,7 @@ String prayerSortLabel(AppLocalizations l10n, PrayerSort sort) {
 }
 
 /// Match count on the left, the intention chip beside it when one is in
-/// view, and the sort control as plain text on the right.
+/// view, and the random pill and sort control on the right.
 class PrayerRequestsFilterBar extends StatelessWidget {
   const PrayerRequestsFilterBar({
     super.key,
@@ -27,12 +27,16 @@ class PrayerRequestsFilterBar extends StatelessWidget {
     required this.total,
     required this.onOpenSort,
     required this.onClearIntention,
+    this.onFindPrayer,
   });
 
   final PrayerRequestsFilter filter;
   final int total;
   final VoidCallback onOpenSort;
   final VoidCallback onClearIntention;
+
+  /// Opens "A prayer for you"; the pill is hidden when null.
+  final VoidCallback? onFindPrayer;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +76,10 @@ class PrayerRequestsFilterBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
+        if (onFindPrayer != null) ...[
+          _RandomPill(isDark: isDark, onTap: onFindPrayer!),
+          const SizedBox(width: 12),
+        ],
         Flexible(
           child: Align(
             alignment: Alignment.centerRight,
@@ -83,6 +91,52 @@ class PrayerRequestsFilterBar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shuffle pill beside the sort control.
+class _RandomPill extends StatelessWidget {
+  const _RandomPill({required this.isDark, required this.onTap});
+
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+
+    return Material(
+      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Semantics(
+          button: true,
+          label: context.l10n.event_prayer_find,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(AppAssets.shuffle, size: 16, color: foreground),
+                const SizedBox(width: 6),
+                Text(
+                  context.l10n.event_prayer_random,
+                  strutStyle: context.tibetanStrutStyle(13, compact: true),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: foreground,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -488,26 +488,12 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (roomReady)
+                if (canCompose)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Row(
-                      children: [
-                        if (canCompose)
-                          Expanded(
-                            child: PrayerRequestPrompt(
-                              hintText: context.l10n.event_prayer_add,
-                              onTap: () => unawaited(_openComposer()),
-                            ),
-                          )
-                        else
-                          const Spacer(),
-                        const SizedBox(width: 10),
-                        _FindPrayerButton(
-                          isDark: isDark,
-                          onTap: () => unawaited(_findPrayer()),
-                        ),
-                      ],
+                    child: PrayerRequestPrompt(
+                      hintText: context.l10n.event_prayer_add,
+                      onTap: () => unawaited(_openComposer()),
                     ),
                   ),
                 if (canFilter)
@@ -521,6 +507,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                           () => unawaited(
                             _applyFilter(state.filter.withoutIntention()),
                           ),
+                      onFindPrayer: () => unawaited(_findPrayer()),
                     ),
                   ),
                 Expanded(
@@ -744,36 +731,6 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(2),
         ),
-      ),
-    );
-  }
-}
-
-/// Round shuffle button beside the prompt: opens "A prayer for you".
-class _FindPrayerButton extends StatelessWidget {
-  const _FindPrayerButton({required this.isDark, required this.onTap});
-
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceWhite,
-      shape: CircleBorder(
-        side: BorderSide(color: isDark ? AppColors.grey800 : AppColors.grey300),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: IconButton(
-        icon: Icon(
-          AppAssets.shuffle,
-          size: 20,
-          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-        ),
-        tooltip: context.l10n.event_prayer_find,
-        constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-        padding: EdgeInsets.zero,
-        onPressed: onTap,
       ),
     );
   }

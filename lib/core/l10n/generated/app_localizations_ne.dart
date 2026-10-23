@@ -3263,6 +3263,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get event_prayer_find => 'Find a prayer for you';
 
   @override
+  String get event_prayer_random => 'Random';
+
+  @override
   String get event_prayer_finding => 'Finding a prayer...';
 
   @override

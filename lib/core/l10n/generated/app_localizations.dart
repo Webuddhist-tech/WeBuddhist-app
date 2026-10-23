@@ -5654,6 +5654,12 @@ abstract class AppLocalizations {
   /// **'Find a prayer for you'**
   String get event_prayer_find;
 
+  /// No description provided for @event_prayer_random.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get event_prayer_random;
+
   /// No description provided for @event_prayer_finding.
   ///
   /// In en, this message translates to:
