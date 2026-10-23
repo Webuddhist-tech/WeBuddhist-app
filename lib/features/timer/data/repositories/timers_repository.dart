@@ -181,6 +181,7 @@ class TimersRepository implements TimersRepositoryInterface {
   Future<Either<Failure, PresetTimer>> updateUserTimer({
     required String timerId,
     required String name,
+    required String description,
     required int durationMs,
     required String? ambientSoundId,
   }) async {
@@ -194,6 +195,7 @@ class TimersRepository implements TimersRepositoryInterface {
       updated = await remote.updateUserTimer(
         timerId: timerId,
         name: name,
+        description: description,
         durationMs: durationMs,
         ambientSoundId: ambientSoundId,
       );

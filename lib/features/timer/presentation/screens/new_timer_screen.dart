@@ -17,14 +17,15 @@ import 'package:go_router/go_router.dart';
 /// via `POST /timers/user`.
 ///
 /// Passing [timer] switches the screen to edit mode, which updates that timer
-/// via `PUT /timers/user/{id}` instead. Only duration and ambient sound are
-/// editable; the name follows the duration.
+/// via `PUT /timers/user/{id}` instead. Duration, ambient sound, and the
+/// optional title are editable. The API `name` still follows the duration.
 ///
 /// `group_id` and `parent_preset_id` are never sent (no app concept for
-/// either yet). `name`/`description` have no input fields in this design, so
-/// they're derived: name is "{n} minutes" from the duration rounded to whole
-/// minutes ("{n} seconds" under one minute), description is always "". The
-/// saved duration keeps hours, minutes, and seconds.
+/// either yet). `name` is "{n} minutes" from the duration rounded to whole
+/// minutes ("{n} seconds" under one minute). The title the user types is
+/// stored in `description` — trimmed, at most [_maxTitleLength] characters,
+/// and `""` when left blank. The saved duration keeps hours, minutes, and
+/// seconds.
 class NewTimerScreen extends ConsumerStatefulWidget {
   const NewTimerScreen({super.key, this.timer});
 
@@ -32,6 +33,7 @@ class NewTimerScreen extends ConsumerStatefulWidget {
   final PresetTimer? timer;
 
   static const _defaultDurationMinutes = 20;
+  static const _maxTitleLength = 40;
 
   @override
   ConsumerState<NewTimerScreen> createState() => _NewTimerScreenState();
@@ -43,6 +45,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   /// unchanged.
   late int _durationMs;
   late String? _ambientSoundId;
+  late final TextEditingController _titleController;
   String? _ambientSoundName;
   bool _isSubmitting = false;
 
@@ -58,7 +61,26 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     _durationMs =
         timer?.durationMs ?? NewTimerScreen._defaultDurationMinutes * 60000;
     _ambientSoundId = timer?.ambientSoundId;
+    _titleController = TextEditingController(
+      text: _clampedTitle(timer?.description ?? ''),
+    );
   }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
+
+  /// Blank titles stay blank. Anything past the cap is cut so an older
+  /// description still fits the field and can be saved.
+  static String _clampedTitle(String value) {
+    final trimmed = value.trim();
+    if (trimmed.length <= NewTimerScreen._maxTitleLength) return trimmed;
+    return trimmed.substring(0, NewTimerScreen._maxTitleLength);
+  }
+
+  String get _timerDescription => _titleController.text.trim();
 
   /// The ambient sound name to display. An edited timer only carries the id,
   /// so it is resolved against the loaded sound catalog until the user picks
@@ -116,7 +138,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
     final result = await useCase(
       CreateUserTimerParams(
         name: _timerName,
-        description: '',
+        description: _timerDescription,
         durationMs: _durationMs,
         ambientSoundId: _ambientSoundId,
       ),
@@ -145,6 +167,7 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
       UpdateUserTimerParams(
         timerId: widget.timer!.id,
         name: _timerName,
+        description: _timerDescription,
         durationMs: _durationMs,
         ambientSoundId: _ambientSoundId,
       ),
@@ -184,6 +207,8 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
+                  _TitleField(controller: _titleController),
+                  const SizedBox(height: 12),
                   _SettingsRow(
                     label: context.l10n.timer_duration_label,
                     value:
@@ -315,6 +340,55 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TitleField extends StatelessWidget {
+  const _TitleField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Light mode matches the design fill. The theme's default field fill is
+    // a pink tint, so this decoration has to override it explicitly.
+    final fillColor = isDark ? AppColors.surfaceVariantDark : AppColors.grey50;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide.none,
+    );
+
+    return TextField(
+      controller: controller,
+      maxLength: NewTimerScreen._maxTitleLength,
+      textCapitalization: TextCapitalization.sentences,
+      textInputAction: TextInputAction.done,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: textColor,
+      ),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: fillColor,
+        hintText: context.l10n.timer_title_hint,
+        hintStyle: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: textColor.withValues(alpha: 0.4),
+        ),
+        counterText: '',
+        border: border,
+        enabledBorder: border,
+        focusedBorder: border,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
       ),
     );
   }
