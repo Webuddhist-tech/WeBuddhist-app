@@ -88,10 +88,16 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
   /// Bumped on every first-page load, so a stale page is dropped.
   int _generation = 0;
 
+  /// Reads the first page again. A page still in flight is dropped when it
+  /// lands, so its loading flag is cleared here, not there.
   Future<void> load() async {
     if (state.isLoading) return;
     final generation = ++_generation;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      isLoadingMore: false,
+      clearError: true,
+    );
     final result = await _repository.listMyPrayerRequests(
       skip: 0,
       limit: _limit,

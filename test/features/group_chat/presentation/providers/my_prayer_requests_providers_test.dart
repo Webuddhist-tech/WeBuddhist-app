@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -32,6 +34,9 @@ class _FakeRepository extends Fake implements GroupChatRepository {
   _FakeRepository(this.history);
 
   List<ChatMessageDTO> history;
+
+  /// Awaited before a page is answered, to stage a race.
+  Completer<void>? gate;
   final List<int> skips = [];
   final List<String> completed = [];
   final List<String> updated = [];
@@ -47,6 +52,8 @@ class _FakeRepository extends Fake implements GroupChatRepository {
   }) async {
     skips.add(skip);
     expect(eventId, isNull);
+    final gate = this.gate;
+    if (gate != null) await gate.future;
     final failure = this.failure;
     if (failure != null) return Left(failure);
     final end = (skip + limit).clamp(0, history.length);
@@ -137,6 +144,29 @@ void main() {
     await notifier.loadMore();
     expect(repository.skips, [0, 20]);
     expect(notifier.state.requests.length, 25);
+    expect(notifier.state.hasMore, isFalse);
+  });
+
+  test('a refresh while a page is in flight drops the page', () async {
+    final notifier = start([for (var i = 0; i < 25; i++) _mine('r$i')]);
+    await _settle();
+
+    repository.gate = Completer<void>();
+    final more = notifier.loadMore();
+    expect(notifier.state.isLoadingMore, isTrue);
+
+    repository.history = [_mine('fresh')];
+    final gate = repository.gate!;
+    repository.gate = null;
+    final refresh = notifier.load();
+    expect(notifier.state.isLoadingMore, isFalse);
+    await refresh;
+    gate.complete();
+    await more;
+
+    // The stale page did not land, and paging still works.
+    expect(notifier.state.requests.map((r) => r.id), ['fresh']);
+    expect(notifier.state.isLoadingMore, isFalse);
     expect(notifier.state.hasMore, isFalse);
   });
 
