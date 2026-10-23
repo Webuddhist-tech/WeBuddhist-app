@@ -183,6 +183,14 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
     // Watched here, in build: the item builder below runs during layout.
     final request = _currentRequest();
     final count = state.hasLoaded ? state.total : widget.request.prayerCount;
+    final total = request.totalPrayerCount;
+    // "12 people · 31 prayers" once the server counts prayers; the older
+    // wording stays for one that only counts people.
+    final countLabel =
+        total > 0
+            ? '${context.l10n.event_prayer_people_count(count)} · '
+                '${context.l10n.event_prayer_prayers_count(total)}'
+            : context.l10n.event_prayer_people_praying(count);
     final showError =
         state.error != null && state.supporters.isEmpty && state.hasLoaded;
     final showSpinner =
@@ -205,7 +213,7 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
               ),
               const SizedBox(height: 16),
               Text(
-                context.l10n.event_prayer_people_praying(count),
+                countLabel,
                 strutStyle: context.tibetanStrutStyle(13, compact: true),
                 style: TextStyle(
                   fontSize: 13,
@@ -331,6 +339,7 @@ class _SupporterRow extends StatelessWidget {
     final accent = prayerIntentionColor(null, isDark);
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final times = supporter.prayerCount;
 
     return Container(
@@ -365,8 +374,11 @@ class _SupporterRow extends StatelessWidget {
           ),
           if (times > 0) ...[
             const SizedBox(width: 12),
+            Icon(AppAssets.handsPraying, size: 16, color: muted),
+            const SizedBox(width: 4),
             Text(
-              '$times',
+              context.l10n.event_prayer_my_count(times),
+              strutStyle: context.tibetanStrutStyle(14, compact: true),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
