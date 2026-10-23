@@ -1,5 +1,4 @@
-import 'dart:ui' show Locale;
-
+import 'package:flutter_pecha/core/l10n/l10n.dart';
 import 'package:flutter_pecha/core/l10n/tolgee/tolgee_cdn.dart';
 import 'package:flutter_pecha/core/l10n/tolgee/tolgee_locale_map.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +12,7 @@ void main() {
       'en',
       'bo',
       'zh',
+      'zh_Hans',
       'hi',
       'mn',
       'ne',
@@ -22,7 +22,7 @@ void main() {
         in tolgeeSyncLanguageTags.entries) {
       expect(
         entry.value,
-        TolgeeLocaleMap.cdnTagFor(Locale(entry.key)),
+        TolgeeLocaleMap.cdnTagFor(L10n.localeFor(entry.key)),
         reason: 'Tag drifted for app locale ${entry.key}',
       );
     }

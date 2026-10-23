@@ -91,6 +91,34 @@ void main() {
       ).called(1);
     });
 
+    test('should load stored Simplified Chinese with its script', () async {
+      when(
+        mockLocalStorageService.get<String>(StorageKeys.preferredLanguage),
+      ).thenAnswer((_) async => 'zh-Hans');
+
+      localeNotifier = await createLocaleNotifier();
+
+      expect(localeNotifier.state.languageCode, 'zh');
+      expect(localeNotifier.state.scriptCode, 'Hans');
+    });
+
+    test('should persist Simplified Chinese chosen as content', () async {
+      when(
+        mockLocalStorageService.get<String>(StorageKeys.preferredLanguage),
+      ).thenAnswer((_) async => null);
+      when(
+        mockLocalStorageService.set(StorageKeys.preferredLanguage, any),
+      ).thenAnswer((_) async => true);
+      localeNotifier = await createLocaleNotifier();
+
+      await localeNotifier.applyUiLocaleForContent('zh-hans');
+
+      expect(localeNotifier.state.toLanguageTag(), 'zh-Hans');
+      verify(
+        mockLocalStorageService.set(StorageKeys.preferredLanguage, 'zh-Hans'),
+      ).called(1);
+    });
+
     test('should set and persist new locale', () async {
       // Arrange
       when(

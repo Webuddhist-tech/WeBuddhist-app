@@ -15,6 +15,7 @@ const Map<String, String> tolgeeSyncLanguageTags = <String, String>{
   'en': 'en',
   'bo': 'bo-IN',
   'zh': 'zh-Hant-TW',
+  'zh_Hans': 'zh-Hans-CN',
   'hi': 'hi',
   'mn': 'mn',
   'ne': 'ne',
@@ -238,7 +239,7 @@ Future<void> _runPull(Directory root, {required bool dryRun}) async {
   try {
     final int projectId = await api.resolveProjectId();
     stdout.writeln('Tolgee project: $projectId');
-    stdout.writeln('Fetching all six languages before touching ARB files...');
+    stdout.writeln('Fetching all languages before touching ARB files...');
 
     final RemoteCatalog catalog = await api.fetchCatalog(projectId);
     final Map<String, ArbDocument> documents = _readAllArbs(root);
@@ -604,7 +605,11 @@ void _writeAllArbsAtomically(Map<String, ArbDocument> documents) {
 }
 
 Set<String> _placeholderNames(String message) {
-  final RegExp pattern = RegExp(r'\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*[,}]');
+  // A plural case body like `=1 {round}` is text, not an argument.
+  final RegExp pattern = RegExp(
+    r'(?<!(?:=\d+|zero|one|two|few|many|other)\s*)'
+    r'\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*[,}]',
+  );
   return pattern
       .allMatches(message)
       .map((RegExpMatch match) => match.group(1)!)
