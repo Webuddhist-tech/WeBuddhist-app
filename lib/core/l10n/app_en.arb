@@ -1571,6 +1571,8 @@
   },
   "event_prayer_load_failed": "Prayer requests couldn't be loaded",
   "event_prayer_closed": "Prayer requests are closed for this event",
+  "group_prayer_closed": "Prayer requests are closed for this space",
+  "group_prayer_delete_body": "It will be removed for everyone in this space.",
   "event_prayer_pray": "Pray",
   "event_prayer_praying": "Prayed",
   "event_prayer_my_count": "+{count}",
@@ -1639,6 +1641,44 @@
     }
   },
   "event_prayer_translated": "Translated",
+  "event_prayer_sort_mine": "My prayers",
+  "event_prayer_section_active": "Active",
+  "event_prayer_section_accomplished": "Accomplished",
+  "event_prayer_mark_accomplished": "Accomplished",
+  "event_prayer_mark_active": "Mark as active",
+  "event_prayer_mine_empty_title": "No prayer requests from you yet",
+  "event_prayer_mine_empty_body": "Requests you post here will appear in this list",
+  "event_prayer_update_failed": "The prayer request couldn't be updated",
+  "event_prayer_find": "Find a prayer for you",
+  "event_prayer_random": "Random",
+  "event_prayer_finding": "Finding a prayer...",
+  "event_prayer_found": "A prayer for you",
+  "event_prayer_skip": "Skip",
+  "event_prayer_next": "Next prayer",
+  "event_prayer_be_first": "Be the first to pray",
+  "event_prayer_random_empty_title": "No prayers to find yet",
+  "event_prayer_random_empty_body": "No one else has posted a request here yet",
+  "event_prayer_random_failed": "Couldn't find a prayer",
+  "event_prayer_people_count": "{count, plural,\n=1 {1 person}\nother {{count} people}\n}",
+  "@event_prayer_people_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_prayers_count": "{count, plural,\n=1 {1 prayer}\nother {{count} prayers}\n}",
+  "@event_prayer_prayers_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "me_prayer_requests": "My prayer requests",
+  "me_prayer_requests_empty_title": "No prayer requests yet",
+  "me_prayer_requests_empty_body": "Requests you post in spaces and events will appear here",
+  "me_prayer_delete_body": "It will be removed for everyone in that space or event.",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",

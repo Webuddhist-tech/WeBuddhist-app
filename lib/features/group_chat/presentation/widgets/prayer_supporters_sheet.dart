@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
@@ -15,21 +16,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Who is praying for one of the viewer's own requests, and how many times.
 class PrayerSupportersSheet extends ConsumerStatefulWidget {
-  const PrayerSupportersSheet({
-    super.key,
-    required this.eventId,
-    required this.request,
-  });
+  const PrayerSupportersSheet({super.key, this.scope, required this.request});
 
-  final String eventId;
+  /// The room whose notifier keeps [request] current; null shows it as given.
+  final PrayerRoomScope? scope;
 
   /// The request as it was when opened; an edit made while the sheet is up
-  /// is picked up from the event's request list.
+  /// is picked up from the room's request list.
   final ChatMessageDTO request;
 
   static Future<void> show(
     BuildContext context, {
-    required String eventId,
+    PrayerRoomScope? scope,
     required ChatMessageDTO request,
   }) {
     return showModalBottomSheet<void>(
@@ -38,8 +36,7 @@ class PrayerSupportersSheet extends ConsumerStatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder:
-          (_) => PrayerSupportersSheet(eventId: eventId, request: request),
+      builder: (_) => PrayerSupportersSheet(scope: scope, request: request),
     );
   }
 
@@ -79,8 +76,10 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
 
   ChatMessageDTO _currentRequest() {
     final id = widget.request.id;
+    final scope = widget.scope;
+    if (scope == null) return widget.request;
     return ref.watch(
-          prayerRequestsProvider(widget.eventId).select(
+          prayerRequestsProvider(scope).select(
             (state) =>
                 state.requests.where((request) => request.id == id).firstOrNull,
           ),
@@ -184,6 +183,14 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
     // Watched here, in build: the item builder below runs during layout.
     final request = _currentRequest();
     final count = state.hasLoaded ? state.total : widget.request.prayerCount;
+    final total = request.totalPrayerCount;
+    // "12 people · 31 prayers" once the server counts prayers; the older
+    // wording stays for one that only counts people.
+    final countLabel =
+        total > 0
+            ? '${context.l10n.event_prayer_people_count(count)} · '
+                '${context.l10n.event_prayer_prayers_count(total)}'
+            : context.l10n.event_prayer_people_praying(count);
     final showError =
         state.error != null && state.supporters.isEmpty && state.hasLoaded;
     final showSpinner =
@@ -206,7 +213,7 @@ class _PrayerSupportersSheetState extends ConsumerState<PrayerSupportersSheet> {
               ),
               const SizedBox(height: 16),
               Text(
-                context.l10n.event_prayer_people_praying(count),
+                countLabel,
                 strutStyle: context.tibetanStrutStyle(13, compact: true),
                 style: TextStyle(
                   fontSize: 13,
@@ -332,6 +339,7 @@ class _SupporterRow extends StatelessWidget {
     final accent = prayerIntentionColor(null, isDark);
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final times = supporter.prayerCount;
 
     return Container(
@@ -366,8 +374,11 @@ class _SupporterRow extends StatelessWidget {
           ),
           if (times > 0) ...[
             const SizedBox(width: 12),
+            Icon(AppAssets.handsPraying, size: 16, color: muted),
+            const SizedBox(width: 4),
             Text(
-              '$times',
+              context.l10n.event_prayer_my_count(times),
+              strutStyle: context.tibetanStrutStyle(14, compact: true),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

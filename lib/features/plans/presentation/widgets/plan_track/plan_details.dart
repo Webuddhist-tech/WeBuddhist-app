@@ -17,6 +17,7 @@ import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/core/widgets/slide_away_header.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
@@ -738,7 +739,7 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
         ?.fold((_) => null, (event) => event);
     if (event == null || !event.chatEnabled) return const SizedBox.shrink();
     return PrayerRequestsButton(
-      eventId: eventId,
+      scope: PrayerRoomScope.event(eventId),
       count: event.prayerRequestCount,
       onTap: () => _openPrayerRequests(eventId),
       padding:
@@ -752,7 +753,9 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       LoginDrawer.show(context, ref);
       return;
     }
-    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
+    unawaited(
+      PrayerRequestsSheet.show(context, scope: PrayerRoomScope.event(eventId)),
+    );
   }
 
   Widget _buildDayCarouselSection(String language) {

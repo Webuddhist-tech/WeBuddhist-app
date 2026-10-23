@@ -3,14 +3,27 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
-enum _ConnectAction { edit, delete }
+/// One more entry between Edit and Delete.
+class ConnectMenuEntry {
+  const ConnectMenuEntry({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
-/// Overflow button with an optional Edit entry and a destructive Delete.
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+}
+
+/// Overflow button with an optional Edit entry, any [extras], and a
+/// destructive Delete.
 class ConnectActionMenu extends StatelessWidget {
   const ConnectActionMenu({
     super.key,
     this.onEdit,
     this.onDelete,
+    this.extras = const [],
     this.icon = AppAssets.dotsThreeVertical,
     this.iconSize = 20,
     this.iconColor,
@@ -19,6 +32,7 @@ class ConnectActionMenu extends StatelessWidget {
 
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final List<ConnectMenuEntry> extras;
   final IconData icon;
   final double iconSize;
   final Color? iconColor;
@@ -30,7 +44,23 @@ class ConnectActionMenu extends StatelessWidget {
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
-    return PopupMenuButton<_ConnectAction>(
+    final entries = [
+      if (onEdit != null)
+        ConnectMenuEntry(
+          icon: AppAssets.pencilSimple,
+          label: context.l10n.edit,
+          onTap: onEdit!,
+        ),
+      ...extras,
+      if (onDelete != null)
+        ConnectMenuEntry(
+          icon: AppAssets.trash,
+          label: context.l10n.delete,
+          onTap: onDelete!,
+        ),
+    ];
+
+    return PopupMenuButton<int>(
       icon: Icon(
         icon,
         size: iconSize,
@@ -49,42 +79,28 @@ class ConnectActionMenu extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: isDark ? AppColors.grey800 : AppColors.grey300),
       ),
-      onSelected: (action) {
-        switch (action) {
-          case _ConnectAction.edit:
-            onEdit?.call();
-          case _ConnectAction.delete:
-            onDelete?.call();
-        }
-      },
+      onSelected: (index) => entries[index].onTap(),
       itemBuilder:
           (context) => [
-            if (onEdit != null)
+            for (var i = 0; i < entries.length; i++)
               _item(
-                _ConnectAction.edit,
-                AppAssets.pencilSimple,
-                context.l10n.edit,
-                textColor,
-              ),
-            if (onDelete != null)
-              _item(
-                _ConnectAction.delete,
-                AppAssets.trash,
-                context.l10n.delete,
-                AppColors.error,
+                i,
+                entries[i].icon,
+                entries[i].label,
+                entries[i].onTap == onDelete ? AppColors.error : textColor,
               ),
           ],
     );
   }
 
-  PopupMenuItem<_ConnectAction> _item(
-    _ConnectAction action,
+  PopupMenuItem<int> _item(
+    int index,
     IconData icon,
     String label,
     Color color,
   ) {
-    return PopupMenuItem<_ConnectAction>(
-      value: action,
+    return PopupMenuItem<int>(
+      value: index,
       height: 44,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(

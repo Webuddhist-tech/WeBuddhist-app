@@ -18,7 +18,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_
 import 'package:intl/intl.dart';
 
 /// One prayer request as a card tinted by its intention: who asked, what
-/// for, how many are praying, and a pray button for everyone but the requester.
+/// for, how many are praying, and a pray button for everyone but the
+/// requester. An accomplished one shows a double check instead.
 class PrayerRequestTile extends StatelessWidget {
   const PrayerRequestTile({
     super.key,
@@ -30,6 +31,7 @@ class PrayerRequestTile extends StatelessWidget {
     this.onShowSupporters,
     this.onEdit,
     this.onDelete,
+    this.onToggleCompleted,
     this.now,
   });
 
@@ -49,9 +51,12 @@ class PrayerRequestTile extends StatelessWidget {
   /// Only the requester may see who is praying; ignored on others' cards.
   final VoidCallback? onShowSupporters;
 
-  /// Either one shows the overflow menu with the matching entry.
+  /// Any of these shows the overflow menu with the matching entry.
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+
+  /// Marks the request accomplished, or active again when it already is.
+  final VoidCallback? onToggleCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +125,9 @@ class PrayerRequestTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (onEdit != null || onDelete != null)
+                if (onEdit != null ||
+                    onDelete != null ||
+                    onToggleCompleted != null)
                   ConnectActionMenu(
                     icon: AppAssets.dotsThree,
                     iconColor:
@@ -129,6 +136,17 @@ class PrayerRequestTile extends StatelessWidget {
                             : AppColors.textSecondary,
                     onEdit: onEdit,
                     onDelete: onDelete,
+                    extras: [
+                      if (onToggleCompleted != null)
+                        ConnectMenuEntry(
+                          icon: AppAssets.checks,
+                          label:
+                              request.isCompleted
+                                  ? context.l10n.event_prayer_mark_active
+                                  : context.l10n.event_prayer_mark_accomplished,
+                          onTap: onToggleCompleted!,
+                        ),
+                    ],
                     style: IconButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(32, 32),
@@ -190,20 +208,21 @@ class PrayerRequestTile extends StatelessWidget {
     if (count > 0) {
       supporters = _SupportersSummary(
         count: count,
+        total: request.totalPrayerCount,
         recent: request.recentPrayers,
         accent: accent,
         cardColor: cardColor,
         isDark: isDark,
         onTap: isOwn ? onShowSupporters : null,
       );
-    } else if (isOwn) {
+    } else {
       supporters = Text(
-        context.l10n.event_prayer_waiting_first,
+        isOwn
+            ? context.l10n.event_prayer_waiting_first
+            : context.l10n.event_prayer_be_first,
         strutStyle: context.tibetanStrutStyle(12, compact: true),
         style: TextStyle(fontSize: 12, color: muted),
       );
-    } else {
-      supporters = const SizedBox.shrink();
     }
 
     return Row(
@@ -211,7 +230,13 @@ class PrayerRequestTile extends StatelessWidget {
         Expanded(
           child: Align(alignment: Alignment.centerLeft, child: supporters),
         ),
-        if (!isOwn) ...[
+        if (request.isCompleted) ...[
+          const SizedBox(width: 8),
+          Semantics(
+            label: context.l10n.event_prayer_section_accomplished,
+            child: Icon(AppAssets.checks, size: 20, color: muted),
+          ),
+        ] else if (!isOwn) ...[
           const SizedBox(width: 8),
           _PrayButton(
             prayedByMe: request.prayedByMe,
@@ -551,6 +576,7 @@ class PrayerAvatar extends StatelessWidget {
 class _SupportersSummary extends StatelessWidget {
   const _SupportersSummary({
     required this.count,
+    required this.total,
     required this.recent,
     required this.accent,
     required this.cardColor,
@@ -559,6 +585,9 @@ class _SupportersSummary extends StatelessWidget {
   });
 
   final int count;
+
+  /// Every prayer, repeats included; 0 from a server that sends none.
+  final int total;
   final List<ChatPrayerUserDTO> recent;
   final Color accent;
   final Color cardColor;
@@ -573,10 +602,16 @@ class _SupportersSummary extends StatelessWidget {
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final shown = recent.take(3).toList();
     final extra = count - shown.length;
+    final l10n = context.l10n;
+    // "12 people · 31 prayers" once the server counts prayers; the older
+    // wording stays for one that only counts people.
     final label =
-        shown.isNotEmpty && extra > 0
-            ? context.l10n.event_prayer_more_praying(extra)
-            : context.l10n.event_prayer_people_praying(count);
+        total > 0
+            ? '${l10n.event_prayer_people_count(count)} · '
+                '${l10n.event_prayer_prayers_count(total)}'
+            : shown.isNotEmpty && extra > 0
+            ? l10n.event_prayer_more_praying(extra)
+            : l10n.event_prayer_people_praying(count);
 
     return InkWell(
       onTap: onTap,

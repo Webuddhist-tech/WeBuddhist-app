@@ -47,6 +47,15 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async {
+    try {
+      return Right(await _remote.getGroupRoom(groupId));
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'getGroupRoom'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
     int skip = 0,
@@ -148,6 +157,48 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    String? groupId,
+    bool? isCompleted,
+  }) async {
+    try {
+      return Right(
+        await _remote.listMyPrayerRequests(
+          skip: skip,
+          limit: limit,
+          eventId: eventId,
+          groupId: groupId,
+          isCompleted: isCompleted,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'listMyPrayerRequests'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async {
+    try {
+      return Right(
+        await _remote.pickRandomPrayerRequest(
+          roomId,
+          excludeIds: excludeIds,
+          translationLanguage: translationLanguage,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'pickRandomPrayerRequest'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {
     int skip = 0,
@@ -220,6 +271,25 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
       );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'updateMessage'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
+  }) async {
+    try {
+      return Right(
+        await _remote.setMessageCompleted(
+          roomId,
+          messageId: messageId,
+          isCompleted: isCompleted,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'setMessageCompleted'));
     }
   }
 

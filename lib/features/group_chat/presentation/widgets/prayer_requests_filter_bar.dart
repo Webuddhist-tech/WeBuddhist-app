@@ -19,7 +19,7 @@ String prayerSortLabel(AppLocalizations l10n, PrayerSort sort) {
 }
 
 /// Match count on the left, the intention chip beside it when one is in
-/// view, and the sort control as plain text on the right.
+/// view, and the random pill and sort control on the right.
 class PrayerRequestsFilterBar extends StatelessWidget {
   const PrayerRequestsFilterBar({
     super.key,
@@ -27,12 +27,16 @@ class PrayerRequestsFilterBar extends StatelessWidget {
     required this.total,
     required this.onOpenSort,
     required this.onClearIntention,
+    this.onFindPrayer,
   });
 
   final PrayerRequestsFilter filter;
   final int total;
   final VoidCallback onOpenSort;
   final VoidCallback onClearIntention;
+
+  /// Opens "A prayer for you"; the pill is hidden when null.
+  final VoidCallback? onFindPrayer;
 
   @override
   Widget build(BuildContext context) {
@@ -41,46 +45,114 @@ class PrayerRequestsFilterBar extends StatelessWidget {
     final intention = filter.intention;
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final sortLabel =
-        intention == null
-            ? prayerSortLabel(l10n, filter.sort)
-            : l10n.event_prayer_sort_by_intention;
+        intention != null
+            ? l10n.event_prayer_sort_by_intention
+            : filter.mine
+            ? l10n.event_prayer_sort_mine
+            : prayerSortLabel(l10n, filter.sort);
 
-    return Row(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                Text(
-                  l10n.event_prayer_request_count(total),
-                  strutStyle: context.tibetanStrutStyle(13, compact: true),
-                  style: TextStyle(fontSize: 13, color: muted),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Text(
+                      l10n.event_prayer_request_count(total),
+                      strutStyle: context.tibetanStrutStyle(13, compact: true),
+                      style: TextStyle(fontSize: 13, color: muted),
+                    ),
+                    if (intention != null) ...[
+                      const SizedBox(width: 8),
+                      _IntentionChip(
+                        intention: intention,
+                        isDark: isDark,
+                        onClear: onClearIntention,
+                      ),
+                    ],
+                  ],
                 ),
-                if (intention != null) ...[
-                  const SizedBox(width: 8),
-                  _IntentionChip(
-                    intention: intention,
-                    isDark: isDark,
-                    onClear: onClearIntention,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // The controls keep their own width, so the pill sits against
+            // the sort control; the count scrolls in whatever is left.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth - _countMinWidth,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onFindPrayer != null) ...[
+                    _RandomPill(isDark: isDark, onTap: onFindPrayer!),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: _SortButton(
+                      label: sortLabel,
+                      isDark: isDark,
+                      onTap: onOpenSort,
+                    ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Room kept for the count before the sort label starts to ellipsize.
+  static const double _countMinWidth = 84;
+}
+
+/// Shuffle pill beside the sort control.
+class _RandomPill extends StatelessWidget {
+  const _RandomPill({required this.isDark, required this.onTap});
+
+  final bool isDark;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+
+    return Material(
+      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
+      shape: const StadiumBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Semantics(
+          button: true,
+          label: context.l10n.event_prayer_find,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(AppAssets.shuffle, size: 16, color: foreground),
+                const SizedBox(width: 6),
+                Text(
+                  context.l10n.event_prayer_random,
+                  strutStyle: context.tibetanStrutStyle(13, compact: true),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: foreground,
+                  ),
+                ),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: _SortButton(
-              label: sortLabel,
-              isDark: isDark,
-              onTap: onOpenSort,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

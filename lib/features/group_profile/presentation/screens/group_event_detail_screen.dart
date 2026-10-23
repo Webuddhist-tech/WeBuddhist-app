@@ -19,6 +19,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_attendance_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -333,7 +334,7 @@ class _GroupEventDetailScreenState
               if (event.chatEnabled && isAttending) ...[
                 const SizedBox(width: 12),
                 PrayerRequestsButton(
-                  eventId: event.id,
+                  scope: PrayerRoomScope.event(event.id),
                   count: event.prayerRequestCount,
                   padding: EdgeInsets.zero,
                   outlined: true,
@@ -428,7 +429,9 @@ class _GroupEventDetailScreenState
       LoginDrawer.show(context, ref);
       return;
     }
-    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
+    unawaited(
+      PrayerRequestsSheet.show(context, scope: PrayerRoomScope.event(eventId)),
+    );
   }
 
   int _attendeeCount(GroupEvent event, bool isAttending) {
