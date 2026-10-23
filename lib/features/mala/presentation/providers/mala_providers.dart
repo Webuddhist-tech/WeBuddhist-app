@@ -127,8 +127,9 @@ final malaCatalogueProvider = FutureProvider<Either<Failure, List<Mantra>>>((
   if (!_isAuthenticated(ref)) {
     return const Left(AuthenticationFailure('Not authenticated'));
   }
-  // Re-fetches when the app language changes so mantra content is localized.
-  final language = ref.watch(localeProvider).languageCode;
+  // Re-fetches when the content language changes so mantra content is
+  // localized. The UI locale can differ from it (see locale/README.md).
+  final language = ref.watch(contentLanguageProvider);
   return ref.watch(getCatalogueUseCaseProvider)(language);
 });
 
@@ -140,7 +141,7 @@ final accumulationSearchProvider =
     ) {
       return AccumulationSearchNotifier(
         repository: ref.watch(malaRepositoryProvider),
-        languageCode: ref.watch(localeProvider).languageCode,
+        languageCode: ref.watch(contentLanguageProvider),
       );
     });
 

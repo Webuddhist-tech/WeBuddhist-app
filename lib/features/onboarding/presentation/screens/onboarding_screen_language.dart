@@ -22,6 +22,10 @@ class OnboardingScreenLanguage extends ConsumerStatefulWidget {
     ),
     _LanguageOption(locale: Locale(AppConfig.chineseLanguageCode), label: '中文'),
     _LanguageOption(
+      locale: Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+      label: '简体中文',
+    ),
+    _LanguageOption(
       locale: Locale(AppConfig.tibetanLanguageCode),
       label: 'བོད་ཡིག',
     ),
@@ -52,7 +56,8 @@ class _OnboardingScreenLanguageState
   @override
   void initState() {
     super.initState();
-    _selectedLanguageCode = ref.read(localeProvider).languageCode;
+    // The full tag keeps Simplified Chinese (`zh-Hans`) apart from `zh`.
+    _selectedLanguageCode = ref.read(localeProvider).toLanguageTag();
   }
 
   Future<void> _handleContinue() async {
@@ -92,7 +97,7 @@ class _OnboardingScreenLanguageState
         children: [
           for (final language in OnboardingScreenLanguage._languages)
             OnboardingRadioOption(
-              id: language.locale.languageCode,
+              id: language.locale.toLanguageTag(),
               label: language.label,
               selectedId: _selectedLanguageCode,
               onSelect: (id) => setState(() => _selectedLanguageCode = id),
