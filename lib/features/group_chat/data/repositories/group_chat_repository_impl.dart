@@ -161,6 +161,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? eventId,
+    String? groupId,
     bool? isCompleted,
   }) async {
     try {
@@ -169,6 +170,7 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
           skip: skip,
           limit: limit,
           eventId: eventId,
+          groupId: groupId,
           isCompleted: isCompleted,
         ),
       );

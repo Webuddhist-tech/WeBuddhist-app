@@ -60,11 +60,13 @@ abstract class GroupChatRepository {
     int count = 1,
   });
 
-  /// The caller's own prayer requests; [eventId] keeps to one event's chat.
+  /// The caller's own prayer requests; [eventId] keeps to one event's chat,
+  /// [groupId] to one space's own chat.
   Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
     int skip = 0,
     int limit = 20,
     String? eventId,
+    String? groupId,
     bool? isCompleted,
   });
 

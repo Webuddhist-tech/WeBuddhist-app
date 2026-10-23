@@ -73,6 +73,34 @@ void main() {
       expect(room.eventId, 'e1');
     });
 
+    test('listMyPrayerRequests narrows to a space by group_id', () async {
+      final ds = _datasource((options) async {
+        expect(options.method, 'GET');
+        expect(options.path, '/chat/prayer-requests/me');
+        expect(options.queryParameters, {
+          'skip': 0,
+          'limit': 20,
+          'group_id': 'g1',
+        });
+        return _status(200, {
+          'prayer_requests': [
+            {
+              ..._message,
+              'room_kind': 'GROUP',
+              'space': {'id': 'g1', 'name': 'Sangha'},
+            },
+          ],
+          'skip': 0,
+          'limit': 20,
+          'total': 1,
+        });
+      });
+
+      final page = await ds.listMyPrayerRequests(groupId: 'g1');
+      expect(page.total, 1);
+      expect(page.messages.single.id, 'm1');
+    });
+
     test('getGroupRoom resolves the space room', () async {
       final ds = _datasource((options) async {
         expect(options.method, 'GET');

@@ -331,11 +331,13 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? eventId,
+    String? groupId,
     bool? isCompleted,
   }) async {
     myListed.add({
       'skip': skip,
       'eventId': eventId,
+      'groupId': groupId,
       'isCompleted': isCompleted,
     });
     listedSkips.add(skip);
@@ -1894,7 +1896,7 @@ void main() {
       await notifier.setFilter(PrayerRequestsFilter.initial.withMine());
 
       expect(repository.myListed, [
-        {'skip': 0, 'eventId': 'e1', 'isCompleted': null},
+        {'skip': 0, 'eventId': 'e1', 'groupId': null, 'isCompleted': null},
       ]);
       expect(repository.listedSorts, ['newest']);
       expect(notifier.state.filter.mine, isTrue);
@@ -1902,6 +1904,27 @@ void main() {
       expect(notifier.state.total, 2);
       // The viewer's count is not the room's.
       expect(container.read(prayerRequestCountProvider(_eventScope)), 2);
+    });
+
+    test(
+      'My prayers in a space narrows the my-requests endpoint by group',
+      () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+      container.listen(prayerRequestsProvider(_groupScope), (_, _) {});
+      container.listen(prayerRequestCountProvider(_groupScope), (_, _) {});
+      final notifier = container.read(
+        prayerRequestsProvider(_groupScope).notifier,
+      );
+      await _settle();
+      await notifier.setFilter(PrayerRequestsFilter.initial.withMine());
+
+      expect(repository.myListed, [
+        {'skip': 0, 'eventId': null, 'groupId': 'g1', 'isCompleted': null},
+      ]);
+      expect(notifier.state.filter.mine, isTrue);
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+      expect(container.read(prayerRequestCountProvider(_groupScope)), 1);
     });
 
     test(

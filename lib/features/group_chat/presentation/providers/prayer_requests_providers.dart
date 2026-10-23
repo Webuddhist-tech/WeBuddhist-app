@@ -471,7 +471,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   /// One page under the filter in view: the room's requests, or under
   /// [PrayerRequestsFilter.mine] the viewer's own from the my-requests
-  /// endpoint, which filters by event and not by space.
+  /// endpoint, narrowed to this event or space.
   Future<Either<Failure, ChatMessagesPage>> _fetchPage(
     String roomId, {
     required int skip,
@@ -482,6 +482,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         skip: skip,
         limit: _limit,
         eventId: scope.eventId,
+        groupId: scope.groupId,
       );
     }
     return _repository.listMessages(

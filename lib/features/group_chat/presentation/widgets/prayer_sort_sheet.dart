@@ -8,22 +8,13 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_re
 /// Picks how the prayer requests are ordered, or the viewer's own. Pops
 /// with the chosen filter, or null when dismissed.
 class PrayerSortSheet extends StatelessWidget {
-  const PrayerSortSheet({
-    super.key,
-    required this.current,
-    this.showMine = true,
-  });
+  const PrayerSortSheet({super.key, required this.current});
 
   final PrayerRequestsFilter current;
-
-  /// Whether *My prayers* is offered; the my-requests endpoint filters by
-  /// event only, so a space leaves it out.
-  final bool showMine;
 
   static Future<PrayerRequestsFilter?> show(
     BuildContext context, {
     required PrayerRequestsFilter current,
-    bool showMine = true,
   }) {
     return showModalBottomSheet<PrayerRequestsFilter>(
       context: context,
@@ -31,7 +22,7 @@ class PrayerSortSheet extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (_) => PrayerSortSheet(current: current, showMine: showMine),
+      builder: (_) => PrayerSortSheet(current: current),
     );
   }
 
@@ -89,16 +80,14 @@ class PrayerSortSheet extends StatelessWidget {
                                 context,
                               ).pop(current.withSort(sort)),
                         ),
-                      if (showMine)
-                        _SortRow(
-                          icon: AppAssets.profile,
-                          label: l10n.event_prayer_sort_mine,
-                          selected: current.mine,
-                          isDark: isDark,
-                          onTap:
-                              () =>
-                                  Navigator.of(context).pop(current.withMine()),
-                        ),
+                      _SortRow(
+                        icon: AppAssets.profile,
+                        label: l10n.event_prayer_sort_mine,
+                        selected: current.mine,
+                        isDark: isDark,
+                        onTap:
+                            () => Navigator.of(context).pop(current.withMine()),
+                      ),
                     ],
                   ),
                 ),

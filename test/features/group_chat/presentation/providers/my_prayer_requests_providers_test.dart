@@ -48,10 +48,12 @@ class _FakeRepository extends Fake implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? eventId,
+    String? groupId,
     bool? isCompleted,
   }) async {
     skips.add(skip);
     expect(eventId, isNull);
+    expect(groupId, isNull);
     final gate = this.gate;
     if (gate != null) await gate.future;
     final failure = this.failure;

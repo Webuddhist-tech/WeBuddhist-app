@@ -199,6 +199,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     int skip = 0,
     int limit = 20,
     String? eventId,
+    String? groupId,
     bool? isCompleted,
   }) async => throw UnimplementedError();
 

@@ -271,12 +271,14 @@ class GroupChatRemoteDatasource {
   }
 
   /// The caller's own prayer requests, newest first. [eventId] keeps to
-  /// the ones posted in that event's chat; there is no space filter.
-  /// [isCompleted] keeps to accomplished (true) or active (false) ones.
+  /// the ones posted in that event's chat, [groupId] to the space's own
+  /// chat (not its events'). [isCompleted] keeps to accomplished (true) or
+  /// active (false) ones.
   Future<ChatMessagesPage> listMyPrayerRequests({
     int skip = 0,
     int limit = 20,
     String? eventId,
+    String? groupId,
     bool? isCompleted,
   }) async {
     try {
@@ -286,6 +288,7 @@ class GroupChatRemoteDatasource {
           'skip': skip,
           'limit': limit,
           if (eventId != null) 'event_id': eventId,
+          if (groupId != null) 'group_id': groupId,
           if (isCompleted != null) 'is_completed': isCompleted,
         },
         options: _noCache,

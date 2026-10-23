@@ -343,12 +343,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   }
 
   Future<void> _openSort(PrayerRequestsFilter current) async {
-    // The my-requests endpoint filters by event, not by space.
-    final picked = await PrayerSortSheet.show(
-      context,
-      current: current,
-      showMine: widget.scope.isEvent,
-    );
+    final picked = await PrayerSortSheet.show(context, current: current);
     if (!mounted || picked == null) return;
     await _applyFilter(picked);
   }
