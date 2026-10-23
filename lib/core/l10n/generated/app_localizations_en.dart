@@ -3211,6 +3211,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'The prayer request couldn\'t be updated';
 
   @override
+  String get event_prayer_find => 'Find a prayer for you';
+
+  @override
+  String get event_prayer_finding => 'Finding a prayer...';
+
+  @override
+  String get event_prayer_found => 'A prayer for you';
+
+  @override
+  String get event_prayer_skip => 'Skip';
+
+  @override
+  String get event_prayer_next => 'Next prayer';
+
+  @override
+  String get event_prayer_be_first => 'Be the first to pray';
+
+  @override
+  String get event_prayer_random_empty_title => 'No prayers to find yet';
+
+  @override
+  String get event_prayer_random_empty_body =>
+      'No one else has posted a request here yet';
+
+  @override
+  String get event_prayer_random_failed => 'Couldn\'t find a prayer';
+
+  @override
   String get recitation_live_sync => 'Sync';
 
   @override

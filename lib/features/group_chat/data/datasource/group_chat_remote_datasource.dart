@@ -307,6 +307,36 @@ class GroupChatRemoteDatasource {
     }
   }
 
+  /// One request for the caller to pray for: never their own or an
+  /// accomplished one, and ones they have not prayed for first. [excludeIds]
+  /// (the cards already shown, oldest first, at most 50) come back only once
+  /// nothing else is left. 404 NO_PRAYER_REQUESTS when nobody else has
+  /// posted one.
+  Future<ChatMessageDTO> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/chat/rooms/$roomId/prayer-requests/random',
+        queryParameters: {
+          if (excludeIds.isNotEmpty) 'exclude_ids': excludeIds,
+          if (translationLanguage != null)
+            'translation_language': translationLanguage,
+        },
+        // Repeated `exclude_ids=` keys, as the server reads them.
+        options: Options(
+          extra: {'no_cache': true},
+          listFormat: ListFormat.multi,
+        ),
+      );
+      return ChatMessageDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
   /// Everyone praying for one request, newest first.
   Future<ChatPrayersPage> listPrayers(
     String messageId, {

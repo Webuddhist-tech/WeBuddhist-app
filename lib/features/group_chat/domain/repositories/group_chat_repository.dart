@@ -68,6 +68,14 @@ abstract class GroupChatRepository {
     bool? isCompleted,
   });
 
+  /// One request for the caller to pray for; Left(NotFoundFailure) when
+  /// nobody else has posted one.
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  });
+
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {
     int skip = 0,

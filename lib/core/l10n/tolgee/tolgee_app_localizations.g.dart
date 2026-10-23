@@ -6336,6 +6336,69 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_prayer_find => TolgeeBridge.get(
+    localeName,
+    'event_prayer_find',
+    () => _fallback.event_prayer_find,
+  );
+
+  @override
+  String get event_prayer_finding => TolgeeBridge.get(
+    localeName,
+    'event_prayer_finding',
+    () => _fallback.event_prayer_finding,
+  );
+
+  @override
+  String get event_prayer_found => TolgeeBridge.get(
+    localeName,
+    'event_prayer_found',
+    () => _fallback.event_prayer_found,
+  );
+
+  @override
+  String get event_prayer_skip => TolgeeBridge.get(
+    localeName,
+    'event_prayer_skip',
+    () => _fallback.event_prayer_skip,
+  );
+
+  @override
+  String get event_prayer_next => TolgeeBridge.get(
+    localeName,
+    'event_prayer_next',
+    () => _fallback.event_prayer_next,
+  );
+
+  @override
+  String get event_prayer_be_first => TolgeeBridge.get(
+    localeName,
+    'event_prayer_be_first',
+    () => _fallback.event_prayer_be_first,
+  );
+
+  @override
+  String get event_prayer_random_empty_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random_empty_title',
+    () => _fallback.event_prayer_random_empty_title,
+  );
+
+  @override
+  String get event_prayer_random_empty_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random_empty_body',
+    () => _fallback.event_prayer_random_empty_body,
+  );
+
+  @override
+  String get event_prayer_random_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random_failed',
+    () => _fallback.event_prayer_random_failed,
+  );
+
+  @override
   String get recitation_live_sync => TolgeeBridge.get(
     localeName,
     'recitation_live_sync',

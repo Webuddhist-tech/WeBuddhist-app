@@ -164,6 +164,7 @@ class AppAssets {
   static const IconData warning = PhosphorIconsRegular.warning;
   static const IconData check = PhosphorIconsBold.check;
   static const IconData checks = PhosphorIconsRegular.checks;
+  static const IconData shuffle = PhosphorIconsRegular.shuffle;
 
   // ========== SOCIAL MEDIA ICONS ==========
   static const IconData linkSimple = PhosphorIconsRegular.linkSimple;

@@ -214,14 +214,14 @@ class PrayerRequestTile extends StatelessWidget {
         isDark: isDark,
         onTap: isOwn ? onShowSupporters : null,
       );
-    } else if (isOwn) {
+    } else {
       supporters = Text(
-        context.l10n.event_prayer_waiting_first,
+        isOwn
+            ? context.l10n.event_prayer_waiting_first
+            : context.l10n.event_prayer_be_first,
         strutStyle: context.tibetanStrutStyle(12, compact: true),
         style: TextStyle(fontSize: 12, color: muted),
       );
-    } else {
-      supporters = const SizedBox.shrink();
     }
 
     return Row(

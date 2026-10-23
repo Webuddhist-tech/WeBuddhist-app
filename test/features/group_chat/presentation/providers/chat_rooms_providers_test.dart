@@ -182,6 +182,13 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Right(unit);
 
   @override
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
     int skip = 0,
     int limit = 20,

@@ -222,6 +222,10 @@ class PrayerRequestsState extends Equatable {
 
   /// How many requests match [filter] on the server.
   final int total;
+
+  /// The request picked for the viewer to pray for, shown outside the list.
+  /// Kept here so a prayer on it renders like one on a listed row.
+  final ChatMessageDTO? spotlight;
   final bool isLoading;
   final bool isLoadingMore;
   final bool hasLoaded;
@@ -235,6 +239,7 @@ class PrayerRequestsState extends Equatable {
     this.requests = const [],
     this.filter = PrayerRequestsFilter.initial,
     this.total = 0,
+    this.spotlight,
     this.isLoading = false,
     this.isLoadingMore = false,
     this.hasLoaded = false,
@@ -249,6 +254,8 @@ class PrayerRequestsState extends Equatable {
     List<ChatMessageDTO>? requests,
     PrayerRequestsFilter? filter,
     int? total,
+    ChatMessageDTO? spotlight,
+    bool clearSpotlight = false,
     bool? isLoading,
     bool? isLoadingMore,
     bool? hasLoaded,
@@ -263,6 +270,7 @@ class PrayerRequestsState extends Equatable {
       requests: requests ?? this.requests,
       filter: filter ?? this.filter,
       total: total ?? this.total,
+      spotlight: clearSpotlight ? null : spotlight ?? this.spotlight,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasLoaded: hasLoaded ?? this.hasLoaded,
@@ -279,6 +287,7 @@ class PrayerRequestsState extends Equatable {
     requests,
     filter,
     total,
+    spotlight,
     isLoading,
     isLoadingMore,
     hasLoaded,
@@ -709,6 +718,34 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     return result;
   }
 
+  /// Picks one request for the viewer to pray for and puts it in the
+  /// spotlight. The listed row is preferred when there is one: it carries
+  /// taps the server has not confirmed yet. [excludeIds] are the cards
+  /// already shown, oldest first.
+  Future<Either<Failure, ChatMessageDTO>> pickRandom({
+    List<String> excludeIds = const [],
+  }) async {
+    final roomId = state.roomId;
+    if (roomId == null) {
+      return const Left(NotFoundFailure('Prayer room not ready'));
+    }
+    final result = await _repository.pickRandomPrayerRequest(
+      roomId,
+      excludeIds: excludeIds,
+      translationLanguage: _translationLanguage,
+    );
+    if (!mounted) return result;
+    return result.map((picked) {
+      final shown = _find(picked.id) ?? picked;
+      state = state.copyWith(spotlight: shown);
+      return shown;
+    });
+  }
+
+  void clearSpotlight() {
+    if (state.spotlight != null) state = state.copyWith(clearSpotlight: true);
+  }
+
   /// Marks one of the viewer's own requests accomplished, or active again,
   /// in place. The server's copy wins where it sends one.
   Future<Either<Failure, Unit>> setCompleted(
@@ -810,6 +847,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       state = state.copyWith(total: _clampCount(state.total - 1));
     }
     if (inRoom) _shiftCount(-1, inList: false);
+    if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
   }
 
   /// Rows held for the end once paging is over. None of the pages brought
@@ -1074,16 +1112,25 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     for (final request in state.requests) {
       if (request.id == messageId) return request;
     }
-    return null;
+    final spotlight = state.spotlight;
+    return spotlight != null && spotlight.id == messageId ? spotlight : null;
   }
 
+  /// Rewrites one request wherever it is shown: in the list, held for the
+  /// end, and in the spotlight.
   void _update(
     String messageId,
     ChatMessageDTO Function(ChatMessageDTO request) transform,
   ) {
+    final spotlight = state.spotlight;
+    final lit =
+        spotlight != null && spotlight.id == messageId
+            ? transform(spotlight)
+            : null;
     final held = _unlisted[messageId];
     if (held != null) {
       _unlisted[messageId] = transform(held);
+      if (lit != null) state = state.copyWith(spotlight: lit);
       return;
     }
     var changed = false;
@@ -1097,7 +1144,12 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         else
           request,
     ];
-    if (changed) state = state.copyWith(requests: requests);
+    if (changed || lit != null) {
+      state = state.copyWith(
+        requests: changed ? requests : null,
+        spotlight: lit,
+      );
+    }
   }
 }
 

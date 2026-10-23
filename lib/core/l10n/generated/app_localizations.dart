@@ -5648,6 +5648,60 @@ abstract class AppLocalizations {
   /// **'The prayer request couldn\'t be updated'**
   String get event_prayer_update_failed;
 
+  /// No description provided for @event_prayer_find.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a prayer for you'**
+  String get event_prayer_find;
+
+  /// No description provided for @event_prayer_finding.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding a prayer...'**
+  String get event_prayer_finding;
+
+  /// No description provided for @event_prayer_found.
+  ///
+  /// In en, this message translates to:
+  /// **'A prayer for you'**
+  String get event_prayer_found;
+
+  /// No description provided for @event_prayer_skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get event_prayer_skip;
+
+  /// No description provided for @event_prayer_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next prayer'**
+  String get event_prayer_next;
+
+  /// No description provided for @event_prayer_be_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to pray'**
+  String get event_prayer_be_first;
+
+  /// No description provided for @event_prayer_random_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayers to find yet'**
+  String get event_prayer_random_empty_title;
+
+  /// No description provided for @event_prayer_random_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'No one else has posted a request here yet'**
+  String get event_prayer_random_empty_body;
+
+  /// No description provided for @event_prayer_random_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find a prayer'**
+  String get event_prayer_random_failed;
+
   /// No description provided for @recitation_live_sync.
   ///
   /// In en, this message translates to:

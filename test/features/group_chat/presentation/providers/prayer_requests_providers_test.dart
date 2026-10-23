@@ -303,6 +303,29 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   final List<Map<String, Object?>> completions = [];
   Failure? completeFailure;
 
+  final List<List<String>> randomExcludes = [];
+  Failure? randomFailure;
+
+  /// What the random pick answers; null falls back to the first row of
+  /// [history] not yet excluded.
+  ChatMessageDTO? randomResponse;
+
+  @override
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async {
+    randomExcludes.add(excludeIds);
+    final failure = randomFailure;
+    if (failure != null) return Left(failure);
+    final picked =
+        randomResponse ??
+        history.where((m) => !excludeIds.contains(m.id)).firstOrNull;
+    if (picked == null) return const Left(NotFoundFailure('none'));
+    return Right(picked);
+  }
+
   @override
   Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
     int skip = 0,
@@ -1939,6 +1962,79 @@ void main() {
       final done = await notifier.setCompleted('a', isCompleted: true);
       expect(done.isLeft(), isTrue);
       expect(_byId(notifier, 'a').isCompleted, isFalse);
+    });
+
+    test(
+      'pickRandom spotlights the listed row and passes the excludes',
+      () async {
+        repository = _FakeGroupChatRepository(
+          history: [_prayer('a', count: 2), _prayer('b')],
+        );
+        container = buildContainer();
+
+        final notifier = _keepAlive(container);
+        await _settle();
+        notifier.pray('a');
+        await _settle();
+
+        final picked = await notifier.pickRandom(excludeIds: const ['x']);
+        expect(repository.randomExcludes, [
+          ['x'],
+        ]);
+        expect(picked.isRight(), isTrue);
+        // The listed row, with the viewer's prayer on it, not the server's copy.
+        expect(notifier.state.spotlight?.id, 'a');
+        expect(notifier.state.spotlight?.prayedByMe, isTrue);
+      },
+    );
+
+    test('a prayer on a spotlight that is not listed still renders', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')])
+        ..randomResponse = _prayer('far', count: 4);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.pickRandom();
+      expect(notifier.state.spotlight?.id, 'far');
+
+      notifier.pray('far');
+      expect(notifier.state.spotlight?.prayedByMe, isTrue);
+      expect(notifier.state.spotlight?.prayerCount, 5);
+      expect(notifier.state.spotlight?.myPrayerCount, 1);
+      await _settle();
+      expect(repository.prayed, [
+        ['far'],
+      ]);
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+
+      notifier.clearSpotlight();
+      expect(notifier.state.spotlight, isNull);
+    });
+
+    test('pickRandom answers not found when nobody else has posted', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final picked = await notifier.pickRandom(excludeIds: const ['a']);
+      expect(picked.fold((f) => f is NotFoundFailure, (_) => false), isTrue);
+      expect(notifier.state.spotlight, isNull);
+    });
+
+    test('deleting the spotlit request clears the spotlight', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.pickRandom();
+      expect(notifier.state.spotlight?.id, 'a');
+
+      notifier.applyDeletion('a');
+      expect(notifier.state.spotlight, isNull);
     });
 
     test('applyEdit carries a completion made on another device', () async {

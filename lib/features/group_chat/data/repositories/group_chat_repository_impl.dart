@@ -178,6 +178,25 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async {
+    try {
+      return Right(
+        await _remote.pickRandomPrayerRequest(
+          roomId,
+          excludeIds: excludeIds,
+          translationLanguage: translationLanguage,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'pickRandomPrayerRequest'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {
     int skip = 0,

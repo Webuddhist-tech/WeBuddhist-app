@@ -147,6 +147,50 @@ void main() {
       expect(message, isNull);
     });
 
+    test(
+      'pickRandomPrayerRequest repeats exclude_ids the way the server reads',
+      () async {
+        final ds = _datasource((options) async {
+          expect(options.method, 'GET');
+          expect(options.path, '/chat/rooms/r1/prayer-requests/random');
+          expect(
+            options.uri.query,
+            'exclude_ids=a&exclude_ids=b&translation_language=BO',
+          );
+          return _status(200, {..._message, 'id': 'c'});
+        });
+
+        final picked = await ds.pickRandomPrayerRequest(
+          'r1',
+          excludeIds: const ['a', 'b'],
+          translationLanguage: 'BO',
+        );
+
+        expect(picked.id, 'c');
+        expect(picked.isPrayerRequest, isTrue);
+      },
+    );
+
+    test('pickRandomPrayerRequest sends no exclude_ids when none', () async {
+      final ds = _datasource((options) async {
+        expect(options.uri.query, isEmpty);
+        return _status(200, _message);
+      });
+
+      await ds.pickRandomPrayerRequest('r1');
+    });
+
+    test('pickRandomPrayerRequest surfaces NO_PRAYER_REQUESTS', () async {
+      final ds = _datasource(
+        (options) async => _status(404, {'detail': 'NO_PRAYER_REQUESTS'}),
+      );
+
+      await expectLater(
+        ds.pickRandomPrayerRequest('r1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
     test('listIntentions reads the catalog in display order', () async {
       final ds = _datasource((options) async {
         expect(options.method, 'GET');
@@ -233,11 +277,7 @@ void main() {
       });
 
       await ds.listMessages('r1', messageType: 'PRAYER');
-      await ds.listMessages(
-        'r1',
-        messageType: 'PRAYER',
-        sort: 'needs_prayers',
-      );
+      await ds.listMessages('r1', messageType: 'PRAYER', sort: 'needs_prayers');
       await ds.listMessages(
         'r1',
         messageType: 'PRAYER',
@@ -334,47 +374,50 @@ void main() {
       expect(page.prayers.single.lastPrayedAt, '2026-09-29T10:04:00+00:00');
     });
 
-    test('prayFor posts the selected ids with a count and reads the summaries', () async {
-      Object? sent;
-      final ds = _datasource((options) async {
-        sent = options.data;
-        expect(options.method, 'POST');
-        expect(options.path, '/chat/rooms/r1/prayers');
-        return _status(200, {
-          'prayers': [
-            {
-              'message_id': 'a1',
-              'prayer_count': 12,
-              'prayed_by_me': true,
-              'my_prayer_count': 3,
-              'created': true,
-            },
-            {
-              'message_id': 'b2',
-              'prayer_count': 4,
-              'prayed_by_me': true,
-              'created': false,
-            },
-          ],
+    test(
+      'prayFor posts the selected ids with a count and reads the summaries',
+      () async {
+        Object? sent;
+        final ds = _datasource((options) async {
+          sent = options.data;
+          expect(options.method, 'POST');
+          expect(options.path, '/chat/rooms/r1/prayers');
+          return _status(200, {
+            'prayers': [
+              {
+                'message_id': 'a1',
+                'prayer_count': 12,
+                'prayed_by_me': true,
+                'my_prayer_count': 3,
+                'created': true,
+              },
+              {
+                'message_id': 'b2',
+                'prayer_count': 4,
+                'prayed_by_me': true,
+                'created': false,
+              },
+            ],
+          });
         });
-      });
 
-      final prayers = await ds.prayFor(
-        'r1',
-        messageIds: ['a1', 'b2', 'c3'],
-        count: 3,
-      );
+        final prayers = await ds.prayFor(
+          'r1',
+          messageIds: ['a1', 'b2', 'c3'],
+          count: 3,
+        );
 
-      expect(sent, {
-        'message_ids': ['a1', 'b2', 'c3'],
-        'count': 3,
-      });
-      expect(prayers.map((p) => p.messageId), ['a1', 'b2']);
-      expect(prayers.first.created, isTrue);
-      expect(prayers.first.myPrayerCount, 3);
-      expect(prayers.last.created, isFalse);
-      expect(prayers.last.myPrayerCount, isNull);
-    });
+        expect(sent, {
+          'message_ids': ['a1', 'b2', 'c3'],
+          'count': 3,
+        });
+        expect(prayers.map((p) => p.messageId), ['a1', 'b2']);
+        expect(prayers.first.created, isTrue);
+        expect(prayers.first.myPrayerCount, 3);
+        expect(prayers.last.created, isFalse);
+        expect(prayers.last.myPrayerCount, isNull);
+      },
+    );
 
     test('prayFor sends one prayer when no count is given', () async {
       Object? sent;
