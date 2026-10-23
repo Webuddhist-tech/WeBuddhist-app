@@ -51,48 +51,64 @@ class PrayerRequestsFilterBar extends StatelessWidget {
             ? l10n.event_prayer_sort_mine
             : prayerSortLabel(l10n, filter.sort);
 
-    return Row(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                Text(
-                  l10n.event_prayer_request_count(total),
-                  strutStyle: context.tibetanStrutStyle(13, compact: true),
-                  style: TextStyle(fontSize: 13, color: muted),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Text(
+                      l10n.event_prayer_request_count(total),
+                      strutStyle: context.tibetanStrutStyle(13, compact: true),
+                      style: TextStyle(fontSize: 13, color: muted),
+                    ),
+                    if (intention != null) ...[
+                      const SizedBox(width: 8),
+                      _IntentionChip(
+                        intention: intention,
+                        isDark: isDark,
+                        onClear: onClearIntention,
+                      ),
+                    ],
+                  ],
                 ),
-                if (intention != null) ...[
-                  const SizedBox(width: 8),
-                  _IntentionChip(
-                    intention: intention,
-                    isDark: isDark,
-                    onClear: onClearIntention,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // The controls keep their own width, so the pill sits against
+            // the sort control; the count scrolls in whatever is left.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth - _countMinWidth,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onFindPrayer != null) ...[
+                    _RandomPill(isDark: isDark, onTap: onFindPrayer!),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: _SortButton(
+                      label: sortLabel,
+                      isDark: isDark,
+                      onTap: onOpenSort,
+                    ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        if (onFindPrayer != null) ...[
-          _RandomPill(isDark: isDark, onTap: onFindPrayer!),
-          const SizedBox(width: 12),
-        ],
-        Flexible(
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: _SortButton(
-              label: sortLabel,
-              isDark: isDark,
-              onTap: onOpenSort,
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
+
+  /// Room kept for the count before the sort label starts to ellipsize.
+  static const double _countMinWidth = 84;
 }
 
 /// Shuffle pill beside the sort control.
