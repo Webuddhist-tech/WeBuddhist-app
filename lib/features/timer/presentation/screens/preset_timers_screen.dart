@@ -30,52 +30,50 @@ class PresetTimersScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(AppAssets.arrowLeft),
+          onPressed: () => context.pop(),
+        ),
+        title: Text(l10n.meditation_timer),
+      ),
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _TimersHeader(
-              title: l10n.meditation_timer,
-              subtitle: l10n.timer_list_subtitle,
-            ),
-            Expanded(
-              child: timersAsync.when(
-                data: (timersEither) {
-                  return timersEither.fold(
-                    (failure) => ErrorStateWidget(
-                      error: failure,
-                      onRetry: () => _retryPresetTimers(ref),
-                    ),
-                    (timers) {
-                      final presetTimers = _sortedPresetTimers(
-                        timers.where((timer) => timer.isPreset).toList(),
-                      );
-                      // User-created timers (type == "user_created") sit under
-                      // the dashed create row, which stays so another timer
-                      // can be added.
-                      final customTimers =
-                          timers.where((timer) => timer.isUserCreated).toList();
-
-                      return RefreshIndicator(
-                        onRefresh: () => _refreshPresetTimers(ref),
-                        child: _TimersContent(
-                          presetTimers: presetTimers,
-                          customTimers: customTimers,
-                          minLabel: l10n.timer_min,
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const _TimersContentSkeleton(),
-                error:
-                    (error, _) => ErrorStateWidget(
-                      error: error,
-                      onRetry: () => _retryPresetTimers(ref),
-                    ),
+        top: false,
+        child: timersAsync.when(
+          data: (timersEither) {
+            return timersEither.fold(
+              (failure) => ErrorStateWidget(
+                error: failure,
+                onRetry: () => _retryPresetTimers(ref),
               ),
-            ),
-          ],
+              (timers) {
+                final presetTimers = _sortedPresetTimers(
+                  timers.where((timer) => timer.isPreset).toList(),
+                );
+                // User-created timers (type == "user_created") sit under
+                // the create row, which stays so another timer can be
+                // added.
+                final customTimers =
+                    timers.where((timer) => timer.isUserCreated).toList();
+
+                return RefreshIndicator(
+                  onRefresh: () => _refreshPresetTimers(ref),
+                  child: _TimersContent(
+                    presetTimers: presetTimers,
+                    customTimers: customTimers,
+                    minLabel: l10n.timer_min,
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const _TimersContentSkeleton(),
+          error:
+              (error, _) => ErrorStateWidget(
+                error: error,
+                onRetry: () => _retryPresetTimers(ref),
+              ),
         ),
       ),
     );
@@ -101,58 +99,6 @@ class PresetTimersScreen extends ConsumerWidget {
     final sorted = List<PresetTimer>.from(timers)
       ..sort((a, b) => a.durationMs.compareTo(b.durationMs));
     return sorted;
-  }
-}
-
-class _TimersHeader extends StatelessWidget {
-  const _TimersHeader({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subtitleColor =
-        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          IconButton(
-            icon: const Icon(AppAssets.arrowLeft),
-            onPressed: () => context.pop(),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 12, right: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    height: 1.15,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.35,
-                    color: subtitleColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -229,7 +175,6 @@ class _TimersContent extends ConsumerWidget {
         const SizedBox(height: 12),
         CustomTimerCard(
           title: l10n.timer_create_custom,
-          subtitle: l10n.timer_create_custom_subtitle,
           onTap: () => context.push('/home/timers/new'),
         ),
         if (customTimers.isNotEmpty) ...[
