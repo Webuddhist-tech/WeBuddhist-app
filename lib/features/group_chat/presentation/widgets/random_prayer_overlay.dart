@@ -176,6 +176,7 @@ class _RandomPrayerOverlayState extends ConsumerState<RandomPrayerOverlay> {
       type: MaterialType.transparency,
       child: SafeArea(
         child: Stack(
+          fit: StackFit.expand,
           children: [
             Column(
               children: [
