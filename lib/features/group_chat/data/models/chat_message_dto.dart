@@ -52,6 +52,10 @@ class ChatMessageDTO extends Equatable {
   final ChatMessageTranslationDTO? translation;
   final bool canTranslate;
 
+  /// An accomplished request stays listed with its counts; nobody prays for it.
+  final bool isCompleted;
+  final String? completedAt;
+
   const ChatMessageDTO({
     required this.id,
     required this.roomId,
@@ -73,6 +77,8 @@ class ChatMessageDTO extends Equatable {
     this.sourceLanguage,
     this.translation,
     this.canTranslate = false,
+    this.isCompleted = false,
+    this.completedAt,
   });
 
   bool get isPrayerRequest => messageType == typePrayer;
@@ -132,7 +138,15 @@ class ChatMessageDTO extends Equatable {
               ? ChatMessageTranslationDTO.fromJson(translationJson)
               : null,
       canTranslate: json['can_translate'] as bool? ?? false,
+      isCompleted: json['is_completed'] as bool? ?? false,
+      completedAt: json['completed_at'] as String?,
     );
+  }
+
+  /// A row of the viewer's own requests (`GET /chat/prayer-requests/me`).
+  /// It names no sender, since the caller is the sender, and no type.
+  factory ChatMessageDTO.fromMyPrayerRequestJson(Map<String, dynamic> json) {
+    return ChatMessageDTO.fromJson({...json, 'message_type': typePrayer});
   }
 
   /// Additive: only the fields a live update rewrites are parameterised, so
@@ -142,6 +156,8 @@ class ChatMessageDTO extends Equatable {
   /// message — so the usual `?? this` idiom loses nothing here.
   /// [clearTranslation] drops the translation and detected language a new
   /// body has made stale, unless new ones are passed with it.
+  /// [clearCompletedAt] drops the completion time of a request made active
+  /// again.
   ChatMessageDTO copyWith({
     String? body,
     String? deletedAt,
@@ -156,6 +172,9 @@ class ChatMessageDTO extends Equatable {
     ChatMessageTranslationDTO? translation,
     bool? canTranslate,
     bool clearTranslation = false,
+    bool? isCompleted,
+    String? completedAt,
+    bool clearCompletedAt = false,
   }) {
     return ChatMessageDTO(
       id: id,
@@ -180,6 +199,8 @@ class ChatMessageDTO extends Equatable {
       translation:
           translation ?? (clearTranslation ? null : this.translation),
       canTranslate: canTranslate ?? this.canTranslate,
+      isCompleted: isCompleted ?? this.isCompleted,
+      completedAt: completedAt ?? (clearCompletedAt ? null : this.completedAt),
     );
   }
 
@@ -203,6 +224,8 @@ class ChatMessageDTO extends Equatable {
         'prayed_by_me': prayedByMe,
         'my_prayer_count': myPrayerCount,
         'recent_prayers': recentPrayers.map((user) => user.toJson()).toList(),
+        'is_completed': isCompleted,
+        if (completedAt != null) 'completed_at': completedAt,
       },
       if (sourceLanguage != null) 'source_language': sourceLanguage,
       if (translation != null) 'translation': translation!.toJson(),
@@ -232,5 +255,7 @@ class ChatMessageDTO extends Equatable {
     sourceLanguage,
     translation,
     canTranslate,
+    isCompleted,
+    completedAt,
   ];
 }

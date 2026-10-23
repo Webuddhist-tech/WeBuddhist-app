@@ -163,6 +163,7 @@ class AppAssets {
   static const IconData warningCircleFill = PhosphorIconsFill.warningCircle;
   static const IconData warning = PhosphorIconsRegular.warning;
   static const IconData check = PhosphorIconsBold.check;
+  static const IconData checks = PhosphorIconsRegular.checks;
 
   // ========== SOCIAL MEDIA ICONS ==========
   static const IconData linkSimple = PhosphorIconsRegular.linkSimple;

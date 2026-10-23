@@ -299,6 +299,53 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     String? description,
   }) async => const Right(unit);
 
+  final List<Map<String, Object?>> myListed = [];
+  final List<Map<String, Object?>> completions = [];
+  Failure? completeFailure;
+
+  @override
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    bool? isCompleted,
+  }) async {
+    myListed.add({
+      'skip': skip,
+      'eventId': eventId,
+      'isCompleted': isCompleted,
+    });
+    listedSkips.add(skip);
+    final gate = listGate;
+    if (gate != null) await gate.future;
+    final end = (skip + limit).clamp(0, history.length);
+    final start = skip.clamp(0, history.length);
+    return Right(
+      ChatMessagesPage(
+        messages: history.sublist(start, end),
+        skip: skip,
+        limit: limit,
+        total: history.length,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
+  }) async {
+    completions.add({
+      'roomId': roomId,
+      'messageId': messageId,
+      'isCompleted': isCompleted,
+    });
+    final failure = completeFailure;
+    if (failure != null) return Left(failure);
+    return Right(updateResponse);
+  }
+
   @override
   Future<Either<Failure, ChatMessageDTO?>> updateMessage(
     String roomId, {
@@ -1808,6 +1855,107 @@ void main() {
       notifier.applyDeletion('a');
 
       expect(notifier.state.requests.map((r) => r.id), ['b']);
+    });
+
+    test(
+      'My prayers lists from the my-requests endpoint for the event',
+      () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+      container.listen(prayerRequestCountProvider(_eventScope), (_, _) {});
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(PrayerRequestsFilter.initial.withMine());
+
+      expect(repository.myListed, [
+        {'skip': 0, 'eventId': 'e1', 'isCompleted': null},
+      ]);
+      expect(repository.listedSorts, ['newest']);
+      expect(notifier.state.filter.mine, isTrue);
+      expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
+      expect(notifier.state.total, 2);
+      // The viewer's count is not the room's.
+      expect(container.read(prayerRequestCountProvider(_eventScope)), 2);
+    });
+
+    test(
+      'under My prayers only the viewer\'s own live request is listed',
+      () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+      container.listen(prayerRequestCountProvider(_eventScope), (_, _) {});
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(PrayerRequestsFilter.initial.withMine());
+
+      notifier.appendLive(_prayer('theirs'), viewerId: 'someone-else');
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+      expect(notifier.state.total, 1);
+      expect(container.read(prayerRequestCountProvider(_eventScope)), 2);
+
+      notifier.appendLive(_prayer('mine'), viewerId: 'u1');
+      expect(notifier.state.requests.map((r) => r.id), ['mine', 'a']);
+      expect(notifier.state.total, 2);
+    });
+
+    test('setCompleted flips the row and keeps the server\'s time', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.updateResponse = _prayer('a').copyWith(
+        isCompleted: true,
+        completedAt: '2026-10-23T09:00:00+00:00',
+      );
+      final done = await notifier.setCompleted('a', isCompleted: true);
+      expect(done.isRight(), isTrue);
+      expect(repository.completions, [
+        {'roomId': 'room-1', 'messageId': 'a', 'isCompleted': true},
+      ]);
+      expect(_byId(notifier, 'a').isCompleted, isTrue);
+      expect(_byId(notifier, 'a').completedAt, '2026-10-23T09:00:00+00:00');
+      expect(_byId(notifier, 'a').prayerCount, 3);
+
+      repository.updateResponse = null;
+      await notifier.setCompleted('a', isCompleted: false);
+      expect(_byId(notifier, 'a').isCompleted, isFalse);
+      expect(_byId(notifier, 'a').completedAt, isNull);
+    });
+
+    test('setCompleted leaves the row alone when the server refuses', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')])
+        ..completeFailure = const ServerFailure('nope');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final done = await notifier.setCompleted('a', isCompleted: true);
+      expect(done.isLeft(), isTrue);
+      expect(_byId(notifier, 'a').isCompleted, isFalse);
+    });
+
+    test('applyEdit carries a completion made on another device', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      notifier.applyEdit(
+        _prayer('a').copyWith(
+          isCompleted: true,
+          completedAt: '2026-10-23T09:00:00+00:00',
+        ),
+      );
+      expect(_byId(notifier, 'a').isCompleted, isTrue);
+      expect(_byId(notifier, 'a').completedAt, '2026-10-23T09:00:00+00:00');
     });
   });
 

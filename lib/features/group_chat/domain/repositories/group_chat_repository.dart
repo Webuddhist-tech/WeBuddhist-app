@@ -60,6 +60,14 @@ abstract class GroupChatRepository {
     int count = 1,
   });
 
+  /// The caller's own prayer requests; [eventId] keeps to one event's chat.
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    bool? isCompleted,
+  });
+
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {
     int skip = 0,
@@ -80,6 +88,14 @@ abstract class GroupChatRepository {
     required String messageId,
     required String body,
     String? intention,
+  });
+
+  /// Marks one of the caller's own prayer requests accomplished or active.
+  /// Right with the server's copy, or null when it answered without one.
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
   });
 
   Future<Either<Failure, Unit>> deleteMessage(

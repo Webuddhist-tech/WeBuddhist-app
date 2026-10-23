@@ -41,9 +41,11 @@ class PrayerRequestsFilterBar extends StatelessWidget {
     final intention = filter.intention;
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final sortLabel =
-        intention == null
-            ? prayerSortLabel(l10n, filter.sort)
-            : l10n.event_prayer_sort_by_intention;
+        intention != null
+            ? l10n.event_prayer_sort_by_intention
+            : filter.mine
+            ? l10n.event_prayer_sort_mine
+            : prayerSortLabel(l10n, filter.sort);
 
     return Row(
       children: [

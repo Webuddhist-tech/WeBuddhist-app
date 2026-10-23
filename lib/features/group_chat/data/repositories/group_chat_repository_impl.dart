@@ -157,6 +157,27 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    bool? isCompleted,
+  }) async {
+    try {
+      return Right(
+        await _remote.listMyPrayerRequests(
+          skip: skip,
+          limit: limit,
+          eventId: eventId,
+          isCompleted: isCompleted,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'listMyPrayerRequests'));
+    }
+  }
+
+  @override
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {
     int skip = 0,
@@ -229,6 +250,25 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
       );
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'updateMessage'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
+  }) async {
+    try {
+      return Right(
+        await _remote.setMessageCompleted(
+          roomId,
+          messageId: messageId,
+          isCompleted: isCompleted,
+        ),
+      );
+    } catch (e) {
+      return Left(ExceptionMapper.map(e, context: 'setMessageCompleted'));
     }
   }
 

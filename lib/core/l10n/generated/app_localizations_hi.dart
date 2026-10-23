@@ -3215,6 +3215,32 @@ class AppLocalizationsHi extends AppLocalizations {
   String get event_prayer_translated => 'Translated';
 
   @override
+  String get event_prayer_sort_mine => 'My prayers';
+
+  @override
+  String get event_prayer_section_active => 'Active';
+
+  @override
+  String get event_prayer_section_accomplished => 'Accomplished';
+
+  @override
+  String get event_prayer_mark_accomplished => 'Accomplished';
+
+  @override
+  String get event_prayer_mark_active => 'Mark as active';
+
+  @override
+  String get event_prayer_mine_empty_title => 'No prayer requests from you yet';
+
+  @override
+  String get event_prayer_mine_empty_body =>
+      'Requests you post here will appear in this list';
+
+  @override
+  String get event_prayer_update_failed =>
+      'The prayer request couldn\'t be updated';
+
+  @override
   String get recitation_live_sync => 'सिंक';
 
   @override

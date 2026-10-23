@@ -264,7 +264,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     switch (event) {
       case ChatLiveMessageCreated(message: final json):
         if (json.isEmpty) return;
-        _notifier.appendLive(ChatMessageDTO.fromJson(json));
+        _notifier.appendLive(
+          ChatMessageDTO.fromJson(json),
+          viewerId: _viewerId,
+        );
         unawaited(_markRoomRead());
       case ChatLiveMessageUpdated(message: final json):
         if (json.isEmpty) return;
@@ -328,7 +331,12 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   }
 
   Future<void> _openSort(PrayerRequestsFilter current) async {
-    final picked = await PrayerSortSheet.show(context, current: current);
+    // The my-requests endpoint filters by event, not by space.
+    final picked = await PrayerSortSheet.show(
+      context,
+      current: current,
+      showMine: widget.scope.isEvent,
+    );
     if (!mounted || picked == null) return;
     await _applyFilter(picked);
   }
@@ -358,6 +366,24 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     result.fold(
       (_) => messenger.showSnackBar(
         SnackBar(content: Text(l10n.event_prayer_delete_failed)),
+      ),
+      (_) {},
+    );
+  }
+
+  /// Flips one of the viewer's own requests between active and
+  /// accomplished. The card moving section already shows it landed.
+  Future<void> _toggleCompleted(ChatMessageDTO request) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await _notifier.setCompleted(
+      request.id,
+      isCompleted: !request.isCompleted,
+    );
+    if (!mounted) return;
+    result.fold(
+      (_) => messenger.showSnackBar(
+        SnackBar(content: Text(l10n.event_prayer_update_failed)),
       ),
       (_) {},
     );
@@ -511,6 +537,12 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     } else if (!state.hasLoaded ||
         (state.isLoading && state.requests.isEmpty)) {
       placeholder = const Center(child: CircularProgressIndicator());
+    } else if (state.requests.isEmpty && state.filter.mine) {
+      placeholder = _Notice(
+        text: context.l10n.event_prayer_mine_empty_title,
+        detail: context.l10n.event_prayer_mine_empty_body,
+        color: mutedColor,
+      );
     } else if (state.requests.isEmpty && state.filter.byIntention) {
       placeholder = _Notice(
         text: context.l10n.event_prayer_filter_empty_title,
@@ -544,7 +576,8 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final viewerId = _viewerId;
     final viewerEmail = user?.email;
     final canEdit = state.roomStatus == PrayerRoomStatus.ready;
-    final itemCount = state.requests.length + (state.isLoadingMore ? 1 : 0);
+    final rows = _rows(context, state);
+    final itemCount = rows.length + (state.isLoadingMore ? 1 : 0);
 
     return ListView.builder(
       controller: scrollController,
@@ -552,19 +585,26 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index >= state.requests.length) {
+        if (index >= rows.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(child: CircularProgressIndicator()),
           );
         }
-        final request = state.requests[index];
-        final isSelf = isSelfChatMessage(
-          senderId: request.senderId,
-          senderEmail: request.senderEmail,
-          currentUserId: viewerId,
-          currentUserEmail: viewerEmail,
-        );
+        final row = rows[index];
+        if (row is _SectionRow) {
+          return _SectionHeader(label: row.label, isDark: isDark);
+        }
+        final request = (row as _RequestRow).request;
+        // My-requests rows name no sender; they are all the viewer's.
+        final isSelf =
+            state.filter.mine ||
+            isSelfChatMessage(
+              senderId: request.senderId,
+              senderEmail: request.senderEmail,
+              currentUserId: viewerId,
+              currentUserEmail: viewerEmail,
+            );
         final displayName =
             chatSenderDisplayName(
               messageName: request.senderName,
@@ -599,9 +639,33 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
               isSelf && canEdit
                   ? () => unawaited(_deleteRequest(request))
                   : null,
+          onToggleCompleted:
+              isSelf && canEdit
+                  ? () => unawaited(_toggleCompleted(request))
+                  : null,
         );
       },
     );
+  }
+
+  /// The list as rendered: under *My prayers* the active requests, then
+  /// the accomplished ones, each under a heading; otherwise as listed.
+  List<_Row> _rows(BuildContext context, PrayerRequestsState state) {
+    if (!state.filter.mine) {
+      return [for (final request in state.requests) _RequestRow(request)];
+    }
+    final active = state.requests.where((request) => !request.isCompleted);
+    final accomplished = state.requests.where((request) => request.isCompleted);
+    return [
+      if (active.isNotEmpty) ...[
+        _SectionRow(context.l10n.event_prayer_section_active),
+        for (final request in active) _RequestRow(request),
+      ],
+      if (accomplished.isNotEmpty) ...[
+        _SectionRow(context.l10n.event_prayer_section_accomplished),
+        for (final request in accomplished) _RequestRow(request),
+      ],
+    ];
   }
 
   Widget _buildTitleBar(BuildContext context, bool isDark) {
@@ -653,6 +717,43 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+}
+
+sealed class _Row {}
+
+class _SectionRow extends _Row {
+  _SectionRow(this.label);
+
+  final String label;
+}
+
+class _RequestRow extends _Row {
+  _RequestRow(this.request);
+
+  final ChatMessageDTO request;
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.label, required this.isDark});
+
+  final String label;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+      child: Text(
+        label,
+        strutStyle: context.tibetanStrutStyle(13, compact: true),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
         ),
       ),
     );

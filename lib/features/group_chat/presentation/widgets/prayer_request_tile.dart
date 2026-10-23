@@ -18,7 +18,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_
 import 'package:intl/intl.dart';
 
 /// One prayer request as a card tinted by its intention: who asked, what
-/// for, how many are praying, and a pray button for everyone but the requester.
+/// for, how many are praying, and a pray button for everyone but the
+/// requester. An accomplished one shows a double check instead.
 class PrayerRequestTile extends StatelessWidget {
   const PrayerRequestTile({
     super.key,
@@ -30,6 +31,7 @@ class PrayerRequestTile extends StatelessWidget {
     this.onShowSupporters,
     this.onEdit,
     this.onDelete,
+    this.onToggleCompleted,
     this.now,
   });
 
@@ -49,9 +51,12 @@ class PrayerRequestTile extends StatelessWidget {
   /// Only the requester may see who is praying; ignored on others' cards.
   final VoidCallback? onShowSupporters;
 
-  /// Either one shows the overflow menu with the matching entry.
+  /// Any of these shows the overflow menu with the matching entry.
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+
+  /// Marks the request accomplished, or active again when it already is.
+  final VoidCallback? onToggleCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +125,9 @@ class PrayerRequestTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (onEdit != null || onDelete != null)
+                if (onEdit != null ||
+                    onDelete != null ||
+                    onToggleCompleted != null)
                   ConnectActionMenu(
                     icon: AppAssets.dotsThree,
                     iconColor:
@@ -129,6 +136,17 @@ class PrayerRequestTile extends StatelessWidget {
                             : AppColors.textSecondary,
                     onEdit: onEdit,
                     onDelete: onDelete,
+                    extras: [
+                      if (onToggleCompleted != null)
+                        ConnectMenuEntry(
+                          icon: AppAssets.checks,
+                          label:
+                              request.isCompleted
+                                  ? context.l10n.event_prayer_mark_active
+                                  : context.l10n.event_prayer_mark_accomplished,
+                          onTap: onToggleCompleted!,
+                        ),
+                    ],
                     style: IconButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(32, 32),
@@ -211,7 +229,13 @@ class PrayerRequestTile extends StatelessWidget {
         Expanded(
           child: Align(alignment: Alignment.centerLeft, child: supporters),
         ),
-        if (!isOwn) ...[
+        if (request.isCompleted) ...[
+          const SizedBox(width: 8),
+          Semantics(
+            label: context.l10n.event_prayer_section_accomplished,
+            child: Icon(AppAssets.checks, size: 20, color: muted),
+          ),
+        ] else if (!isOwn) ...[
           const SizedBox(width: 8),
           _PrayButton(
             prayedByMe: request.prayedByMe,

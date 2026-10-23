@@ -6280,6 +6280,62 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get event_prayer_sort_mine => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_mine',
+    () => _fallback.event_prayer_sort_mine,
+  );
+
+  @override
+  String get event_prayer_section_active => TolgeeBridge.get(
+    localeName,
+    'event_prayer_section_active',
+    () => _fallback.event_prayer_section_active,
+  );
+
+  @override
+  String get event_prayer_section_accomplished => TolgeeBridge.get(
+    localeName,
+    'event_prayer_section_accomplished',
+    () => _fallback.event_prayer_section_accomplished,
+  );
+
+  @override
+  String get event_prayer_mark_accomplished => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mark_accomplished',
+    () => _fallback.event_prayer_mark_accomplished,
+  );
+
+  @override
+  String get event_prayer_mark_active => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mark_active',
+    () => _fallback.event_prayer_mark_active,
+  );
+
+  @override
+  String get event_prayer_mine_empty_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mine_empty_title',
+    () => _fallback.event_prayer_mine_empty_title,
+  );
+
+  @override
+  String get event_prayer_mine_empty_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mine_empty_body',
+    () => _fallback.event_prayer_mine_empty_body,
+  );
+
+  @override
+  String get event_prayer_update_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_update_failed',
+    () => _fallback.event_prayer_update_failed,
+  );
+
+  @override
   String get recitation_live_sync => TolgeeBridge.get(
     localeName,
     'recitation_live_sync',

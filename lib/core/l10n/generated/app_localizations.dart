@@ -5600,6 +5600,54 @@ abstract class AppLocalizations {
   /// **'Translated'**
   String get event_prayer_translated;
 
+  /// No description provided for @event_prayer_sort_mine.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayers'**
+  String get event_prayer_sort_mine;
+
+  /// No description provided for @event_prayer_section_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get event_prayer_section_active;
+
+  /// No description provided for @event_prayer_section_accomplished.
+  ///
+  /// In en, this message translates to:
+  /// **'Accomplished'**
+  String get event_prayer_section_accomplished;
+
+  /// No description provided for @event_prayer_mark_accomplished.
+  ///
+  /// In en, this message translates to:
+  /// **'Accomplished'**
+  String get event_prayer_mark_accomplished;
+
+  /// No description provided for @event_prayer_mark_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as active'**
+  String get event_prayer_mark_active;
+
+  /// No description provided for @event_prayer_mine_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests from you yet'**
+  String get event_prayer_mine_empty_title;
+
+  /// No description provided for @event_prayer_mine_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you post here will appear in this list'**
+  String get event_prayer_mine_empty_body;
+
+  /// No description provided for @event_prayer_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The prayer request couldn\'t be updated'**
+  String get event_prayer_update_failed;
+
   /// No description provided for @recitation_live_sync.
   ///
   /// In en, this message translates to:

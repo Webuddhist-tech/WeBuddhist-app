@@ -188,6 +188,21 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Right(unit);
 
   @override
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    bool? isCompleted,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<Either<Failure, ChatMessageDTO?>> updateMessage(
     String roomId, {
     required String messageId,
