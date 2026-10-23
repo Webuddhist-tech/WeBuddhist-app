@@ -2168,4 +2168,80 @@ void main() {
       expect(notifier.state.supporters.length, 1);
     });
   });
+
+  group('PrayerRequestsState.othersHaveActiveRequest', () {
+    final mine = _prayer('p1');
+    const theirs = ChatMessageDTO(
+      id: 'p2',
+      roomId: 'room-1',
+      senderId: 'u2',
+      senderEmail: 'u2@example.com',
+      body: 'pray p2',
+      createdAt: '2026-09-11T10:05:00+00:00',
+      messageType: ChatMessageDTO.typePrayer,
+    );
+    PrayerRequestsState loaded(
+      List<ChatMessageDTO> requests, {
+      PrayerRequestsFilter filter = PrayerRequestsFilter.initial,
+      bool hasMore = false,
+    }) => PrayerRequestsState(
+      roomStatus: PrayerRoomStatus.ready,
+      requests: requests,
+      filter: filter,
+      hasLoaded: true,
+      hasMore: hasMore,
+    );
+
+    test('false for an empty room', () {
+      expect(loaded(const []).othersHaveActiveRequest(viewerId: 'u1'), false);
+    });
+
+    test('false when every request is the viewer\'s', () {
+      expect(loaded([mine]).othersHaveActiveRequest(viewerId: 'u1'), false);
+    });
+
+    test('matches the viewer by email when the id is unknown', () {
+      expect(
+        loaded([mine]).othersHaveActiveRequest(viewerEmail: 'U1@example.com'),
+        false,
+      );
+    });
+
+    test('false when the others\' requests are all accomplished', () {
+      final done = theirs.copyWith(isCompleted: true);
+      expect(
+        loaded([mine, done]).othersHaveActiveRequest(viewerId: 'u1'),
+        false,
+      );
+    });
+
+    test('true once someone else has an active request', () {
+      expect(
+        loaded([mine, theirs]).othersHaveActiveRequest(viewerId: 'u1'),
+        true,
+      );
+    });
+
+    test('null while pages are left to load', () {
+      expect(
+        loaded([mine], hasMore: true).othersHaveActiveRequest(viewerId: 'u1'),
+        isNull,
+      );
+    });
+
+    test('null for a filtered list', () {
+      final byMine = loaded(
+        [mine],
+        filter: PrayerRequestsFilter.initial.withMine(),
+      );
+      expect(byMine.othersHaveActiveRequest(viewerId: 'u1'), isNull);
+    });
+
+    test('null before the first page lands', () {
+      expect(
+        const PrayerRequestsState().othersHaveActiveRequest(viewerId: 'u1'),
+        isNull,
+      );
+    });
+  });
 }

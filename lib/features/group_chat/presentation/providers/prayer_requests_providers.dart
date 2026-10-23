@@ -15,6 +15,7 @@ import 'package:flutter_pecha/features/group_chat/domain/prayer_translation_lang
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -277,6 +278,22 @@ class PrayerRequestsState extends Equatable {
       hasMore: hasMore ?? this.hasMore,
       skip: skip ?? this.skip,
       error: clearError ? null : error ?? this.error,
+    );
+  }
+
+  /// Whether anyone else has an active request; null when this list can't tell.
+  bool? othersHaveActiveRequest({String? viewerId, String? viewerEmail}) {
+    if (!hasLoaded || isLoading || hasMore || error != null) return null;
+    if (filter.mine || filter.byIntention) return null;
+    return requests.any(
+      (request) =>
+          !request.isCompleted &&
+          !isSelfChatMessage(
+            senderId: request.senderId,
+            senderEmail: request.senderEmail,
+            currentUserId: viewerId,
+            currentUserEmail: viewerEmail,
+          ),
     );
   }
 

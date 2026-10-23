@@ -86,6 +86,9 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   bool _composing = false;
   String? _roomId;
 
+  /// Whether someone else has an active request, as the full list last showed.
+  bool _othersPosted = true;
+
   static const double _loadMoreThreshold = 200;
 
   PrayerRequestsNotifier get _notifier =>
@@ -331,6 +334,16 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     }
   }
 
+  /// Filtered views cannot tell, so they keep the full list's last answer.
+  bool _canFindPrayer(PrayerRequestsState state) {
+    return _othersPosted =
+        state.othersHaveActiveRequest(
+          viewerId: _viewerId,
+          viewerEmail: _providers.read(userProvider).user?.email,
+        ) ??
+        _othersPosted;
+  }
+
   /// Opens the "A prayer for you" overlay; its card leaves the notifier's
   /// spotlight once it closes.
   Future<void> _findPrayer() async {
@@ -502,7 +515,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
                           () => unawaited(
                             _applyFilter(state.filter.withoutIntention()),
                           ),
-                      onFindPrayer: () => unawaited(_findPrayer()),
+                      onFindPrayer:
+                          _canFindPrayer(state)
+                              ? () => unawaited(_findPrayer())
+                              : null,
                     ),
                   ),
                 Expanded(
