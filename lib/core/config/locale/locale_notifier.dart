@@ -57,7 +57,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
       );
       if (_userSelected) return;
       if (locale != null) {
-        state = Locale(locale);
+        state = L10n.localeFor(locale);
       }
     } catch (e) {
       // If loading fails, keep the default locale
@@ -72,17 +72,19 @@ class LocaleNotifier extends StateNotifier<Locale> {
 
   Future<void> setLocale(Locale locale) async {
     final isSupported = L10n.all.any(
-      (l) => l.languageCode == locale.languageCode,
+      (l) =>
+          l.languageCode == locale.languageCode &&
+          l.scriptCode == locale.scriptCode,
     );
     if (!isSupported) {
-      throw Exception("Locale ${locale.languageCode} is not supported");
+      throw Exception("Locale ${locale.toLanguageTag()} is not supported");
     }
 
     _userSelected = true;
     state = locale;
     await _localStorageService.set(
       StorageKeys.preferredLanguage,
-      locale.languageCode,
+      locale.toLanguageTag(),
     );
   }
 
@@ -93,12 +95,12 @@ class LocaleNotifier extends StateNotifier<Locale> {
   /// half of the system-vs-content split — it never throws for unknown codes.
   Future<void> applyUiLocaleForContent(String code) async {
     final uiCode = AppConfig.resolveContentLanguage(code);
-    final locale = Locale(uiCode);
+    final locale = L10n.localeFor(uiCode);
     _userSelected = true;
     state = locale;
     await _localStorageService.set(
       StorageKeys.preferredLanguage,
-      locale.languageCode,
+      locale.toLanguageTag(),
     );
   }
 

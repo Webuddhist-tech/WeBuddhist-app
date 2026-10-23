@@ -77,8 +77,13 @@ class AppLanguage {
     ),
     AppLanguage(
       code: AppConfig.chineseLanguageCode,
-      name: 'Chinese',
+      name: 'Traditional Chinese',
       nativeName: '中文',
+    ),
+    AppLanguage(
+      code: AppConfig.simplifiedChineseLanguageCode,
+      name: 'Simplified Chinese',
+      nativeName: '简体中文',
     ),
     AppLanguage(
       code: AppConfig.hindiLanguageCode,
