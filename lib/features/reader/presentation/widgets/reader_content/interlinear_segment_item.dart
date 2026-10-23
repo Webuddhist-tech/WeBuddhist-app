@@ -110,8 +110,20 @@ class InterlinearSegmentItem extends ConsumerWidget {
 
     // The translation reads as supporting text beneath the original. Without
     // the original it is the text, so it takes the text's colour.
-    final Color? secondaryColor =
+    final Color secondaryColor =
         layers.original ? style.palette.translation : style.palette.text;
+    final originalMetrics = style.type.line(
+      layers.translation
+          ? ReaderTextRole.originalWithTranslation
+          : ReaderTextRole.originalAlone,
+      ReaderScript.of(primary.html, language: primary.fontLanguage),
+    );
+    final translationMetrics = style.type.line(
+      layers.original
+          ? ReaderTextRole.translationUnder
+          : ReaderTextRole.translationAlone,
+      ReaderScript.of(secondary.text, language: secondarySlot.languageCode),
+    );
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -152,15 +164,16 @@ class InterlinearSegmentItem extends ConsumerWidget {
                         SegmentHtmlWidget(
                           htmlContent: primary.html,
                           segmentIndex: segment.segmentNumber,
-                          fontSize: style.type.originalSize,
-                          lineHeight: style.type.verseHeight(
-                            primary.fontLanguage,
-                          ),
+                          fontSize: originalMetrics.fontSize,
+                          lineHeight: originalMetrics.height,
                           language: primary.fontLanguage,
                           isSelected: isSelected,
                           textColor: style.palette.text,
-                          fontStyle: typeStyle.fontStyle,
-                          fontWeight: typeStyle.fontWeight,
+                          fontStyle:
+                              typeStyle.fontStyle ?? originalMetrics.fontStyle,
+                          fontWeight:
+                              typeStyle.fontWeight ??
+                              originalMetrics.fontWeight,
                         ),
                         // Original and its translation belong together; the
                         // larger gap goes between verses, below.
@@ -169,23 +182,27 @@ class InterlinearSegmentItem extends ConsumerWidget {
                       if (layers.translation && secondary.isPlaceholder)
                         _SecondaryPlaceholder(
                           text: secondary.text,
-                          language: secondarySlot.languageCode,
-                          type: style.type,
+                          fontFamily: style.type.family(
+                            secondarySlot.languageCode,
+                          ),
+                          metrics: translationMetrics,
                           color: secondaryColor,
                         )
                       else if (layers.translation)
                         SegmentHtmlWidget(
                           htmlContent: secondary.text,
                           segmentIndex: segment.segmentNumber,
-                          fontSize: style.type.translationSize,
-                          lineHeight: style.type.verseHeight(
-                            secondarySlot.languageCode,
-                          ),
+                          fontSize: translationMetrics.fontSize,
+                          lineHeight: translationMetrics.height,
                           language: secondarySlot.languageCode,
                           isSelected: isSelected,
                           textColor: secondaryColor,
-                          fontStyle: typeStyle.fontStyle,
-                          fontWeight: typeStyle.fontWeight,
+                          fontStyle:
+                              typeStyle.fontStyle ??
+                              translationMetrics.fontStyle,
+                          fontWeight:
+                              typeStyle.fontWeight ??
+                              translationMetrics.fontWeight,
                         ),
                       const SizedBox(height: 16),
                     ],
@@ -239,14 +256,16 @@ class _SecondaryResolved {
 class _SecondaryPlaceholder extends StatelessWidget {
   const _SecondaryPlaceholder({
     required this.text,
-    required this.language,
-    required this.type,
+    required this.fontFamily,
+    required this.metrics,
     required this.color,
   });
 
   final String text;
-  final String language;
-  final ReaderTypography type;
+  final String? fontFamily;
+
+  /// The translation line's size and line height, which this stands in for.
+  final ReaderTextMetrics metrics;
   final Color? color;
 
   @override
@@ -257,12 +276,12 @@ class _SecondaryPlaceholder extends StatelessWidget {
         text,
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: type.translationSize,
-          fontFamily: type.family(language),
+          fontSize: metrics.fontSize,
+          fontFamily: fontFamily,
           fontWeight: FontWeight.w400,
           fontStyle: FontStyle.italic,
           color: color,
-          height: type.placeholderHeight,
+          height: metrics.height,
         ),
       ),
     );

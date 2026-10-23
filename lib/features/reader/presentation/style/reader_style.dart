@@ -24,8 +24,6 @@ class ReaderStyle {
   static ThemeData theme(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final background = ReaderPalette.resolve(theme, ref).background;
-    if (background == null) return theme;
-
     return theme.copyWith(
       scaffoldBackgroundColor: background,
       appBarTheme: theme.appBarTheme.copyWith(backgroundColor: background),

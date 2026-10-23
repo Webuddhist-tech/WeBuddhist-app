@@ -195,7 +195,7 @@ class _SectionRow extends ConsumerWidget {
                     ?.copyWith(
                       fontFamily: style.type.family(language),
                       fontWeight: isCurrent ? FontWeight.w700 : null,
-                      height: style.type.headingHeight(language),
+                      height: style.type.listLineHeight(language),
                     ),
               ),
             ),

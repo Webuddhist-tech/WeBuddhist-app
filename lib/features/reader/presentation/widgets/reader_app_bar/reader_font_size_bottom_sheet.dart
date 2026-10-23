@@ -1,44 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_text_size.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Bottom sheet for adjusting font size with increase/decrease buttons
+/// Bottom sheet for adjusting font size with increase/decrease buttons.
+/// They move the original and translation lines' size steps together.
 class ReaderFontSizeBottomSheet extends ConsumerWidget {
   const ReaderFontSizeBottomSheet({super.key});
 
-  // Font size steps: 12, 14, 18, 22, 28, 36, 44
-  // Default is step 3 (index 2) = 18
-  static const List<double> fontSizeSteps = [12, 14, 18, 22, 28, 36, 44];
-  static const int defaultStepIndex = 2; // Step 3 = 18
-  static const double defaultFontSize = 18.0;
+  /// The smaller A is off when no line can get smaller.
+  static bool canDecrease(ReaderTextSize size) =>
+      size.originalStep > ReaderTextSize.minStep ||
+      size.translationStep > ReaderTextSize.minStep;
 
-  int _getCurrentStepIndex(double currentFontSize) {
-    for (int i = 0; i < fontSizeSteps.length; i++) {
-      if ((currentFontSize - fontSizeSteps[i]).abs() < 0.5) {
-        return i;
-      }
-    }
-    // Find closest step
-    int closestIndex = defaultStepIndex;
-    double minDiff = double.infinity;
-    for (int i = 0; i < fontSizeSteps.length; i++) {
-      final diff = (currentFontSize - fontSizeSteps[i]).abs();
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIndex = i;
-      }
-    }
-    return closestIndex;
-  }
+  /// The larger A is off when no line can get larger.
+  static bool canIncrease(ReaderTextSize size) =>
+      size.originalStep < ReaderTextSize.maxStep ||
+      size.translationStep < ReaderTextSize.maxStep;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fontSize = ref.watch(fontSizeProvider);
-    final currentStepIndex = _getCurrentStepIndex(fontSize);
-
-    final canDecrease = currentStepIndex > 0;
-    final canIncrease = currentStepIndex < fontSizeSteps.length - 1;
+    final textSize = ref.watch(readerTextSizeProvider);
+    final canDecrease = ReaderFontSizeBottomSheet.canDecrease(textSize);
+    final canIncrease = ReaderFontSizeBottomSheet.canIncrease(textSize);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -72,13 +57,9 @@ class ReaderFontSizeBottomSheet extends ConsumerWidget {
                     isEnabled: canDecrease,
                     onTap:
                         canDecrease
-                            ? () {
-                              final newFontSize =
-                                  fontSizeSteps[currentStepIndex - 1];
-                              ref
-                                  .read(fontSizeProvider.notifier)
-                                  .setFontSize(newFontSize);
-                            }
+                            ? () => ref
+                                .read(readerTextSizeProvider.notifier)
+                                .stepBoth(-1)
                             : null,
                   ),
                 ),
@@ -91,13 +72,9 @@ class ReaderFontSizeBottomSheet extends ConsumerWidget {
                     isEnabled: canIncrease,
                     onTap:
                         canIncrease
-                            ? () {
-                              final newFontSize =
-                                  fontSizeSteps[currentStepIndex + 1];
-                              ref
-                                  .read(fontSizeProvider.notifier)
-                                  .setFontSize(newFontSize);
-                            }
+                            ? () => ref
+                                .read(readerTextSizeProvider.notifier)
+                                .stepBoth(1)
                             : null,
                   ),
                 ),
