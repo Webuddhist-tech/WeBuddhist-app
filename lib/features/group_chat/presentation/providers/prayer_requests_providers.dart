@@ -827,8 +827,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   /// Takes a request out of the list, or out of the ones counted but not
   /// listed. [inRoom] says it is gone from the room, not only from the
-  /// filter in view.
+  /// filter in view, so it leaves the spotlight too, which may be the only
+  /// place a picked request is shown.
   void _dropRow(String messageId, {required bool inRoom}) {
+    if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
     final unlisted = _unlisted.containsKey(messageId);
     final held = _unlisted.remove(messageId);
     final listed = state.requests.any((request) => request.id == messageId);
@@ -847,7 +849,6 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       state = state.copyWith(total: _clampCount(state.total - 1));
     }
     if (inRoom) _shiftCount(-1, inList: false);
-    if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
   }
 
   /// Rows held for the end once paging is over. None of the pages brought

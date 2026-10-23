@@ -2037,6 +2037,22 @@ void main() {
       expect(notifier.state.spotlight, isNull);
     });
 
+    test('deleting a request shown only in the spotlight clears it', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')])
+        ..randomResponse = _prayer('far');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.pickRandom();
+      expect(notifier.state.spotlight?.id, 'far');
+
+      notifier.applyDeletion('far');
+      expect(notifier.state.spotlight, isNull);
+      expect(notifier.state.requests.map((r) => r.id), ['a']);
+      expect(notifier.state.total, 1);
+    });
+
     test('applyEdit carries a completion made on another device', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a')]);
       container = buildContainer();
