@@ -178,13 +178,28 @@ class SeriesRepository implements SeriesRepositoryInterface {
       return const Left(AuthenticationFailure('Not authenticated'));
     }
 
+    final wasEnrolled =
+        local.readEnrollments(userId)?.contains(seriesId) ?? false;
+    final isGroupEnrollment = groupId != null && groupId.isNotEmpty;
+
     await local.enqueueEnrollment(userId, seriesId);
     try {
       await remote.enrollInSeries(seriesId, groupId: groupId);
       await local.removePendingEnrollment(userId, seriesId);
       return const Right(unit);
     } catch (e) {
-      return const Right(unit);
+      // Offline: keep it queued and replay it on reconnect. Only personal
+      // enrollments can wait — the queue does not keep the group, so a
+      // replayed group enrollment would land as a personal one.
+      if (e is NetworkException && !isGroupEnrollment) {
+        return const Right(unit);
+      }
+      await local.discardEnrollment(
+        userId,
+        seriesId,
+        keepEnrolled: wasEnrolled,
+      );
+      return Left(_toFailure(e, 'Failed to enroll in series'));
     }
   }
 
@@ -238,8 +253,19 @@ class SeriesRepository implements SeriesRepositoryInterface {
       try {
         await remote.enrollInSeries(seriesId);
         await local.removePendingEnrollment(userId, seriesId);
-      } catch (_) {
+      } on NotFoundException {
+        // The series is gone; this enrollment can never succeed.
+        await local.discardEnrollment(userId, seriesId);
+      } on NetworkException {
+        return; // Still offline: the rest would fail too. Retry later.
+      } on AuthenticationException {
+        return; // Session problem, not this series. Retry after re-auth.
+      } on RateLimitException {
         return;
+      } catch (_) {
+        // Rejected by the server: keep it for a later retry, but don't let
+        // it block the enrollments queued after it.
+        continue;
       }
     }
   }

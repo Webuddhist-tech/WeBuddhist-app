@@ -174,6 +174,21 @@ class HomeLocalDatasource {
     return _writeList(pendingEnrollmentsKey(userId), pending.toList()..sort());
   }
 
+  /// Undoes [enqueueEnrollment] when the server rejected the enrollment, so
+  /// the Enroll button comes back. Leaves [seriesId] in the enrollments when
+  /// [keepEnrolled] (the user was already enrolled before this attempt).
+  Future<void> discardEnrollment(
+    String userId,
+    String seriesId, {
+    bool keepEnrolled = false,
+  }) async {
+    await removePendingEnrollment(userId, seriesId);
+    if (keepEnrolled) return;
+    final enrollments = readEnrollments(userId);
+    if (enrollments == null || !enrollments.contains(seriesId)) return;
+    await saveEnrollments(userId, {...enrollments}..remove(seriesId));
+  }
+
   T? _readObject<T>(String key, T Function(Map<String, dynamic>) fromJson) {
     final raw = _box.get(key);
     if (raw == null) return null;
