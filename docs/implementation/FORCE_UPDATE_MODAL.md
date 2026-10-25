@@ -4,7 +4,7 @@
 
 Implements an app-wide, non-dismissible forced-update modal on Android and iOS. When the `upgrader` package detects that a newer version is available on the Play Store / App Store, a blocking dialog is shown over every route and cannot be dismissed — the user must tap "Update now" to be taken to the store. It stays up until the installed version matches the store version. The check only runs in release builds.
 
-The soft, dismissible update banner that previously appeared only on the home screen has been removed; the force modal supersedes it entirely.
+The soft, dismissible update banner that previously appeared only on the home screen is no longer mounted; the force modal supersedes it. Its code (`lib/core/services/upgrade/update_banner.dart` and `updateBannerShownProvider` in `upgrade_provider.dart`) is still in the tree but unreferenced — safe to delete.
 
 ---
 
@@ -82,7 +82,7 @@ The gate returns the unwrapped child on non-Android/iOS platforms (e.g. macOS) b
 
 ## Localization
 
-Three keys added to all ARB files (`app_en.arb`, `app_bo.arb`, `app_zh.arb`):
+Three keys exist in every ARB file under `lib/core/l10n/` (`app_en`, `app_bo`, `app_zh`, `app_hi`, `app_mn`, `app_ne`); en/bo/zh shown:
 
 | Key | English | Tibetan | Chinese |
 |-----|---------|---------|---------|

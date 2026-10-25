@@ -1,5 +1,15 @@
 # Token Refresh Flow - Technical Deep Dive
 
+> ⚠️ **OBSOLETE (Oct 2026).** Everything below describes a removed
+> implementation: an `http`-based `ApiClient`, the **ID token** as the API
+> bearer, and `getValidIdToken()` / `refreshIdToken()` /
+> `_ongoingIdTokenRefresh`. None of these exist any more. The current design
+> (Dio `AuthInterceptor` + `RetryInterceptor`, access-token bearer, single-flight
+> `AuthService._validCredentials()` over the Auth0 credentials manager) is
+> documented in [`AUTH_IMPLEMENTATION.md`](AUTH_IMPLEMENTATION.md) — see
+> "Token Refresh Flow" and "Error Handling Strategy" there. Kept only for
+> history; candidate for deletion.
+
 ## Overview
 
 This document provides a detailed technical walkthrough of the token refresh mechanism, including timing diagrams, edge cases, and race condition handling.

@@ -12,7 +12,9 @@ Social hub tab: unified feed, group events, and group discovery from followed co
 - **Feed** — merged posts, events, practices from followed groups; posts carry likes and comments
 - **Events** — group events with attendance
 - **Groups** — discover, my groups, follow/unfollow
-- Group search, post detail with comment thread
+- Group search (`GroupSearchScreen`), My Groups list, followed-groups row above the tabs
+- Post detail (drawer from a card, or `/home/posts/:postId` route from a push) with comment thread
+- App-bar **Chats** action with unread dot (members only) — opens `group_chat`'s Chats screen
 - Optimistic pending join/unjoin while API catches up
 
 ## Architecture
@@ -31,20 +33,24 @@ connect/
 
 | Area | Files |
 |------|-------|
-| Tab host | `presentation/screens/connect_screen.dart` |
+| Tab host | `presentation/screens/connect_screen.dart` (tabs `feed` / `events` / `groups`, `_ChatsAction`) |
 | Feed | `connect_unified_feed_providers.dart`, `connect_feed_merge_utils.dart` |
 | Post likes/comments | `connect_post_like_actions.dart`, `connect_post_comments_providers.dart` |
 | Followed practices list | `connect_practices_providers.dart` — no tab of its own; backs the group post composer's in-app content sheet |
-| Groups | `connect_providers.dart`, `discover_groups_screen.dart` |
+| Events | `connect_events_providers.dart` (`myConnectEventsProvider` family by format, `discoverConnectEventsProvider`) |
+| Groups | `connect_providers.dart`, `discover_groups_screen.dart`, `my_groups_screen.dart` |
+| Search | `group_search_provider.dart`, `group_search_screen.dart` |
+| Post detail | `connect_post_detail_screen.dart` (`ConnectPostDetailPanel`), `connect_post_detail_drawer.dart` |
 | Optimistic UI | `pendingJoinedGroupsProvider`, `pendingUnjoinedGroupIdsProvider` |
 | Barrel | `connect.dart` (screen only) |
 
 ## State management
 
-- `StateNotifierProvider.autoDispose` with explicit state classes per tab
+- `StateNotifierProvider.autoDispose` with explicit state classes per tab (`myUnifiedConnectFeedProvider` / `discoverUnifiedConnectFeedProvider`, events, practices, `discoverGroupsProvider`, `groupSearchProvider`, `connectPostCommentsProvider` family)
 - `FutureProvider`: `myGroupsProvider`
 - `StateProvider`: pending join/unjoin optimistic state
-- `ConnectLazySegmentMixin` — lazy tab loading; pass `isActive` to defer fetch
+- `ConnectLazyMyDiscoverTabMixin` (in `connect_lazy_segment_mixin.dart`) — lazy My/Discover segment loading; pass `isActive` to defer fetch
+- `ConnectMyDiscoverTabGate` — waits for the first My fetch, then opens on Discover if My is empty
 
 ## Data sources
 
@@ -54,6 +60,7 @@ connect/
 ## Cross-feature dependencies
 
 - **auth** — guest gating, login prompts
+- **group_chat** — `chatRoomsProvider` / `chatRoomsPushRefreshProvider` drive the Chats unread dot
 - **group_profile** — entities (`GroupProfile`, `GroupEvent`, `GroupPractice`), repository, follow invalidation
 - **core** — `contentLanguageProvider`, theme
 
@@ -61,7 +68,8 @@ connect/
 
 - **`hasLoaded`** on paginated states — distinguish empty vs not-yet-fetched
 - **`ensureLoaded()`** lazy init for discover groups
-- Unified feed merges via `ConnectFeedMergeUtils`
+- Unified feed merges via `ConnectFeedMergeUtils` (dedupe by key, newest first); feed and practices page independently
+- Post detail has no single-post fetch: it renders `initialPost`, so a route opened without one (push deep link) shows a placeholder post
 - Follow/unfollow must invalidate connect + group_profile providers
 
 ---
@@ -72,7 +80,7 @@ connect/
 
 1. **Split providers by tab/concern** — don't create one mega-provider file.
 2. **Preserve optimistic pending groups** — merge with API via existing utils.
-3. **Lazy load tabs** — use `isActive` / `ConnectLazySegmentMixin`.
+3. **Lazy load tabs** — use `isActive` / `ConnectLazyMyDiscoverTabMixin`.
 4. **Reuse group_profile entities** — don't duplicate group models here.
 
 ### Do
@@ -95,7 +103,7 @@ connect/
 | New feed card type | entity/model → datasource → merge utils → tab widget |
 | Comment thread | `connect_post_comments_providers.dart`, detail screen |
 | Like behavior | `connect_post_like_actions.dart`, `connect_like_utils.dart` |
-| New sub-tab | screen segment + provider file + `ConnectScreen` tab enum |
+| New sub-tab | provider file + tab widget + `_tabNames` / `TabController` length in `ConnectScreen` |
 
 ### Testing
 

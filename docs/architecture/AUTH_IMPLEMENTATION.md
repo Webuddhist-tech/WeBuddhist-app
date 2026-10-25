@@ -2,164 +2,133 @@
 
 ## Overview
 
-Flutter Pecha uses Auth0 for authentication with **ID token-based authorization**. This document describes the architecture, design decisions, and implementation details.
+WeBuddhist uses Auth0 (Universal Login via `auth0_flutter`) for sign-in and
+sends the Auth0 **access token** (a JWT minted for the API `audience`) as the
+bearer to the backend. The ID token is used only client-side, for identity
+(the `sub` claim → `currentUserId`).
+
+> Rewritten Oct 2026. The previous version described an `http`-based
+> `ApiClient` and ID-token bearer (`getValidIdToken` / `refreshIdToken`); that
+> code no longer exists.
 
 ---
 
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Flutter Application                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌────────────┐  ┌──────────────┐  ┌──────────────────┐   │
-│  │    UI      │  │ AuthNotifier │  │   ApiClient      │   │
-│  │  Widgets   │──│  (Riverpod)  │──│ (HTTP Client)    │   │
-│  └────────────┘  └──────────────┘  └──────────────────┘   │
-│                         │                    │              │
-│                         │                    │              │
-│                  ┌──────────────┐            │              │
-│                  │ AuthService  │────────────┘              │
-│                  │  (Singleton) │                           │
-│                  └──────────────┘                           │
-│                         │                                    │
-└─────────────────────────┼────────────────────────────────────┘
-                          │
-                          ▼
-                 ┌─────────────────┐
-                 │   Auth0 SDK     │
-                 │ (Credentials    │
-                 │   Manager)      │
-                 └─────────────────┘
-                          │
-                          ▼
-              ┌──────────────────────┐
-              │   Platform Storage   │
-              │  Keychain/Keystore   │
-              └──────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         Flutter Application                       │
+│                                                                    │
+│  UI (LoginPage, LoginDrawer) ──► AuthNotifier (authProvider)       │
+│                                   │  use cases (domain/usecases)   │
+│                                   ▼                                │
+│                          AuthRepositoryImpl ──► AuthService        │
+│                                                  (singleton)       │
+│                                                     ▲              │
+│  Dio (dioProvider)                                  │              │
+│   AuthInterceptor ──► AuthServiceTokenProvider ─────┤              │
+│   RetryInterceptor (401 / bearer-less 403) ─────────┘              │
+│        │ permanent failure → AuthNotifier.handleSessionExpired()   │
+└────────┼───────────────────────────────────────────────────────────┘
+         ▼
+   Auth0 SDK credentialsManager  ──►  Keychain / Keystore
 ```
 
 ---
 
 ## Design Decisions
 
-### 1. **Why ID Tokens for API Authorization?**
+### 1. Access token as the API bearer
 
-**Backend Requirement:**
+- Login requests `audience: ConfigService.auth0Audience`, so the access token
+  is a verifiable JWT. `AuthService.getValidAccessToken()` is the only bearer
+  source; ID tokens are never sent to the API.
+- Sessions created before the audience was configured hold an **opaque**
+  access token that the backend rejects and refresh cannot upgrade.
+  `AuthService.isUsableApiAccessToken` + `AuthException(code:
+  'opaque_access_token')` treat that as a permanent session loss (forces
+  re-login). This is a **transitional migration net**; the backend no longer
+  issues opaque tokens to new sessions.
 
-- Backend validates JWT ID tokens
-- ID tokens contain user identity claims
-- Access tokens not used by backend
+### 2. The credentials manager is the only refresh path
 
-**Implication:**
+`AuthService._validCredentials()` funnels every caller through Auth0's
+`credentialsManager` (`credentials(minTtl: 120)` proactively,
+`renewCredentials()` when forced). It is **single-flight**: concurrent callers
+share one in-flight call, a forced caller never joins a non-forced read, and a
+forced fetch is sequenced *after* any running call so a rotating refresh
+token is never consumed twice. Awaiters time out after 20 s. Never call
+`_auth0.api.renewCredentials` directly.
 
-- Must manually check ID token expiry
-- Cannot rely on Auth0 SDK's automatic refresh
-- Requires custom token validation logic
+### 3. Singleton `AuthService`
 
-### 2. **Why Singleton AuthService?**
+`AuthService.instance` owns the single `Auth0` client. `initialize()` is
+single-flight and loads config from `ConfigService`.
 
-**Benefits:**
+### 4. Riverpod + use cases
 
-- Single source of truth for auth state
-- Prevents multiple Auth0 instances
-- Consistent credential management
-- Easy to test and mock
-
-**Implementation:**
-
-```dart
-class AuthService {
-  AuthService._internal();
-  static final AuthService _instance = AuthService._internal();
-  static AuthService get instance => _instance;
-}
-```
-
-### 3. **Why Riverpod for State Management?**
-
-**Benefits:**
-
-- Compile-time safety
-- Easy dependency injection
-- Proper disposal lifecycle
-- Testing-friendly
-
-**Usage:**
-
-```dart
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final authService = AuthService.instance;
-  return AuthNotifier(authService: authService);
-});
-```
+`authProvider` (`StateNotifierProvider<AuthNotifier, AuthState>`, in
+`presentation/providers/state_providers.dart`) builds `AuthNotifier` from
+use-case providers (`presentation/providers/use_case_providers.dart`).
+Profile data is a separate notifier (`userProvider` / `UserNotifier`).
 
 ---
 
 ## Component Details
 
-### AuthService
+### ConfigService (`lib/features/auth/application/config_service.dart`)
 
-**Responsibilities:**
+Fetches `domain`, `client_id`, `audience` (legacy key `auth0Audience`) from
+`GET {BASE_API_URL}/props` (8 s timeout) and caches them in
+SharedPreferences, so Auth0 can be built offline. Falls back to
+`AUTH0_AUDIENCE` from `.env`. `auth0Scheme` comes from `AUTH0_SCHEME`.
 
-- Auth0 SDK initialization
-- Login/logout operations
-- Token validation and refresh
-- Credential storage management
-
-**Key Methods:**
+### AuthService (`lib/features/auth/auth_service.dart`)
 
 ```dart
 Future<void> initialize()
-Future<Credentials?> loginWithGoogle()
-Future<Credentials?> loginWithApple()
-Future<String?> getValidIdToken()
-Future<String?> refreshIdToken()
-Future<void> localLogout()
-Future<void> globalLogout()
-bool isIdTokenExpired(String idToken)
+Future<Credentials?> loginWithGoogle()   // connection 'google-oauth2', prompt=select_account
+Future<Credentials?> loginWithApple()    // connection 'apple'
+Future<Credentials?> loginWithPhone()    // connection 'sms' (Universal Login passwordless)
+Future<Credentials?> getCredentials()    // launch restore; minTtl 120 s
+Future<String?> getValidAccessToken()    // proactive (request path)
+Future<String?> forceRefreshAccessToken()// reactive 401 path; throws on opaque token
+Future<String?> getIdTokenForIdentity()
+Future<bool> hasValidCredentials()       // false is INDETERMINATE; timeout → true
+Future<void> localLogout()               // clear credentials + guest flag + local identity
+Future<void> globalLogout()              // also ends the Auth0 web session (unused by UI)
+static bool isSessionPermanentlyLost(Object e) // no creds / no refresh token / opaque
+static bool isTokenRenewalFailed(Object e)     // RENEW_FAILED
+// guest flag: saveGuestMode / continueAsGuest / isGuestMode / clearGuestMode
 ```
 
-### ApiClient
+### Network layer (`lib/core/network/`, wired in `lib/core/di/core_providers.dart`)
 
-**Responsibilities:**
+- `AuthInterceptor` — for paths matched by `ProtectedRoutes.isProtected` or
+  `isOptional` (`lib/core/config/protected_routes.dart`) attaches
+  `Authorization: Bearer <access token>` from `AuthServiceTokenProvider`
+  (which swallows errors → request goes out without a bearer).
+- `RetryInterceptor` — on **401**, or **403 without an Authorization header**
+  on a protected/optional route (FastAPI `HTTPBearer` answers a missing header
+  with 403), queues the request, runs one `forceRefreshAccessToken()`, and
+  replays the queue with the new token on a bare Dio. Network errors are
+  retried with backoff (opt out with `extra['no_retry']`).
+- The library Dio (`libraryDioProvider`) is unauthenticated.
 
-- HTTP request interception
-- Automatic token injection
-- 401 retry logic
-- Request/response logging
-
-**Key Methods:**
-
-```dart
-Future<StreamedResponse> send(BaseRequest request)
-void close()
-BaseRequest _cloneRequest(BaseRequest request)
-bool _isProtectedRoute(String path)
-```
-
-### AuthNotifier
-
-**Responsibilities:**
-
-- Authentication state management
-- Login state restoration
-- Error handling
-- User logout coordination
-
-**State:**
+### AuthNotifier (`presentation/providers/auth_notifier.dart`)
 
 ```dart
 class AuthState {
-  final bool isLoggedIn;
+  final bool isLoggedIn;              // true for guests too
   final bool isLoading;
   final bool isGuest;
-  final String? userId;
-  final UserProfile? userProfile;
   final String? errorMessage;
+  final bool? hasCompletedOnboarding; // null = unknown → route guard fails open
 }
 ```
+
+Uses an **auth epoch** (bumped on login/logout/expiry) so stale async
+continuations never re-apply a logged-in state.
 
 ---
 
@@ -167,172 +136,79 @@ class AuthState {
 
 ### Token Storage
 
-- **Platform:** iOS Keychain, Android Keystore
-- **Managed by:** Auth0 `credentialsManager`
-- **Encryption:** Platform-provided
-- **Access:** App-scoped only
+Auth0 `credentialsManager` (iOS Keychain / Android Keystore). The app stores
+no tokens in SharedPreferences or `flutter_secure_storage`. SharedPreferences
+holds only the guest flag, `currentUserId`, cached profile JSON and the cached
+Auth0 config.
 
 ### Token Transmission
 
-- **Protocol:** HTTPS only
-- **Header:** `Authorization: Bearer {token}`
-- **Scope:** Protected routes only
+HTTPS; `Authorization: Bearer` only on protected/optional routes.
+`LoggingInterceptor` masks the header (`Bearer ***`).
 
-### Token Refresh
+### Backend auth responses (observed)
 
-- **Trigger:** Automatic on expiry
-- **Method:** OAuth 2.0 refresh token grant
-- **Concurrency:** Single refresh per expiry
-- **Fallback:** User logout on refresh failure
+- Missing header → **403**
+- Invalid / non-JWT bearer → **401**
+- JWT-shaped but unverifiable bearer → **500** (backend bug; not retried as auth)
 
 ---
 
 ## Error Handling Strategy
 
-### Error Types
-
-```dart
-class AuthException implements Exception {
-  final String message;
-  final String? code;
-}
+```
+credentials error
+   ├─ no credentials / no refresh token / opaque token → permanent
+   ├─ RENEW_FAILED
+   │    ├─ at launch (getCredentials)   → transient: keep session (likely offline)
+   │    └─ on reactive 401 path         → permanent (server answered, so online)
+   └─ anything else (IO, timeout)       → transient: keep session
 ```
 
-### Error Flow
+Permanent on the request path (and the user is not a guest) →
+`RetryInterceptor.onAuthExpired` → `AuthNotifier.handleSessionExpired()`
+(flip to logged out, clear local credentials, reset analytics identity). The
+router then redirects to `/login` and remembers the pending route.
 
-```
-Authentication Error
-        │
-        ├─ WebAuthenticationException
-        │  └─ User cancelled → Show message
-        │
-        ├─ ApiException (refresh failed)
-        │  ├─ Network error → Retry
-        │  └─ 403/Invalid token → Logout
-        │
-        └─ CredentialsManagerException
-           └─ No credentials → Require login
-```
-
----
-
-## Performance Considerations
-
-### Token Validation
-
-- **Cost:** O(1) - local JWT parsing
-- **Network:** None
-- **Frequency:** Every API call
-
-### Token Refresh
-
-- **Cost:** 1 network call to Auth0
-- **Duration:** ~500ms typical
-- **Frequency:** Every 50-60 minutes
-- **Concurrency:** Serialized
-
-### Optimization Strategies
-
-1. **Local validation** before network calls
-2. **Concurrency control** for refresh operations
-3. **2-minute buffer** to reduce edge cases
-4. **Caching** by Auth0 SDK
-
----
-
-## Testing Strategy
-
-### Unit Tests
-
-- Token expiry validation
-- Concurrency control
-- Error handling
-- State management
-
-### Integration Tests
-
-- Login flow
-- Token refresh flow
-- 401 retry mechanism
-- Multiple simultaneous requests
-
-### Manual Testing
-
-- Login with Google/Apple
-- Token expiry scenarios
-- Network failure handling
-- App backgrounding/foregrounding
+Login errors: `WebAuthenticationException` (`a0.session.user_cancelled` →
+"cancelled") → `AuthException` → `AuthenticationFailure`.
 
 ---
 
 ## Deployment Considerations
 
-### Environment Variables
+### Environment Variables (`.env.<flavor>`)
 
 ```env
-AUTH0_DOMAIN=your-tenant.auth0.com
-AUTH0_CLIENT_ID=your-client-id
-AUTH0_AUDIENCE=your-api-audience
+BASE_API_URL=...      # also used for GET /props
+AUTH0_SCHEME=org.pecha.app            # per flavor
+AUTH0_AUDIENCE=...                    # fallback when /props has none
 ```
+
+Domain and client ID come from `/props`, not `.env`.
 
 ### Auth0 Configuration
 
-- **Application Type:** Native
-- **Grant Types:** Authorization Code, Refresh Token
-- **Token Settings:**
-  - ID Token Expiration: 3600s (1 hour)
-  - Refresh Token Expiration: 2592000s (30 days)
-  - Refresh Token Rotation: Enabled
-
-### Monitoring
-
-- Token refresh frequency
-- Authentication failure rate
-- 401 retry success rate
-- Auth0 API call volume
-
----
-
-## API Endpoints
-
-### Protected Routes
-
-```dart
-static const List<String> _protectedPaths = [
-  '/api/v1/users/me',
-  '/api/v1/users/me/plans',
-];
-```
-
-### Adding New Protected Routes
-
-1. Add path to `_protectedPaths` in `ApiClient`
-2. Ensure backend validates ID token
-3. Test 401 retry mechanism
-4. Update documentation
+Native application; Authorization Code + Refresh Token grants; refresh-token
+rotation enabled; API audience configured so access tokens are JWTs. Callback
+URLs per flavor: see `GOOGLE_LOGIN_FIX.md`.
 
 ---
 
 ## Login Flow
 
 ```
-User clicks "Login with Google"
-        ↓
-AuthNotifier.login(connection: 'google')
-        ↓
-AuthService.loginWithGoogle()
-        ↓
-Auth0 WebAuthentication
-        ↓
-User authenticates in browser
-        ↓
-Auth0 returns credentials
-        ↓
-Store credentials in credentialsManager
-        ↓
-Update AuthState (isLoggedIn: true)
-        ↓
-Navigate to home screen
+LoginPage / LoginDrawer button
+  → AuthNotifier.login(connection: 'google' | 'apple' | 'sms', source:)
+      → epoch++ ; isLoading = true
+      → LoginUseCase → AuthService._loginWithConnection (Universal Login, audience, offline_access)
+      → credentialsManager.storeCredentials
+  → _handleSuccessfulLogin
+      → clear guest flag
+      → currentUserId = id_token.sub ; analytics identify
+      → clear auth-scoped HTTP cache
+      → prefetch onboarding status + initializeUser()
+      → state = logged in (only if epoch unchanged) → router redirect
 ```
 
 ---
@@ -340,207 +216,87 @@ Navigate to home screen
 ## Token Refresh Flow
 
 ```
-API call needs authentication
-        ↓
-ApiClient calls getValidIdToken()
-        ↓
-Check if token expired (JWT parsing)
-        ↓
-Token expired? → Refresh token
-        ↓
-Call Auth0 /oauth/token endpoint
-        ↓
-Get new ID token + access token
-        ↓
-Store new credentials
-        ↓
-Return new ID token to ApiClient
-        ↓
-Add Bearer token to request
-        ↓
-Make API call
+Request to protected route
+  → AuthInterceptor → getValidAccessToken()
+      → credentialsManager.credentials(minTtl: 120)  // renews only near expiry
+  → 401 (or bearer-less 403)?
+      → RetryInterceptor queues request; first one calls forceRefreshAccessToken()
+          → credentialsManager.renewCredentials()  (single-flight)
+          → token opaque? → AuthException(opaque_access_token) → permanent
+      → success: replay every queued request with the new bearer
+      → permanent failure (non-guest): handleSessionExpired(); fail queue
+      → transient failure: fail queue, keep session
 ```
 
 ---
 
 ## Logout Flow
 
-### Local Logout
+`AuthNotifier.logout()` (the only UI logout; `globalLogout` is unused):
 
 ```
-User clicks "Logout"
-        ↓
-AuthNotifier.logout()
-        ↓
-AuthService.localLogout()
-        ↓
-Clear credentials from device
-        ↓
-Update AuthState (isLoggedIn: false)
-        ↓
-Navigate to login screen
+start push-device unregister (needs the JWT)
+→ state = logged out (epoch++) ; clear auth-scoped HTTP cache
+→ flush mala counts ; settle pending prayer sends ; await push unregister
+→ AuthService.localLogout() (credentials, guest flag, currentUserId, user data)
+→ clear userProvider ; clear pending deep-link route
+→ cancel scheduled routine notifications ; reset analytics identity
 ```
 
-### Global Logout
-
-```
-User clicks "Logout from all devices"
-        ↓
-AuthNotifier.logout()
-        ↓
-AuthService.globalLogout()
-        ↓
-Call Auth0 logout endpoint
-        ↓
-Clear Auth0 session
-        ↓
-Clear credentials from device
-        ↓
-Update AuthState (isLoggedIn: false)
-        ↓
-Navigate to login screen
-```
+The push service also deletes the FCM token on any signed-out snapshot.
 
 ---
 
 ## State Restoration
 
 ```
-App launches
-        ↓
-AuthNotifier._restoreLoginState()
-        ↓
-AuthService.initialize()
-        ↓
-Check hasValidCredentials()
-        ↓
-Credentials exist?
-    ├─ Yes → Get credentials
-    │         ├─ Success → Update state (logged in)
-    │         └─ Fail → Clear credentials, show login
-    └─ No → Show login screen
+AuthNotifier constructor → _restoreLoginState() (single-flight)
+  → Android fresh install: clear residual credentials
+  → InitializeAuthUseCase (ConfigService /props or cache)
+  → hasValidCredentials()?
+      ├─ yes → getCredentials()
+      │        ├─ ok        → currentUserId, identify, prefetch onboarding + user
+      │        │              (each step ≤10 s budget) → logged in
+      │        ├─ permanent → guest check
+      │        └─ transient → keep session logged in (offline); refresh later
+      └─ no  → guest flag? → guest : logged out
+  → never leaves isLoading = true
+Connectivity offline→online → reconcile (refresh user, or re-run restore)
 ```
 
 ---
 
 ## Best Practices
 
-### 1. **Always Use getValidIdToken()**
-
-```dart
-// ✅ Good
-final token = await authService.getValidIdToken();
-
-// ❌ Bad - might return expired token
-final creds = await authService.getCredentials();
-final token = creds.idToken;
-```
-
-### 2. **Force Refresh on 401**
-
-```dart
-// ✅ Good
-if (response.statusCode == 401) {
-  final token = await authService.refreshIdToken(); // Forces refresh
-}
-
-// ❌ Bad - might return same expired token
-if (response.statusCode == 401) {
-  final token = await authService.getValidIdToken();
-}
-```
-
-### 3. **Handle Errors Gracefully**
-
-```dart
-// ✅ Good
-try {
-  final token = await authService.getValidIdToken();
-} on AuthException catch (e) {
-  logger.warning('Auth failed: $e');
-  // Show error to user
-}
-
-// ❌ Bad - no error handling
-final token = await authService.getValidIdToken();
-```
-
-### 4. **Dispose Resources**
-
-```dart
-// ✅ Good
-final apiClientProvider = Provider<ApiClient>((ref) {
-  final client = ApiClient(authService);
-  ref.onDispose(() => client.close());
-  return client;
-});
-
-// ❌ Bad - memory leak
-final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient(authService);
-});
-```
+1. Get the bearer only via `AuthService.getValidAccessToken()` (normally through
+   `AuthInterceptor`); add new authenticated endpoints to `ProtectedRoutes`.
+2. Never add a second refresh path; go through `_validCredentials`.
+3. Treat `hasValidCredentials() == false` as indeterminate — log out only on
+   typed permanent errors.
+4. Respect the auth epoch for any async work that writes auth state.
+5. Persist `currentUserId` before flipping auth state.
 
 ---
 
 ## Troubleshooting
 
-### Issue: Token refresh loops
+### 401 loop
+Check the access token is a JWT (audience configured in `/props` / `.env`).
+Opaque tokens are converted into a forced re-login.
 
-**Symptom:** Multiple refresh calls in quick succession  
-**Cause:** Race condition in concurrency control  
-**Solution:** Verify `_ongoingIdTokenRefresh` is captured to local variable
+### Requests go out without a bearer
+`AuthServiceTokenProvider` swallows credential errors and returns null; look
+for `Failed to get valid access token` in logs. The backend answers 403, which
+`RetryInterceptor` treats as an auth failure on protected routes.
 
-### Issue: 401 errors persist
+### User unexpectedly logged out
+Look for `Token refresh failed permanently` / `Session is unrecoverable`
+(refresh token revoked, expired or rotated away).
 
-**Symptom:** Retry still returns 401  
-**Cause:** Using `getValidIdToken()` instead of `refreshIdToken()`  
-**Solution:** Force refresh with `refreshIdToken()` on 401
-
-### Issue: User logged out unexpectedly
-
-**Symptom:** User returns to login screen  
-**Cause:** Refresh token expired  
-**Solution:** Expected behavior - refresh tokens expire after 30 days
-
-### Issue: High Auth0 API call volume
-
-**Symptom:** Many `renewCredentials()` calls  
-**Cause:** Concurrency control not working  
-**Solution:** Check logs for "Waiting for ongoing refresh" messages
+### Login fails with "An unexpected error occurred during login"
+Auth0 was never initialised (first launch with `/props` unreachable and no
+cached config). Restore re-runs on reconnect.
 
 ---
 
-## Metrics & Monitoring
-
-### Key Performance Indicators
-
-| Metric                        | Target  | Alert Threshold |
-| ----------------------------- | ------- | --------------- |
-| Token Refresh Frequency       | 1/hour  | > 2/minute      |
-| 401 Error Rate                | < 1%    | > 5%            |
-| Auth0 API Success Rate        | > 99%   | < 95%           |
-| Average Refresh Time          | < 600ms | > 2s            |
-| Concurrent Refresh Efficiency | > 95%   | < 80%           |
-
-### Log Analysis
-
-```bash
-# Count token refreshes
-grep "ID token refreshed successfully" logs.txt | wc -l
-
-# Check for race conditions
-grep "Waiting for ongoing" logs.txt
-
-# Find 401 retries
-grep "Received 401" logs.txt
-
-# Auth errors
-grep "Auth0 API error" logs.txt
-```
-
----
-
-**Version:** 1.0  
-**Last Updated:** October 13, 2025  
-**Status:** ✅ Production Ready
+**Last Updated:** October 22, 2026

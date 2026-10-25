@@ -21,11 +21,13 @@ Full-featured text reader: paginated segments, dual-slot layout (primary + secon
 ```
 reader/
 ├── constants/
-├── data/       settings remote datasource, models (ReaderState, NavigationContext, …)
-├── domain/     entities, services (flattener, merger, navigation), usecases
-├── presentation/  providers, screen, utils, widgets (grouped subfolders)
-└── reader.dart
+├── data/       settings datasource interface, models (ReaderState, NavigationContext, …)
+├── domain/     layout (initial-layout resolver), services (flattener, merger,
+│               navigation, live position), transliteration (EWTS, scripts)
+└── presentation/  providers, screen, utils, widgets (grouped subfolders)
 ```
+
+No barrel file — import files directly.
 
 ## Key files
 
@@ -34,25 +36,37 @@ reader/
 | Screen | `presentation/screens/reader_screen.dart` |
 | Primary state | `presentation/providers/reader_notifier.dart` |
 | Secondary | `reader_secondary_content_provider.dart`, `reader_dual_settings_provider.dart` |
-| Data loading | **texts** `textDetailsFutureProvider` (not ReaderRepository in UI) |
+| Data loading | **texts** `textDetailsFutureProvider`, served by the **library** adapters |
 | Navigation | `domain/services/navigation_service.dart`, `NavigationContext` |
+| Live recitation | `domain/services/live_position_resolver.dart`, live code in `reader_content_part.dart` / `reader_screen.dart` |
 | Flattening | `section_flattener_service.dart`, `FlattenedContent` |
-| Barrel | `reader.dart` |
 
 ## State management
 
 - `readerNotifierProvider` — family by `ReaderParams`
-- `secondaryReaderNotifierProvider`, dual settings providers — keyed by
+- `secondaryReaderProvider` — autoDispose family by `SecondaryReaderKey`
+  (primary text id + secondary version id)
+- `readerDualSettingsProvider` and friends — keyed by
   `ReaderSettingsScope(textId, ReaderLayoutContext)`, see *Language defaults*
 - `readerContextLayoutProvider(context)` — what the person changed inside an
   event / chant / plan (persisted per context, never for the library)
-- Scroll: `readerScrollControllerProvider`, `pendingScrollTargetProvider`
-- Domain use cases exist but **presentation loads via texts providers**
+- Scroll: `ReaderContentPart` owns its own `ItemScrollController` /
+  `ItemPositionsListener`; the providers in `reader_providers.dart`
+  (`readerScrollControllerProvider`, `pendingScrollTargetProvider`, …) are
+  unused
+- Pages come from `textDetailsFutureProvider`, which is **not autoDispose**.
+  `ReaderNotifier._fetchContent` and `SecondaryReaderNotifier._fetchParams`
+  invalidate a page's params when it fails, so the next scroll refetches it
+- `loadPreviousPage()` returns how many items it added at the top; the list
+  shifts by exactly that (nothing on failure) to keep the reader's place
 
 ## Data sources
 
-- **texts API** via `textDetailsFutureProvider` — paginated `ReaderResponse`
-- **Reader settings API** — languages, scripts, versions
+- **Library API** via texts' `textDetailsFutureProvider` — paginated
+  `ReaderResponse` (reader text ids and version ids are library edition ids)
+- **Reader settings** — `readerSettingsRemoteDatasourceProvider` →
+  `LibraryReaderSettingsRemoteDatasource`: languages and versions from the
+  text's translation family; scripts are client-side transliteration
 - **Local storage** — global secondary-layout toggles and script map (library);
   `reader_layout_<context>` JSON for event / chant / plan picks
 - Segment commentary/translation via **texts** segment providers
@@ -64,7 +78,8 @@ reader/
 - **practice** — bookmarks
 - **mala** — accumulation selection, sync
 - **group_profile** — group chant UI
-- **recitation** — list entry model
+- **recitation** — list entry model, live recitation socket (`recitationLiveProvider`)
+- **library** — content, languages, versions, verse alignment
 
 ## Notable patterns
 
@@ -90,7 +105,7 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    list and collection items) shows that language whatever the app language:
    the edition as written when it is the text, else only its translation.
 2. `ReaderInitialLayoutApplier` (owned by `ReaderScreen`) runs once when the
-   text language and `/texts/{id}/languages` are known: seeds the layout into
+   text language and its languages list (`readerLanguagesProvider`) are known: seeds the layout into
    `ReaderDualSettingsNotifier` and fills the translation (remembered pick →
    default → content language) through `fillSecondaryWithLanguages`, which
    tries each candidate until one has a version. While the languages request
@@ -148,7 +163,6 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
    remembered language never replaces the picked edition. When the original
    cannot be loaded, the edition opens as the text itself.
 
-- `ReaderRepository` domain interface exists but **not wired in presentation**
 
 ---
 
@@ -156,7 +170,7 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
 
 ### Principles
 
-1. **Load content through texts providers** — don't duplicate text API in reader datasources.
+1. **Load content through texts providers** — they are backed by the library adapters; don't add HTTP calls in reader.
 2. **Extend NavigationContext** for new entry modes — don't add parallel route params.
 3. **Secondary reader aligns by `segment_number`** across versions.
 4. Widget subfolders by concern — place new UI in matching folder (`reader_content/`, etc.).
@@ -170,7 +184,6 @@ or `plan`. The library keeps the app-wide settings untouched. The others:
 
 ### Don't
 
-- Don't wire ReaderRepository in presentation without team refactor
 - Don't break segment_number alignment for dual layout
 - Don't fetch full text upfront — preserve pagination
 

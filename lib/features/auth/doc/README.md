@@ -12,7 +12,7 @@ App-wide authentication and user profile. Auth0 handles credentials; backend sto
 - Guest mode ("continue as guest")
 - Session restore on launch (offline-tolerant)
 - Access token lifecycle (proactive + reactive refresh)
-- Profile view/edit: name, avatar, username, bio
+- Profile data/edit via `UserNotifier`: name, avatar, username, bio (the profile *screens* live in other features; `presentation/screens/profile_page.dart` is currently unreferenced)
 - Account deletion
 - Onboarding completion flag (route guards)
 - `LoginDrawer` — reusable login prompt app-wide
@@ -35,9 +35,11 @@ auth/
 | Session | `presentation/providers/auth_notifier.dart`, `auth_state.dart` |
 | Profile | `presentation/providers/user_notifier.dart`, `user_state.dart` |
 | Auth0 | `auth_service.dart` (singleton) |
-| Token refresh | `domain/usecases/get_valid_access_token_usecase.dart` |
+| Token refresh | `auth_service.dart` (`getValidAccessToken` / `forceRefreshAccessToken`, single-flight `_validCredentials`), `core/network/auth_service_token_provider.dart`, `core/network/interceptors/retry_interceptor.dart` |
 | Init | `domain/usecases/initialize_auth_usecase.dart` |
-| Login UI | `presentation/widgets/login_drawer.dart`, `login_page.dart` |
+| Login UI | `presentation/widgets/login_drawer.dart`, `presentation/screens/login_page.dart`, `auth_buttons.dart`, `social_login_button.dart` |
+| Session side effects | `presentation/providers/user_session_bootstrap.dart` (clears auth-scoped HTTP cache + user providers on auth transitions) |
+| Analytics | `presentation/utils/auth_analytics.dart` |
 | Barrel | `auth.dart` |
 
 ## State management
@@ -60,7 +62,9 @@ auth/
 - **Consumes:** onboarding (status), notifications (cleanup on logout), mala (sync reset)
 - **Consumed by:** almost every feature via `authProvider` / `userProvider`
 
-Side effects on logout: clear guest mode, reset mala sync, cancel routine notifications.
+Side effects on logout (`AuthNotifier.logout`): unregister the push device (while the JWT is still valid), clear the auth-scoped HTTP cache, flush mala counts, settle pending prayer sends, clear local credentials + guest flag, clear `userProvider` and `currentUserId`, clear the pending deep-link route, cancel routine notifications, reset analytics identity.
+
+A *permanent* mid-session renewal failure (no credentials / no refresh token / opaque token / `RENEW_FAILED` on the reactive 401 path) calls `AuthNotifier.handleSessionExpired()` via the `RetryInterceptor` callback wired in `core/di/core_providers.dart`; it only flips state, clears credentials and resets analytics (lighter than `logout()`).
 
 ## Public API
 
@@ -99,7 +103,7 @@ Import from `features/auth/auth.dart`. Does **not** export `splash_screen.dart` 
 | New profile field | `domain/entities/user.dart` → model → remote datasource → use case → `UserNotifier` |
 | New login method | `auth_service.dart`, `login_page.dart`, `auth_notifier.dart` |
 | Route guard change | `core/config/router/route_guard.dart` + `auth_state.dart` |
-| Token issue | `get_valid_access_token_usecase.dart`, `auth_interceptor.dart` |
+| Token issue | `auth_service.dart`, `core/network/interceptors/auth_interceptor.dart`, `retry_interceptor.dart` (the `Get/ForceRefreshAccessTokenUseCase` classes exist but are not used by the request path) |
 
 ### Testing
 

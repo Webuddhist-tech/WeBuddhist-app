@@ -27,6 +27,8 @@ No data, domain, providers, or barrel.
 
 - **core** — l10n only
 
+> Status: dead code — `LearnScreen` is not imported anywhere (only a commented-out tab in `main_navigation_screen.dart` references it).
+
 ---
 
 ## How to make changes (LLM playbook)

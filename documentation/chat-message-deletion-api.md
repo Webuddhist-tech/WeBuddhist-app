@@ -78,9 +78,11 @@ dialog, titled with the count, then calls
    order, on an environment that answers the bulk request with `404` or
    `405` — the two answers a server gives for a route it does not have.
 
-The thread then drops every deleted id from the selection, leaves any
-failure selected under one "couldn't be deleted" snackbar so tapping Delete
-again retries, and shows "Messages deleted" when all succeed.
+The thread then drops every deleted id from the selection and leaves any
+failure selected under one "couldn't be deleted" snackbar
+(`group_chat_delete_failed`) so tapping Delete again retries. When every id
+succeeds it just clears the selection — there is no success toast, the
+tombstones already show the delete landed.
 
 ## Bulk endpoint — live
 

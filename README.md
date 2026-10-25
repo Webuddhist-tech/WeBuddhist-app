@@ -1,38 +1,85 @@
 # WeBuddhist App
 
-A modern Flutter app for learning, sharing, and live collaboration.
+A Flutter app (package `flutter_pecha`) for learning, practising and sharing
+Buddhist teachings: a text reader, practice plans, chants, mala and timer
+tools, a Tibetan calendar, and community groups with chat and events.
 
-## 🚀 Project Goal
-WeBuddhist App is designed to help users learn, live, and share knowledge interactively. It features a beautiful UI, supports both light and dark themes, and is built with best Flutter practices.
+Targets: Android and iOS (shipped), macOS (runs locally). Bundle / application
+IDs: `org.pecha.app` (prod), `org.pecha.app.staging`, `org.pecha.app.dev`.
 
 ## 🛠 Features
-- Light and Dark theme support with toggle
-- Modern Flutter architecture
-- Easy to customize and extend
+
+Bottom navigation: **Home · Practice · Connect · Me**. Each module lives in
+`lib/features/<name>/` and most have a `doc/README.md`
+(index: [`lib/features/doc/README.md`](lib/features/doc/README.md)).
+
+| Area | Feature modules |
+| --- | --- |
+| Home & shell | `home` (dashboard, verse of the day, streak, main navigation shell), `calendar` (Tibetan lunar calendar, moon phases) |
+| Reading | `reader` (segmented reader, dual-version layout, search, commentary), `texts` (reader-facing text contracts), `library` (WeBuddhist Library API client: texts, TOC, editions, alignments, chant list), `recitation` (catalogue + "My Recitations"), `poems` (story-style poems viewer) |
+| Practice | `practice` (Practice tab, daily routine), `plans` (enrol + track practice plans), `mala` (prayer-bead counter, personal + group accumulation), `timer` (meditation timers, lock-screen Live Activity) |
+| Community | `connect` (Connect tab: feed, events, group discovery), `group_profile` (group pages, events, members, collective accumulators, recitation collections), `group_chat` (group + direct chat over WebSocket, reactions, prayer intentions, moderation) |
+| Account & settings | `auth` (Auth0 login, guest mode, profile), `onboarding`, `more` (Me tab + settings), `feedback` (help / contact form, forwarded by the backend) |
+| Notifications | `notifications` (local scheduled reminders), `push_notifications` (Firebase Cloud Messaging) |
+| Placeholders | `explore`, `learn` (not in navigation) |
+
+Cross-cutting: light/dark themes, six UI languages (`en`, `bo`, `zh`, `hi`,
+`mn`, `ne`) with over-the-air text via Tolgee, PostHog + Microsoft Clarity
+analytics, Firebase Crashlytics, Airbridge attribution and deep links, and a
+forced-update prompt (`upgrader`).
 
 ## 📦 Getting Started
 
-### 1. Clone the Repository
+### Requirements
+- Flutter **3.35.7** (stable) — the version CI pins in `.github/workflows/*.yml`
+  (Dart SDK constraint in `pubspec.yaml`: `^3.7.2`)
+- Xcode (iOS/macOS) and Android Studio / JDK 17 (Android)
+
+### 1. Clone the repository
 ```sh
-git clone https://github.com/your-username/flutter_pecha.git
-cd flutter_pecha
+git clone https://github.com/Webuddhist-tech/WeBuddhist-app.git
+cd WeBuddhist-app
 ```
 
-### 2. Install Dependencies
+### 2. Install dependencies
 ```sh
 flutter pub get
 ```
 
-### 3. Environment Setup
-Create environment files from the template:
+### 3. Environment setup
+Each flavor entrypoint loads its own dotenv file (`lib/main_<flavor>.dart` →
+`.env.<flavor>`). All three files are declared as assets in `pubspec.yaml`,
+so **all three must exist** before any build, even if you only run one flavor:
 ```sh
 cp .env.example .env.dev
 cp .env.example .env.staging
 cp .env.example .env.prod
 ```
-Edit each file with the appropriate values for that environment.
+Edit each file with the values for that environment. Keys read by the app
+(see `lib/env.dart` and `lib/features/auth/application/config_service.dart`):
 
-Each flavor should use its own PostHog project token:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `BASE_API_URL` | yes | WeBuddhist backend base URL |
+| `ENVIRONMENT` | yes | `development` / `staging` / `production` |
+| `LIBRARY_API_URL` | no | Library (texts) API; defaults to `https://library.webuddhist.com` |
+| `LIBRARY_CHANTS_TAG_ID` | yes for chants | Library tag that marks chants |
+| `AUTH0_SCHEME` | yes | Auth0 callback scheme (`org.pecha.app`, `.dev`, `.staging`) |
+| `AUTH0_DOMAIN` / `AUTH0_CLIENT_ID` / `AUTH0_AUDIENCE` | no | Fallbacks; normally fetched from the backend `/props` endpoint |
+| `LOCATIONIQ_TOKEN` | no | Event venue search; empty hides the search box |
+
+> The `.env.*` files are bundled into the app as assets and can be extracted
+> from any build. Put **only client-safe values** in them — never server
+> secrets such as webhook URLs or write API keys.
+
+Native secrets (Airbridge SDK token etc.) live outside dotenv — copy
+`ios/Flutter/Secrets.xcconfig.example` and `android/local.properties.example`;
+see [Airbridge setup](docs/implementation/AIRBRIDGE_SETUP.md).
+
+#### Analytics (optional)
+
+Analytics keys are optional; when absent the SDK stays off. Each flavor should
+use its own PostHog project token:
 
 | Variable | Description |
 |----------|-------------|
@@ -65,51 +112,35 @@ name, and the four bottom tabs as `tab-home` / `tab-practice` / `tab-connect` /
 | `CLARITY_PROJECT_ID` | Clarity project ID (Clarity dashboard → Settings → Overview). Empty disables Clarity |
 | `CLARITY_ENABLED` | Set to `false` to disable Clarity locally |
 
-### 4. Run the App
+### 4. Run the app
 
-**Android**
+Always pass both the flavor and its entrypoint:
+
 ```sh
-flutter run --flavor dev -t lib/main_dev.dart
+flutter run --flavor dev     -t lib/main_dev.dart
 flutter run --flavor staging -t lib/main_staging.dart
-flutter run --flavor prod -t lib/main_prod.dart
+flutter run --flavor prod    -t lib/main_prod.dart
+
+# macOS
+flutter run -d macos --flavor dev -t lib/main_dev.dart
 ```
 
-Build APK:
+Release builds:
 ```sh
-flutter build apk --flavor dev -t lib/main_dev.dart
-flutter build apk --flavor staging -t lib/main_staging.dart
-flutter build apk --flavor prod -t lib/main_prod.dart
-```
-
-Build App Bundle:
-```sh
+flutter build apk       --flavor prod -t lib/main_prod.dart
 flutter build appbundle --flavor prod -t lib/main_prod.dart
+flutter build ipa       --flavor prod -t lib/main_prod.dart
 ```
 
-**iOS**
+### Checks (same as CI)
 ```sh
-flutter run --flavor dev -t lib/main_dev.dart
-flutter run --flavor staging -t lib/main_staging.dart
-flutter run --flavor prod -t lib/main_prod.dart
+dart run tool/generate_tolgee_bridge.dart --check
+dart run tool/tolgee_sync.dart doctor
+flutter analyze
+flutter test
 ```
 
-**macOs**
-```sh
-flutter run -d macos --flavor dev --target lib/main_dev.dart                                                                                                                  
-flutter run -d macos --flavor staging --target lib/main_staging.dart                                                                                                          
-flutter run -d macos --flavor prod --target lib/main_prod.dart        
-```
-
-Build IPA:
-```sh
-flutter build ios --flavor prod -t lib/main_prod.dart
-```
-
-> **Note:**
-> - For iOS, ensure you have Xcode installed and have granted the necessary permissions (see [Flutter macOS setup](https://docs.flutter.dev/get-started/install/macos)).
-> - For Android, ensure Android Studio and an emulator/device are set up.
-
-### 5. Adding Localizations
+### 5. Adding localizations
 
 The app uses Flutter's built-in internationalization (l10n) with ARB files for translations.
 
@@ -118,7 +149,8 @@ The app uses Flutter's built-in internationalization (l10n) with ARB files for t
 
 **To add a new translation string:**
 
-1. Add the key to all ARB files (`app_en.arb`, `app_bo.arb`, `app_zh.arb`):
+1. Add the key to the ARB files (`app_en.arb` is the template; the others are
+   `app_bo.arb`, `app_zh.arb`, `app_hi.arb`, `app_mn.arb`, `app_ne.arb`):
 
 ```json
 // app_en.arb
@@ -249,768 +281,94 @@ rotate-after-exposure guidance, and CI auto-update risks are in
 
 ## ⚙️ Project Structure
 
-This project follows **Clean Architecture** principles with clear separation of concerns across three main layers.
-
-### Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    PRESENTATION LAYER                           │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  UI Components (Screens, Widgets)                       │   │
-│  │  State Management (Riverpod Notifiers/Providers)        │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ depends on
-┌─────────────────────────────────────────────────────────────────┐
-│                      DOMAIN LAYER                               │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Entities (Business Objects)                            │   │
-│  │  Use Cases (Business Logic)                             │   │
-│  │  Repository Interfaces (Contracts)                      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              ↓                                  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ depends on
-┌─────────────────────────────────────────────────────────────────┐
-│                       DATA LAYER                                │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Repository Implementations                             │   │
-│  │  Data Sources (API, Local Storage)                      │   │
-│  │  Models (DTOs for serialization)                        │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ depends on
-┌─────────────────────────────────────────────────────────────────┐
-│                    EXTERNAL SERVICES                            │
-│         (Auth0, Firebase, HTTP, Storage, etc.)                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Folder Structure
+Feature modules follow **Clean Architecture** (presentation → domain → data),
+with Riverpod for state and dependency injection.
 
 ```
 lib/
-├── core/                    # Shared infrastructure & utilities
-│   ├── config/              # App configuration
-│   ├── di/                  # Dependency injection
-│   ├── error/               # Error handling (Failures)
-│   ├── network/             # Network utilities
-│   ├── services/            # External service integrations
-│   ├── storage/             # Local storage utilities
-│   └── theme/               # App theming
-│
-├── features/                # Feature-based modules
-│   └── auth/                # ← Authentication feature example
-│       ├── domain/          # Business logic (no dependencies)
-│       ├── data/            # Data implementation
-│       └── presentation/    # UI & state management
-│
-└── shared/                  # Cross-cutting concerns
-    ├── data/                # Shared data layer utilities
-    ├── domain/              # Shared domain logic
-    ├── presentation/        # Shared UI components
-    └── widgets/             # Reusable widgets
+├── main.dart                 # Shared bootstrap (Firebase, analytics, ProviderScope, router)
+├── main_dev.dart             # Flavor entrypoints: load .env.<flavor>, then call main.dart
+├── main_staging.dart
+├── main_prod.dart
+├── env.dart                  # Typed access to dotenv keys
+├── firebase_options.dart
+├── core/                     # Shared infrastructure
+│   ├── analytics/            # PostHog/Clarity service + event catalogue
+│   ├── cache/                # Hive-backed cache
+│   ├── config/               # API config, feature flags, locale, router (go_router)
+│   ├── deep_linking/         # Deep-link / Airbridge routing
+│   ├── di/                   # Core Riverpod providers
+│   ├── error/                # Failures / exceptions
+│   ├── l10n/                 # ARB files, generated localizations, Tolgee bridge
+│   ├── network/              # DioClient + interceptors, connectivity
+│   ├── services/             # Audio, sharing, upgrade, background images
+│   ├── storage/              # Preferences / secure storage
+│   ├── theme/                # Themes and fonts (see theme/FONT_SYSTEM_GUIDE.md)
+│   └── utils/, widgets/, extensions/, constants/, localization/
+├── features/                 # One folder per feature (see Features above)
+│   └── <feature>/
+│       ├── data/             # DTOs, datasources, repository implementations
+│       ├── domain/           # Entities, repository contracts, use cases
+│       ├── presentation/     # Screens, widgets, providers
+│       └── doc/README.md     # Feature documentation
+└── shared/                   # Cross-feature data/domain/presentation helpers and widgets
+
+packages/youtube_player_flutter/   # Vendored 9.1.3 with a playInBackground flag
+tool/                               # Tolgee bridge generator + sync CLI, Tibetan font patcher
+ci/scripts/                         # Version bump + .env generation used by GitHub Actions
 ```
 
-### Auth Flow Example
-
-Here's how authentication follows clean architecture through all layers:
-
-#### 1. Domain Layer (`features/auth/domain/`)
-*Pure business logic with no framework dependencies*
-
-```
-domain/
-├── entities/
-│   └── user.dart                    # User business entity
-├── repositories/
-│   └── auth_repository.dart         # Repository interface (contract)
-└── usecases/
-    ├── login_usecase.dart           # Login business logic
-    ├── get_current_user_usecase.dart
-    └── logout_usecase.dart
-```
-
-**Key points:**
-- `User` entity: Pure Dart class with business properties
-- `AuthRepository`: Abstract interface defining data operations
-- `LoginUseCase`: Orchestrates login logic, returns `Either<Failure, User>`
-
-#### 2. Data Layer (`features/auth/data/`)
-*Implements domain contracts, handles external dependencies*
-
-```
-data/
-├── models/
-│   └── user_model.dart              # DTO for JSON serialization
-├── datasources/
-│   └── auth_remote_datasource.dart  # API/Service calls
-└── repositories/
-    └── auth_repository_impl.dart    # Implements AuthRepository
-```
-
-**Key points:**
-- `UserModel`: Handles JSON ↔ Dart conversion
-- `AuthRemoteDataSource`: Makes actual API calls
-- `AuthRepositoryImpl`: Implements domain interface, uses datasource
-
-#### 3. Presentation Layer (`features/auth/presentation/`)
-*UI and state management*
-
-```
-presentation/
-├── providers/
-│   ├── auth_notifier.dart           # State management
-│   ├── auth_providers.dart          # DI setup
-│   └── use_case_providers.dart      # Use case providers
-├── screens/
-│   └── login_page.dart              # Login UI
-└── widgets/
-    └── login_form.dart              # Reusable form widget
-```
-
-**Key points:**
-- `AuthNotifier`: Manages auth state, calls use cases
-- `authProviders`: Wire up dependencies using Riverpod
-- `LoginPage`: UI that consumes state via providers
-
-### Key Principles
-
-| Layer | Responsibility | Dependencies |
-|-------|---------------|--------------|
-| **Domain** | Business rules & logic | None (pure Dart) |
-| **Data** | Data sources & persistence | Domain, external services |
-| **Presentation** | UI & state management | Domain (via use cases) |
-
-### Benefits
-
-- **Testable**: Each layer can be unit tested independently
-- **Maintainable**: Changes in one layer don't break others
-- **Scalable**: Easy to add new features following same pattern
-- **Flexible**: Swap implementations (e.g., change API) without affecting business logic
-
-
-
-## Dio Implementation
-Dio is a powerful HTTP client for Dart. Think of it as a supercharged `http` package with built-in support for interceptors, retries, timeout handling, and request transformation.
-
-### Why Dio Over `http` Package?
-
-| Feature | `http` package | Dio |
-|---------|----------------|-----|
-| Interceptors | No | Yes (we use this heavily) |
-| Global configuration | Limited | Full |
-| Automatic retries | Manual | Built-in |
-
-### Our DioClient Structure
-
-**Location**: `lib/core/network/dio_client.dart`
-
-```dart
-class DioClient {
-  DioClient({
-    required AuthInterceptor authInterceptor,
-    required RetryInterceptor retryInterceptor,
-    // ... other interceptors
-  }) : _dio = Dio(options) {
-    // Interceptor order is critical
-    _dio.interceptors.addAll([
-      authInterceptor,      // 1. Add auth headers first
-      cacheInterceptor,     // 2. Check cache
-      retryInterceptor,     // 3. Handle 401 & network errors
-      errorInterceptor,     // 4. Convert errors
-      loggingInterceptor,   // 5. Log final result
-    ]);
-  }
-}
-```
-
-**Why this order?** Each interceptor processes the request in sequence. Auth must run first to add tokens before the request goes out.
-
-### Interceptor Chain: How Requests Flow
-
-```
-Request:  Auth → Cache → Retry → Error → Log → Server
-Response: Log → Error → Retry → Cache → Auth → UI
-```
-
-### Interceptor 1: AuthInterceptor
-
-**What it does**: Checks if the API endpoint requires authentication, adds the auth token.
-
-```dart
-// lib/core/network/interceptors/auth_interceptor.dart
-@override
-void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-  // Only add auth for protected routes
-  if (ProtectedRoutes.isProtected(options.path)) {
-    final token = await _tokenProvider.getToken();
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-  }
-  handler.next(options);  // Pass to next interceptor
-}
-```
-
-**Key point**: Uses `TokenProvider` abstraction so we can swap token sources without changing this code.
-
-### Interceptor 2: RetryInterceptor
-
-**What it does**: Handles 401 (token expired) errors by refreshing the token and retrying the request.
-
-```dart
-// lib/core/network/interceptors/retry_interceptor.dart
-@override
-void onError(DioException err, ErrorInterceptorHandler handler) async {
-  // Handle 401 - Token expired
-  if (err.response?.statusCode == 401) {
-    if (_isRefreshing) {
-      // Already refreshing, queue this request
-      _refreshQueue.add(_RetryRequest(err, handler));
-      return;
-    }
-
-    _isRefreshing = true;
-    final newToken = await _authService.refreshIdToken();
-
-    // Retry all queued requests with new token
-    for (final request in _refreshQueue) {
-      request.error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-      // Retry the request...
-    }
-  }
-
-  // Retry network errors with exponential backoff
-  if (_shouldRetry(err)) {
-    await Future.delayed(Duration(milliseconds: 1000 * (1 << retryCount)));
-    // Retry...
-  }
-}
-```
-
-
-## OAuth Implementation
-
-### What is OAuth 2.0?
-
-OAuth 2.0 is an authorization framework that lets users grant limited access to their accounts without sharing passwords.
-
-**Real-world analogy**: Like giving a valet key to your car - it can only drive the car, not open the trunk.
-
-### Why OAuth 2.0?
-
-1. **Security**: User never shares password with your app
-2. **Control**: User can revoke access anytime
-3. **Standardization**: Industry-wide protocol
-4. **Social Login**: Leverage existing accounts
-
-### OAuth 2.0 Roles
-
-```
-┌─────────────┐                 ┌─────────────┐
-│   User      │                 │ Auth0 Server │
-│  (Resource  │                 │              │
-│   Owner)    │                 │              │
-└──────┬──────┘                 └──────┬──────┘
-       │                                │
-       │ 1. Tap "Login with Google"     │
-       ├───────────────────────────────►│
-       │                                │
-       │ 2. Show Google login page      │
-       │◄───────────────────────────────┤
-       │                                │
-       │ 3. User authenticates           │
-       ├───────────────────────────────►│
-       │                                │
-       │ 4. Return tokens                │
-       │◄───────────────────────────────┤
-       │                                │
-       │    (Access Token, ID Token,     │
-       │     Refresh Token)              │
-```
-
-### Our Auth0 Implementation
-
-**Location**: `lib/features/auth/auth_service.dart`
-
-```dart
-class AuthService {
-  final Auth0 _auth0 = Auth0('YOUR_DOMAIN', 'YOUR_CLIENT_ID');
-
-  Future<Credentials?> loginWithGoogle() async {
-    final credentials = await _auth0.webAuthentication(scheme: 'org.pecha.app')
-        .login(
-          useHTTPS: true,
-          parameters: {"connection": "google-oauth2"},
-          scopes: {"openid", "profile", "email", "offline_access"},
-        );
-
-    // Auth0 SDK handles PKCE automatically
-    // Credentials contain: accessToken, idToken, refreshToken, expiresIn
-
-    await _auth0.credentialsManager.storeCredentials(credentials);
-    return credentials;
-  }
-}
-```
-
-**What scopes mean**:
-- `openid`: Enables OIDC protocol
-- `profile`: Access to user profile data
-- `email`: Access to user email
-- `offline_access`: Enables refresh tokens
-
-### Login Flow: Step by Step
-
-**Step 1: UI - Login Button**
-```dart
-// lib/features/auth/presentation/widgets/auth_buttons.dart
-ElevatedButton(
-  onPressed: () {
-    ref.read(authProvider.notifier).login(connection: 'google-oauth2');
-  },
-  child: Text('Login with Google'),
-)
-```
-
-**Step 2: AuthNotifier - State Management**
-```dart
-// lib/features/auth/presentation/providers/auth_notifier.dart
-Future<void> login({String? connection}) async {
-  state = state.copyWith(isLoading: true);
-
-  final result = await _loginUseCase(LoginParams(connection: connection));
-
-  result.fold(
-    (failure) => state = state.copyWith(errorMessage: failure.message),
-    (credentials) => _handleSuccessfulLogin(credentials),
-  );
-}
-```
-
-**Step 3: UseCase - Orchestration**
-```dart
-// lib/features/auth/domain/usecases/login_usecase.dart
-Future<Either<Failure, AuthCredentials>> call(LoginParams params) async {
-  switch (params.connection) {
-    case 'google-oauth2':
-      return await _repository.loginWithGoogle();
-    case 'apple':
-      return await _repository.loginWithApple();
-  }
-}
-```
-
-**Step 4: Repository - Data Layer**
-```dart
-// lib/features/auth/data/repositories/auth_repository_impl.dart
-Future<Either<Failure, AuthCredentials>> loginWithGoogle() async {
-  try {
-    final credentials = await _authService.loginWithGoogle();
-    return Right(_toAuthCredentials(credentials));
-  } catch (e) {
-    return Left(AuthenticationFailure('Login failed'));
-  }
-}
-```
-
-**Step 5: AuthService - Auth0 Integration**
-```dart
-// lib/features/auth/auth_service.dart
-Future<Credentials?> loginWithGoogle() async {
-  return _loginWithConnection('google-oauth2');
-}
-
-Future<Credentials?> _loginWithConnection(String connection) async {
-  final credentials = await _auth0.webAuthentication(scheme: 'org.pecha.app')
-      .login(
-        useHTTPS: true,
-        parameters: {"connection": connection},
-        scopes: {"openid", "profile", "email", "offline_access"},
-      );
-
-  await _auth0.credentialsManager.storeCredentials(credentials);
-  return credentials;
-}
-```
-
-
-### Auth State & Navigation
-
-**Location**: `lib/core/config/router/go_router.dart`
-
-```dart
-final goRouterProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
-    refreshListenable: GoRouterRefreshStream(ref.watch(authProvider.notifier).stream),
-    redirect: (context, state) async {
-      final authState = ref.watch(authProvider);
-
-      // Unauthenticated trying to access protected route
-      if (!authState.isLoggedIn && RouteConfig.isProtectedRoute(currentPath)) {
-        return RouteConfig.login;  // Redirect to login
-      }
-
-      // Authenticated user on login page
-      if (authState.isLoggedIn && currentPath == RouteConfig.login) {
-        return RouteConfig.home;  // Redirect to home
-      }
-
-      return null;  // No redirect
-    },
-  );
-});
-```
-
-**How it works**:
-- Router watches `authProvider` for state changes
-- When auth state changes, router re-evaluates redirect logic
-- Automatically redirects based on auth status
-
-### Logout Flow
-
-```dart
-// lib/features/auth/presentation/providers/auth_notifier.dart
-Future<void> logout() async {
-  // 1. Clear credentials from storage
-  await _localLogoutUseCase(const NoParams());
-
-  // 2. Clear user data
-  await ref.read(userProvider.notifier).clearUser();
-
-  // 3. Update state
-  state = state.copyWith(isLoggedIn: false);
-
-  // 4. Router automatically redirects to login
-}
-```
-
-### App Launch: Auth State Restoration
-
-```dart
-// lib/features/auth/presentation/providers/auth_notifier.dart
-AuthNotifier(...) : super(const AuthState(isLoading: true)) {
-  _restoreLoginState();  // Runs immediately on creation
-}
-
-Future<void> _restoreLoginState() async {
-  // 1. Check for valid credentials
-  final hasCredentials = await _hasValidCredentialsUseCase();
-
-  if (hasCredentials) {
-    // 2. Restore user data
-    state = state.copyWith(isLoggedIn: true, isLoading: false);
-    ref.read(userProvider.notifier).initializeUser();
-  } else {
-    // 3. Check for guest mode
-    final isGuest = await _isGuestModeUseCase();
-    state = state.copyWith(isLoggedIn: isGuest, isGuest: isGuest, isLoading: false);
-  }
-}
-```
-
-
-### Complete Flow Diagram
-#### End-to-End: From Login to API Call
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     AUTHENTICATION & API CALL FLOW                      │
-└─────────────────────────────────────────────────────────────────────────┘
-
-                        APP LAUNCH
-                            │
-                            ▼
-              ┌─────────────────────────┐
-              │   AuthNotifier created  │
-              │   (isLoading: true)     │
-              └───────────┬─────────────┘
-                          │
-                          ▼
-              ┌─────────────────────────┐
-              │  Check stored creds     │
-              │  (CredentialsManager)   │
-              └───────────┬─────────────┘
-                          │
-              ┌───────────┴───────────┐
-              │                       │
-        Has Creds              No Creds
-              │                       │
-              ▼                       ▼
-    ┌─────────────────┐    ┌─────────────────┐
-    │ isLoggedIn=true │    │ Check guest mode │
-    │ isLoading=false │    └────────┬────────┘
-    └────────┬────────┘             │
-             │              ┌───────┴───────┐
-             │         Was Guest?  Not Guest
-             │              │             │
-             ▼              ▼             ▼
-    ┌─────────────┐  ┌──────────┐  ┌──────────┐
-    │ Show Home   │  │Show Home │  │Show Login│
-    └──────┬──────┘  └──────┬───┘  └──────────┘
-           │                │
-           │                │
-           ▼                ▼
-    ┌──────────────────────────────────┐
-    │     USER TAPS LOGIN BUTTON       │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ AuthNotifier.login() called      │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ LoginUseCase called              │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ AuthRepository.loginWithGoogle() │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ AuthService.loginWithGoogle()    │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Auth0 Web Auth opens             │
-    │ (PKCE flow handled by SDK)       │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ User authenticates with Google   │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Credentials returned             │
-    │ (access, id, refresh tokens)     │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Stored in CredentialsManager     │
-    │ (Keychain/Keystore)              │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ AuthNotifier state updated       │
-    │ (isLoggedIn: true)               │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ GoRouter redirects to Home       │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ User fetches their plans         │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ UserPlansNotifier.fetchPlans()   │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ GetPlansUseCase called           │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Repository.getUserPlans()        │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ DataSource calls Dio.get()       │
-    │ URL: /users/me/plans             │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ REQUEST INTERCEPTOR CHAIN        │
-    │                                  │
-    │ 1. AuthInterceptor               │
-    │    - Path is protected? YES      │
-    │    - Get token from Provider     │
-    │    - Provider calls AuthService  │
-    │    - AuthService checks expiry   │
-    │    - If expired, refreshes       │
-    │    - Returns valid token         │
-    │    - Adds Authorization header   │
-    │                                  │
-    │ 2. CacheInterceptor              │
-    │    - Not in cache, proceed       │
-    │                                  │
-    │ 3. RetryInterceptor              │
-    │    - No error, proceed           │
-    │                                  │
-    │ 4. Send to server                │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ SERVER RESPONSE: 200 OK          │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ RESPONSE INTERCEPTOR CHAIN       │
-    │                                  │
-    │ 1. RetryInterceptor              │
-    │    - No 401, proceed             │
-    │                                  │
-    │ 2. CacheInterceptor              │
-    │    - Store in cache              │
-    │                                  │
-    │ 3. ErrorInterceptor              │
-    │    - No error, proceed           │
-    │                                  │
-    │ 4. LoggingInterceptor            │
-    │    - Log success                 │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ DataSource parses JSON           │
-    │ Returns List<UserPlanModel>      │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Repository maps to entities      │
-    │ Returns Either<Failure, Plans>   │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ UseCase returns Either            │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Notifier folds Either            │
-    │ Updates state with data          │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ UI rebuilds with plans data      │
-    └──────────────────────────────────┘
-```
-
-### 401 Error Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      401 TOKEN EXPIRED FLOW                             │
-└─────────────────────────────────────────────────────────────────────────┘
-
-    API Request with expired token
-                  │
-                  ▼
-    ┌──────────────────────────────────┐
-    │ Server returns 401 Unauthorized  │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ RetryInterceptor.onError()       │
-    └──────────────┬───────────────────┘
-                   │
-                   ▼
-    ┌──────────────────────────────────┐
-    │ Check: Has valid credentials?    │
-    └──────────────┬───────────────────┘
-                   │
-          ┌────────┴────────┐
-          │                 │
-         YES               NO
-          │                 │
-          ▼                 ▼
-    ┌──────────────┐  ┌──────────────┐
-    │ Check if     │  │ Pass error   │
-    │ already     │  │ through      │
-    │ refreshing? │  └──────────────┘
-    └──────┬───────┘
-           │
-     ┌─────┴─────┐
-     │           │
-  Refreshing   Not refreshing
-     │           │
-     ▼           ▼
-┌─────────┐  ┌──────────────────┐
-│ Queue   │  │ Set refreshing = │
-│ request │  │ true             │
-└─────────┘  └────────┬─────────┘
-                      │
-                      ▼
-            ┌──────────────────────┐
-            │ Call AuthService     │
-            │ .refreshIdToken()    │
-            └──────────┬───────────┘
-                       │
-                       ▼
-            ┌──────────────────────┐
-            │ Auth0 API renews     │
-            │ using refresh token  │
-            └──────────┬───────────┘
-                       │
-              ┌────────┴────────┐
-              │                 │
-         Success           Failure
-              │                 │
-              ▼                 ▼
-    ┌───────────────┐  ┌────────────────┐
-    │ Store new     │  │ onAuthExpired  │
-    │ credentials   │  │ callback       │
-    └───────┬───────┘  │ → Logout      │
-            │          └────────────────┘
-            ▼
-    ┌───────────────┐
-    │ Retry queued  │
-    │ requests      │
-    └───────┬───────┘
-            │
-            ▼
-    ┌───────────────┐
-    │ Retry original│
-    │ request       │
-    └───────┬───────┘
-            │
-            ▼
-    ┌───────────────┐
-    │ Set refreshing│
-    │ = false       │
-    └───────────────┘
-```
+### Networking
+
+`lib/core/network/dio_client.dart` adds interceptors in this order:
+`auth → timezone → cache → retry → error → logging`.
+
+- **AuthInterceptor** attaches `Authorization: Bearer <access token>` for
+  protected paths (`lib/core/config/protected_routes.dart`) and, when signed
+  in, for optional-auth paths.
+- **TimezoneInterceptor** sends the device time zone.
+- **CacheInterceptor** serves/stores cacheable GET responses.
+- **RetryInterceptor** queues 401s (and bearer-less 403s), forces one token
+  refresh through `AuthService.forceRefreshAccessToken()`, replays the queue,
+  and retries network errors with backoff.
+- **ErrorInterceptor** maps `DioException`s to typed exceptions;
+  **LoggingInterceptor** logs the final result.
+
+The public Library API uses a separate, unauthenticated Dio
+(`libraryDioProvider` in `lib/core/di/core_providers.dart`) that shares the
+cache, error and logging interceptors.
+
+### Authentication
+
+Auth0 Universal Login via `auth0_flutter` (Google, Apple, SMS), with guest
+mode. The Auth0 domain/client ID come from the backend `/props` endpoint;
+the callback scheme comes from `AUTH0_SCHEME`. The Auth0 credentials manager
+is the single refresh path. The router (`lib/core/config/router/app_router.dart`)
+re-runs `RouteGuard.redirect` whenever auth state changes.
+
+Details: [`lib/features/auth/doc/README.md`](lib/features/auth/doc/README.md)
+and [`lib/core/config/router/README.md`](lib/core/config/router/README.md).
+
+## 🚚 CI/CD (GitHub Actions)
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `ci.yml` | PR into `develop` / `main` | Tolgee bridge check, ARB doctor, `flutter analyze`, `flutter test` |
+| `release-dev.yml` | push to `develop` | Previews the next version, builds the **dev** flavor, uploads to Play internal + TestFlight |
+| `release-prod.yml` | push to `main` | Bumps the version (committed + tagged), builds the **prod** flavor, uploads to stores, creates a GitHub release |
+| `build-android.yml` / `build-ios.yml` | called by the release workflows | Signed build per flavor; `.env.*` written by `ci/scripts/create_env_files.sh` from secrets |
+| `tolgee-sync.yml` | weekly / manual | Syncs ARB ↔ Tolgee and opens a PR |
+| `code-review.yml` | PRs, PR comments, pushes to `main` | Automated code review (Amchi) |
+
+Versioning is automatic from commit messages / branch names — see
+[CONTRIBUTING.md](CONTRIBUTING.md). `codemagic.yaml` is a legacy config and is
+not the active pipeline.
+
+## 📚 Further documentation
+
+- [docs/README.md](docs/README.md) — documentation hub (architecture, implementation notes, Tolgee)
+- [docs/SUMMARY.md](docs/SUMMARY.md) — index of every doc in the repo
+- [lib/features/doc/README.md](lib/features/doc/README.md) — feature doc index
 
 ## 🤝 Contributing
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-## 📄 License
-[MIT](LICENSE)
-
-
-
-
-
-**Table of Contents Screen**
-- Browse through organized text content lists with ease
-- View all available versions of each text in one convenient location
-
-**Reader Screen**
-- Immersive reading experience with optimized formatting
-
+See [CONTRIBUTING.md](CONTRIBUTING.md). Pull requests target `develop`.

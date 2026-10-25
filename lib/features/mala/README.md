@@ -21,29 +21,40 @@ data/
 domain/
   entities/
     mantra.dart                   Mantra, MantraText, AccumulatorMetadata; kBeadsPerRound = 108
-    mala_count.dart               MalaCount (total, accumulatorId, beadImageUrl)
+    mala_count.dart               MalaCount (total, totalCounted, accumulatorId, beadImageUrl)
     accumulator_group.dart        Joined group accumulator summary for a preset
+    mala_accumulation_selection.dart  personal vs group selection value
   repositories/mala_repository.dart
-  usecases/mala_usecases.dart     GetCatalogue / GetAccumulatorDetail / Create / Update
+  usecases/mala_usecases.dart     GetCatalogue / GetAccumulatorDetail / Create / Update /
+                                  Delete (personal reset) / SubmitGroupCount / DeleteGroup
 presentation/
   providers/
     mala_providers.dart           all DI providers + user-id resolution
     mala_counter_notifier.dart    per-mantra counter (seed + increment)
     mala_sync_manager.dart        app-scoped background sync
-    mala_settings_provider.dart   sound / vibration toggles (persisted)
+    mala_settings_provider.dart   sound / vibration / left-handed / mantra speed (persisted)
     accumulator_groups_provider.dart  joined groups + session seed fetch (autoDispose family)
     group_accumulation_counts_provider.dart  per-group session counts (Hive + sync)
     mala_accumulation_selection_provider.dart  personal vs group selection (SharedPreferences)
     accumulation_search_provider.dart preset search state (settings / add flows)
+    accumulation_chant_counter.dart  counts reader chants into the selected target
   services/
     mala_sound_player.dart        bead-tap click (just_audio)
+  utils/
+    mala_analytics.dart           MalaAnalytics + MalaSessionTracker
+    accumulation_sheet_display.dart  sheet section/total rules (events vs groups)
   screens/mala_screen.dart        screen layout (mantra card → counter → beads → group bar)
   widgets/
     mala_beads.dart               the tappable bead-arc CustomPainter
     mantra_switcher.dart          infinite looping carousel (swipe + ‹ › chevrons)
+    mantra_marquee.dart           scrolling script / transliteration band
+    mantra_speed_sheet.dart       marquee speed picker (nested in settings)
+    add_mala_rounds_button.dart   "+" beside the rounds count
+    add_mala_rounds_dialog.dart   wheel picker for offline rounds
     group_accumulations_bar.dart  joined-group pill with overlapping avatars
     group_accumulations_sheet.dart  group accumulations bottom sheet
-    mala_settings_sheet.dart      sound/vibration, reset, bookmark, add accumulation
+    mala_settings_sheet.dart      sound/vibration, mantra speed, add to practice,
+                                  bookmark, share, reset
     mala_skeleton.dart            loading placeholder
 ```
 
@@ -83,18 +94,22 @@ accumulations sheet come from a separate field — see
   reconcile across devices.
 - **Seed-before-send.** `MalaCounterNotifier.seed()` fetches the server total
   and `max()`-merges with the local total *before* taps are enabled
-  (`isSeeding`), so a stale low value is never sent. Seed uses API
+  (`isSeeding`), so a stale low value is never sent. The detail call is raced
+  against a **3 s seed timeout**: on timeout taps unlock on the local Hive
+  total and the late response still reconciles in the background (guarded by
+  a generation counter so it cannot resurrect a session that was reset). Seed uses API
   `current_count` (active session) via `GET /accumulators/{parent_id}`, not
   `total_counted` (lifetime history). When `accumulator_id` is null — fresh
   install or after reset — the client keeps the local session tally (0 after
   reset) and ignores a stale `current_count`.
 - **`beadInRound = total % 108`, `rounds = total ~/ 108`** (`kBeadsPerRound`).
-- Taps are blocked while `isSeeding`; a failed seed shows a retry
-  (`seedFailed`).
+- Taps are blocked while `isSeeding`; a failed seed (no user id) shows a
+  retry (`seedFailed`). An API error falls back to the local total and
+  enables counting.
 
 ### User-id resolution (important)
 
-`mala_providers._resolveUserId()` reads the **persisted** `currentUserId`
+`mala_providers.resolveMalaUserId()` reads the **persisted** `currentUserId`
 (`StorageKeys.currentUserId`, written at login *before* auth state flips) and
 only falls back to `userProvider.user?.id`. This avoids a race where the screen
 is reachable (auth gate passes) but the async profile fetch hasn't populated
@@ -103,7 +118,7 @@ successful seed so the synchronous `incrementBead` can persist taps.
 
 The local store **and** the sync manager must use the *same* id (the counter
 writes Hive taps keyed by it; the sync manager reads dirty entries by it), so
-both resolve through `_resolveUserId` (the sync manager's `currentUserId`
+both resolve through `resolveMalaUserId` (the sync manager's `currentUserId`
 callback is async).
 
 ## Sync (`MalaSyncManager`)
@@ -113,10 +128,15 @@ observes lifecycle + connectivity. Reads dirty entries straight from Hive, so it
 flushes even after the user leaves the screen.
 
 - **Triggers:** launch, each tap (debounced 5s), round completion (immediate),
-  background/pause, connectivity reconnect, screen-leave.
+  background/pause, connectivity reconnect, screen-leave, logout
+  (`AuthNotifier` flushes before clearing the session).
+- **Callbacks:** `onPersonalCountSynced` (counter refreshes `totalCounted`) and
+  `onGroupCountSynced` (group lifetime totals refetch). `flushAndSettle()`
+  flushes and waits for the sweep so callers can refetch server counts.
 - **Flow per dirty preset:** create the accumulator once if `accumulatorId` is
   null (POST), then PUT the absolute total. On success, `max()`-merge the
-  returned total into local `total`/`syncedTotal`.
+  returned total into local `total`/`syncedTotal` and add the synced delta to
+  `totalCounted`.
 - **Failure:** entry stays dirty; exponential backoff retry (cap 60s).
 - Concurrent triggers collapse via an `_isSyncing`/`_dirty` guard.
 
@@ -167,8 +187,11 @@ shows the **session** count from [groupAccumulationCountsProvider] (Hive +
 update live; after a successful group POST the groups list is refetched. Lifetime
 does not drop to 0 when the active session is reset.
 
-**Personal row in the sheet:** shows `MalaCounterState.total` (personal active
-session), same semantics as the counter when personal is selected.
+**Personal row in the sheet:** shows the personal **lifetime** total,
+`MalaCounterNotifier.displayLifetimeCount` (`totalCounted` from
+`GET /accumulators/{parent_id}` plus unsynced taps). The header shows
+"My total | Group total"; rows are split into Events and Groups sections
+(`accumulation_sheet_display.dart`) and ended accumulations are omitted.
 
 Providers:
 
@@ -183,9 +206,11 @@ Providers:
 ## Local store (`MalaLocalDataSource`)
 
 Hive box `mala_counts`, keys `userId:presetId`, value = JSON `LocalMalaState`
-(`total`, `syncedTotal`, `accumulatorId`, `beadImageUrl`). `isDirty =
+(`total`, `syncedTotal`, `totalCounted`, `accumulatorId`, `beadImageUrl`,
+`beadImageBase64`). The same box also caches the preset catalogue under
+`catalogue:v2:{language}`. `isDirty =
 total > syncedTotal`. `pruneSynced` removes fully-synced entries (keeps dirty
-tails).
+tails); it currently has no caller.
 
 Group counts use a separate Hive box `mala_group_counts`, keys
 `userId:groupAccumulatorId`, value = JSON `LocalGroupMalaState` (`total`,
@@ -271,16 +296,25 @@ A `CustomPaint` strand that advances **forward only** (counting is monotonic).
 Below the app bar, the body is a vertical column (24px horizontal padding, 16px
 bottom):
 
-1. **`MantraSwitcher`** — `Expanded(flex: 36)`, inside a white card
-   (`AppColors.surfaceWhite`, 16px corner radius). Infinite looping carousel
+1. **`MantraSwitcher`** — `Expanded(flex: 48)` when any mantra has deity
+   artwork, `flex: 26` otherwise (so the layout does not jump while swiping).
+   Shows the artwork plus a `MantraMarquee` band whose speed comes from
+   `malaSettingsProvider.mantraSpeed`. Infinite looping carousel
    (unbounded `PageView` seeded at `_loopBase * length + index`, mapped back
    with `page % length`); swipe or tap chevrons to wrap. The screen owns
    `_index`; the carousel reports settles via `onIndexChanged`. With one mantra
    it locks (no swipe, chevrons disabled).
-2. **`_CounterBlock`** — `n/108` bead-in-round and rounds count, left-aligned.
-3. **`MalaBeads`** — `Expanded(flex: 42)`, top-aligned in a canvas sized to
-   ~85% of the available height so the arc sits higher on screen.
+2. **`_CounterBlock`** — `n/108` bead-in-round and rounds count (+ the
+   add-rounds button), left-aligned, or right-aligned and with the bead arc
+   mirrored when `leftHanded` is on (toggle in the app bar). Tibetan locale
+   renders Tibetan digits.
+3. **`MalaBeads`** — `Expanded(flex: 30)` with artwork / `flex: 42` without,
+   top-aligned in a canvas sized to ~85% of the available height.
 4. **`GroupAccumulationsBar`** — fixed 40px slot at the bottom (see below).
+
+Route `/mala` (login-gated) takes `extra` keys `presetId`,
+`groupAccumulatorId` and `groupAccumulatorEnded`. When opened on an ended group
+accumulation, the add-rounds button and the groups bar are hidden.
 
 States: skeleton (loading), error+retry (catalogue or seed failure), data.
 
@@ -321,13 +355,14 @@ reserved).
 ## Group accumulations sheet (`GroupAccumulationsSheet`)
 
 Opened from the bar pill. Receives the already-fetched [AccumulatorGroup] list
-and the user's personal **session** count for the current preset
-(`MalaCounterState.total`).
+and reads the user's personal **lifetime** count for the current preset
+(`displayLifetimeCount`).
 
 - **User row:** name and avatar from [userProvider] (local cache written at
   login; refreshes via `GET /users/info` when the sheet opens and no user is
-  cached yet). Count shows the personal mala session total. Tappable; selected
-  row uses `AppColors.blue` / `AppColors.blueDark`.
+  cached yet). Tappable; selected
+  row uses `AppColors.blue` / `AppColors.blueDark`. Count shows the personal
+  lifetime total (see above).
 - **Groups list:** each row shows group image, title, and a **lifetime** count
   (`userTotalCount` from the groups list + unsynced local taps). Not the session
   count used by the counter — so a group reset clears the counter but lifetime
@@ -337,8 +372,10 @@ and the user's personal **session** count for the current preset
   `StorageKeys.malaAccumulationSelectionPrefix` + preset id. Invalid group ids
   fall back to personal when the groups list reloads.
 
-Settings (from the mala app bar) can reset the active session (personal or
-group), add offline mala rounds to the active session, and bookmark the preset.
+Settings (the ⋮ in the mala app bar) toggle sound / vibration, set the mantra
+marquee speed, add the preset to a practice routine, bookmark or share it, and
+reset the active session (personal or group). Offline mala rounds are added from
+the "+" button beside the rounds count.
 
 ## Analytics
 
@@ -359,6 +396,9 @@ closes, the app backgrounds, or five minutes pass without a bead.
   group count POST flush + dirty-on-failure, group reset (flush-then-DELETE).
 - `mala_beads_test.dart` — tap increments, right-to-left swipe increments,
   left-to-right doesn't, and disabled beads ignore both.
+- Also: `accumulation_chant_counter_test.dart`,
+  `mala_accumulation_selection_provider_test.dart`, `data/` (model + catalogue
+  cache tests) and `presentation/{utils,widgets}/`.
 
 `currentUserId` callbacks are async (`Future<String?> Function()`) in both the
 notifier and sync manager.

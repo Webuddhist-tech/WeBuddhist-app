@@ -4,11 +4,12 @@
 
 ## Purpose
 
-App-level notification toggles, OS permission status, and **local scheduling** for recitation, mala, and timer daily repeats. Routine reminders gate server-side plan/series push.
+App-level notification toggles, OS permission status, **local scheduling** for recitation, mala, and timer daily repeats, and the account-wide **Connect** push preferences stored on the backend. Routine reminders gate server-side plan/series push.
 
 ## User-facing functionality
 
-- Master + per-type toggles: routine, recitation, practice, timer
+- Master + per-type toggles: routine, recitation, practice, timer (local, SharedPreferences)
+- Connect toggles (signed-in only): group posts, group chats, prayer received, prayer request — `GET/PATCH /users/me/notification-preferences`
 - OS permission / exact-alarm / battery optimization status display
 - Local scheduling for recitation, mala (accumulator), timer repeats
 - Routine reminder scheduling (hydrated from practice routine)
@@ -21,7 +22,7 @@ App-level notification toggles, OS permission status, and **local scheduling** f
 notifications/
 ├── application/    notification_sync_engine, notification_sync_bootstrap
 ├── data/           channels, local datasource, models, repository, services
-├── domain/         entities, repository, usecases
+├── domain/         entities, repositories, usecases (`NotificationsRepository` + `notifications_usecases.dart` are currently unreferenced)
 ├── presentation/   notification_provider, settings screen
 └── notifications.dart
 ```
@@ -35,12 +36,16 @@ notifications/
 | Toggles | `presentation/providers/notification_provider.dart` |
 | Local OS | `data/services/notification_service.dart` |
 | Routine scheduling | `data/services/routine_notification_service.dart` |
-| Settings UI | `presentation/notification_settings_screen.dart` |
+| Connect (backend) toggles | `presentation/providers/notification_preferences_provider.dart`, `data/datasource/notification_preferences_remote_datasource.dart`, `data/repositories/notification_preferences_repository_impl.dart` |
+| Notification IDs / channels | `data/notification_id_scheme.dart`, `data/channels/notification_channels.dart` |
+| Settings UI | `presentation/notification_settings_screen.dart`, `presentation/widgets/notification_switch_row.dart` |
+| Analytics | `presentation/utils/notification_settings_analytics.dart` |
 | Barrel | `notifications.dart` |
 
 ## State management
 
-- `notificationProvider` — `NotificationNotifier` for app toggles + OS status refresh on resume
+- `notificationProvider` — `NotificationNotifier` for app toggles + OS status refresh (`refreshStatus`)
+- `notificationPreferencesProvider` — autoDispose `NotificationPreferencesNotifier` for the Connect toggles (optimistic, per-toggle serialized writes; rebuilt on sign-in/out)
 - `notificationSyncBootstrapProvider` — waits for auth before routine hydration
 - `notificationSyncEngineProvider` — single reconciliation point
 
@@ -48,6 +53,7 @@ notifications/
 
 - **flutter_local_notifications** — schedule/cancel
 - **SharedPreferences** — app-level toggle flags
+- **Backend** — Connect push preferences (`/users/me/notification-preferences`)
 - **Hive (via practice)** — routine time blocks
 - **FCM (push_notifications)** — plan/series only (not scheduled locally here)
 
@@ -92,7 +98,8 @@ notifications/
 | New toggle | `NotificationSettings` entity, notifier, settings screen, sync engine |
 | Routine time change | practice `routineProvider` → sync engine trigger |
 | Deep link on tap | `notification_nav` model, push feature navigator |
-| Permission UX | `NotificationNotifier.refreshOsStatus` |
+| Permission UX | `NotificationNotifier.refreshStatus` |
+| New Connect toggle | `ConnectNotificationToggle` enum (`domain/entities/notification_preferences.dart`), preferences model, settings screen |
 
 ### Testing
 
