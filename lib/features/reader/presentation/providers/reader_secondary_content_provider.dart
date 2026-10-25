@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart' show Either;
 
 /// Notifier that owns the secondary (companion) version's pages and exposes
 /// a segment_number → content lookup map for the interlinear renderer.
@@ -276,11 +278,20 @@ class SecondaryReaderNotifier extends StateNotifier<SecondaryReaderState> {
   }
 
   Future<ReaderResponse> _fetchParams(TextDetailsParams params) async {
-    final result = await _ref.read(textDetailsFutureProvider(params).future);
+    final Either<Failure, ReaderResponse> result;
+    try {
+      result = await _ref.read(textDetailsFutureProvider(params).future);
+    } catch (_) {
+      _ref.invalidate(textDetailsFutureProvider(params));
+      rethrow;
+    }
     return result.fold(
-      (failure) => throw Exception(
-        'Failed to fetch secondary text: ${failure.message}',
-      ),
+      (failure) {
+        // The provider keeps its result for the session. Drop the failure so
+        // a retry (scroll, or toggling the translation) refetches.
+        _ref.invalidate(textDetailsFutureProvider(params));
+        throw Exception('Failed to fetch secondary text: ${failure.message}');
+      },
       (response) => response,
     );
   }
