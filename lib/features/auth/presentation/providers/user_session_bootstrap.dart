@@ -6,12 +6,15 @@ import 'package:flutter_pecha/features/home/presentation/providers/routine_info_
 import 'package:flutter_pecha/features/home/presentation/providers/streak_provider.dart';
 import 'package:flutter_pecha/features/more/presentation/providers/user_stats_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
+import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void _invalidateUserScopedProviders(Ref ref) {
   ref.invalidate(userRoutineProvider);
   ref.invalidate(userPlansFutureProvider);
+  ref.invalidate(myPlansPaginatedProvider);
+  ref.invalidate(bookmarkExistsCacheProvider);
   ref.invalidate(streakFutureProvider);
   ref.invalidate(userStatsFutureProvider);
   ref.invalidate(routineInfoFutureProvider);
