@@ -275,7 +275,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     final result = await _guardFetch(
       () => ref
           .read(groupChatRepositoryProvider)
-          .listMessages(roomId, skip: 0, limit: _limit),
+          .listMessages(
+            roomId,
+            skip: 0,
+            limit: _limit,
+            messageType: ChatMessageDTO.typeText,
+          ),
     );
 
     if (!mounted) return;
@@ -326,7 +331,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     final result = await _guardFetch(
       () => ref
           .read(groupChatRepositoryProvider)
-          .listMessages(roomId, skip: state.skip, limit: _limit),
+          .listMessages(
+            roomId,
+            skip: state.skip,
+            limit: _limit,
+            messageType: ChatMessageDTO.typeText,
+          ),
     );
 
     if (!mounted) return;
@@ -365,6 +375,8 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   /// produces exactly one row.
   void appendLive(ChatMessageDTO message) {
     if (message.id.isEmpty) return;
+    // Prayer requests share the room but belong to the prayer sheet.
+    if (message.isPrayerRequest) return;
     if (state.messages.any((existing) => existing.id == message.id)) return;
     // A reply sent after its original was deleted arrives quoting it as
     // live, the same way a refetched one does.
@@ -473,7 +485,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     final result = await _guardFetch(
       () => ref
           .read(groupChatRepositoryProvider)
-          .listMessages(roomId, skip: 0, limit: _limit),
+          .listMessages(
+            roomId,
+            skip: 0,
+            limit: _limit,
+            messageType: ChatMessageDTO.typeText,
+          ),
     );
 
     if (!mounted) return ThreadRefreshResult.failed;

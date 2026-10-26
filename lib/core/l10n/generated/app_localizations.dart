@@ -5390,6 +5390,18 @@ abstract class AppLocalizations {
   /// **'Prayer requests are closed for this event'**
   String get event_prayer_closed;
 
+  /// No description provided for @group_prayer_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests are closed for this space'**
+  String get group_prayer_closed;
+
+  /// No description provided for @group_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in this space.'**
+  String get group_prayer_delete_body;
+
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:
@@ -5587,6 +5599,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Translated'**
   String get event_prayer_translated;
+
+  /// No description provided for @event_prayer_sort_mine.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayers'**
+  String get event_prayer_sort_mine;
+
+  /// No description provided for @event_prayer_section_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get event_prayer_section_active;
+
+  /// No description provided for @event_prayer_section_accomplished.
+  ///
+  /// In en, this message translates to:
+  /// **'Accomplished'**
+  String get event_prayer_section_accomplished;
+
+  /// No description provided for @event_prayer_mark_accomplished.
+  ///
+  /// In en, this message translates to:
+  /// **'Accomplished'**
+  String get event_prayer_mark_accomplished;
+
+  /// No description provided for @event_prayer_mark_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as active'**
+  String get event_prayer_mark_active;
+
+  /// No description provided for @event_prayer_mine_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests from you yet'**
+  String get event_prayer_mine_empty_title;
+
+  /// No description provided for @event_prayer_mine_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you post here will appear in this list'**
+  String get event_prayer_mine_empty_body;
+
+  /// No description provided for @event_prayer_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The prayer request couldn\'t be updated'**
+  String get event_prayer_update_failed;
+
+  /// No description provided for @event_prayer_find.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a prayer for you'**
+  String get event_prayer_find;
+
+  /// No description provided for @event_prayer_random.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get event_prayer_random;
+
+  /// No description provided for @event_prayer_finding.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding a prayer...'**
+  String get event_prayer_finding;
+
+  /// No description provided for @event_prayer_found.
+  ///
+  /// In en, this message translates to:
+  /// **'A prayer for you'**
+  String get event_prayer_found;
+
+  /// No description provided for @event_prayer_skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get event_prayer_skip;
+
+  /// No description provided for @event_prayer_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next prayer'**
+  String get event_prayer_next;
+
+  /// No description provided for @event_prayer_be_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to pray'**
+  String get event_prayer_be_first;
+
+  /// No description provided for @event_prayer_random_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayers to find yet'**
+  String get event_prayer_random_empty_title;
+
+  /// No description provided for @event_prayer_random_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'No one else has posted a request here yet'**
+  String get event_prayer_random_empty_body;
+
+  /// No description provided for @event_prayer_random_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find a prayer'**
+  String get event_prayer_random_failed;
+
+  /// No description provided for @event_prayer_people_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 person}\nother {{count} people}\n}'**
+  String event_prayer_people_count(int count);
+
+  /// No description provided for @event_prayer_prayers_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 prayer}\nother {{count} prayers}\n}'**
+  String event_prayer_prayers_count(int count);
+
+  /// No description provided for @me_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayer requests'**
+  String get me_prayer_requests;
+
+  /// No description provided for @me_prayer_requests_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests yet'**
+  String get me_prayer_requests_empty_title;
+
+  /// No description provided for @me_prayer_requests_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you post in spaces and events will appear here'**
+  String get me_prayer_requests_empty_body;
+
+  /// No description provided for @me_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in that space or event.'**
+  String get me_prayer_delete_body;
 
   /// No description provided for @recitation_live_sync.
   ///

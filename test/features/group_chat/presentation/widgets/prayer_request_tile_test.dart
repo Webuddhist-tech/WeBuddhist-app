@@ -22,6 +22,7 @@ ChatMessageDTO _prayer({
   required int count,
   required bool prayedByMe,
   int mine = 0,
+  int total = 0,
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
 }) {
@@ -36,6 +37,7 @@ ChatMessageDTO _prayer({
     messageType: ChatMessageDTO.typePrayer,
     intention: intention,
     prayerCount: count,
+    totalPrayerCount: total,
     prayedByMe: prayedByMe,
     myPrayerCount: mine,
     recentPrayers: recent,
@@ -47,6 +49,7 @@ Future<void> _pump(
   required int count,
   required bool prayedByMe,
   int mine = 0,
+  int total = 0,
   bool isOwn = false,
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
@@ -67,6 +70,7 @@ Future<void> _pump(
             count: count,
             prayedByMe: prayedByMe,
             mine: mine,
+            total: total,
             recent: recent,
             intention: intention,
           ),
@@ -281,6 +285,24 @@ void main() {
     await _pump(tester, count: 1, prayedByMe: true);
     expect(find.text('Pray'), findsOneWidget);
     expect(find.textContaining('+'), findsNothing);
+  });
+
+  testWidgets('people and prayers are both counted once the server sends '
+      'totals', (tester) async {
+    await _pump(
+      tester,
+      count: 12,
+      total: 31,
+      prayedByMe: false,
+      recent: const [ChatPrayerUserDTO(userId: 'u2', name: 'Pema')],
+    );
+    expect(find.text('12 people · 31 prayers'), findsOneWidget);
+    expect(find.textContaining('more prayed'), findsNothing);
+  });
+
+  testWidgets('one person, one prayer reads in the singular', (tester) async {
+    await _pump(tester, count: 1, total: 1, prayedByMe: false);
+    expect(find.text('1 person · 1 prayer'), findsOneWidget);
   });
 
   testWidgets('the avatar stack counts the rest as more', (tester) async {

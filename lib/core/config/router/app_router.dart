@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart
 import 'package:flutter_pecha/features/group_chat/presentation/screens/chats_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/direct_chat_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/group_chat_screen.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/screens/my_prayer_requests_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_profile_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_recitation_collection_screen.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
@@ -214,6 +215,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      // Masked like chat: the requests describe the user's own situation.
+      GoRoute(
+        path: AppRoutes.myPrayerRequests,
+        name: 'my-prayer-requests',
+        builder:
+            (context, state) =>
+                const ClarityMask(child: MyPrayerRequestsScreen()),
+      ),
       // Masked like chat: the message can describe the user's own situation.
       GoRoute(
         path: AppRoutes.helpContact,
@@ -367,7 +376,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 parentNavigatorKey: rootNavigatorKey,
                 builder: (context, state) {
                   final groupId = state.pathParameters['groupId'] ?? '';
-                  return GroupProfileScreen(groupId: groupId);
+                  final openPrayerRequests =
+                      state.uri.queryParameters[AppRoutes.groupPrayersQuery] ==
+                      '1';
+                  return GroupProfileScreen(
+                    groupId: groupId,
+                    openPrayerRequests: openPrayerRequests,
+                  );
                 },
               ),
               GoRoute(

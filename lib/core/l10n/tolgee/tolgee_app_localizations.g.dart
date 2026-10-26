@@ -6030,6 +6030,20 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get group_prayer_closed => TolgeeBridge.get(
+    localeName,
+    'group_prayer_closed',
+    () => _fallback.group_prayer_closed,
+  );
+
+  @override
+  String get group_prayer_delete_body => TolgeeBridge.get(
+    localeName,
+    'group_prayer_delete_body',
+    () => _fallback.group_prayer_delete_body,
+  );
+
+  @override
   String get event_prayer_pray => TolgeeBridge.get(
     localeName,
     'event_prayer_pray',
@@ -6263,6 +6277,176 @@ class TolgeeAppLocalizations extends AppLocalizations {
     localeName,
     'event_prayer_translated',
     () => _fallback.event_prayer_translated,
+  );
+
+  @override
+  String get event_prayer_sort_mine => TolgeeBridge.get(
+    localeName,
+    'event_prayer_sort_mine',
+    () => _fallback.event_prayer_sort_mine,
+  );
+
+  @override
+  String get event_prayer_section_active => TolgeeBridge.get(
+    localeName,
+    'event_prayer_section_active',
+    () => _fallback.event_prayer_section_active,
+  );
+
+  @override
+  String get event_prayer_section_accomplished => TolgeeBridge.get(
+    localeName,
+    'event_prayer_section_accomplished',
+    () => _fallback.event_prayer_section_accomplished,
+  );
+
+  @override
+  String get event_prayer_mark_accomplished => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mark_accomplished',
+    () => _fallback.event_prayer_mark_accomplished,
+  );
+
+  @override
+  String get event_prayer_mark_active => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mark_active',
+    () => _fallback.event_prayer_mark_active,
+  );
+
+  @override
+  String get event_prayer_mine_empty_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mine_empty_title',
+    () => _fallback.event_prayer_mine_empty_title,
+  );
+
+  @override
+  String get event_prayer_mine_empty_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_mine_empty_body',
+    () => _fallback.event_prayer_mine_empty_body,
+  );
+
+  @override
+  String get event_prayer_update_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_update_failed',
+    () => _fallback.event_prayer_update_failed,
+  );
+
+  @override
+  String get event_prayer_find => TolgeeBridge.get(
+    localeName,
+    'event_prayer_find',
+    () => _fallback.event_prayer_find,
+  );
+
+  @override
+  String get event_prayer_random => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random',
+    () => _fallback.event_prayer_random,
+  );
+
+  @override
+  String get event_prayer_finding => TolgeeBridge.get(
+    localeName,
+    'event_prayer_finding',
+    () => _fallback.event_prayer_finding,
+  );
+
+  @override
+  String get event_prayer_found => TolgeeBridge.get(
+    localeName,
+    'event_prayer_found',
+    () => _fallback.event_prayer_found,
+  );
+
+  @override
+  String get event_prayer_skip => TolgeeBridge.get(
+    localeName,
+    'event_prayer_skip',
+    () => _fallback.event_prayer_skip,
+  );
+
+  @override
+  String get event_prayer_next => TolgeeBridge.get(
+    localeName,
+    'event_prayer_next',
+    () => _fallback.event_prayer_next,
+  );
+
+  @override
+  String get event_prayer_be_first => TolgeeBridge.get(
+    localeName,
+    'event_prayer_be_first',
+    () => _fallback.event_prayer_be_first,
+  );
+
+  @override
+  String get event_prayer_random_empty_title => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random_empty_title',
+    () => _fallback.event_prayer_random_empty_title,
+  );
+
+  @override
+  String get event_prayer_random_empty_body => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random_empty_body',
+    () => _fallback.event_prayer_random_empty_body,
+  );
+
+  @override
+  String get event_prayer_random_failed => TolgeeBridge.get(
+    localeName,
+    'event_prayer_random_failed',
+    () => _fallback.event_prayer_random_failed,
+  );
+
+  @override
+  String event_prayer_people_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_people_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_people_count(count),
+  );
+
+  @override
+  String event_prayer_prayers_count(int count) => TolgeeBridge.format(
+    localeName,
+    'event_prayer_prayers_count',
+    <String, Object>{'count': count},
+    () => _fallback.event_prayer_prayers_count(count),
+  );
+
+  @override
+  String get me_prayer_requests => TolgeeBridge.get(
+    localeName,
+    'me_prayer_requests',
+    () => _fallback.me_prayer_requests,
+  );
+
+  @override
+  String get me_prayer_requests_empty_title => TolgeeBridge.get(
+    localeName,
+    'me_prayer_requests_empty_title',
+    () => _fallback.me_prayer_requests_empty_title,
+  );
+
+  @override
+  String get me_prayer_requests_empty_body => TolgeeBridge.get(
+    localeName,
+    'me_prayer_requests_empty_body',
+    () => _fallback.me_prayer_requests_empty_body,
+  );
+
+  @override
+  String get me_prayer_delete_body => TolgeeBridge.get(
+    localeName,
+    'me_prayer_delete_body',
+    () => _fallback.me_prayer_delete_body,
   );
 
   @override

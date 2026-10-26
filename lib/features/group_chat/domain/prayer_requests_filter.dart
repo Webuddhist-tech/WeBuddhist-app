@@ -14,9 +14,14 @@ enum PrayerSort {
   final String apiValue;
 }
 
-/// What the list is narrowed to: an ordering, or one intention.
+/// What the list is narrowed to: an ordering, one intention, or the
+/// viewer's own requests.
 class PrayerRequestsFilter extends Equatable {
-  const PrayerRequestsFilter({this.sort = PrayerSort.newest, this.intention});
+  const PrayerRequestsFilter({
+    this.sort = PrayerSort.newest,
+    this.intention,
+    this.mine = false,
+  });
 
   /// Ignored by the server when [intention] is set; it then orders newest.
   final PrayerSort sort;
@@ -24,11 +29,15 @@ class PrayerRequestsFilter extends Equatable {
   /// Only requests with this intention; null lists them all.
   final ChatPrayerIntentionDTO? intention;
 
+  /// Only the viewer's own requests, from the my-requests endpoint, which
+  /// orders newest and ignores [sort].
+  final bool mine;
+
   static const PrayerRequestsFilter initial = PrayerRequestsFilter();
 
   bool get byIntention => intention != null;
 
-  String? get sortParam => byIntention ? null : sort.apiValue;
+  String? get sortParam => byIntention || mine ? null : sort.apiValue;
 
   String? get intentionParam => intention?.slug;
 
@@ -41,11 +50,13 @@ class PrayerRequestsFilter extends Equatable {
   PrayerRequestsFilter withSort(PrayerSort sort) =>
       PrayerRequestsFilter(sort: sort);
 
+  PrayerRequestsFilter withMine() => const PrayerRequestsFilter(mine: true);
+
   PrayerRequestsFilter withIntention(ChatPrayerIntentionDTO intention) =>
       PrayerRequestsFilter(sort: sort, intention: intention);
 
   PrayerRequestsFilter withoutIntention() => PrayerRequestsFilter(sort: sort);
 
   @override
-  List<Object?> get props => [sort, intention?.slug];
+  List<Object?> get props => [sort, intention?.slug, mine];
 }

@@ -17,6 +17,8 @@ abstract class GroupChatRepository {
 
   Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId);
 
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId);
+
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {
     int skip = 0,
@@ -58,6 +60,24 @@ abstract class GroupChatRepository {
     int count = 1,
   });
 
+  /// The caller's own prayer requests; [eventId] keeps to one event's chat,
+  /// [groupId] to one space's own chat.
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    String? groupId,
+    bool? isCompleted,
+  });
+
+  /// One request for the caller to pray for; Left(NotFoundFailure) when
+  /// nobody else has posted one.
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  });
+
   Future<Either<Failure, ChatPrayersPage>> listPrayers(
     String messageId, {
     int skip = 0,
@@ -78,6 +98,14 @@ abstract class GroupChatRepository {
     required String messageId,
     required String body,
     String? intention,
+  });
+
+  /// Marks one of the caller's own prayer requests accomplished or active.
+  /// Right with the server's copy, or null when it answered without one.
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
   });
 
   Future<Either<Failure, Unit>> deleteMessage(
