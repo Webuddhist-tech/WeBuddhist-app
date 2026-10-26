@@ -47,7 +47,8 @@ class HomeLocalDatasource {
   String featuredSeriesKey(String language, int limit) =>
       'featured_series:v3:$language:$limit';
   String seriesListKey(String language) => 'series_list:$language';
-  String seriesByIdKey(String language, String id) => 'series:v2:$language:$id';
+  String seriesByIdKey(String language, String id) =>
+      'series:v2:$language:$id';
   // v2: entries cached before group_avatar_url was read lack the avatar.
   String todayEventsKey(String language) => 'today_events:v2:$language';
   String verseOfDayKey(String language) => 'verse_of_day:$language';

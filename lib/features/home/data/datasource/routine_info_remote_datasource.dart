@@ -18,10 +18,7 @@ class RoutineInfoRemoteDatasource {
       }
 
       _logger.error('Failed to load routine info: ${response.statusCode}');
-      throw _statusToException(
-        response.statusCode,
-        'Failed to load routine info',
-      );
+      throw _statusToException(response.statusCode, 'Failed to load routine info');
     } on DioException catch (e) {
       // Backend returns 400 (not 404) when the user has never created a
       // routine yet — same business rule as /users/me/routine, see
