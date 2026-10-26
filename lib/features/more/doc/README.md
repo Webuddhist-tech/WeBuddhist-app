@@ -9,7 +9,9 @@
 ## User-facing functionality
 
 - Me tab: profile header, streak card, practice stats (timer, accumulations, practice days)
-- Settings: edit profile, content language, notifications link, theme, legal, about, delete account
+- Settings (`/home/settings`): edit profile (signed-in only), language, notifications link, theme toggle, about, legal, Help & contact (→ **feedback**), sign in / log out
+- Delete account: reached from Edit profile (`/delete-account`), not from Settings directly
+- Legal hub (`/legal`) → terms of service (`/terms-of-service`) and privacy policy (`/privacy-policy`)
 - Streak sharing sheet (verse-of-day integration)
 - Mantra accumulation breakdown sheet
 - Practice days / series completion history sheet
@@ -37,6 +39,8 @@ more/
 | Stats | `presentation/providers/user_stats_provider.dart` |
 | Traditions | `user_traditions_provider`, onboarding datasource reuse |
 | Delete account | `presentation/delete_account_screen.dart` |
+| Legal / about | `presentation/{legal,terms_of_service_screen,privacy_policy_screen,about_screen}.dart` |
+| Language picker | bottom sheet in `more_screen.dart` → `selectAppLanguage()` (`core/config/locale`) |
 
 ## State management
 
@@ -54,6 +58,8 @@ more/
 
 - **auth** — profile, delete account, guest gating
 - **notifications** — settings screen link
+- **feedback** — Help & contact row (`HelpContactScreen.open`)
+- **core/config/locale** — `selectAppLanguage` (PUTs `/users/me/language` first when signed in)
 - **onboarding** — tradition models/datasource
 - **home** — verse of day in streak share
 - **plans** — series-day DTO references

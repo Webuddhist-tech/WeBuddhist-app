@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -32,8 +33,14 @@ final groupAccumulatorsProvider = FutureProvider.autoDispose
       groupId,
     ) async {
       ref.watch(authProvider);
+      final language = ref.watch(contentLanguageProvider);
       final repository = ref.watch(groupAccumulatorRepositoryProvider);
-      return repository.getGroupAccumulators(groupId, skip: 0, limit: 20);
+      return repository.getGroupAccumulators(
+        groupId,
+        skip: 0,
+        limit: 20,
+        language: language,
+      );
     });
 
 final groupAccumulatorDetailProvider = FutureProvider.autoDispose
@@ -42,8 +49,9 @@ final groupAccumulatorDetailProvider = FutureProvider.autoDispose
       accumulatorId,
     ) async {
       ref.watch(authProvider);
+      final language = ref.watch(contentLanguageProvider);
       final repository = ref.watch(groupAccumulatorRepositoryProvider);
-      return repository.getGroupAccumulator(accumulatorId);
+      return repository.getGroupAccumulator(accumulatorId, language: language);
     });
 
 @immutable

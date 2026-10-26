@@ -3,8 +3,9 @@ import 'dart:ui' show Locale;
 /// Maps app UI locales (bare language codes) to Tolgee CDN language tags.
 ///
 /// Content Delivery publishes:
-/// `en`, `bo-IN`, `zh-Hant-TW`, `hi`, `mn`, `ne` under the `webuddhist`
-/// namespace. The Flutter UI / ARB stack keeps using `bo` and `zh`.
+/// `en`, `bo-IN`, `zh-Hant-TW`, `zh-Hans-CN`, `hi`, `mn`, `ne` under the
+/// `webuddhist` namespace. The Flutter UI / ARB stack keeps using `bo`, `zh`
+/// (Traditional) and `zh_Hans` (Simplified).
 class TolgeeLocaleMap {
   TolgeeLocaleMap._();
 
@@ -15,18 +16,22 @@ class TolgeeLocaleMap {
       case 'bo':
         return 'bo-IN';
       case 'zh':
-        return 'zh-Hant-TW';
+        return appLocale.scriptCode == 'Hans' ? 'zh-Hans-CN' : 'zh-Hant-TW';
       default:
         return appLocale.languageCode;
     }
   }
 
-  /// Canonical app language code for bridge matching (`bo`, `zh`, `en`, …).
+  /// Canonical app language code for bridge matching (`bo`, `zh`, `zh-Hans`,
+  /// `en`, …).
   static String appLanguageCodeOf(String localeNameOrTag) {
     final String normalized = localeNameOrTag.replaceAll('_', '-');
     final String lower = normalized.toLowerCase();
     if (lower == 'bo-in' || lower == 'bo') {
       return 'bo';
+    }
+    if (lower.startsWith('zh-hans')) {
+      return 'zh-Hans';
     }
     if (lower.startsWith('zh')) {
       return 'zh';

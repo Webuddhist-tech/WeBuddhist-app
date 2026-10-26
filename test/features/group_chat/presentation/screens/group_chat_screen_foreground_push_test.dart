@@ -124,6 +124,28 @@ void main() {
     expect(filter.shouldShow(const {'type': 'PLAN'}), isTrue);
   });
 
+  testWidgets('prayer pushes from its group keep their banner', (tester) async {
+    final filter = await _pumpChat(tester, pushes);
+
+    // The space's room carries prayer requests too, but this thread never
+    // shows them, so the banner is the only way the member hears of one.
+    expect(
+      filter.shouldShow({..._thisGroup, 'notification_type': 'PRAYER_REQUEST'}),
+      isTrue,
+    );
+    expect(
+      filter.shouldShow({
+        ..._thisGroup,
+        'notification_type': 'PRAYER_RECEIVED',
+      }),
+      isTrue,
+    );
+    expect(
+      filter.shouldShow({..._thisGroup, 'notification_type': 'CHAT_MESSAGE'}),
+      isFalse,
+    );
+  });
+
   testWidgets('a route pushed on top hands the banner back', (tester) async {
     final filter = await _pumpChat(tester, pushes);
 

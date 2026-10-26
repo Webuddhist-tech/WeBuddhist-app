@@ -567,6 +567,7 @@
   "edit_profile_save": "儲存",
   "edit_profile_first_name": "名字",
   "edit_profile_last_name": "姓氏",
+  "edit_profile_display_name": "顯示名稱",
   "edit_profile_bio": "自我介紹",
   "edit_profile_bio_hint": "向大家介紹一下自己",
   "edit_profile_delete_account": "刪除帳號",
@@ -847,7 +848,7 @@
   "reader_swipe_up_for_more": "向上滑動查看更多",
   "reader_videos": "影片",
   "reader_about_this_version": "關於此版本",
-  "reader_version_count": "{count, plural, other{{count} 個版本}}",
+  "reader_version_count": "{count, plural,\nother {{count} 個版本}\n}",
   "mala_no_mantras": "暫無咒語",
   "mala_count_load_error": "無法載入您的計數",
   "mala_mantra_label": "咒語",
@@ -883,7 +884,7 @@
   "session_no_malas": "未找到念珠",
   "session_timers_load_error": "無法載入計時器",
   "session_no_timers": "未找到計時器",
-  "days_count": "{count, plural, other{{count} 天}}",
+  "days_count": "{count, plural,\nother {{count} 天}\n}",
   "timer_minute_session": "{minutes} 分鐘練習",
   "plan_day_of": "第 {day} 天，共 {total} 天",
   "pagination_position": "{current} / {total}",
@@ -942,7 +943,7 @@
   "connect_comment_delete_title": "刪除留言？",
   "connect_comment_delete_message": "這則留言將被永久刪除",
   "connect_comment_delete_failed": "無法刪除留言",
-  "connect_post_comments_count": "{count, plural, other {{count} 則留言}}",
+  "connect_post_comments_count": "{count, plural,\nother {{count} 則留言}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -1035,7 +1036,7 @@
   "group_chat_delete": "刪除",
   "group_chat_delete_title": "要刪除訊息嗎？",
   "group_chat_delete_title_many": "要刪除 {count} 則訊息嗎？",
-  "group_chat_delete_confirm_body": "{count, plural, =1{此訊息將從聊天室中對所有人移除} other{這些訊息將從聊天室中對所有人移除}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {此訊息將從聊天室中對所有人移除}\nother {這些訊息將從聊天室中對所有人移除}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1043,7 +1044,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{無法刪除訊息} other{無法刪除 {count} 則訊息}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {無法刪除訊息}\nother {無法刪除 {count} 則訊息}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/analytics/share_analytics.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -19,6 +20,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_attendance_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_button.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -333,7 +335,7 @@ class _GroupEventDetailScreenState
               if (event.chatEnabled && isAttending) ...[
                 const SizedBox(width: 12),
                 PrayerRequestsButton(
-                  eventId: event.id,
+                  scope: PrayerRoomScope.event(event.id),
                   count: event.prayerRequestCount,
                   padding: EdgeInsets.zero,
                   outlined: true,
@@ -428,7 +430,9 @@ class _GroupEventDetailScreenState
       LoginDrawer.show(context, ref);
       return;
     }
-    unawaited(PrayerRequestsSheet.show(context, eventId: eventId));
+    unawaited(
+      PrayerRequestsSheet.show(context, scope: PrayerRoomScope.event(eventId)),
+    );
   }
 
   int _attendeeCount(GroupEvent event, bool isAttending) {
@@ -1977,7 +1981,10 @@ class _EventAccumulatorPanelState
   ) async {
     final result = await ref
         .read(groupAccumulatorRepositoryProvider)
-        .getGroupAccumulator(detail.id);
+        .getGroupAccumulator(
+          detail.id,
+          language: ref.read(contentLanguageProvider),
+        );
     return result.fold(
       (_) => math.max(
         detail.user?.totalCount ?? 0,

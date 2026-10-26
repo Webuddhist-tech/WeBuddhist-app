@@ -10,14 +10,16 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_translation_language.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
-/// Where the event room stands: 404 on resolve means chat is switched off.
+/// Where the room stands: 404 on resolve means chat is switched off.
 enum PrayerRoomStatus { resolving, ready, closed, failed }
 
 /// How taps turn into pray calls: batched, at most ten prayers a second.
@@ -221,6 +223,10 @@ class PrayerRequestsState extends Equatable {
 
   /// How many requests match [filter] on the server.
   final int total;
+
+  /// The request picked for the viewer to pray for, shown outside the list.
+  /// Kept here so a prayer on it renders like one on a listed row.
+  final ChatMessageDTO? spotlight;
   final bool isLoading;
   final bool isLoadingMore;
   final bool hasLoaded;
@@ -234,6 +240,7 @@ class PrayerRequestsState extends Equatable {
     this.requests = const [],
     this.filter = PrayerRequestsFilter.initial,
     this.total = 0,
+    this.spotlight,
     this.isLoading = false,
     this.isLoadingMore = false,
     this.hasLoaded = false,
@@ -248,6 +255,8 @@ class PrayerRequestsState extends Equatable {
     List<ChatMessageDTO>? requests,
     PrayerRequestsFilter? filter,
     int? total,
+    ChatMessageDTO? spotlight,
+    bool clearSpotlight = false,
     bool? isLoading,
     bool? isLoadingMore,
     bool? hasLoaded,
@@ -262,12 +271,29 @@ class PrayerRequestsState extends Equatable {
       requests: requests ?? this.requests,
       filter: filter ?? this.filter,
       total: total ?? this.total,
+      spotlight: clearSpotlight ? null : spotlight ?? this.spotlight,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasLoaded: hasLoaded ?? this.hasLoaded,
       hasMore: hasMore ?? this.hasMore,
       skip: skip ?? this.skip,
       error: clearError ? null : error ?? this.error,
+    );
+  }
+
+  /// Whether anyone else has an active request; null when this list can't tell.
+  bool? othersHaveActiveRequest({String? viewerId, String? viewerEmail}) {
+    if (!hasLoaded || isLoading || hasMore || error != null) return null;
+    if (filter.mine || filter.byIntention) return null;
+    return requests.any(
+      (request) =>
+          !request.isCompleted &&
+          !isSelfChatMessage(
+            senderId: request.senderId,
+            senderEmail: request.senderEmail,
+            currentUserId: viewerId,
+            currentUserEmail: viewerEmail,
+          ),
     );
   }
 
@@ -278,6 +304,7 @@ class PrayerRequestsState extends Equatable {
     requests,
     filter,
     total,
+    spotlight,
     isLoading,
     isLoadingMore,
     hasLoaded,
@@ -287,9 +314,9 @@ class PrayerRequestsState extends Equatable {
   ];
 }
 
-/// The prayer requests of one event room.
+/// The prayer requests of one event or space room.
 class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
-  PrayerRequestsNotifier({required this.ref, required this.eventId})
+  PrayerRequestsNotifier({required this.ref, required this.scope})
     : _repository = ref.read(groupChatRepositoryProvider),
       _pacing = ref.read(prayerPacingProvider),
       _sends = ref.read(pendingPrayerSendsProvider),
@@ -298,7 +325,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   final Ref ref;
-  final String eventId;
+  final PrayerRoomScope scope;
   static const int _limit = 30;
 
   String get _translationLanguage =>
@@ -372,7 +399,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       clearError: true,
     );
 
-    final roomResult = await _repository.getEventRoom(eventId);
+    final roomResult =
+        scope.isEvent
+            ? await _repository.getEventRoom(scope.id)
+            : await _repository.getGroupRoom(scope.id);
     if (!mounted) return;
 
     final roomId = roomResult.fold((failure) {
@@ -423,15 +453,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     _pageShifted = false;
     _unlisted.clear();
     final filter = state.filter;
-    final result = await _repository.listMessages(
-      roomId,
-      skip: 0,
-      limit: _limit,
-      messageType: ChatMessageDTO.typePrayer,
-      sort: filter.sortParam,
-      intention: filter.intentionParam,
-      translationLanguage: _translationLanguage,
-    );
+    final result = await _fetchPage(roomId, skip: 0);
     if (!mounted || generation != _listGeneration) return;
 
     result.fold(
@@ -457,20 +479,49 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           clearError: true,
         );
         // Only an unfiltered total is the room's count.
-        if (!filter.byIntention) _publishCount(page.total + held.length);
+        if (!filter.byIntention && !filter.mine) {
+          _publishCount(page.total + held.length);
+        }
       },
     );
   }
 
+  /// One page under the filter in view: the room's requests, or under
+  /// [PrayerRequestsFilter.mine] the viewer's own from the my-requests
+  /// endpoint, narrowed to this event or space.
+  Future<Either<Failure, ChatMessagesPage>> _fetchPage(
+    String roomId, {
+    required int skip,
+  }) {
+    final filter = state.filter;
+    if (filter.mine) {
+      return _repository.listMyPrayerRequests(
+        skip: skip,
+        limit: _limit,
+        eventId: scope.eventId,
+        groupId: scope.groupId,
+      );
+    }
+    return _repository.listMessages(
+      roomId,
+      skip: skip,
+      limit: _limit,
+      messageType: ChatMessageDTO.typePrayer,
+      sort: filter.sortParam,
+      intention: filter.intentionParam,
+      translationLanguage: _translationLanguage,
+    );
+  }
+
   void _publishCount(int count) {
-    ref.read(prayerRequestCountProvider(eventId).notifier).state = count;
+    ref.read(prayerRequestCountProvider(scope).notifier).state = count;
   }
 
   /// Moves the room's count on the event screen; [inList] moves the
   /// filtered total shown above the list too.
   void _shiftCount(int delta, {bool inList = true}) {
     if (inList) state = state.copyWith(total: _clampCount(state.total + delta));
-    final current = ref.read(prayerRequestCountProvider(eventId));
+    final current = ref.read(prayerRequestCountProvider(scope));
     if (current == null) return;
     _publishCount(_clampCount(current + delta));
   }
@@ -486,16 +537,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final generation = _listGeneration;
-    final filter = state.filter;
-    final result = await _repository.listMessages(
-      roomId,
-      skip: state.skip,
-      limit: _limit,
-      messageType: ChatMessageDTO.typePrayer,
-      sort: filter.sortParam,
-      intention: filter.intentionParam,
-      translationLanguage: _translationLanguage,
-    );
+    final result = await _fetchPage(roomId, skip: state.skip);
     if (!mounted || generation != _listGeneration) return;
 
     if (_pageShifted) {
@@ -541,16 +583,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final roomId = state.roomId;
     if (roomId == null) return;
     final generation = _listGeneration;
-    final filter = state.filter;
-    final result = await _repository.listMessages(
-      roomId,
-      skip: 0,
-      limit: _limit,
-      messageType: ChatMessageDTO.typePrayer,
-      sort: filter.sortParam,
-      intention: filter.intentionParam,
-      translationLanguage: _translationLanguage,
-    );
+    final result = await _fetchPage(roomId, skip: 0);
     if (!mounted || generation != _listGeneration) return;
     result.fold((_) {}, (page) {
       final pageIds = page.messages.map((message) => message.id).toSet();
@@ -574,14 +607,25 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     String body, {
     required String intention,
   }) async {
-    final result = await _repository.sendEventMessage(
-      eventId,
-      body: body,
-      messageType: ChatMessageDTO.typePrayer,
-      intention: intention,
-    );
+    final result =
+        scope.isEvent
+            ? await _repository.sendEventMessage(
+              scope.id,
+              body: body,
+              messageType: ChatMessageDTO.typePrayer,
+              intention: intention,
+            )
+            : await _repository.sendGroupMessage(
+              scope.id,
+              body: body,
+              messageType: ChatMessageDTO.typePrayer,
+              intention: intention,
+            );
     if (!mounted) return result;
-    result.fold((_) {}, appendLive);
+    result.fold(
+      (_) {},
+      (message) => appendLive(message, viewerId: message.senderId),
+    );
     return result;
   }
 
@@ -649,17 +693,25 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   /// An edit onto the row as it is now. A new body makes the old translation
-  /// stale, so only what [server] sent with it, if anything, is kept.
+  /// stale, so only what [server] sent with it, if anything, is kept. The
+  /// same PATCH marks a request accomplished, so [server] also says whether
+  /// it is.
   static ChatMessageDTO _edited(
     ChatMessageDTO request,
     ChatMessageDTO? server, {
     required String body,
     required ChatPrayerIntentionDTO? intention,
   }) {
-    if (body == request.body) {
-      return request.copyWith(body: body, intention: intention);
+    final completed = server?.isCompleted ?? request.isCompleted;
+    final current = request.copyWith(
+      isCompleted: completed,
+      completedAt: completed ? server?.completedAt : null,
+      clearCompletedAt: !completed,
+    );
+    if (body == current.body) {
+      return current.copyWith(body: body, intention: intention);
     }
-    return request.copyWith(
+    return current.copyWith(
       body: body,
       intention: intention,
       clearTranslation: true,
@@ -684,15 +736,80 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     return result;
   }
 
+  /// Picks one request for the viewer to pray for and puts it in the
+  /// spotlight. The listed row is preferred when there is one: it carries
+  /// taps the server has not confirmed yet. [excludeIds] are the cards
+  /// already shown, oldest first.
+  Future<Either<Failure, ChatMessageDTO>> pickRandom({
+    List<String> excludeIds = const [],
+  }) async {
+    final roomId = state.roomId;
+    if (roomId == null) {
+      return const Left(NotFoundFailure('Prayer room not ready'));
+    }
+    final result = await _repository.pickRandomPrayerRequest(
+      roomId,
+      excludeIds: excludeIds,
+      translationLanguage: _translationLanguage,
+    );
+    if (!mounted) return result;
+    return result.map((picked) {
+      final shown = _find(picked.id) ?? picked;
+      state = state.copyWith(spotlight: shown);
+      return shown;
+    });
+  }
+
+  void clearSpotlight() {
+    if (state.spotlight != null) state = state.copyWith(clearSpotlight: true);
+  }
+
+  /// Marks one of the viewer's own requests accomplished, or active again,
+  /// in place. The server's copy wins where it sends one.
+  Future<Either<Failure, Unit>> setCompleted(
+    String messageId, {
+    required bool isCompleted,
+  }) async {
+    final roomId = state.roomId;
+    if (roomId == null || _find(messageId) == null) {
+      return const Left(NotFoundFailure('Prayer request not found'));
+    }
+    final result = await _repository.setMessageCompleted(
+      roomId,
+      messageId: messageId,
+      isCompleted: isCompleted,
+    );
+    return result.map((updated) {
+      if (!mounted) return unit;
+      final completed = updated?.isCompleted ?? isCompleted;
+      _update(
+        messageId,
+        (request) => request.copyWith(
+          isCompleted: completed,
+          completedAt: completed ? updated?.completedAt : null,
+          clearCompletedAt: !completed,
+        ),
+      );
+      return unit;
+    });
+  }
+
   /// Inserts a prayer request that arrived over the socket or came back from
   /// a send. Anything else in the room is ignored here. One outside the
-  /// intention in view still counts for the room, but is not shown.
-  void appendLive(ChatMessageDTO message) {
+  /// intention in view, or not the viewer's under [PrayerRequestsFilter.mine],
+  /// still counts for the room, but is not shown. [viewerId] tells whose it
+  /// is; without one nothing is the viewer's.
+  void appendLive(ChatMessageDTO message, {String? viewerId}) {
     if (message.id.isEmpty || !_isLive(message)) return;
     if (state.roomId != null && message.roomId != state.roomId) return;
     if (state.requests.any((existing) => existing.id == message.id)) return;
     if (_unlisted.containsKey(message.id)) return;
-    if (!state.filter.matches(message.intention)) {
+    final viewer = viewerId?.trim() ?? '';
+    final listed =
+        state.filter.mine
+            ? viewer.isNotEmpty && message.senderId.trim() == viewer
+            : state.filter.matches(message.intention);
+    if (!listed) {
       _unlisted[message.id] = null;
       _shiftCount(1, inList: false);
       return;
@@ -728,8 +845,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   /// Takes a request out of the list, or out of the ones counted but not
   /// listed. [inRoom] says it is gone from the room, not only from the
-  /// filter in view.
+  /// filter in view, so it leaves the spotlight too, which may be the only
+  /// place a picked request is shown.
   void _dropRow(String messageId, {required bool inRoom}) {
+    if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
     final unlisted = _unlisted.containsKey(messageId);
     final held = _unlisted.remove(messageId);
     final listed = state.requests.any((request) => request.id == messageId);
@@ -1012,16 +1131,25 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     for (final request in state.requests) {
       if (request.id == messageId) return request;
     }
-    return null;
+    final spotlight = state.spotlight;
+    return spotlight != null && spotlight.id == messageId ? spotlight : null;
   }
 
+  /// Rewrites one request wherever it is shown: in the list, held for the
+  /// end, and in the spotlight.
   void _update(
     String messageId,
     ChatMessageDTO Function(ChatMessageDTO request) transform,
   ) {
+    final spotlight = state.spotlight;
+    final lit =
+        spotlight != null && spotlight.id == messageId
+            ? transform(spotlight)
+            : null;
     final held = _unlisted[messageId];
     if (held != null) {
       _unlisted[messageId] = transform(held);
+      if (lit != null) state = state.copyWith(spotlight: lit);
       return;
     }
     var changed = false;
@@ -1035,13 +1163,18 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         else
           request,
     ];
-    if (changed) state = state.copyWith(requests: requests);
+    if (changed || lit != null) {
+      state = state.copyWith(
+        requests: changed ? requests : null,
+        spotlight: lit,
+      );
+    }
   }
 }
 
 final prayerRequestsProvider = StateNotifierProvider.autoDispose
-    .family<PrayerRequestsNotifier, PrayerRequestsState, String>(
-      (ref, eventId) => PrayerRequestsNotifier(ref: ref, eventId: eventId),
+    .family<PrayerRequestsNotifier, PrayerRequestsState, PrayerRoomScope>(
+      (ref, scope) => PrayerRequestsNotifier(ref: ref, scope: scope),
     );
 
 /// The intention picker's choices, in display order.
@@ -1195,12 +1328,12 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
   }
 }
 
-/// Live prayer-request count per event, kept by [PrayerRequestsNotifier] so
+/// Live prayer-request count per room, kept by [PrayerRequestsNotifier] so
 /// the chip on the event screen moves with the sheet instead of waiting for
 /// the next event fetch. Null until the sheet has loaded once. Lives only
 /// while a chip watches it, so a later visit starts from the server count.
 final prayerRequestCountProvider = StateProvider.autoDispose
-    .family<int?, String>((ref, eventId) => null);
+    .family<int?, PrayerRoomScope>((ref, scope) => null);
 
 final prayerSupportersProvider = StateNotifierProvider.autoDispose
     .family<PrayerSupportersNotifier, PrayerSupportersState, String>(

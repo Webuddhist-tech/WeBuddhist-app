@@ -9,7 +9,7 @@ Firebase Cloud Messaging (FCM) lifecycle: token registration, foreground display
 ## User-facing functionality
 
 - Request OS permission, initialize FCM
-- Register device tokens with backend on sign-in
+- Register device tokens with backend on sign-in; unregister + delete the FCM token on sign-out
 - Show foreground pushes via local notifications
 - Skip the banner for a push about the screen already in front (`ForegroundPushFilter`)
 - Handle taps: foreground, background, terminated
@@ -49,7 +49,7 @@ push_notifications/
 ## Data sources
 
 - **Firebase Cloud Messaging** — only imported in repository impl
-- **Backend:** `POST /users/me/push-devices`
+- **Backend:** `POST /users/me/push-devices` (register/upsert, returns `id`), `DELETE /users/me/push-devices/{id}` (master off / sign-out). Delivery is done by the separate webuddhist-worker (SQS → FCM); the app only registers devices
 - **Local:** FCM token, `pushDeviceId` UUID, notification preference flags
 - **flutter_local_notifications** — foreground display
 
@@ -62,7 +62,8 @@ push_notifications/
 | TIMER | Timers screen |
 | RECITATION / COLLECTION / ACCUMULATION | Practice tab |
 | VERSE_OF_DAY (and aliases) | Home tab (verse card) |
-| CHAT + `chat_kind: GROUP` | Group chat by `group_id` (`source_id` is the room id) |
+| CHAT + `chat_kind: GROUP` + `notification_type: CHAT_MESSAGE` | Group chat by `group_id` (`source_id` is the room id) |
+| CHAT + `chat_kind: GROUP` + `notification_type: PRAYER_REQUEST / PRAYER_RECEIVED` | That space's page, then the prayer-request sheet, by `group_id`; otherwise the space is looked up from the room in `source_id` |
 | CHAT + `chat_kind: EVENT` (any `notification_type`: CHAT_MESSAGE, PRAYER_REQUEST, PRAYER_RECEIVED) | That event's screen, then the prayer-request sheet, by `event_id` (only PRAYER_RECEIVED sends it); otherwise the event is looked up from the room in `source_id` |
 | CHAT + `chat_kind: PRIVATE` | Direct chat by `source_id` (the room id); Home tab when it is missing |
 | GROUP_POST | Post detail by `source_id` |
@@ -93,6 +94,19 @@ earlier session. Register and unregister run through one reconcile loop
 failed backend call with linear backoff, up to `maxReconcileRetries`.
 Per-group toggles (group_profile feature) are separate, server-stored, and
 greyed out in the UI while master is off.
+
+## Sign-out
+
+- `AuthNotifier.logout()` first calls `unregisterForSignOut()` (bounded by a
+  4 s timeout) so `DELETE /users/me/push-devices/{id}` runs while the JWT is
+  still valid.
+- Any signed-out auth snapshot (logout, permanent session expiry, guest)
+  then runs `_detachFromAccount()`: it deletes the FCM token
+  (`FirebaseMessaging.deleteToken`), clears `pushDeviceServerId` / `fcmToken`
+  and mints a fresh token for the next sign-in. This works without a JWT, so
+  a stale backend row can no longer deliver. Retries up to `maxDetachRetries`.
+- Foreground pushes that arrive while signed out are dropped; ones that
+  arrive before auth has settled are queued until it does.
 
 ---
 

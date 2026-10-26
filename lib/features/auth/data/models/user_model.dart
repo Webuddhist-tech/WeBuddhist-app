@@ -5,10 +5,7 @@ class SocialProfileModel {
   final String account;
   final String url;
 
-  SocialProfileModel({
-    required this.account,
-    required this.url,
-  });
+  SocialProfileModel({required this.account, required this.url});
 
   factory SocialProfileModel.fromJson(Map<String, dynamic> json) {
     return SocialProfileModel(
@@ -18,24 +15,15 @@ class SocialProfileModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'account': account,
-      'url': url,
-    };
+    return {'account': account, 'url': url};
   }
 
   SocialProfile toEntity() {
-    return SocialProfile(
-      account: account,
-      url: url,
-    );
+    return SocialProfile(account: account, url: url);
   }
 
   factory SocialProfileModel.fromEntity(SocialProfile profile) {
-    return SocialProfileModel(
-      account: profile.account,
-      url: profile.url,
-    );
+    return SocialProfileModel(account: profile.account, url: profile.url);
   }
 }
 
@@ -48,6 +36,7 @@ class UserModel {
   final String? firstName;
   final String? email;
   final String? lastName;
+  final String? displayName;
   final String? username;
   final String? title;
   final String? organization;
@@ -67,6 +56,7 @@ class UserModel {
     this.email,
     this.firstName,
     this.lastName,
+    this.displayName,
     this.username,
     this.title,
     this.organization,
@@ -86,20 +76,25 @@ class UserModel {
       email: json['email']?.toString(),
       firstName: json['firstname']?.toString(),
       lastName: json['lastname']?.toString(),
+      displayName: json['display_name']?.toString(),
       username: json['username']?.toString(),
       title: json['title']?.toString(),
       organization: json['organization']?.toString(),
       location: json['location']?.toString(),
       aboutMe: json['about_me']?.toString(),
       avatarUrl: json['avatar_url']?.toString(),
-      educations: (json['educations'] as List<dynamic>?)
-          ?.map((e) => e.toString())
-          .toList(),
+      educations:
+          (json['educations'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList(),
       followers: json['followers'] as int?,
       following: json['following'] as int?,
-      socialProfiles: (json['social_profiles'] as List<dynamic>?)
-          ?.map((e) => SocialProfileModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      socialProfiles:
+          (json['social_profiles'] as List<dynamic>?)
+              ?.map(
+                (e) => SocialProfileModel.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
       // Note: onboarding_completed is NOT sent by backend API
       // It's managed locally only - will be set by UserNotifier
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
@@ -112,6 +107,7 @@ class UserModel {
       'email': email,
       'firstname': firstName,
       'lastname': lastName,
+      'display_name': displayName,
       'username': username,
       'title': title,
       'organization': organization,
@@ -132,6 +128,7 @@ class UserModel {
       email: email,
       firstName: firstName,
       lastName: lastName,
+      displayName: displayName,
       username: username,
       title: title,
       organization: organization,
@@ -152,6 +149,7 @@ class UserModel {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      displayName: user.displayName,
       username: user.username,
       title: user.title,
       organization: user.organization,
@@ -161,9 +159,10 @@ class UserModel {
       educations: user.educations,
       followers: user.followers,
       following: user.following,
-      socialProfiles: user.socialProfiles
-          ?.map((e) => SocialProfileModel.fromEntity(e))
-          .toList(),
+      socialProfiles:
+          user.socialProfiles
+              ?.map((e) => SocialProfileModel.fromEntity(e))
+              .toList(),
       onboardingCompleted: user.onboardingCompleted,
     );
   }

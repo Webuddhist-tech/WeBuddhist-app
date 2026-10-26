@@ -114,6 +114,15 @@ void main() {
       expect(TolgeeBridge.get('hi', 'sign_in', () => 'bundled'), 'bundled');
     });
 
+    test('does not serve Simplified Chinese to Traditional or back', () {
+      load('zh-Hans-CN', <String, String>{'sign_in': '登录'});
+      expect(TolgeeBridge.get('zh_Hans', 'sign_in', () => 'bundled'), '登录');
+      expect(TolgeeBridge.get('zh', 'sign_in', () => 'bundled'), 'bundled');
+
+      load('zh-Hant-TW', <String, String>{'sign_in': '登入'});
+      expect(TolgeeBridge.get('zh_Hans', 'sign_in', () => 'bundled'), 'bundled');
+    });
+
     test('a missing or blank key falls back', () {
       load('en', <String, String>{'sign_in': ''});
 

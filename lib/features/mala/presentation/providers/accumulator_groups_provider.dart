@@ -12,9 +12,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Active session counts for bead tapping use [joinedGroupUserCountsProvider].
 final joinedAccumulatorGroupsProvider = FutureProvider.autoDispose
     .family<List<AccumulatorGroup>, String>((ref, presetId) async {
-      // Re-fetches when the app language changes so group and event names are
-      // localized, as the catalogue is.
-      final language = ref.watch(localeProvider).languageCode;
+      // Re-fetches when the content language changes so group and event names
+      // are localized, as the catalogue is.
+      final language = ref.watch(contentLanguageProvider);
       final result = await ref
           .watch(malaRepositoryProvider)
           .getJoinedAccumulatorGroups(presetId, language: language);
@@ -35,10 +35,12 @@ final joinedGroupUserCountsProvider = FutureProvider.autoDispose
       if (groups.isEmpty) return const {};
 
       final repository = ref.watch(groupAccumulatorRepositoryProvider);
+      final language = ref.read(contentLanguageProvider);
       final entries = await Future.wait(
         groups.map((group) async {
           final result = await repository.getGroupAccumulator(
             group.groupAccumulatorId,
+            language: language,
           );
           return result.fold(
             (_) => null,

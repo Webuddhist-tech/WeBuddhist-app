@@ -44,6 +44,9 @@ timer/
 | Offline queue | `data/datasource/timers_local_datasource.dart` |
 | Android notif | `data/services/timer_session_notifier.dart` |
 | iOS | `data/services/timer_live_activity.dart` |
+| Keep-alive (iOS silent audio session so the in-app bell rings when locked) | `presentation/services/timer_keep_alive.dart` |
+| Bell | `presentation/services/timer_sound_player.dart` |
+| Analytics (`timer_started` / `timer_completed` / `timer_discarded`) | `presentation/utils/timer_analytics.dart` |
 | Bootstrap | `timerSyncBootstrapProvider` |
 
 ## State management
@@ -74,8 +77,10 @@ timer/
 
 `POST /timers/user` (`TimersRemoteDatasource.createUserTimer`) intentionally
 **never sends** `group_id` or `parent_preset_id` — no app concept for either
-yet. The New Timer screen has no name/description inputs, so those are
-derived: `name` = `"{n} minutes"` (`"{n} seconds"` under one minute), `description` = `""` (always sent).
+yet. `name` is still derived: `"{n} minutes"` (`"{n} seconds"` under one
+minute). The optional title on the New Timer screen is stored in
+`description` (trimmed, 40 characters max, `""` when blank) and shown above
+the duration on user-created cards in "Your timers".
 Start/end bells are always on (backend default); the create flow does not
 expose or accept them as user-configurable params. After a
 successful create (and after a successful edit or delete) the repository
@@ -91,15 +96,17 @@ timers until something else refreshes.
 ### Editing a user timer (`PUT /timers/user/{timer_id}`)
 
 `NewTimerScreen` doubles as the edit screen: passing `timer:` switches the
-title to "Edit timer", prefills duration + ambient sound, replaces the app-bar
-"Save"/"Begin session" pair with a single "Save changes" button, and routes
-through `UpdateUserTimerUseCase`. Route: `/home/timers/edit` with the
-`PresetTimer` as `extra`, opened from the "Edit timer" entry in
-`TimerMoreBottomSheet` (shown only when `isUserCreated`, like delete).
+title to "Edit timer", prefills the title, duration, and ambient sound,
+replaces the app-bar "Save"/"Begin session" pair with a single "Save changes"
+button, and routes through `UpdateUserTimerUseCase`. Route:
+`/home/timers/edit` with the `PresetTimer` as `extra`, opened from the
+"Edit timer" entry in `TimerMoreBottomSheet` (shown only when
+`isUserCreated`, like delete).
 
-Only `name`, `duration` and `ambient_sound_id` are sent — nothing else on the
-timer is user-owned yet. The name keeps tracking the duration (`"{n} minutes"`)
-so the card label stays truthful, but **only when the duration actually
+`name`, `description`, `duration`, and `ambient_sound_id` are sent.
+`description` is always in the body, including as `""`, which clears the
+title. The name keeps tracking the duration (`"{n} minutes"`)
+so the stored name stays truthful, but **only when the duration actually
 changed**: the picker saves exact hours, minutes, and seconds, while the
 label and the derived name are rounded to whole minutes (or shown in seconds
 under one minute, so a short timer never reads "0 min"). An edit that touches
@@ -184,6 +191,12 @@ notifications are always armed when backgrounded.
 - **Best-effort notifications** — never crash session on notif failure
 - **Offline-first writes** for stop reports
 - Completion bell scheduled only on backgrounding (avoid double-ring with in-app sound)
+- **Keep-alive:** on iOS `TimerAudioKeepAlive` loops a silent track (Info.plist `audio`
+  background mode) so the Dart isolate keeps running and rings the real bell; the
+  app reclaims (cancels) the scheduled bell ~2 s before it is due. Android is a no-op.
+- Routes: `/home/timers`, `/home/timers/new`, `/home/timers/edit` (extra: `PresetTimer`),
+  `/home/timers/active` (root navigator, extra: `PresetTimer`). All sit under the
+  guest-accessible `/home` prefix; the data is auth-gated instead.
 
 ---
 

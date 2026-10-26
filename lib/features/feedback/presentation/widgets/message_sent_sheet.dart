@@ -52,7 +52,7 @@ class MessageSentSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = context.l10n;
-    final firstName = ref.watch(userProvider).user?.firstName?.trim() ?? '';
+    final firstName = ref.watch(userProvider).user?.visibleName ?? '';
     final ink = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final muted = isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
     final topic = result.topic;
@@ -120,7 +120,8 @@ class MessageSentSheet extends ConsumerWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? AppColors.cardBorderDark : AppColors.grey300,
+                    color:
+                        isDark ? AppColors.cardBorderDark : AppColors.grey300,
                   ),
                 ),
                 child: Column(

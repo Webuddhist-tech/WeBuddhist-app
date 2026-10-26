@@ -13,8 +13,9 @@ Per-mantra prayer-bead counter. Taps increment a monotonic session total, persis
 - Round tracking (`108` beads per round — `kBeadsPerRound`)
 - Personal vs group accumulation selection
 - Group accumulations bar + bottom sheet
-- Sound / vibration feedback
-- Reset session, add offline rounds, bookmark preset
+- Sound / vibration feedback, left-handed (mirrored) layout, mantra marquee speed
+- Reset session, add offline rounds, add to practice, bookmark / share preset
+- Reader chants counted into the selected target (`accumulation_chant_counter.dart`)
 - Background sync on tap, round completion, lifecycle, reconnect
 
 ## Architecture
@@ -48,20 +49,23 @@ mala/
 | `joinedAccumulatorGroupsProvider` | Joined groups for preset |
 | `groupAccumulationCountsProvider` | Per-group session counts |
 | `malaAccumulationSelectionProvider` | Personal vs group (SharedPreferences) |
+| `malaSettingsProvider` | Sound, vibration, left-handed, mantra speed |
+| `malaCatalogueProvider` | Preset catalogue (re-fetches on UI locale change) |
 
 ## Critical invariants
 
 1. **Monotonic absolutes** — client sends absolute session totals; server takes `max()`.
-2. **Seed-before-send** — block taps until server count merged via `max()`.
+2. **Seed-before-send** — block taps until server count merged via `max()` (or the 3 s seed timeout falls back to the local total; a late response still reconciles).
 3. **User ID from persisted storage first** — `resolveMalaUserId()` avoids auth race.
-4. **Group session vs lifetime** — counter uses session; sheet shows lifetime (`user_total_count` vs `user.total_count`).
+4. **Session vs lifetime** — counter uses session counts; the accumulations sheet shows lifetime for both the personal row (`total_counted` + dirty tail) and group rows (`user_total_count` + dirty tail).
 5. **Presigned bead URLs** — cache as base64 in Hive; widget uses bytes only.
 
 ## Cross-feature dependencies
 
 - **auth** — user ID namespacing
 - **group_profile** — group accumulator detail API
-- **reader** — group chant mode entry
+- **reader** — group chant mode entry; reader chants count via `countChantIntoSelection`
+- **practice** — bookmarks, add-to-routine (`/practice/edit-routine` with `initialMantra`)
 
 ## Detailed reference
 

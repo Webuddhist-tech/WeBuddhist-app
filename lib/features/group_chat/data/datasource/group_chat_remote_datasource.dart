@@ -122,6 +122,20 @@ class GroupChatRemoteDatasource {
     }
   }
 
+  /// Resolves a space's room, creating it on first use. Members and
+  /// followers only.
+  Future<ChatRoomDTO> getGroupRoom(String groupId) async {
+    try {
+      final response = await _dio.get(
+        '/chat/groups/$groupId/room',
+        options: _noCache,
+      );
+      return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
   /// [messageType] narrows the page to one kind, e.g. `PRAYER`. [sort] and
   /// [intention] (a slug) only apply to prayer requests. [translationLanguage]
   /// (`EN`, `ZH`, `BO`) asks for each body in that language as well.
@@ -251,6 +265,76 @@ class GroupChatRemoteDatasource {
           <ChatPrayerIntentionDTO>[];
       intentions.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
       return intentions;
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// The caller's own prayer requests, newest first. [eventId] keeps to
+  /// the ones posted in that event's chat, [groupId] to the space's own
+  /// chat (not its events'). [isCompleted] keeps to accomplished (true) or
+  /// active (false) ones.
+  Future<ChatMessagesPage> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    String? groupId,
+    bool? isCompleted,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/chat/prayer-requests/me',
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+          if (eventId != null) 'event_id': eventId,
+          if (groupId != null) 'group_id': groupId,
+          if (isCompleted != null) 'is_completed': isCompleted,
+        },
+        options: _noCache,
+      );
+      final data = response.data as Map<String, dynamic>;
+      return ChatMessagesPage(
+        messages:
+            (data['prayer_requests'] as List<dynamic>?)
+                ?.whereType<Map<String, dynamic>>()
+                .map(ChatMessageDTO.fromMyPrayerRequestJson)
+                .toList() ??
+            const [],
+        skip: _readInt(data['skip']),
+        limit: _readInt(data['limit']),
+        total: _readInt(data['total']),
+      );
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// One request for the caller to pray for: never their own or an
+  /// accomplished one, and ones they have not prayed for first. [excludeIds]
+  /// (the cards already shown, oldest first, at most 50) come back only once
+  /// nothing else is left. 404 NO_PRAYER_REQUESTS when nobody else has
+  /// posted one.
+  Future<ChatMessageDTO> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/chat/rooms/$roomId/prayer-requests/random',
+        queryParameters: {
+          if (excludeIds.isNotEmpty) 'exclude_ids': excludeIds,
+          if (translationLanguage != null)
+            'translation_language': translationLanguage,
+        },
+        // Repeated `exclude_ids=` keys, as the server reads them.
+        options: Options(
+          extra: {'no_cache': true},
+          listFormat: ListFormat.multi,
+        ),
+      );
+      return ChatMessageDTO.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _unwrap(e);
     }
@@ -401,6 +485,29 @@ class GroupChatRemoteDatasource {
       final response = await _dio.patch(
         '/chat/rooms/$roomId/messages/$messageId',
         data: {'body': body, if (intention != null) 'intention': intention},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['id'] is String) {
+        return ChatMessageDTO.fromJson(data);
+      }
+      return null;
+    } on DioException catch (e) {
+      throw _unwrap(e);
+    }
+  }
+
+  /// Marks one of the caller's own prayer requests accomplished, or active
+  /// again. Sender-only. Leaves `is_edited` alone; the room gets a
+  /// `message_updated` frame.
+  Future<ChatMessageDTO?> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
+  }) async {
+    try {
+      final response = await _dio.patch(
+        '/chat/rooms/$roomId/messages/$messageId',
+        data: {'is_completed': isCompleted},
       );
       final data = response.data;
       if (data is Map<String, dynamic> && data['id'] is String) {

@@ -22,24 +22,27 @@ Read both doc/README.md files, then …
 
 | Feature | Doc | Maturity | Notes |
 |---------|-----|----------|-------|
-| [ai](../ai/doc/README.md) | AI chat + search | Production | Dedicated AI Dio client |
 | [auth](../auth/doc/README.md) | Auth0 + profile | App-critical | Consumed everywhere |
 | [calendar](../calendar/doc/README.md) | Tibetan calendar | Production | Hybrid offline engine |
 | [connect](../connect/doc/README.md) | Social hub tab | Production | Minimal barrel |
+| [feedback](../feedback/doc/README.md) | Help & contact form | Production | Backend posts into the Team chat |
+| [group_chat](../group_chat/doc/README.md) | Group chat | Production | |
 | [explore](../explore/doc/README.md) | Explore tab | **Placeholder** | Not in nav |
 | [group_profile](../group_profile/doc/README.md) | Group pages | Production | Heavy provider hub |
 | [home](../home/doc/README.md) | Home + main nav | Production | Partial barrel |
 | [learn](../learn/doc/README.md) | Learn tab | **Placeholder** | Not in nav |
+| [library](../library/doc/README.md) | Library (texts) API client | **Foundation** | Serves texts, reader, chants |
 | [mala](../mala/doc/README.md) | Prayer-bead counter | Production | Also see [mala/README.md](../mala/README.md) |
 | [more](../more/doc/README.md) | Me + Settings | Production | Screens at presentation root |
 | [notifications](../notifications/doc/README.md) | Local scheduling | Production | Sync engine |
 | [onboarding](../onboarding/doc/README.md) | First-run flow | Production | hooks_riverpod in application |
 | [plans](../plans/doc/README.md) | Practice plans | Production | Richest module |
+| [poems](../poems/doc/README.md) | Poems viewer | Production | Story-style pager |
 | [practice](../practice/doc/README.md) | Practice tab + routine | Production | Hive override required |
 | [push_notifications](../push_notifications/doc/README.md) | FCM | Production | Firebase isolated |
-| [reader](../reader/doc/README.md) | Text reader | Production | Loads via texts API |
-| [recitation](../recitation/doc/README.md) | Recitations | Production | Cache-first lists |
-| [texts](../texts/doc/README.md) | Text library | **Foundation** | Breaking changes ripple |
+| [reader](../reader/doc/README.md) | Text reader | Production | Loads via texts → library |
+| [recitation](../recitation/doc/README.md) | Chant data + live recitation | Production | Screens live in practice |
+| [texts](../texts/doc/README.md) | Reader models + providers | **Foundation** | Backed by library |
 | [timer](../timer/doc/README.md) | Meditation timers | Production | Wall-clock session state |
 
 ## Global architecture conventions
@@ -55,7 +58,7 @@ data/          → datasources, models (DTOs), repository implementations
 ```
 
 - Map **data models → domain entities** at the repository boundary.
-- Prefer **one use case per file** in mature features (auth, texts, plans).
+- Use cases: one per file in auth; grouped by concern in texts and plans.
 - Some features skip use cases (connect) — follow what that feature already does.
 
 ### State management
@@ -82,7 +85,7 @@ data/          → datasources, models (DTOs), repository implementations
 ### Networking
 
 - Main API: **`dioProvider`** + auth/cache/retry interceptors.
-- AI API: **`aiDioProvider`** only in ai feature.
+- Library API: **`libraryDioProvider`** (no auth) only in the library feature.
 - Protected routes: see `core/config/protected_routes.dart`.
 
 ### Localization & content language
@@ -101,7 +104,7 @@ data/          → datasources, models (DTOs), repository implementations
 1. **Minimal diff** — only change what the task requires.
 2. **Match surrounding code** — naming, file placement, provider patterns.
 3. **Don't over-engineer** — no extra abstractions for one-off logic.
-4. **Don't break cross-feature contracts** — especially texts → reader, auth → mala/timer, practice → notifications.
+4. **Don't break cross-feature contracts** — especially library → texts → reader, auth → mala/timer, practice → notifications.
 5. **Run existing tests** when touching mala, auth, or repository logic.
 
 ## Dependency graph (simplified)
@@ -109,9 +112,11 @@ data/          → datasources, models (DTOs), repository implementations
 ```mermaid
 flowchart TD
   auth[auth] --> most[most features]
-  texts[texts] --> reader[reader]
-  texts --> recitation[recitation]
-  texts --> ai[ai]
+  library[library] --> texts[texts]
+  library --> recitation[recitation]
+  texts --> reader[reader]
+  recitation --> reader
+  home --> poems[poems]
   group_profile[group_profile] --> connect[connect]
   group_profile --> mala[mala]
   practice[practice] --> notifications[notifications]

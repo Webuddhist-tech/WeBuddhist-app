@@ -6,40 +6,30 @@ class UserState {
   final bool isLoading;
   final String? errorMessage;
 
-  const UserState({
-    this.user,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  const UserState({this.user, this.isLoading = false, this.errorMessage});
 
   /// Initial state (no user, not loading)
   const UserState.initial()
-      : user = null,
-        isLoading = false,
-        errorMessage = null;
+    : user = null,
+      isLoading = false,
+      errorMessage = null;
 
   /// Loading state
   const UserState.loading()
-      : user = null,
-        isLoading = true,
-        errorMessage = null;
+    : user = null,
+      isLoading = true,
+      errorMessage = null;
 
   /// Loaded state with user data
-  UserState.loaded(User this.user)
-      : isLoading = false,
-        errorMessage = null;
+  UserState.loaded(User this.user) : isLoading = false, errorMessage = null;
 
   /// Error state
   const UserState.error(String this.errorMessage)
-      : user = null,
-        isLoading = false;
+    : user = null,
+      isLoading = false;
 
   /// Copy with method for partial updates
-  UserState copyWith({
-    User? user,
-    bool? isLoading,
-    String? errorMessage,
-  }) {
+  UserState copyWith({User? user, bool? isLoading, String? errorMessage}) {
     return UserState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
@@ -67,6 +57,6 @@ class UserState {
 
   @override
   String toString() {
-    return 'UserState(user: ${user?.displayName ?? 'null'}, isLoading: $isLoading, errorMessage: $errorMessage)';
+    return 'UserState(user: ${user?.fullName ?? 'null'}, isLoading: $isLoading, errorMessage: $errorMessage)';
   }
 }

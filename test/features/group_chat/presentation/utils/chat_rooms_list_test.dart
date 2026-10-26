@@ -185,6 +185,39 @@ void main() {
     });
   });
 
+  group('isPrayerPushPayload', () {
+    const chat = {'session_type': 'CHAT'};
+
+    test('prayer request and prayer received pushes are prayer pushes', () {
+      expect(
+        isPrayerPushPayload({...chat, 'notification_type': 'PRAYER_REQUEST'}),
+        isTrue,
+      );
+      expect(
+        isPrayerPushPayload({...chat, 'notification_type': 'prayer_received'}),
+        isTrue,
+      );
+    });
+
+    test('a chat message or untyped chat push is not', () {
+      expect(
+        isPrayerPushPayload({...chat, 'notification_type': 'CHAT_MESSAGE'}),
+        isFalse,
+      );
+      expect(isPrayerPushPayload(chat), isFalse);
+    });
+
+    test('a push that is not a chat push is not', () {
+      expect(
+        isPrayerPushPayload({
+          'session_type': 'GROUP_POST',
+          'notification_type': 'PRAYER_REQUEST',
+        }),
+        isFalse,
+      );
+    });
+  });
+
   group('chatPushTargets', () {
     const chat = {'session_type': 'CHAT'};
 

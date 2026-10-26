@@ -104,6 +104,7 @@ abstract class AppLocalizations {
     Locale('mn'),
     Locale('ne'),
     Locale('zh'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
 
   /// No description provided for @appTitle.
@@ -1663,7 +1664,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_post_comments_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 comment} other{{count} comments}}'**
+  /// **'{count, plural,\n=1 {1 comment}\nother {{count} comments}\n}'**
   String connect_post_comments_count(int count);
 
   /// No description provided for @connect_post_comments_empty.
@@ -2973,6 +2974,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Last name'**
   String get edit_profile_last_name;
+
+  /// No description provided for @edit_profile_display_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get edit_profile_display_name;
 
   /// No description provided for @edit_profile_bio.
   ///
@@ -4355,7 +4362,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_version_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 version} other{{count} versions}}'**
+  /// **'{count, plural,\n=1 {1 version}\nother {{count} versions}\n}'**
   String reader_version_count(int count);
 
   /// No description provided for @mala_no_mantras.
@@ -4595,7 +4602,7 @@ abstract class AppLocalizations {
   /// No description provided for @days_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 Day} other{{count} Days}}'**
+  /// **'{count, plural,\n=1 {1 Day}\nother {{count} Days}\n}'**
   String days_count(int count);
 
   /// No description provided for @timer_minute_session.
@@ -4979,13 +4986,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{This message will be removed from the chat for everyone} other{These messages will be removed from the chat for everyone}}'**
+  /// **'{count, plural,\n=1 {This message will be removed from the chat for everyone}\nother {These messages will be removed from the chat for everyone}\n}'**
   String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{The message couldn\'t be deleted} other{{count} messages couldn\'t be deleted}}'**
+  /// **'{count, plural,\n=1 {The message couldn\'t be deleted}\nother {{count} messages couldn\'t be deleted}\n}'**
   String group_chat_delete_failed(int count);
 
   /// No description provided for @group_chat_selection_limit.
@@ -5390,6 +5397,18 @@ abstract class AppLocalizations {
   /// **'Prayer requests are closed for this event'**
   String get event_prayer_closed;
 
+  /// No description provided for @group_prayer_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayer requests are closed for this space'**
+  String get group_prayer_closed;
+
+  /// No description provided for @group_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in this space.'**
+  String get group_prayer_delete_body;
+
   /// No description provided for @event_prayer_pray.
   ///
   /// In en, this message translates to:
@@ -5587,6 +5606,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Translated'**
   String get event_prayer_translated;
+
+  /// No description provided for @event_prayer_sort_mine.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayers'**
+  String get event_prayer_sort_mine;
+
+  /// No description provided for @event_prayer_section_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get event_prayer_section_active;
+
+  /// No description provided for @event_prayer_section_accomplished.
+  ///
+  /// In en, this message translates to:
+  /// **'Accomplished'**
+  String get event_prayer_section_accomplished;
+
+  /// No description provided for @event_prayer_mark_accomplished.
+  ///
+  /// In en, this message translates to:
+  /// **'Accomplished'**
+  String get event_prayer_mark_accomplished;
+
+  /// No description provided for @event_prayer_mark_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as active'**
+  String get event_prayer_mark_active;
+
+  /// No description provided for @event_prayer_mine_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests from you yet'**
+  String get event_prayer_mine_empty_title;
+
+  /// No description provided for @event_prayer_mine_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you post here will appear in this list'**
+  String get event_prayer_mine_empty_body;
+
+  /// No description provided for @event_prayer_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'The prayer request couldn\'t be updated'**
+  String get event_prayer_update_failed;
+
+  /// No description provided for @event_prayer_find.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a prayer for you'**
+  String get event_prayer_find;
+
+  /// No description provided for @event_prayer_random.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get event_prayer_random;
+
+  /// No description provided for @event_prayer_finding.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding a prayer...'**
+  String get event_prayer_finding;
+
+  /// No description provided for @event_prayer_found.
+  ///
+  /// In en, this message translates to:
+  /// **'A prayer for you'**
+  String get event_prayer_found;
+
+  /// No description provided for @event_prayer_skip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get event_prayer_skip;
+
+  /// No description provided for @event_prayer_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next prayer'**
+  String get event_prayer_next;
+
+  /// No description provided for @event_prayer_be_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to pray'**
+  String get event_prayer_be_first;
+
+  /// No description provided for @event_prayer_random_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayers to find yet'**
+  String get event_prayer_random_empty_title;
+
+  /// No description provided for @event_prayer_random_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'No one else has posted a request here yet'**
+  String get event_prayer_random_empty_body;
+
+  /// No description provided for @event_prayer_random_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find a prayer'**
+  String get event_prayer_random_failed;
+
+  /// No description provided for @event_prayer_people_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 person}\nother {{count} people}\n}'**
+  String event_prayer_people_count(int count);
+
+  /// No description provided for @event_prayer_prayers_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural,\n=1 {1 prayer}\nother {{count} prayers}\n}'**
+  String event_prayer_prayers_count(int count);
+
+  /// No description provided for @me_prayer_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'My prayer requests'**
+  String get me_prayer_requests;
+
+  /// No description provided for @me_prayer_requests_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No prayer requests yet'**
+  String get me_prayer_requests_empty_title;
+
+  /// No description provided for @me_prayer_requests_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests you post in spaces and events will appear here'**
+  String get me_prayer_requests_empty_body;
+
+  /// No description provided for @me_prayer_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'It will be removed for everyone in that space or event.'**
+  String get me_prayer_delete_body;
 
   /// No description provided for @recitation_live_sync.
   ///
@@ -7224,6 +7387,12 @@ abstract class AppLocalizations {
   /// **'New timer'**
   String get timer_new_title;
 
+  /// No description provided for @timer_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title...'**
+  String get timer_title_hint;
+
   /// No description provided for @timer_edit_title.
   ///
   /// In en, this message translates to:
@@ -7329,7 +7498,7 @@ abstract class AppLocalizations {
   /// No description provided for @timer_create_custom_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Set duration, bells and ambient sound'**
+  /// **'Pick a length and optional background sound'**
   String get timer_create_custom_subtitle;
 
   /// No description provided for @timer_starting.
@@ -7375,6 +7544,18 @@ class _AppLocalizationsDelegate
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hans':
+            return AppLocalizationsZhHans();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'bo':

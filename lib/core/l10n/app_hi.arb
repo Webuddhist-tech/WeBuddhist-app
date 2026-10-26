@@ -584,6 +584,7 @@
   "edit_profile_save": "सेव करें",
   "edit_profile_first_name": "पहला नाम",
   "edit_profile_last_name": "अंतिम नाम",
+  "edit_profile_display_name": "प्रदर्शन नाम",
   "edit_profile_bio": "बायो",
   "edit_profile_bio_hint": "अपने बारे में थोड़ा बताएँ",
   "edit_profile_delete_account": "अकाउंट हटाएँ",
@@ -864,7 +865,7 @@
   "reader_swipe_up_for_more": "अधिक के लिए ऊपर स्वाइप करें",
   "reader_videos": "वीडियो",
   "reader_about_this_version": "इस संस्करण के बारे में",
-  "reader_version_count": "{count, plural, =1{1 संस्करण} other{{count} संस्करण}}",
+  "reader_version_count": "{count, plural,\n=1 {1 संस्करण}\nother {{count} संस्करण}\n}",
   "mala_no_mantras": "कोई मंत्र उपलब्ध नहीं",
   "mala_count_load_error": "आपकी गिनती लोड नहीं हो सकी",
   "mala_mantra_label": "मंत्र",
@@ -900,7 +901,7 @@
   "session_no_malas": "कोई माला नहीं मिली",
   "session_timers_load_error": "टाइमर लोड करने में असमर्थ",
   "session_no_timers": "कोई टाइमर नहीं मिला",
-  "days_count": "{count, plural, =1{1 दिन} other{{count} दिन}}",
+  "days_count": "{count, plural,\n=1 {1 दिन}\nother {{count} दिन}\n}",
   "timer_minute_session": "{minutes} मिनट का सत्र",
   "plan_day_of": "दिन {day} / {total}",
   "pagination_position": "{current} / {total}",
@@ -959,7 +960,7 @@
   "connect_comment_delete_title": "टिप्पणी हटाएँ?",
   "connect_comment_delete_message": "यह टिप्पणी स्थायी रूप से हटा दी जाएगी",
   "connect_comment_delete_failed": "टिप्पणी हटाने में असमर्थ",
-  "connect_post_comments_count": "{count, plural, =1 {1 टिप्पणी} other {{count} टिप्पणियाँ}}",
+  "connect_post_comments_count": "{count, plural,\n=1 {1 टिप्पणी}\nother {{count} टिप्पणियाँ}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -1052,7 +1053,7 @@
   "group_chat_delete": "हटाएँ",
   "group_chat_delete_title": "संदेश हटाएँ?",
   "group_chat_delete_title_many": "{count} संदेश हटाएँ?",
-  "group_chat_delete_confirm_body": "{count, plural, =1{यह संदेश सभी के लिए चैट से हटा दिया जाएगा} other{ये संदेश सभी के लिए चैट से हटा दिए जाएँगे}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {यह संदेश सभी के लिए चैट से हटा दिया जाएगा}\nother {ये संदेश सभी के लिए चैट से हटा दिए जाएँगे}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1060,7 +1061,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{संदेश हटाया नहीं जा सका} other{{count} संदेश हटाए नहीं जा सके}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {संदेश हटाया नहीं जा सका}\nother {{count} संदेश हटाए नहीं जा सके}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {

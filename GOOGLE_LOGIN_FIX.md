@@ -9,16 +9,25 @@ The callback URL mismatch is caused by **inconsistent callback URL configuration
 
 ## Current Configuration
 
-### Android
-- **All flavors** use `org.pecha.app` scheme
-- **Application IDs**:
-  - Dev: `org.pecha.app.dev`
-  - Staging: `org.pecha.app.staging`
-  - Prod: `org.pecha.app`
+> Updated Oct 2026 — the flavor scheme split described in Step 3 below is now
+> in place; this file is kept as the callback-URL reference.
 
-### iOS
-- **Dev/Staging**: Uses flavor-specific schemes
-- **Prod**: Uses `org.pecha.app`
+### Android (`android/app/build.gradle.kts`)
+- Flavor-specific `auth0Scheme` manifest placeholders:
+  - Dev: `org.pecha.app.dev` (application ID `org.pecha.app.dev`, `auth0Domain` = `dev-vz6o17motc18g45h.us.auth0.com`)
+  - Staging: `org.pecha.app.staging` (application ID `org.pecha.app.staging`, `auth0Domain` = `we-buddhist-prod.us.auth0.com`)
+  - Prod: `org.pecha.app` (application ID `org.pecha.app`, `auth0Domain` = `we-buddhist-prod.us.auth0.com`)
+
+### iOS (`ios/Flutter/<flavor>-<mode>.xcconfig`)
+- `AUTH0_SCHEME` per flavor (`org.pecha.app.dev`, `org.pecha.app.staging`, `org.pecha.app`), referenced from `CFBundleURLSchemes` in `ios/Runner/Info.plist`.
+
+### Dart
+- `AuthService` passes `ConfigService.auth0Scheme` (from `AUTH0_SCHEME` in the
+  flavor's `.env.<flavor>`, fallback `org.pecha.app`) to
+  `webAuthentication(scheme:)`; it must match the native scheme above.
+- Domain / client ID / audience are fetched at runtime from the backend
+  `GET {BASE_API_URL}/props` (cached for offline), so the dev callback URLs must
+  be registered on whichever tenant the dev backend's `/props` returns.
 
 ### The Issue
 The app is using these callback URLs:
@@ -65,9 +74,9 @@ org.pecha.app.staging://we-buddhist-prod.us.auth0.com/ios/org.pecha.app.staging/
 https://we-buddhist-prod.us.auth0.com/ios/org.pecha.app.staging/callback
 ```
 
-### Step 2: Remove Old iOS Scheme
+### Step 2: ~~Remove Old iOS Scheme~~ (do NOT do this)
 
-The old `webuddhist` scheme in iOS Info.plist is causing conflicts. It should be removed.
+The `webuddhist` URL scheme in iOS `Info.plist` is **required**: it is the Airbridge deep-link scheme (`webuddhist://…`, see `docs/implementation/AIRBRIDGE_SETUP.md`). It does not conflict with Auth0, which uses the flavor's `AUTH0_SCHEME`.
 
 ### Step 3: Ensure Consistent Scheme Configuration
 
@@ -100,7 +109,7 @@ After updating the Auth0 dashboard:
 
 After implementing the fix:
 - [ ] Callback URLs added to Auth0 dashboard for all environments
-- [ ] Old iOS scheme (`webuddhist`) removed from Info.plist
+- [ ] `webuddhist` scheme still present in Info.plist (Airbridge)
 - [ ] Android and iOS use consistent schemes per flavor
 - [ ] Google login tested successfully
 - [ ] Callback redirect works properly

@@ -129,6 +129,10 @@ class _FakeGroupChatRepository implements GroupChatRepository {
       const Left(NotFoundFailure('not used'));
 
   @override
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async =>
+      const Left(NotFoundFailure('not used'));
+
+  @override
   Future<Either<Failure, ChatMessageDTO>> sendEventMessage(
     String eventId, {
     required String body,
@@ -182,6 +186,29 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     required String reason,
     String? description,
   }) async => const Right(unit);
+
+  @override
+  Future<Either<Failure, ChatMessageDTO>> pickRandomPrayerRequest(
+    String roomId, {
+    List<String> excludeIds = const [],
+    String? translationLanguage,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    String? groupId,
+    bool? isCompleted,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, ChatMessageDTO?>> setMessageCompleted(
+    String roomId, {
+    required String messageId,
+    required bool isCompleted,
+  }) async => throw UnimplementedError();
 
   @override
   Future<Either<Failure, ChatMessageDTO?>> updateMessage(

@@ -12,8 +12,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// ⋮ menu and stacked on top of it; its back arrow returns to the list.
 ///
 /// The two switches are the account-wide ones the notification settings
-/// screen also shows, so they cover prayer requests from every event, not
-/// just the one whose sheet is open. While the app's master switch is off or
+/// screen also shows, so they cover prayer requests from every event and
+/// space, not just the one whose sheet is open. While the app's master switch is off or
 /// the OS permission is missing they are greyed out; their saved values are
 /// untouched.
 class PrayerNotificationSettingsSheet extends ConsumerWidget {

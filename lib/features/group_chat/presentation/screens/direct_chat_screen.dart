@@ -157,10 +157,7 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen> {
 
     setState(() => _sending = true);
     try {
-      final result = await _notifier.send(
-        body,
-        parentMessageId: parent?.id,
-      );
+      final result = await _notifier.send(body, parentMessageId: parent?.id);
       if (!mounted) return;
       result.fold(
         (failure) {
@@ -275,8 +272,7 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen> {
             onSubmit: _send,
             enabled: canSend,
             avatarUrl: user?.avatarUrl,
-            displayName:
-                joinChatName(user?.firstName, user?.lastName) ?? user?.email,
+            displayName: user?.visibleNameOrNull ?? user?.email,
           ),
         ],
       ),

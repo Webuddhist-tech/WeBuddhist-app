@@ -270,7 +270,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final user = ref.watch(userProvider).user;
-    final firstName = user?.firstName ?? user?.username;
+    final firstName = user?.visibleNameOrNull ?? user?.username;
     final hasName = firstName?.isNotEmpty ?? false;
 
     return Scaffold(

@@ -14,11 +14,12 @@ class GroupAccumulatorRemoteDatasource {
     String groupId, {
     required int skip,
     required int limit,
+    required String language,
   }) async {
     try {
       final response = await dio.get(
         '/group-accumulators/$groupId/accumulators',
-        queryParameters: {'skip': skip, 'limit': limit},
+        queryParameters: {'skip': skip, 'limit': limit, 'language': language},
         options: Options(extra: {'no_cache': true}),
       );
 
@@ -38,10 +39,14 @@ class GroupAccumulatorRemoteDatasource {
     }
   }
 
-  Future<GroupAccumulatorModel> fetchGroupAccumulator(String accumulatorId) async {
+  Future<GroupAccumulatorModel> fetchGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/group-accumulators/$accumulatorId',
+        queryParameters: {'language': language},
         options: Options(extra: {'no_cache': true}),
       );
 

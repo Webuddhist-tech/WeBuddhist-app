@@ -360,7 +360,7 @@
   "connect_comment_delete_title": "Delete comment?",
   "connect_comment_delete_message": "This comment will be permanently removed",
   "connect_comment_delete_failed": "Unable to delete comment",
-  "connect_post_comments_count": "{count, plural, =1{1 comment} other{{count} comments}}",
+  "connect_post_comments_count": "{count, plural,\n=1 {1 comment}\nother {{count} comments}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -760,6 +760,7 @@
   "edit_profile_save": "Save",
   "edit_profile_first_name": "First name",
   "edit_profile_last_name": "Last name",
+  "edit_profile_display_name": "Display name",
   "edit_profile_bio": "Bio",
   "edit_profile_bio_hint": "Share a little about yourself",
   "edit_profile_delete_account": "Delete account",
@@ -1229,7 +1230,7 @@
   "reader_swipe_up_for_more": "Swipe up for more",
   "reader_videos": "Videos",
   "reader_about_this_version": "About this version",
-  "reader_version_count": "{count, plural, =1{1 version} other{{count} versions}}",
+  "reader_version_count": "{count, plural,\n=1 {1 version}\nother {{count} versions}\n}",
   "@reader_version_count": {
     "placeholders": {
       "count": {
@@ -1286,7 +1287,7 @@
   "session_no_malas": "No malas found",
   "session_timers_load_error": "Unable to load timers",
   "session_no_timers": "No timers found",
-  "days_count": "{count, plural, =1{1 Day} other{{count} Days}}",
+  "days_count": "{count, plural,\n=1 {1 Day}\nother {{count} Days}\n}",
   "@days_count": {
     "placeholders": {
       "count": {
@@ -1443,7 +1444,7 @@
       }
     }
   },
-  "group_chat_delete_confirm_body": "{count, plural, =1{This message will be removed from the chat for everyone} other{These messages will be removed from the chat for everyone}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {This message will be removed from the chat for everyone}\nother {These messages will be removed from the chat for everyone}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1451,7 +1452,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{The message couldn't be deleted} other{{count} messages couldn't be deleted}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {The message couldn't be deleted}\nother {{count} messages couldn't be deleted}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {
@@ -1571,6 +1572,8 @@
   },
   "event_prayer_load_failed": "Prayer requests couldn't be loaded",
   "event_prayer_closed": "Prayer requests are closed for this event",
+  "group_prayer_closed": "Prayer requests are closed for this space",
+  "group_prayer_delete_body": "It will be removed for everyone in this space.",
   "event_prayer_pray": "Pray",
   "event_prayer_praying": "Prayed",
   "event_prayer_my_count": "+{count}",
@@ -1639,6 +1642,44 @@
     }
   },
   "event_prayer_translated": "Translated",
+  "event_prayer_sort_mine": "My prayers",
+  "event_prayer_section_active": "Active",
+  "event_prayer_section_accomplished": "Accomplished",
+  "event_prayer_mark_accomplished": "Accomplished",
+  "event_prayer_mark_active": "Mark as active",
+  "event_prayer_mine_empty_title": "No prayer requests from you yet",
+  "event_prayer_mine_empty_body": "Requests you post here will appear in this list",
+  "event_prayer_update_failed": "The prayer request couldn't be updated",
+  "event_prayer_find": "Find a prayer for you",
+  "event_prayer_random": "Random",
+  "event_prayer_finding": "Finding a prayer...",
+  "event_prayer_found": "A prayer for you",
+  "event_prayer_skip": "Skip",
+  "event_prayer_next": "Next prayer",
+  "event_prayer_be_first": "Be the first to pray",
+  "event_prayer_random_empty_title": "No prayers to find yet",
+  "event_prayer_random_empty_body": "No one else has posted a request here yet",
+  "event_prayer_random_failed": "Couldn't find a prayer",
+  "event_prayer_people_count": "{count, plural,\n=1 {1 person}\nother {{count} people}\n}",
+  "@event_prayer_people_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_prayers_count": "{count, plural,\n=1 {1 prayer}\nother {{count} prayers}\n}",
+  "@event_prayer_prayers_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "me_prayer_requests": "My prayer requests",
+  "me_prayer_requests_empty_title": "No prayer requests yet",
+  "me_prayer_requests_empty_body": "Requests you post in spaces and events will appear here",
+  "me_prayer_delete_body": "It will be removed for everyone in that space or event.",
   "recitation_live_sync": "Sync",
   "recitation_live_label": "Live",
   "recitation_live_session_ended": "The live session has ended",
@@ -2103,6 +2144,7 @@
   "timer_begin_session": "Begin session",
   "timer_save_changes": "Save changes",
   "timer_new_title": "New timer",
+  "timer_title_hint": "Title...",
   "timer_edit_title": "Edit timer",
   "timer_your_timers": "Your timers",
   "timer_custom_timer": "Custom timer",
@@ -2120,7 +2162,7 @@
   "splash_tagline_2": "We Buddhists practice daily",
   "timer_list_subtitle": "Tap play to begin, or build your own.",
   "timer_create_custom": "Create a custom timer",
-  "timer_create_custom_subtitle": "Set duration, bells and ambient sound",
+  "timer_create_custom_subtitle": "Pick a length and optional background sound",
   "timer_starting": "Starting...",
   "timer_duration_hours": "hours",
   "timer_duration_sec": "sec"

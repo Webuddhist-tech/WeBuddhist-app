@@ -1,6 +1,9 @@
 # Locale Provider Tests
 
-This directory contains comprehensive unit tests for the locale persistence functionality.
+This section covers `locale_provider_test.dart`, the unit tests for UI locale
+persistence (`LocaleNotifier` in `lib/core/config/locale/locale_notifier.dart`).
+The directory also holds content-language analytics, `Env` library-key, and
+protected-route tests.
 
 ## Test Coverage
 
@@ -8,7 +11,7 @@ The test suite includes **21 test cases** covering:
 
 ### Valid Scenarios (6 tests)
 
-- Loading valid stored locales (en, bo, zh)
+- Loading valid stored locales
 - Setting and persisting new locale
 - Default locale on first launch
 - Locale persistence verification
@@ -37,7 +40,7 @@ The test suite includes **21 test cases** covering:
 
 The locally stored locale becomes **invalid** in the following scenarios:
 
-1. **Unsupported language code** - Locale not in `['en', 'bo', 'zh']`
+1. **Unsupported language code** - Locale not in `L10n.all` (`en`, `bo`, `zh`, `hi`, `mn`, `ne`)
 2. **First app launch** - No stored value exists
 3. **Corrupted data** - Wrong type or malformed data
 4. **Storage cleared** - User clears app data/cache
@@ -46,12 +49,11 @@ The locally stored locale becomes **invalid** in the following scenarios:
 
 ### Fallback Behavior
 
-When any invalid scenario occurs, the app:
-
-1. Falls back to default "en" locale
-2. Continues to function normally
-3. Does not crash or show errors to user
-4. Validates against `L10n.all` supported locales
+- First launch, null/empty stored values and storage read failures fall back
+  to the default `en` locale without crashing.
+- `setLocale` validates against `L10n.all` and throws for unsupported codes.
+- Loading does **not** validate: an unsupported code already in storage (e.g.
+  `fr`) is applied as-is, and the tests assert that behaviour.
 
 ## Running Tests
 
@@ -60,12 +62,12 @@ When any invalid scenario occurs, the app:
 flutter test test/core/config/locale_provider_test.dart
 
 # Generate mock files (if needed)
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
 ```
 
 ## Dependencies
 
-- `mockito`: For mocking `PreferencesService`
+- `mockito`: For mocking the local storage service
 - `build_runner`: For generating mock classes
 - `flutter_test`: Flutter testing framework
 
@@ -76,4 +78,4 @@ The `LocaleNotifier` class:
 - Validates stored locale against supported locales
 - Handles storage failures gracefully with try-catch
 - Maintains UI state even if persistence fails
-- Uses SharedPreferences for local storage
+- Persists through the injected local storage service

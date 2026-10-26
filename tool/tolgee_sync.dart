@@ -15,6 +15,7 @@ const Map<String, String> tolgeeSyncLanguageTags = <String, String>{
   'en': 'en',
   'bo': 'bo-IN',
   'zh': 'zh-Hant-TW',
+  'zh_Hans': 'zh-Hans-CN',
   'hi': 'hi',
   'mn': 'mn',
   'ne': 'ne',
@@ -238,7 +239,7 @@ Future<void> _runPull(Directory root, {required bool dryRun}) async {
   try {
     final int projectId = await api.resolveProjectId();
     stdout.writeln('Tolgee project: $projectId');
-    stdout.writeln('Fetching all six languages before touching ARB files...');
+    stdout.writeln('Fetching all languages before touching ARB files...');
 
     final RemoteCatalog catalog = await api.fetchCatalog(projectId);
     final Map<String, ArbDocument> documents = _readAllArbs(root);
@@ -414,8 +415,8 @@ Future<bool> _runDoctor(Directory root, {required bool remote}) async {
     for (final String key in template.messageKeys.intersection(
       document.messageKeys,
     )) {
-      final Set<String> expected = _placeholderNames(template.message(key)!);
-      final Set<String> actual = _placeholderNames(document.message(key)!);
+      final Set<String> expected = placeholderNames(template.message(key)!);
+      final Set<String> actual = placeholderNames(document.message(key)!);
       if (!_setEquals(expected, actual)) {
         placeholderMismatches.add(
           '$key (expected ${_formatSet(expected)}, '
@@ -603,12 +604,75 @@ void _writeAllArbsAtomically(Map<String, ArbDocument> documents) {
   }
 }
 
-Set<String> _placeholderNames(String message) {
-  final RegExp pattern = RegExp(r'\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*[,}]');
-  return pattern
-      .allMatches(message)
-      .map((RegExpMatch match) => match.group(1)!)
-      .toSet();
+/// Argument names in an ICU [message] at any depth. Kept public so a Flutter
+/// test can verify it.
+///
+/// Walks the braces rather than pattern-matching them: a plural or select
+/// case body such as `=1 {round}` is text, while `{count}` inside that body
+/// is still an argument.
+Set<String> placeholderNames(String message) {
+  final Set<String> names = <String>{};
+  int i = 0;
+  while (i < message.length) {
+    i = message[i] == '{' ? _parseArgument(message, i + 1, names) : i + 1;
+  }
+  return names;
+}
+
+final RegExp _argumentName = RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$');
+const Set<String> _caseTypes = <String>{'plural', 'select', 'selectordinal'};
+
+/// Parses `name}`, `name, type}` or `name, plural, cases}` from [start], the
+/// index after the opening brace. Returns the index after the closing one.
+int _parseArgument(String message, int start, Set<String> names) {
+  final int nameEnd = _indexOfAny(message, start, ',}');
+  if (nameEnd == -1) return message.length;
+  final String name = message.substring(start, nameEnd).trim();
+  if (_argumentName.hasMatch(name)) names.add(name);
+  if (message[nameEnd] == '}') return nameEnd + 1;
+  final int typeEnd = _indexOfAny(message, nameEnd + 1, ',}');
+  if (typeEnd == -1) return message.length;
+  if (message[typeEnd] == '}') return typeEnd + 1;
+  final String type = message.substring(nameEnd + 1, typeEnd).trim();
+  if (!_caseTypes.contains(type)) {
+    return _skipToClosingBrace(message, typeEnd + 1);
+  }
+  int i = typeEnd + 1;
+  while (i < message.length) {
+    final String char = message[i];
+    if (char == '}') return i + 1;
+    i = char == '{' ? _parseCaseBody(message, i + 1, names) : i + 1;
+  }
+  return i;
+}
+
+/// Parses case text from [start] to its closing brace, collecting nested
+/// arguments. Returns the index after that brace.
+int _parseCaseBody(String message, int start, Set<String> names) {
+  int i = start;
+  while (i < message.length) {
+    final String char = message[i];
+    if (char == '}') return i + 1;
+    i = char == '{' ? _parseArgument(message, i + 1, names) : i + 1;
+  }
+  return i;
+}
+
+/// Skips a style such as `integer` in `{n, number, integer}`.
+int _skipToClosingBrace(String message, int start) {
+  int depth = 1;
+  for (int i = start; i < message.length; i++) {
+    if (message[i] == '{') depth++;
+    if (message[i] == '}' && --depth == 0) return i + 1;
+  }
+  return message.length;
+}
+
+int _indexOfAny(String message, int start, String chars) {
+  for (int i = start; i < message.length; i++) {
+    if (chars.contains(message[i])) return i;
+  }
+  return -1;
 }
 
 bool _setEquals<T>(Set<T> first, Set<T> second) {

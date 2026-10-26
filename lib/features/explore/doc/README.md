@@ -29,7 +29,9 @@ No data, domain, providers, or barrel file.
 
 ## Cross-feature dependencies
 
-- **core** — `context_ext.dart` for l10n (`nav_explore`, `comingSoonHeadline`)
+- **core** — `context_ext.dart` for l10n (`nav_explore`, `comingSoonHeadline`, `explore_coming_soon_subtitle`)
+
+> Status: dead code — `ExploreScreen` is not imported anywhere (only a commented-out tab references it).
 
 ---
 

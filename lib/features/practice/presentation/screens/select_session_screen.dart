@@ -465,7 +465,7 @@ class _MalasTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final language = ref.watch(localeProvider).languageCode;
+    final language = ref.watch(contentLanguageProvider);
     final catalogueAsync = ref.watch(malaCatalogueProvider);
     Future<void> onRefresh() async {
       ref.invalidate(malaCatalogueProvider);

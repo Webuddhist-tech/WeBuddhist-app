@@ -103,6 +103,15 @@ String chatPushRoomId(Map<String, dynamic> data) =>
 String chatPushGroupId(Map<String, dynamic> data) =>
     (data['group_id'] as String?)?.trim() ?? '';
 
+/// Whether a chat push is about a prayer request rather than a chat message.
+/// A space's room carries both, but group chat shows only chat messages.
+bool isPrayerPushPayload(Map<String, dynamic> data) {
+  if (!isChatPushPayload(data)) return false;
+  final type =
+      (data['notification_type'] as String?)?.trim().toUpperCase() ?? '';
+  return type == 'PRAYER_REQUEST' || type == 'PRAYER_RECEIVED';
+}
+
 /// Whether a chat push is about the room or group currently on screen.
 bool chatPushTargets(
   Map<String, dynamic> data, {

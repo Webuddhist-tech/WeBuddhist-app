@@ -32,14 +32,16 @@ class _FakeChatRepository extends Fake implements GroupChatRepository {
       _pending.remove(roomId)!.complete(result);
 }
 
-ChatRoomDTO _room(String id, {String? eventId}) => ChatRoomDTO(
-  id: id,
-  createdBy: 'user-1',
-  eventId: eventId,
-  kind: 'EVENT',
-  name: 'Prayers',
-  updatedAt: '',
-);
+ChatRoomDTO _room(String id, {String? eventId, String? groupId}) =>
+    ChatRoomDTO(
+      id: id,
+      createdBy: 'user-1',
+      eventId: eventId,
+      groupId: groupId,
+      kind: groupId != null ? 'GROUP' : 'EVENT',
+      name: 'Prayers',
+      updatedAt: '',
+    );
 
 void main() {
   group('resolvePushTap', () {
@@ -216,9 +218,36 @@ void main() {
       expect(actual.resolvesRoom, isTrue);
     });
 
-    test('PRAYER_REQUEST from a group room still opens group chat', () {
+    test('PRAYER_REQUEST from a group room opens the space\'s prayers', () {
       final actual = resolvePushTap({
         'notification_type': 'PRAYER_REQUEST',
+        'session_type': 'CHAT',
+        'chat_kind': 'GROUP',
+        'group_id': 'grp-1',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.groupPrayerRequests);
+      expect(actual.sourceId, 'grp-1');
+      expect(actual.resolvesRoom, isFalse);
+    });
+
+    test('PRAYER_RECEIVED from a group room without a group_id looks the '
+        'space up by room', () {
+      final actual = resolvePushTap({
+        'notification_type': 'PRAYER_RECEIVED',
+        'session_type': 'CHAT',
+        'chat_kind': 'GROUP',
+        'group_id': '',
+        'source_id': 'room-1',
+      });
+      expect(actual.target, PushTapTarget.groupPrayerRequests);
+      expect(actual.sourceId, 'room-1');
+      expect(actual.resolvesRoom, isTrue);
+    });
+
+    test('a plain message in a group room still opens group chat', () {
+      final actual = resolvePushTap({
+        'notification_type': 'CHAT_MESSAGE',
         'session_type': 'CHAT',
         'chat_kind': 'GROUP',
         'group_id': 'grp-1',
@@ -365,6 +394,15 @@ void main() {
                   return Text('event $eventId prayers=$prayers');
                 },
               ),
+              GoRoute(
+                path: 'group/:groupId',
+                builder: (_, state) {
+                  final groupId = state.pathParameters['groupId'];
+                  final prayers =
+                      state.uri.queryParameters[AppRoutes.groupPrayersQuery];
+                  return Text('group $groupId prayers=$prayers');
+                },
+              ),
             ],
           ),
           GoRoute(path: '/other', builder: (_, __) => const Text('other')),
@@ -388,10 +426,16 @@ void main() {
       );
     }
 
-    Future<void> tap(WidgetTester tester, String roomId) async {
+    Future<void> tap(
+      WidgetTester tester,
+      String roomId, {
+      String chatKind = 'EVENT',
+      String? notificationType,
+    }) async {
       container.read(pushMessageNavigatorProvider).handleData({
         'session_type': 'CHAT',
-        'chat_kind': 'EVENT',
+        'chat_kind': chatKind,
+        if (notificationType != null) 'notification_type': notificationType,
         'source_id': roomId,
       });
       tester.binding.scheduleFrame();
@@ -412,6 +456,25 @@ void main() {
 
       expect(location(), '/home/events/event-1?prayers=1');
       expect(find.text('event event-1 prayers=1'), findsOneWidget);
+    });
+
+    testWidgets('opens the looked-up space with its prayer requests', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      await tap(
+        tester,
+        'room-1',
+        chatKind: 'GROUP',
+        notificationType: 'PRAYER_RECEIVED',
+      );
+      expect(repository.requested, ['room-1']);
+
+      repository.complete('room-1', Right(_room('room-1', groupId: 'grp-1')));
+      await tester.pumpAndSettle();
+
+      expect(location(), '/home/group/grp-1?prayers=1');
+      expect(find.text('group grp-1 prayers=1'), findsOneWidget);
     });
 
     testWidgets('falls back to Home when the room cannot be loaded', (

@@ -28,6 +28,7 @@ class AppConfig {
   static const String tibetanLanguageCode = 'bo';
   static const String englishLanguageCode = 'en';
   static const String chineseLanguageCode = 'zh';
+  static const String simplifiedChineseLanguageCode = 'zh-Hans';
   static const String hindiLanguageCode = 'hi';
   static const String mongolianLanguageCode = 'mn';
   static const String nepaliLanguageCode = 'ne';
@@ -36,6 +37,7 @@ class AppConfig {
   static const List<String> supportedLanguages = [
     'en',
     'zh',
+    simplifiedChineseLanguageCode,
     'bo',
     'hi',
     'mn',
@@ -48,8 +50,10 @@ class AppConfig {
   /// Used by `applyUiLocaleForContent` so chrome can fall back when the user
   /// picks a content language the UI cannot render.
   static String resolveContentLanguage(String localeCode) {
-    final code = localeCode.toLowerCase();
-    if (supportedLanguages.contains(code)) return code;
+    final code = localeCode.replaceAll('_', '-').toLowerCase();
+    for (final supported in supportedLanguages) {
+      if (supported.toLowerCase() == code) return supported;
+    }
     return englishLanguageCode;
   }
 

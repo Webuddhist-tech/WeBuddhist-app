@@ -188,6 +188,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       return false;
     }
     if (!(_route?.isCurrent ?? false)) return false;
+    // Prayer requests share the room but are not shown here, so their banner
+    // stays.
+    if (isPrayerPushPayload(data)) return false;
     return chatPushTargets(data, roomId: _roomId, groupId: widget.groupId);
   }
 
@@ -393,6 +396,9 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
   /// backs off and retries rather than leaving the thread without a socket.
   Future<void> _onForegroundPush(PushMessage message) async {
     if (_disposed || !mounted) return;
+    // A prayer request never reaches the thread, so it says nothing about
+    // whether the socket is delivering, and must not mark the room read.
+    if (isPrayerPushPayload(message.data)) return;
     if (!chatPushTargets(
       message.data,
       roomId: _roomId,
@@ -860,9 +866,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
                     isSending: _sending,
                     onSubmit: _send,
                     avatarUrl: user?.avatarUrl,
-                    displayName:
-                        joinChatName(user?.firstName, user?.lastName) ??
-                        user?.email,
+                    displayName: user?.visibleNameOrNull ?? user?.email,
                   ),
                 ],
               )

@@ -1,0 +1,1593 @@
+{
+  "@@locale": "zh_Hans",
+  "appTitle": "WeBuddhist",
+  "sign_in": "登录",
+  "logout": "退出登录",
+  "onboarding_welcome": "欢迎来到",
+  "onboarding_setup_subtitle": "让我们为您设置，只需一分钟",
+  "onboarding_tagline": "学习、修持、连结。每日。",
+  "onboarding_quote": "滴水穿石 ‧ 聚沙成塔",
+  "onboarding_find_peace": "立即开始",
+  "onboarding_continue": "下一步",
+  "onboarding_first_question": "选择您的语言",
+  "onboarding_language_subtitle": "这会设置应用程序的语言",
+  "onboarding_choose_option": "至少选择一项",
+  "onboarding_all_set": "一切就绪",
+  "onboarding_all_set_description": "以下是为您准备的内容：",
+  "onboarding_all_set_practice_title": "修持",
+  "onboarding_all_set_practice_body": "修持计划、持诵、念珠与禅修",
+  "onboarding_all_set_connect_title": "连结",
+  "onboarding_all_set_connect_body": "社群、活动、动态与聊天",
+  "home_recitation": "持诵",
+  "home_today": "今天",
+  "home_good_morning": "早上好",
+  "home_good_afternoon": "下午好",
+  "home_good_evening": "晚上好",
+  "home_meditationTitle": "禅修",
+  "home_prayerTitle": "今日祈愿文",
+  "home_scripture": "导读经典",
+  "home_meditation": "导引禅修",
+  "home_goDeeper": "深入学习",
+  "home_intention": "我今日的意愿",
+  "home_overall_stats": "整体统计",
+  "home_plans": "计划",
+  "home_plans_count": "{count} 计划",
+  "@home_plans_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "home_recitation_count": "{count} 持诵",
+  "@home_recitation_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "home_shortcut_plans": "计划",
+  "home_chants": "持诵",
+  "home_mala": "念珠",
+  "session_mala": "念珠",
+  "bookmark_mala": "念珠",
+  "bookmark_timers": "计时器",
+  "bookmark_texts": "经文",
+  "bookmark_group_accumulation": "共修空间总计数",
+  "mala_add_to_practice": "加入我的修持",
+  "mala_add_mala_round": "添加念珠遍数",
+  "mala_add_rounds_title": "添加念珠遍数：",
+  "mala_add_rounds_message": "添加您在此应用程序之外完成的念珠遍数",
+  "mala_rounds_unit": "{count, plural,\n=1 {遍}\nother {遍}\n}",
+  "mala_add_to_bookmark": "书签",
+  "mala_sound": "声音",
+  "mala_vibration": "震动",
+  "mala_reset_count": "重设计数",
+  "mala_reset_title": "重设此念珠？",
+  "mala_reset_count_confirm": "目前的计数将归零，但您累积的次数仍会保留在终身总数中",
+  "mala_reset_confirm": "重设",
+  "mala_action_coming_soon": "即将推出",
+  "mala_rounds_count": "{count, plural,\n=0 {0 遍}\n=1 {1 遍}\nother {{count} 遍}\n}",
+  "@mala_rounds_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mala_hand_layout_tooltip": "切换左右手布局",
+  "mala_settings_section": "念珠设置",
+  "mala_others_section": "其他",
+  "mala_mantra_speed": "咒语速度",
+  "mala_speed_normal": "正常",
+  "mala_show_full_mantra": "显示完整咒语",
+  "mala_counter_semantics": "计数 {bead}/{total}，{rounds}",
+  "@mala_counter_semantics": {
+    "placeholders": {
+      "bead": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "rounds": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_accumulations": "加入持诵计数",
+  "mala_groups_section": "社群",
+  "mala_group_untitled": "未命名社群",
+  "mala_all_time_accumulation": "我的累计总数",
+  "mala_personal_practice": "个人修持",
+  "mala_events_section": "活动",
+  "mala_my_total": "我的总数：{count}",
+  "@mala_my_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "mala_group_total": "群组总数：{count}",
+  "@mala_group_total": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "home_timer": "计时",
+  "preset_timers": "预设计时",
+  "meditation_timer": "禅修计时",
+  "timer_min": "分钟",
+  "timer_start": "开始",
+  "timer_finish": "完成",
+  "timer_discard_session": "放弃此次修持",
+  "home_hello_prefix": "你好，",
+  "home_greeting_fallback_name": "朋友",
+  "home_share_prompt": "喜欢 {appName} 吗？",
+  "@home_share_prompt": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "home_share_support": "您的支持能帮助我们的社群成长。",
+  "no_feature_content": "尚无精选内容",
+  "nav_home": "首页",
+  "nav_explore": "探索",
+  "nav_learn": "学习",
+  "nav_practice": "修持计划",
+  "nav_settings": "设置",
+  "nav_connect": "社群",
+  "nav_me": "个人",
+  "tab_practices": "修持计划",
+  "text_search": "搜索",
+  "text_toc_versions": "版本",
+  "text_commentary": "注释",
+  "resources": "资源",
+  "no_translation": "尚无相关翻译",
+  "text_close_commentary": "关闭注释",
+  "show_more": "显示更多",
+  "show_less": "显示较少",
+  "more": "更多",
+  "less": "较少",
+  "no_content": "尚无相关内容",
+  "no_commentary": "尚无相关注释",
+  "commentary_not_available_for_language": "暂无 {language} 注释",
+  "@commentary_not_available_for_language": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "loading": "加载中...",
+  "choose_bg_image": "选择背景图片",
+  "save": "保存",
+  "done": "完成",
+  "customise_message": "点击按钮以调整文字样式",
+  "download_image": "下载图片",
+  "no_images_available": "没有可用的图片",
+  "customise_text": "自订文字样式",
+  "text_size": "文字大小",
+  "text_color": "文字颜色",
+  "text_shadow": "文字阴影",
+  "apply": "套用",
+  "my_plans": "我的计划",
+  "browse_plans": "浏览修持计划",
+  "plan_info": "修持计划内容",
+  "start_reading": "立即修持",
+  "tibetan": "藏文",
+  "sanskrit": "梵文",
+  "english": "英文",
+  "chinese": "繁体中文",
+  "classicalChinese": "佛经文体",
+  "pali": "巴利文",
+  "language": "语言",
+  "plan_unenroll": "退出计划",
+  "unenroll_confirmation": "确定要退出吗",
+  "unenroll_message": "您的进度将被永久删除，且无法复原",
+  "practice_plan": "创建每日修持。探索适合您的内容",
+  "search_plans": "搜索计划...",
+  "search_for_plans": "搜索计划",
+  "no_plans_found": "找不到相关计划",
+  "no_days_available": "找不到相关天数",
+  "recitations_title": "唱颂",
+  "recitations_my_recitations": "我的清单",
+  "browse_recitations": "浏览唱诵列表",
+  "recitations_search": "搜索",
+  "recitations_search_for": "寻找持诵内容",
+  "recitations_no_found": "尚无相关持诵内容",
+  "recitations_no_content": "没有可用的持诵",
+  "recitations_no_saved": "没有已保存的持诵",
+  "recitations_login_prompt": "请登录以查看您保存的持诵",
+  "my_recitation_collection_new_title": "新持诵集",
+  "my_recitation_collection_next": "下一步",
+  "my_recitation_collection_create": "创建",
+  "my_recitation_collection_create_button": "创建持诵集",
+  "my_recitation_collection_change_title": "变更标题",
+  "my_recitation_collection_change": "变更",
+  "my_recitation_collection_add_chants": "添加持诵",
+  "my_recitation_collection_search_chants": "搜索持诵",
+  "my_recitation_collection_add_to_collection": "加入持诵集",
+  "my_recitation_collection_edit": "编辑持诵集",
+  "my_recitation_collection_delete": "删除持诵集",
+  "my_recitation_collection_delete_title": "要删除持诵集吗？",
+  "my_recitation_collection_delete_message": "此持诵集将被永久删除",
+  "my_recitation_collection_fallback_title": "持诵集",
+  "my_recitation_collection_unavailable": "已无法使用",
+  "my_recitation_collection_chant_count": "{count, plural,\n=0 {0 段持诵}\n=1 {1 段持诵}\nother {{count} 段持诵}\n}",
+  "@my_recitation_collection_chant_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "my_recitation_collection_chant_count_owner": "{count, plural,\n=0 {0 段持诵 • 我}\n=1 {1 段持诵 • 我}\nother {{count} 段持诵 • 我}\n}",
+  "@my_recitation_collection_chant_count_owner": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "bookmarks_empty_chant_collections_title": "尚无加入书签的法本",
+  "bookmarks_empty_chant_collections_subtitle": "将法本加入书签，即可收藏于此",
+  "notification_allow_title": "允许通知",
+  "notification_allow_subtitle_disabled": "需要权限。请点此前往「设置」授权",
+  "notification_snack_permission_denied": "通知已被封锁。请在「设置」中打开",
+  "notification_snack_disable_alarms_in_settings": "在「设置」中关闭闹钟与提醒",
+  "notification_allow_subtitle_on": "来自 WeBuddhist 的提醒与更新",
+  "notification_allow_subtitle_off": "已关闭。打开后即可收到提醒与更新。",
+  "notification_section_practice": "修持",
+  "notification_section_connect": "社群",
+  "notification_row_plans": "修持计划",
+  "notification_row_chants": "持诵",
+  "notification_row_mala": "念珠与总计数",
+  "notification_row_timer": "计时器",
+  "notification_row_group_posts": "社群贴文",
+  "notification_row_group_chats": "社群聊天室",
+  "notification_row_my_prayer_requests": "我的回向与祈愿",
+  "notification_row_others_prayer_requests": "他人的回向与祈愿",
+  "profile_default_bio": "欢迎来到 WeBuddhist",
+  "profile_guest_title": "访客",
+  "profile_guest_subtitle": "您正以访客身分浏览",
+  "profile_guest_benefits_header": "登录以解锁：",
+  "profile_guest_benefit_save_progress": "保存您的进度",
+  "profile_guest_benefit_personalized": "个人化内容",
+  "profile_guest_benefit_notifications": "自订通知",
+  "auth_drawer_title": "请登录帐号后再继续",
+  "auth_drawer_subtitle": "随时随地，在任何设备上继续您的修持",
+  "routine_delete_block_message": "这将删除该时段及其中所有内容",
+  "something_went_wrong": "出了点问题。请再试一次",
+  "onboarding_quote_citation": "— 法句经 122",
+  "onboarding_traditions_question": "您跟随哪些传承？",
+  "onboarding_tradition_title": "您如何依循佛陀的教法？",
+  "onboarding_tradition_subtitle": "为您的内容选择一个或多个传承。您随时可以在「设置」中变更。",
+  "onboarding_tradition_option_intro": "通过：",
+  "onboarding_tradition_show_all_title": "显示所有内容",
+  "onboarding_skip_for_now": "暂时跳过",
+  "onboarding_add_another_tradition": "添加另一个传承",
+  "onboarding_select_all": "全选",
+  "onboarding_event_enrollment_error": "无法完成注册。请检查您的网络连接，然后再试一次",
+  "onboarding_event_question": "加入即将举办的活动？",
+  "onboarding_event_optional": "选填 · 点击以加入",
+  "onboarding_event_duration": "{description} · {days} 天",
+  "@onboarding_event_duration": {
+    "placeholders": {
+      "description": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "onboarding_event_reminder_note": "我们将在每天早上 7:30 提醒您。(可随时更改。)",
+  "tradition_theravada": "上座部佛教",
+  "tradition_zen": "禅宗",
+  "tradition_tibetan_buddhism": "藏传佛教",
+  "tradition_pure_land": "净土宗",
+  "tradition_ambedkar_buddhism": "安贝卡佛教",
+  "plan_go_to_practice": "前往修持计划",
+  "plan_starts_soon_title": "计划即将开始",
+  "plan_joining_late_title": "在开始日期后加入",
+  "got_it": "明白了",
+  "plan_no_tasks_error": "无法加载任务",
+  "plan_day_tasks_load_error": "无法加载当日任务",
+  "plans_empty_title": "更多内容即将推出",
+  "plans_empty_subtitle": "我们将持续添增修持课程，欢迎随时回来浏览。",
+  "find_plans_load_error": "无法加载计划，\n请检查你的网络连接后再试。",
+  "connect_coming_soon_subtitle": "在修行路上支持您前行的良师、社群、修持挑战与相关活动",
+  "connect_subtitle": "寻找你的社群，一起修持",
+  "discover_groups": "探索社群",
+  "my_groups": "我的社群",
+  "see_all": "查看全部",
+  "connect_groups_load_error": "无法加载社群，\n请检查网络连接后重试",
+  "connect_groups_empty_title": "尚无社群",
+  "connect_groups_empty_subtitle": "恭喜，您已加入我们所有的共修空间！请稍后再来造访，新共修空间即将上线...",
+  "connect_tab_feed": "动态",
+  "connect_tab_events": "活动",
+  "connect_tab_posts": "贴文",
+  "connect_tab_practices": "修持计划",
+  "connect_tab_groups": "社群",
+  "connect_segment_my": "您的社群",
+  "connect_segment_discover": "探索",
+  "connect_empty_discover_posts": "没有可探索的贴文",
+  "connect_empty_discover_events": "没有可探索的活动",
+  "connect_empty_discover_feed": "没有可探索的内容",
+  "connect_empty_discover_groups": "没有可探索的共修空间",
+  "connect_empty_discover_practices": "没有可探索的修行计划",
+  "connect_all_groups": "所有共修空间",
+  "connect_my_empty_feed_title": "您的共修空间最近很安静",
+  "connect_my_empty_events_title": "没有即将举行的活动",
+  "connect_my_empty_posts_title": "尚无贴文",
+  "connect_my_empty_groups_title": "尚未加入社群",
+  "connect_my_empty_feed_subtitle": "您的社群还没有分享新内容",
+  "connect_my_empty_events_subtitle": "您的社群还没有安排任何活动",
+  "connect_my_empty_posts_subtitle": "您的社群还没有发文",
+  "connect_my_empty_groups_subtitle": "你还没有加入任何社群。探索可以一起修持的社群。",
+  "connect_my_empty_feed_browse": "看看其他共修空间在分享什么",
+  "connect_my_empty_events_browse": "浏览开放活动",
+  "connect_my_empty_posts_browse": "浏览其他贴文",
+  "connect_my_empty_practices_title": "尚无修持计划",
+  "connect_my_empty_practices_subtitle": "您的社群还没有发起任何修持",
+  "connect_my_empty_practices_browse": "浏览其他修持计划",
+  "connect_comment_replying_to": "回复 @{handle}",
+  "@connect_comment_replying_to": {
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_comment_hint": "请问您对这则贴文有什么想法？",
+  "connect_comment_reply_hint": "撰写回复…",
+  "connect_comment_reply": "回复",
+  "connect_comment_delete_title": "删除留言？",
+  "connect_comment_delete_message": "这则留言将被永久删除",
+  "connect_comment_delete_failed": "无法删除留言",
+  "connect_post_comments_count": "{count, plural,\nother {{count} 则留言}\n}",
+  "@connect_post_comments_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connect_post_comments_empty": "还没有留言。开始讨论吧",
+  "connect_caption_more": "更多",
+  "connect_online": "在线",
+  "connect_ended": "已结束",
+  "connect_ended_on": "已于 {date} 结束",
+  "home_group_events": "精选活动",
+  "home_poems": "诗偈",
+  "poems_load_error": "无法加载诗歌。\n请检查您的连接并再试一次",
+  "poems_empty": "尚无诗歌，请稍后再来。",
+  "connect_events_filter_all": "全部",
+  "connect_events_filter_in_person": "现场",
+  "connect_events_filter_empty_online": "尚无在线活动",
+  "connect_events_filter_empty_in_person": "尚无现场活动",
+  "connect_events_filter_hybrid": "混合型",
+  "connect_events_filter_empty_hybrid": "没有混合型的活动",
+  "connect_open": "打开",
+  "connect_event_fallback_title": "活动",
+  "connect_group_fallback_title": "共修空间",
+  "connect_event_enter": "进入",
+  "connect_event_participation_prompt": "您会怎么参加?",
+  "connect_event_practice_in_person": "现场修持",
+  "connect_event_practice_online": "在线修持",
+  "connect_event_view_in_person": "现场查看",
+  "connect_event_view_online": "在线查看",
+  "connect_event_accumulation_online": "线上",
+  "connect_event_accumulation_in_person": "现场",
+  "connect_event_has_ended": "此活动已结束",
+  "connect_event_join_to_practice": "参加活动即可修持",
+  "connect_event_leave": "退出活动",
+  "connect_event_leave_confirm_title": "要退出此活动吗？",
+  "connect_event_leave_confirm_message": "您将不再参加{title}。您仍可查看此活动，并随时再次参加。",
+  "@connect_event_leave_confirm_message": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_event_participants_attending": "{count} 位参与者",
+  "@connect_event_participants_attending": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connect_event_participants_attended": "{count} 人参加",
+  "connect_event_participants_empty": "尚无人参加",
+  "connect_event_organizer": "主办单位",
+  "connect_event_tab_videos": "视频",
+  "connect_event_tab_links": "链接",
+  "connect_event_tab_about": "活动介绍",
+  "connect_event_links_title": "更多活动介绍",
+  "connect_event_links_empty": "尚无链接",
+  "connect_event_link_tap_to_join": "点击进入",
+  "connect_event_link_open": "打开链接",
+  "connect_event_date_tba": "日期尚待公告",
+  "connect_event_when": "时间",
+  "connect_event_where": "地点",
+  "connect_event_practices": "活动共修内容",
+  "connect_event_tab_accumulations": "计数统计",
+  "connect_event_tab_recitations": "持诵",
+  "connect_event_add_recitations": "填入您的持诵次数",
+  "connect_event_add_recitations_message": "添加您在线直播，或在此应用程序之外已完成的持诵次数",
+  "connect_event_every_day": "每天",
+  "connect_event_every_weekday": "每个{weekday}",
+  "@connect_event_every_weekday": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_event_every_month": "每个月",
+  "connect_event_every_date": "输入{date}",
+  "@connect_event_every_date": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "connect_event_about_empty": "尚无活动信息",
+  "search_groups": "搜索社群",
+  "search_for_groups": "搜索社群",
+  "no_groups_found": "找不到符合的社群",
+  "explore_coming_soon_subtitle": "探索修持、教法与社群活动的精选空间。",
+  "learn_coming_soon_subtitle": "专为您日常生活设计的个人学习计划",
+  "creator_featured_plan": "精选计划",
+  "audio_init_error": "无法初始化音频播放器。请检查网络连接后重试。",
+  "meditation_audio_load_error": "无法加载。请检查网络连接后重试",
+  "prayer_audio_load_error": "无法加载音频。请检查网络连接后重试",
+  "home_no_series_found": "未找到系列",
+  "home_no_tags_found": "找不到该标签",
+  "home_celebrated_by": "庆祝者：",
+  "reader_settings_tooltip": "阅读器设置",
+  "reader_translate_tooltip": "显示译文",
+  "reader_translate_unavailable": "此文本没有可用译文",
+  "reader_font_size_tooltip": "字体大小",
+  "reader_version_title": "版本 · {language}",
+  "@reader_version_title": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_script_title": "字体 · {language}",
+  "@reader_script_title": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_versions_load_error": "无法加载版本",
+  "reader_scripts_load_error": "加载字体失败。",
+  "reader_languages_load_error": "无法加载语言",
+  "reader_no_versions_in_language": "{language} 尚无可用的版本。",
+  "@reader_no_versions_in_language": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_no_scripts_in_language": "{language} 尚无可用的字体。",
+  "@reader_no_scripts_in_language": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "reader_no_languages": "此文本尚无可用的语言。",
+  "reader_license": "授权",
+  "reader_version_details_load_error": "无法加载版本详情。",
+  "reader_no_version_info": "此版本没有其他可用的信息。",
+  "recitation_unavailable": "此唱诵内容目前无法使用。\n请稍后再试或联系客服。",
+  "recitation_sign_in_required": "请登录以使用此唱诵。",
+  "my_recitations_load_error": "无法加载。请检查您的网络连接，然后再试一次。",
+  "recitations_load_error": "无法加载唱诵。\n请稍后再试。",
+  "text_search_hint": "输入以搜索",
+  "text_search_press_button": "按下搜索按钮以搜索",
+  "text_search_error": "无法执行搜索，请再试一次",
+  "unknown_error": "未知错误",
+  "create_image_share_error": "无法分享，请再试一次",
+  "version_search_no_results": "找不到「{query}」的版本",
+  "@version_search_no_results": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "my_plans_sign_in_prompt": "登录以查看您的计划",
+  "plan_starts_soon_message": "此计划将于 {date} 开始。您可以先浏览内容。",
+  "@plan_starts_soon_message": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "plan_joining_late_message": "此计划已于 {date} 开始。您可以完成过去几天的任务。",
+  "@plan_joining_late_message": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "select_language": "语言设置",
+  "logout_confirmation": "您确定要退出登录吗？",
+  "cancel": "取消",
+  "copy": "复制",
+  "copied": "已复制",
+  "share": "分享",
+  "bookmark": "书签",
+  "collection_audio_versions": "音频版本",
+  "image": "图片",
+  "feedback": "意见回馈",
+  "author": "作者",
+  "plans_created": "创建的修持计划",
+  "ai_confirm": "确认",
+  "search_no_results": "找不到「{query}」的结果",
+  "search_all": "全部",
+  "common_ok": "确定",
+  "comingSoonHeadline": "即将推出",
+  "routine_title": "日常修持",
+  "bookmarks": "书签",
+  "routine_empty_title": "日常修持",
+  "routine_edit": "编辑",
+  "routine_empty_description": "探索更多课程与修持计划，加入学习菜单或添加至您的修持安排",
+  "routine_build": "创建日常修持",
+  "routine_add_session": "添加课程",
+  "routine_edit_title": "编辑日常修持",
+  "routine_delete_block": "删除时段",
+  "routine_session_title_hint": "标题...",
+  "routine_expand_all": "全部展开",
+  "routine_collapse_all": "全部收合",
+  "routine_delete_time_block": "移除时段",
+  "routine_add_plan": "添加计划",
+  "routine_add_recitation": "添加持诵",
+  "routine_add_plan_to_routine": "添加至日常修持",
+  "routine_load_error": "无法加载。请检查您的网络连接，然后再试一次。",
+  "routine_empty_block_title_singular": "空白时段",
+  "routine_empty_block_title_plural": "空白时段 ({count})",
+  "@routine_empty_block_title_plural": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routine_empty_block_message_singular": "此时段尚未添加内容。请添加或将其从您的修持安排中移除",
+  "routine_empty_block_message_plural": "有 {count} 个时段尚未添加内容。请添加，或从您的修持安排中移除",
+  "@routine_empty_block_message_plural": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "routine_empty_block_add_items": "添加清单",
+  "routine_empty_block_delete_singular": "删除时段",
+  "routine_empty_block_delete_plural": "删除空白时段",
+  "routine_notification_title": "让修持成为习惯",
+  "routine_notification_description": "请打开通知权限，以便我们提醒您进行修持。",
+  "routine_notification_enable": "启用通知",
+  "routine_notification_skip": "跳过",
+  "routine_time_adjusted": "已调整为 {time}（最少 {gap} 分钟的间隔）",
+  "@routine_time_adjusted": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "gap": {
+        "type": "int"
+      }
+    }
+  },
+  "routine_add_block_label": "时段",
+  "continueWithGoogle": "使用 Google 继续",
+  "continueWithApple": "使用 Apple 继续",
+  "continueWithPhone": "使用电话继续",
+  "continueAsGuest": "以访客身份继续",
+  "exploreAsGuest": "以访客身份探索",
+  "signIn": "登录",
+  "profileError": "加载个人资料时出错",
+  "profileTitle": "个人资料",
+  "notLoggedIn": "尚未登录",
+  "retry": "重试",
+  "back": "返回",
+  "delete": "删除",
+  "close": "关闭",
+  "tryAgain": "再试一次",
+  "pleaseTryAgain": "请再试一次",
+  "error": "错误",
+  "anonymous": "匿名",
+  "noContentAvailable": "没有可用内容",
+  "unableToLoad": "无法加载，请再试一次",
+  "somethingWrong": "出了点问题，请检查您的连接并重试",
+  "source": "来源",
+  "searchResults": "搜索结果",
+  "noTasks": "没有可用任务",
+  "taskNotFound": "找不到任务",
+  "updateTaskError": "无法更新任务状态",
+  "enrollError": "无法完成注册。请检查您的网络连接，然后再试一次。",
+  "unenrollSuccess": "您已退出 {planTitle}",
+  "@unenrollSuccess": {
+    "placeholders": {
+      "planTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "unenrollError": "无法取消注册。请检查您的网络连接，然后再试一次",
+  "unenrollGenericError": "发生错误。请检查您的网络连接，然后再试一次",
+  "notFound": "此内容已无法使用。请编辑您的修持安排以进行更新",
+  "noTimeSlot": "没有可用的时间段，请先移除一个区块",
+  "maxBlocks": "已达最多 {max} 个可选时间区段上限。",
+  "@maxBlocks": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "duplicateItem": "此项目已在本时间区块",
+  "removeItem": "移除项目",
+  "removeConfirmation": "要从此时段中移除「{itemName}」吗？",
+  "@removeConfirmation": {
+    "placeholders": {
+      "itemName": {
+        "type": "String"
+      }
+    }
+  },
+  "shareError": "无法分享。请再试一次",
+  "@shareError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "updateOrderError": "无法更新顺序。请再试一次",
+  "loadFailed": "无法加载。请检查您的网络连接，然后再试一次。",
+  "captureError": "QR code 扫描失败，请再试一次",
+  "qrShareError": "无法分享QRcode，请稍后再试",
+  "errorDetail": "错误：{error}",
+  "@errorDetail": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "missedDaysCount": "{count, plural,\n=0 {未错过天数}\n=1 {错过1天}\nother {错过{count}天}\n}",
+  "@missedDaysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plan_status_on_track": "进度正常！",
+  "start_now": "立即开始",
+  "plan_enroll": "加入",
+  "show_second_version": "显示次要版本",
+  "enable_add_msg": "打开以同时阅读其他翻译或音译",
+  "main_version": "主要版本",
+  "second_version": "次要版本",
+  "second_version_msg": "次要版本将会显示在主要版本的内文下方",
+  "root_text": "根本文",
+  "version": "所有版本",
+  "parallel_version": "对读版本",
+  "reader_languages_title": "语言",
+  "reader_sections_title": "章节",
+  "reader_original_label": "原文",
+  "reader_translation_label": "译文",
+  "version_not_available": "无可用版本",
+  "read_full_text": "阅读完整文本",
+  "reader_source_label": "来源",
+  "reader_license_label": "授权",
+  "series_stats": "{planCount} 个章节 · {totalDays} 天",
+  "force_update_title": "需要更新",
+  "force_update_message": "新版本已上线，请更新后再继续使用。",
+  "force_update_button": "立即更新",
+  "settings_section_personalisation": "个人化",
+  "settings_section_more": "更多",
+  "settings_section_account": "帐号",
+  "settings_edit_profile": "编辑个人资料",
+  "settings_theme": "主题",
+  "settings_notification_row": "通知",
+  "settings_feedback_row": "意见回馈",
+  "edit_profile_title": "编辑个人资料",
+  "edit_profile_save": "保存",
+  "edit_profile_first_name": "名字",
+  "edit_profile_last_name": "姓氏",
+  "edit_profile_bio": "自我介绍",
+  "edit_profile_bio_hint": "向大家介绍一下自己",
+  "edit_profile_delete_account": "删除帐号",
+  "edit_profile_photo_not_uploaded": "相片尚未上传",
+  "edit_profile_photo_too_large": "图片过大，请选择 1 MB 以下的相片后再试一次",
+  "edit_profile_photo_upload_failed": "无法上传您的相片，请再试一次",
+  "edit_profile_choose_from_library": "从相册选择",
+  "edit_profile_take_photo": "拍照",
+  "edit_profile_offline": "您目前离线中，请连接网络后再试一次",
+  "edit_profile_save_failed": "无法保存您的变更，请再试一次",
+  "edit_profile_traditions": "传承",
+  "edit_profile_choose_traditions": "选择您的传承",
+  "edit_profile_tradition_remove_failed": "无法移除传承，请再试一次",
+  "edit_profile_tradition_save_failed": "无法保存传承，请再试一次",
+  "username_label": "用户名",
+  "username_taken": "这个名称已被使用",
+  "username_available_label": "可使用：",
+  "username_check_error": "无法检查用户名，请再试一次",
+  "username_invalid_format": "用户名格式无效",
+  "username_min_length": "用户名至少需 3 个字符",
+  "username_max_length": "用户名不可超过 30 个字符",
+  "username_no_spaces": "用户名不可包含空格",
+  "username_invalid_chars": "仅允许字母、数字、_ . -",
+  "username_must_start_alphanumeric": "用户名须以字母或数字开头",
+  "username_must_end_alphanumeric": "用户名须以字母或数字结尾",
+  "person_name_min_length": "至少需要 1 个字符",
+  "person_name_max_length": "不得超过 50 个字符",
+  "person_name_invalid_chars": "仅允许字母、空格、连字号和撇号",
+  "about_title": "关于",
+  "about_connect_with_us": "与我们联系...",
+  "about_description": "我们协助佛教徒透过每日的学习、修持与交流，能多一些善举，少一些恶行，并更深入了解自己的心。",
+  "about_social_website": "网站",
+  "me_guest_headline": "体验完整功能",
+  "me_guest_subtitle": "创建免费帐号以保存您的进度",
+  "me_my_stats": "我的统计",
+  "me_day_streak": "连续 {count} 天",
+  "@me_day_streak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "me_best_streak": "最长连续：{count} 天",
+  "@me_best_streak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accumulations": "持诵计数",
+  "accumulations_search": "查找计数结果",
+  "accumulations_search_for": "寻找计数内容",
+  "accumulations_no_found": "尚无持诵计数纪录",
+  "me_accumulation": "累积总数",
+  "me_counts": "次",
+  "me_minutes": "分钟",
+  "me_hours": "小时",
+  "me_total_meditation_time": "禅修总时间",
+  "me_days_plan_practiced_suffix": "天计划已完成",
+  "me_streak_share_message": "我在 {appName} 已连续 {count} 天！",
+  "@me_streak_share_message": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "me_streak_share_quote": "我在 WeBuddhist 的连续纪录！",
+  "me_streak_days_count": "{count} 天",
+  "@me_streak_days_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "share_this_streak": "分享我的连续纪录",
+  "me_streak_share_error": "无法分享连续纪录，请重试",
+  "delete_account_title": "删除帐号",
+  "delete_account_description": "若您删除帐号，您在 WeBuddhist 中的所有数据、纪录与个人化设置将被永久删除。请注意，此操作无法复原。如欲继续，请点按下方按钮。",
+  "delete_account_button": "删除帐号",
+  "delete_account_confirm_message": "您确定要删除您的 WeBuddhist 帐号吗？",
+  "legal_title": "法律信息",
+  "legal_terms_of_service": "使用条款",
+  "legal_privacy_policy": "隐私政策",
+  "follow": "追踪",
+  "calendar_title": "日历",
+  "calendar_upcoming_events": "近期活动",
+  "calendar_day_short": "日",
+  "calendar_day_label": "日",
+  "calendar_day_month": "藏历{month}月{day}日",
+  "@calendar_day_month": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "int"
+      }
+    }
+  },
+  "calendar_lunar_month": "藏历{ordinal}月",
+  "@calendar_lunar_month": {
+    "placeholders": {
+      "ordinal": {
+        "type": "String"
+      }
+    }
+  },
+  "moon_phase_new_moon": "新月",
+  "moon_phase_waxing_crescent": "蛾眉月",
+  "moon_phase_first_quarter": "上弦月",
+  "moon_phase_waxing_gibbous": "盈凸月",
+  "moon_phase_full_moon": "满月",
+  "moon_phase_waning_gibbous": "亏凸月",
+  "moon_phase_last_quarter": "下弦月",
+  "moon_phase_waning_crescent": "残月",
+  "join": "加入",
+  "group_member": "位成员",
+  "group_members": "位成员",
+  "group_tab_members": "成员",
+  "group_tab_followers": "追踪者",
+  "group_members_heading": "成员 ({count})",
+  "@group_members_heading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_followers_heading": "追踪者({count})",
+  "@group_followers_heading": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_invite": "邀请",
+  "group_notifications_title": "通知",
+  "group_notifications_chat": "社群聊天室",
+  "group_notifications_content": "社群内容",
+  "group_notifications_master_off": "此应用程序的通知已关闭",
+  "group_notifications_open_settings": "打开",
+  "group_notifications_update_failed": "无法更新通知设置，请再试一次",
+  "group_notifications_load_failed": "无法加载通知设置",
+  "group_chat_mute_notifications": "将聊天室通知设为静音",
+  "group_chat_unmute_notifications": "取消聊天室通知静音",
+  "group_chat_notifications_muted": "已将聊天室通知设为静音",
+  "group_chat_notifications_unmuted": "聊天室通知已开启",
+  "group_leave_confirm_message": "您将不再收到此社群的消息和动态",
+  "group_leave_space": "退出社群",
+  "group_leave_space_confirm_title": "要退出此社群吗？",
+  "group_leave_space_failed": "无法退出社群，请再试一次",
+  "group_request_to_join": "申请加入",
+  "group_request": "申请加入",
+  "group_request_sent": "已送出申请",
+  "group_join_request_title": "申请加入",
+  "group_join_request_message_label": "消息（选填）",
+  "group_join_request_message_hint": "您如何修持，或是谁邀请您的？",
+  "group_join_request_send": "送出申请",
+  "group_join_request_sent_snackbar": "已送出申请。管理员将进行审核",
+  "group_join_request_error": "无法送出申请，请再试一次",
+  "group_join_requests_title": "加入申请",
+  "group_join_requests_admit": "接受",
+  "group_join_requests_deny": "拒绝",
+  "group_join_requests_empty": "没有待审核的申请",
+  "group_join_requests_load_error": "无法加载加入申请，请再试一次",
+  "group_join_requests_admit_error": "无法接受此申请，请再试一次",
+  "group_join_requests_deny_error": "无法拒绝此申请，请再试一次",
+  "group_reports_title": "检举",
+  "group_reports_section_posts": "贴文",
+  "group_reports_section_comments": "留言",
+  "group_reports_section_messages": "消息",
+  "group_reports_count": "{count, plural,\nother {{count} 则检举}\n}",
+  "@group_reports_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_reports_view_post": "查看贴文",
+  "group_reports_view_message": "查看消息",
+  "group_reports_delete_post": "删除贴文",
+  "group_reports_delete_comment": "删除留言",
+  "group_reports_delete_message": "删除消息",
+  "group_reports_empty": "没有待审核的检举",
+  "group_reports_load_error": "无法加载检举，请再试一次。",
+  "group_reports_delete_confirm_title": "你确定吗？",
+  "group_reports_delete_message_confirm": "这则消息将被永久删除。",
+  "group_reports_message_removed": "消息已移除",
+  "group_reports_delete_message_error": "无法删除消息，请再试一次。",
+  "group_members_only_title": "仅限成员",
+  "group_members_only_message": "加入此社群即可查看内容",
+  "group_join_request_waiting_title": "等待管理员审核",
+  "group_join_request_waiting_message": "申请审核完成后，我们会通知您",
+  "group_members_load_error": "无法加载成员，请再试一次",
+  "group_followers_load_error": "无法加载追踪者，请再试一次。",
+  "group_members_empty": "尚无成员",
+  "group_member_admin": "管理员",
+  "group_member_owner": "拥有者",
+  "group_remove_member": "移除 {name}",
+  "group_remove_member_title": "要从社群中移除吗？",
+  "group_remove_member_message": "{name} 将被移出此社群，且在禁令解除前无法重新加入",
+  "group_remove_member_blocked_for": "封锁期间：",
+  "group_remove_member_duration_day": "1 天",
+  "group_remove_member_duration_days": "{count} 天",
+  "group_remove_member_duration_year": "1 年",
+  "group_remove_member_reason_label": "原因（选填）",
+  "group_remove_member_reason_hint": "其他...",
+  "group_remove_member_action": "移除",
+  "group_remove_member_success": "已将 {name} 移出社群",
+  "group_remove_member_error": "无法移除此成员，请再试一次",
+  "group_join_banned_until": "您已被移出此社群，在 {date} 之前无法重新加入",
+  "group_join_banned": "您已被移出此社群，在禁令解除前无法重新加入",
+  "group_removed_title": "您已被移出此社群",
+  "group_removed_message": "{group} 的管理员已将您移出此社群。您将无法查看其中的贴文、活动和修持，也无法在 {duration} 内要求重新加入。",
+  "group_removed_message_no_date": "{group} 的管理员已将您移出此社群。您将无法查看其中的贴文、活动和修持，也无法要求重新加入",
+  "group_removed_rejoin_label": "您可以在以下日期申请加入此社群",
+  "group_removed_rejoin_value": "{date} · {remaining}",
+  "group_removed_day_left": "剩 1 天",
+  "group_removed_days_left": "剩 {count} 天",
+  "group_removed_last_day": "剩不到一天",
+  "group_followers_empty": "尚无追踪者",
+  "group_follower": "位追踪者",
+  "group_followers": "位追踪者",
+  "group_links_title": "链接",
+  "group_about_description": "社群介绍",
+  "group_about_empty": "尚无相关信息",
+  "group_and_more_links": "及另外 {count} 个链接",
+  "group_practice_with_us": "与我们一起修行",
+  "series_practicing_with_group": "与 {groupName} 一起修行",
+  "group_change_practice_title": "更换修持社群",
+  "group_change_practice_message": "您目前已在另一个社群修持此计划。您想更换修持社群吗？",
+  "group_join_to_contribute": "加入以参与计数",
+  "group_accumulator_join_error": "无法加入计数统计，请再试一次",
+  "group_accumulator_join_before_practice": "先加入本共修计数活动，再将它加入您的修持计划",
+  "group_accumulator_participants": "{count} 位参与者",
+  "group_accumulator_leaderboard": "排行榜",
+  "group_accumulator_my_contributions": "我的贡献",
+  "group_accumulator_recited": "已持诵",
+  "group_accumulator_total": "总数",
+  "group_accumulator_contributions_empty": "加入共修计数以追踪您的贡献",
+  "group_accumulator_leaderboard_empty": "尚无持诵纪录",
+  "group_accumulator_recite_now": "立即持诵",
+  "group_accumulator_view_practice": "查看修持",
+  "group_accumulator_chant_again": "再次持诵",
+  "group_accumulator_finish_session": "结束此次持诵",
+  "group_accumulator_offline_recitation": "线下持诵",
+  "group_accumulator_add_offline_chants_title": "添加离线持诵次数：",
+  "group_accumulator_add_offline_chants_message": "添加您在此应用程序之外完成的持诵次数",
+  "group_accumulator_session_complete": "课诵完成！",
+  "group_accumulator_session_recitations": "您这次完成了 {count} 遍",
+  "group_accumulator_session_share_message": "我在 WeBuddhist 上 {group} 社群的共修计数「{accumulation}」中完成了 {count} 遍持诵，快来加入我吧！",
+  "group_accumulator_session_share_message_no_group": "我在 WeBuddhist 上的共修计数活动「{accumulation}」中完成了 {count} 遍的持诵，快来加入我吧！",
+  "group_accumulator_session_share_error": "无法分享课诵，请重试",
+  "group_recitation_collection_share_message": "来看看 WeBuddhist 上 {group} 社群的持诵集「{collection}」。和我们一起修持吧！",
+  "@group_recitation_collection_share_message": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      },
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "group_recitation_collection_share_message_no_group": "来看看 WeBuddhist 上的持诵集「{collection}」。和我们一起修持吧！",
+  "@group_recitation_collection_share_message_no_group": {
+    "placeholders": {
+      "collection": {
+        "type": "String"
+      }
+    }
+  },
+  "group_recitation_collection_completed_title": "已完成「{collection}」",
+  "group_recitation_collection_dedication": "愿以此功德，令一切众生\n远离痛苦",
+  "share_this_quote": "分享这句话",
+  "shared_from": "分享自",
+  "verse_share_error": "无法分享引文，请再试一次",
+  "verse_comments_title": "评论 · {count}",
+  "verse_likes_title": "点赞 · {count}",
+  "verse_like_failed": "无法更新点赞，请再试一次",
+  "verse_comment_failed": "无法发表评论，请再试一次",
+  "verse_comment_replying_to": "回复 {name}",
+  "share_app_message": "我一直在用这个应用程序培养每日佛法修持的习惯，觉得您也会喜欢。",
+  "share_streak_message": "我一直在养成每日修持的好习惯，想和您分享。有朋友一起坚持会更容易。来 WeBuddhist 和我一起吧。",
+  "share_chant_message": "我想和您分享这段持诵。您可以在 WeBuddhist 上修持它，还能找到完整的持诵与经典文库。",
+  "share_quote_message": "我喜欢 WeBuddhist 上的这段引文，想和您分享。在 WeBuddhist 应用程序上阅读更多富有洞见的引文。",
+  "share_poem_message": "我喜欢WeBuddhist上的这首诗，想和你分享。",
+  "share_poem_title": "「{title}」",
+  "share_mala_message": "我一直在 WeBuddhist 上使用这串电子念珠，想和您分享。这是随时随地修持的便利方式。",
+  "share_passage_message": "我喜欢这段经文，想和您分享。您可以在 WeBuddhist 上阅读完整的上下文。",
+  "share_timer_message": "我想和您分享 WeBuddhist 上的这个禅修计时器。它让创建禅修习惯变得更轻松。",
+  "share_plan_message": "我正在跟随这个佛法修持计划，想和您分享。您可以在 WeBuddhist 上免费和我一起修持。",
+  "share_plan_subject": "在WeBuddhist上和我一起吧",
+  "share_group_invite_message": "来这个社群和我一起吧。让我们在 WeBuddhist 上一起修持！",
+  "weekday_monday": "周一",
+  "weekday_tuesday": "周二",
+  "weekday_wednesday": "周三",
+  "weekday_thursday": "周四",
+  "weekday_friday": "周五",
+  "weekday_saturday": "周六",
+  "weekday_sunday": "周日",
+  "reader_search_failed": "搜索失败。\n请重试",
+  "reader_swipe_up_for_more": "向上滑动查看更多",
+  "reader_videos": "视频",
+  "reader_about_this_version": "关于此版本",
+  "reader_version_count": "{count, plural,\nother {{count} 个版本}\n}",
+  "mala_no_mantras": "暂无咒语",
+  "mala_count_load_error": "无法加载您的计数",
+  "mala_mantra_label": "咒语",
+  "bookmarks_empty_all_title": "尚无书签",
+  "bookmarks_empty_all_subtitle": "加入书签，即可将任何内容保存于此。",
+  "bookmarks_empty_plans_title": "尚无加入书签的修持计划",
+  "bookmarks_empty_plans_subtitle": "将修持计划加入书签，即可收藏于此",
+  "bookmarks_empty_malas_title": "尚无加入书签的念珠",
+  "bookmarks_empty_malas_subtitle": "将念珠加入书签，即可收藏于此",
+  "bookmarks_empty_group_accumulations_title": "尚无加入书签的共修计数",
+  "bookmarks_empty_group_accumulations_subtitle": "将共修计数加入书签，即可收藏于此",
+  "bookmarks_empty_timers_title": "尚无加入书签的计时器",
+  "bookmarks_empty_timers_subtitle": "将计时器加入书签，即可收藏于此",
+  "bookmarks_empty_texts_title": "尚无加入书签的文本",
+  "bookmarks_empty_texts_subtitle": "将文本加入书签，即可收藏于此",
+  "bookmark_removed": "已移除书签",
+  "bookmark_remove_failed": "无法移除书签",
+  "bookmark_saved": "书签已保存",
+  "bookmark_save_failed": "无法保存书签",
+  "bookmarks_yesterday": "昨天",
+  "webview_timeout_error": "页面加载时间过长。请检查您的网络连接",
+  "webview_load_failed": "无法加载页面",
+  "privacy_policy_load_error": "无法加载隐私政策页面",
+  "terms_of_service_load_error": "无法加载服务条款页面",
+  "series_enroll_error": "无法加入系列",
+  "series_share_message": "和我一起在 WeBuddhist 上修习 {title}。\n\n{url}",
+  "player_back_10": "后退 10 秒",
+  "player_pause": "暂停",
+  "player_play": "播放",
+  "player_forward_10": "快进 10 秒",
+  "player_fullscreen": "全屏幕",
+  "player_exit_fullscreen": "退出全屏幕",
+  "session_plans_load_error": "无法加载计划。\n请稍后再试",
+  "session_chants_load_error": "无法加载课诵",
+  "session_no_chants": "未找到课诵",
+  "session_malas_load_error": "无法加载念珠",
+  "session_no_malas": "未找到念珠",
+  "session_timers_load_error": "无法加载计时器",
+  "session_no_timers": "未找到计时器",
+  "days_count": "{count, plural,\nother {{count} 天}\n}",
+  "timer_minute_session": "{minutes} 分钟练习",
+  "timer_notification_in_progress": "禅修进行中",
+  "timer_notification_paused": "已暂停 · 剩余 {time}",
+  "@timer_notification_paused": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "timer_notification_complete": "你的课程已完成",
+  "plan_day_of": "第 {day} 天，共 {total} 天",
+  "pagination_position": "{current} / {total}",
+  "plan_shorts_title": "社群短片",
+  "author_details_load_error": "无法加载作者资料\n请重试",
+  "link_cannot_open": "无法打开此链接",
+  "link_invalid": "无效的网址",
+  "author_no_plans": "尚未创建修持计划",
+  "author_plans_load_error": "无法加载修持计划",
+  "source_with_value": "来源：{value}",
+  "license_with_value": "授权：{value}",
+  "loading_previous_pages": "正在加载上文……（{count} 页）",
+  "loading_more_pages": "正在加载更多……（{count} 页）",
+  "drag_to_resize": "拖动以调整大小",
+  "day_completion_share_message": "我刚在 WeBuddhist 上完成了今天的修持。加入我，一起培养每日修持的好习惯。",
+  "group_accumulator_share_message": "我正在参加 WeBuddhist 上 {group} 社群的共修计数「{accumulation}」，快来加入我吧！",
+  "group_accumulator_share_message_no_group": "我正在参加 WeBuddhist 上的共修计数「{accumulation}」，快来加入我吧！",
+  "group_chat_title": "聊天",
+  "chats_title": "聊天室",
+  "chats_empty_title": "尚无聊天室",
+  "chats_empty_body": "加入共修空间，即可开始聊天",
+  "group_chat_inappropriate": "此消息包含不允许的用语，因此无法发送",
+  "group_chat_not_a_member": "只有成员可以打开此聊天室",
+  "group_chat_open": "聊天",
+  "group_chat_message_hint": "消息",
+  "group_chat_join_to_send": "加入聊天后即可发送消息。",
+  "group_chat_today": "今天",
+  "group_chat_yesterday": "昨天",
+  "group_chat_empty_title": "尚无消息",
+  "group_chat_empty_body": "和您的社群开始聊天吧",
+  "group_chat_load_failed": "无法加载消息",
+  "group_chat_message_not_found": "此消息已不在聊天中",
+  "group_chat_message_too_far_back": "这则消息在聊天记录中较早的位置",
+  "group_chat_keep_looking": "继续查找",
+  "group_chat_retry": "重试",
+  "group_chat_unknown_sender": "成员",
+  "group_chat_reactions_all": "全部",
+  "group_chat_reacted": "已回应",
+  "group_chat_reply": "回复",
+  "group_chat_copy": "复制",
+  "group_chat_copied": "消息已复制",
+  "group_chat_report": "检举",
+  "group_chat_report_title": "您为什么要检举此内容？",
+  "group_chat_report_privacy": "您的姓名将保密",
+  "group_chat_report_reason_harassment": "骚扰或霸凌",
+  "group_chat_report_reason_hate": "仇恨或有害言论",
+  "group_chat_report_reason_sexual": "色情或露骨内容",
+  "group_chat_report_reason_spam": "垃圾消息或诈骗",
+  "group_chat_report_reason_off_topic": "离题或干扰",
+  "group_chat_report_reason_other": "其他",
+  "group_chat_report_note_title": "添加备注",
+  "group_chat_report_note_hint": "其他...",
+  "group_chat_report_submit": "送出检举",
+  "group_chat_report_thanks": "感谢您的回馈",
+  "group_chat_report_offline": "您目前离线。请稍后再试",
+  "group_chat_report_failed": "无法送出检举",
+  "group_chat_report_retry": "重试",
+  "group_chat_delete": "删除",
+  "group_chat_delete_title": "要删除消息吗？",
+  "group_chat_delete_title_many": "要删除 {count} 则消息吗？",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {此消息将从聊天室中对所有人移除}\nother {这些消息将从聊天室中对所有人移除}\n}",
+  "@group_chat_delete_confirm_body": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_delete_failed": "{count, plural,\n=1 {无法删除消息}\nother {无法删除 {count} 则消息}\n}",
+  "@group_chat_delete_failed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_selection_limit": "最多可选取 {count} 则消息",
+  "group_chat_message_deleted_by_sender": "此消息已被删除",
+  "group_chat_reaction_failed": "无法保存您的回应",
+  "group_chat_reactions_count": "{count, plural,\n=1 {1 个回应}\nother {{count} 个回应}\n}",
+  "@group_chat_reactions_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "group_chat_you": "您",
+  "group_chat_tap_to_remove": "点一下即可移除",
+  "group_chat_reply_parent_gone": "该消息已无法使用，因此已移除引用。请重新发送以发布您的消息",
+  "group_tab_posts": "贴文",
+  "group_tab_events": "活动",
+  "group_posts_empty_title": "尚无贴文",
+  "group_posts_empty_message": "分享您社群的第一则动态",
+  "group_posts_load_error": "无法加载贴文，请再试一次",
+  "group_post_button": "发布",
+  "group_post_new_title": "新贴文",
+  "group_post_posting_to": "发布至：",
+  "group_post_caption_hint": "有什么新消息？",
+  "group_post_photos": "相片",
+  "group_post_link": "链接",
+  "group_post_discard_title": "要舍弃贴文吗？",
+  "group_post_discard_message": "您撰写的内容将会遗失",
+  "group_post_keep_editing": "继续编辑",
+  "group_post_discard": "舍弃",
+  "group_post_add_link_title": "添加链接",
+  "group_post_add_link_hint": "粘贴链接，我们会显示预览",
+  "group_post_link_field_hint": "链接",
+  "group_post_attach": "附加",
+  "group_post_attach_as_link": "以链接形式附加",
+  "group_post_preview_failed_title": "无法加载预览",
+  "group_post_preview_failed_message": "您仍可以链接形式附加",
+  "group_post_invalid_link": "请输入有效的链接，例如：https://example.com",
+  "group_post_in_app_content": "应用内内容",
+  "group_post_add_in_app_content_title": "添加应用内内容",
+  "group_post_in_app_content_empty": "暂无可添加的内容",
+  "group_post_photo_limit": "最多可添加 {count} 张相片",
+  "group_post_upload_error": "无法上传相片，请再试一次",
+  "group_post_publish_error": "无法发布您的贴文，请再试一次",
+  "group_post_published": "您的贴文已发布。",
+  "group_post_delete_title": "要删除贴文吗？",
+  "group_post_delete_message": "此贴文将被永久删除",
+  "group_post_delete_failed": "无法删除贴文，请再试一次",
+  "edit": "编辑",
+  "group_post_edit_title": "编辑贴文",
+  "group_post_update_error": "无法保存您的变更，请再试一次",
+  "group_post_updated": "您的变更已保存",
+  "practice_collection_already_added": "此持诵集已在您的修持中",
+  "practice_group_accumulator_already_added": "此共修计数已在您的修持中",
+  "event_live_badge": "直播中",
+  "event_live_audio": "直播音频",
+  "event_live_video_mode": "视频",
+  "event_live_audio_mode": "音频",
+  "event_live_go_live": "直播中",
+  "event_replays": "回放",
+  "event_replay_session": "第 {day} 天 · 第 {session} 场",
+  "event_replay_recording": "录像",
+  "event_replay_back_to_live": "返回直播",
+  "event_replays_empty": "尚无录像",
+  "event_puja_starts_in": "法会开始于",
+  "event_puja_not_started": "法会尚未开始",
+  "event_prayer_requests": "回向与祈愿",
+  "event_prayer_request_count": "{count, plural,\n=1 {1 个回向祈愿}\nother {{count} 个回向祈愿}\none {1 个回向祈愿}\n}",
+  "@event_prayer_request_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_empty_title": "尚无回向祈愿名单",
+  "event_prayer_empty_body": "您的回向祈愿与您社群的回向祈愿会出现在这里",
+  "event_prayer_add": "加入回向名单",
+  "event_prayer_hint": "今天我们可以为您祈愿什么呢？",
+  "event_prayer_hint_intention": "请求为以下事项祈愿：{topics}",
+  "event_prayer_load_failed": "无法加载回向祈愿",
+  "event_prayer_closed": "本活动的回向名单已关闭",
+  "event_prayer_pray": "回向祈愿",
+  "event_prayer_praying": "已回向",
+  "event_prayer_my_count": "+{count}",
+  "event_prayer_new_request": "添加回向祈愿",
+  "event_prayer_edit_request": "编辑回向祈愿内容",
+  "event_prayer_delete_title": "要删除此回向祈愿?",
+  "event_prayer_delete_body": "此则回向祈愿将从本活动删除",
+  "event_prayer_delete_failed": "无法删除此回向祈愿",
+  "event_prayer_choose_intention": "选择一种愿望",
+  "event_prayer_intentions_failed": "无法加载祈愿意向",
+  "event_prayer_request_button": "申请回向祈愿",
+  "event_prayer_you": "你",
+  "event_prayer_waiting_first": "正在等待第一个回向祈愿⋯⋯",
+  "event_prayer_more_praying": "+{count} 人已回向",
+  "@event_prayer_more_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_people_praying": "{count, plural,\n=1 {1 人已回向}\nother {{count} 人已回向}\n}",
+  "@event_prayer_people_praying": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "event_prayer_praying_for_you": "已为您回向",
+  "event_prayer_praying_for": "已为 {name} 回向",
+  "@event_prayer_praying_for": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "event_prayer_your_request": "您的回向祈愿",
+  "event_prayer_supporters_failed": "无法加载正在回向祈愿的人",
+  "event_prayer_no_supporters": "目前还没有人回向",
+  "event_prayer_sort_by": "为谁祈愿",
+  "event_prayer_sort_needs_prayers": "需要祈愿",
+  "event_prayer_sort_most_prayed": "祈愿最多",
+  "event_prayer_sort_newest": "最新",
+  "event_prayer_sort_oldest": "最早",
+  "event_prayer_sort_by_intention": "按祈愿意向",
+  "event_prayer_clear_intention": "清除祈愿意向",
+  "event_prayer_filter_empty_title": "没有符合的请求",
+  "event_prayer_filter_empty_body": "请尝试其他排序或祈愿意向",
+  "event_prayer_see_translation": "查看译文",
+  "event_prayer_see_original": "查看原文",
+  "event_prayer_translated_from": "译自{language}",
+  "event_prayer_translated": "已翻译",
+  "recitation_live_sync": "同步",
+  "recitation_live_label": "直播中",
+  "recitation_live_session_ended": "直播已结束",
+  "feedback_add_image": "添加图片",
+  "feedback_image_limit": "最多可附加 {count} 张图片",
+  "feedback_send": "发送",
+  "feedback_error_offline": "您目前离线。请稍后再试",
+  "feedback_error_rate_limited": "请求次数过多。请稍候再试",
+  "feedback_error_too_large": "图片太大。请移除一张后再试",
+  "feedback_error_failed": "无法送出意见回馈，请再试一次",
+  "feedback_error_unavailable": "目前无法使用意见回馈",
+  "settings_help_contact_row": "协助与联系",
+  "help_contact_title": "协助与联系",
+  "help_contact_intro": "回报问题、分享想法，或提供协助与合作。我们会阅读每一则消息。",
+  "help_contact_message": "消息",
+  "help_contact_photos": "照片或屏幕截屏（选填）",
+  "help_contact_topic": "这是关于什么？（选填）",
+  "help_contact_hint_default": "您想告诉我们什么？",
+  "help_contact_hint_report_problem": "发生了什么事？您在那之前正在做什么？附上截屏会很有帮助。",
+  "help_contact_hint_idea_feedback": "怎样能让 WeBuddhist 对您的修行更有帮助？",
+  "help_contact_hint_suggest_content": "您希望在这里看到哪些教法、经文或老师？欢迎附上链接。",
+  "help_contact_hint_help_collaborate": "您想如何协助？请分享您的技能、语言能力，或能提供的时间。",
+  "help_topic_report_problem": "回报问题",
+  "help_topic_idea_feedback": "想法或意见",
+  "help_topic_suggest_content": "建议内容",
+  "help_topic_help_collaborate": "协助或合作",
+  "help_contact_footer": "回复会由 WeBuddhist 团队发送到您的聊天室。",
+  "help_contact_sent_title": "消息已送出",
+  "help_contact_sent_body": "谢谢。我们通常会在 1 天内回复。您可以在聊天室中看到 WeBuddhist 团队的回复。",
+  "help_contact_sent_body_named": "谢谢，{name}。我们通常会在 1 天内回复。您可以在聊天室中看到 WeBuddhist 团队的回复。",
+  "help_contact_your_request": "您的请求",
+  "help_contact_open_chat": "打开聊天室",
+  "help_context_sent_from": "来自协助与联系",
+  "help_context_photos": "{count, plural,\nother {{count} 张照片}\n}",
+  "chat_official_badge": "官方",
+  "chat_team_reply_time": "通常在 1 天内回复",
+  "connect_failed_load_discover_groups_error": "无法下载社群清单",
+  "connect_failed_like_post_error": "无法帮贴文点赞",
+  "connect_failed_unlike_post_error": "无法删除贴文点赞",
+  "connect_failed_like_comment_error": "无法帮评论点赞",
+  "connect_failed_unlike_comment_error": "无法取消点赞评论",
+  "group_events_load_error": "无法加载活动，请再试一次。",
+  "group_events_empty": "暂无活动",
+  "group_events_empty_message": "创建您的第一场聚会，成员将会收到通知。",
+  "group_event_create_button": "创建活动",
+  "group_event_new_title": "新活动",
+  "group_event_step_of": "第 {current} 步，共 {total} 步",
+  "group_event_step_about": "简介",
+  "group_event_cover_image": "封面图片",
+  "group_event_add_cover_photo": "添加封面照片",
+  "group_event_change_cover": "更换",
+  "group_event_name_and_description": "名称与描述",
+  "group_event_name_label": "活动名称",
+  "group_event_name_hint": "例如：周三共修",
+  "group_event_description_label": "描述（可选）",
+  "group_event_description_hint": "你们将一起修持什么？需要带些什么吗？",
+  "group_event_write": "编辑",
+  "group_event_preview": "预览",
+  "group_event_preview_empty": "暂无可预览的内容",
+  "group_event_continue": "继续",
+  "group_event_name_required_hint": "请添加活动名称以继续",
+  "group_event_languages_title": "活动语言",
+  "group_event_languages_add": "添加语言",
+  "group_event_languages_hint": "已根据您社群的语言预先选择。若有对应语言版本，读者将以其语言查看此活动。",
+  "group_event_discard_title": "要放弃此活动吗？",
+  "group_event_discard_message": "您输入的内容将会丢失",
+  "group_event_format_bold": "粗体",
+  "group_event_format_italic": "斜体",
+  "group_event_format_heading": "标题",
+  "group_event_format_bullet_list": "项目符号列表",
+  "group_event_format_numbered_list": "编号列表",
+  "group_event_format_link": "链接",
+  "group_event_link_title": "插入链接",
+  "group_event_link_text_hint": "文字",
+  "group_event_link_url_hint": "https://",
+  "group_event_link_insert": "插入",
+  "group_event_step_when_where": "时间与地点",
+  "group_event_when": "时间",
+  "group_event_where": "地点",
+  "group_event_one_time": "单次",
+  "group_event_recurring": "重复",
+  "group_event_date": "日期",
+  "group_event_start_date": "开始日期",
+  "group_event_end_date": "结束日期",
+  "group_event_first_date": "首次日期",
+  "group_event_choose_date": "选择日期",
+  "group_event_multi_day": "多日活动",
+  "group_event_all_day": "全天",
+  "group_event_all_day_hint": "在活动页面上显示为全天。",
+  "group_event_start_time": "开始时间",
+  "group_event_end_time": "结束时间",
+  "group_event_add_start_time": "添加开始时间",
+  "group_event_add_end_time": "添加结束时间",
+  "group_event_time_starts": "{time} 开始",
+  "group_event_time_ends": "{time} 结束",
+  "group_event_timezone": "时区",
+  "group_event_repeats": "重复",
+  "group_event_choose_repeats": "选择重复方式",
+  "group_event_duration": "时长",
+  "group_event_duration_decrease": "减少时长",
+  "group_event_duration_increase": "增加时长",
+  "group_event_duration_days": "{count, plural,\n=1 {1 天}\nother {{count} 天}\n}",
+  "group_event_repeats_weekly": "每周{weekday}",
+  "group_event_repeats_monthly": "每月 {day} 日",
+  "group_event_repeats_monthly_lunar": "每月藏历 {day} 日",
+  "group_event_repeats_yearly": "每年 {date}",
+  "group_event_repeats_yearly_lunar": "每年此藏历日期",
+  "group_event_full_moon": "满月",
+  "group_event_new_moon": "新月",
+  "group_event_gregorian": "公历",
+  "group_event_tibetan_lunar": "藏历",
+  "group_event_next_dates": "接下来的日期",
+  "group_event_repeats_hint": "选项根据首次日期而定。",
+  "group_event_in_person": "现场",
+  "group_event_live": "直播",
+  "group_event_both": "两者皆有",
+  "group_event_venue": "场地",
+  "group_event_add_venue": "添加场地位置",
+  "group_event_venue_search_hint": "搜索区域、街道或地标",
+  "group_event_venue_no_results": "未找到地点",
+  "group_event_venue_search_error": "搜索功能目前无法使用",
+  "group_event_drop_pin": "放置图钉",
+  "group_event_drop_pin_hint": "在地图上选择位置",
+  "group_event_pin_marker": "活动场地",
+  "group_event_selected_location": "已选位置",
+  "group_event_pin_unnamed": "已标记的位置",
+  "group_event_confirm_location": "确认位置",
+  "group_event_name_location": "为此位置命名",
+  "group_event_venue_name": "场地名称",
+  "group_event_venue_name_hint": "例如：金刚萨埵佛法中心",
+  "group_event_save_venue": "保存场地",
+  "group_event_live_link": "直播链接",
+  "group_event_live_link_hint": "youtube.com/… 或会议链接",
+  "group_event_use_channel_link": "使用频道链接",
+  "group_event_live_link_youtube_help": "您社群的 YouTube 直播，会在 WeBuddhist 内播放。粘贴其他链接即可更换。",
+  "group_event_live_link_custom_help": "自定义链接，观众将在 WeBuddhist 之外打开。",
+  "group_event_live_link_invalid": "这看起来还不是有效的链接",
+  "group_event_pick_date_hint": "请选择日期以继续",
+  "group_event_pick_repeats_hint": "请选择重复方式以继续",
+  "group_event_end_date_hint": "结束日期必须晚于开始日期",
+  "group_event_end_time_hint": "结束时间必须晚于开始时间",
+  "group_event_venue_hint": "请选择场地以继续",
+  "group_event_link_required_hint": "请添加会议链接以继续",
+  "group_event_map_attribution": "© OpenStreetMap 贡献者",
+  "group_event_step_practices": "修持与视频",
+  "group_event_optional_note": "此处所有内容均为可选，您可以稍后再添加这些详情。",
+  "group_event_practices_section": "活动修持",
+  "group_event_add_practice": "添加修持",
+  "group_event_practice_search_hint": "搜索您社群的修持",
+  "group_event_practice_filter_all": "全部",
+  "group_event_practice_filter_content": "计划与系列",
+  "group_event_practice_filter_collections": "持诵集",
+  "group_event_practice_filter_accumulators": "共修计数",
+  "group_event_practice_rule": "每个活动可包含一个计划或系列及一个持诵集，共修计数则可按需添加。",
+  "group_event_practice_replaced": "已选择「{chosen}」，替换了「{previous}」。",
+  "group_event_practices_empty": "此社群尚无修持",
+  "group_event_practices_load_error": "无法加载修持，请再试一次。",
+  "group_event_practices_none_match": "没有符合的修持",
+  "group_event_add_practices_count": "{count, plural,\n=0 {添加修持}\n=1 {添加 1 项修持}\nother {添加 {count} 项修持}\n}",
+  "group_event_counted_by": "计数方式",
+  "group_event_count_mode_title": "由谁添加计数？",
+  "group_event_count_mode_attendees": "参加者在应用内添加",
+  "group_event_count_mode_attendees_hint": "每人在活动期间或结束后添加自己的持诵次数",
+  "group_event_count_mode_admin": "管理员为现场参加者添加",
+  "group_event_count_mode_admin_hint": "由您输入团体的计数，即人数 × 遍数",
+  "group_event_count_mode_admin_short": "管理员添加",
+  "group_event_count_mode_attendees_taken": "另一个共修计数已使用此方式。每个活动中，参加者只能为一个共修计数添加次数。",
+  "group_event_remove_practice": "移除「{title}」",
+  "group_event_videos_section": "介绍视频",
+  "group_event_videos_hint": "显示在活动的简介页面上，可用来介绍活动或说明活动内容。",
+  "group_event_add_video": "添加视频",
+  "group_event_video_link": "YouTube 链接",
+  "group_event_video_link_hint": "https://youtu.be/…",
+  "group_event_paste": "粘贴",
+  "group_event_video_loading": "正在获取视频详情…",
+  "group_event_video_invalid": "这看起来不是 YouTube 链接，请粘贴来自 YouTube 的链接。",
+  "group_event_video_source": "YouTube",
+  "group_event_video_untitled": "YouTube 视频",
+  "group_event_remove_video": "移除视频",
+  "group_event_skip": "跳过",
+  "group_event_step_review": "检查并发布",
+  "group_event_review_event": "活动",
+  "group_event_review_settings": "设置",
+  "group_event_review_name": "名称",
+  "group_event_review_languages": "语言",
+  "group_event_review_when": "时间",
+  "group_event_review_where": "地点",
+  "group_event_review_live_link": "直播链接",
+  "group_event_review_practices": "修持",
+  "group_event_review_videos": "介绍视频",
+  "group_event_review_event_settings": "活动设置",
+  "group_event_review_none": "无",
+  "group_event_review_tap_hint": "点按任意一行即可更改。",
+  "group_event_review_notify_hint": "发布后，成员将收到通知。",
+  "group_event_review_more": "{first} 等另外 {count} 项",
+  "group_event_review_recurring_from": "{rule} · {times} · 自 {date} 起",
+  "group_event_review_youtube_live": "YouTube 直播",
+  "group_event_review_online": "线上",
+  "group_event_chat_on": "聊天已开启",
+  "group_event_chat_off": "聊天已关闭",
+  "group_event_notifications_on": "通知已开启",
+  "group_event_notifications_off": "通知已关闭",
+  "group_event_all_intentions": "所有祈愿意向",
+  "group_event_intentions_count": "{count, plural,\n=1 {1 项祈愿意向}\nother {{count} 项祈愿意向}\n}",
+  "group_event_publish": "发布",
+  "group_event_publish_error": "无法发布活动，请再试一次",
+  "group_event_settings_title": "活动设置",
+  "group_event_settings_chat": "活动聊天室",
+  "group_event_settings_chat_hint": "为活动开设专属聊天室，成员可在其中交流并发布回向与祈愿。",
+  "group_event_settings_notifications": "通知",
+  "group_event_settings_notifications_hint": "包括发布时的通知、活动开始前的提醒，以及您自行发送的通知。",
+  "group_event_settings_intentions": "祈愿意向",
+  "group_event_settings_intentions_hint": "全部不勾选即允许所有祈愿意向。",
+  "group_event_settings_intentions_error": "目前无法加载祈愿意向。",
+  "group_event_published_title": "已发布",
+  "group_event_published_headline": "「{name}」已上线",
+  "group_event_published_message": "{group} 的成员已收到通知。您可以随时在活动页面中进行编辑。",
+  "group_event_published_message_silent": "您可以随时在活动页面中进行编辑。",
+  "group_event_view_event": "查看活动",
+  "group_event_drafts_section": "草稿",
+  "group_event_draft_label": "草稿",
+  "group_event_draft_untitled": "未命名活动",
+  "group_event_draft_menu_continue": "继续编辑",
+  "group_event_draft_menu_delete": "删除草稿",
+  "group_event_draft_menu_delete_hint": "此操作无法撤销",
+  "group_event_draft_saved": "已保存为草稿",
+  "group_event_draft_save_error": "无法保存草稿，请再试一次",
+  "group_event_draft_deleted": "草稿已删除",
+  "group_event_draft_delete_error": "无法删除草稿，请再试一次",
+  "group_event_draft_delete_title": "要删除草稿吗？",
+  "group_event_draft_delete_message": "此草稿将被永久删除",
+  "group_event_edit_draft_title": "编辑草稿",
+  "group_event_edit_title": "编辑活动",
+  "group_event_save_changes": "保存更改",
+  "group_event_changes_saved": "更改已保存",
+  "group_event_manage": "管理活动",
+  "group_event_manage_details": "详情",
+  "group_event_manage_counts": "计数",
+  "group_event_manage_accumulations": "共修计数",
+  "group_event_manage_admin_adds_pending": "管理员添加",
+  "group_event_manage_admin_adds": "管理员添加 · 目前 {count}",
+  "group_event_manage_attendees_add_pending": "参加者在应用内添加",
+  "group_event_manage_attendees_add": "{people, plural,\n=1 {参加者在应用内添加 · 1 人共 {count}}\nother {参加者在应用内添加 · {people} 人共 {count}}\n}",
+  "group_event_manage_add_count": "添加计数",
+  "group_event_manage_no_accumulations": "此活动没有共修计数。",
+  "group_event_manage_recurring_note": "重复活动不保留参加者名单，各场次的计数会累计相加。",
+  "group_event_in_person_of_target": "{count} / {target}",
+  "group_event_in_person_in_total": "共 {count}",
+  "group_event_in_person_legend_app": "应用",
+  "group_event_in_person_legend_in_person": "现场",
+  "group_event_in_person_add_day": "添加日期",
+  "group_event_in_person_day": "日期",
+  "group_event_in_person_count": "计数",
+  "group_event_in_person_empty": "暂无现场计数。",
+  "group_event_in_person_invalid_count": "请输入至少为 1 的整数",
+  "group_event_in_person_added": "已添加现场计数",
+  "group_event_in_person_updated": "已更新现场计数",
+  "group_event_in_person_deleted": "已删除现场计数",
+  "group_event_in_person_delete_title": "要删除现场计数吗？",
+  "group_event_in_person_delete_message": "{day} 的 {count} 将从共修计数总数中扣除。",
+  "group_event_in_person_exists": "该日期已有计数，请改为编辑。",
+  "group_event_in_person_no_accumulation": "请为此活动关联一个社群共修计数，以记录现场计数。",
+  "group_event_in_person_save_error": "无法保存计数。",
+  "group_event_in_person_load_more": "加载更多",
+  "mala_failed_load_catalogue_error": "无法加载目录",
+  "chant_collection_reload_error": "无法重新加载持诵集以调整顺序",
+  "chant_collection_reorder_error": "无法调整持诵顺序",
+  "timer_duration_label": "时长",
+  "timer_ambient_sound_label": "环境音",
+  "timer_begin_session": "开始禅修",
+  "timer_save_changes": "保存更改",
+  "timer_new_title": "新计时器",
+  "timer_edit_title": "编辑计时器",
+  "timer_your_timers": "您的计时器",
+  "timer_custom_timer": "自定义计时器",
+  "timer_ambient_sounds_title": "环境音",
+  "timer_ambient_sound_none": "默认（无声音）",
+  "timer_ambient_sounds_load_error": "无法加载环境音",
+  "timer_volume_label": "音量",
+  "timer_duration_title": "时长",
+  "timer_edit": "编辑计时器",
+  "timer_delete": "删除计时器",
+  "timer_delete_title": "要删除计时器吗？",
+  "timer_delete_message": "此计时器将从您的计时器中移除。",
+  "timer_duration_must_be_greater_than_error": "时长必须大于 0",
+  "splash_tagline_1": "我们佛弟子一起修持",
+  "splash_tagline_2": "我们佛弟子每日修持",
+  "timer_list_subtitle": "点按播放即可开始，或创建您自己的计时器。",
+  "timer_create_custom": "创建自定义计时器",
+  "timer_create_custom_subtitle": "设置时长、钟声与环境音",
+  "timer_starting": "正在开始…",
+  "timer_duration_hours": "小时",
+  "timer_duration_sec": "秒"
+}

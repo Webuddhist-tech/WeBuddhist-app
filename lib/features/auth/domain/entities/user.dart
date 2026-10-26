@@ -5,10 +5,7 @@ class SocialProfile extends Equatable {
   final String account;
   final String url;
 
-  const SocialProfile({
-    required this.account,
-    required this.url,
-  });
+  const SocialProfile({required this.account, required this.url});
 
   @override
   List<Object?> get props => [account, url];
@@ -24,6 +21,7 @@ class User extends Equatable {
   final String? firstName;
   final String? email;
   final String? lastName;
+  final String? displayName;
   final String? username;
   final String? title;
   final String? organization;
@@ -43,6 +41,7 @@ class User extends Equatable {
     this.email,
     this.firstName,
     this.lastName,
+    this.displayName,
     this.username,
     this.title,
     this.organization,
@@ -61,6 +60,7 @@ class User extends Equatable {
     String? firstName,
     String? email,
     String? lastName,
+    String? displayName,
     String? username,
     String? title,
     String? organization,
@@ -78,6 +78,7 @@ class User extends Equatable {
       email: email ?? this.email,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
+      displayName: displayName ?? this.displayName,
       username: username ?? this.username,
       title: title ?? this.title,
       organization: organization ?? this.organization,
@@ -92,24 +93,51 @@ class User extends Equatable {
     );
   }
 
-  /// Get user's full name
-  String get fullName {
-    if (firstName != null && lastName != null) {
-      return '$firstName $lastName';
-    }
-    return firstName ?? username ?? email ?? 'User';
+  /// Name shown in the UI. Prefers `display_name`, then first and last name
+  /// for profiles saved before that field existed.
+  String get visibleName {
+    final named = displayName?.trim();
+    if (named != null && named.isNotEmpty) return named;
+    return [
+      firstName?.trim() ?? '',
+      lastName?.trim() ?? '',
+    ].where((part) => part.isNotEmpty).join(' ');
   }
 
-  /// Get user's display name (fallback chain)
-  String get displayName {
-    return username ?? fullName;
+  String? get visibleNameOrNull {
+    final name = visibleName;
+    return name.isEmpty ? null : name;
+  }
+
+  /// Get user's full name
+  String get fullName {
+    final named = visibleName;
+    if (named.isNotEmpty) return named;
+    return username ?? email ?? 'User';
   }
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [
+    id,
+    email,
+    firstName,
+    lastName,
+    displayName,
+    username,
+    title,
+    organization,
+    location,
+    aboutMe,
+    avatarUrl,
+    educations,
+    followers,
+    following,
+    socialProfiles,
+    onboardingCompleted,
+  ];
 
   @override
   String toString() {
-    return 'User(id: $id, email: $email, firstName: $firstName, lastName: $lastName, username: $username)';
+    return 'User(id: $id, email: $email, displayName: $displayName, firstName: $firstName, lastName: $lastName, username: $username)';
   }
 }

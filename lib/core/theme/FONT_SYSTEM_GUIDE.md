@@ -24,6 +24,15 @@ Both are local assets with **rewritten vertical metrics**; see
 - **System**: Google Noto Sans Traditional Chinese
 - **Content**: Google Noto Serif Traditional Chinese
 
+### Hindi, Nepali, Mongolian (hi, ne, mn) and any other code
+- No entry in `_languageFonts`, so they use the default config (Inter /
+  Source Serif 4). Devanagari glyphs are not in Inter or Source Serif 4 and
+  render through the platform fallback font.
+
+Font family names live in `AppConfig` (`core/constants/app_config.dart`):
+`englishSystemFont`, `englishContentFont`, `chineseSystemFont`,
+`chineseContentFont`, `tibetanSystemFont`, `tibetanContentFont`.
+
 ## Architecture
 
 ### 1. Font Configuration (`font_config.dart`)
@@ -160,22 +169,21 @@ static const Map<String, LanguageFontConfig> _languageFonts = {
 If you need to use local fonts (from assets):
 
 ```dart
-'bo': LanguageFontConfig(
-  systemFont: 'MonlamTibetan',
-  contentFont: 'TsumachuTibetan',
+// This is how Tibetan is configured today
+AppConfig.tibetanLanguageCode: LanguageFontConfig(
+  systemFont: AppConfig.tibetanSystemFont,   // 'NotoSerifTibetanWB'
+  contentFont: AppConfig.tibetanContentFont, // 'WBTibetanContent'
   systemFontIsGoogle: false,    // Set to false for local fonts
   contentFontIsGoogle: false,
 ),
 ```
 
-Then add the font to `pubspec.yaml`:
+Then declare the family in `pubspec.yaml` under `flutter: fonts:` (see the
+existing `NotoSerifTibetanWB` / `WBTibetanContent` entries).
 
-```yaml
-fonts:
-  - family: TsumachuTibetan
-    fonts:
-      - asset: assets/fonts/Tsumachu.ttf
-```
+A Google font also needs a case in all three switches in `AppFontConfig`:
+`_getGoogleFontFamilyName`, `_getGoogleFontTextTheme` and `_getGoogleFontTextStyle`.
+Each one silently falls back to Inter for a name it does not know.
 
 ## Tibetan vertical metrics
 
@@ -278,4 +286,4 @@ The `getFontFamily()` helper function now:
 2. Returns the actual Google Font family name that works with `TextStyle(fontFamily: ...)`
 3. Works for both Google Fonts and local fonts
 
-**Technical Detail**: For Google Fonts, the function calls the GoogleFonts API (e.g., `GoogleFonts.jomolhari()`) to get the proper font family name, ensuring the font is loaded and available. This is why both `getFontFamily()` and `getContentTextStyle()` now work correctly.
+**Technical Detail**: For Google Fonts, `AppFontConfig._getGoogleFontFamilyName` calls the GoogleFonts API (e.g. `GoogleFonts.sourceSerif4()`) to get the registered family name, which also triggers the download. Local (bundled) fonts — the Tibetan ones — are returned as-is.

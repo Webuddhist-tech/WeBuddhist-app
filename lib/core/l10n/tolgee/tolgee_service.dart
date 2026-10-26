@@ -154,13 +154,16 @@ class TolgeeService {
           return false;
         }
 
-        TolgeeBridge.load(languageCode: target.languageCode, strings: strings);
+        TolgeeBridge.load(
+          languageCode: target.toLanguageTag(),
+          strings: strings,
+        );
         _loadedLocale = target;
         _logger.info(
           isFirstLoad
-              ? 'Tolgee ready for ${target.languageCode} '
+              ? 'Tolgee ready for ${target.toLanguageTag()} '
                   '(CDN tag $cdnTag, ${strings.length} strings)'
-              : 'Tolgee switched to ${target.languageCode} '
+              : 'Tolgee switched to ${target.toLanguageTag()} '
                   '(CDN tag $cdnTag, ${strings.length} strings)',
         );
         return true;
@@ -205,14 +208,14 @@ class TolgeeService {
       if (_desiredLocale != target ||
           strings.isEmpty ||
           TolgeeBridge.holds(
-            languageCode: target.languageCode,
+            languageCode: target.toLanguageTag(),
             strings: strings,
           )) {
         return false;
       }
-      TolgeeBridge.load(languageCode: target.languageCode, strings: strings);
+      TolgeeBridge.load(languageCode: target.toLanguageTag(), strings: strings);
       _logger.info(
-        'Tolgee refreshed ${target.languageCode} '
+        'Tolgee refreshed ${target.toLanguageTag()} '
         '(CDN tag $cdnTag, ${strings.length} strings)',
       );
       return true;

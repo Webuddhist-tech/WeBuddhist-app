@@ -178,15 +178,58 @@ class SeriesRepository implements SeriesRepositoryInterface {
       return const Left(AuthenticationFailure('Not authenticated'));
     }
 
+    final wasEnrolled =
+        local.readEnrollments(userId)?.contains(seriesId) ?? false;
+
+    // Group enrollments never enter the offline queue: the queue does not
+    // keep the group, so a replay (e.g. on reconnect while this request is
+    // still in flight) would enroll the user personally instead.
+    if (groupId != null && groupId.isNotEmpty) {
+      try {
+        await remote.enrollInSeries(seriesId, groupId: groupId);
+      } catch (e) {
+        // Nothing was written locally, so an earlier queued personal
+        // enrollment for this series is left as it was.
+        return Left(_toFailure(e, 'Failed to enroll in series'));
+      }
+      // The server now has the enrollment, so a queued personal one for the
+      // same series has nothing left to do.
+      await local.removePendingEnrollment(userId, seriesId);
+      await local.saveEnrollments(userId, {
+        ...?local.readEnrollments(userId),
+        seriesId,
+      });
+      return const Right(unit);
+    }
+
+    final wasPending = local.readPendingEnrollments(userId).contains(seriesId);
     await local.enqueueEnrollment(userId, seriesId);
     try {
-      await remote.enrollInSeries(seriesId, groupId: groupId);
+      await remote.enrollInSeries(seriesId);
       await local.removePendingEnrollment(userId, seriesId);
       return const Right(unit);
     } catch (e) {
-      return const Right(unit);
+      // Offline: keep it queued and replay it on reconnect.
+      if (e is NetworkException) return const Right(unit);
+      // A server error (5xx, rate limit, session) is temporary: an enrollment
+      // that was already waiting to sync keeps waiting.
+      if (wasPending && !_isPermanentRejection(e)) {
+        return Left(_toFailure(e, 'Failed to enroll in series'));
+      }
+      await local.discardEnrollment(
+        userId,
+        seriesId,
+        keepEnrolled: wasEnrolled && !wasPending,
+      );
+      return Left(_toFailure(e, 'Failed to enroll in series'));
     }
   }
+
+  /// The server will never accept this enrollment, so retrying is pointless.
+  bool _isPermanentRejection(Object e) =>
+      e is NotFoundException ||
+      e is ValidationException ||
+      e is AuthorizationException;
 
   @override
   Future<Either<Failure, Set<String>>> getUserSeriesEnrollments() async {
@@ -238,8 +281,21 @@ class SeriesRepository implements SeriesRepositoryInterface {
       try {
         await remote.enrollInSeries(seriesId);
         await local.removePendingEnrollment(userId, seriesId);
-      } catch (_) {
+      } on NetworkException {
+        return; // Still offline: the rest would fail too. Retry later.
+      } on AuthenticationException {
+        return; // Session problem, not this series. Retry after re-auth.
+      } on RateLimitException {
         return;
+      } catch (e) {
+        if (_isPermanentRejection(e)) {
+          // The series is gone or the server refuses it: this enrollment can
+          // never succeed, so stop showing it and stop retrying it.
+          await local.discardEnrollment(userId, seriesId);
+        }
+        // Otherwise (5xx) keep it for a later retry, but don't let it block
+        // the enrollments queued after it.
+        continue;
       }
     }
   }
@@ -335,6 +391,12 @@ class SeriesRepository implements SeriesRepositoryInterface {
     }
     if (error is NotFoundException) return NotFoundFailure(error.message);
     if (error is RateLimitException) return RateLimitFailure(error.message);
+    if (error is ValidationException) {
+      return ValidationFailure(error.message, code: error.code);
+    }
+    if (error is AuthorizationException) {
+      return AuthorizationFailure(error.message);
+    }
     return UnknownFailure('$fallback: $error');
   }
 }

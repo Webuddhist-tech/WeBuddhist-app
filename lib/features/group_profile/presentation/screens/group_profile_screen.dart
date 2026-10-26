@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/analytics/track_first_value.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
@@ -5,6 +7,9 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_requests_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_analytics.dart';
@@ -14,13 +19,51 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class GroupProfileScreen extends ConsumerWidget {
+class GroupProfileScreen extends ConsumerStatefulWidget {
   final String groupId;
 
-  const GroupProfileScreen({super.key, required this.groupId});
+  /// Opens the prayer-request sheet once the page is on screen. Set from a
+  /// prayer-request notification tap.
+  final bool openPrayerRequests;
+
+  const GroupProfileScreen({
+    super.key,
+    required this.groupId,
+    this.openPrayerRequests = false,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GroupProfileScreen> createState() => _GroupProfileScreenState();
+}
+
+class _GroupProfileScreenState extends ConsumerState<GroupProfileScreen> {
+  bool _didOpenPrayerRequests = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.openPrayerRequests) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didOpenPrayerRequests) return;
+      _didOpenPrayerRequests = true;
+      // `/home` is guest-accessible, so the query alone is no proof of login.
+      final authState = ref.read(authProvider);
+      if (authState.isGuest || !authState.isLoggedIn) {
+        LoginDrawer.show(context, ref);
+        return;
+      }
+      unawaited(
+        PrayerRequestsSheet.show(
+          context,
+          scope: PrayerRoomScope.group(widget.groupId),
+        ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final groupId = widget.groupId;
     final profileAsync = ref.watch(groupProfileProvider(groupId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -41,7 +84,6 @@ class GroupProfileScreen extends ConsumerWidget {
           children: [
             _buildAppBar(
               context,
-              ref,
               groupId,
               profileTitle,
               loadedProfile,
@@ -91,7 +133,6 @@ class GroupProfileScreen extends ConsumerWidget {
 
   Widget _buildAppBar(
     BuildContext context,
-    WidgetRef ref,
     String groupId,
     String? title,
     GroupProfile? profile,

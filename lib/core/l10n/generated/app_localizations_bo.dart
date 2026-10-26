@@ -1643,6 +1643,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get edit_profile_last_name => 'རུས་མིང་།';
 
   @override
+  String get edit_profile_display_name => 'མངོན་མིང་།';
+
+  @override
   String get edit_profile_bio => 'རང་ངོ་སྤྲོད།';
 
   @override
@@ -2614,9 +2617,9 @@ class AppLocalizationsBo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'ཉིན་ $count',
+      other: 'ཉིན་ $count །',
     );
-    return '$_temp0 །';
+    return '$_temp0';
   }
 
   @override
@@ -3102,6 +3105,13 @@ class AppLocalizationsBo extends AppLocalizations {
   String get event_prayer_closed => 'ཐུགས་སྨོན་སྐྱབས་འཇུག་ཞུ་ས་སྒོ་བརྒྱབ་འདུག';
 
   @override
+  String get group_prayer_closed => 'Prayer requests are closed for this space';
+
+  @override
+  String get group_prayer_delete_body =>
+      'It will be removed for everyone in this space.';
+
+  @override
   String get event_prayer_pray => 'སྨོན་ལམ་འདེབས།';
 
   @override
@@ -3220,6 +3230,99 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get event_prayer_translated => 'Translated';
+
+  @override
+  String get event_prayer_sort_mine => 'My prayers';
+
+  @override
+  String get event_prayer_section_active => 'Active';
+
+  @override
+  String get event_prayer_section_accomplished => 'Accomplished';
+
+  @override
+  String get event_prayer_mark_accomplished => 'Accomplished';
+
+  @override
+  String get event_prayer_mark_active => 'Mark as active';
+
+  @override
+  String get event_prayer_mine_empty_title => 'No prayer requests from you yet';
+
+  @override
+  String get event_prayer_mine_empty_body =>
+      'Requests you post here will appear in this list';
+
+  @override
+  String get event_prayer_update_failed =>
+      'The prayer request couldn\'t be updated';
+
+  @override
+  String get event_prayer_find => 'Find a prayer for you';
+
+  @override
+  String get event_prayer_random => 'Random';
+
+  @override
+  String get event_prayer_finding => 'Finding a prayer...';
+
+  @override
+  String get event_prayer_found => 'A prayer for you';
+
+  @override
+  String get event_prayer_skip => 'Skip';
+
+  @override
+  String get event_prayer_next => 'Next prayer';
+
+  @override
+  String get event_prayer_be_first => 'Be the first to pray';
+
+  @override
+  String get event_prayer_random_empty_title => 'No prayers to find yet';
+
+  @override
+  String get event_prayer_random_empty_body =>
+      'No one else has posted a request here yet';
+
+  @override
+  String get event_prayer_random_failed => 'Couldn\'t find a prayer';
+
+  @override
+  String event_prayer_people_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people',
+      one: '1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String event_prayer_prayers_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count prayers',
+      one: '1 prayer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get me_prayer_requests => 'My prayer requests';
+
+  @override
+  String get me_prayer_requests_empty_title => 'No prayer requests yet';
+
+  @override
+  String get me_prayer_requests_empty_body =>
+      'Requests you post in spaces and events will appear here';
+
+  @override
+  String get me_prayer_delete_body =>
+      'It will be removed for everyone in that space or event.';
 
   @override
   String get recitation_live_sync => 'མཉམ་སྒྲིག';
@@ -4170,6 +4273,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get timer_new_title => 'New timer';
 
   @override
+  String get timer_title_hint => 'Title...';
+
+  @override
   String get timer_edit_title => 'Edit timer';
 
   @override
@@ -4224,7 +4330,7 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get timer_create_custom_subtitle =>
-      'Set duration, bells and ambient sound';
+      'Pick a length and optional background sound';
 
   @override
   String get timer_starting => 'Starting...';
