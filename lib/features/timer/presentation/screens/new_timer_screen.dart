@@ -73,12 +73,11 @@ class _NewTimerScreenState extends ConsumerState<NewTimerScreen> {
   }
 
   /// Blank titles stay blank. Anything past the cap is cut so an older
-  /// description still fits the field and can be saved.
-  static String _clampedTitle(String value) {
-    final trimmed = value.trim();
-    if (trimmed.length <= NewTimerScreen._maxTitleLength) return trimmed;
-    return trimmed.substring(0, NewTimerScreen._maxTitleLength);
-  }
+  /// description still fits the field and can be saved. Counts visible
+  /// characters, like the field's `maxLength`, so a Tibetan or emoji title
+  /// is never shortened or split on reopen.
+  static String _clampedTitle(String value) =>
+      value.trim().characters.take(NewTimerScreen._maxTitleLength).toString();
 
   String get _timerDescription => _titleController.text.trim();
 
