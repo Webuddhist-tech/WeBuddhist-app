@@ -111,8 +111,10 @@ class UserNotifier extends StateNotifier<UserState> {
 
   /// Save profile changes to the backend (POST /users/info).
   ///
-  /// First and last name are cleared. The name shown in the app is
-  /// [displayName]. Returns an error message on failure, or null on success.
+  /// The edit screen only edits [displayName], but the current first and last
+  /// name are sent back unchanged: the backend requires both fields, and chat,
+  /// member lists and comments still show other users by first and last name.
+  /// Returns an error message on failure, or null on success.
   Future<String?> saveProfile({
     required String displayName,
     String? aboutMe,
@@ -125,8 +127,8 @@ class UserNotifier extends StateNotifier<UserState> {
   }) async {
     final result = await _updateUserInfoUseCase(
       UpdateUserInfoParams(
-        firstName: '',
-        lastName: '',
+        firstName: state.user?.firstName ?? '',
+        lastName: state.user?.lastName ?? '',
         displayName: displayName,
         aboutMe: aboutMe,
         avatarUrl: avatarUrl,
