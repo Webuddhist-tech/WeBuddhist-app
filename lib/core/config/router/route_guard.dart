@@ -21,12 +21,14 @@ class RouteGuard {
   ///
   /// [getPendingRoute] — returns the currently saved pending route.
   /// [setPendingRoute] — saves or clears the pending route (pass null to clear).
+  /// [holdSplash] — keep the splash up although auth has loaded (launch intro).
   static String? redirect(
     BuildContext context,
     GoRouterState state,
     AuthState authState, {
     required String? Function() getPendingRoute,
     required void Function(String?) setPendingRoute,
+    bool holdSplash = false,
   }) {
     final currentPath = state.fullPath ?? AppRoutes.home;
 
@@ -37,8 +39,9 @@ class RouteGuard {
       'guest=${authState.isGuest}',
     );
 
-    // Show splash while auth is loading.
-    if (authState.isLoading) return AppRoutes.splash;
+    // Show splash while auth is loading, or while the launch splash is still
+    // playing its intro (see splashHoldProvider).
+    if (authState.isLoading || holdSplash) return AppRoutes.splash;
 
     // Route based on auth state
     if (authState.isLoggedIn && !authState.isGuest) {

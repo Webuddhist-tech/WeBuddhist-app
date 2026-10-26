@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/config/router/page_transitions.dart';
 import 'package:flutter_pecha/core/config/router/route_guard.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/config/router/pending_route_provider.dart';
+import 'package:flutter_pecha/core/config/router/splash_hold_provider.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/login_page.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.dart';
@@ -91,6 +92,11 @@ final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// - Preserves deep links for post-login redirection
 /// - Automatically refreshes when auth state changes
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Re-evaluate redirect whenever auth state or the launch splash hold changes.
+  final refresh = GoRouterRefreshStream(ref.read(authProvider.notifier).stream);
+  ref.listen(splashHoldProvider, (_, __) => refresh.notifyListener());
+  ref.onDispose(refresh.dispose);
+
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.home,
@@ -101,10 +107,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     observers: ref.read(analyticsServiceProvider).routeObservers,
 
-    // Re-evaluate redirect whenever auth state changes.
-    refreshListenable: GoRouterRefreshStream(
-      ref.read(authProvider.notifier).stream,
-    ),
+    refreshListenable: refresh,
 
     // Route guard for authentication and authorization.
     // Always reads the latest auth state — do NOT capture it in the closure.
@@ -120,6 +123,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         getPendingRoute: () => ref.read(pendingRouteProvider),
         setPendingRoute:
             (route) => ref.read(pendingRouteProvider.notifier).state = route,
+        holdSplash: ref.read(splashHoldProvider),
       );
     },
 
@@ -127,7 +131,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        // Only the launch splash plays the intro and holds the route for it.
+        builder:
+            (context, state) => SplashScreen(
+              playIntro: ref.read(splashHoldProvider),
+              onIntroComplete:
+                  () => ref.read(splashHoldProvider.notifier).state = false,
+            ),
       ),
 
       // Defensive fallback for the Airbridge tracking URL if it is ever handed
