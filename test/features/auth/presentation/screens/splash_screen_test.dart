@@ -89,6 +89,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
     await tester.pump(const Duration(milliseconds: 16));
     expect(completed, isTrue);
+
+    // The logo holds still while the next screen fades in, then pulses.
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(logoWidth(tester), closeTo(144, 0.01));
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(logoWidth(tester), greaterThan(144.5));
     await tester.pump(const Duration(seconds: 1));
   });
 

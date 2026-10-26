@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/router/splash_exit_transition.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
@@ -20,7 +21,10 @@ import 'package:google_fonts/google_fonts.dart';
 /// 2000 ms  hold                                                         50 ms
 /// 2050 ms  the rest of the tagline slides in from the right            500 ms ease-out
 /// 2550 ms  hold, then [onIntroComplete]                                800 ms
+/// 3350 ms  the next screen fades in over the still splash              600 ms ease-in
 /// ```
+///
+/// The last step is the router's: see [SplashExitTransition].
 ///
 /// Both taglines ("We Buddhists practice together" / "… practice daily") grow
 /// out of the same "WeBuddhist" wordmark. The words are measured at runtime,
@@ -66,6 +70,9 @@ class _SplashScreenState extends State<SplashScreen>
     curve: Curves.easeOut,
   );
   static const _pulseDuration = Duration(milliseconds: 1600);
+
+  /// The logo stays still while the next screen fades in over the splash.
+  static const _pulseDelay = SplashExitTransition.duration;
 
   // Keep in sync with the native launch screens (60dp / 60pt logo, turned
   // 90° clockwise), so the first Flutter frame matches what they drew.
@@ -114,6 +121,7 @@ class _SplashScreenState extends State<SplashScreen>
     end: 1.05,
   ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
 
+  Timer? _pulseStart;
   bool _started = false;
   bool _completed = false;
   bool _notified = false;
@@ -140,6 +148,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _notifyIntroComplete();
+    _pulseStart?.cancel();
     _intro.dispose();
     _pulse.dispose();
     super.dispose();
@@ -153,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (_completed) return;
     _completed = true;
     // Gentle pulse while a long auth restore keeps the splash up.
-    _pulse.repeat(reverse: true);
+    _pulseStart = Timer(_pulseDelay, () => _pulse.repeat(reverse: true));
     _notifyIntroComplete();
   }
 
