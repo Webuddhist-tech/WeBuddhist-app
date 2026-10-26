@@ -154,12 +154,14 @@ class SeriesRemoteDatasource {
       final status = response.statusCode ?? 0;
       if (status == 204 || (status >= 200 && status < 300)) return;
       _logger.error('Failed to enroll in series $seriesId: $status');
-      throw _enrollStatusToException(status);
+      throw _enrollStatusToException(status, response.requestOptions);
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       if (status == 409 || status == 204) return;
       _logger.error('Dio error in enrollInSeries', e);
-      if (status != null) throw _enrollStatusToException(status);
+      if (status != null) {
+        throw _enrollStatusToException(status, e.requestOptions);
+      }
       throw _dioToException(e, 'Failed to enroll in series');
     }
   }
@@ -167,12 +169,22 @@ class SeriesRemoteDatasource {
   /// Like [_statusToException], but tells apart the answers that mean the
   /// server will never accept this enrollment (400, 403, 422), so the offline
   /// queue can drop them instead of retrying forever.
-  Exception _enrollStatusToException(int status) {
+  ///
+  /// A 403 on a request sent without `Authorization` is not a refusal: the
+  /// backend answers a missing header with 403, which happens when reading
+  /// the token failed for a moment. That one is an auth problem, so a queued
+  /// enrollment stays queued and retries later.
+  Exception _enrollStatusToException(int status, RequestOptions request) {
     const label = 'Failed to enroll in series';
     if (status == 400 || status == 422) {
       return ValidationException('$label: $status');
     }
-    if (status == 403) return AuthorizationException('$label: $status');
+    if (status == 403) {
+      if (!request.headers.containsKey('Authorization')) {
+        return const AuthenticationException('Unauthorized');
+      }
+      return AuthorizationException('$label: $status');
+    }
     return _statusToException(status, label);
   }
 

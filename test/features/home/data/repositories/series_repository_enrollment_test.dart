@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -54,6 +56,23 @@ class _FakeRemote extends SeriesRemoteDatasource {
     final error = errors[seriesId];
     if (error != null) throw error;
   }
+}
+
+/// Answers every request with [status] and no body.
+class _StatusAdapter implements HttpClientAdapter {
+  _StatusAdapter(this.status);
+
+  final int status;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async => ResponseBody.fromString('', status);
+
+  @override
+  void close({bool force = false}) {}
 }
 
 void main() {
@@ -220,6 +239,17 @@ void main() {
       expect(local.enrollments, {'b'});
     });
 
+    test('an auth error keeps everything queued', () async {
+      local.pending = {'a', 'b'};
+      local.enrollments = {'a', 'b'};
+      remote.errors['a'] = const AuthenticationException('Unauthorized');
+
+      await repository.flushPendingEnrollments();
+
+      expect(local.pending, {'a', 'b'});
+      expect(local.enrollments, {'a', 'b'});
+    });
+
     test('still offline stops and keeps everything queued', () async {
       local.pending = {'a', 'b'};
       remote.errors['a'] = const NetworkException('No internet connection');
@@ -228,6 +258,28 @@ void main() {
 
       expect(remote.calls, hasLength(1));
       expect(local.pending, {'a', 'b'});
+    });
+  });
+
+  group('SeriesRemoteDatasource.enrollInSeries 403', () {
+    SeriesRemoteDatasource remoteAnswering403({String? token}) {
+      final dio = Dio()..httpClientAdapter = _StatusAdapter(403);
+      if (token != null) dio.options.headers['Authorization'] = 'Bearer $token';
+      return SeriesRemoteDatasource(dio: dio);
+    }
+
+    test('without a bearer is an auth error, so it stays queued', () async {
+      await expectLater(
+        remoteAnswering403().enrollInSeries('s1'),
+        throwsA(isA<AuthenticationException>()),
+      );
+    });
+
+    test('with a bearer is a refusal', () async {
+      await expectLater(
+        remoteAnswering403(token: 't').enrollInSeries('s1'),
+        throwsA(isA<AuthorizationException>()),
+      );
     });
   });
 }
