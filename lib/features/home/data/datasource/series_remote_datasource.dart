@@ -143,30 +143,37 @@ class SeriesRemoteDatasource {
   /// Endpoint: POST /users/me/series
   /// Enrolls the authenticated user in a series. Backend auto-enrolls the
   /// user in every plan that belongs to the series.
-  Future<void> enrollInSeries(
-    String seriesId, {
-    String? groupId,
-  }) async {
+  Future<void> enrollInSeries(String seriesId, {String? groupId}) async {
     try {
       final data = <String, dynamic>{'series_id': seriesId};
       if (groupId != null && groupId.isNotEmpty) {
         data['group_id'] = groupId;
       }
 
-      final response = await dio.post(
-        '/users/me/series',
-        data: data,
-      );
+      final response = await dio.post('/users/me/series', data: data);
       final status = response.statusCode ?? 0;
       if (status == 204 || (status >= 200 && status < 300)) return;
       _logger.error('Failed to enroll in series $seriesId: $status');
-      throw _statusToException(status, 'Failed to enroll in series');
+      throw _enrollStatusToException(status);
     } on DioException catch (e) {
       final status = e.response?.statusCode;
       if (status == 409 || status == 204) return;
       _logger.error('Dio error in enrollInSeries', e);
+      if (status != null) throw _enrollStatusToException(status);
       throw _dioToException(e, 'Failed to enroll in series');
     }
+  }
+
+  /// Like [_statusToException], but tells apart the answers that mean the
+  /// server will never accept this enrollment (400, 403, 422), so the offline
+  /// queue can drop them instead of retrying forever.
+  Exception _enrollStatusToException(int status) {
+    const label = 'Failed to enroll in series';
+    if (status == 400 || status == 422) {
+      return ValidationException('$label: $status');
+    }
+    if (status == 403) return AuthorizationException('$label: $status');
+    return _statusToException(status, label);
   }
 
   /// Endpoint: GET /users/me/series

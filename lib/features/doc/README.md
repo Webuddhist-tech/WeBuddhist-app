@@ -25,7 +25,7 @@ Read both doc/README.md files, then …
 | [auth](../auth/doc/README.md) | Auth0 + profile | App-critical | Consumed everywhere |
 | [calendar](../calendar/doc/README.md) | Tibetan calendar | Production | Hybrid offline engine |
 | [connect](../connect/doc/README.md) | Social hub tab | Production | Minimal barrel |
-| feedback | Feedback | Production | No doc yet |
+| [feedback](../feedback/doc/README.md) | Help & contact form | Production | Backend posts into the Team chat |
 | [group_chat](../group_chat/doc/README.md) | Group chat | Production | |
 | [explore](../explore/doc/README.md) | Explore tab | **Placeholder** | Not in nav |
 | [group_profile](../group_profile/doc/README.md) | Group pages | Production | Heavy provider hub |

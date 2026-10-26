@@ -58,7 +58,7 @@ plans/
 - Mutations: `completeTaskFutureProvider`, `deleteTaskFutureProvider`, `completeSubTaskFutureProvider`, `userPlanSubscribeFutureProvider`, `userPlanUnsubscribeFutureProvider`
 - `planDaysByPlanIdFutureProvider` (in `plan_days_providers.dart`), author providers
 - DI in `use_case_providers.dart`
-- User-scoped providers reset on auth change via `auth/.../user_session_bootstrap.dart` (currently only `userPlansFutureProvider` from this feature)
+- User-scoped providers reset on auth change via `auth/.../user_session_bootstrap.dart` (`userPlansFutureProvider` and `myPlansPaginatedProvider` from this feature)
 
 ## Data sources
 

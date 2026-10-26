@@ -39,10 +39,7 @@ class PlanItem {
   }
 
   /// Convert to FeaturedContent domain entity.
-  FeaturedContent toEntity({
-    required String id,
-    String? targetId,
-  }) {
+  FeaturedContent toEntity({required String id, String? targetId}) {
     // Map contentType to FeaturedContentType
     FeaturedContentType type;
     switch (contentType.toLowerCase()) {
@@ -95,7 +92,8 @@ class PlanItem {
       label: featuredContent.title,
       contentType: contentTypeStr,
       content: featuredContent.description,
-      imageUrl: featuredContent.imageUrl.isNotEmpty ? featuredContent.imageUrl : null,
+      imageUrl:
+          featuredContent.imageUrl.isNotEmpty ? featuredContent.imageUrl : null,
       author: null, // Not mapped from FeaturedContent
     );
   }

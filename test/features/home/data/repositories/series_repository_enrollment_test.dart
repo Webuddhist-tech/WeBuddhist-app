@@ -44,9 +44,13 @@ class _FakeRemote extends SeriesRemoteDatasource {
   final Map<String, Exception> errors = {};
   final List<(String, String?)> calls = [];
 
+  /// Runs at the start of every enroll call, while the request is in flight.
+  void Function()? onCall;
+
   @override
   Future<void> enrollInSeries(String seriesId, {String? groupId}) async {
     calls.add((seriesId, groupId));
+    onCall?.call();
     final error = errors[seriesId];
     if (error != null) throw error;
   }
@@ -72,16 +76,18 @@ void main() {
       expect(local.enrollments, {'s1'});
     });
 
-    test('offline personal enrollment stays queued and reports success',
-        () async {
-      remote.errors['s1'] = const NetworkException('No internet connection');
+    test(
+      'offline personal enrollment stays queued and reports success',
+      () async {
+        remote.errors['s1'] = const NetworkException('No internet connection');
 
-      final result = await repository.enrollInSeries('s1');
+        final result = await repository.enrollInSeries('s1');
 
-      expect(result.isRight(), isTrue);
-      expect(local.pending, {'s1'});
-      expect(local.enrollments, {'s1'});
-    });
+        expect(result.isRight(), isTrue);
+        expect(local.pending, {'s1'});
+        expect(local.enrollments, {'s1'});
+      },
+    );
 
     test('a server rejection is reported and undone locally', () async {
       remote.errors['s1'] = const ServerException('Failed: 500');
@@ -99,6 +105,70 @@ void main() {
       final result = await repository.enrollInSeries('s1', groupId: 'g1');
 
       expect(result.getLeft().toNullable(), isA<NetworkFailure>());
+      expect(local.pending, isEmpty);
+      expect(local.enrollments ?? const <String>{}, isEmpty);
+    });
+
+    test('a failed group attempt keeps a queued personal enrollment', () async {
+      local.pending = {'s1'};
+      local.enrollments = {'s1'};
+      remote.errors['s1'] = const ServerException('Failed: 500');
+
+      final result = await repository.enrollInSeries('s1', groupId: 'g1');
+
+      expect(result.isLeft(), isTrue);
+      expect(local.pending, {'s1'});
+      expect(local.enrollments, {'s1'});
+    });
+
+    test('a group enrollment is never in the queue while it is sent', () async {
+      Set<String>? pendingDuringRequest;
+      remote.onCall = () => pendingDuringRequest = {...local.pending};
+
+      final result = await repository.enrollInSeries('s1', groupId: 'g1');
+
+      expect(result.isRight(), isTrue);
+      expect(pendingDuringRequest, isEmpty);
+      expect(remote.calls, [('s1', 'g1')]);
+      expect(local.enrollments, {'s1'});
+    });
+
+    test(
+      'a group enrollment that succeeds clears a queued personal one',
+      () async {
+        local.pending = {'s1'};
+        local.enrollments = {'s1'};
+
+        await repository.enrollInSeries('s1', groupId: 'g1');
+
+        expect(local.pending, isEmpty);
+        expect(local.enrollments, {'s1'});
+      },
+    );
+
+    test(
+      'a server error keeps an enrollment that was already queued',
+      () async {
+        local.pending = {'s1'};
+        local.enrollments = {'s1'};
+        remote.errors['s1'] = const ServerException('Failed: 500');
+
+        final result = await repository.enrollInSeries('s1');
+
+        expect(result.isLeft(), isTrue);
+        expect(local.pending, {'s1'});
+        expect(local.enrollments, {'s1'});
+      },
+    );
+
+    test('a refusal drops an enrollment that was already queued', () async {
+      local.pending = {'s1'};
+      local.enrollments = {'s1'};
+      remote.errors['s1'] = const AuthorizationException('Failed: 403');
+
+      final result = await repository.enrollInSeries('s1');
+
+      expect(result.getLeft().toNullable(), isA<AuthorizationFailure>());
       expect(local.pending, isEmpty);
       expect(local.enrollments, isEmpty);
     });
@@ -125,16 +195,29 @@ void main() {
       expect(local.pending, {'a'});
     });
 
-    test('a deleted series is dropped from the queue and enrollments',
-        () async {
-      local.pending = {'gone'};
-      local.enrollments = {'gone'};
-      remote.errors['gone'] = const NotFoundException('Series not found');
+    test(
+      'a deleted series is dropped from the queue and enrollments',
+      () async {
+        local.pending = {'gone'};
+        local.enrollments = {'gone'};
+        remote.errors['gone'] = const NotFoundException('Series not found');
+
+        await repository.flushPendingEnrollments();
+
+        expect(local.pending, isEmpty);
+        expect(local.enrollments, isEmpty);
+      },
+    );
+
+    test('a refused series is dropped instead of retried forever', () async {
+      local.pending = {'a', 'b'};
+      local.enrollments = {'a', 'b'};
+      remote.errors['a'] = const ValidationException('Failed: 400');
 
       await repository.flushPendingEnrollments();
 
       expect(local.pending, isEmpty);
-      expect(local.enrollments, isEmpty);
+      expect(local.enrollments, {'b'});
     });
 
     test('still offline stops and keeps everything queued', () async {

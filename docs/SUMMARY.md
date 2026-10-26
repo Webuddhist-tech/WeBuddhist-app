@@ -60,7 +60,7 @@ Other docs inside feature folders:
 
 | Doc | Purpose | Status |
 | --- | --- | --- |
-| [lib/core/config/router/README.md](../lib/core/config/router/README.md) | Router and protected routes | partly historical (mentions `go_router.dart`, `api_client_provider.dart`) |
+| [lib/core/config/router/README.md](../lib/core/config/router/README.md) | Router, redirect guard and route table | current |
 | [lib/core/config/locale/README.md](../lib/core/config/locale/README.md) | UI locale vs content language | current |
 | [lib/core/theme/FONT_SYSTEM_GUIDE.md](../lib/core/theme/FONT_SYSTEM_GUIDE.md) | Font system, Tibetan vertical metrics | current |
 | [assets/fonts/README.md](../assets/fonts/README.md) | Patched Tibetan font builds and how to rebuild them | current |

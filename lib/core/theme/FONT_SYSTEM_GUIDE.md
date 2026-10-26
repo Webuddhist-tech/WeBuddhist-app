@@ -181,8 +181,9 @@ AppConfig.tibetanLanguageCode: LanguageFontConfig(
 Then declare the family in `pubspec.yaml` under `flutter: fonts:` (see the
 existing `NotoSerifTibetanWB` / `WBTibetanContent` entries).
 
-A Google font also needs a case in `AppFontConfig._getGoogleFontFamilyName`;
-unknown names silently fall back to Inter.
+A Google font also needs a case in all three switches in `AppFontConfig`:
+`_getGoogleFontFamilyName`, `_getGoogleFontTextTheme` and `_getGoogleFontTextStyle`.
+Each one silently falls back to Inter for a name it does not know.
 
 ## Tibetan vertical metrics
 

@@ -45,7 +45,9 @@ class VerseOfDayRemoteDatasource {
       if (response.statusCode != 200) {
         throw _statusToException(response.statusCode, 'Failed to load likes');
       }
-      return VerseOfDayLikesModel.fromJson(response.data as Map<String, dynamic>);
+      return VerseOfDayLikesModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
       _logger.error('Dio error in fetchLikes', e);
       throw _dioToException(e, 'Failed to load likes');

@@ -17,11 +17,7 @@ class TodayEventsRemoteDatasource {
     try {
       final response = await dio.get(
         '/events/today',
-        queryParameters: {
-          'language': language,
-          'skip': skip,
-          'limit': limit,
-        },
+        queryParameters: {'language': language, 'skip': skip, 'limit': limit},
       );
 
       if (response.statusCode == 200) {
@@ -31,7 +27,10 @@ class TodayEventsRemoteDatasource {
       }
 
       _logger.error('Failed to load today events: ${response.statusCode}');
-      throw _statusToException(response.statusCode, 'Failed to load today events');
+      throw _statusToException(
+        response.statusCode,
+        'Failed to load today events',
+      );
     } on DioException catch (e) {
       _logger.error('Dio error in fetchTodayEvents', e);
       throw _dioToException(e, 'Failed to load today events');

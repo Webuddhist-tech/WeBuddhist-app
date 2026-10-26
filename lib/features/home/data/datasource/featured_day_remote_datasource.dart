@@ -29,7 +29,9 @@ class FeaturedDayRemoteDatasource {
         } else if (response.statusCode == 429) {
           throw const RateLimitException('Too many requests');
         } else {
-          throw ServerException('Failed to fetch featured day: ${response.statusCode}');
+          throw ServerException(
+            'Failed to fetch featured day: ${response.statusCode}',
+          );
         }
       }
     } on DioException catch (e) {
