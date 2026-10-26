@@ -207,4 +207,25 @@ void main() {
     expect(find.text('No prayers to find yet'), findsOneWidget);
     expect(find.text('Skip'), findsNothing);
   });
+
+  testWidgets('a deleted card is swapped for another pick', (tester) async {
+    final repository = _FakeRepository(
+      history: [_prayer('a'), _prayer('b'), _prayer('c')],
+    );
+    await _pump(tester, repository);
+    await _settle(tester);
+    expect(find.text('May all be well, a'), findsOneWidget);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(RandomPrayerOverlay)),
+    );
+    container.read(prayerRequestsProvider(_scope).notifier).applyDeletion('a');
+    await tester.pump();
+    expect(find.text('Finding a prayer...'), findsOneWidget);
+    expect(repository.randomExcludes.last, ['a']);
+
+    await _settle(tester);
+    expect(find.text('May all be well, a'), findsNothing);
+    expect(find.text('May all be well, b'), findsOneWidget);
+  });
 }

@@ -83,6 +83,15 @@ class _RandomPrayerOverlayState extends ConsumerState<RandomPrayerOverlay> {
   @override
   void initState() {
     super.initState();
+    // While the overlay is open only a deletion clears the spotlight, so a
+    // shown card leaving it means the request is gone: pick another.
+    ref.listenManual(prayerRequestsProvider(widget.scope), (previous, next) {
+      final shown = _card;
+      if (_phase != _Phase.found || shown == null) return;
+      if (previous?.spotlight?.id == shown.id && next.spotlight == null) {
+        unawaited(_pick());
+      }
+    });
     unawaited(_pick());
   }
 
@@ -142,6 +151,13 @@ class _RandomPrayerOverlayState extends ConsumerState<RandomPrayerOverlay> {
       }),
       (picked) {
         _shown.add(picked.id);
+        // Deleted while the deck was settling: deal again instead.
+        final spotlight =
+            ref.read(prayerRequestsProvider(widget.scope)).spotlight;
+        if (spotlight?.id != picked.id) {
+          unawaited(_pick());
+          return;
+        }
         unawaited(HapticFeedback.mediumImpact());
         setState(() {
           _card = picked;
