@@ -20,7 +20,7 @@ class PracticeAccumulationsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final language = ref.watch(localeProvider).languageCode;
+    final language = ref.watch(contentLanguageProvider);
     final accumulatorsAsync = ref.watch(practiceExploreAccumulatorsProvider);
 
     return accumulatorsAsync.when(
