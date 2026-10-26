@@ -2240,6 +2240,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_accumulator_leaderboard => 'Leaderboard';
 
   @override
+  String get group_accumulator_everyone => 'Everyone';
+
+  @override
+  String get group_accumulator_me => 'Me';
+
+  @override
   String get group_accumulator_my_contributions => 'My contributions';
 
   @override

@@ -17,6 +17,8 @@ class GroupAccumulatorModel {
   final int totalCount;
   final int totalTodayCount;
   final Map<String, dynamic>? userJson;
+  final String? description;
+  final List<GroupAccumulatorLinkModel> links;
 
   GroupAccumulatorModel({
     required this.id,
@@ -34,6 +36,8 @@ class GroupAccumulatorModel {
     this.totalCount = 0,
     this.totalTodayCount = 0,
     this.userJson,
+    this.description,
+    this.links = const [],
   });
 
   factory GroupAccumulatorModel.fromJson(Map<String, dynamic> json) {
@@ -53,6 +57,13 @@ class GroupAccumulatorModel {
       totalCount: (json['total_count'] as num?)?.toInt() ?? 0,
       totalTodayCount: (json['total_today_count'] as num?)?.toInt() ?? 0,
       userJson: json['user'] as Map<String, dynamic>?,
+      description: json['description'] as String?,
+      links:
+          (json['links'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(GroupAccumulatorLinkModel.fromJson)
+              .toList() ??
+          const [],
     );
   }
 
@@ -64,8 +75,7 @@ class GroupAccumulatorModel {
       mantraId: mantraId,
       groupId: groupId,
       title: title,
-      image:
-          imageJson != null ? ResponsiveImage.fromJson(imageJson) : null,
+      image: imageJson != null ? ResponsiveImage.fromJson(imageJson) : null,
       targetCount: targetCount,
       startDate: startDate,
       endDate: endDate,
@@ -83,8 +93,7 @@ class GroupAccumulatorModel {
       mantraId: mantraId,
       groupId: groupId,
       title: title,
-      image:
-          imageJson != null ? ResponsiveImage.fromJson(imageJson) : null,
+      image: imageJson != null ? ResponsiveImage.fromJson(imageJson) : null,
       targetCount: targetCount,
       startDate: startDate,
       endDate: endDate,
@@ -98,12 +107,54 @@ class GroupAccumulatorModel {
                 userJson!,
               ).toEntity()
               : null,
+      description: description,
+      links: links.map((link) => link.toEntity()).toList(),
     );
   }
 
   static DateTime? _parseDate(Object? value) {
     if (value is! String || value.isEmpty) return null;
     return DateTime.tryParse(value);
+  }
+}
+
+class GroupAccumulatorLinkModel {
+  final String id;
+  final String url;
+  final String linkType;
+  final String? videoId;
+  final String title;
+  final int displayOrder;
+
+  const GroupAccumulatorLinkModel({
+    required this.id,
+    required this.url,
+    required this.linkType,
+    this.videoId,
+    this.title = '',
+    this.displayOrder = 0,
+  });
+
+  factory GroupAccumulatorLinkModel.fromJson(Map<String, dynamic> json) {
+    return GroupAccumulatorLinkModel(
+      id: json['id'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+      linkType: json['link_type'] as String? ?? '',
+      videoId: json['video_id'] as String?,
+      title: json['title'] as String? ?? '',
+      displayOrder: (json['display_order'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  GroupAccumulatorLink toEntity() {
+    return GroupAccumulatorLink(
+      id: id,
+      url: url,
+      linkType: linkType,
+      videoId: videoId,
+      title: title,
+      displayOrder: displayOrder,
+    );
   }
 }
 
@@ -241,9 +292,7 @@ class GroupAccumulatorMembersPageModel {
     required this.limit,
   });
 
-  factory GroupAccumulatorMembersPageModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory GroupAccumulatorMembersPageModel.fromJson(Map<String, dynamic> json) {
     return GroupAccumulatorMembersPageModel(
       members:
           (json['members'] as List<dynamic>?)

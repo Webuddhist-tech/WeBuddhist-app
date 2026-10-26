@@ -794,6 +794,8 @@
   "group_accumulator_join_error": "གྲངས་གསོག་ལ་ཞུགས་མ་ཐུབ། ཡང་བསྐྱར་ཚོད་ལྟ་གནང་རོགས།",
   "group_accumulator_participants": "མཉམ་ཞུགས་པ་ {count}",
   "group_accumulator_leaderboard": "ཨང་རིམ།",
+  "group_accumulator_everyone": "ཚང་མ།",
+  "group_accumulator_me": "ང་།",
   "group_accumulator_my_contributions": "ངའི་བསགས་གྲངས།",
   "group_accumulator_recited": "བཟླས་པ།",
   "group_accumulator_total": "ཁྱོན་བསྡོམས།",

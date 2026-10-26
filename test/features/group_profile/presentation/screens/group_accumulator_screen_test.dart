@@ -112,7 +112,7 @@ void main() {
     });
 
     // Rebuilds do not report again.
-    await tester.tap(find.text('My Contributions'));
+    await tester.tap(find.text('About'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
