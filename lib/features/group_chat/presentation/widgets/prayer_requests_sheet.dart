@@ -301,9 +301,11 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   }
 
   /// Best-effort: the room also lists under chats, so keep its badge clear.
+  /// Events only: a space's room also holds its chat, and reading prayer
+  /// requests must not clear chat messages the member has not seen.
   Future<void> _markRoomRead() async {
     final roomId = _roomId;
-    if (_disposed || roomId == null) return;
+    if (_disposed || roomId == null || !widget.scope.isEvent) return;
     await _providers.read(groupChatRepositoryProvider).markRoomRead(roomId);
   }
 
