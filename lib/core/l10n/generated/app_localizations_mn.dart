@@ -1637,6 +1637,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get edit_profile_last_name => 'Овог';
 
   @override
+  String get edit_profile_display_name => 'Харагдах нэр';
+
+  @override
   String get edit_profile_bio => 'Танилцуулга';
 
   @override

@@ -2974,6 +2974,12 @@ abstract class AppLocalizations {
   /// **'Last name'**
   String get edit_profile_last_name;
 
+  /// No description provided for @edit_profile_display_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get edit_profile_display_name;
+
   /// No description provided for @edit_profile_bio.
   ///
   /// In en, this message translates to:

@@ -1625,6 +1625,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get edit_profile_last_name => 'Last name';
 
   @override
+  String get edit_profile_display_name => 'Display name';
+
+  @override
   String get edit_profile_bio => 'Bio';
 
   @override

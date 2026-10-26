@@ -1648,6 +1648,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get edit_profile_last_name => 'थर';
 
   @override
+  String get edit_profile_display_name => 'प्रदर्शन नाम';
+
+  @override
   String get edit_profile_bio => 'परिचय';
 
   @override

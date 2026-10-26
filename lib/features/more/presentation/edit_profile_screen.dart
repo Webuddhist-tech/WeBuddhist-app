@@ -36,8 +36,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   late final TextEditingController _usernameCtrl;
-  late final TextEditingController _firstNameCtrl;
-  late final TextEditingController _lastNameCtrl;
+  late final TextEditingController _displayNameCtrl;
   late final TextEditingController _bioCtrl;
 
   String? _originalUsername;
@@ -45,8 +44,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   UsernameState _usernameState = UsernameState.idle;
   List<String> _usernameSuggestions = [];
   String? _usernameValidationMessage;
-  String? _firstNameValidationMessage;
-  String? _lastNameValidationMessage;
+  String? _displayNameValidationMessage;
   Timer? _usernameDebounce;
 
   bool _isRefreshing = false;
@@ -70,8 +68,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _originalUsername = user?.username;
     _avatarUrlAtRefreshStart = user?.avatarUrl;
     _usernameCtrl = TextEditingController(text: user?.username ?? '');
-    _firstNameCtrl = TextEditingController(text: user?.firstName ?? '');
-    _lastNameCtrl = TextEditingController(text: user?.lastName ?? '');
+    _displayNameCtrl = TextEditingController(text: user?.visibleName ?? '');
     _bioCtrl = TextEditingController(text: user?.aboutMe ?? '');
     _bioCtrl.addListener(() => setState(() {}));
 
@@ -89,8 +86,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void dispose() {
     _usernameDebounce?.cancel();
     _usernameCtrl.dispose();
-    _firstNameCtrl.dispose();
-    _lastNameCtrl.dispose();
+    _displayNameCtrl.dispose();
     _bioCtrl.dispose();
     super.dispose();
   }
@@ -117,26 +113,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return switch (PersonNameValidator.validate(name)) {
       PersonNameValidationError.tooShort => l10n.person_name_min_length,
       PersonNameValidationError.tooLong => l10n.person_name_max_length,
-      PersonNameValidationError.invalidCharacters => l10n.person_name_invalid_chars,
+      PersonNameValidationError.invalidCharacters =>
+        l10n.person_name_invalid_chars,
       null => null,
     };
   }
 
-  void _onFirstNameChanged(String value) {
+  void _onDisplayNameChanged(String value) {
     setState(
-      () => _firstNameValidationMessage = _validatePersonName(
-        value,
-        AppLocalizations.of(context)!,
-      ),
-    );
-  }
-
-  void _onLastNameChanged(String value) {
-    setState(
-      () => _lastNameValidationMessage = _validatePersonName(
-        value,
-        AppLocalizations.of(context)!,
-      ),
+      () =>
+          _displayNameValidationMessage = _validatePersonName(
+            value,
+            AppLocalizations.of(context)!,
+          ),
     );
   }
 
@@ -228,20 +217,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     // Block save if username has a conflict or failed frontend validation.
     if (_usernameState == UsernameState.conflict) return;
     if (_usernameState == UsernameState.invalid) return;
-    if (_firstNameValidationMessage != null ||
-        _lastNameValidationMessage != null) {
-      return;
-    }
+    if (_displayNameValidationMessage != null) return;
 
     final l10n = AppLocalizations.of(context)!;
 
-    final firstNameError = _validatePersonName(_firstNameCtrl.text, l10n);
-    final lastNameError = _validatePersonName(_lastNameCtrl.text, l10n);
-    if (firstNameError != null || lastNameError != null) {
-      setState(() {
-        _firstNameValidationMessage = firstNameError;
-        _lastNameValidationMessage = lastNameError;
-      });
+    final displayNameError = _validatePersonName(_displayNameCtrl.text, l10n);
+    if (displayNameError != null) {
+      setState(() => _displayNameValidationMessage = displayNameError);
       return;
     }
 
@@ -295,8 +277,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final error = await ref
         .read(userProvider.notifier)
         .saveProfile(
-          firstName: PersonNameValidator.sanitize(_firstNameCtrl.text),
-          lastName: PersonNameValidator.sanitize(_lastNameCtrl.text),
+          displayName:
+              PersonNameValidator.sanitize(_displayNameCtrl.text) ?? '',
           aboutMe: _bioCtrl.text.trim().isEmpty ? null : _bioCtrl.text.trim(),
           avatarUrl: avatarUrlToSend,
         );
@@ -545,8 +527,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _usernameState != UsernameState.checking &&
       _usernameState != UsernameState.conflict &&
       _usernameState != UsernameState.invalid &&
-      _firstNameValidationMessage == null &&
-      _lastNameValidationMessage == null;
+      _displayNameValidationMessage == null;
 
   @override
   Widget build(BuildContext context) {
@@ -569,8 +550,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
         _originalUsername = user.username;
         _usernameCtrl.text = user.username ?? '';
-        _firstNameCtrl.text = user.firstName ?? '';
-        _lastNameCtrl.text = user.lastName ?? '';
+        _displayNameCtrl.text = user.visibleName;
         _bioCtrl.text = user.aboutMe ?? '';
       }
       setState(() => _isRefreshing = false);
@@ -724,6 +704,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 16),
               ],
 
+              // ── Display name ──────────────────────────────────────────
+              _buildNameField(
+                controller: _displayNameCtrl,
+                label: AppLocalizations.of(context)!.edit_profile_display_name,
+                validationMessage: _displayNameValidationMessage,
+                onChanged: _onDisplayNameChanged,
+                isDark: isDark,
+                inputBorder: inputBorder,
+                focusedBorder: focusedBorder,
+              ),
+
+              const SizedBox(height: 20),
+
               // ── Username ──────────────────────────────────────────────
               UsernameFormField(
                 controller: _usernameCtrl,
@@ -736,42 +729,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
 
               const SizedBox(height: 20),
-
-              // ── First / Last Name row ─────────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _buildNameField(
-                      controller: _firstNameCtrl,
-                      label: AppLocalizations.of(
-                        context,
-                      )!.edit_profile_first_name,
-                      validationMessage: _firstNameValidationMessage,
-                      onChanged: _onFirstNameChanged,
-                      isDark: isDark,
-                      inputBorder: inputBorder,
-                      focusedBorder: focusedBorder,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildNameField(
-                      controller: _lastNameCtrl,
-                      label: AppLocalizations.of(
-                        context,
-                      )!.edit_profile_last_name,
-                      validationMessage: _lastNameValidationMessage,
-                      onChanged: _onLastNameChanged,
-                      isDark: isDark,
-                      inputBorder: inputBorder,
-                      focusedBorder: focusedBorder,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
 
               // ── Bio ───────────────────────────────────────────────────
               TextField(
@@ -886,13 +843,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           controller: controller,
           onChanged: onChanged,
           maxLength: PersonNameValidator.maxLength,
-          buildCounter: (
-            context, {
-            required currentLength,
-            required isFocused,
-            required maxLength,
-          }) =>
-              const SizedBox.shrink(),
+          buildCounter:
+              (
+                context, {
+                required currentLength,
+                required isFocused,
+                required maxLength,
+              }) => const SizedBox.shrink(),
           decoration: InputDecoration(
             labelText: label,
             labelStyle: TextStyle(color: AppColors.grey500),

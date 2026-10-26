@@ -1635,6 +1635,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get edit_profile_last_name => 'अंतिम नाम';
 
   @override
+  String get edit_profile_display_name => 'प्रदर्शन नाम';
+
+  @override
   String get edit_profile_bio => 'बायो';
 
   @override

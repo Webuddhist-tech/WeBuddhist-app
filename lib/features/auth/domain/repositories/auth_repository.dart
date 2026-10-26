@@ -66,6 +66,7 @@ abstract class AuthRepository {
   Future<Either<Failure, User>> updateUserInfo({
     String? firstName,
     String? lastName,
+    String? displayName,
     String? title,
     String? organization,
     String? location,

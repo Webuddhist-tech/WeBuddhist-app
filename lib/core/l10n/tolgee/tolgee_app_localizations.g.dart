@@ -3174,6 +3174,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get edit_profile_display_name => TolgeeBridge.get(
+    localeName,
+    'edit_profile_display_name',
+    () => _fallback.edit_profile_display_name,
+  );
+
+  @override
   String get edit_profile_bio => TolgeeBridge.get(
     localeName,
     'edit_profile_bio',

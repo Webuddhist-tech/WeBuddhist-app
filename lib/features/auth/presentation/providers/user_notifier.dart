@@ -64,7 +64,7 @@ class UserNotifier extends StateNotifier<UserState> {
         _loadFromLocalCache();
       },
       (user) {
-        _logger.info('User data loaded from API: ${user.displayName}');
+        _logger.info('User data loaded from API: ${user.fullName}');
         _appliedSequence = sequence;
         state = UserState.loaded(user);
         _cacheUserLocally(user);
@@ -85,7 +85,7 @@ class UserNotifier extends StateNotifier<UserState> {
         state = state.copyWith(errorMessage: 'Failed to refresh user data');
       },
       (user) {
-        _logger.debug('User data refreshed: ${user.displayName}');
+        _logger.debug('User data refreshed: ${user.fullName}');
         _appliedSequence = sequence;
         state = UserState.loaded(user);
         _cacheUserLocally(user);
@@ -102,7 +102,7 @@ class UserNotifier extends StateNotifier<UserState> {
       // Cache locally
       await _cacheUserLocally(updatedUser);
 
-      _logger.debug('User data updated: ${updatedUser.displayName}');
+      _logger.debug('User data updated: ${updatedUser.fullName}');
     } catch (e) {
       _logger.error('Error updating user', e);
       state = state.copyWith(errorMessage: 'Failed to update user data');
@@ -111,10 +111,12 @@ class UserNotifier extends StateNotifier<UserState> {
 
   /// Save profile changes to the backend (POST /users/info).
   ///
+  /// The edit screen only edits [displayName], but the current first and last
+  /// name are sent back unchanged: the backend requires both fields, and chat,
+  /// member lists and comments still show other users by first and last name.
   /// Returns an error message on failure, or null on success.
   Future<String?> saveProfile({
-    String? firstName,
-    String? lastName,
+    required String displayName,
     String? aboutMe,
     String? avatarUrl,
     String? title,
@@ -125,8 +127,9 @@ class UserNotifier extends StateNotifier<UserState> {
   }) async {
     final result = await _updateUserInfoUseCase(
       UpdateUserInfoParams(
-        firstName: firstName,
-        lastName: lastName,
+        firstName: state.user?.firstName ?? '',
+        lastName: state.user?.lastName ?? '',
+        displayName: displayName,
         aboutMe: aboutMe,
         avatarUrl: avatarUrl,
         title: title,
@@ -143,7 +146,7 @@ class UserNotifier extends StateNotifier<UserState> {
         return failure.message;
       },
       (updatedUser) {
-        _logger.info('Profile saved: ${updatedUser.displayName}');
+        _logger.info('Profile saved: ${updatedUser.fullName}');
         state = UserState.loaded(updatedUser);
         _cacheUserLocally(updatedUser);
         return null;
@@ -164,7 +167,8 @@ class UserNotifier extends StateNotifier<UserState> {
         return null;
       },
       (usernameResult) {
-        if (usernameResult.isAvailable && usernameResult.updatedUsername != null) {
+        if (usernameResult.isAvailable &&
+            usernameResult.updatedUsername != null) {
           // Optimistically update local user state with the confirmed username.
           if (state.user != null) {
             final updated = state.user!.copyWith(
@@ -223,7 +227,7 @@ class UserNotifier extends StateNotifier<UserState> {
       if (localUserData != null) {
         final userModel = UserModel.fromJson(localUserData);
         final user = userModel.toEntity();
-        _logger.debug('Loaded user from cache: ${user.displayName}');
+        _logger.debug('Loaded user from cache: ${user.fullName}');
         state = UserState.loaded(user);
       } else {
         _logger.debug('No user data in cache');

@@ -567,6 +567,7 @@
   "edit_profile_save": "ཉོར།",
   "edit_profile_first_name": "དངོས་མིང་།",
   "edit_profile_last_name": "རུས་མིང་།",
+  "edit_profile_display_name": "མངོན་མིང་།",
   "edit_profile_bio": "རང་ངོ་སྤྲོད།",
   "edit_profile_bio_hint": "ཁྱེད་ཀྱི་ངོ་སྤྲོད་སྙིང་བསྡུས་ཤིག་ཕྲིས།",
   "edit_profile_delete_account": "མིང་ཐོ་སུབས།",

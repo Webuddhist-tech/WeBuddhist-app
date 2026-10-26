@@ -866,9 +866,7 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
                     isSending: _sending,
                     onSubmit: _send,
                     avatarUrl: user?.avatarUrl,
-                    displayName:
-                        joinChatName(user?.firstName, user?.lastName) ??
-                        user?.email,
+                    displayName: user?.visibleNameOrNull ?? user?.email,
                   ),
                 ],
               )
