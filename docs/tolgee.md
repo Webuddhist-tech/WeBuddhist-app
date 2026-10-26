@@ -197,7 +197,8 @@ Network sync commands need a write-capable project API key. Never put it in
 2. Click **+ API Key**.
 3. Grant at least `keys.create`, plus `translations.view` and `languages.view`.
 4. Copy the `tgpak_...` value once and place it only where sync tooling reads it:
-   - **Local:** current shell session, e.g. PowerShell
+   - **Local:** current shell session — macOS/Linux
+     `export TOLGEE_SYNC_API_KEY='tgpak_...'`, PowerShell
      `$env:TOLGEE_SYNC_API_KEY = 'tgpak_...'`
    - **CI:** GitHub repository secret named exactly `TOLGEE_SYNC_API_KEY`
      (Settings → Secrets and variables → Actions), used by
@@ -293,8 +294,9 @@ value, paste it into `.env` files, or check it into git. For recurring
 automation, store the same name as a GitHub Actions secret instead of keeping
 it in a local shell.
 
-```powershell
-$env:TOLGEE_SYNC_API_KEY = 'tgpak_...'
+```sh
+export TOLGEE_SYNC_API_KEY='tgpak_...'        # macOS / Linux
+# PowerShell: $env:TOLGEE_SYNC_API_KEY = 'tgpak_...'
 ```
 
 #### 3. Push dry-run

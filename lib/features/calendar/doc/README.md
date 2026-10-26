@@ -4,16 +4,16 @@
 
 ## Purpose
 
-Tibetan lunar calendar: Gregorian grid with lunar day info, moon phases, and a "today" summary used by the home screen banner.
+Tibetan lunar calendar: Gregorian grid with lunar day info and moon phases (screen at `/home/calendar`, opened from the home header calendar button). The engine is also used by group events for lunar repeat rules.
 
 ## User-facing functionality
 
-- Full calendar screen with month grid (`TibetanCalendarScreen`)
-- Header card for selected day (elemental year/month, lunar day)
-- Month navigation with padded leading/trailing days
-- Moon-phase events (new moon, first quarter, full moon)
-- "Today" sync on open and when app resumes on a new calendar day
-- Home banner via `todayCalendarDayProvider`
+- Full calendar screen with month grid (`TibetanCalendarScreen`, route `AppRoutes.calendar` = `/home/calendar`)
+- Header card for the selected day: "Day {lunarDay}", lunar-month label, moon-phase icon
+- Month navigation (chevrons + horizontal swipe) with a lunar-month subtitle; padded leading/trailing days
+- "Upcoming events" list: moon-phase events (lunar days 1/8/15/30) in the focused month from today on, collapsed to 2 with Show more/less
+- "Today" sync on open and when the app resumes on a new calendar day
+- Day tapping is currently disabled (`onDaySelected` commented out in `tibetan_calendar_grid.dart`), so the selected day is always today
 
 ## Architecture
 
@@ -35,13 +35,16 @@ calendar/
 | Offline engine | `data/kharag_tibetan_calendar_service.dart` |
 | Engine interface | `domain/tibetan_calendar_service.dart` |
 | Remote API | `data/datasource/calendar_remote_datasource.dart` |
-| Home integration | `todayCalendarDayProvider` |
+| Events list | `presentation/widgets/upcoming_events_list.dart` |
+| `GET /calendar/today` | `todayCalendarDayProvider` — defined but **not consumed anywhere** today |
 
 ## State management
 
 - `StateProvider`: `selectedCalendarDayProvider`, `focusedCalendarMonthProvider`
-- `FutureProvider.family`: `calendarMonthProvider`, `backendMonthOverlayProvider`, `todayCalendarDayProvider`
-- `Provider`: `resolvedMonthDaysProvider` — merges engine (sync) + backend (async)
+- `Provider`: `tibetanCalendarServiceProvider` (engine), `engineMonthDaysProvider` (family), `resolvedMonthDaysProvider` (family — merges engine + backend overlay), `resolvedDayProvider` (family), `monthEventsProvider` (family)
+- `FutureProvider.family`: `calendarMonthProvider` (keyed by Gregorian `(year, month)`; returns `[]` on failure), `backendMonthOverlayProvider`
+- `FutureProvider`: `todayCalendarDayProvider` (unused)
+- None of these are `autoDispose`: a month that failed (offline) stays cached as empty for the process lifetime
 
 ## Data sources
 
@@ -51,8 +54,9 @@ calendar/
 
 ## Cross-feature dependencies
 
-- **home** — consumes `todayCalendarDayProvider` for `CalendarBannerCard`
-- **core** — `dioProvider`, l10n
+- **home** — `home_header.dart` pushes `AppRoutes.calendar`. (`CalendarBannerCard` in home is a stateless widget that is not currently rendered and does not read calendar providers.)
+- **group_profile** — `group_event_repeats_sheet.dart` / `group_event_schedule_utils.dart` use `TibetanCalendarService` (Phugpa) for lunar recurrence
+- **core** — `dioProvider`, l10n, router
 
 ## Hybrid resolution pattern
 
@@ -74,7 +78,7 @@ calendar/
 - Extend moon-phase logic in `domain/models/moon_phase.dart`
 - Add festival events in `monthEventsProvider` when backend supports them
 - Update l10n via `calendar_l10n_utils.dart`
-- Mirror home banner changes when `todayCalendarDayProvider` shape changes
+- Keep `TibetanCalendarService` stable — group events depend on it
 
 ### Don't
 
@@ -89,10 +93,11 @@ calendar/
 | New lunar event type | `calendar_event.dart`, `monthEventsProvider`, widgets |
 | Cell UI change | `calendar_day_cell.dart`, `tibetan_calendar_grid.dart` |
 | API shape change | models → repository → `resolvedMonthDaysProvider` merge logic |
-| Home banner | `home/.../calendar_banner_card.dart` + `todayCalendarDayProvider` |
+| Home entry point | `home/.../home_header.dart` (calendar button) |
 
 ### Testing
 
 - Test engine-only path (no network)
 - Test backend overlay merge
 - Test month boundary / padding days
+- Test a month containing a DST transition (range loops use `DateTime.add(Duration(days: 1))` on local dates)

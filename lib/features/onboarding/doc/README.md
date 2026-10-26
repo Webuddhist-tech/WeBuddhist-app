@@ -4,14 +4,15 @@
 
 ## Purpose
 
-First-run multi-step onboarding: welcome, language, tradition selection, finish — plus optional event plan enrollment.
+First-run multi-step onboarding for signed-in users: welcome, language, tradition selection, finish.
 
 ## User-facing functionality
 
 - PageView flow: Welcome → Language → Tradition → Finish
-- Persists preferences locally during flow
-- Optional event plan enrollment (`kOnboardingEvents` hardcoded promos)
-- On completion: save preferences, mark onboarding done in auth, enroll plans + routine block, navigate home
+- Language step applies the UI locale + backend content language (`selectAppLanguage`) and saves the preference locally
+- Tradition step saves selections to the backend (`POST/DELETE /users/me/traditions`, options from `GET /users/me/traditions/onboarding`)
+- On completion: save preferences locally, `PUT /users/me/onboarding` (`has_seen_onboarding: true`), call auth `markOnboardingCompleted()`, navigate home
+- The onboarding *step* no longer enrolls event plans. `EventEnrollmentService` (plan subscribe + routine time block) still lives here but is only used by `features/plans/presentation/plan_info.dart`; `kOnboardingEvents` is currently unreferenced
 
 ## Architecture
 
@@ -33,32 +34,33 @@ onboarding/
 | Flow host | `presentation/screens/onboarding_wrapper.dart` |
 | State | `application/onboarding_notifier.dart`, `onboarding_state.dart` |
 | Traditions | `application/tradition_selection_notifier.dart` |
-| Completion | `application/event_enrollment_service.dart` |
+| Completion | `OnboardingNotifier.submitPreferences()`, `data/repositories/onboarding_repository.dart` |
+| Remote | `data/datasource/onboarding_remote_datasource.dart` (`/users/me/onboarding`, `/users/me/traditions*`) |
+| Event enrollment (used by plans) | `application/event_enrollment_service.dart`, `presentation/providers/event_enrollment_providers.dart` |
+| Analytics | `presentation/utils/onboarding_analytics.dart` |
 | Barrel | `onboarding.dart` (not all screens exported) |
 
 ## State management
 
-- `onboardingProvider` — page index, preferences
-- `traditionSelectionProvider` — multi-select traditions
+- `onboardingProvider` — page index, preferences (**not** autoDispose — page index survives across sessions in one process)
+- `traditionSelectionProvider` — multi-select traditions (autoDispose)
 - Uses **hooks_riverpod** in application layer
 
 ## Data sources
 
-- **Local:** SharedPreferences / local datasource
-- **Remote:** tradition paths, preference sync
+- **Local:** SharedPreferences / local datasource (preferences; backend preference sync is still a TODO in the repository)
+- **Remote:** onboarding status (`GET/PUT /users/me/onboarding`), tradition paths and user traditions
 
 ## Cross-feature dependencies
 
 - **auth** — `markOnboardingCompleted()` on finish (no network round-trip)
-- **plans** — `SubscribeToPlanUseCase`, enrollments
-- **practice** — routine time-block creation, Hive
-- **notifications** — sync engine after routine save
+- **locale** — `selectAppLanguage` on the language step
+- **plans / practice / notifications** — only through `EventEnrollmentService` (consumed by plans)
 
 ## Notable patterns
 
 - Completion updates auth flag locally first
-- Event enrollment is best-effort/idempotent
-- Hardcoded `kOnboardingEvents` for promotional plans
+- Event enrollment (when used) is best-effort/idempotent
 - Barrel hides duplicate `OnboardingPreferences` name
 
 ---
@@ -90,7 +92,7 @@ onboarding/
 |------|----------------|
 | New onboarding step | screen widget + wrapper page list + notifier page count |
 | New preference field | entity → local model → notifier → save use case |
-| Event promo | `kOnboardingEvents` + enrollment service |
+| Event plan enrollment | `event_enrollment_service.dart` (called from plans) |
 | Tradition options | remote datasource + tradition selection notifier |
 
 ### Testing

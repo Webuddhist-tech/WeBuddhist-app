@@ -82,6 +82,21 @@ Before the first production build, verify these settings in the [Airbridge dashb
 
 ---
 
+## App-side deep-link handling
+
+Two independent entry points feed `DeepLinkRouter` (`lib/core/deep_linking/deep_link_router.dart`):
+
+| Source | Wiring | Links handled |
+|---|---|---|
+| Airbridge SDK | `Airbridge.setOnDeeplinkReceived` in `lib/main.dart` → `AirbridgeDeepLinkService` (`lib/core/services/airbridge_deep_link_service.dart`) | `webuddhist://…` scheme hosts (`home`, `practice`, `more`, `profile`, `notifications`), `join.webuddhist.com`, `*.airbridge.io`, `*.abr.ge` (tracking links land on Home) |
+| OS App/Universal Links | `AppLinksDeepLinkService` (`lib/core/deep_linking/app_links_deep_link_service.dart`, `app_links` package) | First-party `https://webuddhist.com/open/...` links (series, reader, plan, group, events, group-accumulator, mala, timer, poem, more) |
+
+Both services buffer a link that arrives before the router exists and dispatch
+it once `MyApp` registers the router (post-frame). Share URLs are built by
+`lib/core/deep_linking/deep_link_url_builder.dart`.
+
+---
+
 ## Server-side verification files
 
 These must be hosted externally (not in this repo) before App Links / Universal Links will verify:
@@ -92,6 +107,7 @@ These must be hosted externally (not in this repo) before App Links / Universal 
 | `apple-app-site-association` | `https://webuddhist.airbridge.io/.well-known/apple-app-site-association` (Airbridge hosts this) |
 | `apple-app-site-association` | `https://webuddhist.abr.ge/.well-known/apple-app-site-association` (Airbridge hosts this) |
 | `assetlinks.json` | `https://join.webuddhist.com/.well-known/assetlinks.json` |
+| `apple-app-site-association` / `assetlinks.json` | `https://webuddhist.com/.well-known/…` (first-party `/open/...` links; `applinks:webuddhist.com` is in the entitlements) |
 
 For `assetlinks.json`, include the **release signing certificate SHA-256** for `org.pecha.app`. Retrieve it with:
 

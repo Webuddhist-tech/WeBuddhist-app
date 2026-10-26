@@ -59,6 +59,23 @@ The language picker and onboarding call `selectAppLanguage`, which updates
 both axes from one choice. Feature code should still read the axis it
 actually needs.
 
+`selectAppLanguage` first `PUT`s `/users/me/language` for signed-in users; if
+that call fails it logs and returns **without changing either axis** (guests
+update locally only). Analytics: `ContentLanguageNotifier` fires
+`content_language_changed` with a `ContentLanguageSource` (`settings`,
+`onboarding`, `reconcile`) — see `content_language_analytics.dart`.
+
+`ContentLanguageNotifier.reconcileToAvailable()` is the server kill switch: if
+the stored content code is not in the backend's enabled list it switches to the
+default (or first enabled) language. Call it only with a successful response.
+
+Known call sites that still send the UI locale to content endpoints (they
+return English content when the axes diverge): the mala catalogue, preset
+search and joined-groups requests (`malaCatalogueProvider`,
+`accumulationSearchProvider`, `joinedAccumulatorGroupsProvider` in
+`features/mala/presentation/providers/`). Reading `localeProvider` for fonts or
+typography (e.g. `plan_card.dart`, `verse_of_day_card.dart`) is correct.
+
 ## Persistence
 
 - UI locale: `StorageKeys.preferredLanguage`

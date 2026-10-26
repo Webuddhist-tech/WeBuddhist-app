@@ -1,5 +1,17 @@
 # Plan Search and Pagination Implementation
 
+> **Status (Oct 2026): partly historical.** The search UI and the tabbed hub described below
+> (`PlansScreen`, `MyPlansTab`, `FindPlansTab`, `PlanSearchDelegate`, `planSearchProvider`) are no
+> longer mounted anywhere — they are only exported from `lib/features/plans/plans.dart` and push
+> routes that no longer exist (`/plans/info`, `/plans/details`). Plan browsing and search now live in
+> `lib/features/practice` (`AllPlansScreen`, `PlansSearchScreen` → `seriesSearchProvider`).
+>
+> Still live: `findPlansPaginatedProvider` (practice `SelectPlanScreen`) and
+> `myPlansPaginatedProvider` (home plan lists, practice routine screens, group event detail).
+> Both now seed their first page from the Hive cache (`PlansLocalDatasource`) before fetching.
+> `MyPlansNotifier.loadInitial()` goes through the cache-first `getUserPlans()`, so only
+> `refresh()` (→ `refreshUserPlans()`) is guaranteed to hit the network.
+
 ## Overview
 
 Implemented a production-ready plan search feature with debounced API calls and infinite scroll pagination for both search results and the Find Plans tab.
@@ -42,7 +54,7 @@ Implemented a production-ready plan search feature with debounced API calls and 
 
 **File**: `lib/features/plans/presentation/search/plan_search_delegate.dart`
 
-- Extended Flutter's `SearchDelegate<PlansModel?>`
+- Extended Flutter's `SearchDelegate<Plan?>`
 - Features:
   - Real-time search with debouncing
   - Loading indicator during API calls
@@ -103,7 +115,7 @@ Implemented a production-ready plan search feature with debounced API calls and 
 
 **Files**:
 
-- `lib/features/plans/data/repositories/plans_repository.dart`
+- `lib/features/plans/data/repositories/plans_repository_impl.dart`
 - `lib/features/plans/data/repositories/user_plans_repository.dart`
 
 Plans Repository:
@@ -136,8 +148,8 @@ Both datasources updated to:
 
 **Files**:
 
-- `lib/features/plans/data/providers/plans_providers.dart`
-- `lib/features/plans/data/providers/user_plans_provider.dart`
+- `lib/features/plans/presentation/providers/plans_providers.dart`
+- `lib/features/plans/presentation/providers/user_plans_provider.dart`
 
 Plans Providers:
 
@@ -180,16 +192,20 @@ User Plans Provider:
 
 ## API Integration
 
-The implementation uses the existing `PlansRemoteDatasource.fetchPlans()` method with `PlansQueryParams` that supports:
+Find Plans and search go through `GetPlansUseCase` (`domain/usecases/plans_usecases.dart`) →
+`PlansRepositoryImpl.getPlans()` → `PlansRemoteDatasource`:
 
 ```dart
-PlansQueryParams(
+getPlansUseCase(GetPlansParams(
   language: languageCode,
-  search: query,      // Text search query
+  search: query,      // Text search query (search only)
   skip: offset,       // Pagination offset
-  limit: pageSize,    // Items per page
-)
+  limit: pageSize,    // Items per page (20)
+));
 ```
+
+My Plans calls `UserPlansRepositoryInterface.getUserPlans(language:, skip:, limit:)` directly
+(and `refreshUserPlans(...)` on pull-to-refresh).
 
 ## Files Created
 
@@ -204,9 +220,9 @@ PlansQueryParams(
 1. `lib/features/plans/presentation/screens/plans_screen.dart` - Search integration
 2. `lib/features/plans/presentation/widgets/find_plan_tab.dart` - Added pagination
 3. `lib/features/plans/presentation/widgets/my_plan_tab.dart` - Added pagination
-4. `lib/features/plans/data/providers/plans_providers.dart` - Added Find Plans provider
-5. `lib/features/plans/data/providers/user_plans_provider.dart` - Added My Plans provider
-6. `lib/features/plans/data/repositories/plans_repository.dart` - Added search/pagination params
+4. `lib/features/plans/presentation/providers/plans_providers.dart` - Added Find Plans provider
+5. `lib/features/plans/presentation/providers/user_plans_provider.dart` - Added My Plans provider
+6. `lib/features/plans/data/repositories/plans_repository_impl.dart` - Added search/pagination params
 7. `lib/features/plans/data/repositories/user_plans_repository.dart` - Added pagination params
 8. `lib/features/plans/data/datasource/plans_remote_datasource.dart` - Query param builder
 9. `lib/features/plans/data/datasource/user_plans_remote_datasource.dart` - Query param builder

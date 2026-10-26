@@ -44,6 +44,9 @@ timer/
 | Offline queue | `data/datasource/timers_local_datasource.dart` |
 | Android notif | `data/services/timer_session_notifier.dart` |
 | iOS | `data/services/timer_live_activity.dart` |
+| Keep-alive (iOS silent audio session so the in-app bell rings when locked) | `presentation/services/timer_keep_alive.dart` |
+| Bell | `presentation/services/timer_sound_player.dart` |
+| Analytics (`timer_started` / `timer_completed` / `timer_discarded`) | `presentation/utils/timer_analytics.dart` |
 | Bootstrap | `timerSyncBootstrapProvider` |
 
 ## State management
@@ -188,6 +191,12 @@ notifications are always armed when backgrounded.
 - **Best-effort notifications** — never crash session on notif failure
 - **Offline-first writes** for stop reports
 - Completion bell scheduled only on backgrounding (avoid double-ring with in-app sound)
+- **Keep-alive:** on iOS `TimerAudioKeepAlive` loops a silent track (Info.plist `audio`
+  background mode) so the Dart isolate keeps running and rings the real bell; the
+  app reclaims (cancels) the scheduled bell ~2 s before it is due. Android is a no-op.
+- Routes: `/home/timers`, `/home/timers/new`, `/home/timers/edit` (extra: `PresetTimer`),
+  `/home/timers/active` (root navigator, extra: `PresetTimer`). All sit under the
+  guest-accessible `/home` prefix; the data is auth-gated instead.
 
 ---
 

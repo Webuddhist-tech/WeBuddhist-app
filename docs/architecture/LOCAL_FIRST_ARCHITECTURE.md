@@ -103,6 +103,8 @@ initialized in `lib/main.dart`:
 - `MalaLocalDataSource.init()`
 - `HomeLocalDatasource.init()`
 - `UserStatsLocalDatasource.init()`
+- `TimersLocalDatasource.init()`
+- `PlansLocalDatasource.init()`
 
 The local datasource should:
 

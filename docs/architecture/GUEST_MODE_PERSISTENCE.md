@@ -26,7 +26,7 @@ _restoreLoginState()
 │  └─ No → Show Login
 │
 └─ Router Redirect Logic
-   ├─ isLoading: true → Allow navigation (native splash visible)
+   ├─ isLoading: true → /splash
    └─ isLoading: false → Route based on auth state
 ```
 
@@ -76,226 +76,90 @@ Future<void> clearGuestMode() async {
 
 ### 2. Auth State Management
 
-**Location:** `lib/features/auth/application/auth_provider.dart`
+**Location:** `lib/features/auth/presentation/providers/auth_notifier.dart` (`AuthNotifier`, exposed as `authProvider` in `presentation/providers/state_providers.dart`). The notifier talks to `AuthService` only through use cases (`ContinueAsGuestUseCase`, `IsGuestModeUseCase`, `ClearGuestModeAndOnboardingUseCase`, `LogoutUseCase`, …).
 
 #### AuthState Properties
 
+`lib/features/auth/presentation/state/auth_state.dart`:
+
 ```dart
 class AuthState {
-  final bool isLoggedIn;    // Both authenticated and guest users
-  final bool isLoading;     // During auth initialization
-  final bool isGuest;       // Distinguishes guest from authenticated
-  final String? userId;     // 'guest' for guests, auth ID for users
-  final UserProfile? userProfile;  // Null for guests
+  final bool isLoggedIn;              // true for BOTH authenticated users and guests
+  final bool isLoading;               // during launch restore / login
+  final bool isGuest;                 // distinguishes guest from authenticated
+  final String? errorMessage;
+  final bool? hasCompletedOnboarding; // null = unknown; authenticated users only
 }
 ```
 
-#### State Restoration Logic
+There is no `userId` / `userProfile` on `AuthState`: the profile lives in
+`userProvider` (`UserNotifier`), and the signed-in user's id is persisted under
+`StorageKeys.currentUserId`.
 
-```dart
-Future<void> _restoreLoginState() async {
-  try {
-    await authService.initialize();
+#### State Restoration Logic (summary)
 
-    // 1. Check credentials first (authenticated users)
-    final hasCredentials = await authService.hasValidCredentials();
-    if (hasCredentials) {
-      final credentials = await authService.getCredentials();
-      state = state.copyWith(
-        isLoggedIn: true,
-        isGuest: false,
-        userId: credentials?.user.sub,
-        userProfile: credentials?.user,
-        isLoading: false,
-      );
-      return;
-    }
+`_restoreLoginState()` (single-flight, also re-run on reconnect when the app
+launched offline into guest/logged-out):
 
-    // 2. Check guest mode (returning guest users)
-    final isGuest = await authService.isGuestMode();
-    if (isGuest) {
-      state = state.copyWith(
-        isLoggedIn: true,
-        isGuest: true,
-        userId: 'guest',
-        userProfile: null,
-        isLoading: false,
-      );
-      return;
-    }
-
-    // 3. No state found (new users)
-    state = state.copyWith(
-      isLoggedIn: false,
-      isGuest: false,
-      isLoading: false,
-    );
-  } catch (e) {
-    await _handleAuthFailure();
-  }
-}
-```
+1. Android fresh install only: clear any residual credentials.
+2. `InitializeAuthUseCase` (loads Auth0 config from `/props`, cached for offline).
+3. `hasValidCredentials()` →
+   - **yes** → `_restoreCredentials()`: fetch credentials; on success persist
+     `currentUserId`, prefetch onboarding status + profile, then flip to
+     authenticated. A *transient* failure keeps the session (offline-tolerant);
+     only a *permanent* failure (`AuthenticationFailure`) falls through to the
+     guest check.
+   - **no** → `_checkGuestMode()`: `is_guest_mode` true → guest state, else logged out.
+4. Anything unresolved in `finally` → logged-out state (never leaves the splash up).
 
 #### State Transitions
 
-**Choosing Guest Mode:**
-
-```dart
-Future<void> continueAsGuest() async {
-  await authService.saveGuestMode();  // Persist choice
-  state = state.copyWith(
-    isLoggedIn: true,
-    isGuest: true,
-    userId: 'guest',
-  );
-}
-```
-
-**Guest → Authenticated:**
-
-```dart
-Future<void> login({String? connection}) async {
-  // ... authenticate with Auth0 ...
-  await authService.clearGuestMode();  // Clear guest state
-  state = state.copyWith(
-    isLoggedIn: true,
-    isGuest: false,
-    userId: credentials.user.sub,
-    userProfile: credentials.user,
-  );
-}
-```
-
-**Logout (Any Mode):**
-
-```dart
-Future<void> logout() async {
-  await authService.localLogout();  // Clears credentials AND guest mode
-  state = state.copyWith(
-    isLoggedIn: false,
-    isGuest: false,
-  );
-}
-```
+- **Choosing guest mode:** `AuthNotifier.continueAsGuest(source:)` persists the
+  flag via `AuthService.continueAsGuest()` and sets `isLoggedIn: true, isGuest: true`.
+- **Guest → authenticated:** `AuthNotifier.login(connection:)` → on success
+  `_handleSuccessfulLogin()` clears the guest flag *before* the state flips,
+  stores `currentUserId`, prefetches onboarding + profile, then sets
+  `isLoggedIn: true, isGuest: false`.
+- **Logout (any mode):** `AuthNotifier.logout()` → `AuthService.localLogout()`
+  clears Auth0 credentials **and** the guest flag (plus `currentUserId` /
+  cached user data), and the state becomes logged out.
+- A permanent token-renewal failure is **not** applied to guests: the
+  `RetryInterceptor` checks `isGuestMode()` before calling `handleSessionExpired()`.
 
 ---
 
 ### 3. Router Integration
 
-**Location:** `lib/core/config/router/go_router.dart`
+**Location:** `lib/core/config/router/route_guard.dart` (`RouteGuard.redirect`),
+wired in `lib/core/config/router/app_router.dart`; route lists in
+`lib/core/config/router/app_routes.dart`.
 
 #### Key Design Decision
 
-Both authenticated and guest users have `isLoggedIn: true`, allowing them to access protected routes. The router doesn't need to distinguish between them.
+Guests have `isLoggedIn: true`, but the guard **does** distinguish them:
 
-```dart
-redirect: (context, state) {
-  final isLoading = authState.isLoading;
-  final isLoggedIn = authState.isLoggedIn;  // True for both types
-  final currentPath = state.fullPath ?? RouteConfig.home;
+- `isLoading` → `/splash`.
+- Authenticated → onboarding enforcement + pending-route restore.
+- **Guest** (`_handleGuest`) → `/login`, `/onboarding`, `/splash` redirect to
+  `/home`; any route not in `AppRoutes.guestAccessibleRoutes` (prefix match)
+  redirects to `/home`.
+- Logged out → public routes only; everything else redirects to `/login`
+  (saving the pending route).
 
-  // 1. While loading, allow navigation (native splash visible)
-  if (isLoading) {
-    return null;
-  }
-
-  // 2. Logged-in users (guest or authenticated) on login page → home
-  if (isLoggedIn && currentPath == RouteConfig.login) {
-    return RouteConfig.home;
-  }
-
-  // 3. Not logged-in trying to access protected routes → login
-  if (!isLoggedIn && RouteConfig.isProtectedRoute(currentPath)) {
-    return RouteConfig.login;
-  }
-
-  return null;
-}
-```
-
-**Why This Works:**
-
-- Simplifies routing logic
-- Guest users get same navigation access
-- Feature restrictions handled at component level, not routing level
-- Login page accessible via profile (not blocked by router)
+Because guests are bounced off `/login`, in-app sign-in for guests goes through
+the `LoginDrawer` bottom sheet (`lib/features/auth/presentation/widgets/login_drawer.dart`),
+not a navigation to `/login`. Feature-level gating (e.g. "sign in to join a
+group") also uses `LoginDrawer`.
 
 ---
 
 ### 4. Guest Profile UI
 
-**Location:** `lib/features/auth/presentation/profile_page.dart`
-
-#### Conditional Rendering
-
-```dart
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final authState = ref.watch(authProvider);
-
-  if (authState.isGuest) {
-    return _buildGuestProfile(context, ref);
-  }
-
-  // Show authenticated user profile
-  return _buildAuthenticatedProfile(context, authState);
-}
-```
-
-#### Guest Profile Components
-
-1. **Guest Avatar**
-
-   - Icon: `Icons.person_outline`
-   - Background color: Theme-aware grey
-
-2. **Guest Label**
-
-   - Title: "Guest User"
-   - Description: "You're browsing as a guest"
-
-3. **Sign In Button**
-
-   - Prominent placement
-   - Direct navigation to login page
-   - Primary action style
-
-4. **Benefits Card**
-   - Lists features available after sign-in:
-     - Save progress
-     - Sync across devices
-     - Personalized content
-     - Custom notifications
-
-#### Dark Mode Support
-
-```dart
-final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-// Avatar
-CircleAvatar(
-  backgroundColor: isDarkMode ? Colors.grey[800] : Colors.grey[400],
-  child: Icon(
-    Icons.person_outline,
-    color: isDarkMode ? Colors.grey[300] : Colors.white,
-  ),
-)
-
-// Card
-Card(
-  elevation: isDarkMode ? 2 : 1,
-  color: Theme.of(context).cardColor,
-  // ...
-)
-
-// Icons
-Icon(
-  icon,
-  color: isDarkMode
-    ? Theme.of(context).colorScheme.secondary
-    : Theme.of(context).primaryColor,
-)
-```
+The old `ProfilePage` (`lib/features/auth/presentation/screens/profile_page.dart`)
+still contains a guest variant but is **not referenced by any route** — and its
+"Sign In" button does `context.go('/login')`, which the guard redirects back to
+`/home` for guests. The live guest experience is the Me tab plus `LoginDrawer`
+prompts.
 
 ---
 
@@ -309,7 +173,7 @@ Icon(
          ▼
 ┌─────────────────┐
 │  Auth Loading   │ isLoading: true
-│ (Native Splash) │ isLoggedIn: false
+│ (/splash route) │ isLoggedIn: false
 └────────┬────────┘
          │
          ▼
@@ -330,8 +194,6 @@ Icon(
 ├────────────────┤        ├────────────────┤
 │ isLoggedIn: T  │        │ isLoggedIn: T  │
 │ isGuest: F     │        │ isGuest: T     │
-│ userId: auth_id│        │ userId: 'guest'│
-│ userProfile: ✓ │        │ userProfile: ✗ │
 └────────┬───────┘        └────────┬───────┘
          │                         │
          └──────────┬──────────────┘
@@ -355,51 +217,10 @@ Icon(
 
 ### Unit Tests
 
-```dart
-// Test guest mode persistence
-test('saveGuestMode persists to SharedPreferences', () async {
-  await authService.saveGuestMode();
-  expect(await authService.isGuestMode(), true);
-});
-
-// Test guest mode clearing
-test('clearGuestMode removes from SharedPreferences', () async {
-  await authService.saveGuestMode();
-  await authService.clearGuestMode();
-  expect(await authService.isGuestMode(), false);
-});
-
-// Test state restoration
-test('restores guest state on app restart', () async {
-  await authService.saveGuestMode();
-  final notifier = AuthNotifier(authService: authService);
-  await Future.delayed(Duration.zero); // Allow async init
-  expect(notifier.state.isGuest, true);
-  expect(notifier.state.isLoggedIn, true);
-});
-```
-
-### Integration Tests
-
-```dart
-testWidgets('guest user can navigate to profile', (tester) async {
-  // Set up guest state
-  await authService.saveGuestMode();
-
-  // Launch app
-  await tester.pumpWidget(MyApp());
-  await tester.pumpAndSettle();
-
-  // Find and tap profile icon
-  final profileIcon = find.byIcon(Icons.account_circle);
-  await tester.tap(profileIcon);
-  await tester.pumpAndSettle();
-
-  // Verify profile page shown
-  expect(find.text('Guest User'), findsOneWidget);
-  expect(find.text('Sign In'), findsOneWidget);
-});
-```
+See `test/` for the current `AuthNotifier` tests. `AuthNotifier` is constructed
+with use cases + `ref` (not an `AuthService`), so tests override the use-case
+providers. Cover: guest flag persisted/cleared, guest restored on relaunch,
+guest not logged out by a permanent token-renewal failure.
 
 ### Manual Test Scenarios
 
@@ -410,7 +231,7 @@ testWidgets('guest user can navigate to profile', (tester) async {
 
 2. **Guest to Authenticated**
 
-   - Open as guest → Tap profile icon → Tap "Sign In" → Authenticate → Close app → Reopen
+   - Open as guest → trigger a `LoginDrawer` (e.g. Me tab sign-in) → Authenticate → Close app → Reopen
    - Expected: Home screen (authenticated)
 
 3. **Logout from Guest**
@@ -418,9 +239,6 @@ testWidgets('guest user can navigate to profile', (tester) async {
    - Open as guest → Navigate to settings → Tap "Logout"
    - Expected: Login page shown
 
-4. **Dark Mode**
-   - Enable dark mode → Open as guest → Navigate to profile
-   - Expected: Proper dark mode colors throughout
 
 ---
 
@@ -453,7 +271,6 @@ testWidgets('guest user can navigate to profile', (tester) async {
 2. **Public State:** Guest status is not private information
 3. **Easy Reset:** User can logout to clear state
 4. **No Credentials:** No auth tokens or passwords stored
-5. **Platform Secure:** SharedPreferences uses platform keystore
 
 ### What Guest Users Cannot Do
 
@@ -508,15 +325,12 @@ final prefs = await SharedPreferences.getInstance();
 print('Guest mode: ${prefs.getBool('is_guest_mode')}');
 ```
 
-### Cannot Access Profile as Guest
+### Guest Bounced to Home
 
-**Symptoms:** Tapping profile icon does nothing
+**Symptoms:** Navigating to a screen as a guest lands on Home
 
-**Check:**
-
-1. `GestureDetector` wrapping icon in home screen?
-2. Navigation route configured?
-3. `authState.isGuest` returning true?
+**Check:** the route (or a prefix of it) is listed in
+`AppRoutes.guestAccessibleRoutes`; `/login` is never reachable for guests by design.
 
 ---
 
@@ -528,6 +342,6 @@ print('Guest mode: ${prefs.getBool('is_guest_mode')}');
 
 ---
 
-**Last Updated:** October 14, 2025  
+**Last Updated:** October 22, 2026 (synced with current `AuthNotifier` / `RouteGuard`)  
 **Version:** 1.0  
 **Author:** Development Team

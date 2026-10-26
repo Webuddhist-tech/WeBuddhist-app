@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/flattened_content.dart';
@@ -26,6 +27,7 @@ import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart' show Either;
 
 /// Parameters for initializing the reader
 class ReaderParams {
@@ -592,11 +594,21 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
 
     final stopwatch = Stopwatch()..start();
-    final result = await _ref.read(textDetailsFutureProvider(params).future);
+    final Either<Failure, ReaderResponse> result;
+    try {
+      result = await _ref.read(textDetailsFutureProvider(params).future);
+    } catch (_) {
+      _ref.invalidate(textDetailsFutureProvider(params));
+      rethrow;
+    }
     stopwatch.stop();
     return result.fold(
-      (failure) =>
-          throw Exception('Failed to fetch content: ${failure.message}'),
+      (failure) {
+        // The provider keeps its result for the session. Drop the failure so
+        // the next scroll to this page asks the network again.
+        _ref.invalidate(textDetailsFutureProvider(params));
+        throw Exception('Failed to fetch content: ${failure.message}');
+      },
       (response) {
         _trackPageLoaded(response, stopwatch.elapsedMilliseconds);
         return response;
@@ -801,10 +813,12 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     }
   }
 
-  /// Load the previous page of content
-  Future<void> loadPreviousPage() async {
+  /// Loads the page before the loaded window. Returns how many items were
+  /// added at the top (0 when nothing was added), so the list can keep the
+  /// reader's place.
+  Future<int> loadPreviousPage() async {
     if (_isDisposed || state.isLoadingPrevious || !state.hasPreviousPage) {
-      return;
+      return 0;
     }
 
     state = state.copyWith(isLoadingPrevious: true);
@@ -814,7 +828,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       final firstSegmentId = state.content?.firstSegmentId;
       if (firstSegmentId == null) {
         state = state.copyWith(isLoadingPrevious: false);
-        return;
+        return 0;
       }
 
       final response = await _fetchContent(
@@ -822,7 +836,7 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         direction: 'previous',
       );
 
-      if (_isDisposed) return;
+      if (_isDisposed) return 0;
       if (_activeVersionId != fetchVersionId) {
         // Primary version changed mid-pagination — discard the stale page.
         // Clear the loading flag so the top skeleton doesn't get stuck if
@@ -831,12 +845,13 @@ class ReaderNotifier extends StateNotifier<ReaderState>
           'Discarding stale previous page from versionId=$fetchVersionId',
         );
         state = state.copyWith(isLoadingPrevious: false);
-        return;
+        return 0;
       }
 
       // Merge new content with existing
+      final previousContent = state.content ?? FlattenedContent.empty();
       final mergedContent = _merger.merge(
-        state.content ?? FlattenedContent.empty(),
+        previousContent,
         response.content.sections,
         PaginationDirection.previous,
       );
@@ -847,10 +862,12 @@ class ReaderNotifier extends StateNotifier<ReaderState>
         hasPreviousPage: response.currentSegmentPosition > 1,
         currentSegmentPosition: response.currentSegmentPosition,
       );
+      return mergedContent.itemCount - previousContent.itemCount;
     } catch (e, stackTrace) {
       _logger.error('Failed to load previous page', e, stackTrace);
-      if (_isDisposed) return;
+      if (_isDisposed) return 0;
       state = state.copyWith(isLoadingPrevious: false);
+      return 0;
     }
   }
 

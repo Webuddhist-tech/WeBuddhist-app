@@ -581,9 +581,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _logger.debug(
         'Triggering previous page load at index $firstVisibleIndex',
       );
-      notifier.loadPreviousPage().then((_) {
+      notifier.loadPreviousPage().then((addedCount) {
         _hasTriggeredPrevious = false;
-        _adjustScrollAfterPreviousLoad();
+        _adjustScrollAfterPreviousLoad(addedCount);
       });
     }
 
@@ -791,10 +791,18 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   // ─── Scrolling ───────────────────────────────────────────────────────────
 
-  void _adjustScrollAfterPreviousLoad() {
+  /// Keeps the reader's place after [addedCount] items were added at the top.
+  void _adjustScrollAfterPreviousLoad(int addedCount) {
     // Runs after an earlier page loads, which can finish after the reader
     // was closed. There is nothing left to scroll, and `ref` is unusable.
     if (!mounted || _positionBeforePreviousLoad == null) return;
+
+    // Nothing was added (the load failed or the page was empty): the list
+    // did not shift, so moving it would push the reader away from the top.
+    if (addedCount <= 0) {
+      _positionBeforePreviousLoad = null;
+      return;
+    }
 
     final state = ref.read(readerNotifierProvider(widget.sources.first));
     final content = state.content;
@@ -809,14 +817,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         // Mark as programmatic scroll to avoid affecting app bar
         _isProgrammaticScroll = true;
 
-        // Estimate the number of new items added
-        // For simplicity, we'll use the page size as an approximation
-        final newItemsCount = ReaderConstants.pageSize;
-        final targetIndex = _positionBeforePreviousLoad! + newItemsCount;
+        final targetIndex = _positionBeforePreviousLoad! + addedCount;
         if (targetIndex >= 0 && targetIndex < content.itemCount) {
           _itemScrollController.jumpTo(index: targetIndex);
           _logger.debug(
-            'Adjusted scroll after prepend: $targetIndex (added ~$newItemsCount items)',
+            'Adjusted scroll after prepend: $targetIndex (added $addedCount items)',
           );
         }
 
