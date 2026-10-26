@@ -865,7 +865,7 @@
   "reader_swipe_up_for_more": "थप हेर्न माथि स्वाइप गर्नुहोस्",
   "reader_videos": "भिडियोहरू",
   "reader_about_this_version": "यस संस्करणको बारेमा",
-  "reader_version_count": "{count, plural, =1{1 संस्करण} other{{count} संस्करण}}",
+  "reader_version_count": "{count, plural,\n=1 {1 संस्करण}\nother {{count} संस्करण}\n}",
   "mala_no_mantras": "कुनै मन्त्र उपलब्ध छैन",
   "mala_count_load_error": "तपाईंको गणना लोड गर्न सकिएन",
   "mala_mantra_label": "मन्त्र",
@@ -901,7 +901,7 @@
   "session_no_malas": "कुनै माला फेला परेन",
   "session_timers_load_error": "टाइमर लोड गर्न असमर्थ",
   "session_no_timers": "कुनै टाइमर फेला परेन",
-  "days_count": "{count, plural, =1{1 दिन} other{{count} दिन}}",
+  "days_count": "{count, plural,\n=1 {1 दिन}\nother {{count} दिन}\n}",
   "timer_minute_session": "{minutes} मिनेटको सत्र",
   "plan_day_of": "दिन {day} / {total}",
   "pagination_position": "{current} / {total}",
@@ -960,7 +960,7 @@
   "connect_comment_delete_title": "टिप्पणी मेट्ने?",
   "connect_comment_delete_message": "यो टिप्पणी स्थायी रूपमा हटाइनेछ",
   "connect_comment_delete_failed": "टिप्पणी मेट्न असमर्थ",
-  "connect_post_comments_count": "{count, plural, =1 {1 टिप्पणी} other {{count} टिप्पणीहरू}}",
+  "connect_post_comments_count": "{count, plural,\n=1 {1 टिप्पणी}\nother {{count} टिप्पणीहरू}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -1053,7 +1053,7 @@
   "group_chat_delete": "मेटाउनुहोस्",
   "group_chat_delete_title": "सन्देश मेटाउने?",
   "group_chat_delete_title_many": "{count} सन्देशहरू मेटाउने?",
-  "group_chat_delete_confirm_body": "{count, plural, =1{यो सन्देश सबैका लागि च्याटबाट हटाइनेछ} other{यी सन्देशहरू सबैका लागि च्याटबाट हटाइनेछन्}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {यो सन्देश सबैका लागि च्याटबाट हटाइनेछ}\nother {यी सन्देशहरू सबैका लागि च्याटबाट हटाइनेछन्}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1061,7 +1061,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{सन्देश मेटाउन सकिएन} other{{count} सन्देशहरू मेटाउन सकिएन}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {सन्देश मेटाउन सकिएन}\nother {{count} सन्देशहरू मेटाउन सकिएन}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {

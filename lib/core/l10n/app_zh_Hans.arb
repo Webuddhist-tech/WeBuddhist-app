@@ -352,7 +352,7 @@
   "connect_comment_delete_title": "删除留言？",
   "connect_comment_delete_message": "这则留言将被永久删除",
   "connect_comment_delete_failed": "无法删除留言",
-  "connect_post_comments_count": "{count, plural, other {{count} 则留言}}",
+  "connect_post_comments_count": "{count, plural,\nother {{count} 则留言}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -1035,7 +1035,7 @@
   "reader_swipe_up_for_more": "向上滑动查看更多",
   "reader_videos": "视频",
   "reader_about_this_version": "关于此版本",
-  "reader_version_count": "{count, plural, other{{count} 个版本}}",
+  "reader_version_count": "{count, plural,\nother {{count} 个版本}\n}",
   "mala_no_mantras": "暂无咒语",
   "mala_count_load_error": "无法加载您的计数",
   "mala_mantra_label": "咒语",
@@ -1075,7 +1075,7 @@
   "session_no_malas": "未找到念珠",
   "session_timers_load_error": "无法加载计时器",
   "session_no_timers": "未找到计时器",
-  "days_count": "{count, plural, other{{count} 天}}",
+  "days_count": "{count, plural,\nother {{count} 天}\n}",
   "timer_minute_session": "{minutes} 分钟练习",
   "timer_notification_in_progress": "禅修进行中",
   "timer_notification_paused": "已暂停 · 剩余 {time}",
@@ -1146,7 +1146,7 @@
   "group_chat_delete": "删除",
   "group_chat_delete_title": "要删除消息吗？",
   "group_chat_delete_title_many": "要删除 {count} 则消息吗？",
-  "group_chat_delete_confirm_body": "{count, plural, =1{此消息将从聊天室中对所有人移除} other{这些消息将从聊天室中对所有人移除}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {此消息将从聊天室中对所有人移除}\nother {这些消息将从聊天室中对所有人移除}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1154,7 +1154,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{无法删除消息} other{无法删除 {count} 则消息}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {无法删除消息}\nother {无法删除 {count} 则消息}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {
@@ -1330,7 +1330,7 @@
   "help_contact_your_request": "您的请求",
   "help_contact_open_chat": "打开聊天室",
   "help_context_sent_from": "来自协助与联系",
-  "help_context_photos": "{count, plural, other{{count} 张照片}}",
+  "help_context_photos": "{count, plural,\nother {{count} 张照片}\n}",
   "chat_official_badge": "官方",
   "chat_team_reply_time": "通常在 1 天内回复",
   "connect_failed_load_discover_groups_error": "无法下载社群清单",

@@ -865,7 +865,7 @@
   "reader_swipe_up_for_more": "Илүү ихийг үзэхийн тулд дээш шудрана уу",
   "reader_videos": "Бичлэгүүд",
   "reader_about_this_version": "Энэ хувилбарын тухай",
-  "reader_version_count": "{count, plural, =1{1 хувилбар} other{{count} хувилбар}}",
+  "reader_version_count": "{count, plural,\n=1 {1 хувилбар}\nother {{count} хувилбар}\n}",
   "mala_no_mantras": "Тарни алга байна",
   "mala_count_load_error": "Таны тоог ачаалж чадсангүй",
   "mala_mantra_label": "Тарни",
@@ -901,7 +901,7 @@
   "session_no_malas": "Мала олдсонгүй",
   "session_timers_load_error": "Цаг хэмжигчийг ачаалж чадсангүй",
   "session_no_timers": "Цаг хэмжигч олдсонгүй",
-  "days_count": "{count, plural, =1{1 өдөр} other{{count} өдөр}}",
+  "days_count": "{count, plural,\n=1 {1 өдөр}\nother {{count} өдөр}\n}",
   "timer_minute_session": "{minutes} минутын дасгал",
   "plan_day_of": "{total} өдрийн {day}-р өдөр",
   "pagination_position": "{total}-аас {current}",
@@ -960,7 +960,7 @@
   "connect_comment_delete_title": "Сэтгэгдлийг устгах уу?",
   "connect_comment_delete_message": "Энэ сэтгэгдэл бүрмөсөн устгагдана",
   "connect_comment_delete_failed": "Сэтгэгдлийг устгаж чадсангүй",
-  "connect_post_comments_count": "{count, plural, =1 {1 сэтгэгдэл} other {{count} сэтгэгдэл}}",
+  "connect_post_comments_count": "{count, plural,\n=1 {1 сэтгэгдэл}\nother {{count} сэтгэгдэл}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -1053,7 +1053,7 @@
   "group_chat_delete": "Устгах",
   "group_chat_delete_title": "Зурвасыг устгах уу?",
   "group_chat_delete_title_many": "{count} зурвасыг устгах уу?",
-  "group_chat_delete_confirm_body": "{count, plural, =1{Энэ зурвас бүх хүний хувьд чатаас устгагдана} other{Эдгээр зурвас бүх хүний хувьд чатаас устгагдана}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {Энэ зурвас бүх хүний хувьд чатаас устгагдана}\nother {Эдгээр зурвас бүх хүний хувьд чатаас устгагдана}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1061,7 +1061,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{Зурвасыг устгаж чадсангүй} other{{count} зурвасыг устгаж чадсангүй}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {Зурвасыг устгаж чадсангүй}\nother {{count} зурвасыг устгаж чадсангүй}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {

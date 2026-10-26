@@ -2617,9 +2617,9 @@ class AppLocalizationsBo extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'ཉིན་ $count',
+      other: 'ཉིན་ $count །',
     );
-    return '$_temp0 །';
+    return '$_temp0';
   }
 
   @override
@@ -4330,7 +4330,7 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get timer_create_custom_subtitle =>
-      'Set duration, bells and ambient sound';
+      'Pick a length and optional background sound';
 
   @override
   String get timer_starting => 'Starting...';

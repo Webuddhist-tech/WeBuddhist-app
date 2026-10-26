@@ -4330,7 +4330,7 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get timer_create_custom_subtitle =>
-      'Set duration, bells and ambient sound';
+      'Pick a length and optional background sound';
 
   @override
   String get timer_starting => 'Starting...';

@@ -846,7 +846,7 @@
   "reader_swipe_up_for_more": "མང་བ་ལ་གྱེན་དུ་འགྲིལ་རོགས།",
   "reader_videos": "བརྙན་ཐུང་།",
   "reader_about_this_version": "པར་གཞི་འདིའི་སྐོར།",
-  "reader_version_count": "{count, plural, other{པར་གཞི་ {count}}}",
+  "reader_version_count": "{count, plural,\nother {པར་གཞི་ {count}}\n}",
   "mala_no_mantras": "སྔགས་མེད།",
   "mala_count_load_error": "ཁྱེད་ཀྱི་གྲངས་ཀ་འཇུག་མ་ཐུབ།",
   "mala_mantra_label": "སྔགས།",
@@ -882,7 +882,7 @@
   "session_no_malas": "ཕྲེང་བ་རྙེད་མ་སོང་།",
   "session_timers_load_error": "སྒོམ་ཡུན་སྟོན་ཐུབ་མ་སོང་།",
   "session_no_timers": "སྒོམ་ཡུན་རྙེད་མ་སོང་།",
-  "days_count": "{count, plural, other{ཉིན་ {count}}} །",
+  "days_count": "{count, plural,\nother {ཉིན་ {count} །}\n}",
   "timer_minute_session": "སྐར་མ་ {minutes} ཡི་ཉམས་ལེན།",
   "plan_day_of": "ཉིན་ {day} / {total}",
   "pagination_position": "{current} / {total}",
@@ -943,7 +943,7 @@
   "connect_comment_delete_title": "བསམ་ཚུལ་བསུབ་རྒྱུ་ཡིན་ནམ།",
   "connect_comment_delete_message": "བསམ་ཚུལ་འདི་གཏན་དུ་བསུབ་འགྲོ།",
   "connect_comment_delete_failed": "མཆན་བསུབ་ཐུབ་མ་སོང་།",
-  "connect_post_comments_count": "{count, plural, other {བསམ་ཚུལ་ {count}}}",
+  "connect_post_comments_count": "{count, plural,\nother {བསམ་ཚུལ་ {count}}\n}",
   "@connect_post_comments_count": {
     "placeholders": {
       "count": {
@@ -1036,7 +1036,7 @@
   "group_chat_delete": "སུབས།",
   "group_chat_delete_title": "འཕྲིན་ཡིག་སུབ་བམ།",
   "group_chat_delete_title_many": "འཕྲིན་ཡིག་ {count} སུབ་བམ།",
-  "group_chat_delete_confirm_body": "{count, plural, =1{འཕྲིན་ཡིག་འདི་མི་ཚང་མའི་ཆེད་དུ་གླེང་མོལ་ནས་བསུབ་འགྲོ།} other{འཕྲིན་ཡིག་འདི་དག་མི་ཚང་མའི་ཆེད་དུ་གླེང་མོལ་ནས་བསུབ་འགྲོ།}}",
+  "group_chat_delete_confirm_body": "{count, plural,\n=1 {འཕྲིན་ཡིག་འདི་མི་ཚང་མའི་ཆེད་དུ་གླེང་མོལ་ནས་བསུབ་འགྲོ།}\nother {འཕྲིན་ཡིག་འདི་དག་མི་ཚང་མའི་ཆེད་དུ་གླེང་མོལ་ནས་བསུབ་འགྲོ།}\n}",
   "@group_chat_delete_confirm_body": {
     "placeholders": {
       "count": {
@@ -1044,7 +1044,7 @@
       }
     }
   },
-  "group_chat_delete_failed": "{count, plural, =1{འཕྲིན་ཡིག་སུབ་ཐུབ་མ་སོང་།} other{འཕྲིན་ཡིག་ {count} སུབ་ཐུབ་མ་སོང་།}}",
+  "group_chat_delete_failed": "{count, plural,\n=1 {འཕྲིན་ཡིག་སུབ་ཐུབ་མ་སོང་།}\nother {འཕྲིན་ཡིག་ {count} སུབ་ཐུབ་མ་སོང་།}\n}",
   "@group_chat_delete_failed": {
     "placeholders": {
       "count": {

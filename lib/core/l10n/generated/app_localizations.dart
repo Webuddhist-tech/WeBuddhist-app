@@ -1664,7 +1664,7 @@ abstract class AppLocalizations {
   /// No description provided for @connect_post_comments_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 comment} other{{count} comments}}'**
+  /// **'{count, plural,\n=1 {1 comment}\nother {{count} comments}\n}'**
   String connect_post_comments_count(int count);
 
   /// No description provided for @connect_post_comments_empty.
@@ -4362,7 +4362,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_version_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 version} other{{count} versions}}'**
+  /// **'{count, plural,\n=1 {1 version}\nother {{count} versions}\n}'**
   String reader_version_count(int count);
 
   /// No description provided for @mala_no_mantras.
@@ -4602,7 +4602,7 @@ abstract class AppLocalizations {
   /// No description provided for @days_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{1 Day} other{{count} Days}}'**
+  /// **'{count, plural,\n=1 {1 Day}\nother {{count} Days}\n}'**
   String days_count(int count);
 
   /// No description provided for @timer_minute_session.
@@ -4986,13 +4986,13 @@ abstract class AppLocalizations {
   /// No description provided for @group_chat_delete_confirm_body.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{This message will be removed from the chat for everyone} other{These messages will be removed from the chat for everyone}}'**
+  /// **'{count, plural,\n=1 {This message will be removed from the chat for everyone}\nother {These messages will be removed from the chat for everyone}\n}'**
   String group_chat_delete_confirm_body(int count);
 
   /// No description provided for @group_chat_delete_failed.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{The message couldn\'t be deleted} other{{count} messages couldn\'t be deleted}}'**
+  /// **'{count, plural,\n=1 {The message couldn\'t be deleted}\nother {{count} messages couldn\'t be deleted}\n}'**
   String group_chat_delete_failed(int count);
 
   /// No description provided for @group_chat_selection_limit.
@@ -7498,7 +7498,7 @@ abstract class AppLocalizations {
   /// No description provided for @timer_create_custom_subtitle.
   ///
   /// In en, this message translates to:
-  /// **'Set duration, bells and ambient sound'**
+  /// **'Pick a length and optional background sound'**
   String get timer_create_custom_subtitle;
 
   /// No description provided for @timer_starting.
