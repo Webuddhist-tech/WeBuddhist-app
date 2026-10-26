@@ -4230,6 +4230,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timer_new_title => 'New timer';
 
   @override
+  String get timer_title_hint => 'Title...';
+
+  @override
   String get timer_edit_title => 'Edit timer';
 
   @override

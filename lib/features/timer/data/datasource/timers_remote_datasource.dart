@@ -94,11 +94,13 @@ class TimersRemoteDatasource {
 
   /// Updates a user-defined timer via `PUT /timers/user/{timerId}`.
   ///
-  /// Only the fields the app lets the user change are sent. `ambient_sound_id`
-  /// is always included — sending `null` clears the timer's ambient sound.
+  /// Only the fields the app lets the user change are sent. `description` is
+  /// the user-typed title and is always included — an empty string clears it.
+  /// `ambient_sound_id` is always included — sending `null` clears the sound.
   Future<PresetTimerModel> updateUserTimer({
     required String timerId,
     required String name,
+    required String description,
     required int durationMs,
     required String? ambientSoundId,
   }) async {
@@ -107,6 +109,7 @@ class TimersRemoteDatasource {
         '/timers/user/$timerId',
         data: {
           'name': name,
+          'description': description,
           'duration': durationMs,
           'ambient_sound_id': ambientSoundId,
         },

@@ -7386,6 +7386,12 @@ abstract class AppLocalizations {
   /// **'New timer'**
   String get timer_new_title;
 
+  /// No description provided for @timer_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Title...'**
+  String get timer_title_hint;
+
   /// No description provided for @timer_edit_title.
   ///
   /// In en, this message translates to:

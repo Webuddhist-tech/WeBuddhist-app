@@ -52,6 +52,8 @@ class PresetTimerCard extends StatelessWidget {
       color: textColor,
     );
 
+    final customTitle = timer.isUserCreated ? timer.description?.trim() : null;
+
     final minutes = TextSpan(text: '${timer.displayValue}', style: minuteStyle);
     final unit = TextSpan(
       text: timer.displaysSeconds ? context.l10n.timer_duration_sec : minLabel,
@@ -67,6 +69,27 @@ class PresetTimerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (customTitle != null && customTitle.isNotEmpty) ...[
+                  Text(
+                    customTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      height:
+                          isTibetan
+                              ? AppFontConfig.tibetanCompactLineHeight
+                              : null,
+                      leadingDistribution:
+                          isTibetan
+                              ? AppFontConfig.tibetanLeadingDistribution
+                              : null,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Text.rich(
                   TextSpan(
                     children:
@@ -130,19 +153,24 @@ class _PlayButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
-    final iconColor = isDark ? AppColors.textPrimary : AppColors.onPrimary;
+    final iconColor =
+        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final borderColor = isDark ? AppColors.grey500 : AppColors.grey800;
 
     return Material(
-      color: background,
+      color: Colors.transparent,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
         customBorder: const CircleBorder(),
-        child: SizedBox(
+        child: Ink(
           width: 48,
           height: 48,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: borderColor, width: 1.5),
+          ),
           child: Icon(AppAssets.play, size: 18, color: iconColor),
         ),
       ),

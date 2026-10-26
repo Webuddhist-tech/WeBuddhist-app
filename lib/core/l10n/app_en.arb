@@ -2144,6 +2144,7 @@
   "timer_begin_session": "Begin session",
   "timer_save_changes": "Save changes",
   "timer_new_title": "New timer",
+  "timer_title_hint": "Title...",
   "timer_edit_title": "Edit timer",
   "timer_your_timers": "Your timers",
   "timer_custom_timer": "Custom timer",
