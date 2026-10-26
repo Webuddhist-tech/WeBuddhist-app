@@ -13,7 +13,8 @@ Implementation lives in [`locale_notifier.dart`](locale_notifier.dart).
 ## Why they are separate
 
 UI locale is **bounded**. The app can only render chrome in a language it
-ships an ARB for (`L10n.all`: `en`, `zh`, `bo`, `hi`, `mn`, `ne`).
+ships an ARB for (`L10n.all`: `en`, `zh`, `zh-Hans`, `bo`, `hi`, `mn`,
+`ne`).
 
 Content language is **open-ended**. The backend may serve languages the app
 has no UI translation for (`th`, `tib`, `tibphono`, or any code from

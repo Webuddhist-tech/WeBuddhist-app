@@ -53,6 +53,7 @@ const Map<String, String> _nativeLanguageNames = {
   'sa': 'संस्कृतम्',
   'vi': 'Tiếng Việt',
   'zh': '中文',
+  'zh-hans': '简体中文',
 };
 
 /// English fallback names keyed by ISO language code. Used when no localized
@@ -241,6 +242,7 @@ const Map<String, String> _englishLanguageNames = {
   'yo': 'Yoruba',
   'za': 'Zhuang',
   'zh': 'Chinese',
+  'zh-hans': 'Simplified Chinese',
   'lzh': 'Classical Chinese',
   'zu': 'Zulu',
 };
