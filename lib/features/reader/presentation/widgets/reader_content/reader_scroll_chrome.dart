@@ -37,6 +37,16 @@ class ReaderFocusMode {
     }
     return false;
   }
+
+  /// Brings the bars back whatever the page did. Returns true when they were
+  /// hidden.
+  bool show() {
+    _down = 0;
+    _up = 0;
+    if (_barsVisible) return false;
+    _barsVisible = true;
+    return true;
+  }
 }
 
 /// How far through the page the reader is, from 0 to 1, for the progress

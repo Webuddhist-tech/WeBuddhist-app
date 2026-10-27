@@ -20,6 +20,7 @@ import 'package:flutter_pecha/features/reader/presentation/style/reader_style.da
 import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_live_follow.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_scroll_chrome.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_pill.dart';
@@ -103,10 +104,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// edition, so they are not asked for again.
   final Map<int, Set<String>> _skippedSegmentIds = {};
 
-  // Focus mode, from the list's scroll offset in pixels.
-  final ScrollOffsetListener _scrollOffsetListener =
-      ScrollOffsetListener.create();
-  StreamSubscription<double>? _scrollOffsetSubscription;
+  // Focus mode, from the list's scroll updates in pixels.
   final ReaderFocusMode _focusMode = ReaderFocusMode();
 
   // User gesture tracking, for telling the person's scrolls from the app's.
@@ -160,8 +158,17 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool get _isLiveRecitation =>
       widget.sources.first.navigationContext?.isLiveRecitation ?? false;
 
-  /// Rendered index of the live line, for the scrolled-away check.
-  int? _liveIndex;
+  /// The section and round the live verse was last in, to tell a controller
+  /// jump to a new section or round from the next verse.
+  String? _lastLiveSection;
+  int? _lastLiveRound;
+
+  /// A controller jump put a section heading at the top and the live verse
+  /// has not reached its place below it yet.
+  bool _liveAfterSectionJump = false;
+
+  /// Counts the live scrolls, so only the latest one hands the page back.
+  int _liveScroll = 0;
   bool _liveInitialized = false;
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
@@ -176,9 +183,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   void initState() {
     super.initState();
     _itemPositionsListener.itemPositions.addListener(_onScrollPositionChanged);
-    _scrollOffsetSubscription = _scrollOffsetListener.changes.listen(
-      _onScrollOffset,
-    );
 
     // Expose scroll controller to parent
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -193,7 +197,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _onScrollPositionChanged,
     );
     _debounceTimer?.cancel();
-    _scrollOffsetSubscription?.cancel();
     _sections.dispose();
     _currentSectionKey.dispose();
     super.dispose();
@@ -208,8 +211,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
     _updateCurrentSection();
     _updateProgress();
-
-    if (_isLiveRecitation) _maybePauseLiveFollow();
   }
 
   /// The section of the entry at the top of the viewport, for the pill.
@@ -232,7 +233,12 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// back up the page does not bring hidden bars back.
   void _onScrollOffset(double delta) {
     if (!mounted) return;
-    final byApp = _isProgrammaticScroll || !_recentUserGesture;
+    // A finger on the list makes the scroll the person's, even one that
+    // interrupts the app's own.
+    final byApp =
+        !_isUserScrolling && (_isProgrammaticScroll || !_recentUserGesture);
+    // Any scroll by the person leaves the live recitation.
+    if (!byApp && delta != 0 && _isLiveRecitation) _pauseLiveFollow();
     if (byApp && !_isLiveRecitation) return;
     if (!_focusMode.scrolled(delta, countUp: !byApp)) return;
     final hide = !_focusMode.barsVisible;
@@ -887,6 +893,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// the way those buttons do. Closing that sheet leaves the segment
   /// selected, so the resources sheet is what's left.
   void _onSegmentTap(int index, Segment segment) {
+    // Opening a verse's resources leaves the live recitation.
+    if (_isLiveRecitation) _pauseLiveFollow();
     final params = widget.sources[index];
     for (var i = 0; i < _startedCount; i++) {
       if (i == index) continue;
@@ -971,6 +979,18 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (!mounted || next.position == null) return;
     final positionChanged = previous?.position != next.position;
     final followRequested = previous?.followRequest != next.followRequest;
+    if (followRequested) {
+      // Rejoining goes to the live verse itself, not to the heading of a
+      // section the room moved to meanwhile.
+      _lastLiveSection = null;
+      _lastLiveRound = null;
+      // The verse opened before leaving would cover the live one.
+      for (var i = 0; i < _startedCount; i++) {
+        ref
+            .read(readerNotifierProvider(widget.sources[i]).notifier)
+            .selectSegment(null);
+      }
+    }
     if (positionChanged || followRequested) unawaited(_applyLive(next));
   }
 
@@ -1035,16 +1055,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return null;
   }
 
-  /// Local id of the line to highlight, or null when no source shows it or
-  /// the user opted out. Also records its rendered index.
+  /// Local id of the line to show on the live card, or null when no source
+  /// shows it or the person is not following: paused, the page reads like
+  /// the normal reader.
   String? _resolveLiveHighlight(
     List<_SourceView> views,
-    List<_Entry> entries,
     RecitationLivePosition? position,
     RecitationLiveFollowMode mode,
   ) {
-    if (position == null || mode == RecitationLiveFollowMode.off) {
-      _liveIndex = null;
+    if (position == null || mode != RecitationLiveFollowMode.following) {
       return null;
     }
     for (final view in views) {
@@ -1053,11 +1072,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         view.state,
         position.segmentId,
       );
-      if (localId == null) continue;
-      _liveIndex = _entryIndexForSegment(entries, localId, source: view.index);
-      return localId;
+      if (localId != null) return localId;
     }
-    _liveIndex = null;
     return null;
   }
 
@@ -1134,7 +1150,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         return;
       }
     }
-    liveNotifier.setOutOfSync(!_scrollToLiveSegment(located.$1, located.$2));
+    liveNotifier.setOutOfSync(
+      !_scrollToLiveSegment(located.$1, located.$2, position.roundNumber),
+    );
   }
 
   /// Brings [position] into a loaded text and returns where it landed. A
@@ -1178,7 +1196,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       final active = _activeSegmentIdsOf(i, state);
       if (active.isNotEmpty && !active.contains(local)) continue;
       if (state.content?.containsSegment(local) != true) {
-        if (!await notifier.loadNextPage(fromSegmentId: local)) continue;
+        if (!await _loadForwardTo(i, local)) continue;
         if (!mounted) return null;
         state = ref.read(readerNotifierProvider(params));
       }
@@ -1190,6 +1208,62 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       return (i, found);
     }
     return null;
+  }
+
+  /// Loads source [index] forward until it holds [segmentId], page after
+  /// page from where reading would load next. A page fetched at [segmentId]
+  /// itself would be appended after the loaded ones and skip every verse in
+  /// between. False when the verse never arrives: the source ran out, a
+  /// fetch failed, or a page brought nothing new.
+  Future<bool> _loadForwardTo(int index, String segmentId) async {
+    final params = widget.sources[index];
+    final notifier = ref.read(readerNotifierProvider(params).notifier);
+    while (mounted) {
+      final state = ref.read(readerNotifierProvider(params));
+      if (state.isLoadingNext) {
+        // A page reading asked for is on its way; it may bring the verse.
+        try {
+          await notifier.stream
+              .firstWhere((s) => !s.isLoadingNext)
+              .timeout(const Duration(seconds: 30));
+        } catch (e) {
+          _logger.debug('Page for live verse $segmentId did not settle: $e');
+          return false;
+        }
+        continue;
+      }
+      final content = state.content;
+      if (content == null) return false;
+      if (_localSegmentIdFor(content, segmentId) != null) return true;
+      if (!state.hasNextPage) return false;
+
+      final active = _activeSegmentIdsOf(index, state);
+      final from =
+          active.isEmpty
+              ? null
+              : nextSegmentToLoad(
+                content,
+                active,
+                skipped: _skippedSegmentIds[index] ?? const {},
+              );
+      if (active.isNotEmpty && from == null) return false;
+
+      final before = content.segmentIndexMap.length;
+      _nextTriggered.add(index);
+      final merged = await notifier
+          .loadNextPage(fromSegmentId: from)
+          .whenComplete(() => _nextTriggered.remove(index));
+      if (!mounted || !merged) return false;
+      final after = ref.read(readerNotifierProvider(params)).content;
+      if (after == null) return false;
+      if (from != null && !after.containsSegment(from)) {
+        // The edition lacks that verse, as in [_loadNext].
+        (_skippedSegmentIds[index] ??= {}).add(from);
+      } else if (after.segmentIndexMap.length <= before) {
+        return false;
+      }
+    }
+    return false;
   }
 
   /// Rebuild so the highlight, which reads the alias, lands on it too.
@@ -1217,53 +1291,117 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return state.isError ? null : state;
   }
 
-  /// Scrolls to the rendered line [segmentId] of [source]; false when it is
-  /// not on this page (a verse outside the task's).
-  bool _scrollToLiveSegment(int source, String segmentId) {
+  /// Scrolls to the rendered line [segmentId] of [source], read in [round];
+  /// false when it is not on this page (a verse outside the task's).
+  ///
+  /// The verse is held ⅔ down the text area (see [liveScrollTarget]). When
+  /// the room moved to another section or round, that section's heading
+  /// goes to the top instead.
+  bool _scrollToLiveSegment(
+    int source,
+    String segmentId,
+    int? round, {
+    bool settling = false,
+  }) {
+    final layout = _layoutFor([
+      for (var i = 0; i < _startedCount; i++) _readView(i),
+    ]);
     final index = _entryIndexForSegment(
-      _currentEntries(),
+      layout.entries,
       segmentId,
       source: source,
     );
     if (index == null) return false;
+
+    final sectionIndex =
+        index < layout.sectionOfEntry.length
+            ? layout.sectionOfEntry[index]
+            : -1;
+    final section = sectionIndex < 0 ? null : layout.sections[sectionIndex];
+    final jump = isLiveSectionJump(
+      previousSection: _lastLiveSection,
+      section: section?.key,
+      previousRound: _lastLiveRound,
+      round: round,
+    );
+    if (jump || section?.key != _lastLiveSection) _liveAfterSectionJump = jump;
+    _lastLiveSection = section?.key;
+    _lastLiveRound = round;
     if (!_itemScrollController.isAttached) return true;
 
+    final LiveScrollTarget? target;
+    // A verse not laid out yet is placed by its top; once the scroll lands
+    // it is measured and placed again by its middle.
+    var measured = true;
+    if (jump && section != null) {
+      target = (index: section.entryIndex, alignment: 0);
+    } else {
+      final positions = _itemPositionsListener.itemPositions.value;
+      ItemPosition? at(int row) =>
+          positions.where((p) => p.index == row).firstOrNull;
+      final verse = at(index);
+      final start = at(0);
+      measured = verse != null;
+      target = liveScrollTarget(
+        index: index,
+        heightFraction:
+            verse == null ? null : verse.itemTrailingEdge - verse.itemLeadingEdge,
+        distanceFromStart:
+            verse == null || start == null
+                ? null
+                : verse.itemLeadingEdge - start.itemLeadingEdge,
+        currentTop: verse?.itemLeadingEdge,
+        afterSectionJump: _liveAfterSectionJump,
+      );
+      // Once the verse has reached its place, the page holds it there.
+      if (target != null) _liveAfterSectionJump = false;
+    }
+    if (target == null) return true;
+
+    final generation = _liveGeneration;
+    final scroll = ++_liveScroll;
     _isProgrammaticScroll = true;
-    _itemScrollController.scrollTo(
-      index: index,
-      duration: ReaderConstants.scrollAnimationDuration,
-      curve: Curves.easeInOutCubic,
-      alignment: ReaderConstants.liveFollowAlignment,
-    );
-    Future.delayed(
-      ReaderConstants.scrollAnimationDuration +
-          const Duration(milliseconds: 100),
-      () {
-        _isProgrammaticScroll = false;
-        // Pull the next page in at the operator's pace, not the user's.
-        if (mounted) _checkPaginationThresholds();
-      },
-    );
+    // A jump far down the page runs past its duration, so this waits for
+    // the scroll itself rather than a timer: until it lands, its steps are
+    // the app's, not the person's.
+    _itemScrollController
+        .scrollTo(
+          index: target.index,
+          duration: ReaderConstants.scrollAnimationDuration,
+          curve: Curves.easeInOutCubic,
+          alignment: target.alignment,
+        )
+        .whenComplete(() async {
+          if (!mounted || scroll != _liveScroll) return;
+          _isProgrammaticScroll = false;
+          // Pull the next page in at the operator's pace, not the user's.
+          _checkPaginationThresholds();
+          if (measured || settling) return;
+          // The list reports where the verse landed a frame later.
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted ||
+              scroll != _liveScroll ||
+              _isUserScrolling ||
+              generation != _liveGeneration ||
+              !ref.read(recitationLiveProvider(_liveEventId!)).isFollowing) {
+            return;
+          }
+          _scrollToLiveSegment(source, segmentId, round, settling: true);
+        });
     return true;
   }
 
-  /// A user scroll that takes the live line off screen ends follow mode; a
-  /// nudge that keeps it visible does not.
-  void _maybePauseLiveFollow() {
-    if (_isProgrammaticScroll || !_recentUserGesture) return;
-    final liveIndex = _liveIndex;
+  /// Leaves the live recitation: the Live pill turns to Paused, the page stops
+  /// following and reads like the normal reader until the person rejoins.
+  void _pauseLiveFollow() {
     final eventId = _liveEventId;
-    if (liveIndex == null || eventId == null) return;
+    if (eventId == null) return;
     if (!ref.read(recitationLiveProvider(eventId)).isFollowing) return;
-
-    final visible = _itemPositionsListener.itemPositions.value.any(
-      (p) =>
-          p.index == liveIndex &&
-          p.itemTrailingEdge > 0 &&
-          p.itemLeadingEdge < 1,
-    );
-    if (!visible) {
-      ref.read(recitationLiveProvider(eventId).notifier).pauseFollowing();
+    ref.read(recitationLiveProvider(eventId).notifier).pauseFollowing();
+    // Bring the bars back, so the Paused pill is there to tap.
+    if (_focusMode.show()) {
+      widget.onScrollDirectionChanged?.call(false);
+      setState(() => _pillVisible = true);
     }
   }
 
@@ -1451,12 +1589,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final layout = _layoutFor(views);
     _layout = layout;
     final entries = layout.entries;
-    final liveSegmentId = _resolveLiveHighlight(
-      views,
-      entries,
-      livePosition,
-      liveMode,
-    );
+    final liveSegmentId = _resolveLiveHighlight(views, livePosition, liveMode);
     final tail = views.last.state;
     final isLoadingTail =
         tail.isLoadingNext ||
@@ -1528,18 +1661,29 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             onPointerCancel: (_) {
               _isUserScrolling = false;
             },
-            child: ScrollablePositionedList.builder(
-              itemScrollController: _itemScrollController,
-              itemPositionsListener: _itemPositionsListener,
-              scrollOffsetListener: _scrollOffsetListener,
-              itemCount: entries.length,
-              padding: EdgeInsets.only(
-                top: ReaderConstants.contentTopPadding,
-                bottom: widget.bottomPadding,
+            // The list's own ScrollOffsetListener stops hearing the person
+            // once a long scrollTo swaps its inner lists; the updates they
+            // bubble up come from whichever list is showing.
+            child: NotificationListener<ScrollUpdateNotification>(
+              onNotification: (notification) {
+                if (notification.depth == 0 &&
+                    notification.metrics.axis == Axis.vertical) {
+                  _onScrollOffset(notification.scrollDelta ?? 0);
+                }
+                return false;
+              },
+              child: ScrollablePositionedList.builder(
+                itemScrollController: _itemScrollController,
+                itemPositionsListener: _itemPositionsListener,
+                itemCount: entries.length,
+                padding: EdgeInsets.only(
+                  top: ReaderConstants.contentTopPadding,
+                  bottom: widget.bottomPadding,
+                ),
+                itemBuilder:
+                    (context, index) =>
+                        _buildEntry(entries[index], views, liveSegmentId),
               ),
-              itemBuilder:
-                  (context, index) =>
-                      _buildEntry(entries[index], views, liveSegmentId),
             ),
           ),
         ),

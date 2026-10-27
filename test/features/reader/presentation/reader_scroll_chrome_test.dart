@@ -49,6 +49,16 @@ void main() {
       expect(mode.scrolled(100), isFalse);
       expect(mode.barsVisible, isFalse);
     });
+
+    test('show brings hidden bars back and starts counting afresh', () {
+      final mode = ReaderFocusMode()..scrolled(30);
+      expect(mode.show(), isTrue);
+      expect(mode.barsVisible, isTrue);
+      expect(mode.show(), isFalse);
+      // The steps before show do not carry over.
+      expect(mode.scrolled(20), isFalse);
+      expect(mode.scrolled(4), isTrue);
+    });
   });
 
   group('reading progress', () {
