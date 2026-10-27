@@ -263,6 +263,7 @@ class PrayerRequestsState extends Equatable {
     PrayerRoomStatus? roomStatus,
     String? roomId,
     String? mantra,
+    bool clearMantra = false,
     List<ChatMessageDTO>? requests,
     PrayerRequestsFilter? filter,
     int? total,
@@ -279,7 +280,7 @@ class PrayerRequestsState extends Equatable {
     return PrayerRequestsState(
       roomStatus: roomStatus ?? this.roomStatus,
       roomId: roomId ?? this.roomId,
-      mantra: mantra ?? this.mantra,
+      mantra: clearMantra ? null : mantra ?? this.mantra,
       requests: requests ?? this.requests,
       filter: filter ?? this.filter,
       total: total ?? this.total,
@@ -432,14 +433,13 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (room == null) return;
 
     final roomId = room.id;
-    final pronunciation = room.mantra?.pronunciation.trim();
+    final pronunciation = room.mantra?.pronunciation.trim() ?? '';
+    // A retry after the room lost its mantra must drop the old text too.
     state = state.copyWith(
       roomId: roomId,
       roomStatus: PrayerRoomStatus.ready,
-      mantra:
-          pronunciation == null || pronunciation.isEmpty
-              ? null
-              : pronunciation,
+      mantra: pronunciation.isEmpty ? null : pronunciation,
+      clearMantra: pronunciation.isEmpty,
     );
     await _loadFirstPage(roomId);
   }

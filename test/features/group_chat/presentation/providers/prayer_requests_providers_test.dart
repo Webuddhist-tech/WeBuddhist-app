@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intent
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_mantra_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
@@ -78,6 +79,10 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   List<ChatMessageDTO> history;
   Failure? roomFailure;
 
+  /// Returned on the event room; null for a room without one.
+  ChatRoomMantraDTO? roomMantra;
+  Failure? listFailure;
+
   /// Which room endpoint was asked, `event:<id>` or `group:<id>`.
   final List<String> roomLookups = [];
   final List<String?> roomLanguages = [];
@@ -121,7 +126,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     roomLanguages.add(language);
     final failure = roomFailure;
     if (failure != null) return Left(failure);
-    return const Right(
+    return Right(
       ChatRoomDTO(
         id: 'room-1',
         createdBy: 'u1',
@@ -129,6 +134,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
         eventId: 'e1',
         name: 'Tara',
         updatedAt: '',
+        mantra: roomMantra,
       ),
     );
   }
@@ -171,6 +177,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     listedTranslationLanguages.add(translationLanguage);
     final gate = listGate;
     if (gate != null) await gate.future;
+    final failure = listFailure;
+    if (failure != null) return Left(failure);
     final rows =
         intention == null
             ? history
@@ -907,6 +915,30 @@ void main() {
       await notifier.retry();
       await _settle();
       expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
+    });
+
+    test('a room mantra is kept, and dropped once the room loses it', () async {
+      repository =
+          _FakeGroupChatRepository()
+            ..roomMantra = const ChatRoomMantraDTO(
+              id: 'm1',
+              pronunciation: ' Om Mani Padme Hum ',
+            )
+            ..listFailure = const ServerFailure('boom');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(notifier.state.mantra, 'Om Mani Padme Hum');
+      expect(notifier.state.error, 'boom');
+
+      repository
+        ..roomMantra = null
+        ..listFailure = null;
+      await notifier.retry();
+      await _settle();
+      expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
+      expect(notifier.state.mantra, isNull);
     });
 
     test('send posts a PRAYER message and inserts it at the top', () async {
