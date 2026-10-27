@@ -7,6 +7,7 @@ import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/texts/data/datasource/text_remote_datasource.dart';
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 
 class TextsRepository {
   final TextRemoteDatasource remoteDatasource;
@@ -281,6 +282,23 @@ class TextsRepository {
     } catch (e) {
       _logger.warning('Aligning segment $segmentId failed', e);
       return null;
+    }
+  }
+
+  /// See [TextRemoteDatasource.fetchOutline]. A failed fetch counts as no
+  /// table of contents: the reader falls back to the headings it has loaded.
+  Future<TextOutline> fetchOutline({
+    required String textId,
+    String? versionId,
+  }) async {
+    try {
+      return await remoteDatasource.fetchOutline(
+        textId: textId,
+        versionId: versionId,
+      );
+    } catch (e) {
+      _logger.warning('Table of contents for $textId failed', e);
+      return const TextOutline.empty();
     }
   }
 }

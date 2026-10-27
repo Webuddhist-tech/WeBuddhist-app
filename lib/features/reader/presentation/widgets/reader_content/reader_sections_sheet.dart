@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The page's texts with their sections nested: the text on screen marked,
 /// those before it ticked, the section on screen marked under its text.
-/// Pops with the entry index to go to.
+/// Pops with the section to go to; a text pops as the section it opens.
 class ReaderSectionsSheet extends ConsumerWidget {
   final ValueListenable<ReaderSectionsSnapshot> snapshot;
   final ValueListenable<String?> current;
@@ -103,7 +103,7 @@ class ReaderSectionsSheet extends ConsumerWidget {
                                 onTap:
                                     () => Navigator.of(
                                       context,
-                                    ).pop(pages.texts[i].entryIndex),
+                                    ).pop(pages.texts[i].start),
                               ),
                               for (final section in pages.texts[i].sections)
                                 _SectionRow(
@@ -112,9 +112,7 @@ class ReaderSectionsSheet extends ConsumerWidget {
                                   isCurrent: section.key == currentKey,
                                   nested: true,
                                   onTap:
-                                      () => Navigator.of(
-                                        context,
-                                      ).pop(section.entryIndex),
+                                      () => Navigator.of(context).pop(section),
                                 ),
                             ],
                             for (var i = 0; i < pages.pendingSources; i++)

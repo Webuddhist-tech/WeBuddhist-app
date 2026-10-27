@@ -9,8 +9,13 @@ class ReaderPageSection {
   final String language;
 
   /// The entry to bring to the top: the heading, or the first verse when
-  /// the heading was drawn for an earlier source.
+  /// the heading was drawn for an earlier source. -1 while the verse it
+  /// opens at is not on the page.
   final int entryIndex;
+
+  /// The verse it opens at, to load it when it is not on the page; null for
+  /// a section known only from the loaded pages.
+  final String? segmentId;
 
   const ReaderPageSection({
     required this.source,
@@ -18,7 +23,10 @@ class ReaderPageSection {
     required this.title,
     required this.language,
     required this.entryIndex,
+    this.segmentId,
   });
+
+  bool get isOnPage => entryIndex >= 0;
 
   String get key => '$source:$id';
 
@@ -29,10 +37,12 @@ class ReaderPageSection {
       other.id == id &&
       other.title == title &&
       other.language == language &&
-      other.entryIndex == entryIndex;
+      other.entryIndex == entryIndex &&
+      other.segmentId == segmentId;
 
   @override
-  int get hashCode => Object.hash(source, id, title, language, entryIndex);
+  int get hashCode =>
+      Object.hash(source, id, title, language, entryIndex, segmentId);
 }
 
 /// A text of the page as the navigator lists it, with its sections nested.
@@ -44,6 +54,10 @@ class ReaderPageText {
 
   /// The section the text is named after, left out of [sections].
   final String titleSectionId;
+
+  /// The verse the text opens at while it is not on the page (the page was
+  /// loaded from further in), to load it; null when [entryIndex] is it.
+  final String? startSegmentId;
   final List<ReaderPageSection> sections = [];
 
   ReaderPageText({
@@ -52,7 +66,18 @@ class ReaderPageText {
     required this.language,
     required this.entryIndex,
     required this.titleSectionId,
+    this.startSegmentId,
   });
+
+  /// The text as a place to go to: its start.
+  ReaderPageSection get start => ReaderPageSection(
+    source: source,
+    id: titleSectionId,
+    title: title,
+    language: language,
+    entryIndex: startSegmentId == null ? entryIndex : -1,
+    segmentId: startSegmentId,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -61,6 +86,7 @@ class ReaderPageText {
       other.title == title &&
       other.language == language &&
       other.entryIndex == entryIndex &&
+      other.startSegmentId == startSegmentId &&
       listEquals(other.sections, sections);
 
   @override
@@ -69,6 +95,7 @@ class ReaderPageText {
     title,
     language,
     entryIndex,
+    startSegmentId,
     Object.hashAll(sections),
   );
 }

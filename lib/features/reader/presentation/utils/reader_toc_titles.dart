@@ -1,0 +1,127 @@
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
+
+/// The translation's title for each section of the [original], by the
+/// original section's id. Library tables of contents hold titles only in
+/// their own edition's language, so the translation's sections are matched
+/// to the original's by the verse they open at: the [translation]'s are
+/// numbered like the original's verses. Of those opening at the same verse
+/// the one at the same depth wins, else the nearest in depth. A section with
+/// no match is left out.
+Map<String, String> matchTranslationTitles(
+  TextOutline original,
+  TextOutline translation,
+) {
+  if (original.isEmpty || translation.isEmpty) return const {};
+  final byNumber = <int, List<TextOutlineSection>>{};
+  for (final section in translation.sections) {
+    if (section.titleFor(translation.language) == null) continue;
+    byNumber.putIfAbsent(section.number, () => []).add(section);
+  }
+  final titles = <String, String>{};
+  for (final section in original.sections) {
+    final candidates = byNumber[section.number];
+    if (candidates == null) continue;
+    TextOutlineSection? best;
+    for (final candidate in candidates) {
+      if (best == null ||
+          (candidate.depth - section.depth).abs() <
+              (best.depth - section.depth).abs()) {
+        best = candidate;
+      }
+    }
+    titles[section.id] = best!.titleFor(translation.language)!;
+  }
+  return titles;
+}
+
+/// A section's title as the reader shows it, and the language it is in:
+/// the translation's own title for it ([translationTitle]), else its title
+/// in the translation's language, else its own in [originalLanguage] (or
+/// any), else the text's title.
+({String title, String language}) readerSectionTitle({
+  required Map<String, String> titles,
+  required String originalLanguage,
+  String? translationTitle,
+  String? translationLanguage,
+  required String textTitle,
+  required String textLanguage,
+}) {
+  if (translationLanguage != null) {
+    if (translationTitle != null && translationTitle.isNotEmpty) {
+      return (title: translationTitle, language: translationLanguage);
+    }
+    final inTranslation = _titleIn(titles, translationLanguage);
+    if (inTranslation != null) {
+      return (title: inTranslation, language: translationLanguage);
+    }
+  }
+  final own = _titleIn(titles, originalLanguage);
+  if (own != null) return (title: own, language: originalLanguage);
+  for (final entry in titles.entries) {
+    if (entry.value.isNotEmpty) {
+      return (title: entry.value, language: entry.key);
+    }
+  }
+  return (title: textTitle, language: textLanguage);
+}
+
+String? _titleIn(Map<String, String> titles, String language) {
+  final code = language.trim().toLowerCase();
+  for (final entry in titles.entries) {
+    if (entry.key.trim().toLowerCase() == code && entry.value.isNotEmpty) {
+      return entry.value;
+    }
+  }
+  return null;
+}
+
+/// The headings of [titled] that are sections of the page: those some verse
+/// sits directly under. A heading whose titled subheadings hold all of its
+/// verses, one after another, only groups them; it still names a text.
+List<TextOutlineSection> readerPageSections(List<TextOutlineSection> titled) {
+  final children = <String, List<TextOutlineSection>>{};
+  for (final section in titled) {
+    final parent = section.parentId;
+    if (parent != null) children.putIfAbsent(parent, () => []).add(section);
+  }
+  bool grouping(TextOutlineSection section) {
+    final nested = children[section.id];
+    if (nested == null) return false;
+    var next = section.number;
+    for (final child in nested) {
+      if (child.number != next) return false;
+      next = child.endNumber + 1;
+    }
+    return next == section.endNumber + 1;
+  }
+
+  return [
+    for (final section in titled)
+      if (!grouping(section)) section,
+  ];
+}
+
+/// The innermost of [sections] holding the verse numbered [verseNumber],
+/// or null. [sections] are in reading order with each heading before the
+/// ones nested in it, so their opening verses never go down.
+TextOutlineSection? innermostSectionHolding(
+  List<TextOutlineSection> sections,
+  int verseNumber,
+) {
+  // The last section opening at or before the verse.
+  var low = 0;
+  var high = sections.length;
+  while (low < high) {
+    final middle = (low + high) >> 1;
+    if (sections[middle].number <= verseNumber) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
+  }
+  // Back from there: a later one holding the verse is nested deeper.
+  for (var i = low - 1; i >= 0; i--) {
+    if (sections[i].holds(verseNumber)) return sections[i];
+  }
+  return null;
+}

@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_type.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation.dart';
@@ -183,6 +184,41 @@ class LibraryTextRemoteDatasource implements TextRemoteDatasource {
       segmentId: segmentId,
       sourceId: sourceTextId,
       targetId: targetTextId,
+    );
+  }
+
+  @override
+  Future<TextOutline> fetchOutline({
+    required String textId,
+    String? versionId,
+  }) async {
+    final isSecondary =
+        versionId != null && versionId.isNotEmpty && versionId != textId;
+    final edition = await _library.resolveEdition(
+      isSecondary ? versionId : textId,
+    );
+    final primary = isSecondary ? await _library.resolveEdition(textId) : null;
+    final entries = await _library.getOutline(
+      edition.id,
+      primaryEditionId: primary?.id,
+    );
+    if (entries.isEmpty) return const TextOutline.empty();
+    final text = await _library.getText(edition.textId);
+    return TextOutline(
+      language: text.language,
+      sections: [
+        for (final entry in entries)
+          TextOutlineSection(
+            id: entry.id,
+            parentId: entry.parentId,
+            depth: entry.depth,
+            titles: entry.title,
+            segmentId: entry.segmentId,
+            number: entry.number,
+            endNumber: entry.endNumber,
+            opensText: entry.opensText,
+          ),
+      ],
     );
   }
 

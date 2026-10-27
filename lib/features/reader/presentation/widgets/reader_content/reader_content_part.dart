@@ -19,6 +19,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_sett
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_live_follow.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
@@ -34,6 +35,7 @@ import 'package:flutter_pecha/features/recitation/presentation/providers/recitat
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment_info.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -325,8 +327,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       String id,
       String title,
       String language,
-      int entry,
-    ) => sectionIndexByKey.putIfAbsent('$source:$id', () {
+      int entry, {
+      String? segmentId,
+    }) => sectionIndexByKey.putIfAbsent('$source:$id', () {
       sections.add(
         ReaderPageSection(
           source: source,
@@ -334,6 +337,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           title: title,
           language: language,
           entryIndex: entry,
+          segmentId: segmentId,
         ),
       );
       return sections.length - 1;
@@ -357,19 +361,47 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       if (view.params.textId != previousTextId) open.clear();
       previousTextId = view.params.textId;
       final (textTitle, textLanguage) = _titleOf(view);
+      // The whole table of contents, its titled headings: those verses sit
+      // directly under are the text's sections, not loaded yet included.
+      final outline = view.outline;
+      final titled = <TextOutlineSection>[
+        if (outline != null)
+          for (final section in outline.sections)
+            if (section.titleFor(outline.language) != null) section,
+      ];
+      final outlined = readerPageSections(titled);
+      final opening = titled.firstOrNull;
       // The text is named by its first heading when it has one.
-      final heading = items.isEmpty ? null : items.first.section;
-      final titled = heading != null && (heading.title?.isNotEmpty ?? false);
-      final (title, titleLanguage) =
-          titled && !view.translationHeadings
-              ? _headingText(view, heading)
-              : (textTitle, textLanguage);
+      final String titleSectionId;
+      final String title;
+      final String titleLanguage;
+      if (outline != null) {
+        final opens = opening != null && opening.opensText && opening.depth == 0;
+        titleSectionId = opens ? opening.id : _textSectionId;
+        (title, titleLanguage) =
+            opens && !view.translationHeadings
+                ? _outlineTitle(view, opening)
+                : (textTitle, textLanguage);
+      } else {
+        final heading = items.isEmpty ? null : items.first.section;
+        final titled = heading != null && (heading.title?.isNotEmpty ?? false);
+        titleSectionId = titled ? heading.id : _textSectionId;
+        (title, titleLanguage) =
+            titled && !view.translationHeadings
+                ? _headingText(view, heading)
+                : (textTitle, textLanguage);
+      }
       final text = ReaderPageText(
         source: view.index,
         title: title,
         language: titleLanguage,
         entryIndex: entries.length,
-        titleSectionId: titled ? heading.id : _textSectionId,
+        titleSectionId: titleSectionId,
+        // Loaded from further in: the opening verse is not on the page.
+        startSegmentId:
+            view.state.hasPreviousPage && opening != null && opening.opensText
+                ? opening.segmentId
+                : null,
       );
       texts.add(text);
       int textSection() => sectionAt(
@@ -379,6 +411,24 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         textLanguage,
         entries.length,
       );
+      // Verses before the first heading belong to the text itself, ahead of
+      // its headings.
+      if (opening != null && !opening.opensText) textSection();
+      final outlineSection = <String, int>{};
+      for (final section in outlined) {
+        final (sectionTitle, sectionLanguage) = _outlineTitle(view, section);
+        outlineSection[section.id] = sectionAt(
+          view.index,
+          section.id,
+          sectionTitle,
+          sectionLanguage,
+          -1,
+          segmentId: section.segmentId,
+        );
+      }
+      // Where each heading and verse of this source sits in the list.
+      final headerEntry = <String, int>{};
+      final verseEntry = <int, int>{};
       if (views.length > 1 &&
           items.isNotEmpty &&
           !view.translationHeadings &&
@@ -399,6 +449,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           if (!view.translationHeadings) {
             drawn[section.id] = (view.index, entries.length);
           }
+          headerEntry[section.id] = entries.length;
           // A heading the translation's stand in for stays in the list, as
           // an empty item, so indices do not move.
           add(_Entry.item(view.index, item, previous), -1);
@@ -407,14 +458,25 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         }
 
         final segment = item.segment!;
+        verseEntry.putIfAbsent(segment.segmentNumber, () => entries.length);
         var headings = const <SecondaryHeading>[];
-        final int sectionIndex;
         if (view.translationHeadings) {
-          final secondary = view.secondaryState!;
           headings =
               view.collapsedHeadings?[segment.segmentId] ??
-              secondary.headingsBySegmentNumber[segment.segmentNumber] ??
+              view.secondaryState!.headingsBySegmentNumber[segment
+                  .segmentNumber] ??
               const <SecondaryHeading>[];
+        }
+        final int sectionIndex;
+        if (outline != null) {
+          final holding = innermostSectionHolding(
+            outlined,
+            segment.segmentNumber,
+          );
+          sectionIndex =
+              holding == null ? textSection() : outlineSection[holding.id]!;
+        } else if (view.translationHeadings) {
+          final secondary = view.secondaryState!;
           final enclosing = secondary.headingsEnclosing(segment.segmentNumber);
           sectionIndex =
               enclosing.isEmpty
@@ -455,6 +517,22 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         );
         previous = item;
       }
+      // Each heading goes where it is drawn, else to the verse it opens at;
+      // one with neither on the page waits to be loaded.
+      for (final section in outlined) {
+        final at = headerEntry[section.id] ?? verseEntry[section.number];
+        if (at == null) continue;
+        final index = outlineSection[section.id]!;
+        final placed = sections[index];
+        sections[index] = ReaderPageSection(
+          source: placed.source,
+          id: placed.id,
+          title: placed.title,
+          language: placed.language,
+          entryIndex: at,
+          segmentId: placed.segmentId,
+        );
+      }
     }
     if (!_isCollapsed && widget.chantSessionFooter != null) {
       add(const _Entry.footer(), -1);
@@ -486,15 +564,41 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return first.isHeader && (first.section?.title?.isNotEmpty ?? false);
   }
 
-  /// A heading's title as the page reads it: in the translation's language
-  /// when the table of contents has it, else the text's.
+  /// A heading's title as the page reads it: the translation's for it when
+  /// one shows, else the text's (see [readerSectionTitle]).
   (String, String) _headingText(_SourceView view, Section section) {
-    final headingLanguage =
-        view.secondaryActive ? view.dualSettings.secondary.languageCode : null;
-    final translated =
-        headingLanguage == null ? null : section.titleIn(headingLanguage);
-    if (translated != null) return (translated, headingLanguage!);
-    return (section.title ?? '', view.language);
+    final title = readerSectionTitle(
+      titles: section.titles,
+      originalLanguage: view.language,
+      translationTitle: view.translationTitles[section.id],
+      translationLanguage:
+          view.secondaryActive
+              ? view.dualSettings.secondary.languageCode
+              : null,
+      textTitle: section.title ?? '',
+      textLanguage: view.language,
+    );
+    return (title.title, title.language);
+  }
+
+  /// A section of the whole table of contents as the navigator lists it.
+  (String, String) _outlineTitle(
+    _SourceView view,
+    TextOutlineSection section,
+  ) {
+    final (textTitle, textLanguage) = _titleOf(view);
+    final title = readerSectionTitle(
+      titles: section.titles,
+      originalLanguage: view.outline?.language ?? view.language,
+      translationTitle: view.translationTitles[section.id],
+      translationLanguage:
+          view.secondaryActive
+              ? view.dualSettings.secondary.languageCode
+              : null,
+      textTitle: textTitle,
+      textLanguage: textLanguage,
+    );
+    return (title.title, title.language);
   }
 
   /// The sections the pill counts, text by text: a text's sections, or the
@@ -531,7 +635,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (_startedCount < widget.sources.length) {
       setState(() => _startedCount = widget.sources.length);
     }
-    final picked = await showModalBottomSheet<int>(
+    final picked = await showModalBottomSheet<ReaderPageSection>(
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
@@ -545,7 +649,46 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
               ReaderSectionsSheet(snapshot: _sections, current: _currentSectionKey),
     );
     if (picked == null || !mounted) return;
-    _scrollToEntry(picked);
+    await _goToSection(picked);
+  }
+
+  /// Brings [section] to the top, loading the verse it opens at first when
+  /// it is not on the page.
+  Future<void> _goToSection(ReaderPageSection section) async {
+    if (section.isOnPage) {
+      _scrollToEntry(section.entryIndex);
+      return;
+    }
+    final segmentId = section.segmentId;
+    if (segmentId == null) return;
+    final bool loaded;
+    if (_isCollapsed) {
+      loaded = await _loadForwardTo(section.source, segmentId);
+    } else {
+      final notifier = ref.read(
+        readerNotifierProvider(widget.sources[section.source]).notifier,
+      );
+      loaded = await notifier.jumpToSegment(segmentId) != null;
+    }
+    if (!loaded || !mounted) return;
+    // Let the list take the new verses, then find the section in it, or the
+    // text it names.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    final layout = _layout;
+    if (layout == null) return;
+    var entry = -1;
+    for (final placed in layout.sections) {
+      if (placed.key == section.key) entry = placed.entryIndex;
+    }
+    for (final text in layout.texts) {
+      if (entry < 0 &&
+          text.source == section.source &&
+          text.titleSectionId == section.id) {
+        entry = text.entryIndex;
+      }
+    }
+    if (entry >= 0) _scrollToEntry(entry);
   }
 
   /// Brings the entry at [index] to the top.
@@ -1333,7 +1476,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // A verse not laid out yet is placed by its top; once the scroll lands
     // it is measured and placed again by its middle.
     var measured = true;
-    if (jump && section != null) {
+    if (jump && section != null && section.isOnPage) {
       target = (index: section.entryIndex, alignment: 0);
     } else {
       final positions = _itemPositionsListener.itemPositions.value;
@@ -1471,6 +1614,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         (showOriginal
             ? secondaryState.headingsBySegmentNumber.isNotEmpty
             : secondaryState.headsTranslationOnly);
+
+    // The whole table of contents, for a source showing its whole text, by
+    // the edition its pages came from; with a translation, its titles too.
+    TextOutline? outline;
+    var translationTitles = const <String, String>{};
+    final editionId = state.textDetail?.id;
+    if (editionId != null && !collapsed) {
+      final outlineProvider = readerOutlineProvider(editionId);
+      if (watch || ref.exists(outlineProvider)) {
+        final loaded = get(outlineProvider).valueOrNull;
+        if (loaded != null && !loaded.isEmpty) outline = loaded;
+      }
+      if (outline != null && secondaryActive) {
+        final titlesProvider = readerTranslationTitlesProvider((
+          textId: editionId,
+          versionId: secondaryVersionId,
+        ));
+        if (watch || ref.exists(titlesProvider)) {
+          translationTitles = get(titlesProvider).valueOrNull ?? const {};
+        }
+      }
+    }
     return _SourceView(
       index: index,
       params: params,
@@ -1485,6 +1650,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           collapsed && secondaryState != null
               ? collapsedTranslationHeadings(items, secondaryState)
               : null,
+      outline: outline,
+      translationTitles: translationTitles,
     );
   }
 
@@ -1848,6 +2015,13 @@ class _SourceView {
   final bool translationHeadings;
   final Map<String, List<SecondaryHeading>>? collapsedHeadings;
 
+  /// The text's whole table of contents, for a source showing all of it;
+  /// null while it loads or when it has none.
+  final TextOutline? outline;
+
+  /// The translation's title for each section, by the original's id.
+  final Map<String, String> translationTitles;
+
   const _SourceView({
     required this.index,
     required this.params,
@@ -1859,6 +2033,8 @@ class _SourceView {
     this.secondaryState,
     this.translationHeadings = false,
     this.collapsedHeadings,
+    this.outline,
+    this.translationTitles = const {},
   });
 
   String get language => state.textDetail?.language ?? 'en';
