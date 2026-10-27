@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
-import 'package:flutter_pecha/core/config/router/app_routes.dart';
+import 'package:flutter_pecha/core/config/router/launch_navigation.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_router.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:go_router/go_router.dart';
@@ -105,32 +106,11 @@ class AppLinksDeepLinkService {
     return true;
   }
 
-  /// Dispatches [uri] once the router's base location has left `/splash`.
-  ///
-  /// Uses `currentConfiguration.uri`, which reflects only non-imperative
-  /// matches (i.e. the true base location, ignoring any pushed pages). The
-  /// router delegate is a [Listenable], so we attach a one-shot listener when
-  /// the base has not settled yet.
+  /// Dispatches [uri] once the router has left `/splash`; see
+  /// [runWhenOffSplash].
   void _dispatchWhenRouterSettled(GoRouter router, Uri uri) {
-    final delegate = router.routerDelegate;
-
-    bool isSettled() =>
-        delegate.currentConfiguration.uri.path != AppRoutes.splash;
-
-    if (isSettled()) {
-      _dispatch(uri);
-      return;
-    }
-
+    if (runWhenOffSplash(router, () => _dispatch(uri))) return;
     _logger.info('Router still on splash, deferring deep link dispatch: $uri');
-    void onRouterChanged() {
-      if (!isSettled()) return;
-      delegate.removeListener(onRouterChanged);
-      _logger.info('Router settled, dispatching deferred deep link: $uri');
-      _dispatch(uri);
-    }
-
-    delegate.addListener(onRouterChanged);
   }
 
   Future<void> dispose() async {
@@ -182,14 +162,21 @@ class AppLinksDeepLinkService {
       return;
     }
 
-    if (_router == null) {
+    final router = _router;
+    if (router == null) {
       _pendingUri = uri;
       _logger.info('Router not ready, stored app link: $uri');
       return;
     }
 
-    _dispatch(uri);
+    // The splash can still be up (auth loading, or the launch intro holding
+    // it), and a link dispatched now would be redirected there and lost.
+    _dispatchWhenRouterSettled(router, uri);
   }
+
+  /// Feeds [uri] in as if the OS had just delivered it.
+  @visibleForTesting
+  void handleLinkForTesting(Uri uri) => _handleLink(uri);
 
   bool _dispatch(Uri uri, {String? baseLocation}) {
     final router = _router;

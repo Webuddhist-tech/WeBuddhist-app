@@ -40,7 +40,9 @@ class RouteGuard {
     );
 
     // Show splash while auth is loading, or while the launch splash is still
-    // playing its intro (see splashHoldProvider).
+    // playing its intro (see splashHoldProvider). The destination is not
+    // remembered, so navigation that starts on its own (links, notification
+    // taps) waits for the splash first, with runWhenOffSplash.
     if (authState.isLoading || holdSplash) return AppRoutes.splash;
 
     // Route based on auth state
