@@ -109,6 +109,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   // App bar visibility state
   bool _isAppBarVisible = true;
+
+  /// How far through the page the reader is, for the header's progress line.
+  final ValueNotifier<double> _progress = ValueNotifier(0);
   double _bottomOverlayHeight = 0;
   // Scroll controller callback
   void Function(String segmentId, {double? alignment})? _scrollToSegment;
@@ -426,6 +429,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   @override
   void dispose() {
     _audioController?.dispose();
+    _progress.dispose();
     super.dispose();
   }
 
@@ -780,9 +784,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         SafeArea(
           child: Column(
             children: [
-              // App bar slides up out of view on scroll-down.
+              // Focus mode: the app bar slides up out of view on scroll-down.
               SlideAwayHeader(
                 visible: _isAppBarVisible,
+                duration: ReaderConstants.focusModeDuration,
+                curve: ReaderConstants.focusModeCurve,
                 child: _buildAppBar(context),
               ),
               // Main scrollable content
@@ -806,6 +812,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         chantSessionFooter: chantFooter,
                         onSourceSelected: _onSourceSelected,
                         onScrollDirectionChanged: _onScrollDirectionChanged,
+                        progress: _progress,
                         onScrollControllerReady: (scrollFn) {
                           _scrollToSegment = scrollFn;
                         },
@@ -912,7 +919,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     return ReaderAppBarOverlay(
       params: _activeParams,
-      colorIndex: widget.colorIndex,
+      progress: _progress,
       liveSyncToggle: liveSyncToggle,
       prayerRequestsButton: prayerRequestsButton,
       // Picking a result replaces the route without the event, which drops
@@ -921,11 +928,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           liveEventId == null ? () => _handleSearch(context) : null,
       onLanguagesPressed: () => _openLanguagesSheet(context),
       // The event page already offers share and offline recitations, so the
-      // menu goes and font size gets its own button.
+      // menu goes there.
       onMorePressed:
           eventId == null ? () => _openMoreBottomSheet(context) : null,
-      onFontSizePressed:
-          eventId == null ? null : () => showFontSizeBottomSheet(context),
+      onFontSizePressed: () => showFontSizeBottomSheet(context),
     );
   }
 

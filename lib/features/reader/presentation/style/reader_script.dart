@@ -2,16 +2,20 @@
 /// are looked up by it, so a Tibetan line and an English line at the same
 /// size step look the same size on screen.
 enum ReaderScript {
-  latin(1.4),
-  tibetan(1.9),
-  chinese(1.6),
-  devanagari(1.6),
-  cyrillic(1.4);
+  latin(1.4, 1.0),
+  tibetan(1.9, 1.5),
+  chinese(1.6, 1.05),
+  devanagari(1.6, 1.0),
+  cyrillic(1.4, 1.0);
 
-  const ReaderScript(this.lineHeightRatio);
+  const ReaderScript(this.lineHeightRatio, this.interfaceScale);
 
   /// Line height as a multiple of the font size, at Normal spacing.
   final double lineHeightRatio;
+
+  /// How much bigger interface text written in this script is than Latin at
+  /// the same nominal size, so labels look the same size on screen.
+  final double interfaceScale;
 
   /// How many letters decide a line's script; the rest are not read.
   static const int _sampleLetters = 40;

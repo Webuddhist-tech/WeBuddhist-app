@@ -204,6 +204,17 @@ class ReaderTypography {
         ReaderTextSize.scaleOf(settings.originalStep),
   );
 
+  /// Size of reader chrome (the sections pill, the bottom bar) written in
+  /// [script], given its Latin [size]. Chrome does not follow the size steps.
+  static double chromeSize(double size, ReaderScript script) =>
+      _round(size * script.interfaceScale);
+
+  /// The sections pill's text.
+  static const double sectionPillSize = 14;
+
+  /// The bottom bar's title and count.
+  static const double bottomBarSize = 13;
+
   String? family(String language) => getFontFamily(language);
 
   /// Line height of list rows outside the page, such as the sections sheet;

@@ -21,6 +21,7 @@ import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reade
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_scroll_chrome.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_pill.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
@@ -47,11 +48,17 @@ class ReaderContentPart extends ConsumerStatefulWidget {
   final List<ReaderParams> sources;
   final String? initialSegmentId;
   final double bottomPadding;
+  /// Focus mode: true when the header and bottom bar should slide away, false
+  /// when they should come back (see [ReaderFocusMode]).
   final void Function(bool isScrollingDown)? onScrollDirectionChanged;
   final void Function(void Function(String segmentId, {double? alignment}))?
   onScrollControllerReady;
   final void Function(VoidCallback scrollToTop)? onScrollToTopReady;
   final Widget? chantSessionFooter;
+
+  /// Gets how far through the page the reader is, 0 to 1, for the progress
+  /// line under the header.
+  final ValueNotifier<double>? progress;
 
   /// A segment of this source was tapped: the segment actions and panels
   /// follow that text.
@@ -67,6 +74,7 @@ class ReaderContentPart extends ConsumerStatefulWidget {
     this.onScrollToTopReady,
     this.chantSessionFooter,
     this.onSourceSelected,
+    this.progress,
   }) : assert(sources.length > 0, 'at least one source is required');
 
   @override
@@ -95,13 +103,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// edition, so they are not asked for again.
   final Map<int, Set<String>> _skippedSegmentIds = {};
 
-  // Scroll direction tracking
-  double? _lastScrollOffset; // Nullable to detect first measurement
-  bool _lastScrollDirection = false; // false = up, true = down
+  // Focus mode, from the list's scroll offset in pixels.
+  final ScrollOffsetListener _scrollOffsetListener =
+      ScrollOffsetListener.create();
+  StreamSubscription<double>? _scrollOffsetSubscription;
+  final ReaderFocusMode _focusMode = ReaderFocusMode();
 
-  // User gesture tracking - only track scroll direction when user is actively scrolling
+  // User gesture tracking, for telling the person's scrolls from the app's.
   bool _isUserScrolling = false;
-  bool _hasUserInteracted = false;
   bool _isProgrammaticScroll = false;
 
   /// Collapsed view: a plan task's verses of each source, read in turn and
@@ -167,6 +176,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   void initState() {
     super.initState();
     _itemPositionsListener.itemPositions.addListener(_onScrollPositionChanged);
+    _scrollOffsetSubscription = _scrollOffsetListener.changes.listen(
+      _onScrollOffset,
+    );
 
     // Expose scroll controller to parent
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -181,6 +193,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _onScrollPositionChanged,
     );
     _debounceTimer?.cancel();
+    _scrollOffsetSubscription?.cancel();
     _sections.dispose();
     _currentSectionKey.dispose();
     super.dispose();
@@ -193,9 +206,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _reportFurthestSegment();
     });
 
-    // Track scroll direction for app bar visibility
-    _trackScrollDirection();
     _updateCurrentSection();
+    _updateProgress();
 
     if (_isLiveRecitation) _maybePauseLiveFollow();
   }
@@ -215,40 +227,48 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _currentSectionKey.value = layout.sections[section].key;
   }
 
-  void _trackScrollDirection() {
-    // Only track scroll direction for user-initiated scrolls
-    if (_isProgrammaticScroll) return;
-    if (!_hasUserInteracted) return;
-    if (!_isUserScrolling) return;
+  /// Focus mode. The person's scrolls count both ways. The app's own count
+  /// only while following a live recitation, and only downwards, so a jump
+  /// back up the page does not bring hidden bars back.
+  void _onScrollOffset(double delta) {
+    if (!mounted) return;
+    final byApp = _isProgrammaticScroll || !_recentUserGesture;
+    if (byApp && !_isLiveRecitation) return;
+    if (!_focusMode.scrolled(delta, countUp: !byApp)) return;
+    final hide = !_focusMode.barsVisible;
+    widget.onScrollDirectionChanged?.call(hide);
+    setState(() => _pillVisible = !hide);
+  }
 
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isEmpty) return;
-
-    // Calculate approximate scroll offset based on first visible item
-    final sortedPositions =
-        positions.toList()..sort((a, b) => a.index.compareTo(b.index));
-    final firstItem = sortedPositions.first;
-    final currentOffset = firstItem.index + (1 - firstItem.itemLeadingEdge);
-
-    // Initialize on first user scroll - don't trigger direction change
-    if (_lastScrollOffset == null) {
-      _lastScrollOffset = currentOffset;
-      return;
+  /// The progress line: the last verse on screen out of the text's verses,
+  /// or, on a plan task's page, the last row on screen out of its rows.
+  void _updateProgress() {
+    final progress = widget.progress;
+    final layout = _layout;
+    if (progress == null || layout == null || layout.entries.isEmpty) return;
+    int? last;
+    for (final position in _itemPositionsListener.itemPositions.value) {
+      if (position.itemLeadingEdge >= 1) continue;
+      if (last == null || position.index > last) last = position.index;
     }
+    if (last == null) return;
+    if (last >= layout.entries.length) last = layout.entries.length - 1;
 
-    // Determine scroll direction with a small threshold to avoid jitter
-    const threshold = 0.5;
-    if ((currentOffset - _lastScrollOffset!).abs() > threshold) {
-      final isScrollingDown = currentOffset > _lastScrollOffset!;
-      if (isScrollingDown != _lastScrollDirection) {
-        _lastScrollDirection = isScrollingDown;
-        widget.onScrollDirectionChanged?.call(isScrollingDown);
-        if (_pillVisible == isScrollingDown) {
-          setState(() => _pillVisible = !isScrollingDown);
-        }
+    int? verse;
+    var totalVerses = 0;
+    if (!_isCollapsed) {
+      totalVerses =
+          ref.read(readerNotifierProvider(widget.sources.first)).totalSegments;
+      for (var i = last; i >= 0 && verse == null; i--) {
+        verse = layout.entries[i].item?.segment?.segmentNumber;
       }
-      _lastScrollOffset = currentOffset;
     }
+    progress.value = readerProgress(
+      lastVerseNumber: verse,
+      totalVerses: totalVerses,
+      lastVisibleRow: last,
+      rowCount: layout.entries.length,
+    );
   }
 
   // ─── Sources and the rendered list ───────────────────────────────────────
@@ -470,6 +490,22 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (translated != null) return (translated, headingLanguage!);
     return (section.title ?? '', view.language);
   }
+
+  /// The sections the pill counts, text by text: a text's sections, or the
+  /// text itself while none of its verses are in.
+  static List<ReaderPageSection> _pillSections(_PageLayout layout) => [
+    for (final text in layout.texts)
+      if (layout.sections.any((s) => s.source == text.source))
+        ...layout.sections.where((s) => s.source == text.source)
+      else
+        ReaderPageSection(
+          source: text.source,
+          id: text.titleSectionId,
+          title: text.title,
+          language: text.language,
+          entryIndex: text.entryIndex,
+        ),
+  ];
 
   /// What the sections are of: the plan task on a page of several texts,
   /// else the text.
@@ -1439,37 +1475,31 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         if (mounted) _sections.value = snapshot;
       });
     }
-    // Something to move between: another text, or sections of this one.
-    final showPill =
-        layout.texts.isNotEmpty &&
-        (widget.sources.length > 1 || layout.texts.first.sections.length > 1);
+    // Something to move between: more than one section on the page.
+    final pillSections = _pillSections(layout);
+    final sectionCount = pillSections.length + pending;
+    final showPill = pillSections.isNotEmpty && sectionCount > 1;
 
     return Column(
       children: [
         if (showPill)
           SlideAwayHeader(
             visible: _pillVisible,
+            duration: ReaderConstants.focusModeDuration,
+            curve: ReaderConstants.focusModeCurve,
             child: ValueListenableBuilder<String?>(
               valueListenable: _currentSectionKey,
               builder: (context, key, _) {
-                // A text none of whose verses are in yet has no sections.
-                final section =
-                    layout.sections.where((s) => s.key == key).firstOrNull ??
-                    layout.sections.firstOrNull;
-                final index =
-                    section == null
-                        ? 0
-                        : layout.texts.indexWhere(
-                          (t) => t.source == section.source,
-                        );
-                final text = layout.texts[index < 0 ? 0 : index];
+                // The section at the top of the page, counted among the
+                // page's sections.
+                final at = pillSections.indexWhere((s) => s.key == key);
+                final index = at < 0 ? 0 : at;
+                final section = pillSections[index];
                 return ReaderSectionsPill(
-                  title: text.title,
-                  language: text.language,
-                  position: text.source + 1,
-                  // One text: nothing to count.
-                  total:
-                      widget.sources.length > 1 ? widget.sources.length : null,
+                  title: section.title,
+                  language: section.language,
+                  position: index + 1,
+                  total: sectionCount,
                   onTap: _openSectionsSheet,
                 );
               },
@@ -1486,7 +1516,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           child: Listener(
             onPointerDown: (_) {
               _isUserScrolling = true;
-              _hasUserInteracted = true;
               _lastUserPointerAt = DateTime.now();
             },
             onPointerMove: (_) => _lastUserPointerAt = DateTime.now(),
@@ -1502,6 +1531,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             child: ScrollablePositionedList.builder(
               itemScrollController: _itemScrollController,
               itemPositionsListener: _itemPositionsListener,
+              scrollOffsetListener: _scrollOffsetListener,
               itemCount: entries.length,
               padding: EdgeInsets.only(
                 top: ReaderConstants.contentTopPadding,

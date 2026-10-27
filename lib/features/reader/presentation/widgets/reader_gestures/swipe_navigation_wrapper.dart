@@ -22,6 +22,8 @@ class SwipeNavigationWrapper extends ConsumerStatefulWidget {
   final Widget child;
   final ReaderParams params;
   final TextDetail textDetail;
+
+  /// Focus mode: the bottom bar slides down out of view with the header.
   final bool isAppBarVisible;
 
   const SwipeNavigationWrapper({
@@ -64,35 +66,41 @@ class _SwipeNavigationWrapperState
               left: 0,
               right: 0,
               bottom: 0,
-              child: PlanNavigationBottomBar(
-                navigationContext: navigationContext,
-                fallbackTitle: widget.textDetail.title,
-                fallbackTitleFontFamily: getFontFamily(
-                  widget.textDetail.language,
+              child: AnimatedSlide(
+                offset:
+                    widget.isAppBarVisible ? Offset.zero : const Offset(0, 1),
+                duration: ReaderConstants.focusModeDuration,
+                curve: ReaderConstants.focusModeCurve,
+                child: PlanNavigationBottomBar(
+                  navigationContext: navigationContext,
+                  fallbackTitle: widget.textDetail.title,
+                  fallbackTitleFontFamily: getFontFamily(
+                    widget.textDetail.language,
+                  ),
+                  onPreviousTap:
+                      canSwipe
+                          ? () => _navigate(
+                            navigationContext,
+                            SwipeDirection.previous,
+                          )
+                          : null,
+                  onNextTap:
+                      canSwipe
+                          ? () =>
+                              _navigate(navigationContext, SwipeDirection.next)
+                          : null,
+                  onFinishedTap:
+                      navigationContext != null &&
+                              (navigationContext.source ==
+                                      NavigationSource.plan ||
+                                  navigationContext.source ==
+                                      NavigationSource
+                                          .groupRecitationCollection ||
+                                  navigationContext.source ==
+                                      NavigationSource.myRecitationCollection)
+                          ? _finishReading
+                          : null,
                 ),
-                onPreviousTap:
-                    canSwipe
-                        ? () => _navigate(
-                          navigationContext,
-                          SwipeDirection.previous,
-                        )
-                        : null,
-                onNextTap:
-                    canSwipe
-                        ? () =>
-                            _navigate(navigationContext, SwipeDirection.next)
-                        : null,
-                onFinishedTap:
-                    navigationContext != null &&
-                            (navigationContext.source ==
-                                    NavigationSource.plan ||
-                                navigationContext.source ==
-                                    NavigationSource
-                                        .groupRecitationCollection ||
-                                navigationContext.source ==
-                                    NavigationSource.myRecitationCollection)
-                        ? _finishReading
-                        : null,
               ),
             ),
         ],

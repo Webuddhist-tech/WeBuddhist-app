@@ -1,3 +1,4 @@
+import 'package:flutter/animation.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/features/texts/constants/text_details_constants.dart';
 
@@ -54,8 +55,16 @@ class ReaderConstants {
   static const double appBarBottomHeight = 3.0;
   static const bool enableAppBarAutoHide = true; // Set to true to re-enable
 
+  /// The reading-progress line under the header.
+  static const double progressLineHeight = 2.0;
+
+  /// Focus mode: how the header, bottom bar and sections pill slide.
+  static const Duration focusModeDuration = Duration(milliseconds: 200);
+  static const Curve focusModeCurve = Curves.easeOut;
+
   // Segment item
-  static const double segmentHorizontalPadding = 12.0;
+  /// Side margins of the page; they do not follow the size buttons.
+  static const double segmentHorizontalPadding = 16.0;
   static const double segmentVerticalPadding = 6.0;
   static const double contentTopPadding = 12.0;
   static const double segmentNumberWidth = 28.0;
