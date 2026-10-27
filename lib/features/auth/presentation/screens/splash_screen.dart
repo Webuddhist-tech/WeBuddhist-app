@@ -126,18 +126,27 @@ class _SplashScreenState extends State<SplashScreen>
   bool _completed = false;
   bool _notified = false;
 
+  /// The device asks for reduced motion: no intro and no pulse.
+  bool _reduceMotion = false;
+
   @override
   void initState() {
     super.initState();
     _intro.addStatusListener(_onIntroStatus);
+    // The tagline font (Inter) is fetched by google_fonts and can arrive
+    // after the first build; the word positions are measured in build, so
+    // measure again once it lands.
+    PaintingBinding.instance.systemFonts.addListener(_onFontsChanged);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (_reduceMotion) _pulse.reset();
     if (_started) return;
     _started = true;
-    if (widget.playIntro && !MediaQuery.disableAnimationsOf(context)) {
+    if (widget.playIntro && !_reduceMotion) {
       _intro.forward();
     } else {
       // Jump to the finished state; this reports completed to the listener.
@@ -148,10 +157,15 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _notifyIntroComplete();
+    PaintingBinding.instance.systemFonts.removeListener(_onFontsChanged);
     _pulseStart?.cancel();
     _intro.dispose();
     _pulse.dispose();
     super.dispose();
+  }
+
+  void _onFontsChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onIntroStatus(AnimationStatus status) {
@@ -162,7 +176,9 @@ class _SplashScreenState extends State<SplashScreen>
     if (_completed) return;
     _completed = true;
     // Gentle pulse while a long auth restore keeps the splash up.
-    _pulseStart = Timer(_pulseDelay, () => _pulse.repeat(reverse: true));
+    _pulseStart = Timer(_pulseDelay, () {
+      if (!_reduceMotion) _pulse.repeat(reverse: true);
+    });
     _notifyIntroComplete();
   }
 

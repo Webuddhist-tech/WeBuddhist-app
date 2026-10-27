@@ -1,13 +1,22 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations_en.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_taglines.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+/// The Flutter SDK, which ships the Roboto fonts used as a stand-in for a
+/// late-arriving Inter.
+String _flutterRoot() =>
+    Platform.environment['FLUTTER_ROOT'] ??
+    File(Platform.resolvedExecutable).parent.parent.parent.parent.parent.path;
 
 void main() {
   const tagline = 'We Buddhists learn daily';
@@ -145,7 +154,52 @@ void main() {
     await tester.pump();
     expect(completed, isTrue);
     expect(opacityOf(tester, 'learn daily'), 1);
-    await tester.pump(const Duration(seconds: 1));
+
+    // Past the pulse delay the logo still does not pulse.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(logoWidth(tester), 144);
+    }
+    expect(tester.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('re-measures the tagline when its font arrives late', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: SplashScreen(tagline: tagline, playIntro: false)),
+    );
+    await tester.pump();
+
+    final family = GoogleFonts.inter(fontWeight: FontWeight.w700).fontFamily!;
+    final roboto = File(
+      '${_flutterRoot()}/bin/cache/artifacts/material_fonts/Roboto-Bold.ttf',
+    ).readAsBytesSync();
+    await tester.runAsync(() async {
+      await (FontLoader(family)
+            ..addFont(Future.value(ByteData.view(roboto.buffer))))
+          .load();
+    });
+    await tester.pump();
+
+    final space =
+        TextPainter(
+            text: TextSpan(
+              text: ' ',
+              style: TextStyle(
+                fontFamily: family,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          )
+          ..layout();
+    final gap =
+        tester.getRect(find.text('Buddhist')).left -
+        tester.getRect(find.text('We')).right;
+    expect(gap, closeTo(space.width, 1));
+    space.dispose();
   });
 
   testWidgets('reports completion if removed before the intro ends', (
