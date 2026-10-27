@@ -58,6 +58,7 @@ class LibraryRepository {
     String? title,
     required int limit,
     required int offset,
+    bool noCache = false,
   }) {
     return _datasource.fetchTexts(
       tagId: tagId,
@@ -65,6 +66,7 @@ class LibraryRepository {
       title: title,
       limit: limit,
       offset: offset,
+      noCache: noCache,
     );
   }
 

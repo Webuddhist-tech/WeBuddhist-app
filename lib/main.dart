@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/analytics/clarity_analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
@@ -189,6 +190,14 @@ void main() async {
     _logger.info('Plans local storage initialized');
   } catch (e) {
     _logger.warning('Error initializing plans local storage: $e');
+  }
+
+  // Initialize the shared screen cache (last-known-good data per screen).
+  try {
+    await ScreenCacheStore.init();
+    _logger.info('Screen cache initialized');
+  } catch (e) {
+    _logger.warning('Error initializing screen cache: $e');
   }
 
   // Create provider container for routine storage

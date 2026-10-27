@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -32,6 +33,7 @@ final groupProfileRepositoryProvider =
     Provider<GroupProfileRepositoryInterface>((ref) {
       return GroupProfileRepositoryImpl(
         remote: ref.watch(groupProfileRemoteDatasourceProvider),
+        store: ref.watch(screenCacheStoreProvider),
       );
     });
 
@@ -40,16 +42,19 @@ final getGroupProfileUseCaseProvider = Provider<GetGroupProfileUseCase>((ref) {
   return GetGroupProfileUseCase(repository.getGroupProfile);
 });
 
-final groupProfileProvider = FutureProvider.autoDispose.family<
+/// Stored profile first, refreshed in the background. `.future` resolves with
+/// the stored value; callers needing fresh data use `refreshGroupProfile`.
+final groupProfileProvider = StreamProvider.autoDispose.family<
   Either<Failure, GroupProfile>,
   String
->((ref, groupId) async {
-  // Refetch when auth changes so user-specific fields (e.g. is_group_enrolled)
+>((ref, groupId) {
+  // Rebuild when auth changes so user-specific fields (e.g. is_group_enrolled)
   // are loaded with the Bearer token attached.
   ref.watch(authProvider);
   final language = ref.watch(contentLanguageProvider);
-  final useCase = ref.watch(getGroupProfileUseCaseProvider);
-  return useCase(GetGroupProfileParams(groupId: groupId, language: language));
+  return ref
+      .watch(groupProfileRepositoryProvider)
+      .watchGroupProfile(groupId, language: language);
 });
 
 class GroupPracticesState {
@@ -1741,15 +1746,21 @@ Future<void> refreshGroupProfilePage({
   final followKey = GroupFollowKey(groupId: groupId, groupType: groupType);
   ref.invalidate(groupFollowProvider(followKey));
 
+  AsyncValue<Either<Failure, GroupProfile>>? refreshed;
   final refreshTasks = <Future<void>>[
     ref
-        .refresh(groupProfileProvider(groupId).future)
-        .then(
-          (result) => result.fold(
+        .read(groupProfileRepositoryProvider)
+        .refreshGroupProfile(
+          groupId,
+          language: ref.read(contentLanguageProvider),
+        )
+        .then((result) {
+          refreshed = AsyncData(result);
+          result.fold(
             (_) {},
             (profile) => reconcileGroupRemovalNotice(ref, profile),
-          ),
-        ),
+          );
+        }),
   ];
 
   if (ref.exists(groupPracticesProvider(groupId))) {
@@ -1774,7 +1785,9 @@ Future<void> refreshGroupProfilePage({
   refreshGroupPosts(ref, groupId);
 
   await Future.wait(refreshTasks);
-  final after = _membershipSize(ref.read(groupProfileProvider(groupId)));
+  final after = _membershipSize(
+    refreshed ?? ref.read(groupProfileProvider(groupId)),
+  );
   if (before != null && after != null && before != after) {
     ref
         .read(groupMembershipEpochProvider(groupId).notifier)

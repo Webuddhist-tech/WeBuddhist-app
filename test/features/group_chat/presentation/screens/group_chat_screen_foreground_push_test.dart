@@ -83,7 +83,7 @@ Future<ForegroundPushFilter> _pumpChat(
         authProvider.overrideWith((ref) => _SignedInAuth()),
         userProvider.overrideWith((ref) => _NoUser()),
         groupProfileProvider.overrideWith(
-          (ref, id) => Completer<Either<Failure, GroupProfile>>().future,
+          (ref, id) => Completer<Either<Failure, GroupProfile>>().future.asStream(),
         ),
         pushMessagingRepositoryProvider.overrideWithValue(pushes),
         foregroundPushFilterProvider.overrideWithValue(filter),

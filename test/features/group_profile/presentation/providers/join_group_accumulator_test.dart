@@ -92,7 +92,7 @@ void main() {
           (ref, id) async => const Right(_detail),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) async => const Left(NetworkFailure('test')),
+          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
         ),
       ],
     );
@@ -170,7 +170,7 @@ void main() {
           _FakeProfileRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith((ref, id) => detail.future),
-        groupProfileProvider.overrideWith((ref, id) => profile.future),
+        groupProfileProvider.overrideWith((ref, id) => profile.future.asStream()),
       ],
     );
     addTearDown(container.dispose);

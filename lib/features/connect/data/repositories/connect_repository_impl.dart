@@ -1,3 +1,6 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_datasource.dart';
@@ -8,9 +11,12 @@ import 'package:flutter_pecha/features/connect/domain/repositories/connect_repos
 import 'package:fpdart/fpdart.dart';
 
 class ConnectRepositoryImpl implements ConnectRepository {
-  ConnectRepositoryImpl({required this.remote});
+  ConnectRepositoryImpl({required this.remote, required this.store});
 
   final ConnectRemoteDatasource remote;
+  final ScreenCacheStore store;
+
+  static const int _myGroupsLimit = 20;
 
   @override
   Future<Either<Failure, DiscoverGroupsPage>> getDiscoverGroups({
@@ -68,6 +74,52 @@ class ConnectRepositoryImpl implements ConnectRepository {
     } catch (e) {
       return Left(UnknownFailure('Failed to load my groups: $e'));
     }
+  }
+
+  @override
+  Stream<Either<Failure, DiscoverGroupsPage>> watchMyGroups({
+    required String language,
+  }) async* {
+    final userId = await store.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      yield const Left(AuthenticationFailure('Not authenticated'));
+      return;
+    }
+    yield* _myGroupsSource(userId, language).watch();
+  }
+
+  @override
+  Future<Either<Failure, DiscoverGroupsPage>> refreshMyGroups({
+    required String language,
+  }) async {
+    final userId = await store.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    return _myGroupsSource(userId, language).refresh();
+  }
+
+  ScreenCacheSource<DiscoverGroupsPage> _myGroupsSource(
+    String userId,
+    String language,
+  ) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user('my_groups', userId: userId, language: language),
+      fetchJson:
+          () => remote.fetchMyGroupsJson(
+            language: language,
+            skip: 0,
+            limit: _myGroupsLimit,
+          ),
+      fromJson:
+          (json) => ConnectRemoteDatasource.parseGroupsPage(
+            json as Map<String, dynamic>,
+            skip: 0,
+            limit: _myGroupsLimit,
+          ),
+      failureMessage: 'Failed to load my groups',
+    );
   }
 
   @override

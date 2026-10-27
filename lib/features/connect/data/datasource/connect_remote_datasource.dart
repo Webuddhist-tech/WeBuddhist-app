@@ -45,7 +45,7 @@ class ConnectRemoteDatasource {
         );
       }
 
-      return _parseGroupsPage(
+      return parseGroupsPage(
         response.data as Map<String, dynamic>,
         skip: skip,
         limit: limit,
@@ -57,6 +57,20 @@ class ConnectRemoteDatasource {
   }
 
   Future<DiscoverGroupsPage> fetchMyGroups({
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    final data = await fetchMyGroupsJson(
+      language: language,
+      skip: skip,
+      limit: limit,
+    );
+    return parseGroupsPage(data, skip: skip, limit: limit);
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchMyGroupsJson({
     required String language,
     int skip = 0,
     int limit = 20,
@@ -76,11 +90,7 @@ class ConnectRemoteDatasource {
         );
       }
 
-      return _parseGroupsPage(
-        response.data as Map<String, dynamic>,
-        skip: skip,
-        limit: limit,
-      );
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       _logger.error('Dio error in fetchMyGroups', e);
       throw _dioToException(e, 'Failed to load my groups');
@@ -269,7 +279,7 @@ class ConnectRemoteDatasource {
     }
   }
 
-  DiscoverGroupsPage _parseGroupsPage(
+  static DiscoverGroupsPage parseGroupsPage(
     Map<String, dynamic> data, {
     required int skip,
     required int limit,

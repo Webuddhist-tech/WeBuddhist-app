@@ -1,7 +1,11 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_profile_remote_datasource.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_request.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
@@ -16,8 +20,49 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 
 class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   final GroupProfileRemoteDatasource remote;
+  final ScreenCacheStore store;
 
-  GroupProfileRepositoryImpl({required this.remote});
+  GroupProfileRepositoryImpl({required this.remote, required this.store});
+
+  @override
+  Stream<Either<Failure, GroupProfile>> watchGroupProfile(
+    String groupId, {
+    required String language,
+  }) async* {
+    final userId = await store.currentUserId();
+    yield* _profileSource(groupId, userId: userId, language: language).watch();
+  }
+
+  @override
+  Future<Either<Failure, GroupProfile>> refreshGroupProfile(
+    String groupId, {
+    required String language,
+  }) async {
+    final userId = await store.currentUserId();
+    return _profileSource(groupId, userId: userId, language: language).refresh();
+  }
+
+  // Guests can view profiles, so a missing user id falls back to `anon`.
+  ScreenCacheSource<GroupProfile> _profileSource(
+    String groupId, {
+    required String? userId,
+    required String language,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'group_profile',
+        userId: userId,
+        language: language,
+        params: [groupId],
+      ),
+      fetchJson: () => remote.fetchGroupProfileJson(groupId, language: language),
+      fromJson:
+          (json) =>
+              GroupProfileModel.fromJson(json as Map<String, dynamic>).toEntity(),
+      failureMessage: 'Failed to load group profile',
+    );
+  }
 
   @override
   Future<Either<Failure, GroupProfile>> getGroupProfile(

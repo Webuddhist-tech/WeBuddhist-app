@@ -17,6 +17,17 @@ abstract class GroupProfileRepositoryInterface {
     required String language,
   });
 
+  /// Stored profile first, then revalidated in the background.
+  Stream<Either<Failure, GroupProfile>> watchGroupProfile(
+    String groupId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupProfile>> refreshGroupProfile(
+    String groupId, {
+    required String language,
+  });
+
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
     GroupType groupType,

@@ -263,7 +263,7 @@ Future<void> _pumpEventPage(
           (ref, id) => _NoParticipants(),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) async => const Left(NetworkFailure('test')),
+          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
         ),
         seriesByIdProvider.overrideWith(
           (ref, id) => Stream.value(Right(_series)),

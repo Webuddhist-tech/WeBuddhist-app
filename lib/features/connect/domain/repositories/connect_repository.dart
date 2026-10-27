@@ -18,6 +18,15 @@ abstract class ConnectRepository {
     int limit = 20,
   });
 
+  /// Stored first page of joined groups, then revalidated in the background.
+  Stream<Either<Failure, DiscoverGroupsPage>> watchMyGroups({
+    required String language,
+  });
+
+  Future<Either<Failure, DiscoverGroupsPage>> refreshMyGroups({
+    required String language,
+  });
+
   Future<Either<Failure, ConnectFeedPage>> getConnectFeeds({
     required bool includeUnfollowed,
     required String language,

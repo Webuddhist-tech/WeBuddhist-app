@@ -26,6 +26,16 @@ class GroupProfileRemoteDatasource {
     String groupId, {
     required String language,
   }) async {
+    return GroupProfileModel.fromJson(
+      await fetchGroupProfileJson(groupId, language: language),
+    );
+  }
+
+  /// Raw profile as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchGroupProfileJson(
+    String groupId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/author/groups/$groupId',
@@ -34,9 +44,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupProfileModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error(
           'Failed to load group profile $groupId: ${response.statusCode}',

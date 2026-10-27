@@ -9,12 +9,16 @@ class RecitationsQueryParams {
   final int? limit;
   final bool shouldIncludeCollections;
 
+  /// Bypasses the HTTP cache so a revalidation reaches the server.
+  final bool noCache;
+
   RecitationsQueryParams({
     this.language,
     this.search,
     this.skip,
     this.limit,
     this.shouldIncludeCollections = false,
+    this.noCache = false,
   });
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -66,7 +67,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
 
   Future<void> _onGroupsRefresh() async {
     await Future.wait([
-      ref.refresh(myGroupsProvider.future),
+      ref
+          .read(connectRepositoryProvider)
+          .refreshMyGroups(language: ref.read(contentLanguageProvider)),
       ref.read(discoverGroupsProvider.notifier).refresh(),
     ]);
   }

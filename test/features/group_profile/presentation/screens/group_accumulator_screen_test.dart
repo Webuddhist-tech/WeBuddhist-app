@@ -69,7 +69,7 @@ Future<void> _pump(
           (ref, id) async => const Right(_detail),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) async => const Left(NetworkFailure('test')),
+          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
         ),
         groupAccumulatorRepositoryProvider.overrideWithValue(
           _FakeAccumulatorRepository(),

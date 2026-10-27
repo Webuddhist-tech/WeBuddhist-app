@@ -45,7 +45,7 @@ Future<PlanEmbeddedController> _openPractice(
           (ref, id) async => const Right(_detail),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) async => const Left(NetworkFailure('test')),
+          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
         ),
       ],
       child: MaterialApp(
