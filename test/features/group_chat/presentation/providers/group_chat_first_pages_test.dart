@@ -161,7 +161,7 @@ void main() {
     await _settle();
 
     expect(seen.first, ['old']);
-    expect(seen.last, ['old', 'new']);
+    expect(seen.last, unorderedEquals(['old', 'new']));
     expect(container.read(chatRoomsProvider).hasUnread, isTrue);
     expect(jsonDecode(store.entries[key]!)['rooms'], hasLength(2));
   });

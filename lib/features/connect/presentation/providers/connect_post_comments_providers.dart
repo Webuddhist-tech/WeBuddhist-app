@@ -1,6 +1,6 @@
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
-import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

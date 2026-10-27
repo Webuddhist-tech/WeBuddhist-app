@@ -32,6 +32,7 @@ class MalaRemoteDataSource {
             if (language != null) 'language': language,
             if (query != null && query.isNotEmpty) 'search': query,
           },
+          options: Options(extra: {'no_cache': true}),
         );
         if (response.statusCode != 200) {
           throw _statusToException(

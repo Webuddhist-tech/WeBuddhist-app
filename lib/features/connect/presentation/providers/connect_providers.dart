@@ -6,7 +6,7 @@ import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_da
 import 'package:flutter_pecha/features/connect/data/repositories/connect_repository_impl.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
 import 'package:flutter_pecha/features/connect/domain/repositories/connect_repository.dart';
-import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

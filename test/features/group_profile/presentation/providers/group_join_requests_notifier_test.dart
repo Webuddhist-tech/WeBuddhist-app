@@ -117,6 +117,7 @@ void main() {
     );
 
     final initial = notifier.loadInitial();
+    await pumpEventQueue();
     final firstPage = _page(skip: 0, start: 0, count: 20, total: 40);
     repository.pageHolds.single.complete(Right(firstPage));
     await initial;
@@ -156,6 +157,7 @@ void main() {
     );
 
     final initial = notifier.loadInitial();
+    await pumpEventQueue();
     repository.pageHolds.single.complete(
       Right(_page(skip: 0, start: 0, count: 20, total: 40)),
     );
@@ -187,6 +189,7 @@ void main() {
     );
 
     final initial = notifier.loadInitial();
+    await pumpEventQueue();
     repository.pageHolds.single.complete(
       Right(_page(skip: 0, start: 0, count: 20, total: 30)),
     );

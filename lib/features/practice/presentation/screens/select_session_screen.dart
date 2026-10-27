@@ -473,6 +473,7 @@ class _MalasTab extends ConsumerWidget {
     }
 
     return catalogueAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error:
           (_, __) => _RefreshableScrollBody(

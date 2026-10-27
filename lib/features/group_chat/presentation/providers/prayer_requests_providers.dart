@@ -7,7 +7,7 @@ import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dar
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
-import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_first_pages.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
