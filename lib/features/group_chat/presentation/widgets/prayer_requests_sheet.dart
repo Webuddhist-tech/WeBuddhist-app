@@ -643,6 +643,7 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
           avatarUrl:
               request.senderAvatarUrl ?? (isSelf ? user?.avatarUrl : null),
           isOwn: isSelf,
+          mantra: state.mantra,
           onPray:
               () => _notifier.pray(request.id, viewer: _viewerAsSupporter()),
           onShowSupporters:

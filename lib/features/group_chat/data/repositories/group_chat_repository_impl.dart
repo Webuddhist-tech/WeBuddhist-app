@@ -38,18 +38,24 @@ class GroupChatRepositoryImpl implements GroupChatRepository {
   }
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async {
     try {
-      return Right(await _remote.getEventRoom(eventId));
+      return Right(await _remote.getEventRoom(eventId, language: language));
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'getEventRoom'));
     }
   }
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async {
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
+    String groupId, {
+    String? language,
+  }) async {
     try {
-      return Right(await _remote.getGroupRoom(groupId));
+      return Right(await _remote.getGroupRoom(groupId, language: language));
     } catch (e) {
       return Left(ExceptionMapper.map(e, context: 'getGroupRoom'));
     }

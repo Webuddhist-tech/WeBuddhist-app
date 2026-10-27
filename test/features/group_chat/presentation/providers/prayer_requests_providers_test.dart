@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -79,6 +80,7 @@ class _FakeGroupChatRepository implements GroupChatRepository {
 
   /// Which room endpoint was asked, `event:<id>` or `group:<id>`.
   final List<String> roomLookups = [];
+  final List<String?> roomLanguages = [];
 
   /// Which send endpoint was used, `event:<id>` or `group:<id>`.
   final List<String> sentTo = [];
@@ -111,8 +113,12 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   List<ChatPrayerUserDTO> supporters = const [];
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async {
     roomLookups.add('event:$eventId');
+    roomLanguages.add(language);
     final failure = roomFailure;
     if (failure != null) return Left(failure);
     return const Right(
@@ -128,8 +134,12 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async {
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
+    String groupId, {
+    String? language,
+  }) async {
     roomLookups.add('group:$groupId');
+    roomLanguages.add(language);
     final failure = roomFailure;
     if (failure != null) return Left(failure);
     return const Right(
@@ -444,6 +454,14 @@ ChatMessageDTO _byId(PrayerRequestsNotifier notifier, String id) {
   return notifier.state.requests.firstWhere((request) => request.id == id);
 }
 
+class _FixedContentLanguage extends StateNotifier<String>
+    implements ContentLanguageNotifier {
+  _FixedContentLanguage(super.code);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   late _FakeGroupChatRepository repository;
   late ProviderContainer container;
@@ -451,6 +469,7 @@ void main() {
   ProviderContainer buildContainer({
     PrayerPacing pacing = _instant,
     String translationLanguage = 'EN',
+    String mantraLanguage = 'en',
   }) {
     return ProviderContainer(
       overrides: [
@@ -459,11 +478,23 @@ void main() {
         prayerTranslationLanguageProvider.overrideWithValue(
           translationLanguage,
         ),
+        prayerMantraLanguageProvider.overrideWithValue(mantraLanguage),
       ],
     );
   }
 
   tearDown(() => container.dispose());
+
+  test('the mantra language is the content language, lowercased', () {
+    container = ProviderContainer(
+      overrides: [
+        contentLanguageProvider.overrideWith(
+          (ref) => _FixedContentLanguage('zh-Hans'),
+        ),
+      ],
+    );
+    expect(container.read(prayerMantraLanguageProvider), 'zh-hans');
+  });
 
   group('PrayerRequestsNotifier', () {
     test('resolves the event room, then lists only prayer requests', () async {
@@ -481,6 +512,7 @@ void main() {
       expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
       expect(repository.listedTypes, ['PRAYER']);
       expect(repository.roomLookups, ['event:e1']);
+      expect(repository.roomLanguages, ['en']);
     });
 
     test('a space scope resolves the group room instead', () async {
@@ -494,6 +526,7 @@ void main() {
       await _settle();
 
       expect(repository.roomLookups, ['group:g1']);
+      expect(repository.roomLanguages, ['en']);
       expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
       expect(notifier.state.roomId, 'room-1');
       expect(notifier.state.requests.map((r) => r.id), ['a']);

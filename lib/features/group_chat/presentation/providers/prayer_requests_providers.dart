@@ -47,6 +47,12 @@ final prayerTranslationLanguageProvider = Provider<String>(
   (ref) => prayerTranslationLanguage(ref.watch(contentLanguageProvider)),
 );
 
+/// `language` on the room resolve: which language the room's mantra comes in.
+/// Lowercased: the server spells its codes `zh-hans`, not `zh-Hans`.
+final prayerMantraLanguageProvider = Provider<String>(
+  (ref) => ref.watch(contentLanguageProvider).toLowerCase(),
+);
+
 /// The last server-confirmed prayer state of one request.
 class _PrayerSnapshot {
   const _PrayerSnapshot({
@@ -217,6 +223,9 @@ class PrayerRequestsState extends Equatable {
   final PrayerRoomStatus roomStatus;
   final String? roomId;
 
+  /// The room's own mantra to float on a prayer; null uses the built-in one.
+  final String? mantra;
+
   /// Prayer requests only, in the order of [filter].
   final List<ChatMessageDTO> requests;
   final PrayerRequestsFilter filter;
@@ -237,6 +246,7 @@ class PrayerRequestsState extends Equatable {
   const PrayerRequestsState({
     this.roomStatus = PrayerRoomStatus.resolving,
     this.roomId,
+    this.mantra,
     this.requests = const [],
     this.filter = PrayerRequestsFilter.initial,
     this.total = 0,
@@ -252,6 +262,7 @@ class PrayerRequestsState extends Equatable {
   PrayerRequestsState copyWith({
     PrayerRoomStatus? roomStatus,
     String? roomId,
+    String? mantra,
     List<ChatMessageDTO>? requests,
     PrayerRequestsFilter? filter,
     int? total,
@@ -268,6 +279,7 @@ class PrayerRequestsState extends Equatable {
     return PrayerRequestsState(
       roomStatus: roomStatus ?? this.roomStatus,
       roomId: roomId ?? this.roomId,
+      mantra: mantra ?? this.mantra,
       requests: requests ?? this.requests,
       filter: filter ?? this.filter,
       total: total ?? this.total,
@@ -301,6 +313,7 @@ class PrayerRequestsState extends Equatable {
   List<Object?> get props => [
     roomStatus,
     roomId,
+    mantra,
     requests,
     filter,
     total,
@@ -399,13 +412,14 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       clearError: true,
     );
 
+    final language = ref.read(prayerMantraLanguageProvider);
     final roomResult =
         scope.isEvent
-            ? await _repository.getEventRoom(scope.id)
-            : await _repository.getGroupRoom(scope.id);
+            ? await _repository.getEventRoom(scope.id, language: language)
+            : await _repository.getGroupRoom(scope.id, language: language);
     if (!mounted) return;
 
-    final roomId = roomResult.fold((failure) {
+    final room = roomResult.fold((failure) {
       final closed = failure is NotFoundFailure;
       state = state.copyWith(
         roomStatus: closed ? PrayerRoomStatus.closed : PrayerRoomStatus.failed,
@@ -414,10 +428,19 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         error: closed ? null : failure.message,
       );
       return null;
-    }, (room) => room.id);
-    if (roomId == null) return;
+    }, (room) => room);
+    if (room == null) return;
 
-    state = state.copyWith(roomId: roomId, roomStatus: PrayerRoomStatus.ready);
+    final roomId = room.id;
+    final pronunciation = room.mantra?.pronunciation.trim();
+    state = state.copyWith(
+      roomId: roomId,
+      roomStatus: PrayerRoomStatus.ready,
+      mantra:
+          pronunciation == null || pronunciation.isEmpty
+              ? null
+              : pronunciation,
+    );
     await _loadFirstPage(roomId);
   }
 

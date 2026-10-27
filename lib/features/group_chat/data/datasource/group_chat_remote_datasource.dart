@@ -109,11 +109,13 @@ class GroupChatRemoteDatasource {
   }
 
   /// Resolves an event's room, creating it and joining the caller on first
-  /// use. 404 once chat is switched off or the event is gone.
-  Future<ChatRoomDTO> getEventRoom(String eventId) async {
+  /// use. 404 once chat is switched off or the event is gone. [language]
+  /// picks the room mantra's language; the server falls back on its own.
+  Future<ChatRoomDTO> getEventRoom(String eventId, {String? language}) async {
     try {
       final response = await _dio.get(
         '/chat/events/$eventId/room',
+        queryParameters: {if (language != null) 'language': language},
         options: _noCache,
       );
       return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);
@@ -123,11 +125,12 @@ class GroupChatRemoteDatasource {
   }
 
   /// Resolves a space's room, creating it on first use. Members and
-  /// followers only.
-  Future<ChatRoomDTO> getGroupRoom(String groupId) async {
+  /// followers only. [language] as on [getEventRoom].
+  Future<ChatRoomDTO> getGroupRoom(String groupId, {String? language}) async {
     try {
       final response = await _dio.get(
         '/chat/groups/$groupId/room',
+        queryParameters: {if (language != null) 'language': language},
         options: _noCache,
       );
       return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);
