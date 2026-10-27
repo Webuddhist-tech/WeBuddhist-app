@@ -1,15 +1,130 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_accumulator_remote_datasource.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_accumulator_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_accumulator_repository.dart';
 
 class GroupAccumulatorRepositoryImpl
     implements GroupAccumulatorRepositoryInterface {
   final GroupAccumulatorRemoteDatasource remote;
+  final ScreenCacheStore store;
 
-  GroupAccumulatorRepositoryImpl({required this.remote});
+  GroupAccumulatorRepositoryImpl({required this.remote, required this.store});
+
+  Future<ScreenCacheSource<T>> _userSource<T extends Object>(
+    String screen, {
+    String language = '',
+    List<String> params = const [],
+    required Future<Map<String, dynamic>> Function() fetchJson,
+    required T Function(Map<String, dynamic> json) parse,
+    required String failureMessage,
+  }) async {
+    final userId = await store.currentUserId();
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        screen,
+        userId: userId,
+        language: language,
+        params: params,
+      ),
+      fetchJson: fetchJson,
+      fromJson: (json) => parse(json as Map<String, dynamic>),
+      failureMessage: failureMessage,
+    );
+  }
+
+  @override
+  Stream<Either<Failure, GroupAccumulatorsPage>> watchGroupAccumulators(
+    String groupId, {
+    required String language,
+    required int limit,
+  }) async* {
+    final source = await _userSource(
+      'group_accumulators',
+      language: language,
+      params: [groupId],
+      fetchJson:
+          () => remote.fetchGroupAccumulatorsJson(
+            groupId,
+            skip: 0,
+            limit: limit,
+            language: language,
+          ),
+      parse: (json) => GroupAccumulatorsPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group accumulators',
+    );
+    yield* source.watch();
+  }
+
+  Future<ScreenCacheSource<GroupAccumulatorDetail>> _detailSource(
+    String accumulatorId,
+    String language,
+  ) {
+    return _userSource(
+      'group_accumulator',
+      language: language,
+      params: [accumulatorId],
+      fetchJson:
+          () => remote.fetchGroupAccumulatorJson(
+            accumulatorId,
+            language: language,
+          ),
+      parse: (json) => GroupAccumulatorModel.fromJson(json).toDetailEntity(),
+      failureMessage: 'Failed to load group accumulator',
+    );
+  }
+
+  @override
+  Stream<Either<Failure, GroupAccumulatorDetail>> watchGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  }) async* {
+    yield* (await _detailSource(accumulatorId, language)).watch();
+  }
+
+  @override
+  Future<Either<Failure, GroupAccumulatorDetail>> refreshGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  }) async {
+    return (await _detailSource(accumulatorId, language)).refresh();
+  }
+
+  @override
+  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  }) async {
+    final source = await _membersSource(accumulatorId, limit: 20, sortBy: sortBy);
+    return source.read();
+  }
+
+  Future<ScreenCacheSource<GroupAccumulatorMembersPage>> _membersSource(
+    String accumulatorId, {
+    required int limit,
+    required GroupAccumulatorMemberSort sortBy,
+  }) {
+    return _userSource(
+      'group_accumulator_members',
+      params: [accumulatorId, sortBy.name],
+      fetchJson:
+          () => remote.fetchGroupAccumulatorMembersJson(
+            accumulatorId,
+            skip: 0,
+            limit: limit,
+            sortBy: sortBy,
+          ),
+      parse:
+          (json) => GroupAccumulatorMembersPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group accumulator members',
+    );
+  }
 
   @override
   Future<Either<Failure, GroupAccumulatorsPage>> getGroupAccumulators(
@@ -117,6 +232,14 @@ class GroupAccumulatorRepositoryImpl
     required int limit,
     required GroupAccumulatorMemberSort sortBy,
   }) async {
+    if (skip == 0) {
+      final source = await _membersSource(
+        accumulatorId,
+        limit: limit,
+        sortBy: sortBy,
+      );
+      return source.refresh();
+    }
     try {
       final model = await remote.fetchGroupAccumulatorMembers(
         accumulatorId,

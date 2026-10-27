@@ -15,6 +15,28 @@ abstract class GroupAccumulatorRepositoryInterface {
     required String language,
   });
 
+  Stream<Either<Failure, GroupAccumulatorsPage>> watchGroupAccumulators(
+    String groupId, {
+    required String language,
+    required int limit,
+  });
+
+  Stream<Either<Failure, GroupAccumulatorDetail>> watchGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupAccumulatorDetail>> refreshGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  });
+
+  /// Stored first page; `getGroupAccumulatorMembers(skip: 0)` writes it.
+  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  });
+
   Future<Either<Failure, void>> joinGroupAccumulator(String accumulatorId);
 
   Future<Either<Failure, void>> deleteGroupAccumulator(String groupAccumulatorId);

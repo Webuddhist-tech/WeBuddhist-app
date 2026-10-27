@@ -37,6 +37,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../widgets/fake_in_app_webview_platform.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
   @override
@@ -116,6 +120,30 @@ class _RecordingEnrollment extends StateNotifier<SeriesEnrollmentState>
 
 /// Records event joins (a participation saved) instead of calling the API.
 class _RecordingGroupRepository implements GroupProfileRepositoryInterface {
+  @override
+  Future<GroupPracticesPage?> readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) async => null;
+
+  @override
+  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+      null;
+
+  @override
+  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+    String eventId,
+  ) async => null;
+
+  @override
+  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+    String groupId,
+  ) async => null;
+
+  @override
+  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+      null;
+
   _RecordingGroupRepository(this._joins);
 
   final List<String> _joins;
@@ -257,7 +285,7 @@ Future<void> _pumpEventPage(
           _RecordingGroupRepository(joins),
         ),
         groupEventDetailProvider.overrideWith(
-          (ref, id) async => Right(event),
+          (ref, id) => Stream.value(Right(event)),
         ),
         groupEventParticipantsProvider.overrideWith(
           (ref, id) => _NoParticipants(),
@@ -279,10 +307,11 @@ Future<void> _pumpEventPage(
         ),
         myPlansPaginatedProvider.overrideWith((ref) => _NoMyPlans()),
         groupEventInLanguageProvider.overrideWith(
-          (ref, key) =>
-              stream != null
-                  ? stream()
-                  : Future.value(const Left(NetworkFailure('test'))),
+          (ref, key) => Stream.fromFuture(
+            stream != null
+                ? stream()
+                : Future.value(const Left(NetworkFailure('test'))),
+          ),
         ),
         userPlanDayContentFutureProvider.overrideWith(
           (ref, params) => Stream.value(Right(_day)),

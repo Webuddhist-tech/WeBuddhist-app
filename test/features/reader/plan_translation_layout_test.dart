@@ -227,11 +227,13 @@ class _HeldPlanEdition {
   final Completer<void> _release = Completer<void>();
 
   Override override() {
-    return readerVersionInfoProvider.overrideWith((ref, versionId) async {
+    return readerVersionInfoProvider.overrideWith((ref, versionId) {
       ref.keepAlive();
-      if (!_started.isCompleted) _started.complete();
-      await _release.future;
-      return _planEdition;
+      return Stream.fromFuture(() async {
+        if (!_started.isCompleted) _started.complete();
+        await _release.future;
+        return _planEdition;
+      }());
     });
   }
 

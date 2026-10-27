@@ -126,7 +126,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         availableContentLanguagesProvider.overrideWith(
-          (ref) async => _languages,
+          (ref) => Stream.value(_languages),
         ),
         contentLanguageProvider.overrideWith(
           (ref) => _FixedContentLanguage(contentLanguage),

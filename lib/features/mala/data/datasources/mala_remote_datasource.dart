@@ -62,6 +62,20 @@ class MalaRemoteDataSource {
     bool joinedOnly = false,
     String? language,
   }) async {
+    final data = await fetchAccumulatorGroupsJson(
+      accumulatorId,
+      joinedOnly: joinedOnly,
+      language: language,
+    );
+    return AccumulatorGroupsResponseModel.fromJson(data).groups;
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchAccumulatorGroupsJson(
+    String accumulatorId, {
+    bool joinedOnly = false,
+    String? language,
+  }) async {
     try {
       final response = await dio.get(
         '/accumulators/$accumulatorId/groups',
@@ -72,9 +86,7 @@ class MalaRemoteDataSource {
         options: Options(extra: {'no_cache': true}),
       );
       if (response.statusCode == 200) {
-        return AccumulatorGroupsResponseModel.fromJson(
-          response.data as Map<String, dynamic>,
-        ).groups;
+        return response.data as Map<String, dynamic>;
       }
       throw _statusToException(
         response.statusCode,

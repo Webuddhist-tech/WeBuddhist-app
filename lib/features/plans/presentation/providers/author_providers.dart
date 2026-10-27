@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
@@ -15,31 +16,42 @@ final authorRepositoryProvider = Provider<AuthorRepository>((ref) {
     authorRemoteDatasource: AuthorRemoteDatasource(
       dio: ref.watch(dioProvider),
     ),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
-// Get author by ID provider
-final authorByIdFutureProvider = FutureProvider.family<Either<Failure, AuthorModel>, String>((
-  ref,
-  id,
-) {
-  return ref.watch(authorRepositoryProvider).getAuthorById(id);
-});
+// Stored author first, refreshed in the background (name kept for callers).
+final authorByIdFutureProvider =
+    StreamProvider.family<Either<Failure, AuthorModel>, String>((ref, id) {
+      return ref.watch(authorRepositoryProvider).watchAuthorById(id);
+    });
 
-// Get plans by author ID provider (using use case)
+// Stored plans page first (repository reads Hive), filtered by author.
 final authorPlansFutureProvider =
-    FutureProvider.family<Either<Failure, List<Plan>>, String>((ref, authorId) async {
+    StreamProvider.family<Either<Failure, List<Plan>>, String>((
+      ref,
+      authorId,
+    ) async* {
       final getPlansUseCase = ref.watch(getPlansUseCaseProvider);
+      final local = ref.watch(plansLocalDatasourceProvider);
+      const language = 'en';
+      const limit = 100;
 
-      final result = await getPlansUseCase(const GetPlansParams(
-        language: 'en',
-        limit: 100,
-      ));
+      List<Plan> byAuthor(List<Plan> plans) =>
+          plans.where((plan) => plan.authorId == authorId).toList();
 
-      return result.fold(
-        (failure) => Left(failure),
-        (plans) => Right(plans.where((plan) => plan.authorId == authorId).toList()),
+      final result = await getPlansUseCase(
+        const GetPlansParams(language: language, limit: limit),
       );
+      yield result.map(byAuthor);
+
+      final key = local.plansKey(language: language, limit: limit);
+      await for (final _ in local.watchKey(key)) {
+        final cached = local.readPlans(language: language, limit: limit);
+        if (cached != null) {
+          yield Right(byAuthor(cached.map((plan) => plan.toEntity()).toList()));
+        }
+      }
     });
 
 // Author state notifier for managing local state

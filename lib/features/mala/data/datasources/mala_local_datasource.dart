@@ -168,6 +168,11 @@ class MalaLocalDataSource {
     }
   }
 
+  /// Fires when the stored catalogue for [language] changes.
+  Stream<void> watchCatalogue(String language) {
+    return _box.watch(key: _catalogueKey(language)).map((_) => null);
+  }
+
   Future<void> writeCatalogue(
     String language,
     List<PresetAccumulatorModel> presets,

@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -17,6 +18,7 @@ final routineRemoteDatasourceProvider = Provider<RoutineRemoteDatasource>((ref) 
 final routineApiRepositoryProvider = Provider<RoutineApiRepository>((ref) {
   return RoutineApiRepositoryImpl(
     datasource: ref.watch(routineRemoteDatasourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
@@ -47,22 +49,23 @@ final deleteTimeBlockUseCaseProvider = Provider<DeleteTimeBlockUseCase>((ref) {
 
 // ─── Data providers ───
 
-/// The authenticated user's current routine, mapped to [RoutineData].
-///
-/// Returns [null] when no routine has been created yet.
-/// Returns an error state when the API call fails.
-///
-/// Use `ref.invalidate(userRoutineProvider)` to refresh after any mutation.
-final userRoutineProvider = FutureProvider<RoutineData?>((ref) async {
+/// The user's routine: stored copy first, refreshed in the background; null
+/// for guests. Pull-to-refresh calls `refreshUserRoutine`; `ref.invalidate`
+/// after a mutation still works (stored → fresh).
+final userRoutineProvider = StreamProvider<RoutineData?>((ref) {
   final auth = ref.watch(authProvider);
-  if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) return null;
+  if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
+    return Stream.value(null);
+  }
 
   final language = ref.watch(contentLanguageProvider);
-  final result = await ref.read(getUserRoutineUseCaseProvider)(
-    language: language,
-  );
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (data) => data,
-  );
+  return ref
+      .watch(routineApiRepositoryProvider)
+      .watchUserRoutine(language: language)
+      .map(
+        (result) => result.fold(
+          (failure) => throw Exception(failure.message),
+          (data) => data,
+        ),
+      );
 });

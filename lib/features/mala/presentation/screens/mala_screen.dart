@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/core.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/tibetan_numerals.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/accumulator_groups_provider.dart';
@@ -123,24 +124,21 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
       // changing the bead appearance.
       body: ClipRect(
         child: SafeArea(
-          child: catalogue.when(
-            loading: () => const _MalaAppBarScaffold(child: MalaSkeleton()),
+          child: ScreenCacheBuilder<List<Mantra>>(
+            value: catalogue,
+            skeleton: const _MalaAppBarScaffold(child: MalaSkeleton()),
+            onRetry: () => ref.invalidate(malaCatalogueProvider),
             error:
-                (e, _) => _MalaAppBarScaffold(
+                (error, retry) => _MalaAppBarScaffold(
                   child: _ErrorView(
-                    onRetry: () => ref.invalidate(malaCatalogueProvider),
+                    message:
+                        error is Failure
+                            ? context.l10n.mala_failed_load_catalogue_error
+                            : null,
+                    onRetry: retry,
                   ),
                 ),
-            data:
-                (either) => either.fold(
-                  (failure) => _MalaAppBarScaffold(
-                    child: _ErrorView(
-                      message: context.l10n.mala_failed_load_catalogue_error,
-                      onRetry: () => ref.invalidate(malaCatalogueProvider),
-                    ),
-                  ),
-                  (mantras) => _buildLoaded(context, mantras),
-                ),
+            data: (mantras) => _buildLoaded(context, mantras),
           ),
         ),
       ),

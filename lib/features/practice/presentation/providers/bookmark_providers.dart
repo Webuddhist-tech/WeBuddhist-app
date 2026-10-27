@@ -1,18 +1,23 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/models/bookmark_models.dart';
 import 'package:flutter_pecha/features/practice/data/repositories/bookmark_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 
 final bookmarkRepositoryProvider = Provider<BookmarkRepository>((ref) {
   return BookmarkRepository(
     remoteDatasource: BookmarkRemoteDatasource(
       dio: ref.watch(dioProvider),
     ),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
@@ -315,29 +320,50 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
   /// empty state belongs.
   final bool _isAuthenticated;
   final _logger = AppLogger('BookmarksNotifier');
+  StreamSubscription<Either<Failure, List<BookmarkDTO>>>? _subscription;
 
+  /// Stored list first, then the server list; retry goes through [refresh].
   Future<void> load() async {
     if (!_isAuthenticated) {
       state = const BookmarksState();
       return;
     }
+    if (_subscription != null) return refresh();
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _repository.fetchBookmarks(language: _language);
-    if (!mounted) return;
-    result.fold(
-      (failure) {
-        _logger.error('Failed to load bookmarks: ${failure.message}');
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (list) {
-        final sorted = [...list]
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        state = BookmarksState(bookmarks: sorted, isLoading: false);
-      },
-    );
+    _subscription = _repository
+        .watchBookmarks(language: _language)
+        .listen((result) {
+          if (!mounted) return;
+          result.fold(_onFailure, _onList);
+        });
   }
 
-  Future<void> refresh() => load();
+  Future<void> refresh() async {
+    if (!_isAuthenticated) return;
+    if (_subscription == null) return load();
+    state = state.copyWith(clearError: true);
+    final result = await _repository.refreshBookmarks(language: _language);
+    if (!mounted) return;
+    result.fold(_onFailure, (_) {});
+  }
+
+  void _onFailure(Failure failure) {
+    _logger.error('Failed to load bookmarks: ${failure.message}');
+    if (state.bookmarks.isEmpty) {
+      state = state.copyWith(isLoading: false, error: failure.message);
+    }
+  }
+
+  void _onList(List<BookmarkDTO> list) {
+    final sorted = [...list]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    state = BookmarksState(bookmarks: sorted, isLoading: false);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   /// Optimistically removes [bookmark], restoring it if the API call fails.
   /// Returns `true` on success.
@@ -356,7 +382,11 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
         state = state.copyWith(bookmarks: previous);
         return false;
       },
-      (_) => true,
+      (_) {
+        // Bring the stored list in line so it never resurrects the bookmark.
+        unawaited(_repository.refreshBookmarks(language: _language));
+        return true;
+      },
     );
   }
 }

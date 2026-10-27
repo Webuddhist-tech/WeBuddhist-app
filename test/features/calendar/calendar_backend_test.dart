@@ -83,7 +83,8 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(backendMonthOverlayProvider(month).future);
+      container.listen(resolvedMonthDaysProvider(month), (_, __) {});
+      await pumpEventQueue();
       final days = container.read(resolvedMonthDaysProvider(month));
 
       // The backend's sentinel designation wins over the engine's.
@@ -102,7 +103,8 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(backendMonthOverlayProvider(month).future);
+      container.listen(resolvedMonthDaysProvider(month), (_, __) {});
+      await pumpEventQueue();
       final days = container.read(resolvedMonthDaysProvider(month));
 
       final day = days[dateOnly(losar)];
@@ -139,6 +141,22 @@ class _RealisticFakeRepo implements CalendarRepository {
   @override
   Future<Either<Failure, TibetanCalendarDay>> getToday() async =>
       const Left(NetworkFailure('no data'));
+
+  @override
+  Stream<Either<Failure, List<TibetanCalendarDay>>> watchMonth(
+    int year,
+    int month,
+  ) => Stream.fromFuture(getMonth(year, month));
+
+  @override
+  Future<Either<Failure, List<TibetanCalendarDay>>> refreshMonth(
+    int year,
+    int month,
+  ) => getMonth(year, month);
+
+  @override
+  Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
+      Stream.fromFuture(getToday());
 }
 
 class _OfflineRepo implements CalendarRepository {
@@ -151,4 +169,20 @@ class _OfflineRepo implements CalendarRepository {
   @override
   Future<Either<Failure, TibetanCalendarDay>> getToday() async =>
       const Left(NetworkFailure('offline'));
+
+  @override
+  Stream<Either<Failure, List<TibetanCalendarDay>>> watchMonth(
+    int year,
+    int month,
+  ) => Stream.fromFuture(getMonth(year, month));
+
+  @override
+  Future<Either<Failure, List<TibetanCalendarDay>>> refreshMonth(
+    int year,
+    int month,
+  ) => getMonth(year, month);
+
+  @override
+  Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
+      Stream.fromFuture(getToday());
 }

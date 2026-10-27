@@ -59,6 +59,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:flutter_pecha/core/utils/network_image_utils.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 
 enum _EventTab { videos, about, accumulations }
 
@@ -142,27 +143,14 @@ class _GroupEventDetailScreenState
           children: [
             _buildAppBar(context, isDark, loadedEvent),
             Expanded(
-              child: eventAsync.when(
-                data:
-                    (either) => either.fold(
-                      (failure) => ErrorStateWidget(
-                        error: failure,
-                        onRetry:
-                            () => ref.invalidate(
-                              groupEventDetailProvider(widget.eventId),
-                            ),
-                      ),
-                      (event) => _buildContent(context, event, isDark),
+              child: ScreenCacheBuilder<GroupEvent>(
+                value: eventAsync,
+                skeleton: const Center(child: CircularProgressIndicator()),
+                onRetry:
+                    () => ref.invalidate(
+                      groupEventDetailProvider(widget.eventId),
                     ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, _) => ErrorStateWidget(
-                      error: error,
-                      onRetry:
-                          () => ref.invalidate(
-                            groupEventDetailProvider(widget.eventId),
-                          ),
-                    ),
+                data: (event) => _buildContent(context, event, isDark),
               ),
             ),
           ],

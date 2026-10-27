@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -20,18 +21,20 @@ final myRecitationCollectionsRepositoryProvider =
         remoteDatasource: ref.watch(
           myRecitationCollectionsRemoteDatasourceProvider,
         ),
+        store: ref.watch(screenCacheStoreProvider),
       );
     });
 
-/// `GET /users/me/recitation-collections/{collectionId}` for the detail screen.
-final myRecitationCollectionDetailProvider = FutureProvider.autoDispose
+/// Stored detail first, refreshed in the background.
+final myRecitationCollectionDetailProvider = StreamProvider.autoDispose
     .family<Either<Failure, MyRecitationCollectionDetailModel>, String>((
       ref,
       collectionId,
     ) {
+      ref.watch(authProvider);
       return ref
           .watch(myRecitationCollectionsRepositoryProvider)
-          .getCollectionDetail(collectionId);
+          .watchCollectionDetail(collectionId);
     });
 
 enum MyChantCompletionResult { completed, failed }
@@ -180,9 +183,10 @@ final myRecitationCollectionCompletionProvider = StateNotifierProvider
       return notifier;
     });
 
-final myRecitationCollectionDaysCountProvider = FutureProvider.autoDispose
-    .family<Either<Failure, int>, String>((ref, collectionId) async {
+final myRecitationCollectionDaysCountProvider = StreamProvider.autoDispose
+    .family<Either<Failure, int>, String>((ref, collectionId) {
+      ref.watch(authProvider);
       return ref
           .watch(myRecitationCollectionsRepositoryProvider)
-          .getCompletionDaysCount(collectionId);
+          .watchCompletionDaysCount(collectionId);
     });

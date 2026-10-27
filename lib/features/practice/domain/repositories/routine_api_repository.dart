@@ -19,6 +19,15 @@ abstract class RoutineApiRepository {
     int limit = 20,
   });
 
+  /// Stored routine first, then revalidated in the background.
+  Stream<Either<Failure, RoutineData>> watchUserRoutine({
+    required String language,
+  });
+
+  Future<Either<Failure, RoutineData>> refreshUserRoutine({
+    required String language,
+  });
+
   /// Creates a new routine with its first time block.
   /// Returns the server-assigned [routineId] and [timeBlockId] on success.
   Future<Either<Failure, ({String routineId, String timeBlockId})>>

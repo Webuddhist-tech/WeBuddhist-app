@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intention_dto.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,8 +89,8 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
   /// Bumped on every first-page load, so a stale page is dropped.
   int _generation = 0;
 
-  /// Reads the first page again. A page still in flight is dropped when it
-  /// lands, so its loading flag is cleared here, not there.
+  /// Shows the stored first page, then reads it again. A page still in
+  /// flight is dropped when it lands, so its loading flag is cleared here.
   Future<void> load() async {
     if (state.isLoading) return;
     final generation = ++_generation;
@@ -98,30 +99,36 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
       isLoadingMore: false,
       clearError: true,
     );
-    final result = await _repository.listMyPrayerRequests(
-      skip: 0,
-      limit: _limit,
-    );
+    final source = await ref
+        .read(groupChatFirstPagesProvider)
+        .myPrayerRequests(limit: _limit);
     if (!mounted || generation != _generation) return;
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          hasLoaded: true,
-          error: failure.message,
-        );
-      },
-      (page) {
-        state = state.copyWith(
-          requests: page.messages,
-          total: page.total,
-          isLoading: false,
-          hasLoaded: true,
-          hasMore: page.messages.length < page.total,
-          skip: page.messages.length,
-          clearError: true,
-        );
-      },
+
+    await loadCachedFirstPage(
+      source,
+      isCurrent: () => mounted && generation == _generation,
+      seed: state.requests.isEmpty,
+      fetch: () => _repository.listMyPrayerRequests(skip: 0, limit: _limit),
+      encode: (page) => page.toJson(),
+      apply:
+          (page) =>
+              state = state.copyWith(
+                requests: page.messages,
+                total: page.total,
+                isLoading: false,
+                isLoadingMore: false,
+                hasLoaded: true,
+                hasMore: page.messages.length < page.total,
+                skip: page.messages.length,
+                clearError: true,
+              ),
+      fail:
+          (failure) =>
+              state = state.copyWith(
+                isLoading: false,
+                hasLoaded: true,
+                error: failure.message,
+              ),
     );
   }
 

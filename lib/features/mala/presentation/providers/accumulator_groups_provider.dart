@@ -10,15 +10,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Metadata only (titles, image, membership, lifetime
 /// [AccumulatorGroup.userTotalCount] and [AccumulatorGroup.groupTotalCount]).
 /// Active session counts for bead tapping use [joinedGroupUserCountsProvider].
-final joinedAccumulatorGroupsProvider = FutureProvider.autoDispose
-    .family<List<AccumulatorGroup>, String>((ref, presetId) async {
+/// Stored list first, refreshed in the background; a failure with nothing
+/// stored is an empty list, as before. Keyed by user id, and autoDispose, so
+/// it is rebuilt for whoever opens the mala screen next.
+final joinedAccumulatorGroupsProvider = StreamProvider.autoDispose
+    .family<List<AccumulatorGroup>, String>((ref, presetId) {
       // Re-fetches when the content language changes so group and event names
       // are localized, as the catalogue is.
       final language = ref.watch(contentLanguageProvider);
-      final result = await ref
+      return ref
           .watch(malaRepositoryProvider)
-          .getJoinedAccumulatorGroups(presetId, language: language);
-      return result.fold((_) => const [], (groups) => groups);
+          .watchJoinedAccumulatorGroups(presetId, language: language)
+          .map(
+            (result) =>
+                result.fold((_) => const <AccumulatorGroup>[], (groups) => groups),
+          );
     });
 
 /// Per-group user session counts keyed by [AccumulatorGroup.groupAccumulatorId].

@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/calendar/data/datasource/calendar_remote_datasource.dart';
 import 'package:flutter_pecha/features/calendar/data/kharag_tibetan_calendar_service.dart';
@@ -9,7 +10,6 @@ import 'package:flutter_pecha/features/calendar/domain/repositories/calendar_rep
 import 'package:flutter_pecha/features/calendar/domain/tibetan_calendar_service.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_calendar_month_usecase.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_today_calendar_usecase.dart';
-import 'package:flutter_pecha/shared/domain/base_classes/usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ============ Engine (offline fallback + lunar-month mapping) ============
@@ -29,6 +29,7 @@ final calendarRemoteDatasourceProvider = Provider<CalendarRemoteDatasource>(
 final calendarRepositoryProvider = Provider<CalendarRepository>(
   (ref) => CalendarRepositoryImpl(
     datasource: ref.watch(calendarRemoteDatasourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   ),
 );
 
@@ -88,31 +89,29 @@ final engineMonthDaysProvider =
       return map;
     });
 
-/// One authoritative Gregorian month from the backend. Cached per month, so
-/// the grid's leading/trailing days (which belong to adjacent months) reuse the
-/// neighbours' fetches as the user navigates. Returns an empty list on failure
-/// so the caller silently falls back to the engine.
+/// One authoritative Gregorian month from the backend: the stored month shows
+/// first, the server month replaces it if changed. Emits an empty list on
+/// failure so the caller silently falls back to the engine.
 final calendarMonthProvider =
-    FutureProvider.family<List<TibetanCalendarDay>, _GregorianMonthKey>((
+    StreamProvider.family<List<TibetanCalendarDay>, _GregorianMonthKey>((
       ref,
       key,
-    ) async {
-      final useCase = ref.watch(getCalendarMonthUseCaseProvider);
-      final result = await useCase(
-        GetCalendarMonthParams(year: key.year, month: key.month),
-      );
-      return result.fold((_) => const <TibetanCalendarDay>[], (days) => days);
+    ) {
+      return ref
+          .watch(calendarRepositoryProvider)
+          .watchMonth(key.year, key.month)
+          .map(
+            (result) =>
+                result.fold((_) => const <TibetanCalendarDay>[], (days) => days),
+          );
     });
 
 /// Backend days overlaying the visible range of [month], keyed by Gregorian
-/// date. Empty when offline/unavailable. Fetches the Gregorian months the grid
+/// date. Empty while nothing has arrived. Watches the Gregorian months the grid
 /// spans (the focused month plus the neighbours its leading/trailing days fall
-/// into).
+/// into) and rebuilds as each one lands or refreshes.
 final backendMonthOverlayProvider =
-    FutureProvider.family<Map<DateTime, TibetanCalendarDay>, DateTime>((
-      ref,
-      month,
-    ) async {
+    Provider.family<Map<DateTime, TibetanCalendarDay>, DateTime>((ref, month) {
       final range = _visibleRange(month);
 
       final keys = <_GregorianMonthKey>{};
@@ -124,16 +123,11 @@ final backendMonthOverlayProvider =
         keys.add((year: d.year, month: d.month));
       }
 
-      // Register every subscription *before* awaiting. In Riverpod, `ref.watch`
-      // calls after the first `await` don't create reactive subscriptions, so
-      // collect all the month futures synchronously, then await them together.
-      final futures = [
-        for (final key in keys) ref.watch(calendarMonthProvider(key).future),
-      ];
-      final months = await Future.wait(futures);
-
       final overlay = <DateTime, TibetanCalendarDay>{};
-      for (final days in months) {
+      for (final key in keys) {
+        final days =
+            ref.watch(calendarMonthProvider(key)).valueOrNull ??
+            const <TibetanCalendarDay>[];
         for (final day in days) {
           final g = day.gregorianDate;
           if (g == null) continue; // omitted day — no grid cell
@@ -148,13 +142,11 @@ final backendMonthOverlayProvider =
 
 /// Resolved days for [month]: engine values overlaid with backend values where
 /// available. Synchronous (engine is always present); updates when the backend
-/// overlay resolves. This is what the UI reads.
+/// overlay changes. This is what the UI reads.
 final resolvedMonthDaysProvider =
     Provider.family<Map<DateTime, TibetanCalendarDay>, DateTime>((ref, month) {
       final engine = ref.watch(engineMonthDaysProvider(month));
-      final overlay =
-          ref.watch(backendMonthOverlayProvider(month)).asData?.value ??
-          const <DateTime, TibetanCalendarDay>{};
+      final overlay = ref.watch(backendMonthOverlayProvider(month));
       if (overlay.isEmpty) return engine;
       return {...engine, ...overlay};
     });
@@ -178,16 +170,19 @@ final resolvedDayProvider = Provider.family<TibetanCalendarDay, DateTime>((
 /// engine fallback on failure. Used by the home-screen summary card. While the
 /// request is in flight the card can show the engine value (see the card's
 /// `asData ?? engine` pattern) so there's no spinner.
-final todayCalendarDayProvider = FutureProvider<TibetanCalendarDay>((ref) async {
-  final useCase = ref.watch(getTodayCalendarUseCaseProvider);
-  final result = await useCase(const NoParams());
-  return result.fold(
-    (_) => TibetanCalendarDay.fromEngine(
-      dateOnly(DateTime.now()),
-      ref.read(tibetanCalendarServiceProvider),
-    ),
-    (day) => day,
-  );
+final todayCalendarDayProvider = StreamProvider<TibetanCalendarDay>((ref) {
+  return ref
+      .watch(calendarRepositoryProvider)
+      .watchToday()
+      .map(
+        (result) => result.fold(
+          (_) => TibetanCalendarDay.fromEngine(
+            dateOnly(DateTime.now()),
+            ref.read(tibetanCalendarServiceProvider),
+          ),
+          (day) => day,
+        ),
+      );
 });
 
 // ============ Events (moon phases only, derived from resolved days) ============

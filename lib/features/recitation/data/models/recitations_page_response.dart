@@ -40,8 +40,18 @@ class RecitationsPageResponse {
       skip: json['skip'] as int? ?? 0,
       limit: json['limit'] as int? ?? recitationsData.length,
       total: json['total'] as int? ?? recitationsData.length,
+      nextSkip: json['next_skip'] as int?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'recitations': recitations.map((r) => r.toJson()).toList(),
+    'collections': collections.map((c) => c.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+    'next_skip': nextSkip,
+  };
 
   bool get hasMore => nextSkip < total;
 }

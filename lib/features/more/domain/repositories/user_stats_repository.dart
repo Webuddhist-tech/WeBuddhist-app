@@ -19,4 +19,21 @@ abstract class UserStatsRepositoryInterface extends Repository {
   Future<Either<Failure, MantraCountPage>> getMantraCounts(
     GetMantraCountsParams params,
   );
+
+  /// Stored first page first, then revalidated in the background.
+  Stream<Either<Failure, SeriesDayCompletedPage>> watchSeriesDayCompleted({
+    required String language,
+  });
+
+  Future<Either<Failure, SeriesDayCompletedPage>> refreshSeriesDayCompleted({
+    required String language,
+  });
+
+  Stream<Either<Failure, MantraCountPage>> watchMantraCounts({
+    required String language,
+  });
+
+  Future<Either<Failure, MantraCountPage>> refreshMantraCounts({
+    required String language,
+  });
 }

@@ -82,7 +82,7 @@ Future<void> _pumpBar(WidgetTester tester, _JoinedList joined) async {
         malaSoundPlayerProvider.overrideWithValue(SilentMalaSoundPlayer()),
         analyticsServiceProvider.overrideWithValue(RecordingAnalyticsService()),
         joinedAccumulatorGroupsProvider.overrideWith(
-          (ref, presetId) async => joined.next(),
+          (ref, presetId) => Stream.value(joined.next()),
         ),
       ],
       child: const MaterialApp(

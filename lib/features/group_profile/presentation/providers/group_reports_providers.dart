@@ -93,12 +93,19 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   /// server's own window.
   int _serverOffset = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (_resolving || state.isLoading) return;
 
     final generation = ++_requestGeneration;
+    final stored =
+        state.reports.isEmpty
+            ? await _repository.readStoredGroupReports(_groupId)
+            : null;
+    if (!mounted || generation != _requestGeneration) return;
+    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(
-      isLoading: true,
+      isLoading: state.reports.isEmpty,
       isLoadingMore: false,
       clearError: true,
     );
@@ -117,20 +124,22 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
         state = state.copyWith(
           isLoading: false,
           hasLoaded: true,
-          error: failure.message,
+          error: state.reports.isEmpty ? failure.message : null,
         );
       },
-      (page) {
-        _serverOffset = page.received;
-        state = state.copyWith(
-          reports: page.reports,
-          total: page.total,
-          isLoading: false,
-          hasLoaded: true,
-          hasMore: _hasMore(page, _serverOffset),
-          clearError: true,
-        );
-      },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(GroupReportsPage page) {
+    _serverOffset = page.received;
+    state = state.copyWith(
+      reports: page.reports,
+      total: page.total,
+      isLoading: false,
+      hasLoaded: true,
+      hasMore: _hasMore(page, _serverOffset),
+      clearError: true,
     );
   }
 

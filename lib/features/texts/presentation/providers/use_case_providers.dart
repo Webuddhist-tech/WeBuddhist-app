@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_segment_repository.dart';
 import 'package:flutter_pecha/features/library/data/adapters/library_text_remote_datasource.dart';
 import 'package:flutter_pecha/features/library/presentation/providers/library_providers.dart';
@@ -18,6 +19,7 @@ final textsRepositoryProvider = Provider<TextsRepository>((ref) {
     remoteDatasource: LibraryTextRemoteDatasource(
       library: ref.watch(libraryRepositoryProvider),
     ),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 

@@ -1,5 +1,7 @@
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,35 +75,38 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
       return;
     }
 
+    // Stored first page shows at once; the server's replaces it if changed.
     state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await ref.read(groupProfileRepositoryProvider).getConnectPractices(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: 0,
-      limit: _limit,
-    );
-
+    final source = await ref
+        .read(connectRepositoryProvider)
+        .connectPracticesFirstPage(
+          includeUnfollowed: includeUnfollowed,
+          language: language,
+          limit: _limit,
+        );
     if (!mounted) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-          hasLoaded: true,
-        );
-      },
-      (page) {
-        state = state.copyWith(
-          practices: page.practices,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.practices.length,
-          hasLoaded: true,
-          clearError: true,
-        );
-      },
+    await loadCachedFirstPage(
+      source,
+      isCurrent: () => mounted,
+      seed: state.practices.isEmpty,
+      apply:
+          (page) =>
+              state = state.copyWith(
+                practices: page.practices,
+                isLoading: false,
+                hasMore: page.hasMore,
+                skip: page.practices.length,
+                hasLoaded: true,
+                clearError: true,
+              ),
+      fail:
+          (failure) =>
+              state = state.copyWith(
+                isLoading: false,
+                error: failure.message,
+                hasLoaded: true,
+              ),
     );
   }
 
@@ -135,10 +140,10 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
     );
   }
 
+  /// Keeps the list on screen while the first page is read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const ConnectPracticesState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void retry() {

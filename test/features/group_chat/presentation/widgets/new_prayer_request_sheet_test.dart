@@ -9,6 +9,9 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+
+import '../../../../helpers/fake_screen_cache_store.dart';
 
 const _defaultHint = 'How can we pray for you today?';
 
@@ -53,7 +56,10 @@ Future<void> _pump(
 }) {
   return tester.pumpWidget(
     ProviderScope(
-      overrides: [prayerIntentionsProvider.overrideWith((ref) => catalog)],
+      overrides: [
+        prayerIntentionsProvider.overrideWith((ref) => catalog.asStream()),
+        screenCacheStoreProvider.overrideWithValue(FakeScreenCacheStore()),
+      ],
       child: MaterialApp(
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,

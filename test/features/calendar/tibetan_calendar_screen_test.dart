@@ -25,6 +25,22 @@ class _OfflineCalendarRepository implements CalendarRepository {
   @override
   Future<Either<Failure, TibetanCalendarDay>> getToday() async =>
       const Left(NetworkFailure('offline test'));
+
+  @override
+  Stream<Either<Failure, List<TibetanCalendarDay>>> watchMonth(
+    int year,
+    int month,
+  ) => Stream.fromFuture(getMonth(year, month));
+
+  @override
+  Future<Either<Failure, List<TibetanCalendarDay>>> refreshMonth(
+    int year,
+    int month,
+  ) => getMonth(year, month);
+
+  @override
+  Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
+      Stream.fromFuture(getToday());
 }
 
 void main() {

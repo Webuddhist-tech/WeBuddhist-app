@@ -1,10 +1,15 @@
 import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/more/data/datasource/user_stats_local_datasource.dart';
 import 'package:flutter_pecha/features/more/data/datasource/user_stats_remote_datasource.dart';
+import 'package:flutter_pecha/features/more/data/models/mantra_count_model.dart';
+import 'package:flutter_pecha/features/more/data/models/series_day_completed_model.dart';
 import 'package:flutter_pecha/features/more/data/models/user_stats_model.dart';
 import 'package:flutter_pecha/features/more/domain/entities/mantra_count.dart';
 import 'package:flutter_pecha/features/more/domain/entities/series_day_completed.dart';
@@ -16,8 +21,87 @@ import 'package:flutter_pecha/features/more/domain/usecases/get_series_day_compl
 class UserStatsRepositoryImpl implements UserStatsRepositoryInterface {
   final UserStatsRemoteDatasource remote;
   final UserStatsLocalDatasource local;
+  final ScreenCacheStore store;
 
-  UserStatsRepositoryImpl({required this.remote, required this.local});
+  UserStatsRepositoryImpl({
+    required this.remote,
+    required this.local,
+    required this.store,
+  });
+
+  @override
+  Stream<Either<Failure, SeriesDayCompletedPage>> watchSeriesDayCompleted({
+    required String language,
+  }) async* {
+    final userId = await store.currentUserId();
+    yield* _seriesDayCompletedSource(userId, language).watch();
+  }
+
+  @override
+  Future<Either<Failure, SeriesDayCompletedPage>> refreshSeriesDayCompleted({
+    required String language,
+  }) async {
+    final userId = await store.currentUserId();
+    return _seriesDayCompletedSource(userId, language).refresh();
+  }
+
+  @override
+  Stream<Either<Failure, MantraCountPage>> watchMantraCounts({
+    required String language,
+  }) async* {
+    final userId = await store.currentUserId();
+    yield* _mantraCountsSource(userId, language).watch();
+  }
+
+  @override
+  Future<Either<Failure, MantraCountPage>> refreshMantraCounts({
+    required String language,
+  }) async {
+    final userId = await store.currentUserId();
+    return _mantraCountsSource(userId, language).refresh();
+  }
+
+  ScreenCacheSource<SeriesDayCompletedPage> _seriesDayCompletedSource(
+    String? userId,
+    String language,
+  ) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'series_day_completed',
+        userId: userId,
+        language: language,
+      ),
+      fetchJson: () => remote.fetchSeriesDayCompletedJson(language: language),
+      fromJson:
+          (json) =>
+              SeriesDayCompletedPageModel.fromJson(
+                json as Map<String, dynamic>,
+              ).toEntity(),
+      failureMessage: 'Failed to load series day completed',
+    );
+  }
+
+  ScreenCacheSource<MantraCountPage> _mantraCountsSource(
+    String? userId,
+    String language,
+  ) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'mantra_counts',
+        userId: userId,
+        language: language,
+      ),
+      fetchJson: () => remote.fetchMantraCountsJson(language: language),
+      fromJson:
+          (json) =>
+              MantraCountPageModel.fromJson(
+                json as Map<String, dynamic>,
+              ).toEntity(),
+      failureMessage: 'Failed to load mantra counts',
+    );
+  }
 
   @override
   Future<Either<Failure, MantraCountPage>> getMantraCounts(

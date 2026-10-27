@@ -70,14 +70,17 @@ Future<void> _pump(WidgetTester tester) async {
     ProviderScope(
       overrides: [
         groupEventDetailProvider.overrideWith(
-          (ref, eventId) async => const Right<Failure, GroupEvent>(_event),
+          (ref, eventId) => Stream.value(const Right<Failure, GroupEvent>(_event)),
         ),
-        groupCmsEventsProvider.overrideWith((ref, groupId) async => const []),
+        groupCmsEventsProvider.overrideWith(
+          (ref, groupId) => Stream.value(const []),
+        ),
         groupEventComposerRepositoryProvider.overrideWithValue(
           _FakeComposerRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) async => Right<Failure, GroupAccumulatorDetail>(
+          (ref, id) => Stream.value(
+            Right<Failure, GroupAccumulatorDetail>(
             GroupAccumulatorDetail(
               id: id,
               presetAccumulatorId: 'p-$id',
@@ -87,6 +90,7 @@ Future<void> _pump(WidgetTester tester) async {
               totalCount: 1840,
               memberCount: 9,
             ),
+          ),
           ),
         ),
       ],

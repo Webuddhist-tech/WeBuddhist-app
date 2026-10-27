@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
@@ -110,6 +113,27 @@ class _RoomsWalk {
   /// Set when a page failed. Earlier pages of the same walk are still in
   /// [rooms]; a walk whose first page failed has none.
   final Failure? failure;
+
+  factory _RoomsWalk.fromJson(Map<String, dynamic> json) {
+    return _RoomsWalk(
+      rooms:
+          (json['rooms'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatRoomDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: (json['skip'] as num?)?.toInt() ?? 0,
+      total: (json['total'] as num?)?.toInt() ?? 0,
+      hasMore: json['has_more'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'rooms': rooms.map((room) => room.toJson()).toList(),
+    'skip': skip,
+    'total': total,
+    'has_more': hasMore,
+  };
 }
 
 /// The viewer's group chats and direct chats.
@@ -173,20 +197,39 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   Future<void> loadInitial() async {
     if (state.isLoading) return;
     _generation++;
-    // `hasLoaded` waits for the whole walk, not the first page: with a first
-    // page of event rooms the list is still empty when it lands, and marking
-    // it loaded there would flash the empty state before the chats arrive.
-    //
-    // `isLoadingMore` is cleared here rather than when the orphaned page
-    // lands: the bump above has already made that page a no-op, and `isLoading`
-    // holds off any new `loadMore` until this walk is published. Leaving the
-    // flag to the orphan would let it land after a fresh page had gone out and
-    // clear that page's flag from under it.
-    state = state.copyWith(
-      isLoading: true,
-      isLoadingMore: false,
-      clearError: true,
-    );
+    // The last walk stored on this device shows at once when the list is
+    // empty; the fresh walk below replaces it.
+    final stored = state.rooms.isEmpty ? await _readStoredWalk() : null;
+    if (!mounted) return;
+    if (stored != null) {
+      _unreadBeyondOffset = null;
+      state = state.copyWith(
+        rooms: chatListRooms(stored.rooms),
+        isLoading: false,
+        isLoadingMore: false,
+        hasLoaded: true,
+        hasMore: stored.hasMore,
+        skip: stored.skip,
+        total: stored.total,
+        hasUnreadBeyondList: false,
+        clearError: true,
+      );
+    } else {
+      // `hasLoaded` waits for the whole walk, not the first page: with a first
+      // page of event rooms the list is still empty when it lands, and marking
+      // it loaded there would flash the empty state before the chats arrive.
+      //
+      // `isLoadingMore` is cleared here rather than when the orphaned page
+      // lands: the bump above has already made that page a no-op, and `isLoading`
+      // holds off any new `loadMore` until this walk is published. Leaving the
+      // flag to the orphan would let it land after a fresh page had gone out and
+      // clear that page's flag from under it.
+      state = state.copyWith(
+        isLoading: true,
+        isLoadingMore: false,
+        clearError: true,
+      );
+    }
 
     final walk = await _walk(skip: 0);
     if (!mounted) return;
@@ -194,14 +237,16 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     final failure = walk.failure;
     if (failure != null && walk.rooms.isEmpty) {
       // Nothing new landed; whatever was on screen stays, and so does the
-      // paging that goes with it.
+      // paging that goes with it. A stored list stays quiet about it.
       state = state.copyWith(
         isLoading: false,
         hasLoaded: true,
-        error: failure.message,
+        error: stored == null ? failure.message : null,
+        clearError: stored != null,
       );
       return;
     }
+    if (failure == null) unawaited(_storeWalk(walk));
 
     // A fresh list starts with no verdict about what lies beyond it; the scan
     // below earns that again from scratch, since the room it found last time
@@ -450,6 +495,39 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
       } catch (_) {
         // Storage is best-effort; the next lookup falls back to the server.
       }
+    }
+  }
+
+  /// Where the last complete walk is kept, per account.
+  Future<String> _walkKey() async {
+    return ScreenCacheKey.user(
+      'chat_rooms',
+      userId: await _loadAccountId(),
+      language: 'all',
+    );
+  }
+
+  Future<_RoomsWalk?> _readStoredWalk() async {
+    final store = ref.read(screenCacheStoreProvider);
+    final key = await _walkKey();
+    final raw = store.read(key);
+    if (raw == null) return null;
+    try {
+      return _RoomsWalk.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      unawaited(store.remove(key));
+      return null;
+    }
+  }
+
+  Future<void> _storeWalk(_RoomsWalk walk) async {
+    try {
+      final key = await _walkKey();
+      await ref
+          .read(screenCacheStoreProvider)
+          .save(key, jsonEncode(walk.toJson()));
+    } catch (_) {
+      // Storage is best-effort; the next load fetches again.
     }
   }
 

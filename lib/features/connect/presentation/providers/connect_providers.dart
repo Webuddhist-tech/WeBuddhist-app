@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_da
 import 'package:flutter_pecha/features/connect/data/repositories/connect_repository_impl.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
 import 'package:flutter_pecha/features/connect/domain/repositories/connect_repository.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -83,37 +84,38 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
     loadInitial();
   }
 
+  /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
 
     state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await repository.getDiscoverGroups(
+    final source = await repository.discoverGroupsFirstPage(
       language: language,
-      skip: 0,
       limit: _limit,
     );
-
     if (!mounted) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-          hasLoaded: true,
-        );
-      },
-      (page) {
-        state = state.copyWith(
-          groups: page.groups,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.groups.length,
-          hasLoaded: true,
-          clearError: true,
-        );
-      },
+    await loadCachedFirstPage(
+      source,
+      isCurrent: () => mounted,
+      seed: state.groups.isEmpty,
+      apply:
+          (page) =>
+              state = state.copyWith(
+                groups: page.groups,
+                isLoading: false,
+                hasMore: page.hasMore,
+                skip: page.groups.length,
+                hasLoaded: true,
+                clearError: true,
+              ),
+      fail:
+          (failure) =>
+              state = state.copyWith(
+                isLoading: false,
+                error: failure.message,
+                hasLoaded: true,
+              ),
     );
   }
 
@@ -146,10 +148,10 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
     );
   }
 
+  /// Keeps the list on screen while the first page is read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const DiscoverGroupsState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void removeGroups(Set<String> groupIds) {

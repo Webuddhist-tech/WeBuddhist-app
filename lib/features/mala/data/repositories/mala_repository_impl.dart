@@ -1,20 +1,72 @@
 import 'dart:async';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasource.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_remote_datasource.dart';
+import 'package:flutter_pecha/features/mala/data/models/accumulator_group_model.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mala_count.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
 import 'package:flutter_pecha/features/mala/domain/repositories/mala_repository.dart';
 
 class MalaRepositoryImpl implements MalaRepository {
-  MalaRepositoryImpl({required this.remote, this.local});
+  MalaRepositoryImpl({required this.remote, this.local, ScreenCacheStore? store})
+    : store = store ?? ScreenCacheStore();
 
   final MalaRemoteDataSource remote;
   final MalaLocalDataSource? local;
+  final ScreenCacheStore store;
+
+  @override
+  Stream<Either<Failure, List<AccumulatorGroup>>> watchJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  }) async* {
+    final userId = await store.currentUserId();
+    yield* _joinedGroupsSource(accumulatorId, userId, language).watch();
+  }
+
+  @override
+  Future<Either<Failure, List<AccumulatorGroup>>> refreshJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  }) async {
+    final userId = await store.currentUserId();
+    return _joinedGroupsSource(accumulatorId, userId, language).refresh();
+  }
+
+  ScreenCacheSource<List<AccumulatorGroup>> _joinedGroupsSource(
+    String accumulatorId,
+    String? userId,
+    String? language,
+  ) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'joined_accumulator_groups',
+        userId: userId,
+        language: language ?? 'all',
+        params: [accumulatorId],
+      ),
+      fetchJson:
+          () => remote.fetchAccumulatorGroupsJson(
+            accumulatorId,
+            joinedOnly: true,
+            language: language,
+          ),
+      fromJson:
+          (json) =>
+              AccumulatorGroupsResponseModel.fromJson(
+                json as Map<String, dynamic>,
+              ).groups.map((group) => group.toEntity()).toList(),
+      failureMessage: 'Failed to load accumulator groups',
+    );
+  }
 
   @override
   Future<Either<Failure, List<Mantra>>> getCatalogue({

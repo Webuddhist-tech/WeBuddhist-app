@@ -20,6 +20,22 @@ class ConnectRemoteDatasource {
     int limit = 20,
     String? search,
   }) async {
+    final data = await fetchDiscoverGroupsJson(
+      language: language,
+      skip: skip,
+      limit: limit,
+      search: search,
+    );
+    return parseGroupsPage(data, skip: skip, limit: limit);
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchDiscoverGroupsJson({
+    required String language,
+    int skip = 0,
+    int limit = 20,
+    String? search,
+  }) async {
     try {
       final queryParameters = <String, dynamic>{
         'language': language,
@@ -45,11 +61,7 @@ class ConnectRemoteDatasource {
         );
       }
 
-      return parseGroupsPage(
-        response.data as Map<String, dynamic>,
-        skip: skip,
-        limit: limit,
-      );
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       _logger.error('Dio error in fetchDiscoverGroups', e);
       throw _dioToException(e, 'Failed to load discover groups');
@@ -103,6 +115,22 @@ class ConnectRemoteDatasource {
     int skip = 0,
     int limit = 20,
   }) async {
+    final data = await fetchConnectFeedsJson(
+      includeUnfollowed: includeUnfollowed,
+      language: language,
+      skip: skip,
+      limit: limit,
+    );
+    return ConnectFeedPageModel.fromJson(data, language: language).toEntity();
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchConnectFeedsJson({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
     try {
       final queryParameters = <String, dynamic>{
         'skip': skip,
@@ -124,13 +152,81 @@ class ConnectRemoteDatasource {
         throw _statusToException(response.statusCode, 'Failed to load feed');
       }
 
-      return ConnectFeedPageModel.fromJson(
-        response.data as Map<String, dynamic>,
-        language: language,
-      ).toEntity();
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       _logger.error('Dio error in fetchConnectFeeds', e);
       throw _dioToException(e, 'Failed to load feed');
+    }
+  }
+
+  /// Raw `/events` page for the Connect tab; the typed read lives in
+  /// `GroupProfileRemoteDatasource.fetchConnectEvents`.
+  Future<Map<String, dynamic>> fetchConnectEventsJson({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+    String? eventFormat,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/events',
+        queryParameters: {
+          'skip': skip,
+          'limit': limit,
+          'language': language,
+          if (includeUnfollowed) 'include_unfollowed': true,
+          if (eventFormat != null) 'event_format': eventFormat,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode != 200) {
+        _logger.error('Failed to load connect events: ${response.statusCode}');
+        throw _statusToException(response.statusCode, 'Failed to load events');
+      }
+
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchConnectEventsJson', e);
+      throw _dioToException(e, 'Failed to load events');
+    }
+  }
+
+  /// Raw `/author/groups/practices` page for the Connect tab; the typed read
+  /// lives in `GroupProfileRemoteDatasource.fetchPractices`.
+  Future<Map<String, dynamic>> fetchConnectPracticesJson({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/author/groups/practices',
+        queryParameters: {
+          'language': language,
+          'skip': skip,
+          'limit': limit,
+          if (includeUnfollowed) 'include_unfollowed': true,
+        },
+        options: Options(extra: {'no_cache': true}),
+      );
+
+      if (response.statusCode != 200) {
+        _logger.error(
+          'Failed to load connect practices: ${response.statusCode}',
+        );
+        throw _statusToException(
+          response.statusCode,
+          'Failed to load group practices',
+        );
+      }
+
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      _logger.error('Dio error in fetchConnectPracticesJson', e);
+      throw _dioToException(e, 'Failed to load group practices');
     }
   }
 
@@ -167,6 +263,20 @@ class ConnectRemoteDatasource {
     int skip = 0,
     int limit = 20,
   }) async {
+    final data = await fetchPostCommentsJson(
+      postId: postId,
+      skip: skip,
+      limit: limit,
+    );
+    return ConnectPostCommentsPageModel.fromJson(data).toEntity();
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchPostCommentsJson({
+    required String postId,
+    int skip = 0,
+    int limit = 20,
+  }) async {
     try {
       final response = await dio.get(
         '/groups/author/posts/$postId/comments',
@@ -182,9 +292,7 @@ class ConnectRemoteDatasource {
         );
       }
 
-      return ConnectPostCommentsPageModel.fromJson(
-        response.data as Map<String, dynamic>,
-      ).toEntity();
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       _logger.error('Dio error in fetchPostComments', e);
       throw _dioToException(e, 'Failed to load comments');

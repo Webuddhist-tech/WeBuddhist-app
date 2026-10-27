@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -37,6 +38,7 @@ final malaRepositoryProvider = Provider<MalaRepository>((ref) {
   return MalaRepositoryImpl(
     remote: ref.watch(malaRemoteDataSourceProvider),
     local: ref.watch(malaLocalDataSourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
@@ -121,16 +123,27 @@ final malaSyncManagerProvider = Provider<MalaSyncManager>((ref) {
 
 // ============ Catalogue ============
 
-final malaCatalogueProvider = FutureProvider<Either<Failure, List<Mantra>>>((
+/// Stored catalogue first (the repository reads Hive), then each refresh
+/// written to it. Re-fetches when the content language changes.
+final malaCatalogueProvider = StreamProvider<Either<Failure, List<Mantra>>>((
   ref,
-) async {
+) async* {
   if (!_isAuthenticated(ref)) {
-    return const Left(AuthenticationFailure('Not authenticated'));
+    yield const Left(AuthenticationFailure('Not authenticated'));
+    return;
   }
-  // Re-fetches when the content language changes so mantra content is
-  // localized. The UI locale can differ from it (see locale/README.md).
   final language = ref.watch(contentLanguageProvider);
-  return ref.watch(getCatalogueUseCaseProvider)(language);
+  final getCatalogue = ref.watch(getCatalogueUseCaseProvider);
+  final local = ref.watch(malaLocalDataSourceProvider);
+
+  yield await getCatalogue(language);
+
+  await for (final _ in local.watchCatalogue(language)) {
+    final cached = local.readCatalogue(language);
+    if (cached != null) {
+      yield Right(cached.map((preset) => preset.toEntity()).toList());
+    }
+  }
 });
 
 // ============ Catalogue search (debounced, server-side) ============

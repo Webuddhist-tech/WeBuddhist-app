@@ -100,28 +100,44 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
 
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final feedFuture = ref.read(connectRepositoryProvider).getConnectFeeds(
+    // Stored first pages show at once; the server's replace them if changed.
+    final repository = ref.read(connectRepositoryProvider);
+    final feedSource = await repository.connectFeedFirstPage(
       includeUnfollowed: includeUnfollowed,
       language: language,
-      skip: 0,
       limit: _limit,
     );
-    final practicesFuture = ref
-        .read(groupProfileRepositoryProvider)
-        .getConnectPractices(
-          includeUnfollowed: includeUnfollowed,
-          language: language,
-          skip: 0,
-          limit: _limit,
-        );
+    final practicesSource = await repository.connectPracticesFirstPage(
+      includeUnfollowed: includeUnfollowed,
+      language: language,
+      limit: _limit,
+    );
+    if (!mounted) return;
 
-    final feedResult = await feedFuture;
-    final practicesResult = await practicesFuture;
+    final cachedFeed = state.feedItems.isEmpty ? feedSource.read() : null;
+    final cachedPractices = practicesSource.read();
+    if (cachedFeed != null) {
+      state = state.copyWith(
+        feedItems: cachedFeed.items,
+        practices: cachedPractices?.practices ?? const [],
+        isLoading: false,
+        feedHasMore: cachedFeed.hasMore,
+        practicesHasMore: cachedPractices?.hasMore ?? false,
+        feedSkip: cachedFeed.items.length,
+        practicesSkip: cachedPractices?.practices.length ?? 0,
+        hasLoaded: true,
+        clearError: true,
+      );
+    }
+
+    final feedResult = await feedSource.refresh();
+    final practicesResult = await practicesSource.refresh();
 
     if (!mounted) return;
 
     feedResult.fold(
       (failure) {
+        if (cachedFeed != null) return;
         state = state.copyWith(
           isLoading: false,
           error: failure.message,
@@ -234,10 +250,10 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     );
   }
 
+  /// Keeps the feed on screen while the first pages are read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const UnifiedConnectFeedState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void retry() {

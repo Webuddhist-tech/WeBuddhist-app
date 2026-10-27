@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -16,8 +17,9 @@ class PracticeScreen extends ConsumerWidget {
   final bool showAppBar;
 
   Future<void> _refreshRoutine(WidgetRef ref) async {
-    ref.invalidate(userRoutineProvider);
-    await ref.read(userRoutineProvider.future);
+    await ref
+        .read(routineApiRepositoryProvider)
+        .refreshUserRoutine(language: ref.read(contentLanguageProvider));
   }
 
   void _onBuildRoutine(BuildContext context, WidgetRef ref) {

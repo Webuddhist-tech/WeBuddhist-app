@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_first_pages.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -369,6 +374,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// filter is dropped when it lands.
   int _listGeneration = 0;
 
+  /// The list on screen came from the device, so a failed re-read stays quiet.
+  bool _seededFromStore = false;
+
   /// Live requests counted but not in the list: outside the intention in
   /// view (null) or held for the end of a sort still paging (the row, in
   /// [PrayerRequestsState.total]). Dedupes the REST reply against the echo.
@@ -404,7 +412,8 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     )..start();
   }
 
-  /// Resolves the room, then fetches its first page of prayer requests.
+  /// Shows the stored room and page at once, then resolves the room and
+  /// fetches its first page of prayer requests.
   Future<void> load() async {
     if (state.isLoading) return;
     state = state.copyWith(
@@ -412,6 +421,17 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       isLoading: true,
       clearError: true,
     );
+    final stored = state.requests.isEmpty ? await _readSnapshot() : null;
+    if (!mounted) return;
+    if (stored != null && stored.roomId.isNotEmpty) {
+      _seededFromStore = true;
+      state = state.copyWith(
+        roomId: stored.roomId,
+        roomStatus: PrayerRoomStatus.ready,
+        clearError: true,
+      );
+      _applyFirstPage(stored.page);
+    }
 
     final language = ref.read(prayerMantraLanguageProvider);
     final roomResult =
@@ -475,38 +495,84 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final generation = ++_listGeneration;
     _pageShifted = false;
     _unlisted.clear();
-    final filter = state.filter;
+    final source = await _snapshotSource();
+    if (!mounted || generation != _listGeneration) return;
+    // A filter change starts empty; its stored page shows while it re-reads.
+    if (state.requests.isEmpty) {
+      final stored = source.read();
+      if (stored != null && stored.roomId == roomId) {
+        _seededFromStore = true;
+        state = state.copyWith(isLoading: false);
+        _applyFirstPage(stored.page);
+      }
+    }
     final result = await _fetchPage(roomId, skip: 0);
     if (!mounted || generation != _listGeneration) return;
 
+    final seeded = _seededFromStore;
+    _seededFromStore = false;
     result.fold(
       (failure) {
         state = state.copyWith(
           isLoading: false,
           hasLoaded: true,
-          error: failure.message,
+          error: seeded ? null : failure.message,
+          clearError: seeded,
         );
       },
       (page) {
-        _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
-        final hasMore = page.messages.length < page.total;
-        final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
-        final requests = [...page.messages.where(_isLive), ...held];
-        state = state.copyWith(
-          requests: requests,
-          total: page.total + held.length,
-          isLoading: false,
-          hasLoaded: true,
-          hasMore: hasMore,
-          skip: page.messages.length + held.length,
-          clearError: true,
+        _applyFirstPage(page);
+        unawaited(
+          ref
+              .read(screenCacheStoreProvider)
+              .save(
+                source.key,
+                jsonEncode(
+                  PrayerRoomSnapshot(roomId: roomId, page: page).toJson(),
+                ),
+              )
+              .catchError((Object _) => false),
         );
-        // Only an unfiltered total is the room's count.
-        if (!filter.byIntention && !filter.mine) {
-          _publishCount(page.total + held.length);
-        }
       },
     );
+  }
+
+  /// Publishes a first page under the filter in view.
+  void _applyFirstPage(ChatMessagesPage page) {
+    final filter = state.filter;
+    _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
+    final hasMore = page.messages.length < page.total;
+    final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
+    final requests = [...page.messages.where(_isLive), ...held];
+    state = state.copyWith(
+      requests: requests,
+      total: page.total + held.length,
+      isLoading: false,
+      hasLoaded: true,
+      hasMore: hasMore,
+      skip: page.messages.length + held.length,
+      clearError: true,
+    );
+    // Only an unfiltered total is the room's count.
+    if (!filter.byIntention && !filter.mine) {
+      _publishCount(page.total + held.length);
+    }
+  }
+
+  Future<ScreenCacheSource<PrayerRoomSnapshot>> _snapshotSource() {
+    return ref
+        .read(groupChatFirstPagesProvider)
+        .prayerRoom(
+          scope,
+          filter: state.filter,
+          translationLanguage: _translationLanguage,
+          limit: _limit,
+        );
+  }
+
+  Future<PrayerRoomSnapshot?> _readSnapshot() async {
+    final source = await _snapshotSource();
+    return source.read();
   }
 
   /// One page under the filter in view: the room's requests, or under
@@ -1202,9 +1268,12 @@ final prayerRequestsProvider = StateNotifierProvider.autoDispose
 
 /// The intention picker's choices, in display order.
 final prayerIntentionsProvider =
-    FutureProvider.autoDispose<List<ChatPrayerIntentionDTO>>((ref) async {
-      final result = await ref.read(groupChatRepositoryProvider).listIntentions();
-      return result.fold((failure) => throw failure, (intentions) => intentions);
+    StreamProvider.autoDispose<List<ChatPrayerIntentionDTO>>((ref) async* {
+      final source = await ref.read(groupChatFirstPagesProvider).intentions();
+      yield* source.watch().map(
+        (result) =>
+            result.fold((failure) => throw failure, (intentions) => intentions),
+      );
     });
 
 class PrayerSupportersState extends Equatable {
@@ -1282,24 +1351,28 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
 
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
 
+  /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> load() async {
     if (state.isLoading) return;
     state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _repository.listPrayers(
-      messageId,
-      skip: 0,
-      limit: _limit,
-    );
+    final source = await ref
+        .read(groupChatFirstPagesProvider)
+        .prayers(messageId, limit: _limit);
     if (!mounted) return;
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          hasLoaded: true,
-          error: failure.message,
-        );
-      },
-      (page) => state = _merged(const [], 0, page, isLoading: false),
+    await loadCachedFirstPage(
+      source,
+      isCurrent: () => mounted,
+      seed: state.supporters.isEmpty,
+      fetch: () => _repository.listPrayers(messageId, skip: 0, limit: _limit),
+      encode: (page) => page.toJson(),
+      apply: (page) => state = _merged(const [], 0, page, isLoading: false),
+      fail:
+          (failure) =>
+              state = state.copyWith(
+                isLoading: false,
+                hasLoaded: true,
+                error: failure.message,
+              ),
     );
   }
 

@@ -87,9 +87,33 @@ class OnboardingRemoteDatasource {
   Future<List<TraditionPath>> fetchTraditionOnboardingPaths({
     required String language,
   }) async {
+    return parseTraditionPaths(
+      await fetchTraditionOnboardingPathsJson(language: language),
+    );
+  }
+
+  static List<TraditionPath> parseTraditionPaths(
+    Map<String, dynamic> pathsJson,
+  ) {
+    return traditionPathOrder
+        .where((code) => pathsJson.containsKey(code))
+        .map(
+          (code) => TraditionPath.fromJson(
+            code,
+            pathsJson[code] as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
+  /// The validated `paths` map as served, for the screen cache.
+  Future<Map<String, dynamic>> fetchTraditionOnboardingPathsJson({
+    required String language,
+  }) async {
     final response = await _dio.get(
       '/users/me/traditions/onboarding',
       queryParameters: {'language': language},
+      options: Options(extra: {'no_cache': true}),
     );
 
     final data = response.data;
@@ -108,15 +132,7 @@ class OnboardingRemoteDatasource {
       );
     }
 
-    return traditionPathOrder
-        .where((code) => pathsJson.containsKey(code))
-        .map(
-          (code) => TraditionPath.fromJson(
-            code,
-            pathsJson[code] as Map<String, dynamic>,
-          ),
-        )
-        .toList();
+    return pathsJson;
   }
 
   /// Fetch the user's selected traditions.

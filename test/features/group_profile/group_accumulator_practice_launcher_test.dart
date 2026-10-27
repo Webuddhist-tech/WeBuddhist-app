@@ -42,7 +42,7 @@ Future<PlanEmbeddedController> _openPractice(
       overrides: [
         authProvider.overrideWith((ref) => _SignedInAuth()),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) async => const Right(_detail),
+          (ref, id) => Stream.value(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
           (ref, id) => Stream.value(const Left(NetworkFailure('test'))),

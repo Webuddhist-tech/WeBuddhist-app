@@ -4,7 +4,6 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
-import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_hero_card.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_more_sheet.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_sections.dart';
@@ -26,6 +25,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 
 class GroupAccumulatorScreen extends ConsumerStatefulWidget {
   final String accumulatorId;
@@ -118,35 +118,14 @@ class _GroupAccumulatorScreenState
           children: [
             _buildAppBar(context, resolvedDetail),
             Expanded(
-              child: detailAsync.when(
-                data:
-                    (either) => either.fold(
-                      (failure) => Center(
-                        child: ErrorStateWidget(
-                          error: failure,
-                          onRetry:
-                              () => ref.invalidate(
-                                groupAccumulatorDetailProvider(
-                                  widget.accumulatorId,
-                                ),
-                              ),
-                        ),
-                      ),
-                      (detail) => _buildContent(context, detail, isDark),
+              child: ScreenCacheBuilder<GroupAccumulatorDetail>(
+                value: detailAsync,
+                skeleton: const Center(child: CircularProgressIndicator()),
+                onRetry:
+                    () => ref.invalidate(
+                      groupAccumulatorDetailProvider(widget.accumulatorId),
                     ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, _) => Center(
-                      child: ErrorStateWidget(
-                        error: error,
-                        onRetry:
-                            () => ref.invalidate(
-                              groupAccumulatorDetailProvider(
-                                widget.accumulatorId,
-                              ),
-                            ),
-                      ),
-                    ),
+                data: (detail) => _buildContent(context, detail, isDark),
               ),
             ),
           ],

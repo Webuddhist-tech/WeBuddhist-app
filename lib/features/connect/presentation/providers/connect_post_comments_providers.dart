@@ -1,5 +1,6 @@
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,33 +66,34 @@ class ConnectPostCommentsNotifier
   final String postId;
   static const int _limit = 20;
 
+  /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
 
     state = state.copyWith(isLoading: true, clearError: true);
 
-    final result = await ref.read(connectRepositoryProvider).getPostComments(
-      postId: postId,
-      skip: 0,
-      limit: _limit,
-    );
-
+    final source = await ref
+        .read(connectRepositoryProvider)
+        .postCommentsFirstPage(postId, limit: _limit);
     if (!mounted) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (page) {
-        state = state.copyWith(
-          comments: page.comments,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.comments.length,
-          total: page.total,
-          clearError: true,
-        );
-      },
+    await loadCachedFirstPage(
+      source,
+      isCurrent: () => mounted,
+      seed: state.comments.isEmpty,
+      apply:
+          (page) =>
+              state = state.copyWith(
+                comments: page.comments,
+                isLoading: false,
+                hasMore: page.hasMore,
+                skip: page.comments.length,
+                total: page.total,
+                clearError: true,
+              ),
+      fail:
+          (failure) =>
+              state = state.copyWith(isLoading: false, error: failure.message),
     );
   }
 

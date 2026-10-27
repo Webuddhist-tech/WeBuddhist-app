@@ -80,6 +80,15 @@ class MyRecitationCollectionsRemoteDatasource {
   Future<MyRecitationCollectionDetailModel> getCollectionDetail(
     String collectionId,
   ) async {
+    return MyRecitationCollectionDetailModel.fromJson(
+      await getCollectionDetailJson(collectionId),
+    );
+  }
+
+  /// Raw detail as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> getCollectionDetailJson(
+    String collectionId,
+  ) async {
     final response = await dio.get(
       '/users/me/recitation-collections/$collectionId',
     );
@@ -89,7 +98,7 @@ class MyRecitationCollectionsRemoteDatasource {
         'Unexpected /users/me/recitation-collections detail payload type',
       );
     }
-    return MyRecitationCollectionDetailModel.fromJson(data);
+    return data;
   }
 
   /// DELETE /users/me/recitation-collections/{collectionId}
@@ -269,6 +278,14 @@ class MyRecitationCollectionsRemoteDatasource {
   /// GET /users/me/recitation-collections/{collectionId}/complete/days-count
   Future<MyRecitationCollectionCompletionDaysCountResponse>
   getCompletionDaysCount({required String collectionId}) async {
+    return MyRecitationCollectionCompletionDaysCountResponse.fromJson(
+      await getCompletionDaysCountJson(collectionId: collectionId),
+    );
+  }
+
+  Future<Map<String, dynamic>> getCompletionDaysCountJson({
+    required String collectionId,
+  }) async {
     final response = await dio.get(
       '/users/me/recitation-collections/$collectionId/complete/days-count',
       options: Options(extra: {'no_cache': true}),
@@ -279,7 +296,7 @@ class MyRecitationCollectionsRemoteDatasource {
         'Unexpected /users/me/recitation-collections/complete/days-count payload type',
       );
     }
-    return MyRecitationCollectionCompletionDaysCountResponse.fromJson(data);
+    return data;
   }
 
   static List<String> _uniqueNonEmptyTextIds(List<String> textIds) {

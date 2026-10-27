@@ -17,6 +17,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/analytics/recording_analytics_service.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 class _GuestAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _GuestAuth() : super(const AuthState(isLoggedIn: false, isGuest: true));
@@ -27,6 +32,11 @@ class _GuestAuth extends StateNotifier<AuthState> implements AuthNotifier {
 
 class _FakeAccumulatorRepository extends Fake
     implements GroupAccumulatorRepositoryInterface {
+  @override
+  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  }) async => null;
   @override
   Future<Either<Failure, GroupAccumulatorMembersPage>>
   getGroupAccumulatorMembers(
@@ -46,7 +56,31 @@ class _FakeAccumulatorRepository extends Fake
 }
 
 class _FakeProfileRepository extends Fake
-    implements GroupProfileRepositoryInterface {}
+    implements GroupProfileRepositoryInterface {
+  @override
+  Future<GroupPracticesPage?> readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) async => null;
+
+  @override
+  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+      null;
+
+  @override
+  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+    String eventId,
+  ) async => null;
+
+  @override
+  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+    String groupId,
+  ) async => null;
+
+  @override
+  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+      null;
+}
 
 const _detail = GroupAccumulatorDetail(
   id: 'acc-1',
@@ -66,7 +100,7 @@ Future<void> _pump(
         analyticsServiceProvider.overrideWithValue(service),
         authProvider.overrideWith((ref) => _GuestAuth()),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) async => const Right(_detail),
+          (ref, id) => Stream.value(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
           (ref, id) => Stream.value(const Left(NetworkFailure('test'))),

@@ -35,6 +35,17 @@ abstract class MalaRepository {
   /// on the deleted record server-side.
   Future<Either<Failure, Unit>> deleteUserAccumulator(String accumulatorId);
 
+  /// Stored joined groups first, then revalidated in the background.
+  Stream<Either<Failure, List<AccumulatorGroup>>> watchJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  });
+
+  Future<Either<Failure, List<AccumulatorGroup>>> refreshJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  });
+
   /// Joined group accumulators for a preset
   /// (`GET /accumulators/{accumulator_id}/groups?joined_only=true`).
   /// [language] localizes each row's group name and event title.

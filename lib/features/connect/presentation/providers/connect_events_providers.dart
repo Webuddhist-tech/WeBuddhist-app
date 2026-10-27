@@ -1,5 +1,7 @@
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/cached_first_page.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
@@ -81,36 +83,39 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
       return;
     }
 
+    // Stored first page shows at once; the server's replaces it if changed.
     state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await ref.read(groupProfileRepositoryProvider).getConnectEvents(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: 0,
-      limit: _limit,
-      eventFormat: eventFormat,
-    );
-
+    final source = await ref
+        .read(connectRepositoryProvider)
+        .connectEventsFirstPage(
+          includeUnfollowed: includeUnfollowed,
+          language: language,
+          limit: _limit,
+          eventFormat: eventFormat,
+        );
     if (!mounted) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-          hasLoaded: true,
-        );
-      },
-      (page) {
-        state = state.copyWith(
-          events: page.events,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.events.length,
-          hasLoaded: true,
-          clearError: true,
-        );
-      },
+    await loadCachedFirstPage(
+      source,
+      isCurrent: () => mounted,
+      seed: state.events.isEmpty,
+      apply:
+          (page) =>
+              state = state.copyWith(
+                events: page.events,
+                isLoading: false,
+                hasMore: page.hasMore,
+                skip: page.events.length,
+                hasLoaded: true,
+                clearError: true,
+              ),
+      fail:
+          (failure) =>
+              state = state.copyWith(
+                isLoading: false,
+                error: failure.message,
+                hasLoaded: true,
+              ),
     );
   }
 
@@ -145,10 +150,10 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
     );
   }
 
+  /// Keeps the list on screen while the first page is read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const ConnectEventsState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void retry() {

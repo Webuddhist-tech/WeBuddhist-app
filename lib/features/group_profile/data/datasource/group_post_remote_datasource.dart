@@ -15,6 +15,13 @@ class GroupPostRemoteDatasource {
   GroupPostRemoteDatasource({required this.dio});
 
   Future<GroupPostPermissionModel> fetchPostPermission(String groupId) async {
+    return GroupPostPermissionModel.fromJson(
+      await fetchPostPermissionJson(groupId),
+    );
+  }
+
+  /// Raw payload as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchPostPermissionJson(String groupId) async {
     try {
       final response = await dio.get(
         '/users/me/permission/$groupId',
@@ -22,9 +29,7 @@ class GroupPostRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupPostPermissionModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(
@@ -45,6 +50,16 @@ class GroupPostRemoteDatasource {
     required int skip,
     required int limit,
   }) async {
+    return ConnectPostsPageModel.fromJson(
+      await fetchGroupPostsJson(groupId, skip: skip, limit: limit),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupPostsJson(
+    String groupId, {
+    required int skip,
+    required int limit,
+  }) async {
     try {
       final response = await dio.get(
         '/groups/author/$groupId/posts',
@@ -53,9 +68,7 @@ class GroupPostRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return ConnectPostsPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(

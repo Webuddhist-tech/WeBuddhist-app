@@ -206,12 +206,13 @@ Future<void> _pumpLiveEventDetails(
         localStorageServiceProvider.overrideWithValue(_FakeStorage()),
         // Still loading counts as live; a failure means no stream.
         groupEventInLanguageProvider.overrideWith(
-          (ref, key) =>
-              fetch != null
-                  ? fetch()
-                  : streamKnownAbsent
-                  ? Future.value(const Left(NetworkFailure('test')))
-                  : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
+          (ref, key) => Stream.fromFuture(
+            fetch != null
+                ? fetch()
+                : streamKnownAbsent
+                ? Future.value(const Left(NetworkFailure('test')))
+                : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
+          ),
         ),
         userPlanDayContentFutureProvider.overrideWith(
           (ref, params) => Stream.value(Right(day)),

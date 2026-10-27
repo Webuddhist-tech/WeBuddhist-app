@@ -1,3 +1,6 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_event_composer_remote_datasource.dart';
@@ -12,8 +15,48 @@ import 'package:fpdart/fpdart.dart';
 class GroupEventComposerRepositoryImpl
     implements GroupEventComposerRepositoryInterface {
   final GroupEventComposerRemoteDatasource remote;
+  final ScreenCacheStore store;
 
-  GroupEventComposerRepositoryImpl({required this.remote});
+  GroupEventComposerRepositoryImpl({required this.remote, required this.store});
+
+  Future<ScreenCacheSource<List<GroupEventCmsItem>>> _cmsEventsSource(
+    String groupId,
+    String language,
+  ) async {
+    final userId = await store.currentUserId();
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'group_cms_events',
+        userId: userId,
+        language: language,
+        params: [groupId],
+      ),
+      fetchJson: () => remote.fetchCmsEventsJson(groupId),
+      fromJson:
+          (json) => GroupEventComposerRemoteDatasource.parseCmsEvents(
+            (json as List).cast<Map<String, dynamic>>(),
+            language: language,
+          ),
+      failureMessage: 'Failed to load events',
+    );
+  }
+
+  @override
+  Stream<Either<Failure, List<GroupEventCmsItem>>> watchCmsEvents(
+    String groupId, {
+    required String language,
+  }) async* {
+    yield* (await _cmsEventsSource(groupId, language)).watch();
+  }
+
+  @override
+  Future<Either<Failure, List<GroupEventCmsItem>>> refreshCmsEvents(
+    String groupId, {
+    required String language,
+  }) async {
+    return (await _cmsEventsSource(groupId, language)).refresh();
+  }
 
   @override
   Future<Either<Failure, List<GroupEventIntention>>> getIntentions() {

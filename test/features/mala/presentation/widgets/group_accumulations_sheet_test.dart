@@ -111,7 +111,7 @@ Future<void> _openSheet(
         malaSoundPlayerProvider.overrideWithValue(SilentMalaSoundPlayer()),
         analyticsServiceProvider.overrideWithValue(RecordingAnalyticsService()),
         joinedAccumulatorGroupsProvider.overrideWith(
-          (ref, presetId) async => groups,
+          (ref, presetId) => Stream.value(groups),
         ),
       ],
       child: MaterialApp(

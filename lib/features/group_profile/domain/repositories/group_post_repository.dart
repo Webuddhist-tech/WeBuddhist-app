@@ -17,6 +17,13 @@ abstract class GroupPostRepositoryInterface {
     required int limit,
   });
 
+  Stream<Either<Failure, GroupPostPermission>> watchPostPermission(
+    String groupId,
+  );
+
+  /// Stored first page; `getGroupPosts(skip: 0)` writes it.
+  Future<ConnectPostsPage?> readStoredGroupPosts(String groupId);
+
   /// Uploads one file and returns its storage key for [createPost].
   Future<Either<Failure, String>> uploadMedia(File file);
 

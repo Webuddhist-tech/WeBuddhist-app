@@ -84,8 +84,17 @@ class BookmarkRemoteDatasource {
   /// tab client-side, so a single combined list backs every tab and a removal
   /// reflects everywhere at once.
   Future<List<BookmarkDTO>> fetchBookmarks({String? language}) async {
+    final rows = await fetchBookmarksJson(language: language);
+    return rows.map(BookmarkDTO.tryFromJson).whereType<BookmarkDTO>().toList();
+  }
+
+  /// Every bookmark row as served, so the screen cache stores raw JSON.
+  Future<List<Map<String, dynamic>>> fetchBookmarksJson({
+    String? language,
+  }) async {
     const pageSize = 50;
-    final all = <BookmarkDTO>[];
+    final all = <Map<String, dynamic>>[];
+    var parsed = 0;
     var skip = 0;
 
     while (true) {
@@ -105,13 +114,17 @@ class BookmarkRemoteDatasource {
       }
 
       final page = BookmarksResponse.fromJson(data);
-      all.addAll(page.bookmarks);
+      all.addAll(
+        (data['bookmarks'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>(),
+      );
+      parsed += page.bookmarks.length;
       skip += pageSize;
 
       // Stop on an empty/short page or once we've collected the reported total.
       if (page.bookmarks.isEmpty ||
           page.bookmarks.length < pageSize ||
-          all.length >= page.total) {
+          parsed >= page.total) {
         break;
       }
     }

@@ -28,6 +28,45 @@ abstract class GroupProfileRepositoryInterface {
     required String language,
   });
 
+  Stream<Either<Failure, GroupEventsPage>> watchGroupEvents(
+    String groupId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupEventsPage>> refreshGroupEvents(
+    String groupId, {
+    required String language,
+  });
+
+  Stream<Either<Failure, GroupEvent>> watchGroupEventDetail(
+    String eventId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupEvent>> refreshGroupEventDetail(
+    String eventId, {
+    required String language,
+  });
+
+  Stream<Either<Failure, GroupRecitationCollection>>
+  watchRecitationCollectionDetail({required String collectionId});
+
+  /// Stored first pages; the matching `getX(skip: 0)` call writes them.
+  Future<GroupPracticesPage?> readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  });
+
+  Future<GroupMembersPage?> readStoredGroupMembers(String groupId);
+
+  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+    String eventId,
+  );
+
+  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(String groupId);
+
+  Future<GroupReportsPage?> readStoredGroupReports(String groupId);
+
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
     GroupType groupType,

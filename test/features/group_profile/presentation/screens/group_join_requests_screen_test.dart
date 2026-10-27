@@ -10,9 +10,37 @@ import 'package:flutter_pecha/features/group_profile/presentation/screens/group_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 /// Answers each page request with the next queued result.
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  @override
+  Future<GroupPracticesPage?> readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) async => null;
+
+  @override
+  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+      null;
+
+  @override
+  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+    String eventId,
+  ) async => null;
+
+  @override
+  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+    String groupId,
+  ) async => null;
+
+  @override
+  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+      null;
+
   _FakeRepository(this.pages);
 
   final List<Either<Failure, GroupJoinRequestsPage>> pages;

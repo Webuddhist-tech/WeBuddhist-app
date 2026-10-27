@@ -15,6 +15,10 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 const _members = [
   GroupMember(userId: 'u1', username: 'pema', fullname: 'Pema', role: 'OWNER'),
@@ -23,6 +27,30 @@ const _members = [
 ];
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  @override
+  Future<GroupPracticesPage?> readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) async => null;
+
+  @override
+  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+      null;
+
+  @override
+  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+    String eventId,
+  ) async => null;
+
+  @override
+  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+    String groupId,
+  ) async => null;
+
+  @override
+  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+      null;
+
   @override
   Future<Either<Failure, GroupMembersPage>> getGroupMembers(
     String groupId, {
@@ -54,8 +82,9 @@ Future<void> _pump(WidgetTester tester, {String? viewerRole}) async {
         groupProfileRepositoryProvider.overrideWithValue(_FakeRepository()),
         userProvider.overrideWith((ref) => _NoUser()),
         groupMyPermissionProvider.overrideWith(
-          (ref, groupId) async =>
-              GroupPostPermission(groupId: groupId, role: viewerRole),
+          (ref, groupId) => Stream.value(
+            GroupPostPermission(groupId: groupId, role: viewerRole),
+          ),
         ),
       ],
       child: MaterialApp(

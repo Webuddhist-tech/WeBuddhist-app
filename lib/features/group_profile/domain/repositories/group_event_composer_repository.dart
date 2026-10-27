@@ -55,6 +55,16 @@ abstract class GroupEventComposerRepositoryInterface {
     required String language,
   });
 
+  Stream<Either<Failure, List<GroupEventCmsItem>>> watchCmsEvents(
+    String groupId, {
+    required String language,
+  });
+
+  Future<Either<Failure, List<GroupEventCmsItem>>> refreshCmsEvents(
+    String groupId, {
+    required String language,
+  });
+
   /// [original] is the event as it was loaded; when given, only the
   /// fields that changed are sent, and removed ones are cleared.
   Future<Either<Failure, GroupEvent>> updateEvent(

@@ -9,6 +9,8 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_member_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 
+int _pageInt(Object? value) => value is num ? value.toInt() : 0;
+
 class ChatRoomsPage {
   final List<ChatRoomDTO> rooms;
   final int skip;
@@ -21,6 +23,27 @@ class ChatRoomsPage {
     required this.limit,
     required this.total,
   });
+
+  factory ChatRoomsPage.fromJson(Map<String, dynamic> json) {
+    return ChatRoomsPage(
+      rooms:
+          (json['rooms'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatRoomDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: _pageInt(json['skip']),
+      limit: _pageInt(json['limit']),
+      total: _pageInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'rooms': rooms.map((room) => room.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+  };
 }
 
 class ChatMessagesPage {
@@ -35,6 +58,27 @@ class ChatMessagesPage {
     required this.limit,
     required this.total,
   });
+
+  factory ChatMessagesPage.fromJson(Map<String, dynamic> json) {
+    return ChatMessagesPage(
+      messages:
+          (json['messages'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatMessageDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: _pageInt(json['skip']),
+      limit: _pageInt(json['limit']),
+      total: _pageInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'messages': messages.map((message) => message.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+  };
 }
 
 class ChatRoomMembersPage {
@@ -66,6 +110,29 @@ class ChatPrayersPage {
     required this.limit,
     required this.total,
   });
+
+  factory ChatPrayersPage.fromJson(Map<String, dynamic> json) {
+    return ChatPrayersPage(
+      messageId: json['message_id'] as String? ?? '',
+      prayers:
+          (json['prayers'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatPrayerUserDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: _pageInt(json['skip']),
+      limit: _pageInt(json['limit']),
+      total: _pageInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'message_id': messageId,
+    'prayers': prayers.map((user) => user.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+  };
 }
 
 class GroupChatRemoteDatasource {

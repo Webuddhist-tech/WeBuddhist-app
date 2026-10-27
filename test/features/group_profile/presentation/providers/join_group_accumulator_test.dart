@@ -18,6 +18,10 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -29,6 +33,11 @@ class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
 /// Holds the join request open until the test completes [join].
 class _SlowJoinRepository extends Fake
     implements GroupAccumulatorRepositoryInterface {
+  @override
+  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  }) async => null;
   final join = Completer<Either<Failure, void>>();
 
   @override
@@ -38,6 +47,30 @@ class _SlowJoinRepository extends Fake
 
 class _FakeProfileRepository extends Fake
     implements GroupProfileRepositoryInterface {
+  @override
+  Future<GroupPracticesPage?> readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) async => null;
+
+  @override
+  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+      null;
+
+  @override
+  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+    String eventId,
+  ) async => null;
+
+  @override
+  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+    String groupId,
+  ) async => null;
+
+  @override
+  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+      null;
+
   @override
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
@@ -89,7 +122,7 @@ void main() {
           _FakeProfileRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) async => const Right(_detail),
+          (ref, id) => Stream.value(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
           (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
@@ -169,7 +202,9 @@ void main() {
         groupProfileRepositoryProvider.overrideWithValue(
           _FakeProfileRepository(),
         ),
-        groupAccumulatorDetailProvider.overrideWith((ref, id) => detail.future),
+        groupAccumulatorDetailProvider.overrideWith(
+          (ref, id) => detail.future.asStream(),
+        ),
         groupProfileProvider.overrideWith((ref, id) => profile.future.asStream()),
       ],
     );
