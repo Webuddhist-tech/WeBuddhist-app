@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
+import 'package:flutter_pecha/core/config/router/launch_navigation.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/notifications/data/channels/notification_channels.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
@@ -174,7 +175,15 @@ class NotificationService {
     final response = _launchNotificationResponse;
     if (response == null) return;
     _launchNotificationResponse = null;
-    _onNotificationTapped(response);
+    final router = _router;
+    if (router == null) {
+      // Logs that it cannot navigate.
+      _onNotificationTapped(response);
+      return;
+    }
+    // Consumed once auth has loaded, which can be while the launch intro
+    // still holds the splash; navigating then would be redirected and lost.
+    runWhenOffSplash(router, () => _onNotificationTapped(response));
   }
 
   /// Logs key Android diagnostics that affect whether notifications fire

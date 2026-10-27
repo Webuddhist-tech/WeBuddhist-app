@@ -6,6 +6,8 @@ import 'package:flutter_pecha/core/config/router/page_transitions.dart';
 import 'package:flutter_pecha/core/config/router/route_guard.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/core/config/router/pending_route_provider.dart';
+import 'package:flutter_pecha/core/config/router/splash_exit_transition.dart';
+import 'package:flutter_pecha/core/config/router/splash_hold_provider.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/login_page.dart';
 import 'package:flutter_pecha/features/auth/presentation/screens/splash_screen.dart';
@@ -91,6 +93,26 @@ final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shell');
 /// - Preserves deep links for post-login redirection
 /// - Automatically refreshes when auth state changes
 final appRouterProvider = Provider<GoRouter>((ref) {
+  // Re-evaluate redirect whenever auth state or the launch splash hold changes.
+  final refresh = GoRouterRefreshStream(ref.read(authProvider.notifier).stream);
+  ref.listen(splashHoldProvider, (_, __) => refresh.notifyListener());
+  ref.onDispose(refresh.dispose);
+
+  // The screen the launch splash exits to fades in over it (Figma).
+  final splashExit = SplashExitTransition();
+  Page<void> splashExitPage(GoRouterState state, Widget child) =>
+      SplashExitPage(
+        exit: splashExit,
+        key: state.pageKey,
+        name: state.name ?? state.path,
+        arguments: <String, String>{
+          ...state.pathParameters,
+          ...state.uri.queryParameters,
+        },
+        restorationId: state.pageKey.value,
+        child: child,
+      );
+
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: AppRoutes.home,
@@ -99,12 +121,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     // deep link can be inserted twice and leave a stale page under Back.
     overridePlatformDefaultLocation: true,
     debugLogDiagnostics: true,
-    observers: ref.read(analyticsServiceProvider).routeObservers,
+    observers: [
+      ...ref.read(analyticsServiceProvider).routeObservers,
+      splashExit.observer,
+    ],
 
-    // Re-evaluate redirect whenever auth state changes.
-    refreshListenable: GoRouterRefreshStream(
-      ref.read(authProvider.notifier).stream,
-    ),
+    refreshListenable: refresh,
 
     // Route guard for authentication and authorization.
     // Always reads the latest auth state — do NOT capture it in the closure.
@@ -120,6 +142,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         getPendingRoute: () => ref.read(pendingRouteProvider),
         setPendingRoute:
             (route) => ref.read(pendingRouteProvider.notifier).state = route,
+        holdSplash: ref.read(splashHoldProvider),
       );
     },
 
@@ -127,7 +150,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        // Only the launch splash plays the intro, holds the route for it,
+        // and has the next screen fade in over it.
+        builder:
+            (context, state) => SplashScreen(
+              playIntro: ref.read(splashHoldProvider),
+              onIntroComplete: () {
+                final hold = ref.read(splashHoldProvider.notifier);
+                if (!hold.state) return;
+                splashExit.arm();
+                hold.state = false;
+              },
+            ),
       ),
 
       // Defensive fallback for the Airbridge tracking URL if it is ever handed
@@ -187,13 +221,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: "/login",
         name: "login",
-        builder: (context, state) => const LoginPage(),
+        pageBuilder:
+            (context, state) => splashExitPage(state, const LoginPage()),
       ),
       // onboarding route
       GoRoute(
         path: "/onboarding",
         name: "onboarding",
-        builder: (context, state) => const OnboardingWrapper(),
+        pageBuilder:
+            (context, state) =>
+                splashExitPage(state, const OnboardingWrapper()),
       ),
       // Chat content is private: masked from Clarity recordings regardless of
       // the project's masking mode. Taps still count toward heatmaps.
@@ -255,8 +292,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         // The shell has its own navigator; without observers here every
         // tab-shell screen would go untracked.
         observers: ref.read(analyticsServiceProvider).routeObservers,
-        builder: (context, state, child) {
-          return HomeShellScaffold(child: child);
+        pageBuilder: (context, state, child) {
+          return splashExitPage(state, HomeShellScaffold(child: child));
         },
         routes: [
           GoRoute(

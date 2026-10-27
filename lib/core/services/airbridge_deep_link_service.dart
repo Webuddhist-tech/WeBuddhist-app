@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
+import 'package:flutter_pecha/core/config/router/launch_navigation.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_router.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:go_router/go_router.dart';
@@ -49,11 +50,16 @@ class AirbridgeDeepLinkService {
       return;
     }
 
-    DeepLinkRouter.route(
-      uri,
-      router,
-      source: 'airbridge',
-      analytics: _analytics,
-    );
+    // The router is registered, and links stored before that dispatched,
+    // while the splash is still up; a link dispatched then would be
+    // redirected to the splash and lost.
+    runWhenOffSplash(router, () {
+      DeepLinkRouter.route(
+        uri,
+        router,
+        source: 'airbridge',
+        analytics: _analytics,
+      );
+    });
   }
 }
