@@ -3,15 +3,15 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/intl_format_locale.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_link_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/youtube_video_player.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 /// Leaderboard, About, and Videos for one group accumulation.
 ///
@@ -32,11 +32,11 @@ class GroupAccumulatorSections extends StatefulWidget {
       _GroupAccumulatorSectionsState();
 }
 
+// TickerProviderStateMixin, not Single: the controller is replaced when the
+// Videos tab appears or disappears after a refresh.
 class _GroupAccumulatorSectionsState extends State<GroupAccumulatorSections>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _sections;
-
-  bool get _showVideos => widget.detail.youtubeLinks.isNotEmpty;
 
   @override
   void initState() {
@@ -67,7 +67,8 @@ class _GroupAccumulatorSectionsState extends State<GroupAccumulatorSections>
 
   @override
   Widget build(BuildContext context) {
-    final showVideos = _showVideos;
+    final videos = widget.detail.youtubeLinks;
+    final showVideos = videos.isNotEmpty;
     final labelColor =
         widget.isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final unselected =
@@ -105,11 +106,7 @@ class _GroupAccumulatorSectionsState extends State<GroupAccumulatorSections>
             children: [
               _LeaderboardPane(detail: widget.detail, isDark: widget.isDark),
               _AboutPane(detail: widget.detail, isDark: widget.isDark),
-              if (showVideos)
-                _VideosPane(
-                  links: widget.detail.youtubeLinks,
-                  isDark: widget.isDark,
-                ),
+              if (showVideos) _VideosPane(links: videos, isDark: widget.isDark),
             ],
           ),
         ),
@@ -330,7 +327,7 @@ class _VideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final videoId = _videoId;
+    final videoId = groupAccumulatorVideoId(link);
     final title = link.title.trim();
     final placeholder =
         isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
@@ -348,8 +345,9 @@ class _VideoCard extends StatelessWidget {
                 children: [
                   if (videoId != null)
                     CachedNetworkImageWidget(
-                      imageUrl:
-                          'https://img.youtube.com/vi/$videoId/hqdefault.jpg',
+                      imageUrl: ConnectPostLinkUtils.youtubeThumbnailUrl(
+                        videoId,
+                      ),
                       fit: BoxFit.cover,
                       errorWidget: ColoredBox(color: placeholder),
                     )
@@ -394,26 +392,29 @@ class _VideoCard extends StatelessWidget {
     );
   }
 
-  String? get _videoId {
-    final stored = link.videoId?.trim();
-    if (stored != null && stored.isNotEmpty) return stored;
-    return YoutubePlayer.convertUrlToId(link.url.trim());
-  }
-
   void _open(BuildContext context, String? videoId) {
     if (videoId == null) {
-      final uri = Uri.tryParse(link.url.trim());
-      if (uri != null) {
-        launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
+      // No playable ID: show the link in the in-app browser instead.
+      openUrl(link.url);
       return;
     }
     Navigator.of(context).push(
       MaterialPageRoute(
         settings: const RouteSettings(name: 'video-player'),
+        // The player accepts a bare ID, which avoids re-parsing URL forms
+        // (such as /live/) that its own matcher does not understand.
         builder:
-            (_) => YoutubeVideoPlayer(videoUrl: link.url, title: link.title),
+            (_) => YoutubeVideoPlayer(videoUrl: videoId, title: link.title),
       ),
     );
   }
+}
+
+/// The YouTube ID for [link]: the stored `video_id` when the API sends one,
+/// otherwise parsed from the URL (watch, youtu.be, embed, shorts, live).
+@visibleForTesting
+String? groupAccumulatorVideoId(GroupAccumulatorLink link) {
+  final stored = link.videoId?.trim();
+  if (stored != null && stored.isNotEmpty) return stored;
+  return ConnectPostLinkUtils.youtubeVideoId(link.url);
 }
