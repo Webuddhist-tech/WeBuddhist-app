@@ -84,6 +84,10 @@ class ConnectPostCommentsNotifier
   final ScreenCacheSource<ConnectPostCommentsPage> _source;
   static const int _limit = 20;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
@@ -91,30 +95,42 @@ class ConnectPostCommentsNotifier
     // Only an empty list shows the loader; a seeded one refreshes silently.
     state = state.copyWith(isLoading: state.comments.isEmpty, clearError: true);
 
-    await loadCachedFirstPage(
-      _source,
-      isCurrent: () => mounted,
-      seed: state.comments.isEmpty,
-      apply:
-          (page) =>
-              state = state.copyWith(
-                comments: page.comments,
-                isLoading: false,
-                hasMore: page.hasMore,
-                skip: page.comments.length,
-                total: page.total,
-                clearError: true,
-              ),
-      fail:
-          (failure) =>
-              state = state.copyWith(isLoading: false, error: failure.message),
-    );
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        _source,
+        isCurrent: () => mounted,
+        seed: state.comments.isEmpty,
+        apply: (page) {
+          _pageEpoch++;
+          state = state.copyWith(
+            comments: page.comments,
+            isLoading: false,
+            hasMore: page.hasMore,
+            skip: page.comments.length,
+            total: page.total,
+            clearError: true,
+          );
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(isLoading: false, error: failure.message),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
+    final epoch = _pageEpoch;
 
     final result = await ref.read(connectRepositoryProvider).getPostComments(
       postId: postId,
@@ -123,6 +139,11 @@ class ConnectPostCommentsNotifier
     );
 
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {

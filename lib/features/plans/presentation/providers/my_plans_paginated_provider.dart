@@ -61,6 +61,10 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
   final PlansLocalDatasource local;
   static const int _limit = 20;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   Future<void> _initialize() async {
     _seedFromCache();
     await loadInitial();
@@ -96,11 +100,13 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
       state = state.copyWith(isLoading: true, error: null);
     }
 
+    _firstPageInFlight = true;
     final result = await repository.getUserPlans(
       language: languageCode,
       skip: 0,
       limit: _limit,
     );
+    _firstPageInFlight = false;
 
     result.fold(
       (failure) {
@@ -112,6 +118,7 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
       },
       (response) {
         if (mounted) {
+          _pageEpoch++;
           state = state.copyWith(
             plans: response.userPlans,
             isLoading: false,
@@ -127,17 +134,27 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
 
   /// Load more plans
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) {
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
       return;
     }
 
     state = state.copyWith(isLoadingMore: true, error: null);
+    final epoch = _pageEpoch;
 
     final result = await repository.getUserPlans(
       language: languageCode,
       skip: state.skip,
       limit: _limit,
     );
+
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      if (mounted) state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -183,11 +200,13 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
       hasMore: true,
     );
 
+    _firstPageInFlight = true;
     final result = await repository.refreshUserPlans(
       language: languageCode,
       skip: 0,
       limit: _limit,
     );
+    _firstPageInFlight = false;
 
     result.fold(
       (failure) {
@@ -200,6 +219,7 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
       },
       (response) {
         if (mounted) {
+          _pageEpoch++;
           state = state.copyWith(
             plans: response.userPlans,
             isLoading: false,

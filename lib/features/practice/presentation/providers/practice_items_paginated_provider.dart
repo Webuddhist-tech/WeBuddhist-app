@@ -93,6 +93,10 @@ class PracticeItemsNotifier extends StateNotifier<PracticeItemsState> {
   final PracticeItemsTab _tab;
   final String _languageCode;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   PracticeItemsNotifier({
     required GetPracticeItemsUseCase useCase,
     required PracticeItemsRepository repository,
@@ -107,6 +111,7 @@ class PracticeItemsNotifier extends StateNotifier<PracticeItemsState> {
   }
 
   void _applyFirstPage(PracticeItemsPage page) {
+    _pageEpoch++;
     state = PracticeItemsState(
       items: page.items,
       isLoading: false,
@@ -133,29 +138,40 @@ class PracticeItemsNotifier extends StateNotifier<PracticeItemsState> {
       state = state.copyWith(isLoading: true);
     }
 
-    final result = await _repository.refreshFirstPage(
-      tab: _tab,
-      language: _languageCode,
-      pageSize: _defaultPageSize,
-    );
+    _firstPageInFlight = true;
+    try {
+      final result = await _repository.refreshFirstPage(
+        tab: _tab,
+        language: _languageCode,
+        pageSize: _defaultPageSize,
+      );
 
-    if (!mounted) return;
-    result.fold(
-      (failure) {
-        _logger.error('Initial load failed: ${failure.message}');
-        if (state.items.isEmpty) {
-          state = state.copyWith(isLoading: false, error: failure.message);
-        }
-      },
-      _applyFirstPage,
-    );
+      if (!mounted) return;
+      result.fold(
+        (failure) {
+          _logger.error('Initial load failed: ${failure.message}');
+          if (state.items.isEmpty) {
+            state = state.copyWith(isLoading: false, error: failure.message);
+          }
+        },
+        _applyFirstPage,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || state.isLoading || !state.hasMore) return;
+    if (state.isLoadingMore ||
+        state.isLoading ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true);
     final nextPage = state.page + 1;
+    final epoch = _pageEpoch;
 
     final result = await _useCase(
       tab: _tab,
@@ -165,6 +181,11 @@ class PracticeItemsNotifier extends StateNotifier<PracticeItemsState> {
     );
 
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
     result.fold(
       (failure) {
         _logger.error('Load more failed: ${failure.message}');

@@ -15,7 +15,8 @@ class FeaturedSeriesLayout {
   final List<Series> others;
 }
 
-const _featuredSeriesLimit = 10;
+const homeFeaturedSeriesLimit = 10;
+const _featuredSeriesLimit = homeFeaturedSeriesLimit;
 
 /// Picks one random series as the hero card so no single series is favored.
 FeaturedSeriesLayout? _layout(List<Series> seriesList) {

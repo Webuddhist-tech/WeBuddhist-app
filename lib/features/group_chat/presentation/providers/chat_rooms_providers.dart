@@ -206,6 +206,9 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   /// its result is dropped instead.
   int _generation = 0;
 
+  // Blocks paging while a walk from the top is in flight.
+  bool _firstPageInFlight = false;
+
   /// Unread counts and last messages both change on the server without the app
   /// hearing about it — the live socket is per-room, and there is no rooms
   /// stream. So this list is refetched on every occasion it could be stale
@@ -224,6 +227,15 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
 
   Future<void> loadInitial() async {
     if (state.isLoading) return;
+    _firstPageInFlight = true;
+    try {
+      await _loadFromTop();
+    } finally {
+      _firstPageInFlight = false;
+    }
+  }
+
+  Future<void> _loadFromTop() async {
     _generation++;
     // The last walk stored on this device shows at once when the list is
     // empty; the fresh walk below replaces it.
@@ -305,7 +317,12 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || state.isLoading || !state.hasMore) return;
+    if (state.isLoadingMore ||
+        state.isLoading ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
     final generation = _generation;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 

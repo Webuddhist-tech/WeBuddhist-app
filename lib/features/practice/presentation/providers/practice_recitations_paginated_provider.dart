@@ -71,7 +71,10 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
   final String _languageCode;
   final bool _includeCollections;
   final ScreenCacheSource<RecitationsPageResponse> _source;
-  bool _loadInFlight = false;
+  bool _firstPageInFlight = false;
+
+  // Bumped whenever page one is applied, so a stale page is dropped.
+  int _pageEpoch = 0;
 
   PracticeRecitationsNotifier({
     required RecitationsRemoteDatasource datasource,
@@ -171,6 +174,7 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
   }
 
   void _applyFirstPage(RecitationsPageResponse page) {
+    _pageEpoch++;
     state = PracticeRecitationsState(
       recitations: page.recitations,
       collections: page.collections,
@@ -184,9 +188,9 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
   /// Shows the stored first page at once, then replaces it if the server
   /// page changed; a failed refresh keeps whatever is on screen.
   Future<void> loadInitial() async {
-    if (_loadInFlight) return;
+    if (_firstPageInFlight) return;
 
-    _loadInFlight = true;
+    _firstPageInFlight = true;
     try {
       final source = _source;
       final cached = state.isEmpty ? source.read() : null;
@@ -217,14 +221,20 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
         },
       );
     } finally {
-      _loadInFlight = false;
+      _firstPageInFlight = false;
     }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || state.isLoading || !state.hasMore) return;
+    if (state.isLoadingMore ||
+        state.isLoading ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, error: null);
+    final epoch = _pageEpoch;
 
     try {
       final page = await _datasource.fetchRecitationsPage(
@@ -232,6 +242,11 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
       );
 
       if (!mounted) return;
+      // Page one was replaced meanwhile; this page belongs to the old list.
+      if (epoch != _pageEpoch) {
+        state = state.copyWith(isLoadingMore: false);
+        return;
+      }
       final updatedRecitations = [...state.recitations, ...page.recitations];
       state = state.copyWith(
         recitations: updatedRecitations,

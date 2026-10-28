@@ -404,6 +404,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// filter is dropped when it lands.
   int _listGeneration = 0;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   /// The list on screen came from the device, so a failed re-read stays quiet.
   bool _seededFromStore = false;
 
@@ -446,6 +450,15 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// fetches its first page of prayer requests.
   Future<void> load() async {
     if (state.isLoading) return;
+    _firstPageInFlight = true;
+    try {
+      await _load();
+    } finally {
+      _firstPageInFlight = false;
+    }
+  }
+
+  Future<void> _load() async {
     // A seeded room keeps its rows and status while the server is asked again.
     final seeded = state.requests.isNotEmpty && state.roomId != null;
     state = state.copyWith(
@@ -526,6 +539,16 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   Future<void> _loadFirstPage(String roomId) async {
+    final wasInFlight = _firstPageInFlight;
+    _firstPageInFlight = true;
+    try {
+      await _readFirstPage(roomId);
+    } finally {
+      _firstPageInFlight = wasInFlight;
+    }
+  }
+
+  Future<void> _readFirstPage(String roomId) async {
     final generation = ++_listGeneration;
     _pageShifted = false;
     _unlisted.clear();
@@ -572,6 +595,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
 
   /// Publishes a first page under the filter in view.
   void _applyFirstPage(ChatMessagesPage page) {
+    _pageEpoch++;
     final filter = state.filter;
     _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
     final hasMore = page.messages.length < page.total;
@@ -650,14 +674,21 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (roomId == null ||
         state.isLoading ||
         state.isLoadingMore ||
-        !state.hasMore) {
+        !state.hasMore ||
+        _firstPageInFlight) {
       return;
     }
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final generation = _listGeneration;
+    final epoch = _pageEpoch;
     final result = await _fetchPage(roomId, skip: state.skip);
     if (!mounted || generation != _listGeneration) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     if (_pageShifted) {
       _pageShifted = false;
@@ -1405,6 +1436,10 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
   final ScreenCacheSource<ChatPrayersPage> _source;
   static const int _limit = 20;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
 
   /// Stored first page shows at once; the server's replaces it if changed.
@@ -1412,33 +1447,52 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
     if (state.isLoading) return;
     // Only an empty roster shows the loader; a seeded one refreshes silently.
     state = state.copyWith(isLoading: state.supporters.isEmpty, clearError: true);
-    await loadCachedFirstPage(
-      _source,
-      isCurrent: () => mounted,
-      seed: state.supporters.isEmpty,
-      fetch: () => _repository.listPrayers(messageId, skip: 0, limit: _limit),
-      encode: (page) => page.toJson(),
-      apply: (page) => state = _merged(const [], 0, page, isLoading: false),
-      fail:
-          (failure) =>
-              state = state.copyWith(
-                isLoading: false,
-                hasLoaded: true,
-                error: failure.message,
-              ),
-    );
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        _source,
+        isCurrent: () => mounted,
+        seed: state.supporters.isEmpty,
+        fetch: () => _repository.listPrayers(messageId, skip: 0, limit: _limit),
+        encode: (page) => page.toJson(),
+        apply: (page) {
+          _pageEpoch++;
+          state = _merged(const [], 0, page, isLoading: false);
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(
+                  isLoading: false,
+                  hasLoaded: true,
+                  error: failure.message,
+                ),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    if (state.isLoading ||
+        state.isLoadingMore ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final skip = state.skip;
+    final epoch = _pageEpoch;
     final result = await _repository.listPrayers(
       messageId,
       skip: skip,
       limit: _limit,
     );
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
     result.fold(
       (failure) {
         state = state.copyWith(isLoadingMore: false, error: failure.message);

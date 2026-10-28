@@ -61,6 +61,20 @@ class StreakRepository implements StreakRepositoryInterface {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> refreshStreak() async {
+    final userId = local.currentUserIdSync ?? await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    try {
+      await _refresh(userId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to refresh streak'));
+    }
+  }
+
   Future<void> _refresh(String userId) async {
     final streak = await remote.fetchStreak();
     await local.saveStreak(userId, streak);

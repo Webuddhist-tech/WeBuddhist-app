@@ -76,6 +76,10 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
   final String language;
   final ScreenCacheSource<GroupPracticesPage>? _source;
   static const int _limit = 20;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   bool _loadRequested = false;
 
   void ensureLoaded() {
@@ -101,34 +105,46 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
     // Only an empty list shows the loader; a seeded one refreshes silently.
     state = state.copyWith(isLoading: state.practices.isEmpty, clearError: true);
 
-    await loadCachedFirstPage(
-      source,
-      isCurrent: () => mounted,
-      seed: state.practices.isEmpty,
-      apply:
-          (page) =>
-              state = state.copyWith(
-                practices: page.practices,
-                isLoading: false,
-                hasMore: page.hasMore,
-                skip: page.practices.length,
-                hasLoaded: true,
-                clearError: true,
-              ),
-      fail:
-          (failure) =>
-              state = state.copyWith(
-                isLoading: false,
-                error: failure.message,
-                hasLoaded: true,
-              ),
-    );
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        source,
+        isCurrent: () => mounted,
+        seed: state.practices.isEmpty,
+        apply: (page) {
+          _pageEpoch++;
+          state = state.copyWith(
+            practices: page.practices,
+            isLoading: false,
+            hasMore: page.hasMore,
+            skip: page.practices.length,
+            hasLoaded: true,
+            clearError: true,
+          );
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(
+                  isLoading: false,
+                  error: failure.message,
+                  hasLoaded: true,
+                ),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
+    final epoch = _pageEpoch;
 
     final result = await ref.read(groupProfileRepositoryProvider).getConnectPractices(
       includeUnfollowed: includeUnfollowed,
@@ -138,6 +154,11 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
     );
 
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {

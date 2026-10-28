@@ -108,6 +108,10 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
   /// Bumped on every first-page load, so a stale page is dropped.
   int _generation = 0;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   /// Shows the stored first page, then reads it again. A page still in
   /// flight is dropped when it lands, so its loading flag is cleared here.
   Future<void> load() async {
@@ -120,43 +124,60 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
       clearError: true,
     );
 
-    await loadCachedFirstPage(
-      _source,
-      isCurrent: () => mounted && generation == _generation,
-      seed: state.requests.isEmpty,
-      fetch: () => _repository.listMyPrayerRequests(skip: 0, limit: _limit),
-      encode: (page) => page.toJson(),
-      apply:
-          (page) =>
-              state = state.copyWith(
-                requests: page.messages,
-                total: page.total,
-                isLoading: false,
-                isLoadingMore: false,
-                hasLoaded: true,
-                hasMore: page.messages.length < page.total,
-                skip: page.messages.length,
-                clearError: true,
-              ),
-      fail:
-          (failure) =>
-              state = state.copyWith(
-                isLoading: false,
-                hasLoaded: true,
-                error: failure.message,
-              ),
-    );
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        _source,
+        isCurrent: () => mounted && generation == _generation,
+        seed: state.requests.isEmpty,
+        fetch: () => _repository.listMyPrayerRequests(skip: 0, limit: _limit),
+        encode: (page) => page.toJson(),
+        apply: (page) {
+          _pageEpoch++;
+          state = state.copyWith(
+            requests: page.messages,
+            total: page.total,
+            isLoading: false,
+            isLoadingMore: false,
+            hasLoaded: true,
+            hasMore: page.messages.length < page.total,
+            skip: page.messages.length,
+            clearError: true,
+          );
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(
+                  isLoading: false,
+                  hasLoaded: true,
+                  error: failure.message,
+                ),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    if (state.isLoading ||
+        state.isLoadingMore ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
     final generation = _generation;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final result = await _repository.listMyPrayerRequests(
       skip: state.skip,
       limit: _limit,
     );
     if (!mounted || generation != _generation) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
     result.fold(
       (failure) {
         state = state.copyWith(isLoadingMore: false, error: failure.message);

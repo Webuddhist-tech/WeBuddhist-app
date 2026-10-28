@@ -125,7 +125,7 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
        _groupId = groupId,
        super(const GroupPracticesState()) {
     // The stored page is the first state, so the first frame never spins.
-    if (stored != null) _applyFirstPage(stored);
+    if (stored != null) _applyFirstPage(stored, fresh: false);
   }
 
   final GroupProfileRepositoryInterface _repository;
@@ -133,6 +133,10 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
   final String _groupId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
@@ -145,12 +149,18 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
       clearError: true,
     );
 
-    final result = await _repository.getGroupPractices(
-      _groupId,
-      language: language,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupPracticesPage> result;
+    try {
+      result = await _repository.getGroupPractices(
+        _groupId,
+        language: language,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -165,7 +175,8 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
     );
   }
 
-  void _applyFirstPage(GroupPracticesPage page) {
+  void _applyFirstPage(GroupPracticesPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
     state = state.copyWith(
       practices: page.practices,
       total: page.total,
@@ -179,7 +190,10 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupPractices(
@@ -190,6 +204,11 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -986,7 +1005,7 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
        _groupId = groupId,
        super(const GroupMembersState()) {
     // The stored page is the first state, so the first frame never spins.
-    if (stored != null) _applyFirstPage(stored);
+    if (stored != null) _applyFirstPage(stored, fresh: false);
   }
 
   final GroupProfileRepositoryInterface _repository;
@@ -994,6 +1013,10 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
   final VoidCallback? onMemberRemoved;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   final Set<String> _removedUserIds = {};
   final Set<String> _removingUserIds = {};
 
@@ -1004,11 +1027,17 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
     final generation = ++_requestGeneration;
     state = state.copyWith(isLoading: state.members.isEmpty, clearError: true);
 
-    final result = await _repository.getGroupMembers(
-      _groupId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupMembersPage> result;
+    try {
+      result = await _repository.getGroupMembers(
+        _groupId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -1023,7 +1052,8 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
     );
   }
 
-  void _applyFirstPage(GroupMembersPage page) {
+  void _applyFirstPage(GroupMembersPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
     final members = _withoutRemoved(page.members);
     final dropped = page.members.length - members.length;
     state = state.copyWith(
@@ -1039,7 +1069,10 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupMembers(
@@ -1049,6 +1082,11 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -1269,7 +1307,7 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
        _groupId = groupId,
        super(const GroupJoinRequestsState()) {
     // The stored page is the first state, so the first frame never spins.
-    if (stored != null) _applyFirstPage(stored);
+    if (stored != null) _applyFirstPage(stored, fresh: false);
   }
 
   final GroupProfileRepositoryInterface _repository;
@@ -1277,6 +1315,10 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
   final VoidCallback? onMemberAdmitted;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
@@ -1287,11 +1329,17 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     final generation = ++_requestGeneration;
     state = state.copyWith(isLoading: state.requests.isEmpty, clearError: true);
 
-    final result = await _repository.getGroupJoinRequests(
-      _groupId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupJoinRequestsPage> result;
+    try {
+      result = await _repository.getGroupJoinRequests(
+        _groupId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -1306,7 +1354,8 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     );
   }
 
-  void _applyFirstPage(GroupJoinRequestsPage page) {
+  void _applyFirstPage(GroupJoinRequestsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
     state = state.copyWith(
       requests: page.requests,
       total: page.total,
@@ -1428,7 +1477,10 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
       return;
     }
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupJoinRequests(
@@ -1438,6 +1490,11 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -1597,13 +1654,17 @@ class GroupEventParticipantsNotifier
        _eventId = eventId,
        super(const GroupEventParticipantsState()) {
     // The stored page is the first state, so the first frame never spins.
-    if (stored != null) _applyFirstPage(stored);
+    if (stored != null) _applyFirstPage(stored, fresh: false);
   }
 
   final GroupProfileRepositoryInterface _repository;
   final String _eventId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
@@ -1615,11 +1676,17 @@ class GroupEventParticipantsNotifier
       clearError: true,
     );
 
-    final result = await _repository.getGroupEventParticipants(
-      _eventId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupEventParticipantsPage> result;
+    try {
+      result = await _repository.getGroupEventParticipants(
+        _eventId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -1634,7 +1701,8 @@ class GroupEventParticipantsNotifier
     );
   }
 
-  void _applyFirstPage(GroupEventParticipantsPage page) {
+  void _applyFirstPage(GroupEventParticipantsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
     state = state.copyWith(
       participants: page.participants,
       total: page.total,
@@ -1648,7 +1716,10 @@ class GroupEventParticipantsNotifier
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupEventParticipants(
@@ -1658,6 +1729,11 @@ class GroupEventParticipantsNotifier
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -1680,11 +1756,17 @@ class GroupEventParticipantsNotifier
     final generation = ++_requestGeneration;
     state = const GroupEventParticipantsState(isLoading: true);
 
-    final result = await _repository.getGroupEventParticipants(
-      _eventId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupEventParticipantsPage> result;
+    try {
+      result = await _repository.getGroupEventParticipants(
+        _eventId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -1693,6 +1775,7 @@ class GroupEventParticipantsNotifier
         state = state.copyWith(isLoading: false, error: failure.message);
       },
       (page) {
+        _pageEpoch++;
         state = state.copyWith(
           participants: page.participants,
           total: page.total,

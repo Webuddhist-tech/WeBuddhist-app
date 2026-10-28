@@ -103,6 +103,10 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   final ScreenCacheSource<ConnectFeedPage>? _feedSource;
   final ScreenCacheSource<GroupPracticesPage>? _practicesSource;
   static const int _limit = 20;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   bool _loadRequested = false;
 
   void ensureLoaded() {
@@ -156,8 +160,10 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
       );
     }
 
+    _firstPageInFlight = true;
     final feedResult = await feedSource.refresh();
     final practicesResult = await practicesSource.refresh();
+    _firstPageInFlight = false;
 
     if (!mounted) return;
 
@@ -171,6 +177,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
         );
       },
       (page) {
+        _pageEpoch++;
         practicesResult.fold(
           (failure) {
             state = state.copyWith(
@@ -202,17 +209,23 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
+    final epoch = _pageEpoch;
 
     final futures = <Future<void>>[];
 
     if (state.feedHasMore) {
-      futures.add(_loadMoreFeed());
+      futures.add(_loadMoreFeed(epoch));
     }
     if (state.practicesHasMore) {
-      futures.add(_loadMorePractices());
+      futures.add(_loadMorePractices(epoch));
     }
 
     await Future.wait(futures);
@@ -221,7 +234,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     state = state.copyWith(isLoadingMore: false);
   }
 
-  Future<void> _loadMoreFeed() async {
+  Future<void> _loadMoreFeed(int epoch) async {
     final result = await ref.read(connectRepositoryProvider).getConnectFeeds(
       includeUnfollowed: includeUnfollowed,
       language: language,
@@ -229,7 +242,8 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
       limit: _limit,
     );
 
-    if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (!mounted || epoch != _pageEpoch) return;
 
     result.fold(
       (failure) {
@@ -246,7 +260,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     );
   }
 
-  Future<void> _loadMorePractices() async {
+  Future<void> _loadMorePractices(int epoch) async {
     final result = await ref
         .read(groupProfileRepositoryProvider)
         .getConnectPractices(
@@ -256,7 +270,8 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
           limit: _limit,
         );
 
-    if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (!mounted || epoch != _pageEpoch) return;
 
     result.fold(
       (failure) {

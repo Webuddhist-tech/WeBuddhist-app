@@ -1,5 +1,6 @@
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_post_remote_datasource.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_post_
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_post_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
+import 'package:fpdart/fpdart.dart';
 
 final groupPostRemoteDatasourceProvider = Provider<GroupPostRemoteDatasource>((
   ref,
@@ -112,13 +114,17 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
        _groupId = groupId,
        super(const GroupPostsState()) {
     // The stored page is the first state, so the first frame never spins.
-    if (stored != null) _applyFirstPage(stored);
+    if (stored != null) _applyFirstPage(stored, fresh: false);
   }
 
   final GroupPostRepositoryInterface _repository;
   final String _groupId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
@@ -127,11 +133,17 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     final generation = ++_requestGeneration;
     state = state.copyWith(isLoading: state.posts.isEmpty, clearError: true);
 
-    final result = await _repository.getGroupPosts(
-      _groupId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, ConnectPostsPage> result;
+    try {
+      result = await _repository.getGroupPosts(
+        _groupId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -147,7 +159,8 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     );
   }
 
-  void _applyFirstPage(ConnectPostsPage page) {
+  void _applyFirstPage(ConnectPostsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
     state = state.copyWith(
       posts: page.posts,
       total: page.total,
@@ -162,7 +175,10 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupPosts(
@@ -172,6 +188,11 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {

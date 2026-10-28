@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exception_mapper.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:fpdart/fpdart.dart';
@@ -84,7 +85,17 @@ class ScreenCacheSource<T extends Object> {
     }
   }
 
-  Future<String> _fetchEncoded() async => jsonEncode(await fetchJson());
+  /// A response the model cannot read is a failed fetch, not a stored entry.
+  Future<String> _fetchEncoded() async {
+    final raw = jsonEncode(await fetchJson());
+    try {
+      fromJson(jsonDecode(raw) as Object);
+    } catch (e, st) {
+      _logger.warning('Unreadable response for $key', e, st);
+      throw const CacheException('Unreadable response');
+    }
+    return raw;
+  }
 
   T? _decode(String? raw) {
     if (raw == null) return null;

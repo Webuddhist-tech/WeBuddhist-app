@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/cache_config.dart';
+import 'package:flutter_pecha/core/cache/cache_service.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
@@ -41,13 +43,80 @@ class TextsRepository {
       size: size,
     );
     if (!forceRefresh) {
-      final cached = source.read();
+      var cached = source.read();
+      if (cached == null) {
+        // Pages saved by the previous app version keep opening offline.
+        cached = _legacyPage(
+          textId: textId,
+          contentId: contentId,
+          versionId: versionId,
+          segmentId: segmentId,
+          direction: direction,
+          language: language,
+          size: size,
+        );
+        if (cached != null) {
+          unawaited(
+            store
+                .save(source.key, jsonEncode(cached.toJson()))
+                .catchError((Object _) => false),
+          );
+        }
+      }
       if (cached != null) {
         unawaited(source.refresh());
         return Right(cached);
       }
     }
     return source.refresh();
+  }
+
+  ReaderResponse? _legacyPage({
+    required String textId,
+    String? contentId,
+    String? versionId,
+    String? segmentId,
+    String? direction,
+    String? language,
+    int? size,
+  }) {
+    try {
+      final cache = CacheService.instance;
+      final keys = [
+        CacheKeys.textDetails(
+          textId: textId,
+          contentId: contentId,
+          versionId: versionId,
+          segmentId: segmentId,
+          direction: direction,
+          language: language,
+          size: size,
+        ),
+        CacheKeys.textDetailsPrevious(
+          textId: textId,
+          contentId: contentId,
+          versionId: versionId,
+          segmentId: segmentId,
+          direction: direction,
+          language: language,
+          size: size,
+        ),
+      ];
+      for (final key in keys) {
+        final page = cache
+            .get<ReaderResponse>(
+              key: key,
+              box: cache.textContentBox,
+              fromJson: ReaderResponse.fromJson,
+              ignoreExpiry: true,
+            )
+            .data;
+        if (page != null) return page;
+      }
+    } catch (e) {
+      _logger.debug('Legacy text cache unavailable: $e');
+    }
+    return null;
   }
 
   ScreenCacheSource<ReaderResponse> _pageSource({

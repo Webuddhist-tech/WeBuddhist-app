@@ -377,7 +377,8 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
     state = state.copyWith(clearError: true);
     final result = await _repository.refreshBookmarks(language: _language);
     if (!mounted) return;
-    result.fold(_onFailure, (_) {});
+    // Applied directly too: with no store there is no change event to wait for.
+    result.fold(_onFailure, _onList);
   }
 
   void _onFailure(Failure failure) {

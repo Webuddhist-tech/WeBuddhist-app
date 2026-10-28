@@ -123,6 +123,26 @@ void main() {
     expect(events.last, const Right<Failure, String>('pushed'));
   });
 
+  test('an unreadable response keeps the stored value', () async {
+    store.entries[_key] = '{"v":"old"}';
+    responses = [
+      {'other': 1},
+    ];
+    final events = await collect(source().watch());
+    expect(events, [const Right<Failure, String>('old')]);
+    expect(store.entries[_key], '{"v":"old"}');
+  });
+
+  test('an unreadable first response is a failure, not a hang', () async {
+    responses = [
+      {'other': 1},
+    ];
+    final events = await collect(source().watch());
+    expect(events, hasLength(1));
+    expect(events.single.getLeft().toNullable(), isA<CacheFailure>());
+    expect(store.entries[_key], isNull);
+  });
+
   test('refresh returns the mapped failure when the fetch throws', () async {
     final result = await source().refresh();
     expect(result.getLeft().toNullable(), isA<NetworkFailure>());

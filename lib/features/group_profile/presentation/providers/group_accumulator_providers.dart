@@ -183,6 +183,10 @@ class GroupAccumulatorMembersNotifier
   final GroupAccumulatorMemberSort sortBy;
   static const _pageSize = 20;
   bool _hasLoaded = false;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial({bool force = false}) async {
@@ -193,12 +197,18 @@ class GroupAccumulatorMembersNotifier
       clearError: true,
     );
 
-    final result = await _repository.getGroupAccumulatorMembers(
-      accumulatorId,
-      skip: 0,
-      limit: _pageSize,
-      sortBy: sortBy,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupAccumulatorMembersPage> result;
+    try {
+      result = await _repository.getGroupAccumulatorMembers(
+        accumulatorId,
+        skip: 0,
+        limit: _pageSize,
+        sortBy: sortBy,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
     if (!mounted) return;
 
     result.fold(
@@ -207,18 +217,23 @@ class GroupAccumulatorMembersNotifier
         hasLoadedOnce: true,
         error: state.members.isEmpty ? failure : null,
       ),
-      (page) => state = state.copyWith(
-        isLoading: false,
-        hasLoadedOnce: true,
-        members: page.members,
-        total: page.total,
-      ),
+      (page) {
+        _pageEpoch++;
+        state = state.copyWith(
+          isLoading: false,
+          hasLoadedOnce: true,
+          members: page.members,
+          total: page.total,
+        );
+      },
     );
   }
 
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    if (_firstPageInFlight) return;
 
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final result = await _repository.getGroupAccumulatorMembers(
       accumulatorId,
@@ -227,6 +242,11 @@ class GroupAccumulatorMembersNotifier
       sortBy: sortBy,
     );
     if (!mounted) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) => state = state.copyWith(isLoadingMore: false, error: failure),

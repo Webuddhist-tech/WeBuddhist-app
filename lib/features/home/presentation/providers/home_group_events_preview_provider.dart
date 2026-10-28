@@ -16,38 +16,45 @@ final homeEventsRemoteDatasourceProvider = Provider<HomeEventsRemoteDatasource>(
   (ref) => HomeEventsRemoteDatasource(dio: ref.watch(dioProvider)),
 );
 
+/// Null for guests. Shared by the preview and Home's pull-to-refresh.
+final homeGroupEventsPreviewSourceProvider =
+    Provider.autoDispose<ScreenCacheSource<List<GroupEvent>>?>((ref) {
+      final authState = ref.watch(authProvider);
+      if (authState.isGuest || !authState.isLoggedIn) return null;
+
+      final language = ref.watch(contentLanguageProvider);
+      final remote = ref.watch(homeEventsRemoteDatasourceProvider);
+      final store = ref.watch(screenCacheStoreProvider);
+      return ScreenCacheSource<List<GroupEvent>>(
+        store: store,
+        key: ScreenCacheKey.user(
+          'home_events',
+          userId: store.currentUserIdSync,
+          language: language,
+        ),
+        fetchJson:
+            () => remote.fetchPreviewJson(
+              language: language,
+              limit: homeGroupEventsPreviewLimit,
+            ),
+        fromJson:
+            (json) =>
+                GroupEventsPageModel.fromJson(
+                  json as Map<String, dynamic>,
+                  language: language,
+                ).toEntity().events,
+        failureMessage: 'Failed to load events',
+      );
+    });
+
 /// Stored preview is the first state; guests get an empty list.
 final homeGroupEventsPreviewProvider = AsyncNotifierProvider.autoDispose<
   AutoDisposeScreenCacheNotifier<List<GroupEvent>, List<GroupEvent>>,
   List<GroupEvent>
 >(() {
   return AutoDisposeScreenCacheNotifier((ref, bind) {
-    final authState = ref.watch(authProvider);
-    if (authState.isGuest || !authState.isLoggedIn) return const [];
-
-    final language = ref.watch(contentLanguageProvider);
-    final remote = ref.watch(homeEventsRemoteDatasourceProvider);
-    final store = ref.watch(screenCacheStoreProvider);
-    final source = ScreenCacheSource<List<GroupEvent>>(
-      store: store,
-      key: ScreenCacheKey.user(
-        'home_events',
-        userId: store.currentUserIdSync,
-        language: language,
-      ),
-      fetchJson:
-          () => remote.fetchPreviewJson(
-            language: language,
-            limit: homeGroupEventsPreviewLimit,
-          ),
-      fromJson:
-          (json) =>
-              GroupEventsPageModel.fromJson(
-                json as Map<String, dynamic>,
-                language: language,
-              ).toEntity().events,
-      failureMessage: 'Failed to load events',
-    );
+    final source = ref.watch(homeGroupEventsPreviewSourceProvider);
+    if (source == null) return const [];
     return bind.source(
       source,
       select:
