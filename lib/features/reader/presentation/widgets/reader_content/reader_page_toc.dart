@@ -58,6 +58,10 @@ class ReaderPageText {
   /// The verse the text opens at while it is not on the page (the page was
   /// loaded from further in), to load it; null when [entryIndex] is it.
   final String? startSegmentId;
+
+  /// The text's start is not on the page and no verse is known to load it
+  /// by (no heading opens the text): its first page is loaded instead.
+  final bool startsBeforePage;
   final List<ReaderPageSection> sections = [];
 
   ReaderPageText({
@@ -67,6 +71,7 @@ class ReaderPageText {
     required this.entryIndex,
     required this.titleSectionId,
     this.startSegmentId,
+    this.startsBeforePage = false,
   });
 
   /// The text as a place to go to: its start.
@@ -75,7 +80,7 @@ class ReaderPageText {
     id: titleSectionId,
     title: title,
     language: language,
-    entryIndex: startSegmentId == null ? entryIndex : -1,
+    entryIndex: startSegmentId == null && !startsBeforePage ? entryIndex : -1,
     segmentId: startSegmentId,
   );
 
@@ -87,6 +92,7 @@ class ReaderPageText {
       other.language == language &&
       other.entryIndex == entryIndex &&
       other.startSegmentId == startSegmentId &&
+      other.startsBeforePage == startsBeforePage &&
       listEquals(other.sections, sections);
 
   @override
@@ -96,6 +102,7 @@ class ReaderPageText {
     language,
     entryIndex,
     startSegmentId,
+    startsBeforePage,
     Object.hashAll(sections),
   );
 }

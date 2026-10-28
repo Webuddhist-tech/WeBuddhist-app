@@ -391,17 +391,20 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                 ? _headingText(view, heading)
                 : (textTitle, textLanguage);
       }
+      final startUnloaded = !_isCollapsed && view.state.hasPreviousPage;
+      final opensFromHeading =
+          startUnloaded && opening != null && opening.opensText;
       final text = ReaderPageText(
         source: view.index,
         title: title,
         language: titleLanguage,
         entryIndex: entries.length,
         titleSectionId: titleSectionId,
-        // Loaded from further in: the opening verse is not on the page.
-        startSegmentId:
-            view.state.hasPreviousPage && opening != null && opening.opensText
-                ? opening.segmentId
-                : null,
+        // Loaded from further in: the opening verse is not on the page. A
+        // heading that opens the text names it; otherwise the text's first
+        // page is loaded. A collapsed page always holds its own start.
+        startSegmentId: opensFromHeading ? opening.segmentId : null,
+        startsBeforePage: startUnloaded && !opensFromHeading,
       );
       texts.add(text);
       int textSection() => sectionAt(
@@ -657,21 +660,32 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// Brings [section] to the top, loading the verse it opens at first when
-  /// it is not on the page.
+  /// it is not on the page; a text's own row whose start is not known by a
+  /// verse loads the text's first page.
   Future<void> _goToSection(ReaderPageSection section) async {
     if (section.isOnPage) {
       _scrollToEntry(section.entryIndex);
       return;
     }
     final segmentId = section.segmentId;
-    if (segmentId == null) return;
+    final notifier = ref.read(
+      readerNotifierProvider(widget.sources[section.source]).notifier,
+    );
     final bool loaded;
-    if (_isCollapsed) {
+    if (segmentId == null) {
+      final textStart =
+          _layout?.texts.any(
+            (text) =>
+                text.source == section.source &&
+                text.titleSectionId == section.id &&
+                text.startsBeforePage,
+          ) ??
+          false;
+      if (!textStart) return;
+      loaded = await notifier.jumpToStart();
+    } else if (_isCollapsed) {
       loaded = await _loadForwardTo(section.source, segmentId);
     } else {
-      final notifier = ref.read(
-        readerNotifierProvider(widget.sources[section.source]).notifier,
-      );
       loaded = await notifier.jumpToSegment(segmentId) != null;
     }
     if (!loaded || !mounted) return;

@@ -82,8 +82,13 @@ ReaderResponse _page(TextDetailsParams params) {
   );
 }
 
-/// Knows text C's whole table of contents.
+/// Knows text C's whole table of contents. With [openingVerse] past 1, the
+/// verses before it come ahead of any heading.
 class _Outlines implements TextsRepository {
+  _Outlines({this.openingVerse = 1});
+
+  final int openingVerse;
+
   @override
   Future<TextOutline> fetchOutline({
     required String textId,
@@ -96,10 +101,10 @@ class _Outlines implements TextsRepository {
           id: 'ch$c',
           depth: 0,
           titles: {'en': _chapters[c]},
-          segmentId: 'C-${c * 20 + 1}',
-          number: c * 20 + 1,
+          segmentId: 'C-${c == 0 ? openingVerse : c * 20 + 1}',
+          number: c == 0 ? openingVerse : c * 20 + 1,
           endNumber: c * 20 + 20,
-          opensText: c == 0,
+          opensText: c == 0 && openingVerse == 1,
         ),
     ],
   );
@@ -108,7 +113,11 @@ class _Outlines implements TextsRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester, {String? openAt}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  String? openAt,
+  int openingVerse = 1,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -116,7 +125,9 @@ Future<void> _pump(WidgetTester tester, {String? openAt}) async {
         readerSettingsRemoteDatasourceProvider.overrideWithValue(
           FakeReaderSettingsDatasource(languages: const [], versions: const {}),
         ),
-        textsRepositoryProvider.overrideWithValue(_Outlines()),
+        textsRepositoryProvider.overrideWithValue(
+          _Outlines(openingVerse: openingVerse),
+        ),
         textDetailsFutureProvider.overrideWith(
           (ref, params) async => Right<Failure, ReaderResponse>(_page(params)),
         ),
@@ -209,5 +220,23 @@ void main() {
 
     expect(find.text('Sections'), findsNothing);
     expect(find.textContaining('Verse 41.'), findsOneWidget);
+  });
+
+  testWidgets('the text\'s row goes back to its start, before any heading', (
+    tester,
+  ) async {
+    // Verses 1-5 come before the first heading, so no heading names the
+    // text's start; opened further in, they are not on the page.
+    await _pump(tester, openAt: 'C-45', openingVerse: 6);
+    expect(find.textContaining('Verse 1.'), findsNothing);
+
+    await tester.tap(find.textContaining(' / '));
+    await _settle(tester);
+    // The text's row is named by the text.
+    await tester.tap(find.text('A Prayer Book').last);
+    await _settle(tester);
+
+    expect(find.text('Sections'), findsNothing);
+    expect(find.textContaining('Verse 1.'), findsOneWidget);
   });
 }
