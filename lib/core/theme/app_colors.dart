@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ============ Primary Colors (Logo Red) ============
-  /// Dominant fill from `assets/images/webuddhist_logo.png`.
-  static const Color primary = Color(0xFFFF0000);
-  static const Color primaryLight = Color(0xFFFF3333);
-  static const Color primaryDark = Color(0xFFAD2424); // darker brand red
-  static const Color primaryDarkest = Color(0xFF871C1C);
+  // ============ Primary Colors (Temple Red) ============
+  /// Temple Red, the primary brand colour (Brand Guidelines v1.0).
+  /// The other shades are mixed from it toward white or black.
+  static const Color primary = Color(0xFFE94043);
+  static const Color primaryLight = Color(0xFFED6669); // 20% white
+  static const Color primaryDark = Color(0xFFAF3032); // 25% black
+  static const Color primaryDarkest = Color(0xFF872527); // 42% black
 
   /// Primary color containers and tints
-  static const Color primaryContainer = Color(0xFFFFEBEE); // Red 50
-  static const Color primarySurface = Color(0xFFFFF5F5);
+  static const Color primaryContainer = Color(0xFFFDECEC); // 90% white
+  static const Color primarySurface = Color(0xFFFEF5F6); // 95% white
 
   /// Unread count pill and unread dot for chats. Logo red in both themes.
   static const Color unreadBadge = primary;
@@ -189,5 +190,5 @@ class AppColors {
   // ============ Design System Reference ============
   // Figma file: 0TE5qdViUvrisFZfNqODpX/WeBuddhist-App
   // Design system: Monlam Colors
-  // Primary theme: Logo red (WeBuddhist mark)
+  // Primary theme: Temple Red #E94043 (WeBuddhist Brand Guidelines v1.0)
 }

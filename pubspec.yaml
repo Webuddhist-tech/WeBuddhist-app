@@ -183,10 +183,10 @@ flutter_launcher_icons:
     background_color: "#FFFFFF"
     theme_color: "#FFFFFF"
   remove_alpha_ios: true
-  image_path: "assets/images/webuddhist_logo.png"
+  image_path: "assets/launcher/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/webuddhist_logo.png"
+  adaptive_icon_background: "#FFF4E3"
+  adaptive_icon_foreground: "assets/launcher/app_icon_foreground.png"
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -198,7 +198,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/segment-bg/
     - assets/images/verse-bg/
     - assets/images/tag_cover/
     - assets/images/recitation_cover/
