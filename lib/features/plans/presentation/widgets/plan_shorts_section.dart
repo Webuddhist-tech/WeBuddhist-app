@@ -1,10 +1,185 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_link_utils.dart';
 import 'package:flutter_pecha/features/home/home.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
 import 'package:flutter_pecha/shared/widgets/reusable_youtube_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+
+/// Plan-day YouTube. Shorts stay in the vertical carousel; longer videos,
+/// including a past event's session recordings, play as normal 16:9 videos.
+class PlanDayVideos extends StatelessWidget {
+  const PlanDayVideos({super.key, required this.videos});
+
+  final List<PlanVideoModel> videos;
+
+  @override
+  Widget build(BuildContext context) {
+    if (videos.isEmpty) return const SizedBox.shrink();
+
+    final shorts = <PlanVideoModel>[];
+    final sessions = <PlanVideoModel>[];
+    for (final video in videos) {
+      if (ConnectPostLinkUtils.isYoutubeShort(video.url)) {
+        shorts.add(video);
+      } else {
+        sessions.add(video);
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (sessions.isNotEmpty) _PlanSessionVideos(videos: sessions),
+        PlanShortsSection(videos: shorts),
+      ],
+    );
+  }
+}
+
+class _PlanSessionVideos extends StatelessWidget {
+  const _PlanSessionVideos({required this.videos});
+
+  final List<PlanVideoModel> videos;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = List<PlanVideoModel>.from(videos)
+      ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var index = 0; index < sorted.length; index++) ...[
+          if (index > 0) const SizedBox(height: 12),
+          _PlanSessionCard(video: sorted[index]),
+        ],
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _PlanSessionCard extends StatelessWidget {
+  const _PlanSessionCard({required this.video});
+
+  final PlanVideoModel video;
+
+  String get _playUrl {
+    final url = video.url.trim();
+    if (url.isNotEmpty) return url;
+    final id = video.videoId.trim();
+    if (id.isEmpty) return '';
+    return 'https://www.youtube.com/watch?v=$id';
+  }
+
+  String? get _thumbnailUrl {
+    final stored = video.videoId.trim();
+    final id =
+        stored.isNotEmpty
+            ? stored
+            : ConnectPostLinkUtils.youtubeVideoId(video.url);
+    if (id == null || id.isEmpty) return null;
+    return ConnectPostLinkUtils.youtubeThumbnailUrl(id);
+  }
+
+  Future<void> _open(BuildContext context) async {
+    final url = _playUrl;
+    if (url.isEmpty) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: 'video-player'),
+        builder:
+            (_) => YoutubeVideoPlayer(videoUrl: url, title: video.title ?? ''),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final title = video.title?.trim() ?? '';
+    final thumbnailUrl = _thumbnailUrl;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _open(context),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (thumbnailUrl != null)
+                    CachedNetworkImage(
+                      imageUrl: thumbnailUrl,
+                      fit: BoxFit.cover,
+                      placeholder:
+                          (_, __) => ColoredBox(
+                            color:
+                                isDark
+                                    ? const Color(0xFF2A2A2A)
+                                    : const Color(0xFFE8E8E8),
+                          ),
+                      errorWidget:
+                          (_, __, ___) => ColoredBox(
+                            color:
+                                isDark
+                                    ? const Color(0xFF2A2A2A)
+                                    : const Color(0xFFE8E8E8),
+                          ),
+                    )
+                  else
+                    ColoredBox(
+                      color:
+                          isDark
+                              ? const Color(0xFF2A2A2A)
+                              : const Color(0xFFE8E8E8),
+                    ),
+                  Container(color: Colors.black.withValues(alpha: 0.18)),
+                  Center(
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.82),
+                      ),
+                      child: const Icon(
+                        AppAssets.play,
+                        color: AppColors.primaryDark,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (title.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white : Colors.black87,
+              height: 1.3,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 /// Renders a "Shorts from the community" section as a horizontal scrolling
 /// carousel of 9:16 cards. Each card autoplays muted (Instagram-style).

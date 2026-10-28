@@ -1888,6 +1888,12 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_accumulator_leaderboard => 'ཨང་རིམ།';
 
   @override
+  String get group_accumulator_everyone => 'ཚང་མ།';
+
+  @override
+  String get group_accumulator_me => 'ང་།';
+
+  @override
   String get group_accumulator_my_contributions => 'ངའི་བསགས་གྲངས།';
 
   @override

@@ -289,6 +289,7 @@ class _RandomPrayerOverlayState extends ConsumerState<RandomPrayerOverlay> {
       request: request,
       displayName: name,
       avatarUrl: request.senderAvatarUrl,
+      mantra: ref.read(prayerRequestsProvider(widget.scope)).mantra,
       onPray:
           live ? () => _notifier.pray(request.id, viewer: widget.viewer) : null,
     );

@@ -1787,6 +1787,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_accumulator_leaderboard => '排行榜';
 
   @override
+  String get group_accumulator_everyone => '所有人';
+
+  @override
+  String get group_accumulator_me => '我';
+
+  @override
   String get group_accumulator_my_contributions => '我的貢獻';
 
   @override

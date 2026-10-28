@@ -1877,6 +1877,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get group_accumulator_leaderboard => 'लीडरबोर्ड';
 
   @override
+  String get group_accumulator_everyone => 'सभी';
+
+  @override
+  String get group_accumulator_me => 'मैं';
+
+  @override
   String get group_accumulator_my_contributions => 'मेरा योगदान';
 
   @override

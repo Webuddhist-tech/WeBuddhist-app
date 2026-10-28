@@ -1884,6 +1884,12 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_accumulator_leaderboard => 'Тэргүүлэгчдийн самбар';
 
   @override
+  String get group_accumulator_everyone => 'Бүгд';
+
+  @override
+  String get group_accumulator_me => 'Би';
+
+  @override
   String get group_accumulator_my_contributions => 'Миний хувь нэмэр';
 
   @override

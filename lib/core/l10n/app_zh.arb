@@ -644,6 +644,8 @@
   "group_accumulator_join_error": "無法加入計數統計，請再試一次",
   "group_accumulator_participants": "{count} 位參與者",
   "group_accumulator_leaderboard": "排行榜",
+  "group_accumulator_everyone": "所有人",
+  "group_accumulator_me": "我",
   "group_accumulator_my_contributions": "我的貢獻",
   "group_accumulator_recited": "已持誦",
   "group_accumulator_total": "總數",

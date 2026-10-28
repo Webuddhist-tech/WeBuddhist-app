@@ -36,4 +36,29 @@ void main() {
       expect(formatGroupEventTime(at(15), 'ne'), '१५:००');
     });
   });
+
+  group('multi-day ranges keep the year', () {
+    test('same year puts the year on the end only', () {
+      expect(
+        formatGroupEventDayRange(
+          DateTime(2026, 3, 12),
+          DateTime(2026, 3, 15),
+          'en',
+        ),
+        '12 Mar - 15 Mar 2026',
+      );
+    });
+
+    test('a range that crosses a year labels both ends', () {
+      expect(
+        formatGroupEventDayRange(
+          DateTime(2026, 12, 28),
+          DateTime(2027, 1, 4),
+          'en',
+          separator: ' – ',
+        ),
+        '28 Dec 2026 – 4 Jan 2027',
+      );
+    });
+  });
 }

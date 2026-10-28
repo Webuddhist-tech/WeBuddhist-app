@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_mantra_dto.dart';
 
 class ChatRoomDTO extends Equatable {
   final String id;
@@ -26,6 +27,10 @@ class ChatRoomDTO extends Equatable {
   /// yet; absent reads as false, so the room just shows as a plain chat.
   final bool isOfficial;
 
+  /// What an event or space room floats up on each prayer; null falls back
+  /// to the app's built-in mantra.
+  final ChatRoomMantraDTO? mantra;
+
   const ChatRoomDTO({
     required this.id,
     required this.createdBy,
@@ -44,10 +49,12 @@ class ChatRoomDTO extends Equatable {
     this.otherUserEmail,
     this.otherUserName,
     this.isOfficial = false,
+    this.mantra,
   });
 
   factory ChatRoomDTO.fromJson(Map<String, dynamic> json) {
     final lastMessageJson = json['last_message'];
+    final mantraJson = json['mantra'];
     return ChatRoomDTO(
       id: json['id'] as String? ?? '',
       createdBy: json['created_by'] as String? ?? '',
@@ -69,6 +76,10 @@ class ChatRoomDTO extends Equatable {
       otherUserEmail: json['other_user_email'] as String?,
       otherUserName: json['other_user_name'] as String?,
       isOfficial: json['is_official'] == true,
+      mantra:
+          mantraJson is Map<String, dynamic>
+              ? ChatRoomMantraDTO.fromJson(mantraJson)
+              : null,
     );
   }
 
@@ -91,6 +102,7 @@ class ChatRoomDTO extends Equatable {
       if (otherUserEmail != null) 'other_user_email': otherUserEmail,
       if (otherUserName != null) 'other_user_name': otherUserName,
       if (isOfficial) 'is_official': true,
+      if (mantra != null) 'mantra': mantra!.toJson(),
     };
   }
 
@@ -113,6 +125,7 @@ class ChatRoomDTO extends Equatable {
     otherUserEmail,
     otherUserName,
     isOfficial,
+    mantra,
   ];
 }
 

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
+import 'package:flutter_pecha/core/config/router/launch_navigation.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
@@ -307,27 +308,13 @@ class PushMessageNavigator {
   /// mechanism in [RouteGuard] only captures unauthenticated attempts, not
   /// loading ones — so pushing the real destination now would just get
   /// redirected away and lost, landing the user on Home once auth settles.
-  /// Mirrors `AppLinksDeepLinkService._dispatchWhenRouterSettled`, which
-  /// solves the identical race for app-link cold starts.
+  /// The launch intro holds the splash the same way (`splashHoldProvider`).
+  /// Shares [runWhenOffSplash] with the other launch-time navigations.
   void _routeWhenSettled(Map<String, dynamic> data, PushAppState appState) {
-    final router = _ref.read(appRouterProvider);
-    final delegate = router.routerDelegate;
-
-    bool isSettled() =>
-        delegate.currentConfiguration.uri.path != AppRoutes.splash;
-
-    if (isSettled()) {
-      _route(data, appState);
-      return;
-    }
-
-    void onRouterChanged() {
-      if (!isSettled()) return;
-      delegate.removeListener(onRouterChanged);
-      _route(data, appState);
-    }
-
-    delegate.addListener(onRouterChanged);
+    runWhenOffSplash(
+      _ref.read(appRouterProvider),
+      () => _route(data, appState),
+    );
   }
 
   void _route(Map<String, dynamic> data, PushAppState appState) {
