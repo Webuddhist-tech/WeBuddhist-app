@@ -21,15 +21,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get onboarding_welcome => 'Chào mừng bạn đến với';
 
   @override
-  String get onboarding_setup_subtitle =>
-      'Hãy cùng thiết lập cho bạn, chỉ mất một phút thôi';
-
-  @override
   String get onboarding_tagline => 'Học hỏi, tu tập và kết nối. Mỗi ngày.';
-
-  @override
-  String get onboarding_quote =>
-      'Nước nhỏ từng giọt, rồi bình cũng đầy tràn. Cũng vậy, người trí tích góp dần dần, tự làm mình đầy điều thiện.';
 
   @override
   String get onboarding_find_peace => 'Bắt đầu';
@@ -43,9 +35,6 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get onboarding_language_subtitle =>
       'Đây là ngôn ngữ hiển thị của ứng dụng';
-
-  @override
-  String get onboarding_choose_option => 'Chọn ít nhất một:';
 
   @override
   String get onboarding_all_set => 'Bạn đã sẵn sàng';
@@ -68,43 +57,10 @@ class AppLocalizationsVi extends AppLocalizations {
       'Nhóm, sự kiện, bảng tin và trò chuyện';
 
   @override
-  String get home_recitation => 'bài tụng';
-
-  @override
   String get home_today => 'Hôm nay';
 
   @override
-  String get home_good_morning => 'Chào buổi sáng';
-
-  @override
-  String get home_good_afternoon => 'Chào buổi chiều';
-
-  @override
-  String get home_good_evening => 'Chào buổi tối';
-
-  @override
-  String get home_meditationTitle => 'Thiền';
-
-  @override
-  String get home_prayerTitle => 'Lời cầu nguyện trong ngày';
-
-  @override
-  String get home_scripture => 'Kinh văn có hướng dẫn';
-
-  @override
-  String get home_meditation => 'Thiền có hướng dẫn';
-
-  @override
-  String get home_goDeeper => 'Tìm hiểu sâu hơn';
-
-  @override
-  String get home_intention => 'Ý nguyện của tôi hôm nay';
-
-  @override
   String get home_overall_stats => 'Thống kê tổng quan';
-
-  @override
-  String get home_plans => 'lộ trình';
 
   @override
   String home_plans_count(int count) {
@@ -266,9 +222,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timer_min => 'phút';
 
   @override
-  String get timer_start => 'Bắt đầu';
-
-  @override
   String get timer_finish => 'Kết thúc';
 
   @override
@@ -276,9 +229,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get home_hello_prefix => 'Xin chào, ';
-
-  @override
-  String get home_greeting_fallback_name => 'bạn';
 
   @override
   String home_share_prompt(String appName) {
@@ -320,9 +270,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get text_search => 'Tìm kiếm';
 
   @override
-  String get text_toc_versions => 'Phiên bản';
-
-  @override
   String get text_commentary => 'Chú giải';
 
   @override
@@ -330,9 +277,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get no_translation => 'Không tìm thấy bản dịch nào';
-
-  @override
-  String get text_close_commentary => 'Đóng chú giải';
 
   @override
   String get show_more => 'Xem thêm';
@@ -350,9 +294,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get no_content => 'Không tìm thấy nội dung';
 
   @override
-  String get no_commentary => 'Không tìm thấy chú giải nào';
-
-  @override
   String commentary_not_available_for_language(String language) {
     return 'Chưa có chú giải bằng $language';
   }
@@ -361,38 +302,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get loading => 'Đang tải...';
 
   @override
-  String get choose_bg_image => 'Chọn ảnh nền';
-
-  @override
   String get save => 'Lưu';
 
   @override
   String get done => 'Xong';
-
-  @override
-  String get customise_message =>
-      'Nhấn vào biểu tượng tùy chỉnh để điều chỉnh kiểu chữ';
-
-  @override
-  String get download_image => 'Tải ảnh xuống';
-
-  @override
-  String get no_images_available => 'Không có hình ảnh';
-
-  @override
-  String get customise_text => 'Tùy chỉnh văn bản';
-
-  @override
-  String get text_size => 'Cỡ chữ';
-
-  @override
-  String get text_color => 'Màu chữ';
-
-  @override
-  String get text_shadow => 'Bóng chữ';
-
-  @override
-  String get apply => 'Áp dụng';
 
   @override
   String get my_plans => 'Lộ trình của tôi';
@@ -454,15 +367,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get no_days_available => 'Không tìm thấy ngày nào';
 
   @override
-  String get recitations_title => 'Bài tụng';
-
-  @override
-  String get recitations_my_recitations => 'Bài tụng của tôi';
-
-  @override
-  String get browse_recitations => 'Xem các bài tụng';
-
-  @override
   String get recitations_search => 'Tìm kiếm bài tụng...';
 
   @override
@@ -473,12 +377,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get recitations_no_content => 'Không có bài tụng nào';
-
-  @override
-  String get recitations_no_saved => 'Chưa lưu bài tụng nào';
-
-  @override
-  String get recitations_login_prompt => 'Đăng nhập để xem các bài tụng đã lưu';
 
   @override
   String get my_recitation_collection_new_title => 'Tuyển tập mới';
@@ -649,12 +547,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get something_went_wrong => 'Đã xảy ra lỗi. Vui lòng thử lại';
 
   @override
-  String get onboarding_quote_citation => '— Kinh Pháp Cú 122';
-
-  @override
-  String get onboarding_traditions_question => 'Bạn theo\ntruyền thống nào?';
-
-  @override
   String get onboarding_tradition_title =>
       'Bạn theo lời dạy của Đức Phật như thế nào?';
 
@@ -663,53 +555,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chọn một hoặc nhiều truyền thống cho nội dung của bạn. Bạn có thể thay đổi bất cứ lúc nào trong Cài đặt.';
 
   @override
-  String get onboarding_tradition_option_intro => 'Theo:';
-
-  @override
   String get onboarding_tradition_show_all_title => 'Hiển thị tất cả';
-
-  @override
-  String get onboarding_skip_for_now => 'Để sau';
-
-  @override
-  String get onboarding_add_another_tradition => 'Thêm truyền thống khác';
-
-  @override
-  String get onboarding_select_all => 'Chọn tất cả';
-
-  @override
-  String get onboarding_event_enrollment_error =>
-      'Không thể đăng ký cho bạn. Hãy kiểm tra kết nối và thử lại';
-
-  @override
-  String get onboarding_event_question => 'Tham gia một\nsự kiện?';
-
-  @override
-  String get onboarding_event_optional => 'Không bắt buộc · Nhấn để đăng ký';
-
-  @override
-  String onboarding_event_duration(String description, int days) {
-    return '$description · $days ngày';
-  }
-
-  @override
-  String get onboarding_event_reminder_note =>
-      'Chúng tôi sẽ gửi lời nhắc hằng ngày cho bạn lúc 7:30 sáng. (Có thể thay đổi bất cứ lúc nào.)';
-
-  @override
-  String get tradition_theravada => 'Nam tông';
-
-  @override
-  String get tradition_zen => 'Thiền tông';
-
-  @override
-  String get tradition_tibetan_buddhism => 'Phật giáo Tây Tạng';
-
-  @override
-  String get tradition_pure_land => 'Tịnh Độ';
-
-  @override
-  String get tradition_ambedkar_buddhism => 'Phật giáo Ambedkar';
 
   @override
   String get plan_go_to_practice => 'Vào tu tập';
@@ -741,10 +587,6 @@ class AppLocalizationsVi extends AppLocalizations {
       'Không thể tải.\nHãy kiểm tra kết nối và thử lại';
 
   @override
-  String get connect_coming_soon_subtitle =>
-      'Các vị thầy, cộng đồng, thử thách và sự kiện đồng hành cùng bạn trên con đường tu tập';
-
-  @override
   String get connect_subtitle => 'Tìm nhóm và cùng nhau tu tập';
 
   @override
@@ -764,17 +606,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get connect_groups_empty_title => 'Không còn nhóm nào';
 
   @override
-  String get connect_groups_empty_subtitle =>
-      'Chúc mừng, bạn đã tham gia tất cả các nhóm của chúng tôi! Hãy quay lại sau nhé. Các nhóm mới sắp ra mắt...';
-
-  @override
   String get connect_tab_feed => 'Bảng tin';
 
   @override
   String get connect_tab_events => 'Sự kiện';
-
-  @override
-  String get connect_tab_posts => 'Bài đăng';
 
   @override
   String get connect_tab_practices => 'Pháp tu';
@@ -789,10 +624,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get connect_segment_discover => 'Khám phá';
 
   @override
-  String get connect_empty_discover_posts =>
-      'Không có bài đăng nào để khám phá';
-
-  @override
   String get connect_empty_discover_events =>
       'Không có sự kiện nào để khám phá';
 
@@ -803,10 +634,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get connect_empty_discover_groups => 'Không có nhóm nào để khám phá';
 
   @override
-  String get connect_empty_discover_practices =>
-      'Không có pháp tu nào để khám phá';
-
-  @override
   String get connect_all_groups => 'Tất cả nhóm';
 
   @override
@@ -814,9 +641,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_title => 'Không có sự kiện sắp tới';
-
-  @override
-  String get connect_my_empty_posts_title => 'Chưa có bài đăng nào';
 
   @override
   String get connect_my_empty_groups_title => 'Chưa có nhóm nào';
@@ -830,10 +654,6 @@ class AppLocalizationsVi extends AppLocalizations {
       'Các nhóm của bạn chưa lên lịch sự kiện nào';
 
   @override
-  String get connect_my_empty_posts_subtitle =>
-      'Các nhóm của bạn chưa đăng bài nào';
-
-  @override
   String get connect_my_empty_groups_subtitle =>
       'Bạn chưa tham gia nhóm nào. Hãy khám phá vài nhóm để cùng tu tập';
 
@@ -843,19 +663,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_browse => 'Xem các sự kiện mở';
-
-  @override
-  String get connect_my_empty_posts_browse => 'Xem các bài đăng khác';
-
-  @override
-  String get connect_my_empty_practices_title => 'Chưa có pháp tu nào';
-
-  @override
-  String get connect_my_empty_practices_subtitle =>
-      'Các nhóm của bạn chưa bắt đầu pháp tu nào';
-
-  @override
-  String get connect_my_empty_practices_browse => 'Xem các pháp tu khác';
 
   @override
   String connect_comment_replying_to(String handle) {
@@ -895,9 +702,6 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get connect_post_comments_empty =>
       'Chưa có bình luận nào. Hãy bắt đầu cuộc trò chuyện';
-
-  @override
-  String get connect_caption_more => 'Xem thêm';
 
   @override
   String get connect_online => 'Trực tuyến';
@@ -944,16 +748,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get connect_events_filter_empty_hybrid => 'Không có sự kiện kết hợp';
 
   @override
-  String get connect_open => 'Mở';
-
-  @override
   String get connect_event_fallback_title => 'Sự kiện';
 
   @override
   String get connect_group_fallback_title => 'Nhóm';
-
-  @override
-  String get connect_event_enter => 'Vào';
 
   @override
   String get connect_event_participation_prompt =>
@@ -1014,22 +812,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get connect_event_tab_videos => 'Video';
 
   @override
-  String get connect_event_tab_links => 'Liên kết';
-
-  @override
   String get connect_event_tab_about => 'Thông tin';
 
   @override
   String get connect_event_links_title => 'Thông tin thêm về sự kiện';
-
-  @override
-  String get connect_event_links_empty => 'Chưa có liên kết nào';
-
-  @override
-  String get connect_event_link_tap_to_join => 'Nhấn để tham gia';
-
-  @override
-  String get connect_event_link_open => 'Mở liên kết';
 
   @override
   String get connect_event_date_tba => 'Ngày sẽ được thông báo sau';
@@ -1041,13 +827,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get connect_event_where => 'Địa điểm';
 
   @override
-  String get connect_event_practices => 'Pháp tu của sự kiện';
-
-  @override
   String get connect_event_tab_accumulations => 'Tích lũy';
-
-  @override
-  String get connect_event_tab_recitations => 'Bài tụng';
 
   @override
   String get connect_event_add_recitations => 'Thêm lượt tụng';
@@ -1096,18 +876,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get creator_featured_plan => 'Lộ trình nổi bật';
 
   @override
-  String get audio_init_error =>
-      'Không thể khởi động trình phát âm thanh. Hãy kiểm tra kết nối và thử lại';
-
-  @override
-  String get meditation_audio_load_error =>
-      'Không thể tải. Hãy kiểm tra kết nối và thử lại';
-
-  @override
-  String get prayer_audio_load_error =>
-      'Không thể tải âm thanh. Hãy kiểm tra kết nối và thử lại';
-
-  @override
   String get home_no_series_found => 'Không tìm thấy chuỗi lộ trình nào';
 
   @override
@@ -1117,32 +885,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get home_celebrated_by => 'Được kỷ niệm bởi: ';
 
   @override
-  String get reader_settings_tooltip => 'Cài đặt trình đọc';
-
-  @override
-  String get reader_translate_tooltip => 'Hiện bản dịch';
-
-  @override
-  String get reader_translate_unavailable => 'Kinh văn này chưa có bản dịch';
-
-  @override
   String get reader_font_size_tooltip => 'Cỡ chữ';
 
   @override
-  String reader_version_title(String language) {
-    return 'Phiên bản · $language';
-  }
-
-  @override
-  String reader_script_title(String language) {
-    return 'Hệ chữ · $language';
-  }
-
-  @override
   String get reader_versions_load_error => 'Không thể tải các phiên bản';
-
-  @override
-  String get reader_scripts_load_error => 'Không thể tải hệ chữ';
 
   @override
   String get reader_languages_load_error => 'Không thể tải ngôn ngữ';
@@ -1153,39 +899,10 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String reader_no_scripts_in_language(String language) {
-    return 'Không có hệ chữ nào cho $language';
-  }
-
-  @override
   String get reader_no_languages => 'Kinh văn này chưa có ngôn ngữ nào';
 
   @override
   String get reader_license => 'Giấy phép';
-
-  @override
-  String get reader_version_details_load_error =>
-      'Không thể tải thông tin phiên bản';
-
-  @override
-  String get reader_no_version_info =>
-      'Không có thêm thông tin về phiên bản này';
-
-  @override
-  String get recitation_unavailable =>
-      'Nội dung bài tụng hiện không khả dụng.\nHãy thử lại sau hoặc liên hệ bộ phận hỗ trợ';
-
-  @override
-  String get recitation_sign_in_required =>
-      'Đăng nhập để truy cập bài tụng này';
-
-  @override
-  String get my_recitations_load_error =>
-      'Không thể tải.\nHãy kiểm tra kết nối và thử lại';
-
-  @override
-  String get recitations_load_error =>
-      'Không thể tải bài tụng.\nHãy thử lại sau';
 
   @override
   String get text_search_hint => 'Nhập để tìm kiếm';
@@ -1197,15 +914,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get text_search_error => 'Không thể tìm kiếm.\nVui lòng thử lại';
 
   @override
-  String get unknown_error => 'Lỗi không xác định';
-
-  @override
   String get create_image_share_error => 'Không thể chia sẻ. Vui lòng thử lại';
-
-  @override
-  String version_search_no_results(String query) {
-    return 'Không tìm thấy phiên bản nào cho \"$query\"';
-  }
 
   @override
   String get my_plans_sign_in_prompt => 'Đăng nhập để xem lộ trình của bạn';
@@ -1243,12 +952,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get collection_audio_versions => 'Bản âm thanh';
-
-  @override
-  String get image => 'Hình ảnh';
-
-  @override
-  String get feedback => 'Gửi góp ý';
 
   @override
   String get author => 'Tác giả';
@@ -1309,9 +1012,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get routine_collapse_all => 'Thu gọn tất cả';
-
-  @override
-  String get routine_delete_time_block => 'Xóa khung giờ';
 
   @override
   String get routine_add_plan => 'Thêm lộ trình';
@@ -1383,9 +1083,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get continueWithPhone => 'Tiếp tục bằng số điện thoại';
 
   @override
-  String get continueAsGuest => 'Tiếp tục với tư cách khách';
-
-  @override
   String get exploreAsGuest => 'Khám phá với tư cách khách';
 
   @override
@@ -1435,9 +1132,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get source => 'Nguồn';
-
-  @override
-  String get searchResults => 'Kết quả tìm kiếm';
 
   @override
   String get noTasks => 'Không có nhiệm vụ nào';
@@ -1495,12 +1189,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get updateOrderError => 'Không thể cập nhật thứ tự. Vui lòng thử lại';
-
-  @override
-  String get loadFailed => 'Không thể tải. Hãy kiểm tra kết nối và thử lại';
-
-  @override
   String get captureError => 'Không thể chụp mã QR. Vui lòng thử lại';
 
   @override
@@ -1533,30 +1221,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get plan_enroll => 'Đăng ký';
 
   @override
-  String get show_second_version => 'Hiện bản thứ hai';
-
-  @override
-  String get enable_add_msg =>
-      'Bật để thêm bản dịch hoặc phiên âm bên cạnh văn bản chính';
-
-  @override
-  String get main_version => 'Bản chính';
-
-  @override
-  String get second_version => 'Bản thứ hai';
-
-  @override
-  String get second_version_msg =>
-      'Bản thứ hai sẽ hiển thị bên dưới mỗi câu kệ của văn bản chính';
-
-  @override
   String get root_text => 'Chánh văn';
 
   @override
   String get version => 'Phiên bản';
-
-  @override
-  String get parallel_version => 'Bản đối chiếu';
 
   @override
   String get reader_languages_title => 'Ngôn ngữ';
@@ -1572,15 +1240,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get version_not_available => 'Không khả dụng';
-
-  @override
-  String get read_full_text => 'Đọc toàn văn';
-
-  @override
-  String get reader_source_label => 'Nguồn';
-
-  @override
-  String get reader_license_label => 'Giấy phép';
 
   @override
   String series_stats(int planCount, int totalDays) {
@@ -1623,12 +1282,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get edit_profile_save => 'Lưu';
-
-  @override
-  String get edit_profile_first_name => 'Tên';
-
-  @override
-  String get edit_profile_last_name => 'Họ';
 
   @override
   String get edit_profile_display_name => 'Tên hiển thị';
@@ -1777,9 +1430,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get me_accumulation => 'Tổng tích lũy';
 
   @override
-  String get me_counts => 'lượt đếm';
-
-  @override
   String get me_minutes => 'phút';
 
   @override
@@ -1791,11 +1441,6 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get me_days_plan_practiced_suffix =>
       'tổng số ngày lộ trình đã hoàn thành';
-
-  @override
-  String me_streak_share_message(int count, String appName) {
-    return 'Tôi đã tu tập $count ngày liên tiếp trên $appName!';
-  }
 
   @override
   String get me_streak_share_quote =>
@@ -1852,11 +1497,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendar_day_label => 'Ngày';
 
   @override
-  String calendar_day_month(int day, int month) {
-    return 'Ngày $day · Tháng $month';
-  }
-
-  @override
   String calendar_lunar_month(String ordinal) {
     return 'Tháng $ordinal âm lịch';
   }
@@ -1865,25 +1505,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get moon_phase_new_moon => 'Trăng mới';
 
   @override
-  String get moon_phase_waxing_crescent => 'Trăng lưỡi liềm đầu tháng';
-
-  @override
   String get moon_phase_first_quarter => 'Trăng thượng huyền';
 
   @override
-  String get moon_phase_waxing_gibbous => 'Trăng khuyết đầu tháng';
-
-  @override
   String get moon_phase_full_moon => 'Trăng tròn';
-
-  @override
-  String get moon_phase_waning_gibbous => 'Trăng khuyết cuối tháng';
-
-  @override
-  String get moon_phase_last_quarter => 'Trăng hạ huyền';
-
-  @override
-  String get moon_phase_waning_crescent => 'Trăng lưỡi liềm cuối tháng';
 
   @override
   String get join => 'Tham gia';
@@ -2451,27 +2076,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get reader_videos => 'Video';
 
   @override
-  String get reader_about_this_version => 'Về phiên bản này';
-
-  @override
-  String reader_version_count(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count phiên bản',
-      one: '1 phiên bản',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get mala_no_mantras => 'Không có thần chú nào';
 
   @override
   String get mala_count_load_error => 'Không thể tải số đếm của bạn';
-
-  @override
-  String get mala_mantra_label => 'Thần chú';
 
   @override
   String get bookmarks_empty_all_title => 'Chưa có dấu trang nào';
@@ -2651,26 +2259,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get author_plans_load_error => 'Không thể tải lộ trình';
 
   @override
-  String source_with_value(String value) {
-    return 'Nguồn: $value';
-  }
-
-  @override
-  String license_with_value(String value) {
-    return 'Giấy phép: $value';
-  }
-
-  @override
-  String loading_previous_pages(int count) {
-    return 'Đang tải phần trước... ($count trang)';
-  }
-
-  @override
-  String loading_more_pages(int count) {
-    return 'Đang tải thêm... ($count trang)';
-  }
-
-  @override
   String get drag_to_resize => 'Kéo để đổi kích thước';
 
   @override
@@ -2686,9 +2274,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String group_accumulator_share_message_no_group(String accumulation) {
     return 'Tôi đang tham gia chương trình tích lũy \"$accumulation\" trên WeBuddhist. Hãy cùng tham gia với tôi!';
   }
-
-  @override
-  String get group_chat_title => 'Trò chuyện';
 
   @override
   String get chats_title => 'Trò chuyện';
@@ -2712,9 +2297,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get group_chat_message_hint => 'Tin nhắn';
-
-  @override
-  String get group_chat_join_to_send => 'Tham gia trò chuyện để gửi tin nhắn';
 
   @override
   String get group_chat_today => 'Hôm nay';
@@ -3013,9 +2595,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get event_live_badge => 'TRỰC TIẾP';
 
   @override
-  String get event_live_audio => 'Âm thanh trực tiếp';
-
-  @override
   String get event_live_video_mode => 'Video';
 
   @override
@@ -3097,9 +2676,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get event_prayer_pray => 'Cầu nguyện';
 
   @override
-  String get event_prayer_praying => 'Đã cầu nguyện';
-
-  @override
   String event_prayer_my_count(int count) {
     return '+$count';
   }
@@ -3154,11 +2730,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get event_prayer_praying_for_you => 'Đã cầu nguyện cho bạn';
-
-  @override
-  String event_prayer_praying_for(String name) {
-    return 'Đã cầu nguyện cho $name';
-  }
 
   @override
   String get event_prayer_your_request => 'Lời nhờ của bạn';
@@ -3448,13 +3019,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get connect_failed_unlike_post_error => 'Không thể bỏ thích bài đăng';
-
-  @override
-  String get connect_failed_like_comment_error => 'Không thể thích bình luận';
-
-  @override
-  String get connect_failed_unlike_comment_error =>
-      'Không thể bỏ thích bình luận';
 
   @override
   String get group_events_load_error =>
@@ -4273,9 +3837,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timer_your_timers => 'Bộ hẹn giờ của bạn';
 
   @override
-  String get timer_custom_timer => 'Hẹn giờ tùy chỉnh';
-
-  @override
   String get timer_ambient_sounds_title => 'Âm thanh nền';
 
   @override
@@ -4314,15 +3875,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get splash_tagline_2 => 'Phật tử chúng ta tu tập mỗi ngày';
 
   @override
-  String get timer_list_subtitle =>
-      'Nhấn phát để bắt đầu, hoặc tự tạo bộ hẹn giờ riêng.';
-
-  @override
   String get timer_create_custom => 'Tạo bộ hẹn giờ tùy chỉnh';
-
-  @override
-  String get timer_create_custom_subtitle =>
-      'Chọn thời lượng và âm thanh nền (nếu muốn)';
 
   @override
   String get timer_starting => 'Đang bắt đầu...';

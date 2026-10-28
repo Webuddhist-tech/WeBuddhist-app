@@ -21,15 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboarding_welcome => 'Welcome to';
 
   @override
-  String get onboarding_setup_subtitle =>
-      'Let\'s get you set up, It\'ll only take a minute';
-
-  @override
   String get onboarding_tagline => 'Learn, practice, and connect. Daily.';
-
-  @override
-  String get onboarding_quote =>
-      'Drop by drop the water pot is filled. Likewise, the wise person, gathering it little by little, fills themselves with good.';
 
   @override
   String get onboarding_find_peace => 'Get started';
@@ -43,9 +35,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get onboarding_language_subtitle =>
       'This sets the language of the app';
-
-  @override
-  String get onboarding_choose_option => 'Choose at least one:';
 
   @override
   String get onboarding_all_set => 'You\'re all set';
@@ -69,43 +58,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Spaces, events, newsfeed and chat';
 
   @override
-  String get home_recitation => 'recitations';
-
-  @override
   String get home_today => 'Today';
 
   @override
-  String get home_good_morning => 'Good morning';
-
-  @override
-  String get home_good_afternoon => 'Good afternoon';
-
-  @override
-  String get home_good_evening => 'Good evening';
-
-  @override
-  String get home_meditationTitle => 'Meditation';
-
-  @override
-  String get home_prayerTitle => 'Prayer of the day';
-
-  @override
-  String get home_scripture => 'Guided scripture';
-
-  @override
-  String get home_meditation => 'Guided meditation';
-
-  @override
-  String get home_goDeeper => 'Go deeper';
-
-  @override
-  String get home_intention => 'My intention for today';
-
-  @override
   String get home_overall_stats => 'Overall stats';
-
-  @override
-  String get home_plans => 'plans';
 
   @override
   String home_plans_count(int count) {
@@ -266,9 +222,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timer_min => 'min';
 
   @override
-  String get timer_start => 'Start';
-
-  @override
   String get timer_finish => 'Finish';
 
   @override
@@ -276,9 +229,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get home_hello_prefix => 'Hello, ';
-
-  @override
-  String get home_greeting_fallback_name => 'there';
 
   @override
   String home_share_prompt(String appName) {
@@ -319,9 +269,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get text_search => 'Search';
 
   @override
-  String get text_toc_versions => 'Versions';
-
-  @override
   String get text_commentary => 'Commentaries';
 
   @override
@@ -329,9 +276,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get no_translation => 'No translations found';
-
-  @override
-  String get text_close_commentary => 'Close commentary';
 
   @override
   String get show_more => 'Show more';
@@ -349,9 +293,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get no_content => 'No content found';
 
   @override
-  String get no_commentary => 'No commentaries found';
-
-  @override
   String commentary_not_available_for_language(String language) {
     return '$language commentary not available';
   }
@@ -360,37 +301,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loading => 'Loading...';
 
   @override
-  String get choose_bg_image => 'Choose a background image';
-
-  @override
   String get save => 'Save';
 
   @override
   String get done => 'Done';
-
-  @override
-  String get customise_message => 'Tap the customize icon to adjust text style';
-
-  @override
-  String get download_image => 'Download image';
-
-  @override
-  String get no_images_available => 'No images available';
-
-  @override
-  String get customise_text => 'Customize text';
-
-  @override
-  String get text_size => 'Text size';
-
-  @override
-  String get text_color => 'Text color';
-
-  @override
-  String get text_shadow => 'Text shadow';
-
-  @override
-  String get apply => 'Apply';
 
   @override
   String get my_plans => 'My plans';
@@ -451,15 +365,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get no_days_available => 'No days found';
 
   @override
-  String get recitations_title => 'Recitations';
-
-  @override
-  String get recitations_my_recitations => 'My recitations';
-
-  @override
-  String get browse_recitations => 'Browse recitations';
-
-  @override
   String get recitations_search => 'Search for recitations...';
 
   @override
@@ -470,13 +375,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recitations_no_content => 'No recitations available';
-
-  @override
-  String get recitations_no_saved => 'No saved recitations';
-
-  @override
-  String get recitations_login_prompt =>
-      'Sign in to view your saved recitations';
 
   @override
   String get my_recitation_collection_new_title => 'New Collection';
@@ -646,13 +544,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get something_went_wrong => 'Something went wrong. Please try again';
 
   @override
-  String get onboarding_quote_citation => '— Dhammapada 122';
-
-  @override
-  String get onboarding_traditions_question =>
-      'Which traditions\ndo you follow?';
-
-  @override
   String get onboarding_tradition_title =>
       'How do you follow the Buddha’s teachings?';
 
@@ -661,53 +552,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose one or more traditions for your content. You can change this anytime in Settings.';
 
   @override
-  String get onboarding_tradition_option_intro => 'Through:';
-
-  @override
   String get onboarding_tradition_show_all_title => 'Show me everything';
-
-  @override
-  String get onboarding_skip_for_now => 'Skip for now';
-
-  @override
-  String get onboarding_add_another_tradition => 'Add another tradition';
-
-  @override
-  String get onboarding_select_all => 'Select all';
-
-  @override
-  String get onboarding_event_enrollment_error =>
-      'Unable to enroll you. Check your connection and try again';
-
-  @override
-  String get onboarding_event_question => 'Join an\nevent?';
-
-  @override
-  String get onboarding_event_optional => 'Optional · Tap to enroll';
-
-  @override
-  String onboarding_event_duration(String description, int days) {
-    return '$description · $days days';
-  }
-
-  @override
-  String get onboarding_event_reminder_note =>
-      'We\'ll send you a daily reminder at 7:30 AM. (Change anytime.)';
-
-  @override
-  String get tradition_theravada => 'Theravada';
-
-  @override
-  String get tradition_zen => 'Zen';
-
-  @override
-  String get tradition_tibetan_buddhism => 'Tibetan Buddhism';
-
-  @override
-  String get tradition_pure_land => 'Pure Land';
-
-  @override
-  String get tradition_ambedkar_buddhism => 'Ambedkar Buddhism';
 
   @override
   String get plan_go_to_practice => 'Go to practice';
@@ -738,10 +583,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Unable to load.\nCheck your connection and try again';
 
   @override
-  String get connect_coming_soon_subtitle =>
-      'Teachers, communities, challenges, and events to support you on the path';
-
-  @override
   String get connect_subtitle => 'Find spaces and practice together';
 
   @override
@@ -761,17 +602,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_groups_empty_title => 'No more spaces';
 
   @override
-  String get connect_groups_empty_subtitle =>
-      'Congrats, you\'ve joined all our spaces! Check back soon. New ones are on the way...';
-
-  @override
   String get connect_tab_feed => 'Feed';
 
   @override
   String get connect_tab_events => 'Events';
-
-  @override
-  String get connect_tab_posts => 'Posts';
 
   @override
   String get connect_tab_practices => 'Practices';
@@ -786,9 +620,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_segment_discover => 'Discover';
 
   @override
-  String get connect_empty_discover_posts => 'No posts to discover';
-
-  @override
   String get connect_empty_discover_events => 'No events to discover';
 
   @override
@@ -798,9 +629,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_empty_discover_groups => 'No spaces to discover';
 
   @override
-  String get connect_empty_discover_practices => 'No practices to discover';
-
-  @override
   String get connect_all_groups => 'All spaces';
 
   @override
@@ -808,9 +636,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_title => 'No upcoming events';
-
-  @override
-  String get connect_my_empty_posts_title => 'No posts yet';
 
   @override
   String get connect_my_empty_groups_title => 'No spaces yet';
@@ -824,10 +649,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your spaces haven\'t scheduled any events';
 
   @override
-  String get connect_my_empty_posts_subtitle =>
-      'Your spaces haven\'t posted anything';
-
-  @override
   String get connect_my_empty_groups_subtitle =>
       'You haven\'t joined any spaces yet. Discover some to practice with';
 
@@ -837,19 +658,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_browse => 'Browse open events';
-
-  @override
-  String get connect_my_empty_posts_browse => 'Browse other posts';
-
-  @override
-  String get connect_my_empty_practices_title => 'No practices yet';
-
-  @override
-  String get connect_my_empty_practices_subtitle =>
-      'Your spaces haven\'t started any practices';
-
-  @override
-  String get connect_my_empty_practices_browse => 'Browse other practices';
 
   @override
   String connect_comment_replying_to(String handle) {
@@ -889,9 +697,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connect_post_comments_empty =>
       'No comments yet. Start the conversation';
-
-  @override
-  String get connect_caption_more => 'More';
 
   @override
   String get connect_online => 'Online';
@@ -936,16 +741,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_events_filter_empty_hybrid => 'No hybrid events';
 
   @override
-  String get connect_open => 'Open';
-
-  @override
   String get connect_event_fallback_title => 'Event';
 
   @override
   String get connect_group_fallback_title => 'Space';
-
-  @override
-  String get connect_event_enter => 'Enter';
 
   @override
   String get connect_event_participation_prompt => 'How are you attending?';
@@ -1005,22 +804,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_tab_videos => 'Videos';
 
   @override
-  String get connect_event_tab_links => 'Links';
-
-  @override
   String get connect_event_tab_about => 'About';
 
   @override
   String get connect_event_links_title => 'More event details';
-
-  @override
-  String get connect_event_links_empty => 'No links yet';
-
-  @override
-  String get connect_event_link_tap_to_join => 'Tap to join';
-
-  @override
-  String get connect_event_link_open => 'Open link';
 
   @override
   String get connect_event_date_tba => 'Date to be announced';
@@ -1032,13 +819,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connect_event_where => 'Where';
 
   @override
-  String get connect_event_practices => 'Event practices';
-
-  @override
   String get connect_event_tab_accumulations => 'Accumulations';
-
-  @override
-  String get connect_event_tab_recitations => 'Recitations';
 
   @override
   String get connect_event_add_recitations => 'Add recitations';
@@ -1087,18 +868,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get creator_featured_plan => 'Featured plans';
 
   @override
-  String get audio_init_error =>
-      'Unable to initialize audio player. Check your connection and try again';
-
-  @override
-  String get meditation_audio_load_error =>
-      'Unable to load. Check your connection and try again';
-
-  @override
-  String get prayer_audio_load_error =>
-      'Unable to load audio. Check your connection and try again';
-
-  @override
   String get home_no_series_found => 'No series found';
 
   @override
@@ -1108,33 +877,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home_celebrated_by => 'Celebrated by: ';
 
   @override
-  String get reader_settings_tooltip => 'Reader settings';
-
-  @override
-  String get reader_translate_tooltip => 'Show translation';
-
-  @override
-  String get reader_translate_unavailable =>
-      'Translation not available for this text';
-
-  @override
   String get reader_font_size_tooltip => 'Font size';
 
   @override
-  String reader_version_title(String language) {
-    return 'Version · $language';
-  }
-
-  @override
-  String reader_script_title(String language) {
-    return 'Script · $language';
-  }
-
-  @override
   String get reader_versions_load_error => 'Unable to load versions';
-
-  @override
-  String get reader_scripts_load_error => 'Failed to load scripts';
 
   @override
   String get reader_languages_load_error => 'Unable to load languages';
@@ -1145,38 +891,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String reader_no_scripts_in_language(String language) {
-    return 'No scripts available in $language';
-  }
-
-  @override
   String get reader_no_languages => 'No languages available for this text';
 
   @override
   String get reader_license => 'License';
-
-  @override
-  String get reader_version_details_load_error =>
-      'Unable to load version details';
-
-  @override
-  String get reader_no_version_info =>
-      'No additional information is available for this version';
-
-  @override
-  String get recitation_unavailable =>
-      'Recitation content is currently unavailable.\nTry again later or contact support';
-
-  @override
-  String get recitation_sign_in_required => 'Sign in to access this recitation';
-
-  @override
-  String get my_recitations_load_error =>
-      'Unable to load.\nCheck your connection and try again';
-
-  @override
-  String get recitations_load_error =>
-      'Unable to load recitations.\nTry again later';
 
   @override
   String get text_search_hint => 'Type to search';
@@ -1188,15 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get text_search_error => 'Unable to perform search.\nPlease try again';
 
   @override
-  String get unknown_error => 'Unknown error';
-
-  @override
   String get create_image_share_error => 'Unable to share. Please try again';
-
-  @override
-  String version_search_no_results(String query) {
-    return 'No versions found for \"$query\"';
-  }
 
   @override
   String get my_plans_sign_in_prompt => 'Sign in to view your plans';
@@ -1234,12 +944,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get collection_audio_versions => 'Audio versions';
-
-  @override
-  String get image => 'Image';
-
-  @override
-  String get feedback => 'Give feedback';
 
   @override
   String get author => 'Author';
@@ -1300,9 +1004,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routine_collapse_all => 'Collapse all';
-
-  @override
-  String get routine_delete_time_block => 'Remove time block';
 
   @override
   String get routine_add_plan => 'Add plan';
@@ -1374,9 +1075,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueWithPhone => 'Continue with phone';
 
   @override
-  String get continueAsGuest => 'Continue as guest';
-
-  @override
   String get exploreAsGuest => 'Explore as a guest';
 
   @override
@@ -1428,9 +1126,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get source => 'Source';
-
-  @override
-  String get searchResults => 'Search results';
 
   @override
   String get noTasks => 'No tasks available';
@@ -1488,13 +1183,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get updateOrderError => 'Unable to update order. Please try again';
-
-  @override
-  String get loadFailed =>
-      'Unable to load. Check your connection and try again';
-
-  @override
   String get captureError => 'Failed to capture QR code. Please try again';
 
   @override
@@ -1527,30 +1215,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get plan_enroll => 'Enroll';
 
   @override
-  String get show_second_version => 'Show second version';
-
-  @override
-  String get enable_add_msg =>
-      'Enable to add a translation or transliteration alongside the main text';
-
-  @override
-  String get main_version => 'Main version';
-
-  @override
-  String get second_version => 'Second version';
-
-  @override
-  String get second_version_msg =>
-      'The second version will appear below each verse of the main text';
-
-  @override
   String get root_text => 'Root text';
 
   @override
   String get version => 'Versions';
-
-  @override
-  String get parallel_version => 'Parallel version';
 
   @override
   String get reader_languages_title => 'Languages';
@@ -1566,15 +1234,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get version_not_available => 'Not available';
-
-  @override
-  String get read_full_text => 'Read full text';
-
-  @override
-  String get reader_source_label => 'Source';
-
-  @override
-  String get reader_license_label => 'License';
 
   @override
   String series_stats(int planCount, int totalDays) {
@@ -1617,12 +1276,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get edit_profile_save => 'Save';
-
-  @override
-  String get edit_profile_first_name => 'First name';
-
-  @override
-  String get edit_profile_last_name => 'Last name';
 
   @override
   String get edit_profile_display_name => 'Display name';
@@ -1769,9 +1422,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get me_accumulation => 'Total accumulations';
 
   @override
-  String get me_counts => 'counts';
-
-  @override
   String get me_minutes => 'minutes';
 
   @override
@@ -1782,11 +1432,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get me_days_plan_practiced_suffix => 'total plan days completed';
-
-  @override
-  String me_streak_share_message(int count, String appName) {
-    return 'I\'m on a $count-day streak on $appName!';
-  }
 
   @override
   String get me_streak_share_quote => 'My current streak on WeBuddhist!';
@@ -1842,11 +1487,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendar_day_label => 'Day';
 
   @override
-  String calendar_day_month(int day, int month) {
-    return 'Day $day · Month $month';
-  }
-
-  @override
   String calendar_lunar_month(String ordinal) {
     return '$ordinal lunar month';
   }
@@ -1855,25 +1495,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moon_phase_new_moon => 'New moon';
 
   @override
-  String get moon_phase_waxing_crescent => 'Waxing crescent';
-
-  @override
   String get moon_phase_first_quarter => 'First quarter';
 
   @override
-  String get moon_phase_waxing_gibbous => 'Waxing gibbous';
-
-  @override
   String get moon_phase_full_moon => 'Full moon';
-
-  @override
-  String get moon_phase_waning_gibbous => 'Waning gibbous';
-
-  @override
-  String get moon_phase_last_quarter => 'Last quarter';
-
-  @override
-  String get moon_phase_waning_crescent => 'Waning crescent';
 
   @override
   String get join => 'Join';
@@ -2438,27 +2063,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_videos => 'Videos';
 
   @override
-  String get reader_about_this_version => 'About this version';
-
-  @override
-  String reader_version_count(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count versions',
-      one: '1 version',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get mala_no_mantras => 'No mantras available';
 
   @override
   String get mala_count_load_error => 'Could not load your count';
-
-  @override
-  String get mala_mantra_label => 'Mantra';
 
   @override
   String get bookmarks_empty_all_title => 'Nothing bookmarked yet';
@@ -2634,26 +2242,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get author_plans_load_error => 'Unable to load plans';
 
   @override
-  String source_with_value(String value) {
-    return 'Source: $value';
-  }
-
-  @override
-  String license_with_value(String value) {
-    return 'License: $value';
-  }
-
-  @override
-  String loading_previous_pages(int count) {
-    return 'Loading previous... ($count pages)';
-  }
-
-  @override
-  String loading_more_pages(int count) {
-    return 'Loading more... ($count pages)';
-  }
-
-  @override
   String get drag_to_resize => 'Drag to resize';
 
   @override
@@ -2669,9 +2257,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String group_accumulator_share_message_no_group(String accumulation) {
     return 'I am taking part in the \"$accumulation\" accumulation on WeBuddhist. Come join me!';
   }
-
-  @override
-  String get group_chat_title => 'Chat';
 
   @override
   String get chats_title => 'Chats';
@@ -2694,9 +2279,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get group_chat_message_hint => 'Message';
-
-  @override
-  String get group_chat_join_to_send => 'Join chat to send message';
 
   @override
   String get group_chat_today => 'Today';
@@ -2991,9 +2573,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_live_badge => 'LIVE';
 
   @override
-  String get event_live_audio => 'Live audio';
-
-  @override
   String get event_live_video_mode => 'Video';
 
   @override
@@ -3074,9 +2653,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get event_prayer_pray => 'Pray';
 
   @override
-  String get event_prayer_praying => 'Prayed';
-
-  @override
   String event_prayer_my_count(int count) {
     return '+$count';
   }
@@ -3131,11 +2707,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get event_prayer_praying_for_you => 'Prayed for you';
-
-  @override
-  String event_prayer_praying_for(String name) {
-    return 'Prayed for $name';
-  }
 
   @override
   String get event_prayer_your_request => 'Your request';
@@ -3421,12 +2992,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connect_failed_unlike_post_error => 'Unable to unlike post';
-
-  @override
-  String get connect_failed_like_comment_error => 'Unable to like comment';
-
-  @override
-  String get connect_failed_unlike_comment_error => 'Unable to unlike comment';
 
   @override
   String get group_events_load_error =>
@@ -4239,9 +3804,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timer_your_timers => 'Your timers';
 
   @override
-  String get timer_custom_timer => 'Custom timer';
-
-  @override
   String get timer_ambient_sounds_title => 'Ambient sounds';
 
   @override
@@ -4280,14 +3842,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splash_tagline_2 => 'We Buddhists practice daily';
 
   @override
-  String get timer_list_subtitle => 'Tap play to begin, or build your own.';
-
-  @override
   String get timer_create_custom => 'Create a custom timer';
-
-  @override
-  String get timer_create_custom_subtitle =>
-      'Pick a length and optional background sound';
 
   @override
   String get timer_starting => 'Starting...';

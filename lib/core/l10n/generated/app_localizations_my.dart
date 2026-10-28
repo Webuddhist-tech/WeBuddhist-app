@@ -21,15 +21,7 @@ class AppLocalizationsMy extends AppLocalizations {
   String get onboarding_welcome => 'ကြိုဆိုပါသည်';
 
   @override
-  String get onboarding_setup_subtitle =>
-      'သင့်အတွက် စတင်ပြင်ဆင်ကြပါစို့၊ တစ်မိနစ်သာ ကြာပါမည်';
-
-  @override
   String get onboarding_tagline => 'လေ့လာ၊ ကျင့်ကြံ၊ ချိတ်ဆက်ပါ။ နေ့စဉ်။';
-
-  @override
-  String get onboarding_quote =>
-      'ရေစက်တစ်စက်ချင်း ကျခြင်းဖြင့် ရေအိုး ပြည့်သကဲ့သို့ ပညာရှိသည်လည်း ကုသိုလ်ကို အနည်းငယ်စီ စုဆောင်းခြင်းဖြင့် ကောင်းမှုဖြင့် ပြည့်ဝ၏။';
 
   @override
   String get onboarding_find_peace => 'စတင်ရန်';
@@ -43,9 +35,6 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get onboarding_language_subtitle =>
       'ဤရွေးချယ်မှုဖြင့် အက်ပ်၏ ဘာသာစကားကို သတ်မှတ်ပါသည်';
-
-  @override
-  String get onboarding_choose_option => 'အနည်းဆုံး တစ်ခု ရွေးပါ:';
 
   @override
   String get onboarding_all_set => 'အားလုံး အဆင်သင့်ဖြစ်ပါပြီ';
@@ -68,43 +57,10 @@ class AppLocalizationsMy extends AppLocalizations {
       'အဖွဲ့၊ ပွဲ၊ သတင်းစဉ်နှင့် ချတ်';
 
   @override
-  String get home_recitation => 'ရွတ်ဆိုမှု';
-
-  @override
   String get home_today => 'ယနေ့';
 
   @override
-  String get home_good_morning => 'မင်္ဂလာ နံနက်ခင်းပါ';
-
-  @override
-  String get home_good_afternoon => 'မင်္ဂလာ နေ့လယ်ခင်းပါ';
-
-  @override
-  String get home_good_evening => 'မင်္ဂလာ ညနေခင်းပါ';
-
-  @override
-  String get home_meditationTitle => 'တရားထိုင်ခြင်း';
-
-  @override
-  String get home_prayerTitle => 'ယနေ့ ဆုတောင်းချက်';
-
-  @override
-  String get home_scripture => 'လမ်းညွှန် ကျမ်းစာ';
-
-  @override
-  String get home_meditation => 'လမ်းညွှန် တရားထိုင်ခြင်း';
-
-  @override
-  String get home_goDeeper => 'ပိုမိုနက်ရှိုင်းစွာ လေ့လာရန်';
-
-  @override
-  String get home_intention => 'ယနေ့အတွက် ကျွန်ုပ်၏ ရည်ရွယ်ချက်';
-
-  @override
   String get home_overall_stats => 'စုစုပေါင်း စာရင်းအင်း';
-
-  @override
-  String get home_plans => 'သင်ခန်းစာအစီအစဉ်';
 
   @override
   String home_plans_count(int count) {
@@ -265,9 +221,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get timer_min => 'မိနစ်';
 
   @override
-  String get timer_start => 'စတင်ရန်';
-
-  @override
   String get timer_finish => 'ပြီးဆုံးရန်';
 
   @override
@@ -275,9 +228,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get home_hello_prefix => 'မင်္ဂလာပါ ';
-
-  @override
-  String get home_greeting_fallback_name => 'မိတ်ဆွေ';
 
   @override
   String home_share_prompt(String appName) {
@@ -319,9 +269,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get text_search => 'ရှာဖွေရန်';
 
   @override
-  String get text_toc_versions => 'ဗားရှင်းများ';
-
-  @override
   String get text_commentary => 'အဖွင့်များ';
 
   @override
@@ -329,9 +276,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get no_translation => 'ဘာသာပြန် မတွေ့ပါ';
-
-  @override
-  String get text_close_commentary => 'အဖွင့် ပိတ်ရန်';
 
   @override
   String get show_more => 'ထပ်ပြရန်';
@@ -349,9 +293,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get no_content => 'အကြောင်းအရာ မတွေ့ပါ';
 
   @override
-  String get no_commentary => 'အဖွင့် မတွေ့ပါ';
-
-  @override
   String commentary_not_available_for_language(String language) {
     return '$language ဘာသာဖြင့် အဖွင့် မရှိသေးပါ';
   }
@@ -360,38 +301,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get loading => 'ဖွင့်နေသည်...';
 
   @override
-  String get choose_bg_image => 'နောက်ခံပုံ ရွေးပါ';
-
-  @override
   String get save => 'သိမ်းရန်';
 
   @override
   String get done => 'ပြီးပါပြီ';
-
-  @override
-  String get customise_message =>
-      'စာသားပုံစံ ချိန်ညှိရန် စိတ်ကြိုက်ပြင်ရန် အိုင်ကွန်ကို နှိပ်ပါ';
-
-  @override
-  String get download_image => 'ပုံ ဒေါင်းလုဒ်လုပ်ရန်';
-
-  @override
-  String get no_images_available => 'ပုံ မရှိပါ';
-
-  @override
-  String get customise_text => 'စာသား စိတ်ကြိုက်ပြင်ရန်';
-
-  @override
-  String get text_size => 'စာသား အရွယ်';
-
-  @override
-  String get text_color => 'စာသား အရောင်';
-
-  @override
-  String get text_shadow => 'စာသား အရိပ်';
-
-  @override
-  String get apply => 'အသုံးပြုရန်';
 
   @override
   String get my_plans => 'ကျွန်ုပ်၏ သင်ခန်းစာအစီအစဉ်များ';
@@ -454,15 +367,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get no_days_available => 'ရက် မတွေ့ပါ';
 
   @override
-  String get recitations_title => 'ရွတ်ဆိုရန်စာများ';
-
-  @override
-  String get recitations_my_recitations => 'ကျွန်ုပ်၏ ရွတ်ဆိုရန်စာများ';
-
-  @override
-  String get browse_recitations => 'ရွတ်ဆိုရန်စာများ ကြည့်ရန်';
-
-  @override
   String get recitations_search => 'ရွတ်ဆိုရန်စာများ ရှာဖွေရန်...';
 
   @override
@@ -473,13 +377,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get recitations_no_content => 'ရွတ်ဆိုရန်စာ မရှိပါ';
-
-  @override
-  String get recitations_no_saved => 'သိမ်းထားသော ရွတ်ဆိုရန်စာ မရှိပါ';
-
-  @override
-  String get recitations_login_prompt =>
-      'သိမ်းထားသော ရွတ်ဆိုရန်စာများကို ကြည့်ရန် ဝင်ရောက်ပါ';
 
   @override
   String get my_recitation_collection_new_title => 'စုစည်းမှုအသစ်';
@@ -656,12 +553,6 @@ class AppLocalizationsMy extends AppLocalizations {
       'တစ်ခုခု မှားယွင်းသွားပါသည်။ ထပ်ကြိုးစားပါ';
 
   @override
-  String get onboarding_quote_citation => '— ဓမ္မပဒ 122';
-
-  @override
-  String get onboarding_traditions_question => 'ဘယ်ဂိုဏ်းကို\nလိုက်နာပါသလဲ။';
-
-  @override
   String get onboarding_tradition_title =>
       'မြတ်စွာဘုရား၏ တရားတော်များကို ဘယ်လို လိုက်နာပါသလဲ။';
 
@@ -670,54 +561,7 @@ class AppLocalizationsMy extends AppLocalizations {
       'သင့်အကြောင်းအရာအတွက် ဂိုဏ်း တစ်ခု သို့မဟုတ် တစ်ခုထက်ပို ရွေးပါ။ ဆက်တင်များတွင် အချိန်မရွေး ပြောင်းနိုင်ပါသည်။';
 
   @override
-  String get onboarding_tradition_option_intro => 'မှတစ်ဆင့်:';
-
-  @override
   String get onboarding_tradition_show_all_title => 'အားလုံးကို ပြပါ';
-
-  @override
-  String get onboarding_skip_for_now => 'ယခုအတွက် ကျော်ရန်';
-
-  @override
-  String get onboarding_add_another_tradition => 'အခြားဂိုဏ်း ထည့်ရန်';
-
-  @override
-  String get onboarding_select_all => 'အားလုံး ရွေးရန်';
-
-  @override
-  String get onboarding_event_enrollment_error =>
-      'စာရင်းသွင်း၍ မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
-
-  @override
-  String get onboarding_event_question => 'ပွဲတစ်ခုတွင်\nပါဝင်မလား။';
-
-  @override
-  String get onboarding_event_optional =>
-      'ရွေးချယ်နိုင် · စာရင်းသွင်းရန် နှိပ်ပါ';
-
-  @override
-  String onboarding_event_duration(String description, int days) {
-    return '$description · $days ရက်';
-  }
-
-  @override
-  String get onboarding_event_reminder_note =>
-      'နေ့စဉ် နံနက် 7:30 တွင် သတိပေးချက် ပို့ပါမည်။ (အချိန်မရွေး ပြောင်းနိုင်ပါသည်။)';
-
-  @override
-  String get tradition_theravada => 'ထေရဝါဒ';
-
-  @override
-  String get tradition_zen => 'ဇင်';
-
-  @override
-  String get tradition_tibetan_buddhism => 'တိဗက် ဗုဒ္ဓဘာသာ';
-
-  @override
-  String get tradition_pure_land => 'သုခါဝတီ ဂိုဏ်း';
-
-  @override
-  String get tradition_ambedkar_buddhism => 'အမ်ဘက်ဒကာ ဗုဒ္ဓဘာသာ';
 
   @override
   String get plan_go_to_practice => 'ကျင့်စဉ်သို့ သွားရန်';
@@ -749,10 +593,6 @@ class AppLocalizationsMy extends AppLocalizations {
       'ဖွင့်၍ မရပါ။\nအင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
 
   @override
-  String get connect_coming_soon_subtitle =>
-      'လမ်းစဉ်ပေါ်တွင် သင့်ကို အထောက်အကူပြုမည့် ဆရာများ၊ အသိုင်းအဝိုင်းများ၊ စိန်ခေါ်မှုများနှင့် ပွဲများ';
-
-  @override
   String get connect_subtitle => 'အဖွဲ့များကို ရှာဖွေပြီး အတူတကွ ကျင့်ကြံပါ';
 
   @override
@@ -772,17 +612,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get connect_groups_empty_title => 'နောက်ထပ် အဖွဲ့ မရှိတော့ပါ';
 
   @override
-  String get connect_groups_empty_subtitle =>
-      'ဂုဏ်ယူပါသည်၊ အဖွဲ့အားလုံးတွင် ပါဝင်ပြီးပါပြီ။ မကြာမီ ပြန်ကြည့်ပါ။ အဖွဲ့သစ်များ လာပါဦးမည်...';
-
-  @override
   String get connect_tab_feed => 'သတင်းစဉ်';
 
   @override
   String get connect_tab_events => 'ပွဲများ';
-
-  @override
-  String get connect_tab_posts => 'ပို့စ်များ';
 
   @override
   String get connect_tab_practices => 'ကျင့်စဉ်များ';
@@ -797,9 +630,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get connect_segment_discover => 'ရှာဖွေရန်';
 
   @override
-  String get connect_empty_discover_posts => 'ရှာဖွေရန် ပို့စ် မရှိပါ';
-
-  @override
   String get connect_empty_discover_events => 'ရှာဖွေရန် ပွဲ မရှိပါ';
 
   @override
@@ -809,9 +639,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get connect_empty_discover_groups => 'ရှာဖွေရန် အဖွဲ့ မရှိပါ';
 
   @override
-  String get connect_empty_discover_practices => 'ရှာဖွေရန် ကျင့်စဉ် မရှိပါ';
-
-  @override
   String get connect_all_groups => 'အဖွဲ့အားလုံး';
 
   @override
@@ -819,9 +646,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_title => 'လာမည့် ပွဲ မရှိပါ';
-
-  @override
-  String get connect_my_empty_posts_title => 'ပို့စ် မရှိသေးပါ';
 
   @override
   String get connect_my_empty_groups_title => 'အဖွဲ့ မရှိသေးပါ';
@@ -835,10 +659,6 @@ class AppLocalizationsMy extends AppLocalizations {
       'သင့်အဖွဲ့များတွင် စီစဉ်ထားသော ပွဲ မရှိသေးပါ';
 
   @override
-  String get connect_my_empty_posts_subtitle =>
-      'သင့်အဖွဲ့များတွင် ပို့စ်တင်ထားခြင်း မရှိသေးပါ';
-
-  @override
   String get connect_my_empty_groups_subtitle =>
       'မည်သည့်အဖွဲ့တွင်မျှ မပါဝင်ရသေးပါ။ အတူကျင့်ကြံရန် အဖွဲ့များကို ရှာဖွေပါ';
 
@@ -849,19 +669,6 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get connect_my_empty_events_browse =>
       'အများပါဝင်နိုင်သော ပွဲများ ကြည့်ရန်';
-
-  @override
-  String get connect_my_empty_posts_browse => 'အခြားပို့စ်များ ကြည့်ရန်';
-
-  @override
-  String get connect_my_empty_practices_title => 'ကျင့်စဉ် မရှိသေးပါ';
-
-  @override
-  String get connect_my_empty_practices_subtitle =>
-      'သင့်အဖွဲ့များတွင် စတင်ထားသော ကျင့်စဉ် မရှိသေးပါ';
-
-  @override
-  String get connect_my_empty_practices_browse => 'အခြားကျင့်စဉ်များ ကြည့်ရန်';
 
   @override
   String connect_comment_replying_to(String handle) {
@@ -901,9 +708,6 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get connect_post_comments_empty =>
       'မှတ်ချက် မရှိသေးပါ။ စတင် ဆွေးနွေးလိုက်ပါ';
-
-  @override
-  String get connect_caption_more => 'ပိုကြည့်ရန်';
 
   @override
   String get connect_online => 'အွန်လိုင်း';
@@ -949,16 +753,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get connect_events_filter_empty_hybrid => 'ပေါင်းစပ်ပွဲ မရှိပါ';
 
   @override
-  String get connect_open => 'ဖွင့်ရန်';
-
-  @override
   String get connect_event_fallback_title => 'ပွဲ';
 
   @override
   String get connect_group_fallback_title => 'အဖွဲ့';
-
-  @override
-  String get connect_event_enter => 'ဝင်ရန်';
 
   @override
   String get connect_event_participation_prompt => 'ဘယ်လို တက်ရောက်မလဲ။';
@@ -1019,22 +817,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get connect_event_tab_videos => 'ဗီဒီယိုများ';
 
   @override
-  String get connect_event_tab_links => 'လင့်ခ်များ';
-
-  @override
   String get connect_event_tab_about => 'အကြောင်း';
 
   @override
   String get connect_event_links_title => 'နောက်ထပ် ပွဲအသေးစိတ်များ';
-
-  @override
-  String get connect_event_links_empty => 'လင့်ခ် မရှိသေးပါ';
-
-  @override
-  String get connect_event_link_tap_to_join => 'ပါဝင်ရန် နှိပ်ပါ';
-
-  @override
-  String get connect_event_link_open => 'လင့်ခ် ဖွင့်ရန်';
 
   @override
   String get connect_event_date_tba => 'ရက်စွဲကို နောက်မှ ကြေညာပါမည်';
@@ -1046,13 +832,7 @@ class AppLocalizationsMy extends AppLocalizations {
   String get connect_event_where => 'နေရာ';
 
   @override
-  String get connect_event_practices => 'ပွဲ ကျင့်စဉ်များ';
-
-  @override
   String get connect_event_tab_accumulations => 'စုဆောင်းမှုများ';
-
-  @override
-  String get connect_event_tab_recitations => 'ရွတ်ဆိုရန်စာများ';
 
   @override
   String get connect_event_add_recitations => 'ရွတ်ဆိုမှု ထည့်ရန်';
@@ -1101,18 +881,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get creator_featured_plan => 'အထူးဖော်ပြထားသော သင်ခန်းစာအစီအစဉ်များ';
 
   @override
-  String get audio_init_error =>
-      'အသံဖွင့်စက်ကို စတင်၍ မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
-
-  @override
-  String get meditation_audio_load_error =>
-      'ဖွင့်၍ မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
-
-  @override
-  String get prayer_audio_load_error =>
-      'အသံကို ဖွင့်၍ မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
-
-  @override
   String get home_no_series_found => 'စီးရီး မတွေ့ပါ';
 
   @override
@@ -1122,32 +890,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get home_celebrated_by => 'ကျင်းပသူ: ';
 
   @override
-  String get reader_settings_tooltip => 'စာဖတ်ဆက်တင်များ';
-
-  @override
-  String get reader_translate_tooltip => 'ဘာသာပြန် ပြရန်';
-
-  @override
-  String get reader_translate_unavailable => 'ဤကျမ်းစာအတွက် ဘာသာပြန် မရှိပါ';
-
-  @override
   String get reader_font_size_tooltip => 'စာလုံးအရွယ်';
 
   @override
-  String reader_version_title(String language) {
-    return 'ဗားရှင်း · $language';
-  }
-
-  @override
-  String reader_script_title(String language) {
-    return 'အက္ခရာ · $language';
-  }
-
-  @override
   String get reader_versions_load_error => 'ဗားရှင်းများကို ဖွင့်၍ မရပါ';
-
-  @override
-  String get reader_scripts_load_error => 'အက္ခရာများကို ဖွင့်၍ မရပါ';
 
   @override
   String get reader_languages_load_error => 'ဘာသာစကားများကို ဖွင့်၍ မရပါ';
@@ -1158,39 +904,10 @@ class AppLocalizationsMy extends AppLocalizations {
   }
 
   @override
-  String reader_no_scripts_in_language(String language) {
-    return '$language ဘာသာတွင် အက္ခရာ မရှိပါ';
-  }
-
-  @override
   String get reader_no_languages => 'ဤကျမ်းစာအတွက် ဘာသာစကား မရှိပါ';
 
   @override
   String get reader_license => 'လိုင်စင်';
-
-  @override
-  String get reader_version_details_load_error =>
-      'ဗားရှင်း အသေးစိတ်ကို ဖွင့်၍ မရပါ';
-
-  @override
-  String get reader_no_version_info =>
-      'ဤဗားရှင်းအတွက် နောက်ထပ် အချက်အလက် မရှိပါ';
-
-  @override
-  String get recitation_unavailable =>
-      'ရွတ်ဆိုရန်စာ အကြောင်းအရာကို လောလောဆယ် မရရှိနိုင်ပါ။\nနောက်မှ ထပ်ကြိုးစားပါ သို့မဟုတ် အကူအညီဌာနကို ဆက်သွယ်ပါ';
-
-  @override
-  String get recitation_sign_in_required =>
-      'ဤရွတ်ဆိုရန်စာကို ဖွင့်ရန် ဝင်ရောက်ပါ';
-
-  @override
-  String get my_recitations_load_error =>
-      'ဖွင့်၍ မရပါ။\nအင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
-
-  @override
-  String get recitations_load_error =>
-      'ရွတ်ဆိုရန်စာများကို ဖွင့်၍ မရပါ။\nနောက်မှ ထပ်ကြိုးစားပါ';
 
   @override
   String get text_search_hint => 'ရှာဖွေရန် ရိုက်ထည့်ပါ';
@@ -1202,15 +919,7 @@ class AppLocalizationsMy extends AppLocalizations {
   String get text_search_error => 'ရှာဖွေ၍ မရပါ။\nထပ်ကြိုးစားပါ';
 
   @override
-  String get unknown_error => 'မသိရသော အမှား';
-
-  @override
   String get create_image_share_error => 'မျှဝေ၍ မရပါ။ ထပ်ကြိုးစားပါ';
-
-  @override
-  String version_search_no_results(String query) {
-    return '\"$query\" အတွက် ဗားရှင်း မတွေ့ပါ';
-  }
 
   @override
   String get my_plans_sign_in_prompt =>
@@ -1249,12 +958,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get collection_audio_versions => 'အသံ ဗားရှင်းများ';
-
-  @override
-  String get image => 'ပုံ';
-
-  @override
-  String get feedback => 'အကြံပြုချက် ပေးရန်';
 
   @override
   String get author => 'စာရေးသူ';
@@ -1315,9 +1018,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get routine_collapse_all => 'အားလုံး ချုံ့ရန်';
-
-  @override
-  String get routine_delete_time_block => 'အချိန်အပိုင်း ဖယ်ရှားရန်';
 
   @override
   String get routine_add_plan => 'သင်ခန်းစာအစီအစဉ် ထည့်ရန်';
@@ -1390,9 +1090,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get continueWithPhone => 'ဖုန်းဖြင့် ဆက်လက်ရန်';
 
   @override
-  String get continueAsGuest => 'ဧည့်သည်အဖြစ် ဆက်လက်ရန်';
-
-  @override
   String get exploreAsGuest => 'ဧည့်သည်အဖြစ် လေ့လာရန်';
 
   @override
@@ -1444,9 +1141,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get source => 'ရင်းမြစ်';
-
-  @override
-  String get searchResults => 'ရှာဖွေမှု ရလဒ်များ';
 
   @override
   String get noTasks => 'လုပ်ဆောင်ရန် မရှိပါ';
@@ -1504,13 +1198,6 @@ class AppLocalizationsMy extends AppLocalizations {
   }
 
   @override
-  String get updateOrderError => 'အစဉ်ကို ပြောင်း၍ မရပါ။ ထပ်ကြိုးစားပါ';
-
-  @override
-  String get loadFailed =>
-      'ဖွင့်၍ မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ';
-
-  @override
   String get captureError => 'QR ကုဒ်ကို ရိုက်ယူ၍ မရပါ။ ထပ်ကြိုးစားပါ';
 
   @override
@@ -1543,30 +1230,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get plan_enroll => 'စာရင်းသွင်းရန်';
 
   @override
-  String get show_second_version => 'ဒုတိယ ဗားရှင်း ပြရန်';
-
-  @override
-  String get enable_add_msg =>
-      'မူရင်းစာနှင့်အတူ ဘာသာပြန် သို့မဟုတ် အသံထွက်စာ ထည့်ရန် ဖွင့်ပါ';
-
-  @override
-  String get main_version => 'မူရင်း ဗားရှင်း';
-
-  @override
-  String get second_version => 'ဒုတိယ ဗားရှင်း';
-
-  @override
-  String get second_version_msg =>
-      'ဒုတိယ ဗားရှင်းကို မူရင်းစာ၏ ဂါထာတစ်ပုဒ်ချင်းစီ အောက်တွင် ပြသပါမည်';
-
-  @override
   String get root_text => 'မူလကျမ်း';
 
   @override
   String get version => 'ဗားရှင်းများ';
-
-  @override
-  String get parallel_version => 'ယှဉ်တွဲ ဗားရှင်း';
 
   @override
   String get reader_languages_title => 'ဘာသာစကားများ';
@@ -1582,15 +1249,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get version_not_available => 'မရရှိနိုင်ပါ';
-
-  @override
-  String get read_full_text => 'စာအပြည့်အစုံ ဖတ်ရန်';
-
-  @override
-  String get reader_source_label => 'ရင်းမြစ်';
-
-  @override
-  String get reader_license_label => 'လိုင်စင်';
 
   @override
   String series_stats(int planCount, int totalDays) {
@@ -1633,12 +1291,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get edit_profile_save => 'သိမ်းရန်';
-
-  @override
-  String get edit_profile_first_name => 'ပထမအမည်';
-
-  @override
-  String get edit_profile_last_name => 'နောက်ဆုံးအမည်';
 
   @override
   String get edit_profile_display_name => 'ပြသမည့်အမည်';
@@ -1790,9 +1442,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get me_accumulation => 'စုစုပေါင်း စုဆောင်းမှု';
 
   @override
-  String get me_counts => 'အကြိမ်';
-
-  @override
   String get me_minutes => 'မိနစ်';
 
   @override
@@ -1804,11 +1453,6 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get me_days_plan_practiced_suffix =>
       'ပြီးမြောက်ခဲ့သော သင်ခန်းစာအစီအစဉ် ရက်ပေါင်း';
-
-  @override
-  String me_streak_share_message(int count, String appName) {
-    return '$appName တွင် $count ရက် ဆက်တိုက် ကျင့်ကြံနေပါပြီ!';
-  }
 
   @override
   String get me_streak_share_quote =>
@@ -1865,11 +1509,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get calendar_day_label => 'ရက်';
 
   @override
-  String calendar_day_month(int day, int month) {
-    return 'ရက် $day · လ $month';
-  }
-
-  @override
   String calendar_lunar_month(String ordinal) {
     return '$ordinal စန္ဒရလ';
   }
@@ -1878,25 +1517,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get moon_phase_new_moon => 'လကွယ်';
 
   @override
-  String get moon_phase_waxing_crescent => 'လဆန်း လခြမ်းကွေး';
-
-  @override
   String get moon_phase_first_quarter => 'လဆန်း လဝက်';
 
   @override
-  String get moon_phase_waxing_gibbous => 'လဆန်း လဝက်ကျော်';
-
-  @override
   String get moon_phase_full_moon => 'လပြည့်';
-
-  @override
-  String get moon_phase_waning_gibbous => 'လဆုတ် လဝက်ကျော်';
-
-  @override
-  String get moon_phase_last_quarter => 'လဆုတ် လဝက်';
-
-  @override
-  String get moon_phase_waning_crescent => 'လဆုတ် လခြမ်းကွေး';
 
   @override
   String get join => 'ပါဝင်ရန်';
@@ -2466,27 +2090,10 @@ class AppLocalizationsMy extends AppLocalizations {
   String get reader_videos => 'ဗီဒီယိုများ';
 
   @override
-  String get reader_about_this_version => 'ဤဗားရှင်းအကြောင်း';
-
-  @override
-  String reader_version_count(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'ဗားရှင်း $count ခု',
-      one: 'ဗားရှင်း 1 ခု',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get mala_no_mantras => 'မန္တန် မရှိပါ';
 
   @override
   String get mala_count_load_error => 'သင့်အရေအတွက်ကို ဖွင့်၍ မရပါ';
-
-  @override
-  String get mala_mantra_label => 'မန္တန်';
 
   @override
   String get bookmarks_empty_all_title => 'မှတ်ထားသည့်အရာ မရှိသေးပါ';
@@ -2668,26 +2275,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get author_plans_load_error => 'သင်ခန်းစာအစီအစဉ်များကို ဖွင့်၍ မရပါ';
 
   @override
-  String source_with_value(String value) {
-    return 'ရင်းမြစ်: $value';
-  }
-
-  @override
-  String license_with_value(String value) {
-    return 'လိုင်စင်: $value';
-  }
-
-  @override
-  String loading_previous_pages(int count) {
-    return 'ယခင်စာမျက်နှာများ ဖွင့်နေသည်... (စာမျက်နှာ $count မျက်နှာ)';
-  }
-
-  @override
-  String loading_more_pages(int count) {
-    return 'နောက်ထပ် ဖွင့်နေသည်... (စာမျက်နှာ $count မျက်နှာ)';
-  }
-
-  @override
   String get drag_to_resize => 'အရွယ်အစားပြောင်းရန် ဆွဲပါ';
 
   @override
@@ -2703,9 +2290,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String group_accumulator_share_message_no_group(String accumulation) {
     return 'WeBuddhist ပေါ်ရှိ \"$accumulation\" စုဆောင်းမှုတွင် ကျွန်ုပ် ပါဝင်နေပါသည်။ ကျွန်ုပ်နှင့်အတူ လာရောက်ပါဝင်ပါ!';
   }
-
-  @override
-  String get group_chat_title => 'ချတ်';
 
   @override
   String get chats_title => 'ချတ်များ';
@@ -2729,9 +2313,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get group_chat_message_hint => 'မက်ဆေ့ချ်';
-
-  @override
-  String get group_chat_join_to_send => 'မက်ဆေ့ချ် ပို့ရန် ချတ်တွင် ပါဝင်ပါ';
 
   @override
   String get group_chat_today => 'ယနေ့';
@@ -3031,9 +2612,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get event_live_badge => 'တိုက်ရိုက်';
 
   @override
-  String get event_live_audio => 'တိုက်ရိုက် အသံ';
-
-  @override
   String get event_live_video_mode => 'ဗီဒီယို';
 
   @override
@@ -3118,9 +2696,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get event_prayer_pray => 'ဆုတောင်းရန်';
 
   @override
-  String get event_prayer_praying => 'ဆုတောင်းပြီး';
-
-  @override
   String event_prayer_my_count(int count) {
     return '+$count';
   }
@@ -3178,11 +2753,6 @@ class AppLocalizationsMy extends AppLocalizations {
 
   @override
   String get event_prayer_praying_for_you => 'သင့်အတွက် ဆုတောင်းပေးခဲ့သည်';
-
-  @override
-  String event_prayer_praying_for(String name) {
-    return '$name အတွက် ဆုတောင်းပေးခဲ့သည်';
-  }
 
   @override
   String get event_prayer_your_request => 'သင့်တောင်းဆိုချက်';
@@ -3477,13 +3047,6 @@ class AppLocalizationsMy extends AppLocalizations {
   @override
   String get connect_failed_unlike_post_error =>
       'ပို့စ်ကို နှစ်သက်မှု ပြန်ဖြုတ်၍ မရပါ';
-
-  @override
-  String get connect_failed_like_comment_error => 'မှတ်ချက်ကို နှစ်သက်၍ မရပါ';
-
-  @override
-  String get connect_failed_unlike_comment_error =>
-      'မှတ်ချက်ကို နှစ်သက်မှု ပြန်ဖြုတ်၍ မရပါ';
 
   @override
   String get group_events_load_error =>
@@ -4311,9 +3874,6 @@ class AppLocalizationsMy extends AppLocalizations {
   String get timer_your_timers => 'သင့်အချိန်မှတ်စက်များ';
 
   @override
-  String get timer_custom_timer => 'စိတ်ကြိုက် အချိန်မှတ်စက်';
-
-  @override
   String get timer_ambient_sounds_title => 'နောက်ခံ အသံများ';
 
   @override
@@ -4355,15 +3915,7 @@ class AppLocalizationsMy extends AppLocalizations {
       'ဗုဒ္ဓဘာသာဝင် ကျွန်ုပ်တို့ နေ့စဉ် ကျင့်ကြံကြသည်';
 
   @override
-  String get timer_list_subtitle =>
-      'စတင်ရန် ဖွင့်ခလုတ်ကို နှိပ်ပါ သို့မဟုတ် ကိုယ်ပိုင် ဖန်တီးပါ။';
-
-  @override
   String get timer_create_custom => 'စိတ်ကြိုက် အချိန်မှတ်စက် ဖန်တီးရန်';
-
-  @override
-  String get timer_create_custom_subtitle =>
-      'ကြာချိန်နှင့် နောက်ခံအသံ (ရွေးချယ်နိုင်) ကို ရွေးပါ';
 
   @override
   String get timer_starting => 'စတင်နေသည်...';

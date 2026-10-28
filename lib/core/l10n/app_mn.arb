@@ -4,14 +4,11 @@
   "sign_in": "Нэвтрэх",
   "logout": "Гарах",
   "onboarding_welcome": "Тавтай морил",
-  "onboarding_setup_subtitle": "Танд тохируулъя, ердөө нэг минут л хангалттай",
   "onboarding_tagline": "Сурч, дадлага хийж, холбогдоорой. Өдөр бүр.",
-  "onboarding_quote": "Дусал дуслаар ус сав дүүрдэгийн адил, ухаант хүн ч багаахан багаахнаар хуримтлуулж, өөрийгөө буянаар дүүргэдэг.",
   "onboarding_find_peace": "Эхлэх",
   "onboarding_continue": "Үргэлжлүүлэх",
   "onboarding_first_question": "Хэлээ сонгоно уу",
   "onboarding_language_subtitle": "Энэ нь аппын хэлийг тохируулна",
-  "onboarding_choose_option": "Дор хаяж нэгийг сонгоно уу:",
   "onboarding_all_set": "Бүх зүйл бэлэн боллоо",
   "onboarding_all_set_description": "Таныг хүлээж буй зүйлс:",
   "onboarding_all_set_practice_title": "Дадлага",
@@ -19,18 +16,7 @@
   "onboarding_all_set_connect_title": "Холбогдох",
   "onboarding_all_set_connect_body": "Орон зай, арга хэмжээ, мэдээ болон чат",
   "home_today": "Өнөөдөр",
-  "home_good_morning": "Өглөөний мэнд",
-  "home_good_afternoon": "Өдрийн мэнд",
-  "home_good_evening": "Оройн мэнд",
-  "home_meditationTitle": "Бясалгал",
-  "home_prayerTitle": "Өнөөдрийн залбирал",
-  "home_scripture": "Удирдамжтай бичиг",
-  "home_meditation": "Удирдамжтай бясалгал",
-  "home_goDeeper": "Илүү гүнзгий орно уу",
-  "home_intention": "Өнөөдрийн миний зорилго",
-  "home_recitation": "Уншлага",
   "home_overall_stats": "Нийт статистик",
-  "home_plans": "Төлөвлөгөө",
   "home_plans_count": "{count} Төлөвлөгөө",
   "@home_plans_count": {
     "placeholders": {
@@ -114,11 +100,9 @@
   "preset_timers": "Бэлэн тохируулсан цаг",
   "meditation_timer": "Бясалгалын цаг хэмжигч",
   "timer_min": "мин",
-  "timer_start": "Эхлэх",
   "timer_finish": "Дуусгах",
   "timer_discard_session": "Хичээл цуцлах",
   "home_hello_prefix": "Сайн байна уу, ",
-  "home_greeting_fallback_name": "найз минь",
   "home_share_prompt": "{appName} танд таалагдаж байна уу?",
   "@home_share_prompt": {
     "placeholders": {
@@ -138,17 +122,14 @@
   "nav_me": "Би",
   "tab_practices": "Дадлага",
   "text_search": "Хайх",
-  "text_toc_versions": "Хувилбарууд",
   "text_commentary": "Тайлбар",
   "resources": "Нөөц",
   "no_translation": "Орчуулга олдсонгүй",
-  "text_close_commentary": "Тайлбар хаах",
   "show_more": "Илүү ихийг харах",
   "show_less": "Хураах",
   "more": "Илүү",
   "less": "Бага",
   "no_content": "Агуулга олдсонгүй",
-  "no_commentary": "Тайлбар олдсонгүй",
   "commentary_not_available_for_language": "{language} хэл дээрх тайлбар байхгүй",
   "@commentary_not_available_for_language": {
     "placeholders": {
@@ -158,17 +139,8 @@
     }
   },
   "loading": "Ачааллаж байна...",
-  "choose_bg_image": "Дэвсгэр зураг сонгох",
   "save": "Хадгалах",
   "done": "Болсон",
-  "customise_message": "Бичвэрийн загварыг тохируулахын тулд тохируулах дүрс дээр дарна уу",
-  "download_image": "Зураг татах",
-  "no_images_available": "Зураг байхгүй байна",
-  "customise_text": "Бичвэр тохируулах",
-  "text_size": "Бичвэрийн хэмжээ",
-  "text_color": "Бичвэрийн өнгө",
-  "text_shadow": "Бичвэрийн сүүдэр",
-  "apply": "Хэрэглэх",
   "my_plans": "Миний төлөвлөгөө",
   "browse_plans": "Төлөвлөгөө үзэх",
   "plan_info": "Төлөвлөгөөний мэдээлэл",
@@ -188,15 +160,10 @@
   "search_for_plans": "Төлөвлөгөө хайх",
   "no_plans_found": "Төлөвлөгөө олдсонгүй",
   "no_days_available": "Өдөр олдсонгүй",
-  "recitations_title": "Уншлагууд",
-  "recitations_my_recitations": "Миний уншлага",
-  "browse_recitations": "Уншлага үзэх",
   "recitations_search": "Уншлага хайх...",
   "recitations_search_for": "Уншлага хайх",
   "recitations_no_found": "Уншлага олдсонгүй",
   "recitations_no_content": "Уншлага байхгүй байна",
-  "recitations_no_saved": "Хадгалсан уншлага байхгүй",
-  "recitations_login_prompt": "Хадгалсан уншлагаа харахын тулд нэвтэрнэ үү",
   "my_recitation_collection_new_title": "Шинэ цуглуулга",
   "my_recitation_collection_next": "Дараах",
   "my_recitation_collection_create": "Үүсгэх",
@@ -257,39 +224,10 @@
   "auth_drawer_subtitle": "Хаана ч явсан, аль ч төхөөрөмж дээр дадлагаа үргэлжлүүл",
   "routine_delete_block_message": "Цагийн блок болон доторх бүх зүйл устгагдана",
   "something_went_wrong": "Алдаа гарлаа. Дахин оролдоно уу",
-  "onboarding_quote_citation": "— Дхаммапада 122",
-  "onboarding_traditions_question": "Та ямар уламжлал\nдагадаг вэ?",
   "onboarding_tradition_title": "Та Бурхан багшийн сургаалийг хэрхэн дагадаг вэ?",
   "onboarding_tradition_subtitle": "Агуулгадаа нэг буюу хэд хэдэн уламжлал сонгоно уу. Та үүнийг хүссэн үедээ Тохиргоо хэсэгт өөрчилж болно.",
-  "onboarding_tradition_option_intro": "Дараах:",
   "onboarding_tradition_show_all_title": "Бүгдийг харуулах",
-  "onboarding_skip_for_now": "Одоохондоо алгасах",
-  "onboarding_add_another_tradition": "Өөр уламжлал нэмэх",
-  "onboarding_select_all": "Бүгдийг сонгох",
-  "onboarding_event_enrollment_error": "Бүртгэх боломжгүй байна. Холболтоо шалгаад дахин оролдоно уу",
-  "audio_init_error": "Дуу тоглуулагчийг эхлүүлэх боломжгүй. Холболтоо шалгаад дахин оролдоно уу",
-  "meditation_audio_load_error": "Ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу",
-  "prayer_audio_load_error": "Дуу ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу",
   "home_no_series_found": "Цуврал олдсонгүй",
-  "onboarding_event_question": "Арга хэмжээнд\nнэгдэх үү?",
-  "onboarding_event_optional": "Сонголтоор · Бүртгүүлэхийн тулд дарна уу",
-  "onboarding_event_duration": "{description} · {days} өдөр",
-  "@onboarding_event_duration": {
-    "placeholders": {
-      "description": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "onboarding_event_reminder_note": "Бид өглөөний 7:30 цагт өдөр тутмын сануулга илгээнэ. (Хүссэн үедээ өөрчилж болно.)",
-  "tradition_theravada": "Теравада",
-  "tradition_zen": "Зэн",
-  "tradition_tibetan_buddhism": "Төвдийн бурханы шашин",
-  "tradition_pure_land": "Цэвэр газар",
-  "tradition_ambedkar_buddhism": "Амбедкарын бурханы шашин",
   "plan_go_to_practice": "Дадлага руу очих",
   "plan_starts_soon_title": "Удахгүй эхэлнэ",
   "plan_joining_late_title": "Эхлэх огнооны дараа нэгдэж байна",
@@ -299,34 +237,13 @@
   "plans_empty_title": "Удахгүй илүү ихийг нэмнэ",
   "plans_empty_subtitle": "Манай сан өргөжиж байна. Удахгүй дахин шалгаарай.",
   "find_plans_load_error": "Ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу",
-  "connect_coming_soon_subtitle": "Замд тань туслах багш нар, нийгэмлэгүүд, сорилт болон арга хэмжээнүүд",
   "explore_coming_soon_subtitle": "Дадлага, сургаал, нийгэмлэгийн арга хэмжээг нээх онцгой орчин",
   "learn_coming_soon_subtitle": "Өдөр тутмын амьдралд тохируулан зохиосон таны хувийн судлах төлөвлөгөө",
   "creator_featured_plan": "Онцлох төлөвлөгөө",
   "home_no_tags_found": "Шошго олдсонгүй",
   "home_celebrated_by": "Тэмдэглэдэг:",
-  "reader_settings_tooltip": "Уншигчийн тохиргоо",
-  "reader_translate_tooltip": "Орчуулга харуулах",
-  "reader_translate_unavailable": "Энэ текстэд орчуулга байхгүй",
   "reader_font_size_tooltip": "Үсгийн хэмжээ",
-  "reader_version_title": "Хувилбар · {language}",
-  "@reader_version_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
-  "reader_script_title": "Бичиг · {language}",
-  "@reader_script_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_versions_load_error": "Хувилбаруудыг ачаалж чадсангүй",
-  "reader_scripts_load_error": "Бичгүүдийг ачаалж чадсангүй",
   "reader_languages_load_error": "Хэлүүдийг ачаалж чадсангүй",
   "reader_no_versions_in_language": "{language} хэл дээр хувилбар байхгүй",
   "@reader_no_versions_in_language": {
@@ -336,35 +253,12 @@
       }
     }
   },
-  "reader_no_scripts_in_language": "{language} хэл дээр бичиг байхгүй",
-  "@reader_no_scripts_in_language": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_no_languages": "Энэ бичвэрт хэл байхгүй",
   "reader_license": "Лиценз",
-  "reader_version_details_load_error": "Хувилбарын дэлгэрэнгүйг ачаалах боломжгүй",
-  "reader_no_version_info": "Энэ хувилбарт нэмэлт мэдээлэл байхгүй",
-  "recitation_unavailable": "Уншлагын агуулга одоогоор байхгүй байна.\nДараа дахин оролдох эсвэл дэмжлэгтэй холбогдоно уу",
-  "recitation_sign_in_required": "Энэ уншлагыг үзэхийн тулд нэвтэрнэ үү",
-  "my_recitations_load_error": "Ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу",
-  "recitations_load_error": "Уншлагуудыг ачаалах боломжгүй.\nДараа дахин оролдоно уу",
   "text_search_hint": "Хайхын тулд бичнэ үү",
   "text_search_press_button": "Хайхын тулд хайх товчийг дарна уу",
   "text_search_error": "Хайлт хийх боломжгүй.\nДахин оролдоно уу",
-  "unknown_error": "Тодорхойгүй алдаа",
   "create_image_share_error": "Хуваалцах боломжгүй. Дахин оролдоно уу",
-  "version_search_no_results": "\"{query}\"-д тохирох хувилбар олдсонгүй",
-  "@version_search_no_results": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "my_plans_sign_in_prompt": "Төлөвлөгөөгөө харахын тулд нэвтэрнэ үү",
   "plan_starts_soon_message": "{date}-нд эхэлнэ. Та одоо агуулгыг үзэж болно",
   "@plan_starts_soon_message": {
@@ -390,8 +284,6 @@
   "share": "Хуваалцах",
   "bookmark": "Хавчууруулга",
   "collection_audio_versions": "Audio versions",
-  "image": "Зураг",
-  "feedback": "Санал хүсэлт",
   "author": "Зохиогч",
   "plans_created": "Үүсгэсэн төлөвлөгөөнүүд",
   "ai_confirm": "Баталгаажуулах",
@@ -415,7 +307,6 @@
   "routine_add_session": "Дадлагад нэмэх",
   "routine_edit_title": "Хэвшлээ засах",
   "routine_delete_block": "Блок хасах",
-  "routine_delete_time_block": "Цагийн блокыг устгах",
   "routine_add_plan": "Төлөвлөгөө нэмэх",
   "routine_add_recitation": "Уншлага нэмэх",
   "routine_add_plan_to_routine": "Хэвшилд нэмэх",
@@ -460,7 +351,6 @@
   "continueWithGoogle": "Google-ээр үргэлжлүүлэх",
   "continueWithApple": "Apple-ээр үргэлжлүүлэх",
   "continueWithPhone": "Утсаар үргэлжлүүлэх",
-  "continueAsGuest": "Зочноор үргэлжлүүлэх",
   "exploreAsGuest": "Зочноор судлах",
   "signIn": "Нэвтрэх",
   "profileError": "Профайл ачаалахад алдаа гарлаа",
@@ -478,7 +368,6 @@
   "unableToLoad": "Ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу",
   "somethingWrong": "Алдаа гарлаа. Холболтоо шалгаад дахин оролдоно уу",
   "source": "Эх сурвалж",
-  "searchResults": "Хайлтын үр дүн",
   "noTasks": "Даалгавар байхгүй байна",
   "taskNotFound": "Даалгавар олдсонгүй",
   "updateTaskError": "Даалгаврын төлөвийг шинэчлэх боломжгүй",
@@ -493,8 +382,6 @@
   "removeItem": "Зүйл хасах уу?",
   "removeConfirmation": "\"{itemName}\" энэ блокоос хасагдана",
   "shareError": "Хуваалцах боломжгүй. Дахин оролдоно уу",
-  "updateOrderError": "Дарааллыг шинэчлэх боломжгүй. Дахин оролдоно уу",
-  "loadFailed": "Ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу",
   "captureError": "QR кодыг авч чадсангүй. Дахин оролдоно уу",
   "qrShareError": "QR кодыг хуваалцах боломжгүй. Дараа дахин оролдоно уу",
   "errorDetail": "Алдаа: {error}",
@@ -544,21 +431,12 @@
   "plan_status_on_track": "Хэвийн явж байна!",
   "start_now": "Одоо эхлэх",
   "plan_enroll": "Бүртгүүлэх",
-  "show_second_version": "Хоёр дахь хувилбарыг харах",
-  "enable_add_msg": "Үндсэн бичвэрийн хажууд орчуулга эсвэл галиглал нэмэхийн тулд идэвхжүүлнэ үү",
-  "main_version": "Үндсэн хувилбар",
-  "second_version": "Хоёр дахь хувилбар",
-  "second_version_msg": "Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ",
   "root_text": "Үндсэн бичвэр",
   "version": "Хувилбарууд",
-  "parallel_version": "Зэрэгцээ хувилбар",
   "reader_languages_title": "Хэлүүд",
   "reader_original_label": "Эх",
   "reader_translation_label": "Орчуулга",
   "version_not_available": "Байхгүй",
-  "read_full_text": "Бүтэн бичвэрийг унших",
-  "reader_source_label": "Эх сурвалж",
-  "reader_license_label": "Лиценз",
   "series_stats": "{planCount} БҮЛЭГ · {totalDays} ӨДӨР",
   "@series_stats": {
     "placeholders": {
@@ -582,8 +460,6 @@
   "settings_feedback_row": "Санал хүсэлт",
   "edit_profile_title": "Профайл засах",
   "edit_profile_save": "Хадгалах",
-  "edit_profile_first_name": "Нэр",
-  "edit_profile_last_name": "Овог",
   "edit_profile_display_name": "Харагдах нэр",
   "edit_profile_bio": "Танилцуулга",
   "edit_profile_bio_hint": "Өөрийнхөө тухай бага зэрэг хуваалцана уу",
@@ -641,22 +517,10 @@
   "accumulations_search_for": "Хуримтлал хайх",
   "accumulations_no_found": "Хуримтлал олдсонгүй",
   "me_accumulation": "Нийт хуримтлал",
-  "me_counts": "удаа",
   "me_minutes": "минут",
   "me_hours": "цаг",
   "me_total_meditation_time": "Нийт бясалгалын хугацаа",
   "me_days_plan_practiced_suffix": "нийт дуусгасан төлөвлөгөөт өдөр",
-  "me_streak_share_message": "Би {appName} дээр {count} өдрийн дараалалтай байна!",
-  "@me_streak_share_message": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "appName": {
-        "type": "String"
-      }
-    }
-  },
   "me_streak_share_quote": "WeBuddhist дээрх миний одоогийн дараалал!",
   "me_streak_days_count": "{count} өдөр",
   "@me_streak_days_count": {
@@ -680,17 +544,6 @@
   "calendar_upcoming_events": "Удахгүй болох арга хэмжээ",
   "calendar_day_short": "ӨДӨР",
   "calendar_day_label": "Өдөр",
-  "calendar_day_month": "{day}-р өдөр · {month}-р сар",
-  "@calendar_day_month": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      }
-    }
-  },
   "calendar_lunar_month": "{ordinal} билгийн сар",
   "@calendar_lunar_month": {
     "placeholders": {
@@ -700,13 +553,8 @@
     }
   },
   "moon_phase_new_moon": "Шинэ сар",
-  "moon_phase_waxing_crescent": "Өсөх хавирган сар",
   "moon_phase_first_quarter": "Тэргүүн улирал",
-  "moon_phase_waxing_gibbous": "Өсөх дугуйвтар сар",
   "moon_phase_full_moon": "Тэргэл сар",
-  "moon_phase_waning_gibbous": "Хорогдох дугуйвтар сар",
-  "moon_phase_last_quarter": "Эцсийн улирал",
-  "moon_phase_waning_crescent": "Хорогдох хавирган сар",
   "join": "Нэгдэх",
   "group_member": "гишүүн",
   "group_members": "гишүүд",
@@ -852,7 +700,6 @@
   "search_for_groups": "Орон зай хайх",
   "no_groups_found": "Тохирох орон зай олдсонгүй",
   "connect_groups_empty_title": "Одоогоор бүлэг алга",
-  "connect_groups_empty_subtitle": "Баяр хүргэе, та манай бүх орон зайд нэгдсэн байна! Удахгүй дахин шалгаарай. Шинэ орон зайнууд удахгүй нэмэгдэнэ...",
   "connect_groups_load_error": "Бүлгүүдийг ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу",
   "weekday_monday": "Дав",
   "weekday_tuesday": "Мяг",
@@ -864,11 +711,8 @@
   "reader_search_failed": "Хайлт амжилтгүй боллоо.\nДахин оролдоно уу",
   "reader_swipe_up_for_more": "Илүү ихийг үзэхийн тулд дээш шудрана уу",
   "reader_videos": "Бичлэгүүд",
-  "reader_about_this_version": "Энэ хувилбарын тухай",
-  "reader_version_count": "{count, plural,\n=1 {1 хувилбар}\nother {{count} хувилбар}\n}",
   "mala_no_mantras": "Тарни алга байна",
   "mala_count_load_error": "Таны тоог ачаалж чадсангүй",
-  "mala_mantra_label": "Тарни",
   "bookmarks_empty_all_title": "Хараахан хавчуургалаагүй байна",
   "bookmarks_empty_all_subtitle": "Энд хадгалахын тулд юуг ч хавчуургалаарай",
   "bookmarks_empty_plans_title": "Хараахан төлөвлөгөө хавчуургалаагүй байна",
@@ -911,41 +755,28 @@
   "link_invalid": "Буруу URL",
   "author_no_plans": "Одоогоор төлөвлөгөө үүсгээгүй байна",
   "author_plans_load_error": "Төлөвлөгөөг ачаалж чадсангүй",
-  "source_with_value": "Эх сурвалж: {value}",
-  "license_with_value": "Лиценз: {value}",
-  "loading_previous_pages": "Өмнөхийг ачаалж байна... ({count} хуудас)",
-  "loading_more_pages": "Илүү ихийг ачаалж байна... ({count} хуудас)",
   "drag_to_resize": "Хэмжээг өөрчлөхийн тулд чирнэ үү",
   "day_completion_share_message": "Би WeBuddhist дээр өөрийн дадлагын нэг өдрийг дуусгалаа. Надтай нэгдэж, хамтдаа өдөр тутмын дадлагын зуршил бий болгоцгооё.",
   "group_accumulator_share_message": "Би WeBuddhist дээрх {group} орон зайн \"{accumulation}\" хуримтлалд оролцож байна. Та ч бас надтай нэгдээрэй!",
   "group_accumulator_share_message_no_group": "Би WeBuddhist дээр \"{accumulation}\" хуримтлалд оролцож байна. Та ч бас надтай нэгдээрэй!",
   "connect_tab_feed": "Мэдээ",
   "connect_tab_events": "Арга хэмжээ",
-  "connect_tab_posts": "Нийтлэл",
   "connect_tab_practices": "Дадлага",
   "connect_tab_groups": "Орон зай",
   "connect_segment_my": "Таны орон зай",
   "connect_segment_discover": "Судлах",
-  "connect_empty_discover_posts": "Судлах нийтлэл алга",
   "connect_empty_discover_events": "Судлах арга хэмжээ алга",
   "connect_empty_discover_feed": "Судлах зүйл алга",
   "connect_empty_discover_groups": "Судлах орон зай алга",
-  "connect_empty_discover_practices": "Судлах бясалгал алга",
   "connect_all_groups": "Бүх орон зай",
   "connect_my_empty_feed_title": "Шинэ мэдээ алга",
   "connect_my_empty_events_title": "Товлосон арга хэмжээ алга",
-  "connect_my_empty_posts_title": "Одоогоор нийтлэл алга",
   "connect_my_empty_groups_title": "Одоогоор бүлэг алга",
   "connect_my_empty_feed_subtitle": "Таны орон зайнууд шинэ зүйл хуваалцаагүй байна",
   "connect_my_empty_events_subtitle": "Таны орон зайнууд арга хэмжээ товлоогүй байна",
-  "connect_my_empty_posts_subtitle": "Таны орон зайнууд юу ч нийтлээгүй байна",
   "connect_my_empty_groups_subtitle": "Та одоогоор ямар ч бүлэгт нэгдээгүй байна. Хамтдаа дадлага хийх нийгэмлэгүүдийг судлаарай.",
   "connect_my_empty_feed_browse": "Бусад орон зайн хуваалцсаныг үзэх",
   "connect_my_empty_events_browse": "Нээлттэй арга хэмжээг үзэх",
-  "connect_my_empty_posts_browse": "Бусад нийтлэлийг үзэх",
-  "connect_my_empty_practices_title": "Одоогоор дадлага алга",
-  "connect_my_empty_practices_subtitle": "Таны орон зайнууд ямар ч дадлага эхлүүлээгүй байна",
-  "connect_my_empty_practices_browse": "Бусад бясалгалыг үзэх",
   "connect_comment_replying_to": "@{handle}-д хариулж байна",
   "@connect_comment_replying_to": {
     "placeholders": {
@@ -969,7 +800,6 @@
     }
   },
   "connect_post_comments_empty": "Одоогоор сэтгэгдэл алга. Яриаг эхлүүлээрэй",
-  "connect_caption_more": "Илүү",
   "connect_online": "Онлайн",
   "home_group_events": "Онцлох арга хэмжээ",
   "home_poems": "Шүлэг",
@@ -981,7 +811,6 @@
   "connect_events_filter_empty_in_person": "Биечлэн оролцох арга хэмжээ байхгүй",
   "connect_events_filter_hybrid": "Хосолсон",
   "connect_events_filter_empty_hybrid": "Хосолмол арга хэмжээ байхгүй",
-  "connect_open": "Нээх",
   "connect_event_fallback_title": "Арга хэмжээ",
   "connect_group_fallback_title": "Орон зай",
   "connect_event_participants_attending": "{count} оролцогч",
@@ -994,12 +823,8 @@
   },
   "connect_event_participants_empty": "Одоогоор оролцогч алга",
   "connect_event_tab_videos": "Бичлэгүүд",
-  "connect_event_tab_links": "Холбоосууд",
   "connect_event_tab_about": "Тухай",
   "connect_event_links_title": "Үйл явдлын дэлгэрэнгүй мэдээлэл",
-  "connect_event_links_empty": "Одоогоор холбоос алга",
-  "connect_event_link_tap_to_join": "Нэгдэхийн тулд товшино уу",
-  "connect_event_link_open": "Холбоос нээх",
   "connect_event_date_tba": "Огноог дараа зарлана",
   "connect_event_about_empty": "Арга хэмжээний мэдээлэл одоогоор алга",
   "timer_notification_in_progress": "Бясалгал үргэлжилж байна",
@@ -1012,7 +837,6 @@
     }
   },
   "timer_notification_complete": "Таны хуралдаан дууслаа",
-  "group_chat_title": "Чат",
   "chats_title": "Чатууд",
   "chats_empty_title": "Одоогоор чат алга",
   "chats_empty_body": "Чатлаж эхлэхийн тулд орон зайд нэгдээрэй",
@@ -1020,7 +844,6 @@
   "group_chat_not_a_member": "Зөвхөн гишүүд энэ чатыг нээх боломжтой",
   "group_chat_open": "Чат",
   "group_chat_message_hint": "Зурвас",
-  "group_chat_join_to_send": "Мессеж илгээхийн тулд чатад нэгдээрэй.",
   "group_chat_today": "Өнөөдөр",
   "group_chat_yesterday": "Өчигдөр",
   "group_chat_empty_title": "Одоогоор зурвас алга",
@@ -1129,7 +952,6 @@
   "event_prayer_load_failed": "Залбирлын хүсэлтүүдийг ачаалж чадсангүй",
   "event_prayer_closed": "Энэ арга хэмжээний залбирлын хүсэлт хаагдсан",
   "event_prayer_pray": "Залбирах",
-  "event_prayer_praying": "Залбирсан",
   "connect_event_organizer": "Зохион байгуулагч",
   "event_prayer_request_count": "{count, plural,\nother {{count} хүсэлт}\n=1 {1 хүсэлт}\none {1 хүсэлт}\n}",
   "@event_prayer_request_count": {
@@ -1173,7 +995,6 @@
   "help_context_photos": "{count, plural, =1{1 зураг} other{{count} зураг}}",
   "chat_official_badge": "Албан ёсны",
   "chat_team_reply_time": "Ихэвчлэн 1 өдрийн дотор хариулдаг",
-  "connect_event_enter": "Орох",
   "connect_event_participation_prompt": "Та хэрхэн оролцож байна вэ?",
   "connect_event_practice_in_person": "Биечлэн дадлага хийх",
   "connect_event_practice_online": "Онлайнаар дадлага хийх",
@@ -1192,9 +1013,7 @@
   },
   "connect_event_when": "Хэзээ",
   "connect_event_where": "Хаана",
-  "connect_event_practices": "Үйл явдлын дадлагууд",
   "connect_event_tab_accumulations": "Хуримтлал",
-  "connect_event_tab_recitations": "Уншлагууд",
   "connect_event_add_recitations": "Уншлага нэмэх",
   "connect_event_add_recitations_message": "Шууд дамжуулалттай хамт эсвэл энэ аппын гадуур хийсэн уншлагуудаа нэмэх",
   "connect_event_every_day": "Өдөр бүр",
@@ -1218,7 +1037,6 @@
   "player_fullscreen": "Бүтэн дэлгэц",
   "player_exit_fullscreen": "Бүтэн дэлгэцээс гарах",
   "event_live_badge": "ШУУД",
-  "event_live_audio": "Шууд аудио",
   "event_live_video_mode": "Бичлэг",
   "event_live_audio_mode": "Аудио",
   "event_live_go_live": "Шууд",
@@ -1251,14 +1069,6 @@
     }
   },
   "event_prayer_praying_for_you": "Таны төлөө залбирсан",
-  "event_prayer_praying_for": "{name}-ийн төлөө залбирсан",
-  "@event_prayer_praying_for": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "event_prayer_your_request": "Таны хүсэлт",
   "event_prayer_supporters_failed": "Хэн залбирч байгааг ачаалж чадсангүй.",
   "event_prayer_no_supporters": "Одоогоор хэн ч залбираагүй байна",

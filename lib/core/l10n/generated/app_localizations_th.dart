@@ -21,15 +21,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get onboarding_welcome => 'ยินดีต้อนรับสู่';
 
   @override
-  String get onboarding_setup_subtitle =>
-      'มาตั้งค่ากันเถอะ ใช้เวลาเพียงหนึ่งนาที';
-
-  @override
   String get onboarding_tagline => 'เรียนรู้ ปฏิบัติ และเชื่อมโยงกัน ทุกวัน';
-
-  @override
-  String get onboarding_quote =>
-      'หม้อน้ำย่อมเต็มได้ด้วยน้ำทีละหยด ฉันใด ผู้มีปัญญาสั่งสมความดีทีละน้อย ก็ย่อมเต็มเปี่ยมด้วยความดี ฉันนั้น';
 
   @override
   String get onboarding_find_peace => 'เริ่มต้นใช้งาน';
@@ -42,9 +34,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get onboarding_language_subtitle => 'ภาษานี้จะใช้เป็นภาษาของแอป';
-
-  @override
-  String get onboarding_choose_option => 'เลือกอย่างน้อยหนึ่งข้อ:';
 
   @override
   String get onboarding_all_set => 'พร้อมแล้ว';
@@ -66,43 +55,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get onboarding_all_set_connect_body => 'กลุ่ม กิจกรรม ฟีดข่าว และแชท';
 
   @override
-  String get home_recitation => 'บทสวด';
-
-  @override
   String get home_today => 'วันนี้';
 
   @override
-  String get home_good_morning => 'อรุณสวัสดิ์';
-
-  @override
-  String get home_good_afternoon => 'สวัสดีตอนบ่าย';
-
-  @override
-  String get home_good_evening => 'สวัสดีตอนเย็น';
-
-  @override
-  String get home_meditationTitle => 'การทำสมาธิ';
-
-  @override
-  String get home_prayerTitle => 'บทสวดประจำวัน';
-
-  @override
-  String get home_scripture => 'ศึกษาคัมภีร์แบบมีผู้นำ';
-
-  @override
-  String get home_meditation => 'ทำสมาธิแบบมีผู้นำ';
-
-  @override
-  String get home_goDeeper => 'ศึกษาให้ลึกซึ้ง';
-
-  @override
-  String get home_intention => 'ความตั้งใจของฉันสำหรับวันนี้';
-
-  @override
   String get home_overall_stats => 'สถิติโดยรวม';
-
-  @override
-  String get home_plans => 'แผนการปฏิบัติ';
 
   @override
   String home_plans_count(int count) {
@@ -262,9 +218,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get timer_min => 'นาที';
 
   @override
-  String get timer_start => 'เริ่ม';
-
-  @override
   String get timer_finish => 'เสร็จสิ้น';
 
   @override
@@ -272,9 +225,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get home_hello_prefix => 'สวัสดี ';
-
-  @override
-  String get home_greeting_fallback_name => 'เพื่อนธรรม';
 
   @override
   String home_share_prompt(String appName) {
@@ -315,9 +265,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get text_search => 'ค้นหา';
 
   @override
-  String get text_toc_versions => 'ฉบับ';
-
-  @override
   String get text_commentary => 'อรรถกถา';
 
   @override
@@ -325,9 +272,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get no_translation => 'ไม่พบคำแปล';
-
-  @override
-  String get text_close_commentary => 'ปิดอรรถกถา';
 
   @override
   String get show_more => 'แสดงเพิ่มเติม';
@@ -345,9 +289,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get no_content => 'ไม่พบเนื้อหา';
 
   @override
-  String get no_commentary => 'ไม่พบอรรถกถา';
-
-  @override
   String commentary_not_available_for_language(String language) {
     return 'ไม่มีอรรถกถาสำหรับ $language';
   }
@@ -356,37 +297,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get loading => 'กำลังโหลด...';
 
   @override
-  String get choose_bg_image => 'เลือกภาพพื้นหลัง';
-
-  @override
   String get save => 'บันทึก';
 
   @override
   String get done => 'เสร็จสิ้น';
-
-  @override
-  String get customise_message => 'แตะไอคอนปรับแต่งเพื่อปรับรูปแบบข้อความ';
-
-  @override
-  String get download_image => 'ดาวน์โหลดภาพ';
-
-  @override
-  String get no_images_available => 'ไม่มีภาพ';
-
-  @override
-  String get customise_text => 'ปรับแต่งข้อความ';
-
-  @override
-  String get text_size => 'ขนาดตัวอักษร';
-
-  @override
-  String get text_color => 'สีตัวอักษร';
-
-  @override
-  String get text_shadow => 'เงาตัวอักษร';
-
-  @override
-  String get apply => 'ใช้';
 
   @override
   String get my_plans => 'แผนการปฏิบัติของฉัน';
@@ -447,15 +361,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get no_days_available => 'ไม่พบวัน';
 
   @override
-  String get recitations_title => 'บทสวด';
-
-  @override
-  String get recitations_my_recitations => 'บทสวดของฉัน';
-
-  @override
-  String get browse_recitations => 'เลือกดูบทสวด';
-
-  @override
   String get recitations_search => 'ค้นหาบทสวด...';
 
   @override
@@ -466,12 +371,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get recitations_no_content => 'ไม่มีบทสวด';
-
-  @override
-  String get recitations_no_saved => 'ไม่มีบทสวดที่บันทึกไว้';
-
-  @override
-  String get recitations_login_prompt => 'เข้าสู่ระบบเพื่อดูบทสวดที่บันทึกไว้';
 
   @override
   String get my_recitation_collection_new_title => 'ชุดบทสวดใหม่';
@@ -642,13 +541,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get something_went_wrong => 'เกิดข้อผิดพลาด โปรดลองอีกครั้ง';
 
   @override
-  String get onboarding_quote_citation => '— ธรรมบท 122';
-
-  @override
-  String get onboarding_traditions_question =>
-      'คุณปฏิบัติตาม\nสายการปฏิบัติใดบ้าง';
-
-  @override
   String get onboarding_tradition_title =>
       'คุณปฏิบัติตามคำสอนของพระพุทธเจ้าอย่างไร';
 
@@ -657,53 +549,7 @@ class AppLocalizationsTh extends AppLocalizations {
       'เลือกสายการปฏิบัติอย่างน้อยหนึ่งสายสำหรับเนื้อหาของคุณ เปลี่ยนได้ทุกเมื่อในการตั้งค่า';
 
   @override
-  String get onboarding_tradition_option_intro => 'ตามแนวทาง:';
-
-  @override
   String get onboarding_tradition_show_all_title => 'แสดงทั้งหมด';
-
-  @override
-  String get onboarding_skip_for_now => 'ข้ามไปก่อน';
-
-  @override
-  String get onboarding_add_another_tradition => 'เพิ่มสายการปฏิบัติอื่น';
-
-  @override
-  String get onboarding_select_all => 'เลือกทั้งหมด';
-
-  @override
-  String get onboarding_event_enrollment_error =>
-      'ไม่สามารถลงทะเบียนได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
-
-  @override
-  String get onboarding_event_question => 'เข้าร่วม\nกิจกรรมไหม';
-
-  @override
-  String get onboarding_event_optional => 'ไม่บังคับ · แตะเพื่อลงทะเบียน';
-
-  @override
-  String onboarding_event_duration(String description, int days) {
-    return '$description · $days วัน';
-  }
-
-  @override
-  String get onboarding_event_reminder_note =>
-      'เราจะส่งการเตือนให้ทุกวันเวลา 07:30 น. (เปลี่ยนได้ทุกเมื่อ)';
-
-  @override
-  String get tradition_theravada => 'เถรวาท';
-
-  @override
-  String get tradition_zen => 'เซน';
-
-  @override
-  String get tradition_tibetan_buddhism => 'พุทธศาสนาแบบทิเบต';
-
-  @override
-  String get tradition_pure_land => 'สุขาวดี';
-
-  @override
-  String get tradition_ambedkar_buddhism => 'พุทธศาสนาแนวอัมเบดการ์';
 
   @override
   String get plan_go_to_practice => 'ไปที่การปฏิบัติ';
@@ -735,10 +581,6 @@ class AppLocalizationsTh extends AppLocalizations {
       'ไม่สามารถโหลดได้\nตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
 
   @override
-  String get connect_coming_soon_subtitle =>
-      'ครูบาอาจารย์ ชุมชน ความท้าทาย และกิจกรรมที่จะช่วยสนับสนุนคุณบนเส้นทางธรรม';
-
-  @override
   String get connect_subtitle => 'ค้นหากลุ่มและปฏิบัติร่วมกัน';
 
   @override
@@ -758,17 +600,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get connect_groups_empty_title => 'ไม่มีกลุ่มเพิ่มเติม';
 
   @override
-  String get connect_groups_empty_subtitle =>
-      'ยินดีด้วย คุณเข้าร่วมทุกกลุ่มของเราแล้ว แวะกลับมาอีกนะ กลุ่มใหม่กำลังจะมา...';
-
-  @override
   String get connect_tab_feed => 'ฟีด';
 
   @override
   String get connect_tab_events => 'กิจกรรม';
-
-  @override
-  String get connect_tab_posts => 'โพสต์';
 
   @override
   String get connect_tab_practices => 'การปฏิบัติ';
@@ -783,9 +618,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get connect_segment_discover => 'ค้นพบ';
 
   @override
-  String get connect_empty_discover_posts => 'ไม่มีโพสต์ให้ค้นพบ';
-
-  @override
   String get connect_empty_discover_events => 'ไม่มีกิจกรรมให้ค้นพบ';
 
   @override
@@ -795,9 +627,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get connect_empty_discover_groups => 'ไม่มีกลุ่มให้ค้นพบ';
 
   @override
-  String get connect_empty_discover_practices => 'ไม่มีการปฏิบัติให้ค้นพบ';
-
-  @override
   String get connect_all_groups => 'กลุ่มทั้งหมด';
 
   @override
@@ -805,9 +634,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_title => 'ไม่มีกิจกรรมที่กำลังจะมาถึง';
-
-  @override
-  String get connect_my_empty_posts_title => 'ยังไม่มีโพสต์';
 
   @override
   String get connect_my_empty_groups_title => 'ยังไม่มีกลุ่ม';
@@ -821,9 +647,6 @@ class AppLocalizationsTh extends AppLocalizations {
       'กลุ่มของคุณยังไม่ได้กำหนดกิจกรรมใด ๆ';
 
   @override
-  String get connect_my_empty_posts_subtitle => 'กลุ่มของคุณยังไม่ได้โพสต์อะไร';
-
-  @override
   String get connect_my_empty_groups_subtitle =>
       'คุณยังไม่ได้เข้าร่วมกลุ่มใด ค้นหากลุ่มเพื่อปฏิบัติร่วมกัน';
 
@@ -832,19 +655,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_browse => 'เลือกดูกิจกรรมที่เปิดอยู่';
-
-  @override
-  String get connect_my_empty_posts_browse => 'เลือกดูโพสต์อื่น ๆ';
-
-  @override
-  String get connect_my_empty_practices_title => 'ยังไม่มีการปฏิบัติ';
-
-  @override
-  String get connect_my_empty_practices_subtitle =>
-      'กลุ่มของคุณยังไม่ได้เริ่มการปฏิบัติใด ๆ';
-
-  @override
-  String get connect_my_empty_practices_browse => 'เลือกดูการปฏิบัติอื่น ๆ';
 
   @override
   String connect_comment_replying_to(String handle) {
@@ -883,9 +693,6 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get connect_post_comments_empty =>
       'ยังไม่มีความคิดเห็น มาเริ่มการสนทนากัน';
-
-  @override
-  String get connect_caption_more => 'เพิ่มเติม';
 
   @override
   String get connect_online => 'ออนไลน์';
@@ -930,16 +737,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get connect_events_filter_empty_hybrid => 'ไม่มีกิจกรรมแบบไฮบริด';
 
   @override
-  String get connect_open => 'เปิด';
-
-  @override
   String get connect_event_fallback_title => 'กิจกรรม';
 
   @override
   String get connect_group_fallback_title => 'กลุ่ม';
-
-  @override
-  String get connect_event_enter => 'เข้าสู่กิจกรรม';
 
   @override
   String get connect_event_participation_prompt => 'คุณจะเข้าร่วมแบบไหน';
@@ -999,22 +800,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get connect_event_tab_videos => 'วิดีโอ';
 
   @override
-  String get connect_event_tab_links => 'ลิงก์';
-
-  @override
   String get connect_event_tab_about => 'เกี่ยวกับ';
 
   @override
   String get connect_event_links_title => 'รายละเอียดกิจกรรมเพิ่มเติม';
-
-  @override
-  String get connect_event_links_empty => 'ยังไม่มีลิงก์';
-
-  @override
-  String get connect_event_link_tap_to_join => 'แตะเพื่อเข้าร่วม';
-
-  @override
-  String get connect_event_link_open => 'เปิดลิงก์';
 
   @override
   String get connect_event_date_tba => 'จะประกาศวันที่ภายหลัง';
@@ -1026,13 +815,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get connect_event_where => 'ที่ไหน';
 
   @override
-  String get connect_event_practices => 'การปฏิบัติในกิจกรรม';
-
-  @override
   String get connect_event_tab_accumulations => 'ยอดสะสม';
-
-  @override
-  String get connect_event_tab_recitations => 'บทสวด';
 
   @override
   String get connect_event_add_recitations => 'เพิ่มจำนวนการสวด';
@@ -1081,18 +864,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get creator_featured_plan => 'แผนการปฏิบัติแนะนำ';
 
   @override
-  String get audio_init_error =>
-      'ไม่สามารถเริ่มเครื่องเล่นเสียงได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
-
-  @override
-  String get meditation_audio_load_error =>
-      'ไม่สามารถโหลดได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
-
-  @override
-  String get prayer_audio_load_error =>
-      'ไม่สามารถโหลดเสียงได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
-
-  @override
   String get home_no_series_found => 'ไม่พบซีรีส์';
 
   @override
@@ -1102,32 +873,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get home_celebrated_by => 'เฉลิมฉลองโดย: ';
 
   @override
-  String get reader_settings_tooltip => 'การตั้งค่าการอ่าน';
-
-  @override
-  String get reader_translate_tooltip => 'แสดงคำแปล';
-
-  @override
-  String get reader_translate_unavailable => 'ไม่มีคำแปลสำหรับคัมภีร์นี้';
-
-  @override
   String get reader_font_size_tooltip => 'ขนาดตัวอักษร';
 
   @override
-  String reader_version_title(String language) {
-    return 'ฉบับ · $language';
-  }
-
-  @override
-  String reader_script_title(String language) {
-    return 'อักษร · $language';
-  }
-
-  @override
   String get reader_versions_load_error => 'ไม่สามารถโหลดฉบับต่าง ๆ ได้';
-
-  @override
-  String get reader_scripts_load_error => 'โหลดอักษรไม่สำเร็จ';
 
   @override
   String get reader_languages_load_error => 'ไม่สามารถโหลดภาษาได้';
@@ -1138,37 +887,10 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String reader_no_scripts_in_language(String language) {
-    return 'ไม่มีอักษรให้เลือกสำหรับ $language';
-  }
-
-  @override
   String get reader_no_languages => 'ไม่มีภาษาให้เลือกสำหรับคัมภีร์นี้';
 
   @override
   String get reader_license => 'สัญญาอนุญาต';
-
-  @override
-  String get reader_version_details_load_error =>
-      'ไม่สามารถโหลดรายละเอียดฉบับได้';
-
-  @override
-  String get reader_no_version_info => 'ไม่มีข้อมูลเพิ่มเติมสำหรับฉบับนี้';
-
-  @override
-  String get recitation_unavailable =>
-      'ขณะนี้ไม่มีเนื้อหาบทสวด\nลองอีกครั้งในภายหลังหรือติดต่อฝ่ายสนับสนุน';
-
-  @override
-  String get recitation_sign_in_required => 'เข้าสู่ระบบเพื่อเข้าถึงบทสวดนี้';
-
-  @override
-  String get my_recitations_load_error =>
-      'ไม่สามารถโหลดได้\nตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
-
-  @override
-  String get recitations_load_error =>
-      'ไม่สามารถโหลดบทสวดได้\nลองอีกครั้งในภายหลัง';
 
   @override
   String get text_search_hint => 'พิมพ์เพื่อค้นหา';
@@ -1180,15 +902,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get text_search_error => 'ไม่สามารถค้นหาได้\nโปรดลองอีกครั้ง';
 
   @override
-  String get unknown_error => 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ';
-
-  @override
   String get create_image_share_error => 'ไม่สามารถแชร์ได้ โปรดลองอีกครั้ง';
-
-  @override
-  String version_search_no_results(String query) {
-    return 'ไม่พบฉบับสำหรับ \"$query\"';
-  }
 
   @override
   String get my_plans_sign_in_prompt => 'เข้าสู่ระบบเพื่อดูแผนการปฏิบัติของคุณ';
@@ -1226,12 +940,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get collection_audio_versions => 'ฉบับเสียง';
-
-  @override
-  String get image => 'ภาพ';
-
-  @override
-  String get feedback => 'ส่งข้อเสนอแนะ';
 
   @override
   String get author => 'ผู้เขียน';
@@ -1292,9 +1000,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get routine_collapse_all => 'ยุบทั้งหมด';
-
-  @override
-  String get routine_delete_time_block => 'นำช่วงเวลาออก';
 
   @override
   String get routine_add_plan => 'เพิ่มแผนการปฏิบัติ';
@@ -1366,9 +1071,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get continueWithPhone => 'ดำเนินการต่อด้วยเบอร์โทรศัพท์';
 
   @override
-  String get continueAsGuest => 'ดำเนินการต่อในฐานะผู้เยี่ยมชม';
-
-  @override
   String get exploreAsGuest => 'สำรวจในฐานะผู้เยี่ยมชม';
 
   @override
@@ -1420,9 +1122,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get source => 'แหล่งที่มา';
-
-  @override
-  String get searchResults => 'ผลการค้นหา';
 
   @override
   String get noTasks => 'ไม่มีรายการที่ต้องทำ';
@@ -1478,13 +1177,6 @@ class AppLocalizationsTh extends AppLocalizations {
   }
 
   @override
-  String get updateOrderError => 'ไม่สามารถอัปเดตลำดับได้ โปรดลองอีกครั้ง';
-
-  @override
-  String get loadFailed =>
-      'ไม่สามารถโหลดได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
-
-  @override
   String get captureError => 'บันทึกภาพคิวอาร์โค้ดไม่สำเร็จ โปรดลองอีกครั้ง';
 
   @override
@@ -1517,29 +1209,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get plan_enroll => 'ลงทะเบียน';
 
   @override
-  String get show_second_version => 'แสดงฉบับที่สอง';
-
-  @override
-  String get enable_add_msg =>
-      'เปิดเพื่อเพิ่มคำแปลหรือคำถอดเสียงคู่กับข้อความหลัก';
-
-  @override
-  String get main_version => 'ฉบับหลัก';
-
-  @override
-  String get second_version => 'ฉบับที่สอง';
-
-  @override
-  String get second_version_msg => 'ฉบับที่สองจะแสดงใต้แต่ละบทของข้อความหลัก';
-
-  @override
   String get root_text => 'คัมภีร์หลัก';
 
   @override
   String get version => 'ฉบับ';
-
-  @override
-  String get parallel_version => 'ฉบับคู่ขนาน';
 
   @override
   String get reader_languages_title => 'ภาษา';
@@ -1555,15 +1228,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get version_not_available => 'ไม่มีให้ใช้งาน';
-
-  @override
-  String get read_full_text => 'อ่านฉบับเต็ม';
-
-  @override
-  String get reader_source_label => 'แหล่งที่มา';
-
-  @override
-  String get reader_license_label => 'สัญญาอนุญาต';
 
   @override
   String series_stats(int planCount, int totalDays) {
@@ -1606,12 +1270,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get edit_profile_save => 'บันทึก';
-
-  @override
-  String get edit_profile_first_name => 'ชื่อ';
-
-  @override
-  String get edit_profile_last_name => 'นามสกุล';
 
   @override
   String get edit_profile_display_name => 'ชื่อที่แสดง';
@@ -1758,9 +1416,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get me_accumulation => 'ยอดสะสมทั้งหมด';
 
   @override
-  String get me_counts => 'ครั้ง';
-
-  @override
   String get me_minutes => 'นาที';
 
   @override
@@ -1771,11 +1426,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get me_days_plan_practiced_suffix => 'วันที่ทำตามแผนการปฏิบัติครบ';
-
-  @override
-  String me_streak_share_message(int count, String appName) {
-    return 'ฉันปฏิบัติต่อเนื่องมา $count วันแล้วบน $appName!';
-  }
 
   @override
   String get me_streak_share_quote =>
@@ -1832,11 +1482,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get calendar_day_label => 'วัน';
 
   @override
-  String calendar_day_month(int day, int month) {
-    return 'วันที่ $day · เดือน $month';
-  }
-
-  @override
   String calendar_lunar_month(String ordinal) {
     return 'เดือน $ordinal ตามจันทรคติ';
   }
@@ -1845,25 +1490,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get moon_phase_new_moon => 'จันทร์ดับ';
 
   @override
-  String get moon_phase_waxing_crescent => 'จันทร์เสี้ยวข้างขึ้น';
-
-  @override
   String get moon_phase_first_quarter => 'จันทร์ครึ่งดวงข้างขึ้น';
 
   @override
-  String get moon_phase_waxing_gibbous => 'จันทร์ค่อนดวงข้างขึ้น';
-
-  @override
   String get moon_phase_full_moon => 'จันทร์เพ็ญ';
-
-  @override
-  String get moon_phase_waning_gibbous => 'จันทร์ค่อนดวงข้างแรม';
-
-  @override
-  String get moon_phase_last_quarter => 'จันทร์ครึ่งดวงข้างแรม';
-
-  @override
-  String get moon_phase_waning_crescent => 'จันทร์เสี้ยวข้างแรม';
 
   @override
   String get join => 'เข้าร่วม';
@@ -2426,27 +2056,10 @@ class AppLocalizationsTh extends AppLocalizations {
   String get reader_videos => 'วิดีโอ';
 
   @override
-  String get reader_about_this_version => 'เกี่ยวกับฉบับนี้';
-
-  @override
-  String reader_version_count(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count ฉบับ',
-      one: '1 ฉบับ',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get mala_no_mantras => 'ไม่มีมนต์ให้เลือก';
 
   @override
   String get mala_count_load_error => 'โหลดจำนวนนับของคุณไม่สำเร็จ';
-
-  @override
-  String get mala_mantra_label => 'มนต์';
 
   @override
   String get bookmarks_empty_all_title => 'ยังไม่มีบุ๊กมาร์ก';
@@ -2628,26 +2241,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get author_plans_load_error => 'ไม่สามารถโหลดแผนการปฏิบัติได้';
 
   @override
-  String source_with_value(String value) {
-    return 'แหล่งที่มา: $value';
-  }
-
-  @override
-  String license_with_value(String value) {
-    return 'สัญญาอนุญาต: $value';
-  }
-
-  @override
-  String loading_previous_pages(int count) {
-    return 'กำลังโหลดก่อนหน้า... ($count หน้า)';
-  }
-
-  @override
-  String loading_more_pages(int count) {
-    return 'กำลังโหลดเพิ่ม... ($count หน้า)';
-  }
-
-  @override
   String get drag_to_resize => 'ลากเพื่อปรับขนาด';
 
   @override
@@ -2663,9 +2256,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String group_accumulator_share_message_no_group(String accumulation) {
     return 'ฉันกำลังร่วมยอดสะสม \"$accumulation\" บน WeBuddhist มาร่วมกันเถอะ!';
   }
-
-  @override
-  String get group_chat_title => 'แชท';
 
   @override
   String get chats_title => 'แชท';
@@ -2688,9 +2278,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get group_chat_message_hint => 'ข้อความ';
-
-  @override
-  String get group_chat_join_to_send => 'เข้าร่วมแชทเพื่อส่งข้อความ';
 
   @override
   String get group_chat_today => 'วันนี้';
@@ -2981,9 +2568,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get event_live_badge => 'สด';
 
   @override
-  String get event_live_audio => 'เสียงถ่ายทอดสด';
-
-  @override
   String get event_live_video_mode => 'วิดีโอ';
 
   @override
@@ -3062,9 +2646,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get event_prayer_pray => 'อธิษฐาน';
 
   @override
-  String get event_prayer_praying => 'อธิษฐานแล้ว';
-
-  @override
   String event_prayer_my_count(int count) {
     return '+$count';
   }
@@ -3118,11 +2699,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get event_prayer_praying_for_you => 'อธิษฐานให้คุณแล้ว';
-
-  @override
-  String event_prayer_praying_for(String name) {
-    return 'อธิษฐานให้ $name แล้ว';
-  }
 
   @override
   String get event_prayer_your_request => 'คำขอของคุณ';
@@ -3406,14 +2982,6 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get connect_failed_unlike_post_error => 'ไม่สามารถเลิกถูกใจโพสต์ได้';
-
-  @override
-  String get connect_failed_like_comment_error =>
-      'ไม่สามารถกดถูกใจความคิดเห็นได้';
-
-  @override
-  String get connect_failed_unlike_comment_error =>
-      'ไม่สามารถเลิกถูกใจความคิดเห็นได้';
 
   @override
   String get group_events_load_error =>
@@ -4224,9 +3792,6 @@ class AppLocalizationsTh extends AppLocalizations {
   String get timer_your_timers => 'ตัวจับเวลาของคุณ';
 
   @override
-  String get timer_custom_timer => 'ตัวจับเวลาที่กำหนดเอง';
-
-  @override
   String get timer_ambient_sounds_title => 'เสียงบรรยากาศ';
 
   @override
@@ -4265,15 +3830,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get splash_tagline_2 => 'พวกเราชาวพุทธปฏิบัติทุกวัน';
 
   @override
-  String get timer_list_subtitle =>
-      'แตะเล่นเพื่อเริ่ม หรือสร้างตัวจับเวลาของคุณเอง';
-
-  @override
   String get timer_create_custom => 'สร้างตัวจับเวลาเอง';
-
-  @override
-  String get timer_create_custom_subtitle =>
-      'เลือกระยะเวลาและเสียงพื้นหลัง (ไม่บังคับ)';
 
   @override
   String get timer_starting => 'กำลังเริ่ม...';
