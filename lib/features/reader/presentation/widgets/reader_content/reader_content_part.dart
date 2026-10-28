@@ -517,11 +517,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         );
         previous = item;
       }
-      // Each heading goes where it is drawn, else to the verse it opens at;
-      // one with neither on the page waits to be loaded.
+      // A section is on the page once the verse it opens at is: it goes
+      // where its heading is drawn, else to that verse. A page that starts
+      // partway into a section repeats its heading over the later verses,
+      // so a heading alone does not count; such a section waits to be
+      // loaded from its start.
       for (final section in outlined) {
-        final at = headerEntry[section.id] ?? verseEntry[section.number];
-        if (at == null) continue;
+        final opensAt = verseEntry[section.number];
+        if (opensAt == null) continue;
+        final at = headerEntry[section.id] ?? opensAt;
         final index = outlineSection[section.id]!;
         final placed = sections[index];
         sections[index] = ReaderPageSection(

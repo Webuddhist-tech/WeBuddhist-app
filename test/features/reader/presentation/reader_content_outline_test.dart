@@ -28,7 +28,9 @@ const _total = 60;
 
 int _chapterOf(int verse) => (verse - 1) ~/ 20;
 
-/// The page from the anchor, its verses under their chapters' headings.
+/// The page from the anchor, its verses under their chapters' headings: a
+/// page starting partway into a chapter repeats that chapter's heading, as
+/// the API does.
 ReaderResponse _page(TextDetailsParams params) {
   final first =
       params.segmentId == null
@@ -106,7 +108,7 @@ class _Outlines implements TextsRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Future<void> _pump(WidgetTester tester) async {
+Future<void> _pump(WidgetTester tester, {String? openAt}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -124,7 +126,9 @@ Future<void> _pump(WidgetTester tester) async {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: ReaderContentPart(sources: const [ReaderParams(textId: 'C')]),
+          body: ReaderContentPart(
+            sources: [ReaderParams(textId: 'C', segmentId: openAt)],
+          ),
         ),
       ),
     ),
@@ -187,5 +191,23 @@ void main() {
 
     expect(find.textContaining('Verse 1.'), findsOneWidget);
     expect(find.text('· 1 / 3'), findsOneWidget);
+  });
+
+  testWidgets('a chapter loaded only from partway in opens at its start', (
+    tester,
+  ) async {
+    // Opened at verse 45 (a search result, a bookmark): the last chapter is
+    // in only from there, under its repeated heading.
+    await _pump(tester, openAt: 'C-45');
+    expect(find.text(_chapters[2]), findsWidgets);
+    expect(find.textContaining('Verse 41.'), findsNothing);
+
+    await tester.tap(find.textContaining(' / 3'));
+    await _settle(tester);
+    await tester.tap(find.text(_chapters[2]).last);
+    await _settle(tester);
+
+    expect(find.text('Sections'), findsNothing);
+    expect(find.textContaining('Verse 41.'), findsOneWidget);
   });
 }
