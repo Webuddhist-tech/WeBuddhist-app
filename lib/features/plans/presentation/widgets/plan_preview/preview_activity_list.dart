@@ -121,7 +121,7 @@ class PreviewActivityList extends ConsumerWidget {
             );
           },
         ),
-        PlanShortsSection(videos: videos),
+        PlanDayVideos(videos: videos),
       ],
     );
   }
