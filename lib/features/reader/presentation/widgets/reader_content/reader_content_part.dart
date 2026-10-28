@@ -177,6 +177,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Set once the page has shown; after that a font arriving only reflows
   /// it, so the list and its scroll position stay.
   bool _pageShown = false;
+
+  /// Each counted heading's place on the page, by source and section id;
+  /// set in build for the list's items.
+  Map<(int, String), ReaderSectionPlace> _sectionPlaces = const {};
+
+  /// The same places by source and the id of the verse a section opens at.
+  Map<(int, String), ReaderSectionPlace> _sectionPlacesByVerse = const {};
+
+  /// A live room is being followed (not paused): other verses are muted.
+  bool _followingLive = false;
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
   int _liveGeneration = 0;
@@ -1658,6 +1668,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Source [index] as the list draws it, watched in build.
   _SourceView _watchView(int index) => _viewOf(index, watch: true);
 
+  /// The language [view]'s numbers are written in: the translation's when
+  /// one is shown, else the original's.
+  static String _numeralLanguage(_SourceView view) =>
+      view.secondaryActive
+          ? view.dualSettings.secondary.languageCode
+          : view.language;
+
   /// Whether a downloaded font picked for these texts' lines is still
   /// loading, for a short while at most. Defaults are not waited for.
   bool _waitingForPickedFonts(List<_SourceView> views) {
@@ -1903,6 +1920,28 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final pillSections = _pillSections(layout);
     final sectionCount = pillSections.length + pending;
     final showPill = pillSections.isNotEmpty && sectionCount > 1;
+    // Each counted heading's place, for its overline, as the pill counts.
+    _sectionPlaces = {
+      if (sectionCount > 1)
+        for (var i = 0; i < pillSections.length; i++)
+          (pillSections[i].source, pillSections[i].id): (
+            position: i + 1,
+            total: sectionCount,
+          ),
+    };
+    // A translation's own headings have ids of their own: they find their
+    // section by the verse it opens at.
+    _sectionPlacesByVerse = {
+      if (sectionCount > 1)
+        for (var i = 0; i < pillSections.length; i++)
+          if (pillSections[i].segmentId case final segmentId?)
+            (pillSections[i].source, segmentId): (
+              position: i + 1,
+              total: sectionCount,
+            ),
+    };
+    _followingLive =
+        _isLiveRecitation && liveMode == RecitationLiveFollowMode.following;
 
     return Column(
       children: [
@@ -1922,6 +1961,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                 return ReaderSectionsPill(
                   title: section.title,
                   language: section.language,
+                  numeralLanguage: _numeralLanguage(views[section.source]),
                   position: index + 1,
                   total: sectionCount,
                   onTap: _openSectionsSheet,
@@ -2048,6 +2088,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           depth: depth,
           language: headingLanguage,
           showDivider: depth > 0 && (previousItem?.isSegment ?? false),
+          place: _sectionPlaces[(view.index, section.id)],
+          numeralLanguage: _numeralLanguage(view),
         );
       },
       segment: (segment, depth, sectionId) {
@@ -2085,6 +2127,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                     isHighlighted: isHighlighted,
                     highlightSource: state.highlightSource,
                     isLive: isLive,
+                    followingLive: _followingLive,
                     onTap: () => _onSegmentTap(view.index, segment),
                   );
           if (headings.isEmpty) return verse;
@@ -2101,6 +2144,17 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   language: secondarySlot.languageCode,
                   // Like the original's: a nested heading after lines.
                   showDivider: i == 0 && headings[i].depth > 0 && !firstVerse,
+                  // Of the headings opening at a verse the pill counts the
+                  // innermost; outer ones only group it.
+                  place:
+                      _sectionPlaces[(view.index, headings[i].section.id)] ??
+                      (i == headings.length - 1
+                          ? _sectionPlacesByVerse[(
+                            view.index,
+                            segment.segmentId,
+                          )]
+                          : null),
+                  numeralLanguage: _numeralLanguage(view),
                 ),
               verse,
             ],
@@ -2114,6 +2168,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           scope: view.params.settingsScope,
           isSelected: isSelected,
           isLive: isLive,
+          followingLive: _followingLive,
           onTap: () {
             HapticFeedback.lightImpact();
             _onSegmentTap(view.index, segment);
@@ -2320,7 +2375,6 @@ class _SourceTitle extends ConsumerWidget {
       ),
       child: Text(
         title,
-        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: metrics.fontSize,
           fontWeight: metrics.fontWeight,
