@@ -71,9 +71,13 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   GroupReportsNotifier({
     required GroupProfileRepositoryInterface repository,
     required String groupId,
+    GroupReportsPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupReportsState());
+       super(const GroupReportsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
@@ -98,12 +102,6 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
     if (_resolving || state.isLoading) return;
 
     final generation = ++_requestGeneration;
-    final stored =
-        state.reports.isEmpty
-            ? await _repository.readStoredGroupReports(_groupId)
-            : null;
-    if (!mounted || generation != _requestGeneration) return;
-    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(
       isLoading: state.reports.isEmpty,
       isLoadingMore: false,
@@ -332,9 +330,11 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
 
 final groupReportsProvider = StateNotifierProvider.autoDispose
     .family<GroupReportsNotifier, GroupReportsState, String>((ref, groupId) {
+      final repository = ref.watch(groupProfileRepositoryProvider);
       final notifier = GroupReportsNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupReports(groupId),
       );
       notifier.loadInitial();
       return notifier;

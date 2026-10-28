@@ -1,6 +1,7 @@
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/calendar/domain/entities/tibetan_calendar_day.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 /// Backend source of authoritative Tibetan calendar data.
 abstract class CalendarRepository {
@@ -28,4 +29,9 @@ abstract class CalendarRepository {
 
   /// Stored day first (keyed by date, so yesterday's never shows).
   Stream<Either<Failure, TibetanCalendarDay>> watchToday();
+
+  /// Synchronous sources for first-frame seeding; null when not stored-backed.
+  ScreenCacheSource<List<TibetanCalendarDay>>? monthSource(int year, int month);
+
+  ScreenCacheSource<TibetanCalendarDay>? todaySource();
 }

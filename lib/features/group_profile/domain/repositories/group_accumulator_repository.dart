@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
@@ -11,6 +12,17 @@ abstract class GroupAccumulatorRepositoryInterface {
   });
 
   Future<Either<Failure, GroupAccumulatorDetail>> getGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupAccumulatorsPage> groupAccumulatorsSource(
+    String groupId, {
+    required String language,
+    required int limit,
+  });
+
+  ScreenCacheSource<GroupAccumulatorDetail> groupAccumulatorDetailSource(
     String accumulatorId, {
     required String language,
   });
@@ -32,7 +44,7 @@ abstract class GroupAccumulatorRepositoryInterface {
   });
 
   /// Stored first page; `getGroupAccumulatorMembers(skip: 0)` writes it.
-  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+  GroupAccumulatorMembersPage? readStoredGroupAccumulatorMembers(
     String accumulatorId, {
     required GroupAccumulatorMemberSort sortBy,
   });

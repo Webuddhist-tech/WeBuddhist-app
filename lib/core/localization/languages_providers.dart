@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
@@ -46,13 +47,25 @@ ScreenCacheSource<List<AppLanguage>> _languagesSource(
 /// kill-switch reconciliation. Falls back to [AppLanguage.bundledFallback] when
 /// nothing is stored and the fetch fails, so the picker always has something to
 /// show. When the backend returns an empty list, the bundled set is used too.
-final availableContentLanguagesProvider = StreamProvider<List<AppLanguage>>((
-  ref,
-) async* {
-  final source = _languagesSource(ref, recitationOnly: false);
-  final cached = source.read();
-  if (cached != null && cached.isNotEmpty) yield cached;
+final availableContentLanguagesProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<AppLanguage>, List<AppLanguage>>,
+  List<AppLanguage>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final source = _languagesSource(ref, recitationOnly: false);
+    final cached = source.read();
+    return bind.stream(
+      cached != null && cached.isNotEmpty ? cached : null,
+      _availableUpdates(ref, source, cached),
+    );
+  });
+});
 
+Stream<List<AppLanguage>> _availableUpdates(
+  Ref ref,
+  ScreenCacheSource<List<AppLanguage>> source,
+  List<AppLanguage>? cached,
+) async* {
   final result = await source.refresh();
   final languages = result.getRight().toNullable();
   if (languages == null) {
@@ -75,7 +88,7 @@ final availableContentLanguagesProvider = StreamProvider<List<AppLanguage>>((
   } catch (_) {}
 
   yield languages.isNotEmpty ? languages : AppLanguage.bundledFallback;
-});
+}
 
 /// Synchronous view of [availableContentLanguagesProvider] for UI that needs a
 /// list immediately. Uses the fetched value when ready; otherwise
@@ -85,13 +98,24 @@ final resolvedContentLanguagesProvider = Provider<List<AppLanguage>>((ref) {
       AppLanguage.bundledFallback;
 });
 
-final recitationContentLanguagesProvider = StreamProvider<List<AppLanguage>>((
-  ref,
-) async* {
-  final source = _languagesSource(ref, recitationOnly: true);
-  final cached = source.read();
-  if (cached != null && cached.isNotEmpty) yield cached;
+final recitationContentLanguagesProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<AppLanguage>, List<AppLanguage>>,
+  List<AppLanguage>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final source = _languagesSource(ref, recitationOnly: true);
+    final cached = source.read();
+    return bind.stream(
+      cached != null && cached.isNotEmpty ? cached : null,
+      _recitationUpdates(source, cached),
+    );
+  });
+});
 
+Stream<List<AppLanguage>> _recitationUpdates(
+  ScreenCacheSource<List<AppLanguage>> source,
+  List<AppLanguage>? cached,
+) async* {
   final result = await source.refresh();
   final languages = result.getRight().toNullable();
   if (languages != null) {
@@ -99,4 +123,4 @@ final recitationContentLanguagesProvider = StreamProvider<List<AppLanguage>>((
   } else if (cached == null || cached.isEmpty) {
     yield AppLanguage.bundledFallback;
   }
-});
+}

@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -11,31 +12,64 @@ import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_pr
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final userPlansFutureProvider =
-    StreamProvider<Either<Failure, UserPlanListResponseModel>>((ref) {
-      final auth = ref.watch(authProvider);
-      if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-        return Stream.value(
-          const Left(AuthenticationFailure('Not authenticated')),
+const _notAuthenticated = Left<Failure, Never>(
+  AuthenticationFailure('Not authenticated'),
+);
+
+bool _signedOut(Ref ref) {
+  final auth = ref.watch(authProvider);
+  return auth.isLoading || !auth.isLoggedIn || auth.isGuest;
+}
+
+// Stored list is the first state for the signed-in user.
+final userPlansFutureProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<
+    UserPlanListResponseModel,
+    Either<Failure, UserPlanListResponseModel>
+  >,
+  Either<Failure, UserPlanListResponseModel>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    if (_signedOut(ref)) return _notAuthenticated;
+
+    final languageCode = ref.watch(contentLanguageProvider);
+    final repository = ref.watch(userPlansDomainRepositoryProvider);
+    final local = ref.watch(plansLocalDatasourceProvider);
+    final userId = local.currentUserIdSync;
+    final stored =
+        userId == null
+            ? null
+            : local.readUserPlans(userId: userId, language: languageCode);
+    return bind.stream(
+      stored == null ? null : Right(stored),
+      repository.watchUserPlans(language: languageCode),
+    );
+  });
+});
+
+final userPlanProgressDetailsFutureProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      AutoDisposeScreenCacheFamilyNotifier<
+        List<PlanProgressModel>,
+        Either<Failure, List<PlanProgressModel>>,
+        String
+      >,
+      Either<Failure, List<PlanProgressModel>>,
+      String
+    >(() {
+      return AutoDisposeScreenCacheFamilyNotifier((ref, planId, bind) {
+        if (_signedOut(ref)) return _notAuthenticated;
+
+        final repository = ref.watch(userPlansDomainRepositoryProvider);
+        final local = ref.watch(plansLocalDatasourceProvider);
+        final userId = local.currentUserIdSync;
+        final stored =
+            userId == null ? null : local.readPlanProgress(userId, planId);
+        return bind.stream(
+          stored == null ? null : Right(stored),
+          repository.watchUserPlanProgressDetails(planId),
         );
-      }
-
-      final languageCode = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(userPlansDomainRepositoryProvider);
-      return repository.watchUserPlans(language: languageCode);
-    });
-
-final userPlanProgressDetailsFutureProvider = StreamProvider.autoDispose
-    .family<Either<Failure, List<PlanProgressModel>>, String>((ref, planId) {
-      final auth = ref.watch(authProvider);
-      if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-        return Stream.value(
-          const Left(AuthenticationFailure('Not authenticated')),
-        );
-      }
-
-      final repository = ref.watch(userPlansDomainRepositoryProvider);
-      return repository.watchUserPlanProgressDetails(planId);
+      });
     });
 
 final userPlanSubscribeFutureProvider = FutureProvider.autoDispose
@@ -80,34 +114,56 @@ final myPlansPaginatedProvider =
       );
     });
 
-// User plan day content provider
-final userPlanDayContentFutureProvider = StreamProvider.autoDispose.family<
-  Either<Failure, UserPlanDayDetailResponse>,
-  PlanDaysParams
->((ref, params) {
-  final auth = ref.watch(authProvider);
-  if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-    return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
-  }
+// Stored day content is the first state for the signed-in user.
+final userPlanDayContentFutureProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      AutoDisposeScreenCacheFamilyNotifier<
+        UserPlanDayDetailResponse,
+        Either<Failure, UserPlanDayDetailResponse>,
+        PlanDaysParams
+      >,
+      Either<Failure, UserPlanDayDetailResponse>,
+      PlanDaysParams
+    >(() {
+      return AutoDisposeScreenCacheFamilyNotifier((ref, params, bind) {
+        if (_signedOut(ref)) return _notAuthenticated;
 
-  final repository = ref.watch(userPlansDomainRepositoryProvider);
-  return repository.watchUserPlanDayContent(
-    params.planId,
-    params.dayNumber,
-  );
-});
-
-/// Provider that watches completion status for all days in a plan.
-/// Returns Either<Failure, Map> where key is dayNumber and value is isCompleted.
-final userPlanDaysCompletionStatusProvider = StreamProvider.autoDispose
-    .family<Either<Failure, Map<int, bool>>, String>((ref, planId) {
-      final auth = ref.watch(authProvider);
-      if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-        return Stream.value(
-          const Left(AuthenticationFailure('Not authenticated')),
+        final repository = ref.watch(userPlansDomainRepositoryProvider);
+        final local = ref.watch(plansLocalDatasourceProvider);
+        final userId = local.currentUserIdSync;
+        final stored =
+            userId == null
+                ? null
+                : local.readUserPlanDay(userId, params.planId, params.dayNumber);
+        return bind.stream(
+          stored == null ? null : Right(stored),
+          repository.watchUserPlanDayContent(params.planId, params.dayNumber),
         );
-      }
+      });
+    });
 
-      final repository = ref.watch(userPlansDomainRepositoryProvider);
-      return repository.watchPlanDaysCompletionStatus(planId);
+/// Completion status for all days in a plan, keyed by day number.
+final userPlanDaysCompletionStatusProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      AutoDisposeScreenCacheFamilyNotifier<
+        Map<int, bool>,
+        Either<Failure, Map<int, bool>>,
+        String
+      >,
+      Either<Failure, Map<int, bool>>,
+      String
+    >(() {
+      return AutoDisposeScreenCacheFamilyNotifier((ref, planId, bind) {
+        if (_signedOut(ref)) return _notAuthenticated;
+
+        final repository = ref.watch(userPlansDomainRepositoryProvider);
+        final local = ref.watch(plansLocalDatasourceProvider);
+        final userId = local.currentUserIdSync;
+        final stored =
+            userId == null ? null : local.readCompletionStatus(userId, planId);
+        return bind.stream(
+          stored == null ? null : Right(stored),
+          repository.watchPlanDaysCompletionStatus(planId),
+        );
+      });
     });

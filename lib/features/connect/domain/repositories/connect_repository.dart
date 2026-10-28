@@ -26,6 +26,11 @@ abstract class ConnectRepository {
     required String language,
   });
 
+  /// Null when no user id is stored yet.
+  ScreenCacheSource<DiscoverGroupsPage>? myGroupsSource({
+    required String language,
+  });
+
   Future<Either<Failure, DiscoverGroupsPage>> refreshMyGroups({
     required String language,
   });
@@ -38,31 +43,31 @@ abstract class ConnectRepository {
   });
 
   /// Stored first pages for the Connect lists; see ScreenCacheSource.
-  Future<ScreenCacheSource<DiscoverGroupsPage>> discoverGroupsFirstPage({
+  ScreenCacheSource<DiscoverGroupsPage> discoverGroupsFirstPage({
     required String language,
     required int limit,
   });
 
-  Future<ScreenCacheSource<ConnectFeedPage>> connectFeedFirstPage({
+  ScreenCacheSource<ConnectFeedPage> connectFeedFirstPage({
     required bool includeUnfollowed,
     required String language,
     required int limit,
   });
 
-  Future<ScreenCacheSource<GroupEventsPage>> connectEventsFirstPage({
+  ScreenCacheSource<GroupEventsPage> connectEventsFirstPage({
     required bool includeUnfollowed,
     required String language,
     required int limit,
     String? eventFormat,
   });
 
-  Future<ScreenCacheSource<GroupPracticesPage>> connectPracticesFirstPage({
+  ScreenCacheSource<GroupPracticesPage> connectPracticesFirstPage({
     required bool includeUnfollowed,
     required String language,
     required int limit,
   });
 
-  Future<ScreenCacheSource<ConnectPostCommentsPage>> postCommentsFirstPage(
+  ScreenCacheSource<ConnectPostCommentsPage> postCommentsFirstPage(
     String postId, {
     required int limit,
   });

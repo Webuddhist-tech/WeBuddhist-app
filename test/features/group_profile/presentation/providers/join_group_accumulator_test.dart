@@ -22,6 +22,10 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_membe
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
+import '../../../../helpers/fake_screen_cache_store.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -34,10 +38,10 @@ class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
 class _SlowJoinRepository extends Fake
     implements GroupAccumulatorRepositoryInterface {
   @override
-  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+  GroupAccumulatorMembersPage? readStoredGroupAccumulatorMembers(
     String accumulatorId, {
     required GroupAccumulatorMemberSort sortBy,
-  }) async => null;
+  }) => null;
   final join = Completer<Either<Failure, void>>();
 
   @override
@@ -48,27 +52,27 @@ class _SlowJoinRepository extends Fake
 class _FakeProfileRepository extends Fake
     implements GroupProfileRepositoryInterface {
   @override
-  Future<GroupPracticesPage?> readStoredGroupPractices(
+  GroupPracticesPage? readStoredGroupPractices(
     String groupId, {
     required String language,
-  }) async => null;
+  }) => null;
 
   @override
-  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
       null;
 
   @override
-  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
     String eventId,
-  ) async => null;
+  ) => null;
 
   @override
-  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
     String groupId,
-  ) async => null;
+  ) => null;
 
   @override
-  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
       null;
 
   @override
@@ -94,7 +98,23 @@ class _FixedContentLanguage extends StateNotifier<String>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeConnectRepository extends Fake implements ConnectRepository {}
+class _FakeConnectRepository extends Fake implements ConnectRepository {
+  // Built when the discover-groups notifier is created; never fetched here.
+  @override
+  ScreenCacheSource<DiscoverGroupsPage> discoverGroupsFirstPage({
+    required String language,
+    required int limit,
+  }) {
+    return ScreenCacheSource(
+      store: FakeScreenCacheStore(),
+      key: 'test:discover_groups',
+      fetchJson: () async => throw const NetworkException('test'),
+      fromJson:
+          (_) => const DiscoverGroupsPage(groups: [], skip: 0, limit: 20, total: 0),
+      failureMessage: 'test',
+    );
+  }
+}
 
 const _group = GroupProfile(id: 'group-1', title: 'Lodhen Sangha');
 
@@ -122,10 +142,10 @@ void main() {
           _FakeProfileRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) => Stream.value(const Right(_detail)),
+          () => GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
+          () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
       ],
     );
@@ -203,9 +223,11 @@ void main() {
           _FakeProfileRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) => detail.future.asStream(),
+          () => GroupAccumulatorDetailNotifier((ref, id, bind) => detail.future),
         ),
-        groupProfileProvider.overrideWith((ref, id) => profile.future.asStream()),
+        groupProfileProvider.overrideWith(
+          () => GroupProfileNotifier((ref, id, bind) => profile.future),
+        ),
       ],
     );
     addTearDown(container.dispose);

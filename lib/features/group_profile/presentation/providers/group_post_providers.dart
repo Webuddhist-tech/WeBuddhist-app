@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/group_profile/data/repositories/group_pos
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_post_permission.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_post_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 final groupPostRemoteDatasourceProvider = Provider<GroupPostRemoteDatasource>((
   ref,
@@ -25,17 +26,25 @@ final groupPostRepositoryProvider = Provider<GroupPostRepositoryInterface>((
 
 /// `GET /users/me/permission/{groupId}` for the signed-in user. Guests skip
 /// the request. The stored permission shows first and is refreshed each visit.
-final groupMyPermissionProvider = StreamProvider.autoDispose
-    .family<GroupPostPermission?, String>((ref, groupId) {
-      final authState = ref.watch(authProvider);
-      if (authState.isGuest || !authState.isLoggedIn) {
-        return Stream.value(null);
-      }
+typedef GroupMyPermissionNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupPostPermission,
+      GroupPostPermission?,
+      String
+    >;
 
-      return ref
-          .watch(groupPostRepositoryProvider)
-          .watchPostPermission(groupId)
-          .map((result) => result.fold((_) => null, (permission) => permission));
+final groupMyPermissionProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupMyPermissionNotifier, GroupPostPermission?, String>(() {
+      return GroupMyPermissionNotifier((ref, groupId, bind) {
+        final authState = ref.watch(authProvider);
+        if (authState.isGuest || !authState.isLoggedIn) return null;
+
+        return bind.source(
+          ref.watch(groupPostRepositoryProvider).postPermissionSource(groupId),
+          select:
+              (result) => result.fold((_) => null, (permission) => permission),
+        );
+      });
     });
 
 /// Whether the signed-in user may publish posts in the group.
@@ -98,9 +107,13 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   GroupPostsNotifier({
     required GroupPostRepositoryInterface repository,
     required String groupId,
+    ConnectPostsPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupPostsState());
+       super(const GroupPostsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored);
+  }
 
   final GroupPostRepositoryInterface _repository;
   final String _groupId;
@@ -112,12 +125,6 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     if (state.isLoading) return;
 
     final generation = ++_requestGeneration;
-    final stored =
-        state.posts.isEmpty
-            ? await _repository.readStoredGroupPosts(_groupId)
-            : null;
-    if (!mounted || generation != _requestGeneration) return;
-    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(isLoading: state.posts.isEmpty, clearError: true);
 
     final result = await _repository.getGroupPosts(
@@ -236,9 +243,11 @@ final groupPostsProvider = StateNotifierProvider.autoDispose
     .family<GroupPostsNotifier, GroupPostsState, String>((ref, groupId) {
       // Refetch on auth changes so `liked_by_me` reflects the current user.
       ref.watch(authProvider);
+      final repository = ref.watch(groupPostRepositoryProvider);
       final notifier = GroupPostsNotifier(
-        repository: ref.watch(groupPostRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupPosts(groupId),
       );
       notifier.loadInitial();
       return notifier;

@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/practice/data/models/bookmark_models.dart
 import 'package:flutter_pecha/features/practice/data/repositories/bookmark_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 final bookmarkRepositoryProvider = Provider<BookmarkRepository>((ref) {
   return BookmarkRepository(
@@ -304,13 +305,41 @@ class BookmarksState {
 
 class BookmarksNotifier extends StateNotifier<BookmarksState> {
   BookmarksNotifier(
+    BookmarkRepository repository,
+    String language, {
+    required bool isAuthenticated,
+  }) : this._(
+         repository,
+         language,
+         isAuthenticated: isAuthenticated,
+         source:
+             isAuthenticated
+                 ? repository.bookmarksSource(language: language)
+                 : null,
+       );
+
+  BookmarksNotifier._(
     this._repository,
     this._language, {
     required bool isAuthenticated,
+    required ScreenCacheSource<List<BookmarkDTO>>? source,
   }) : _isAuthenticated = isAuthenticated,
-       super(BookmarksState(isLoading: isAuthenticated)) {
+       super(_seed(source, isAuthenticated: isAuthenticated)) {
     if (isAuthenticated) load();
   }
+
+  // The stored list is the first state, so the first frame never spins.
+  static BookmarksState _seed(
+    ScreenCacheSource<List<BookmarkDTO>>? source, {
+    required bool isAuthenticated,
+  }) {
+    final list = source?.read();
+    if (list == null) return BookmarksState(isLoading: isAuthenticated);
+    return BookmarksState(bookmarks: _newestFirst(list));
+  }
+
+  static List<BookmarkDTO> _newestFirst(List<BookmarkDTO> list) =>
+      [...list]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   final BookmarkRepository _repository;
   final String _language;
@@ -329,7 +358,11 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
       return;
     }
     if (_subscription != null) return refresh();
-    state = state.copyWith(isLoading: true, clearError: true);
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(
+      isLoading: state.bookmarks.isEmpty,
+      clearError: true,
+    );
     _subscription = _repository
         .watchBookmarks(language: _language)
         .listen((result) {
@@ -355,8 +388,7 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
   }
 
   void _onList(List<BookmarkDTO> list) {
-    final sorted = [...list]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    state = BookmarksState(bookmarks: sorted, isLoading: false);
+    state = BookmarksState(bookmarks: _newestFirst(list), isLoading: false);
   }
 
   @override

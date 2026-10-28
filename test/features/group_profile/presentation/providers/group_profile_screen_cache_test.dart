@@ -232,7 +232,9 @@ void main() {
     await pumpEventQueue();
 
     expect(seen.any((s) => s.$1.isEmpty && s.$2), isFalse);
-    expect(seen.first.$1, isEmpty);
+    // The stored page is already the first state, with no loading flag.
+    expect(seen.first.$1, ['p1']);
+    expect(seen.first.$2, isFalse);
     expect(seen.last.$1, ['p1', 'p2']);
     expect(seen.last.$2, isFalse);
     expect(profileRemote.practiceCalls, 1);

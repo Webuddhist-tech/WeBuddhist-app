@@ -24,13 +24,13 @@ class RecitationsRepository {
   Stream<Either<Failure, List<RecitationModel>>> watchRecitations({
     required String language,
   }) {
-    return _listSource(language).watch();
+    return recitationsSource(language: language).watch();
   }
 
   Future<Either<Failure, List<RecitationModel>>> refreshRecitations({
     required String language,
   }) {
-    return _listSource(language).refresh();
+    return recitationsSource(language: language).refresh();
   }
 
   /// Network only; used by search.
@@ -52,7 +52,10 @@ class RecitationsRepository {
     }
   }
 
-  ScreenCacheSource<List<RecitationModel>> _listSource(String language) {
+  /// Built synchronously so a screen can seed its first frame.
+  ScreenCacheSource<List<RecitationModel>> recitationsSource({
+    required String language,
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public('recitations', language: language),

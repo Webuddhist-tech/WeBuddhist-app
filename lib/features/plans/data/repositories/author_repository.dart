@@ -25,12 +25,12 @@ class AuthorRepository {
 
   /// Stored author first, then revalidated in the background.
   Stream<Either<Failure, AuthorModel>> watchAuthorById(String id) =>
-      _authorSource(id).watch();
+      authorSource(id).watch();
 
   Future<Either<Failure, AuthorModel>> refreshAuthorById(String id) =>
-      _authorSource(id).refresh();
+      authorSource(id).refresh();
 
-  ScreenCacheSource<AuthorModel> _authorSource(String id) {
+  ScreenCacheSource<AuthorModel> authorSource(String id) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public('author', language: 'all', params: [id]),

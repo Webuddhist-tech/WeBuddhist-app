@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
@@ -15,6 +16,26 @@ abstract class GroupProfileRepositoryInterface {
   Future<Either<Failure, GroupProfile>> getGroupProfile(
     String groupId, {
     required String language,
+  });
+
+  /// Synchronous source builders so a screen can seed its first frame.
+  ScreenCacheSource<GroupProfile> groupProfileSource(
+    String groupId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupEventsPage> groupEventsSource(
+    String groupId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupEvent> groupEventDetailSource(
+    String eventId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupRecitationCollection> recitationCollectionDetailSource({
+    required String collectionId,
   });
 
   /// Stored profile first, then revalidated in the background.
@@ -52,20 +73,20 @@ abstract class GroupProfileRepositoryInterface {
   watchRecitationCollectionDetail({required String collectionId});
 
   /// Stored first pages; the matching `getX(skip: 0)` call writes them.
-  Future<GroupPracticesPage?> readStoredGroupPractices(
+  GroupPracticesPage? readStoredGroupPractices(
     String groupId, {
     required String language,
   });
 
-  Future<GroupMembersPage?> readStoredGroupMembers(String groupId);
+  GroupMembersPage? readStoredGroupMembers(String groupId);
 
-  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
     String eventId,
   );
 
-  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(String groupId);
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(String groupId);
 
-  Future<GroupReportsPage?> readStoredGroupReports(String groupId);
+  GroupReportsPage? readStoredGroupReports(String groupId);
 
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,

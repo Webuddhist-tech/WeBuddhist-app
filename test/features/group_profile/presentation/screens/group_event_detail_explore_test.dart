@@ -41,6 +41,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_pract
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
   @override
@@ -121,27 +122,27 @@ class _RecordingEnrollment extends StateNotifier<SeriesEnrollmentState>
 /// Records event joins (a participation saved) instead of calling the API.
 class _RecordingGroupRepository implements GroupProfileRepositoryInterface {
   @override
-  Future<GroupPracticesPage?> readStoredGroupPractices(
+  GroupPracticesPage? readStoredGroupPractices(
     String groupId, {
     required String language,
-  }) async => null;
+  }) => null;
 
   @override
-  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
       null;
 
   @override
-  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
     String eventId,
-  ) async => null;
+  ) => null;
 
   @override
-  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
     String groupId,
-  ) async => null;
+  ) => null;
 
   @override
-  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
       null;
 
   _RecordingGroupRepository(this._joins);
@@ -285,42 +286,45 @@ Future<void> _pumpEventPage(
           _RecordingGroupRepository(joins),
         ),
         groupEventDetailProvider.overrideWith(
-          (ref, id) => Stream.value(Right(event)),
+          () => GroupEventDetailNotifier.fixed(Right(event)),
         ),
         groupEventParticipantsProvider.overrideWith(
           (ref, id) => _NoParticipants(),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
+          () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
         seriesByIdProvider.overrideWith(
-          (ref, id) => Stream.value(Right(_series)),
+          () => AutoDisposeScreenCacheFamilyNotifier.fixed(Right(_series)),
         ),
         seriesListFutureProvider.overrideWith(
-          (ref) => Stream.value(const Left(NetworkFailure('test'))),
+          () => ScreenCacheNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
         userSeriesEnrollmentsProvider.overrideWith(
-          (ref) => Stream.value(<String>{}),
+          () => ScreenCacheNotifier.fixed(<String>{}),
         ),
         seriesEnrollmentProvider.overrideWith(
           (ref, seriesId) => _RecordingEnrollment(seriesId, enrollments),
         ),
         myPlansPaginatedProvider.overrideWith((ref) => _NoMyPlans()),
         groupEventInLanguageProvider.overrideWith(
-          (ref, key) => Stream.fromFuture(
-            stream != null
-                ? stream()
-                : Future.value(const Left(NetworkFailure('test'))),
+          () => GroupEventInLanguageNotifier(
+            (ref, key, bind) =>
+                stream != null
+                    ? stream()
+                    : Future.value(const Left(NetworkFailure('test'))),
           ),
         ),
         userPlanDayContentFutureProvider.overrideWith(
-          (ref, params) => Stream.value(Right(_day)),
+          () => AutoDisposeScreenCacheFamilyNotifier.fixed(Right(_day)),
         ),
         userPlanDaysCompletionStatusProvider.overrideWith(
-          (ref, planId) => Stream.value(const Right({1: false})),
+          () => AutoDisposeScreenCacheFamilyNotifier.fixed(
+            const Right({1: false}),
+          ),
         ),
         planDaysByPlanIdFutureProvider.overrideWith(
-          (ref, planId) => Stream.value(const Right(<PlanDaysModel>[])),
+          () => ScreenCacheFamilyNotifier.fixed(const Right(<PlanDaysModel>[])),
         ),
       ],
       child: MaterialApp.router(

@@ -20,41 +20,30 @@ class MyRecitationCollectionsRepository {
 
   /// Stored detail first, then revalidated in the background.
   Stream<Either<Failure, MyRecitationCollectionDetailModel>>
-  watchCollectionDetail(String collectionId) async* {
-    final userId = await store.currentUserId();
-    yield* _detailSource(userId, collectionId).watch();
-  }
+  watchCollectionDetail(String collectionId) =>
+      collectionDetailSource(collectionId).watch();
 
   Future<Either<Failure, MyRecitationCollectionDetailModel>>
-  refreshCollectionDetail(String collectionId) async {
-    final userId = await store.currentUserId();
-    return _detailSource(userId, collectionId).refresh();
-  }
+  refreshCollectionDetail(String collectionId) =>
+      collectionDetailSource(collectionId).refresh();
 
-  Stream<Either<Failure, int>> watchCompletionDaysCount(
-    String collectionId,
-  ) async* {
-    final userId = await store.currentUserId();
-    yield* _daysCountSource(userId, collectionId).watch();
-  }
+  Stream<Either<Failure, int>> watchCompletionDaysCount(String collectionId) =>
+      completionDaysCountSource(collectionId).watch();
 
   /// Always fetches; use after a completion so the count is current.
   Future<Either<Failure, int>> refreshCompletionDaysCount(
     String collectionId,
-  ) async {
-    final userId = await store.currentUserId();
-    return _daysCountSource(userId, collectionId).refresh();
-  }
+  ) => completionDaysCountSource(collectionId).refresh();
 
-  ScreenCacheSource<MyRecitationCollectionDetailModel> _detailSource(
-    String? userId,
+  // Built synchronously so a screen can seed its first frame.
+  ScreenCacheSource<MyRecitationCollectionDetailModel> collectionDetailSource(
     String collectionId,
   ) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'recitation_collection',
-        userId: userId,
+        userId: store.currentUserIdSync,
         language: 'all',
         params: [collectionId],
       ),
@@ -67,12 +56,12 @@ class MyRecitationCollectionsRepository {
     );
   }
 
-  ScreenCacheSource<int> _daysCountSource(String? userId, String collectionId) {
+  ScreenCacheSource<int> completionDaysCountSource(String collectionId) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'recitation_collection_days',
-        userId: userId,
+        userId: store.currentUserIdSync,
         language: 'all',
         params: [collectionId],
       ),

@@ -90,6 +90,18 @@ void main() {
     expect(settings.calls, 1);
   });
 
+  test('the stored version is the state on the very first read', () async {
+    store.entries[key] = jsonEncode(
+      const ReaderVersionDetail(id: 'v1', title: 'Stored', language: 'en')
+          .toJson(),
+    );
+    final container = build();
+    container.listen(readerVersionInfoProvider('v1'), (_, __) {});
+    final first = container.read(readerVersionInfoProvider('v1'));
+    expect(first.isLoading, isFalse);
+    expect(first.requireValue.title, 'Stored');
+  });
+
   test('nothing stored and no network is an error', () async {
     settings.error = const NetworkException('offline');
     final container = build();

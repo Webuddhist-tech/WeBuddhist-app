@@ -32,39 +32,36 @@ class UserStatsRepositoryImpl implements UserStatsRepositoryInterface {
   @override
   Stream<Either<Failure, SeriesDayCompletedPage>> watchSeriesDayCompleted({
     required String language,
-  }) async* {
-    final userId = await store.currentUserId();
-    yield* _seriesDayCompletedSource(userId, language).watch();
+  }) {
+    return seriesDayCompletedSource(language: language).watch();
   }
 
   @override
   Future<Either<Failure, SeriesDayCompletedPage>> refreshSeriesDayCompleted({
     required String language,
-  }) async {
-    final userId = await store.currentUserId();
-    return _seriesDayCompletedSource(userId, language).refresh();
+  }) {
+    return seriesDayCompletedSource(language: language).refresh();
   }
 
   @override
   Stream<Either<Failure, MantraCountPage>> watchMantraCounts({
     required String language,
-  }) async* {
-    final userId = await store.currentUserId();
-    yield* _mantraCountsSource(userId, language).watch();
+  }) {
+    return mantraCountsSource(language: language).watch();
   }
 
   @override
   Future<Either<Failure, MantraCountPage>> refreshMantraCounts({
     required String language,
-  }) async {
-    final userId = await store.currentUserId();
-    return _mantraCountsSource(userId, language).refresh();
+  }) {
+    return mantraCountsSource(language: language).refresh();
   }
 
-  ScreenCacheSource<SeriesDayCompletedPage> _seriesDayCompletedSource(
-    String? userId,
-    String language,
-  ) {
+  @override
+  ScreenCacheSource<SeriesDayCompletedPage> seriesDayCompletedSource({
+    required String language,
+  }) {
+    final userId = store.currentUserIdSync;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
@@ -82,10 +79,11 @@ class UserStatsRepositoryImpl implements UserStatsRepositoryInterface {
     );
   }
 
-  ScreenCacheSource<MantraCountPage> _mantraCountsSource(
-    String? userId,
-    String language,
-  ) {
+  @override
+  ScreenCacheSource<MantraCountPage> mantraCountsSource({
+    required String language,
+  }) {
+    final userId = store.currentUserIdSync;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(

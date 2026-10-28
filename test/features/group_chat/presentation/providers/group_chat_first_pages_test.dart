@@ -156,8 +156,12 @@ void main() {
       if (next.hasLoaded && !next.isLoading) {
         seen.add(next.rooms.map((r) => r.id).toList());
       }
-    });
-    container.read(chatRoomsProvider);
+    }, fireImmediately: true);
+    // The stored walk is the very first state: no loading flag, no spinner.
+    final first = container.read(chatRoomsProvider);
+    expect(first.rooms.map((r) => r.id), ['old']);
+    expect(first.isLoading, isFalse);
+    expect(first.hasLoaded, isTrue);
     await _settle();
 
     expect(seen.first, ['old']);
@@ -185,6 +189,9 @@ void main() {
     repository.failure = const ServerFailure('down');
 
     container.listen(myPrayerRequestsProvider, (_, __) {});
+    final first = container.read(myPrayerRequestsProvider);
+    expect(first.requests.map((r) => r.id), ['a']);
+    expect(first.isLoading, isFalse);
     await _settle();
 
     final state = container.read(myPrayerRequestsProvider);
@@ -208,10 +215,12 @@ void main() {
     ];
 
     final seen = <List<String>>[];
+    // The stored list is the very first state, so listen from the start.
     container.listen(prayerIntentionsProvider, (_, next) {
       final value = next.valueOrNull;
       if (value != null) seen.add(value.map((i) => i.slug).toList());
-    });
+    }, fireImmediately: true);
+    expect(container.read(prayerIntentionsProvider).isLoading, isFalse);
     await _settle();
 
     expect(seen, [

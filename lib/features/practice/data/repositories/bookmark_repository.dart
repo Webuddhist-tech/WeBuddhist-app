@@ -16,29 +16,28 @@ class BookmarkRepository {
   /// Stored bookmarks first, then revalidated in the background.
   Stream<Either<Failure, List<BookmarkDTO>>> watchBookmarks({
     String? language,
-  }) async* {
-    final userId = await store.currentUserId();
-    if (userId == null || userId.isEmpty) {
-      yield const Left(AuthenticationFailure('Not authenticated'));
-      return;
+  }) {
+    final source = bookmarksSource(language: language);
+    if (source == null) {
+      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
     }
-    yield* _listSource(userId, language).watch();
+    return source.watch();
   }
 
   Future<Either<Failure, List<BookmarkDTO>>> refreshBookmarks({
     String? language,
   }) async {
-    final userId = await store.currentUserId();
-    if (userId == null || userId.isEmpty) {
+    final source = bookmarksSource(language: language);
+    if (source == null) {
       return const Left(AuthenticationFailure('Not authenticated'));
     }
-    return _listSource(userId, language).refresh();
+    return source.refresh();
   }
 
-  ScreenCacheSource<List<BookmarkDTO>> _listSource(
-    String userId,
-    String? language,
-  ) {
+  /// Built synchronously for first-frame seeding; null while signed out.
+  ScreenCacheSource<List<BookmarkDTO>>? bookmarksSource({String? language}) {
+    final userId = store.currentUserIdSync;
+    if (userId == null || userId.isEmpty) return null;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(

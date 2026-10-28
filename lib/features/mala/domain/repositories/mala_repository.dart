@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
@@ -42,6 +43,12 @@ abstract class MalaRepository {
   });
 
   Future<Either<Failure, List<AccumulatorGroup>>> refreshJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  });
+
+  /// Synchronous builder so a screen can seed its first frame.
+  ScreenCacheSource<List<AccumulatorGroup>> joinedAccumulatorGroupsSource(
     String accumulatorId, {
     String? language,
   });

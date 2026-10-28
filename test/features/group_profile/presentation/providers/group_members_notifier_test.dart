@@ -14,27 +14,27 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_repor
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
   @override
-  Future<GroupPracticesPage?> readStoredGroupPractices(
+  GroupPracticesPage? readStoredGroupPractices(
     String groupId, {
     required String language,
-  }) async => null;
+  }) => null;
 
   @override
-  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async =>
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
       null;
 
   @override
-  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
     String eventId,
-  ) async => null;
+  ) => null;
 
   @override
-  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
     String groupId,
-  ) async => null;
+  ) => null;
 
   @override
-  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async =>
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
       null;
 
   Either<Failure, void> removeResult = const Right(null);

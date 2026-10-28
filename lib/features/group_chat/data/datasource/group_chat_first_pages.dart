@@ -39,10 +39,10 @@ class GroupChatFirstPages {
   final GroupChatRepository repository;
   final ScreenCacheStore store;
 
-  Future<ScreenCacheSource<ChatRoomsPage>> rooms({required int limit}) async {
+  ScreenCacheSource<ChatRoomsPage> rooms({required int limit}) {
     return ScreenCacheSource(
       store: store,
-      key: await _userKey('chat_rooms'),
+      key: _userKey('chat_rooms'),
       fetchJson:
           () async =>
               (await _unwrap(
@@ -53,7 +53,7 @@ class GroupChatFirstPages {
     );
   }
 
-  Future<ScreenCacheSource<List<ChatPrayerIntentionDTO>>> intentions() async {
+  ScreenCacheSource<List<ChatPrayerIntentionDTO>> intentions() {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public('prayer_intentions', language: 'all'),
@@ -72,14 +72,14 @@ class GroupChatFirstPages {
     );
   }
 
-  Future<ScreenCacheSource<ChatMessagesPage>> myPrayerRequests({
+  ScreenCacheSource<ChatMessagesPage> myPrayerRequests({
     required int limit,
     String? eventId,
     String? groupId,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
-      key: await _userKey(
+      key: _userKey(
         'my_prayer_requests',
         params: [eventId ?? '-', groupId ?? '-'],
       ),
@@ -101,15 +101,15 @@ class GroupChatFirstPages {
 
   /// The room and its first page under [filter]; the notifier reads and
   /// saves this itself because room resolution has its own failure states.
-  Future<ScreenCacheSource<PrayerRoomSnapshot>> prayerRoom(
+  ScreenCacheSource<PrayerRoomSnapshot> prayerRoom(
     PrayerRoomScope scope, {
     required PrayerRequestsFilter filter,
     required String translationLanguage,
     required int limit,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
-      key: await _userKey(
+      key: _userKey(
         'prayer_room',
         language: translationLanguage,
         params: [
@@ -151,13 +151,13 @@ class GroupChatFirstPages {
     );
   }
 
-  Future<ScreenCacheSource<ChatPrayersPage>> prayers(
+  ScreenCacheSource<ChatPrayersPage> prayers(
     String messageId, {
     required int limit,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
-      key: await _userKey('prayer_supporters', params: [messageId]),
+      key: _userKey('prayer_supporters', params: [messageId]),
       fetchJson:
           () async =>
               (await _unwrap(
@@ -169,14 +169,15 @@ class GroupChatFirstPages {
     );
   }
 
-  Future<String> _userKey(
+  // Read without an await so a screen can seed its first frame.
+  String _userKey(
     String screen, {
     String language = 'all',
     List<String> params = const [],
-  }) async {
+  }) {
     String? userId;
     try {
-      userId = await store.currentUserId();
+      userId = store.currentUserIdSync;
     } catch (_) {
       userId = null;
     }

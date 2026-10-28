@@ -1,6 +1,7 @@
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_comment_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,27 +59,40 @@ class ConnectPostCommentsNotifier
   ConnectPostCommentsNotifier({
     required this.ref,
     required this.postId,
-  }) : super(const ConnectPostCommentsState()) {
+    required ScreenCacheSource<ConnectPostCommentsPage> source,
+  }) : _source = source,
+       super(_seed(source)) {
     loadInitial();
+  }
+
+  // The stored page is the first state, so the first frame never spins.
+  static ConnectPostCommentsState _seed(
+    ScreenCacheSource<ConnectPostCommentsPage> source,
+  ) {
+    final page = source.read();
+    if (page == null) return const ConnectPostCommentsState();
+    return ConnectPostCommentsState(
+      comments: page.comments,
+      hasMore: page.hasMore,
+      skip: page.comments.length,
+      total: page.total,
+    );
   }
 
   final Ref ref;
   final String postId;
+  final ScreenCacheSource<ConnectPostCommentsPage> _source;
   static const int _limit = 20;
 
   /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final source = await ref
-        .read(connectRepositoryProvider)
-        .postCommentsFirstPage(postId, limit: _limit);
-    if (!mounted) return;
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.comments.isEmpty, clearError: true);
 
     await loadCachedFirstPage(
-      source,
+      _source,
       isCurrent: () => mounted,
       seed: state.comments.isEmpty,
       apply:
@@ -233,5 +247,14 @@ final connectPostCommentsProvider = StateNotifierProvider.autoDispose
       ref,
       postId,
     ) {
-      return ConnectPostCommentsNotifier(ref: ref, postId: postId);
+      return ConnectPostCommentsNotifier(
+        ref: ref,
+        postId: postId,
+        source: ref
+            .watch(connectRepositoryProvider)
+            .postCommentsFirstPage(
+              postId,
+              limit: ConnectPostCommentsNotifier._limit,
+            ),
+      );
     });

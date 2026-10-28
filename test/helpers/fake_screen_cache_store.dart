@@ -14,6 +14,9 @@ class FakeScreenCacheStore extends ScreenCacheStore {
   Future<String?> currentUserId() async => userId;
 
   @override
+  String? get currentUserIdSync => userId;
+
+  @override
   String? read(String key) => entries[key];
 
   @override

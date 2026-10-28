@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -52,20 +53,26 @@ final deleteTimeBlockUseCaseProvider = Provider<DeleteTimeBlockUseCase>((ref) {
 /// The user's routine: stored copy first, refreshed in the background; null
 /// for guests. Pull-to-refresh calls `refreshUserRoutine`; `ref.invalidate`
 /// after a mutation still works (stored → fresh).
-final userRoutineProvider = StreamProvider<RoutineData?>((ref) {
-  final auth = ref.watch(authProvider);
-  if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-    return Stream.value(null);
-  }
+final userRoutineProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<RoutineData, RoutineData?>,
+  RoutineData?
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final auth = ref.watch(authProvider);
+    if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) return null;
 
-  final language = ref.watch(contentLanguageProvider);
-  return ref
-      .watch(routineApiRepositoryProvider)
-      .watchUserRoutine(language: language)
-      .map(
-        (result) => result.fold(
-          (failure) => throw Exception(failure.message),
-          (data) => data,
-        ),
-      );
+    final language = ref.watch(contentLanguageProvider);
+    final source = ref
+        .watch(routineApiRepositoryProvider)
+        .userRoutineSource(language: language);
+    if (source == null) return null;
+    return bind.source(
+      source,
+      select:
+          (result) => result.fold(
+            (failure) => throw Exception(failure.message),
+            (data) => data,
+          ),
+    );
+  });
 });

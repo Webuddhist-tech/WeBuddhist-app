@@ -19,14 +19,14 @@ class GroupPostRepositoryImpl implements GroupPostRepositoryInterface {
 
   GroupPostRepositoryImpl({required this.remote, required this.store});
 
-  Future<ScreenCacheSource<T>> _userSource<T extends Object>(
+  ScreenCacheSource<T> _userSource<T extends Object>(
     String screen, {
     required String groupId,
     required Future<Map<String, dynamic>> Function() fetchJson,
     required T Function(Map<String, dynamic> json) parse,
     required String failureMessage,
-  }) async {
-    final userId = await store.currentUserId();
+  }) {
+    final userId = store.currentUserIdSync;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
@@ -42,25 +42,29 @@ class GroupPostRepositoryImpl implements GroupPostRepositoryInterface {
   }
 
   @override
-  Stream<Either<Failure, GroupPostPermission>> watchPostPermission(
-    String groupId,
-  ) async* {
-    final source = await _userSource(
+  ScreenCacheSource<GroupPostPermission> postPermissionSource(String groupId) {
+    return _userSource(
       'group_post_permission',
       groupId: groupId,
       fetchJson: () => remote.fetchPostPermissionJson(groupId),
       parse: (json) => GroupPostPermissionModel.fromJson(json).toEntity(),
       failureMessage: 'Failed to load post permission',
     );
-    yield* source.watch();
   }
 
   @override
-  Future<ConnectPostsPage?> readStoredGroupPosts(String groupId) async {
-    return (await _postsSource(groupId, limit: 20)).read();
+  Stream<Either<Failure, GroupPostPermission>> watchPostPermission(
+    String groupId,
+  ) {
+    return postPermissionSource(groupId).watch();
   }
 
-  Future<ScreenCacheSource<ConnectPostsPage>> _postsSource(
+  @override
+  ConnectPostsPage? readStoredGroupPosts(String groupId) {
+    return _postsSource(groupId, limit: 20).read();
+  }
+
+  ScreenCacheSource<ConnectPostsPage> _postsSource(
     String groupId, {
     required int limit,
   }) {
@@ -90,7 +94,7 @@ class GroupPostRepositoryImpl implements GroupPostRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
-    if (skip == 0) return (await _postsSource(groupId, limit: limit)).refresh();
+    if (skip == 0) return _postsSource(groupId, limit: limit).refresh();
     return _guard(
       () async =>
           (await remote.fetchGroupPosts(

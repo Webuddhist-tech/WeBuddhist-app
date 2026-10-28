@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -35,6 +36,10 @@ class _FakeBookmarks extends StateNotifier<BookmarksState>
 
 class _Repository implements BookmarkRepository {
   int existsCalls = 0;
+
+  @override
+  ScreenCacheSource<List<BookmarkDTO>>? bookmarksSource({String? language}) =>
+      null;
 
   /// When set, exists lookups wait on it instead of answering at once.
   Completer<Either<Failure, BookmarkExistsResult>>? pending;

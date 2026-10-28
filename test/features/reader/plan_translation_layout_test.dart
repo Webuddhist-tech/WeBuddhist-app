@@ -18,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'fakes/fake_local_storage.dart';
 import 'fakes/fake_reader_settings_datasource.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 final _params = ReaderParams(
   textId: 'bo-root',
@@ -227,14 +228,23 @@ class _HeldPlanEdition {
   final Completer<void> _release = Completer<void>();
 
   Override override() {
-    return readerVersionInfoProvider.overrideWith((ref, versionId) {
-      ref.keepAlive();
-      return Stream.fromFuture(() async {
-        if (!_started.isCompleted) _started.complete();
-        await _release.future;
-        return _planEdition;
-      }());
-    });
+    return readerVersionInfoProvider.overrideWith(
+      () => AutoDisposeScreenCacheFamilyNotifier<
+        ReaderVersionDetail,
+        ReaderVersionDetail,
+        String
+      >((ref, versionId, bind) {
+        (ref as AutoDisposeRef).keepAlive();
+        return bind.stream(
+          null,
+          Stream.fromFuture(() async {
+            if (!_started.isCompleted) _started.complete();
+            await _release.future;
+            return _planEdition;
+          }()),
+        );
+      }),
+    );
   }
 
   Future<void> untilStarted(WidgetTester tester) async {

@@ -143,10 +143,38 @@ class _RoomsWalk {
 /// loading this twice for one answer would be the only alternative.
 class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     with WidgetsBindingObserver {
-  ChatRoomsNotifier({required this.ref}) : super(const ChatRoomsState()) {
+  ChatRoomsNotifier({required this.ref}) : super(_seed(ref)) {
+    _seeded = state.rooms.isNotEmpty;
     WidgetsBinding.instance.addObserver(this);
     loadInitial();
   }
+
+  // The stored walk is the first state, so the first frame never spins.
+  static ChatRoomsState _seed(Ref ref) {
+    final store = ref.read(screenCacheStoreProvider);
+    final userId = store.currentUserIdSync?.trim();
+    if (userId == null || userId.isEmpty) return const ChatRoomsState();
+    final raw = store.read(
+      ScreenCacheKey.user('chat_rooms', userId: userId, language: 'all'),
+    );
+    if (raw == null) return const ChatRoomsState();
+    try {
+      final walk = _RoomsWalk.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      if (walk.rooms.isEmpty) return const ChatRoomsState();
+      return ChatRoomsState(
+        rooms: chatListRooms(walk.rooms),
+        hasLoaded: true,
+        hasMore: walk.hasMore,
+        skip: walk.skip,
+        total: walk.total,
+      );
+    } catch (_) {
+      return const ChatRoomsState();
+    }
+  }
+
+  /// True until the first walk settles when the list was seeded from the store.
+  bool _seeded = false;
 
   final Ref ref;
   static const int _limit = 20;
@@ -201,6 +229,8 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     // empty; the fresh walk below replaces it.
     final stored = state.rooms.isEmpty ? await _readStoredWalk() : null;
     if (!mounted) return;
+    final hadStored = stored != null || _seeded;
+    _seeded = false;
     if (stored != null) {
       _unreadBeyondOffset = null;
       state = state.copyWith(
@@ -224,8 +254,9 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
       // holds off any new `loadMore` until this walk is published. Leaving the
       // flag to the orphan would let it land after a fresh page had gone out and
       // clear that page's flag from under it.
+      // A list seeded from the store refreshes without a loading flag.
       state = state.copyWith(
-        isLoading: true,
+        isLoading: !hadStored,
         isLoadingMore: false,
         clearError: true,
       );
@@ -241,8 +272,8 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
       state = state.copyWith(
         isLoading: false,
         hasLoaded: true,
-        error: stored == null ? failure.message : null,
-        clearError: stored != null,
+        error: hadStored ? null : failure.message,
+        clearError: hadStored,
       );
       return;
     }

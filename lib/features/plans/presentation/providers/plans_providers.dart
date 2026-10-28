@@ -1,5 +1,8 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasource.dart';
+import 'package:flutter_pecha/features/plans/domain/repositories/plans_repository.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,29 +14,58 @@ import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.d
 
 final _logger = AppLogger('PlansProviders');
 
-// Get all plans provider — local-first via repository cache + Hive watch.
-final plansFutureProvider = StreamProvider<Either<Failure, List<Plan>>>((ref) async* {
-  final languageCode = ref.watch(contentLanguageProvider);
-  final repository = ref.watch(plansDomainRepositoryProvider);
-  final local = ref.watch(plansLocalDatasourceProvider);
-  final key = local.plansKey(language: languageCode);
-
+// Each refresh written to Hive re-emits here.
+Stream<Either<Failure, List<Plan>>> _plansUpdates(
+  PlansRepository repository,
+  PlansLocalDatasource local,
+  String languageCode,
+) async* {
   yield await repository.getPlans(language: languageCode);
 
+  final key = local.plansKey(language: languageCode);
   await for (final _ in local.watchKey(key)) {
     final cached = local.readPlans(language: languageCode);
     if (cached != null) {
       yield Right(cached.map((plan) => plan.toEntity()).toList());
     }
   }
+}
+
+// Stored list (from Hive) is the first state, then each refresh.
+final plansFutureProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<Plan>, Either<Failure, List<Plan>>>,
+  Either<Failure, List<Plan>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final languageCode = ref.watch(contentLanguageProvider);
+    final repository = ref.watch(plansDomainRepositoryProvider);
+    final local = ref.watch(plansLocalDatasourceProvider);
+    final stored = local
+        .readPlans(language: languageCode)
+        ?.map((plan) => plan.toEntity())
+        .toList();
+    return bind.stream(
+      stored == null ? null : Right(stored),
+      _plansUpdates(repository, local, languageCode),
+    );
+  });
 });
 
-final planByIdFutureProvider = StreamProvider.family<Either<Failure, Plan?>, String>((
-  ref,
-  id,
-) {
-  final repository = ref.watch(plansDomainRepositoryProvider);
-  return repository.watchPlan(id);
+// Stored plan is the first state, then each refresh.
+final planByIdFutureProvider = AsyncNotifierProvider.family<
+  ScreenCacheFamilyNotifier<Plan, Either<Failure, Plan?>, String>,
+  Either<Failure, Plan?>,
+  String
+>(() {
+  return ScreenCacheFamilyNotifier((ref, id, bind) {
+    final repository = ref.watch(plansDomainRepositoryProvider);
+    final stored =
+        ref.watch(plansLocalDatasourceProvider).readPlanById(id)?.toEntity();
+    return bind.stream(
+      stored == null ? null : Right(stored),
+      repository.watchPlan(id),
+    );
+  });
 });
 
 // Find plans with pagination provider

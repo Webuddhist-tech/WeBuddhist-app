@@ -19,16 +19,16 @@ class GroupEventComposerRepositoryImpl
 
   GroupEventComposerRepositoryImpl({required this.remote, required this.store});
 
-  Future<ScreenCacheSource<List<GroupEventCmsItem>>> _cmsEventsSource(
-    String groupId,
-    String language,
-  ) async {
-    final userId = await store.currentUserId();
+  @override
+  ScreenCacheSource<List<GroupEventCmsItem>> cmsEventsSource(
+    String groupId, {
+    required String language,
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'group_cms_events',
-        userId: userId,
+        userId: store.currentUserIdSync,
         language: language,
         params: [groupId],
       ),
@@ -46,16 +46,16 @@ class GroupEventComposerRepositoryImpl
   Stream<Either<Failure, List<GroupEventCmsItem>>> watchCmsEvents(
     String groupId, {
     required String language,
-  }) async* {
-    yield* (await _cmsEventsSource(groupId, language)).watch();
+  }) {
+    return cmsEventsSource(groupId, language: language).watch();
   }
 
   @override
   Future<Either<Failure, List<GroupEventCmsItem>>> refreshCmsEvents(
     String groupId, {
     required String language,
-  }) async {
-    return (await _cmsEventsSource(groupId, language)).refresh();
+  }) {
+    return cmsEventsSource(groupId, language: language).refresh();
   }
 
   @override

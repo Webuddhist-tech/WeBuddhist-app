@@ -24,14 +24,14 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         groupEventsProvider.overrideWith(
-          (ref, groupId) => Stream.value(
+          () => GroupEventsNotifier.fixed(
             Right<Failure, GroupEventsPage>(
               GroupEventsPage(events: events, total: events.length),
             ),
           ),
         ),
         groupCmsEventsProvider.overrideWith(
-          (ref, groupId) => Stream.value(cmsItems),
+          () => GroupCmsEventsNotifier.fixed(cmsItems),
         ),
       ],
       child: MaterialApp(

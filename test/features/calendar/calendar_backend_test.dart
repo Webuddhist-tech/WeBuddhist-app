@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/calendar/presentation/providers/tibetan_c
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 void main() {
   group('JSON parsing', () {
@@ -157,6 +158,12 @@ class _RealisticFakeRepo implements CalendarRepository {
   @override
   Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
       Stream.fromFuture(getToday());
+  @override
+  ScreenCacheSource<List<TibetanCalendarDay>>? monthSource(int year, int month) =>
+      null;
+
+  @override
+  ScreenCacheSource<TibetanCalendarDay>? todaySource() => null;
 }
 
 class _OfflineRepo implements CalendarRepository {
@@ -185,4 +192,10 @@ class _OfflineRepo implements CalendarRepository {
   @override
   Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
       Stream.fromFuture(getToday());
+  @override
+  ScreenCacheSource<List<TibetanCalendarDay>>? monthSource(int year, int month) =>
+      null;
+
+  @override
+  ScreenCacheSource<TibetanCalendarDay>? todaySource() => null;
 }

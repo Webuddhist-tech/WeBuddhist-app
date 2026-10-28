@@ -85,30 +85,31 @@ class ConnectRepositoryImpl implements ConnectRepository {
   @override
   Stream<Either<Failure, DiscoverGroupsPage>> watchMyGroups({
     required String language,
-  }) async* {
-    final userId = await store.currentUserId();
-    if (userId == null || userId.isEmpty) {
-      yield const Left(AuthenticationFailure('Not authenticated'));
-      return;
+  }) {
+    final source = myGroupsSource(language: language);
+    if (source == null) {
+      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
     }
-    yield* _myGroupsSource(userId, language).watch();
+    return source.watch();
   }
 
   @override
   Future<Either<Failure, DiscoverGroupsPage>> refreshMyGroups({
     required String language,
   }) async {
-    final userId = await store.currentUserId();
-    if (userId == null || userId.isEmpty) {
+    final source = myGroupsSource(language: language);
+    if (source == null) {
       return const Left(AuthenticationFailure('Not authenticated'));
     }
-    return _myGroupsSource(userId, language).refresh();
+    return source.refresh();
   }
 
-  ScreenCacheSource<DiscoverGroupsPage> _myGroupsSource(
-    String userId,
-    String language,
-  ) {
+  @override
+  ScreenCacheSource<DiscoverGroupsPage>? myGroupsSource({
+    required String language,
+  }) {
+    final userId = store.currentUserIdSync;
+    if (userId == null || userId.isEmpty) return null;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user('my_groups', userId: userId, language: language),
@@ -129,15 +130,15 @@ class ConnectRepositoryImpl implements ConnectRepository {
   }
 
   @override
-  Future<ScreenCacheSource<DiscoverGroupsPage>> discoverGroupsFirstPage({
+  ScreenCacheSource<DiscoverGroupsPage> discoverGroupsFirstPage({
     required String language,
     required int limit,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'discover_groups',
-        userId: await store.currentUserId(),
+        userId: store.currentUserIdSync,
         language: language,
       ),
       fetchJson:
@@ -157,16 +158,16 @@ class ConnectRepositoryImpl implements ConnectRepository {
   }
 
   @override
-  Future<ScreenCacheSource<ConnectFeedPage>> connectFeedFirstPage({
+  ScreenCacheSource<ConnectFeedPage> connectFeedFirstPage({
     required bool includeUnfollowed,
     required String language,
     required int limit,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'connect_feed',
-        userId: await store.currentUserId(),
+        userId: store.currentUserIdSync,
         language: language,
         params: [includeUnfollowed ? 'discover' : 'mine'],
       ),
@@ -188,17 +189,17 @@ class ConnectRepositoryImpl implements ConnectRepository {
   }
 
   @override
-  Future<ScreenCacheSource<GroupEventsPage>> connectEventsFirstPage({
+  ScreenCacheSource<GroupEventsPage> connectEventsFirstPage({
     required bool includeUnfollowed,
     required String language,
     required int limit,
     String? eventFormat,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'connect_events',
-        userId: await store.currentUserId(),
+        userId: store.currentUserIdSync,
         language: language,
         params: [includeUnfollowed ? 'discover' : 'mine', eventFormat ?? 'all'],
       ),
@@ -221,16 +222,16 @@ class ConnectRepositoryImpl implements ConnectRepository {
   }
 
   @override
-  Future<ScreenCacheSource<GroupPracticesPage>> connectPracticesFirstPage({
+  ScreenCacheSource<GroupPracticesPage> connectPracticesFirstPage({
     required bool includeUnfollowed,
     required String language,
     required int limit,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'connect_practices',
-        userId: await store.currentUserId(),
+        userId: store.currentUserIdSync,
         language: language,
         params: [includeUnfollowed ? 'discover' : 'mine'],
       ),
@@ -251,15 +252,15 @@ class ConnectRepositoryImpl implements ConnectRepository {
   }
 
   @override
-  Future<ScreenCacheSource<ConnectPostCommentsPage>> postCommentsFirstPage(
+  ScreenCacheSource<ConnectPostCommentsPage> postCommentsFirstPage(
     String postId, {
     required int limit,
-  }) async {
+  }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'post_comments',
-        userId: await store.currentUserId(),
+        userId: store.currentUserIdSync,
         language: 'all',
         params: [postId],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,11 +53,28 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
     required this.ref,
     required this.includeUnfollowed,
     required this.language,
-  }) : super(const ConnectPracticesState());
+    required ScreenCacheSource<GroupPracticesPage>? source,
+  }) : _source = source,
+       super(_seed(source));
+
+  // The stored page is the first state, so the first frame never spins.
+  static ConnectPracticesState _seed(
+    ScreenCacheSource<GroupPracticesPage>? source,
+  ) {
+    final page = source?.read();
+    if (page == null) return const ConnectPracticesState();
+    return ConnectPracticesState(
+      practices: page.practices,
+      hasMore: page.hasMore,
+      skip: page.practices.length,
+      hasLoaded: true,
+    );
+  }
 
   final Ref ref;
   final bool includeUnfollowed;
   final String language;
+  final ScreenCacheSource<GroupPracticesPage>? _source;
   static const int _limit = 20;
   bool _loadRequested = false;
 
@@ -75,16 +93,13 @@ class ConnectPracticesNotifier extends StateNotifier<ConnectPracticesState> {
       return;
     }
 
-    // Stored first page shows at once; the server's replaces it if changed.
-    state = state.copyWith(isLoading: true, clearError: true);
-    final source = await ref
-        .read(connectRepositoryProvider)
-        .connectPracticesFirstPage(
-          includeUnfollowed: includeUnfollowed,
-          language: language,
-          limit: _limit,
-        );
-    if (!mounted) return;
+    final source = _source;
+    if (source == null) {
+      state = const ConnectPracticesState(hasMore: false, hasLoaded: true);
+      return;
+    }
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.practices.isEmpty, clearError: true);
 
     await loadCachedFirstPage(
       source,
@@ -162,10 +177,23 @@ final myConnectPracticesProvider =
       ConnectPracticesState
     >((ref) {
       final language = ref.watch(contentLanguageProvider);
+      final signedIn = ref.watch(
+        authProvider.select((a) => a.isLoggedIn && !a.isGuest),
+      );
       return ConnectPracticesNotifier(
         ref: ref,
         includeUnfollowed: false,
         language: language,
+        source:
+            signedIn
+                ? ref
+                    .watch(connectRepositoryProvider)
+                    .connectPracticesFirstPage(
+                      includeUnfollowed: false,
+                      language: language,
+                      limit: ConnectPracticesNotifier._limit,
+                    )
+                : null,
       );
     });
 
@@ -179,5 +207,12 @@ final discoverConnectPracticesProvider =
         ref: ref,
         includeUnfollowed: true,
         language: language,
+        source: ref
+            .watch(connectRepositoryProvider)
+            .connectPracticesFirstPage(
+              includeUnfollowed: true,
+              language: language,
+              limit: ConnectPracticesNotifier._limit,
+            ),
       );
     });

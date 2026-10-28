@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/data/models/group_post_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_post_permission.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract class GroupPostRepositoryInterface {
@@ -17,12 +18,14 @@ abstract class GroupPostRepositoryInterface {
     required int limit,
   });
 
+  ScreenCacheSource<GroupPostPermission> postPermissionSource(String groupId);
+
   Stream<Either<Failure, GroupPostPermission>> watchPostPermission(
     String groupId,
   );
 
   /// Stored first page; `getGroupPosts(skip: 0)` writes it.
-  Future<ConnectPostsPage?> readStoredGroupPosts(String groupId);
+  ConnectPostsPage? readStoredGroupPosts(String groupId);
 
   /// Uploads one file and returns its storage key for [createPost].
   Future<Either<Failure, String>> uploadMedia(File file);

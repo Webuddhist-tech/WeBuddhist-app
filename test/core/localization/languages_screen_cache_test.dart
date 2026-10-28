@@ -105,6 +105,17 @@ void main() {
     expect(store.entries[key], jsonEncode([_lang('en').toJson(), _lang('bo').toJson()]));
   });
 
+  test('stored languages are the state on the very first read', () async {
+    store.entries[key] = jsonEncode([_lang('en').toJson()]);
+    datasource.languages = [_lang('en')];
+    final container = build();
+    container.listen(availableContentLanguagesProvider, (_, __) {});
+
+    final first = container.read(availableContentLanguagesProvider);
+    expect(first.isLoading, isFalse);
+    expect(_codes(first), ['en']);
+  });
+
   test('offline with a stored list keeps it', () async {
     store.entries[key] = jsonEncode([_lang('en').toJson(), _lang('zh').toJson()]);
     datasource.error = const NetworkException('offline');

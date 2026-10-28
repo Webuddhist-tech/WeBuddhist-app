@@ -101,6 +101,16 @@ void main() {
     expect(remote.calls, 1);
   });
 
+  test('the very first read is the stored profile, not loading', () {
+    store.entries[key] = jsonEncode(_profile('g1', members: 4));
+    final container = ProviderContainer(overrides: overrides());
+    addTearDown(container.dispose);
+
+    final first = container.read(groupProfileProvider('g1'));
+    expect(first.isLoading, isFalse);
+    expect(_members(first), 4);
+  });
+
   test('invalidate after a failure fetches again', () async {
     remote.error = const NetworkException('offline');
     final container = ProviderContainer(overrides: overrides());

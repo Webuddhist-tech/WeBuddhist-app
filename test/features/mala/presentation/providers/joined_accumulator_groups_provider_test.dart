@@ -109,6 +109,17 @@ void main() {
     expect(remote.calls, 1);
   });
 
+  test('stored groups are the state on the very first read', () async {
+    store.entries[key] = jsonEncode(_page(['ga1']));
+    remote.groupIds = ['ga1'];
+    final container = build();
+    container.listen(joinedAccumulatorGroupsProvider('preset-1'), (_, __) {});
+
+    final first = container.read(joinedAccumulatorGroupsProvider('preset-1'));
+    expect(first.isLoading, isFalse);
+    expect(_ids(first), ['ga1']);
+  });
+
   test('a failure with nothing stored is an empty list', () async {
     remote.error = const NetworkException('offline');
     final container = build();

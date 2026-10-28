@@ -8,8 +8,8 @@ import 'package:fpdart/fpdart.dart';
 /// Shows the stored first page at once, then replaces it with the server's.
 ///
 /// [apply] runs with the stored page (if [seed] and one exists) and again
-/// with the fresh one; [fail] only when the fetch fails with nothing seeded.
-/// The caller sets its loading flag before calling. A notifier that must keep
+/// with the fresh one; [fail] only when the fetch fails and the list is still
+/// empty (`seed` false means the caller already shows a page). A notifier that must keep
 /// its own request and failure messages passes [fetch] and [encode]; the
 /// fresh page is then stored here instead of by the source.
 Future<void> loadCachedFirstPage<T extends Object>(
@@ -28,7 +28,7 @@ Future<void> loadCachedFirstPage<T extends Object>(
   if (!isCurrent()) return;
   result.fold(
     (failure) {
-      if (cached == null) fail(failure);
+      if (cached == null && seed) fail(failure);
     },
     (page) {
       apply(page);

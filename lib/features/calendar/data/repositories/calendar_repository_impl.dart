@@ -33,7 +33,11 @@ class CalendarRepositoryImpl implements CalendarRepository {
   ) => _monthSource(year, month).refresh();
 
   @override
-  Stream<Either<Failure, TibetanCalendarDay>> watchToday() {
+  Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
+      todaySource().watch();
+
+  @override
+  ScreenCacheSource<TibetanCalendarDay> todaySource() {
     final now = DateTime.now();
     final date = '${now.year}-${now.month}-${now.day}';
     return ScreenCacheSource<TibetanCalendarDay>(
@@ -44,8 +48,12 @@ class CalendarRepositoryImpl implements CalendarRepository {
           (json) =>
               CalendarDayModel.fromJson(json as Map<String, dynamic>).toEntity(),
       failureMessage: 'Calendar',
-    ).watch();
+    );
   }
+
+  @override
+  ScreenCacheSource<List<TibetanCalendarDay>> monthSource(int year, int month) =>
+      _monthSource(year, month);
 
   ScreenCacheSource<List<TibetanCalendarDay>> _monthSource(int year, int month) {
     return ScreenCacheSource(

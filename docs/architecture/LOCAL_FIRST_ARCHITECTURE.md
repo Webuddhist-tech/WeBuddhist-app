@@ -109,6 +109,16 @@ screen cache in `lib/core/cache/screen_cache/`:
 - `ScreenCacheSource<T>`: `watch()` yields the stored value, revalidates in
   the background and yields again only if the raw JSON changed; `refresh()`
   is for pull-to-refresh. Failures are mapped through `ExceptionMapper`.
+- `ScreenCacheNotifier` family (`screen_cache_notifier.dart`): the provider
+  type for screens. A `StreamProvider` always reports loading on its first
+  read, so screens flashed a skeleton on every open; these notifiers return
+  the stored value synchronously from `build`, then feed stream events into
+  state. Use `bind.source(source)` for a `ScreenCacheSource`, or
+  `bind.stream(localSyncRead, repository.watchX())` for Hive-backed data.
+  `.fixed(value)` / `.pending()` serve test overrides.
+- Paginated lists seed the notifier's initial state in its constructor from a
+  synchronous read (`ScreenCacheStore.currentUserIdSync` keeps the key
+  buildable without an await) and set `isLoading` only when the list is empty.
 - `ScreenCacheBuilder<T>` (`lib/core/widgets/`): data wins even while
   reloading, skeleton only when nothing is loaded, `ErrorStateWidget` with
   retry otherwise.
@@ -131,14 +141,33 @@ ScreenCacheSource<Thing> _source(String language) => ScreenCacheSource(
 );
 ```
 
+Provider shape:
+
+```dart
+final thingProvider = AsyncNotifierProvider.autoDispose.family<
+  AutoDisposeScreenCacheFamilyNotifier<Thing, Either<Failure, Thing>, String>,
+  Either<Failure, Thing>,
+  String
+>(() {
+  return AutoDisposeScreenCacheFamilyNotifier((ref, id, bind) {
+    ref.watch(authProvider);
+    final language = ref.watch(contentLanguageProvider);
+    return bind.source(ref.watch(thingRepositoryProvider).thingSource(id, language: language));
+  });
+});
+```
+
 Rules:
 
+- Never touch another provider inside `build` or `select`: the stored value
+  is delivered during build. Defer side effects with `Future.microtask`.
+- Repository source builders must be synchronous (use `currentUserIdSync`).
 - `fetchJson` must send `Options(extra: {'no_cache': true})`; otherwise the
   HTTP `CacheInterceptor` can answer the revalidation with stale data.
 - User-scoped providers must `ref.watch(authProvider)` so an account switch
   rebuilds the stream under the new user's key.
 - "Data changed" is a raw JSON string compare, not model equality.
-- `.future` on a converted `StreamProvider` resolves with the stored value.
+- `.future` on a converted provider resolves with the stored value.
   Call the repository `refreshX()` when fresh data is required.
 - Retry after a first-load failure is `ref.invalidate(provider)`.
 - Per-feature local datasources are still right for write flows and pending

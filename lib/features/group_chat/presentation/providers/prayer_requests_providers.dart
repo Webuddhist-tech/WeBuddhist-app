@@ -23,6 +23,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/pending
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 /// Where the room stands: 404 on resolve means chat is switched off.
 enum PrayerRoomStatus { resolving, ready, closed, failed }
@@ -339,8 +340,37 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     : _repository = ref.read(groupChatRepositoryProvider),
       _pacing = ref.read(prayerPacingProvider),
       _sends = ref.read(pendingPrayerSendsProvider),
-      super(const PrayerRequestsState()) {
+      super(_seed(ref, scope)) {
+    // A seeded list keeps quiet about a failed re-read, like a stored one.
+    _seededFromStore = state.requests.isNotEmpty;
     load();
+  }
+
+  // The stored room and page are the first state, so the sheet opens filled.
+  static PrayerRequestsState _seed(Ref ref, PrayerRoomScope scope) {
+    final stored =
+        ref
+            .read(groupChatFirstPagesProvider)
+            .prayerRoom(
+              scope,
+              filter: PrayerRequestsFilter.initial,
+              translationLanguage: ref.read(prayerTranslationLanguageProvider),
+              limit: _limit,
+            )
+            .read();
+    if (stored == null || stored.roomId.isEmpty) {
+      return const PrayerRequestsState();
+    }
+    final page = stored.page;
+    return PrayerRequestsState(
+      roomStatus: PrayerRoomStatus.ready,
+      roomId: stored.roomId,
+      requests: page.messages,
+      total: page.total,
+      hasLoaded: true,
+      hasMore: page.messages.length < page.total,
+      skip: page.messages.length,
+    );
   }
 
   final Ref ref;
@@ -416,13 +446,17 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// fetches its first page of prayer requests.
   Future<void> load() async {
     if (state.isLoading) return;
+    // A seeded room keeps its rows and status while the server is asked again.
+    final seeded = state.requests.isNotEmpty && state.roomId != null;
     state = state.copyWith(
-      roomStatus: PrayerRoomStatus.resolving,
-      isLoading: true,
+      roomStatus: seeded ? null : PrayerRoomStatus.resolving,
+      isLoading: !seeded,
       clearError: true,
     );
-    final stored = state.requests.isEmpty ? await _readSnapshot() : null;
-    if (!mounted) return;
+    if (seeded && !state.filter.byIntention && !state.filter.mine) {
+      _publishCount(state.total);
+    }
+    final stored = state.requests.isEmpty ? _readSnapshot() : null;
     if (stored != null && stored.roomId.isNotEmpty) {
       _seededFromStore = true;
       state = state.copyWith(
@@ -495,8 +529,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final generation = ++_listGeneration;
     _pageShifted = false;
     _unlisted.clear();
-    final source = await _snapshotSource();
-    if (!mounted || generation != _listGeneration) return;
+    final source = _snapshotSource();
     // A filter change starts empty; its stored page shows while it re-reads.
     if (state.requests.isEmpty) {
       final stored = source.read();
@@ -559,7 +592,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     }
   }
 
-  Future<ScreenCacheSource<PrayerRoomSnapshot>> _snapshotSource() {
+  ScreenCacheSource<PrayerRoomSnapshot> _snapshotSource() {
     return ref
         .read(groupChatFirstPagesProvider)
         .prayerRoom(
@@ -570,10 +603,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         );
   }
 
-  Future<PrayerRoomSnapshot?> _readSnapshot() async {
-    final source = await _snapshotSource();
-    return source.read();
-  }
+  PrayerRoomSnapshot? _readSnapshot() => _snapshotSource().read();
 
   /// One page under the filter in view: the room's requests, or under
   /// [PrayerRequestsFilter.mine] the viewer's own from the my-requests
@@ -1266,15 +1296,23 @@ final prayerRequestsProvider = StateNotifierProvider.autoDispose
       (ref, scope) => PrayerRequestsNotifier(ref: ref, scope: scope),
     );
 
-/// The intention picker's choices, in display order.
-final prayerIntentionsProvider =
-    StreamProvider.autoDispose<List<ChatPrayerIntentionDTO>>((ref) async* {
-      final source = await ref.read(groupChatFirstPagesProvider).intentions();
-      yield* source.watch().map(
-        (result) =>
-            result.fold((failure) => throw failure, (intentions) => intentions),
-      );
-    });
+/// The intention picker's choices, in display order; stored list first.
+final prayerIntentionsProvider = AsyncNotifierProvider.autoDispose<
+  AutoDisposeScreenCacheNotifier<
+    List<ChatPrayerIntentionDTO>,
+    List<ChatPrayerIntentionDTO>
+  >,
+  List<ChatPrayerIntentionDTO>
+>(() {
+  return AutoDisposeScreenCacheNotifier((ref, bind) {
+    return bind.source(
+      ref.watch(groupChatFirstPagesProvider).intentions(),
+      select:
+          (result) =>
+              result.fold((failure) => throw failure, (intentions) => intentions),
+    );
+  });
+});
 
 class PrayerSupportersState extends Equatable {
   /// Newest first.
@@ -1340,13 +1378,31 @@ class PrayerSupportersState extends Equatable {
 
 /// Everyone praying for one request, paged from the who-prayed endpoint.
 class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
-  PrayerSupportersNotifier({required this.ref, required this.messageId})
-    : super(const PrayerSupportersState()) {
+  PrayerSupportersNotifier({
+    required this.ref,
+    required this.messageId,
+    required ScreenCacheSource<ChatPrayersPage> source,
+  }) : _source = source,
+       super(_seed(source)) {
     load();
+  }
+
+  // The stored page is the first state, so the first frame never spins.
+  static PrayerSupportersState _seed(ScreenCacheSource<ChatPrayersPage> source) {
+    final page = source.read();
+    if (page == null) return const PrayerSupportersState();
+    return PrayerSupportersState(
+      supporters: page.prayers,
+      total: page.total,
+      skip: page.prayers.length,
+      hasLoaded: true,
+      hasMore: page.prayers.isNotEmpty && page.prayers.length < page.total,
+    );
   }
 
   final Ref ref;
   final String messageId;
+  final ScreenCacheSource<ChatPrayersPage> _source;
   static const int _limit = 20;
 
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
@@ -1354,13 +1410,10 @@ class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
   /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> load() async {
     if (state.isLoading) return;
-    state = state.copyWith(isLoading: true, clearError: true);
-    final source = await ref
-        .read(groupChatFirstPagesProvider)
-        .prayers(messageId, limit: _limit);
-    if (!mounted) return;
+    // Only an empty roster shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.supporters.isEmpty, clearError: true);
     await loadCachedFirstPage(
-      source,
+      _source,
       isCurrent: () => mounted,
       seed: state.supporters.isEmpty,
       fetch: () => _repository.listPrayers(messageId, skip: 0, limit: _limit),
@@ -1432,7 +1485,15 @@ final prayerRequestCountProvider = StateProvider.autoDispose
     .family<int?, PrayerRoomScope>((ref, scope) => null);
 
 final prayerSupportersProvider = StateNotifierProvider.autoDispose
-    .family<PrayerSupportersNotifier, PrayerSupportersState, String>(
-      (ref, messageId) =>
-          PrayerSupportersNotifier(ref: ref, messageId: messageId),
-    );
+    .family<PrayerSupportersNotifier, PrayerSupportersState, String>((
+      ref,
+      messageId,
+    ) {
+      return PrayerSupportersNotifier(
+        ref: ref,
+        messageId: messageId,
+        source: ref
+            .watch(groupChatFirstPagesProvider)
+            .prayers(messageId, limit: PrayerSupportersNotifier._limit),
+      );
+    });

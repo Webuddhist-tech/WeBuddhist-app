@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/calendar/data/datasource/calendar_remote_datasource.dart';
 import 'package:flutter_pecha/features/calendar/data/kharag_tibetan_calendar_service.dart';
@@ -11,6 +12,8 @@ import 'package:flutter_pecha/features/calendar/domain/tibetan_calendar_service.
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_calendar_month_usecase.dart';
 import 'package:flutter_pecha/features/calendar/domain/usecases/get_today_calendar_usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:fpdart/fpdart.dart';
 
 // ============ Engine (offline fallback + lunar-month mapping) ============
 
@@ -92,19 +95,31 @@ final engineMonthDaysProvider =
 /// One authoritative Gregorian month from the backend: the stored month shows
 /// first, the server month replaces it if changed. Emits an empty list on
 /// failure so the caller silently falls back to the engine.
-final calendarMonthProvider =
-    StreamProvider.family<List<TibetanCalendarDay>, _GregorianMonthKey>((
-      ref,
-      key,
-    ) {
-      return ref
-          .watch(calendarRepositoryProvider)
-          .watchMonth(key.year, key.month)
-          .map(
-            (result) =>
-                result.fold((_) => const <TibetanCalendarDay>[], (days) => days),
-          );
-    });
+final calendarMonthProvider = AsyncNotifierProvider.family<
+  ScreenCacheFamilyNotifier<
+    List<TibetanCalendarDay>,
+    List<TibetanCalendarDay>,
+    _GregorianMonthKey
+  >,
+  List<TibetanCalendarDay>,
+  _GregorianMonthKey
+>(() {
+  return ScreenCacheFamilyNotifier((ref, key, bind) {
+    final repository = ref.watch(calendarRepositoryProvider);
+    List<TibetanCalendarDay> orEmpty(
+      Either<Failure, List<TibetanCalendarDay>> result,
+    ) => result.fold((_) => const <TibetanCalendarDay>[], (days) => days);
+
+    final source = repository.monthSource(key.year, key.month);
+    if (source == null) {
+      return bind.stream(
+        null,
+        repository.watchMonth(key.year, key.month).map(orEmpty),
+      );
+    }
+    return bind.source(source, select: orEmpty);
+  });
+});
 
 /// Backend days overlaying the visible range of [month], keyed by Gregorian
 /// date. Empty while nothing has arrived. Watches the Gregorian months the grid
@@ -170,19 +185,27 @@ final resolvedDayProvider = Provider.family<TibetanCalendarDay, DateTime>((
 /// engine fallback on failure. Used by the home-screen summary card. While the
 /// request is in flight the card can show the engine value (see the card's
 /// `asData ?? engine` pattern) so there's no spinner.
-final todayCalendarDayProvider = StreamProvider<TibetanCalendarDay>((ref) {
-  return ref
-      .watch(calendarRepositoryProvider)
-      .watchToday()
-      .map(
-        (result) => result.fold(
+final todayCalendarDayProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<TibetanCalendarDay, TibetanCalendarDay>,
+  TibetanCalendarDay
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final repository = ref.watch(calendarRepositoryProvider);
+    TibetanCalendarDay orEngine(Either<Failure, TibetanCalendarDay> result) =>
+        result.fold(
           (_) => TibetanCalendarDay.fromEngine(
             dateOnly(DateTime.now()),
             ref.read(tibetanCalendarServiceProvider),
           ),
           (day) => day,
-        ),
-      );
+        );
+
+    final source = repository.todaySource();
+    if (source == null) {
+      return bind.stream(null, repository.watchToday().map(orEngine));
+    }
+    return bind.source(source, select: orEngine);
+  });
 });
 
 // ============ Events (moon phases only, derived from resolved days) ============

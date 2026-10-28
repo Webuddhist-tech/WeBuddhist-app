@@ -34,27 +34,28 @@ class PracticeExploreRepository {
   final TimersRemoteDatasource timersRemote;
 
   Stream<Either<Failure, List<Series>>> watchSeries(String language) =>
-      _series(language).watch();
+      seriesSource(language).watch();
   Future<Either<Failure, List<Series>>> refreshSeries(String language) =>
-      _series(language).refresh();
+      seriesSource(language).refresh();
 
   Stream<Either<Failure, RecitationsPageResponse>> watchRecitations(
     String language,
-  ) => _recitations(language).watch();
+  ) => recitationsSource(language).watch();
   Future<Either<Failure, RecitationsPageResponse>> refreshRecitations(
     String language,
-  ) => _recitations(language).refresh();
+  ) => recitationsSource(language).refresh();
 
   Stream<Either<Failure, List<Mantra>>> watchAccumulators(String language) =>
-      _accumulators(language).watch();
+      accumulatorsSource(language).watch();
   Future<Either<Failure, List<Mantra>>> refreshAccumulators(String language) =>
-      _accumulators(language).refresh();
+      accumulatorsSource(language).refresh();
 
-  Stream<Either<Failure, List<PresetTimer>>> watchTimers() => _timers().watch();
+  Stream<Either<Failure, List<PresetTimer>>> watchTimers() => timersSource().watch();
   Future<Either<Failure, List<PresetTimer>>> refreshTimers() =>
-      _timers().refresh();
+      timersSource().refresh();
 
-  ScreenCacheSource<List<Series>> _series(String language) {
+  // Sources are public so providers can seed the first frame synchronously.
+  ScreenCacheSource<List<Series>> seriesSource(String language) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public('practice_explore_series', language: language),
@@ -77,7 +78,7 @@ class PracticeExploreRepository {
     );
   }
 
-  ScreenCacheSource<RecitationsPageResponse> _recitations(String language) {
+  ScreenCacheSource<RecitationsPageResponse> recitationsSource(String language) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public(
@@ -102,7 +103,7 @@ class PracticeExploreRepository {
     );
   }
 
-  ScreenCacheSource<List<Mantra>> _accumulators(String language) {
+  ScreenCacheSource<List<Mantra>> accumulatorsSource(String language) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public(
@@ -127,7 +128,7 @@ class PracticeExploreRepository {
     );
   }
 
-  ScreenCacheSource<List<PresetTimer>> _timers() {
+  ScreenCacheSource<List<PresetTimer>> timersSource() {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.public('practice_explore_timers', language: 'all'),

@@ -68,9 +68,9 @@ class PracticeRecitationsState {
 
 class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState> {
   final RecitationsRemoteDatasource _datasource;
-  final ScreenCacheStore _store;
   final String _languageCode;
   final bool _includeCollections;
+  final ScreenCacheSource<RecitationsPageResponse> _source;
   bool _loadInFlight = false;
 
   PracticeRecitationsNotifier({
@@ -79,51 +79,76 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
     required String languageCode,
     required bool includeCollections,
     bool deferLoad = false,
+  }) : this._(
+         datasource: datasource,
+         languageCode: languageCode,
+         includeCollections: includeCollections,
+         deferLoad: deferLoad,
+         source: firstPageSource(
+           datasource: datasource,
+           store: store,
+           languageCode: languageCode,
+           includeCollections: includeCollections,
+         ),
+       );
+
+  PracticeRecitationsNotifier._({
+    required RecitationsRemoteDatasource datasource,
+    required String languageCode,
+    required bool includeCollections,
+    required bool deferLoad,
+    required ScreenCacheSource<RecitationsPageResponse> source,
   }) : _datasource = datasource,
-       _store = store,
        _languageCode = languageCode,
        _includeCollections = includeCollections,
-       super(
-         deferLoad
-             ? const PracticeRecitationsState(isLoading: true)
-             : const PracticeRecitationsState(),
-       ) {
+       _source = source,
+       super(_seed(source, deferLoad: deferLoad)) {
     if (!deferLoad) {
       loadInitial();
     }
   }
 
-  RecitationsQueryParams _queryParams({required int skip}) {
-    return RecitationsQueryParams(
-      language: _languageCode,
-      skip: skip,
-      limit: practiceRecitationsPageSize,
-      shouldIncludeCollections: _includeCollections && skip == 0,
+  // The stored page is the first state, so the first frame never spins.
+  static PracticeRecitationsState _seed(
+    ScreenCacheSource<RecitationsPageResponse> source, {
+    required bool deferLoad,
+  }) {
+    final page = source.read();
+    if (page == null) return PracticeRecitationsState(isLoading: deferLoad);
+    return PracticeRecitationsState(
+      recitations: page.recitations,
+      collections: page.collections,
+      hasMore: page.hasMore,
+      skip: page.nextSkip,
+      total: page.total,
     );
   }
 
   /// Page 1 is stored per language (per user when collections are included).
-  Future<ScreenCacheSource<RecitationsPageResponse>> _firstPageSource() async {
-    final userId = _includeCollections ? await _store.currentUserId() : null;
+  static ScreenCacheSource<RecitationsPageResponse> firstPageSource({
+    required RecitationsRemoteDatasource datasource,
+    required ScreenCacheStore store,
+    required String languageCode,
+    required bool includeCollections,
+  }) {
     final key =
-        _includeCollections
+        includeCollections
             ? ScreenCacheKey.user(
               'chants_page1',
-              userId: userId,
-              language: _languageCode,
+              userId: store.currentUserIdSync,
+              language: languageCode,
             )
-            : ScreenCacheKey.public('chants_page1', language: _languageCode);
+            : ScreenCacheKey.public('chants_page1', language: languageCode);
     return ScreenCacheSource(
-      store: _store,
+      store: store,
       key: key,
       fetchJson: () async {
-        final params = _queryParams(skip: 0);
-        final page = await _datasource.fetchRecitationsPage(
+        final page = await datasource.fetchRecitationsPage(
           queryParams: RecitationsQueryParams(
-            language: params.language,
-            skip: params.skip,
-            limit: params.limit,
-            shouldIncludeCollections: params.shouldIncludeCollections,
+            language: languageCode,
+            skip: 0,
+            limit: practiceRecitationsPageSize,
+            shouldIncludeCollections: includeCollections,
             noCache: true,
           ),
         );
@@ -133,6 +158,15 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
           (json) =>
               RecitationsPageResponse.fromJson(json as Map<String, dynamic>),
       failureMessage: 'Failed to load chants',
+    );
+  }
+
+  RecitationsQueryParams _queryParams({required int skip}) {
+    return RecitationsQueryParams(
+      language: _languageCode,
+      skip: skip,
+      limit: practiceRecitationsPageSize,
+      shouldIncludeCollections: _includeCollections && skip == 0,
     );
   }
 
@@ -154,8 +188,7 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
 
     _loadInFlight = true;
     try {
-      final source = await _firstPageSource();
-      if (!mounted) return;
+      final source = _source;
       final cached = state.isEmpty ? source.read() : null;
       if (cached != null) {
         _applyFirstPage(cached);

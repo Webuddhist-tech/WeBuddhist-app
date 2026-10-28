@@ -33,31 +33,29 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   Stream<Either<Failure, GroupProfile>> watchGroupProfile(
     String groupId, {
     required String language,
-  }) async* {
-    final userId = await store.currentUserId();
-    yield* _profileSource(groupId, userId: userId, language: language).watch();
+  }) {
+    return groupProfileSource(groupId, language: language).watch();
   }
 
   @override
   Future<Either<Failure, GroupProfile>> refreshGroupProfile(
     String groupId, {
     required String language,
-  }) async {
-    final userId = await store.currentUserId();
-    return _profileSource(groupId, userId: userId, language: language).refresh();
+  }) {
+    return groupProfileSource(groupId, language: language).refresh();
   }
 
   // Guests can view profiles, so a missing user id falls back to `anon`.
-  ScreenCacheSource<GroupProfile> _profileSource(
+  @override
+  ScreenCacheSource<GroupProfile> groupProfileSource(
     String groupId, {
-    required String? userId,
     required String language,
   }) {
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
         'group_profile',
-        userId: userId,
+        userId: store.currentUserIdSync,
         language: language,
         params: [groupId],
       ),
@@ -70,15 +68,15 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   /// User-scoped source keyed by the signed-in user (or `anon`).
-  Future<ScreenCacheSource<T>> _userSource<T extends Object>(
+  ScreenCacheSource<T> _userSource<T extends Object>(
     String screen, {
     String language = '',
     List<String> params = const [],
     required Future<Map<String, dynamic>> Function() fetchJson,
     required T Function(Map<String, dynamic> json) parse,
     required String failureMessage,
-  }) async {
-    final userId = await store.currentUserId();
+  }) {
+    final userId = store.currentUserIdSync;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
@@ -93,7 +91,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     );
   }
 
-  Future<ScreenCacheSource<GroupEventsPage>> _eventsSource(
+  ScreenCacheSource<GroupEventsPage> _eventsSource(
     String groupId,
     String language,
   ) {
@@ -110,22 +108,30 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
+  ScreenCacheSource<GroupEventsPage> groupEventsSource(
+    String groupId, {
+    required String language,
+  }) {
+    return _eventsSource(groupId, language);
+  }
+
+  @override
   Stream<Either<Failure, GroupEventsPage>> watchGroupEvents(
     String groupId, {
     required String language,
-  }) async* {
-    yield* (await _eventsSource(groupId, language)).watch();
+  }) {
+    return _eventsSource(groupId, language).watch();
   }
 
   @override
   Future<Either<Failure, GroupEventsPage>> refreshGroupEvents(
     String groupId, {
     required String language,
-  }) async {
-    return (await _eventsSource(groupId, language)).refresh();
+  }) {
+    return _eventsSource(groupId, language).refresh();
   }
 
-  Future<ScreenCacheSource<GroupEvent>> _eventDetailSource(
+  ScreenCacheSource<GroupEvent> _eventDetailSource(
     String eventId,
     String language,
   ) {
@@ -141,25 +147,34 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
+  ScreenCacheSource<GroupEvent> groupEventDetailSource(
+    String eventId, {
+    required String language,
+  }) {
+    return _eventDetailSource(eventId, language);
+  }
+
+  @override
   Stream<Either<Failure, GroupEvent>> watchGroupEventDetail(
     String eventId, {
     required String language,
-  }) async* {
-    yield* (await _eventDetailSource(eventId, language)).watch();
+  }) {
+    return _eventDetailSource(eventId, language).watch();
   }
 
   @override
   Future<Either<Failure, GroupEvent>> refreshGroupEventDetail(
     String eventId, {
     required String language,
-  }) async {
-    return (await _eventDetailSource(eventId, language)).refresh();
+  }) {
+    return _eventDetailSource(eventId, language).refresh();
   }
 
   @override
-  Stream<Either<Failure, GroupRecitationCollection>>
-  watchRecitationCollectionDetail({required String collectionId}) async* {
-    final source = await _userSource(
+  ScreenCacheSource<GroupRecitationCollection> recitationCollectionDetailSource({
+    required String collectionId,
+  }) {
+    return _userSource(
       'group_recitation_collection',
       params: [collectionId],
       fetchJson:
@@ -169,10 +184,15 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
       parse: (json) => GroupRecitationCollectionModel.fromJson(json).toEntity(),
       failureMessage: 'Failed to load recitation collection',
     );
-    yield* source.watch();
   }
 
-  Future<ScreenCacheSource<GroupPracticesPage>> _practicesSource(
+  @override
+  Stream<Either<Failure, GroupRecitationCollection>>
+  watchRecitationCollectionDetail({required String collectionId}) {
+    return recitationCollectionDetailSource(collectionId: collectionId).watch();
+  }
+
+  ScreenCacheSource<GroupPracticesPage> _practicesSource(
     String groupId, {
     required String language,
     required int limit,
@@ -194,7 +214,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     );
   }
 
-  Future<ScreenCacheSource<GroupMembersPage>> _membersSource(
+  ScreenCacheSource<GroupMembersPage> _membersSource(
     String groupId, {
     required int limit,
   }) {
@@ -208,7 +228,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     );
   }
 
-  Future<ScreenCacheSource<GroupEventParticipantsPage>> _participantsSource(
+  ScreenCacheSource<GroupEventParticipantsPage> _participantsSource(
     String eventId, {
     required int limit,
   }) {
@@ -227,7 +247,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     );
   }
 
-  Future<ScreenCacheSource<GroupJoinRequestsPage>> _joinRequestsSource(
+  ScreenCacheSource<GroupJoinRequestsPage> _joinRequestsSource(
     String groupId, {
     required int limit,
   }) {
@@ -245,7 +265,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     );
   }
 
-  Future<ScreenCacheSource<GroupReportsPage>> _reportsSource(
+  ScreenCacheSource<GroupReportsPage> _reportsSource(
     String groupId, {
     required int limit,
   }) {
@@ -267,11 +287,11 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   static const int _firstPageLimit = 20;
 
   @override
-  Future<GroupPracticesPage?> readStoredGroupPractices(
+  GroupPracticesPage? readStoredGroupPractices(
     String groupId, {
     required String language,
-  }) async {
-    final source = await _practicesSource(
+  }) {
+    final source = _practicesSource(
       groupId,
       language: language,
       limit: _firstPageLimit,
@@ -280,27 +300,27 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   }
 
   @override
-  Future<GroupMembersPage?> readStoredGroupMembers(String groupId) async {
-    return (await _membersSource(groupId, limit: _firstPageLimit)).read();
+  GroupMembersPage? readStoredGroupMembers(String groupId) {
+    return _membersSource(groupId, limit: _firstPageLimit).read();
   }
 
   @override
-  Future<GroupEventParticipantsPage?> readStoredGroupEventParticipants(
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
     String eventId,
-  ) async {
-    return (await _participantsSource(eventId, limit: _firstPageLimit)).read();
+  ) {
+    return _participantsSource(eventId, limit: _firstPageLimit).read();
   }
 
   @override
-  Future<GroupJoinRequestsPage?> readStoredGroupJoinRequests(
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
     String groupId,
-  ) async {
-    return (await _joinRequestsSource(groupId, limit: _firstPageLimit)).read();
+  ) {
+    return _joinRequestsSource(groupId, limit: _firstPageLimit).read();
   }
 
   @override
-  Future<GroupReportsPage?> readStoredGroupReports(String groupId) async {
-    return (await _reportsSource(groupId, limit: _firstPageLimit)).read();
+  GroupReportsPage? readStoredGroupReports(String groupId) {
+    return _reportsSource(groupId, limit: _firstPageLimit).read();
   }
 
   @override
@@ -382,7 +402,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int limit,
   }) async {
     if (skip == 0) {
-      final source = await _practicesSource(
+      final source = _practicesSource(
         groupId,
         language: language,
         limit: limit,
@@ -551,7 +571,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
-    if (skip == 0) return (await _membersSource(groupId, limit: limit)).refresh();
+    if (skip == 0) return _membersSource(groupId, limit: limit).refresh();
     try {
       final model = await remote.fetchGroupMembers(
         groupId,
@@ -692,7 +712,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int limit,
   }) async {
     if (skip == 0) {
-      return (await _participantsSource(eventId, limit: limit)).refresh();
+      return _participantsSource(eventId, limit: limit).refresh();
     }
     try {
       final model = await remote.fetchGroupEventParticipants(
@@ -820,7 +840,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int limit,
   }) async {
     if (skip == 0 && status == GroupJoinRequestStatus.pending) {
-      return (await _joinRequestsSource(groupId, limit: limit)).refresh();
+      return _joinRequestsSource(groupId, limit: limit).refresh();
     }
     try {
       final model = await remote.fetchGroupJoinRequests(
@@ -854,7 +874,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int limit,
   }) async {
     if (skip == 0 && kind == null && resolved == false) {
-      return (await _reportsSource(groupId, limit: limit)).refresh();
+      return _reportsSource(groupId, limit: limit).refresh();
     }
     try {
       final model = await remote.fetchGroupReports(

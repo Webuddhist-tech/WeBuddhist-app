@@ -18,8 +18,16 @@ class ScreenCacheStore {
   Box<String>? get _box =>
       Hive.isBoxOpen(boxName) ? Hive.box<String>(boxName) : null;
 
-  /// Opens the box and drops entries written under an older schema.
+  /// Opens the box, drops entries written under an older schema and loads
+  /// preferences so [currentUserIdSync] answers before the first screen.
   static Future<void> init() async {
+    try {
+      await SharedPreferencesService.instance.get<String>(
+        StorageKeys.currentUserId,
+      );
+    } catch (e) {
+      _logger.warning('Preferences not loaded before the first screen', e);
+    }
     if (Hive.isBoxOpen(boxName)) return;
     final box = await Hive.openBox<String>(boxName);
     final stale =
@@ -32,6 +40,13 @@ class ScreenCacheStore {
 
   Future<String?> currentUserId() {
     return SharedPreferencesService.instance.get<String>(
+      StorageKeys.currentUserId,
+    );
+  }
+
+  /// Same id without an await, so a screen can seed its first frame.
+  String? get currentUserIdSync {
+    return SharedPreferencesService.instance.getSync<String>(
       StorageKeys.currentUserId,
     );
   }

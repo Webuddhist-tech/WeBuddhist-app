@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,11 +16,17 @@ final recitationsRepositoryProvider = Provider<RecitationsRepository>((ref) {
   );
 });
 
-// Stored list first, refreshed in the background (name kept for callers).
-final recitationsFutureProvider =
-    StreamProvider<Either<Failure, List<RecitationModel>>>((ref) {
-      final languageCode = ref.watch(contentLanguageProvider);
-      return ref
+// Stored list is the first state, refreshed in the background (name kept).
+final recitationsFutureProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<RecitationModel>, Either<Failure, List<RecitationModel>>>,
+  Either<Failure, List<RecitationModel>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final languageCode = ref.watch(contentLanguageProvider);
+    return bind.source(
+      ref
           .watch(recitationsRepositoryProvider)
-          .watchRecitations(language: languageCode);
-    });
+          .recitationsSource(language: languageCode),
+    );
+  });
+});

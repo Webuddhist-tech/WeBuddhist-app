@@ -1,4 +1,5 @@
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -30,30 +31,54 @@ final practiceExploreRepositoryProvider = Provider<PracticeExploreRepository>((
   );
 });
 
-// Stored sections first; pull-to-refresh goes through the repository.
-final practiceExploreSeriesProvider =
-    StreamProvider<Either<Failure, List<Series>>>((ref) {
-      final language = ref.watch(contentLanguageProvider);
-      return ref.watch(practiceExploreRepositoryProvider).watchSeries(language);
-    });
+// Stored sections are the first state; pull-to-refresh goes through the
+// repository.
+final practiceExploreSeriesProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<Series>, Either<Failure, List<Series>>>,
+  Either<Failure, List<Series>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final language = ref.watch(contentLanguageProvider);
+    return bind.source(
+      ref.watch(practiceExploreRepositoryProvider).seriesSource(language),
+    );
+  });
+});
 
-final practiceExploreRecitationsProvider =
-    StreamProvider<Either<Failure, RecitationsPageResponse>>((ref) {
-      final language = ref.watch(contentLanguageProvider);
-      return ref
-          .watch(practiceExploreRepositoryProvider)
-          .watchRecitations(language);
-    });
+final practiceExploreRecitationsProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<
+    RecitationsPageResponse,
+    Either<Failure, RecitationsPageResponse>
+  >,
+  Either<Failure, RecitationsPageResponse>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final language = ref.watch(contentLanguageProvider);
+    return bind.source(
+      ref.watch(practiceExploreRepositoryProvider).recitationsSource(language),
+    );
+  });
+});
 
-final practiceExploreAccumulatorsProvider =
-    StreamProvider<Either<Failure, List<Mantra>>>((ref) {
-      final language = ref.watch(contentLanguageProvider);
-      return ref
-          .watch(practiceExploreRepositoryProvider)
-          .watchAccumulators(language);
-    });
+final practiceExploreAccumulatorsProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<Mantra>, Either<Failure, List<Mantra>>>,
+  Either<Failure, List<Mantra>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final language = ref.watch(contentLanguageProvider);
+    return bind.source(
+      ref.watch(practiceExploreRepositoryProvider).accumulatorsSource(language),
+    );
+  });
+});
 
-final practiceExploreTimersProvider =
-    StreamProvider<Either<Failure, List<PresetTimer>>>((ref) {
-      return ref.watch(practiceExploreRepositoryProvider).watchTimers();
-    });
+final practiceExploreTimersProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<PresetTimer>, Either<Failure, List<PresetTimer>>>,
+  Either<Failure, List<PresetTimer>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    return bind.source(
+      ref.watch(practiceExploreRepositoryProvider).timersSource(),
+    );
+  });
+});

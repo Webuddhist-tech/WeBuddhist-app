@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -9,7 +8,6 @@ import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/user_state.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/group_chat_screen.dart';
-import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/push_notifications/application/foreground_push_filter.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
@@ -17,7 +15,6 @@ import 'package:flutter_pecha/features/push_notifications/domain/repositories/pu
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fpdart/fpdart.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -82,9 +79,7 @@ Future<ForegroundPushFilter> _pumpChat(
       overrides: [
         authProvider.overrideWith((ref) => _SignedInAuth()),
         userProvider.overrideWith((ref) => _NoUser()),
-        groupProfileProvider.overrideWith(
-          (ref, id) => Completer<Either<Failure, GroupProfile>>().future.asStream(),
-        ),
+        groupProfileProvider.overrideWith(() => GroupProfileNotifier.pending()),
         pushMessagingRepositoryProvider.overrideWithValue(pushes),
         foregroundPushFilterProvider.overrideWithValue(filter),
       ],

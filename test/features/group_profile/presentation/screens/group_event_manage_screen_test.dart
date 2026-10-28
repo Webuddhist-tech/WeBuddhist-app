@@ -70,17 +70,19 @@ Future<void> _pump(WidgetTester tester) async {
     ProviderScope(
       overrides: [
         groupEventDetailProvider.overrideWith(
-          (ref, eventId) => Stream.value(const Right<Failure, GroupEvent>(_event)),
+          () => GroupEventDetailNotifier.fixed(
+            const Right<Failure, GroupEvent>(_event),
+          ),
         ),
         groupCmsEventsProvider.overrideWith(
-          (ref, groupId) => Stream.value(const []),
+          () => GroupCmsEventsNotifier.fixed(const []),
         ),
         groupEventComposerRepositoryProvider.overrideWithValue(
           _FakeComposerRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) => Stream.value(
-            Right<Failure, GroupAccumulatorDetail>(
+          () => GroupAccumulatorDetailNotifier(
+            (ref, id, bind) => Right<Failure, GroupAccumulatorDetail>(
             GroupAccumulatorDetail(
               id: id,
               presetAccumulatorId: 'p-$id',

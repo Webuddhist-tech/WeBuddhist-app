@@ -62,12 +62,13 @@ class MyPlansNotifier extends StateNotifier<MyPlansState> {
   static const int _limit = 20;
 
   Future<void> _initialize() async {
-    await _seedFromCache();
+    _seedFromCache();
     await loadInitial();
   }
 
-  Future<void> _seedFromCache() async {
-    final userId = await local.currentUserId();
+  // Synchronous so the first frame already shows the stored page.
+  void _seedFromCache() {
+    final userId = local.currentUserIdSync;
     if (userId == null || userId.isEmpty) return;
 
     final cached = local.readUserPlans(

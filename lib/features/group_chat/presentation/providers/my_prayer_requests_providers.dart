@@ -7,6 +7,8 @@ import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 
 class MyPrayerRequestsState extends Equatable {
   /// Newest first, across every space and event.
@@ -76,12 +78,29 @@ class MyPrayerRequestsState extends Equatable {
 /// endpoint. Each row carries its room, which is all an edit, a completion
 /// or a delete needs.
 class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
-  MyPrayerRequestsNotifier({required this.ref})
-    : super(const MyPrayerRequestsState()) {
+  MyPrayerRequestsNotifier({
+    required this.ref,
+    required ScreenCacheSource<ChatMessagesPage> source,
+  }) : _source = source,
+       super(_seed(source)) {
     load();
   }
 
+  // The stored page is the first state, so the first frame never spins.
+  static MyPrayerRequestsState _seed(ScreenCacheSource<ChatMessagesPage> source) {
+    final page = source.read();
+    if (page == null) return const MyPrayerRequestsState();
+    return MyPrayerRequestsState(
+      requests: page.messages,
+      total: page.total,
+      hasLoaded: true,
+      hasMore: page.messages.length < page.total,
+      skip: page.messages.length,
+    );
+  }
+
   final Ref ref;
+  final ScreenCacheSource<ChatMessagesPage> _source;
   static const int _limit = 20;
 
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
@@ -94,18 +113,15 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
   Future<void> load() async {
     if (state.isLoading) return;
     final generation = ++_generation;
+    // Only an empty list shows the loader; a seeded one refreshes silently.
     state = state.copyWith(
-      isLoading: true,
+      isLoading: state.requests.isEmpty,
       isLoadingMore: false,
       clearError: true,
     );
-    final source = await ref
-        .read(groupChatFirstPagesProvider)
-        .myPrayerRequests(limit: _limit);
-    if (!mounted || generation != _generation) return;
 
     await loadCachedFirstPage(
-      source,
+      _source,
       isCurrent: () => mounted && generation == _generation,
       seed: state.requests.isEmpty,
       fetch: () => _repository.listMyPrayerRequests(skip: 0, limit: _limit),
@@ -271,4 +287,11 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
 final myPrayerRequestsProvider = StateNotifierProvider.autoDispose<
   MyPrayerRequestsNotifier,
   MyPrayerRequestsState
->((ref) => MyPrayerRequestsNotifier(ref: ref));
+>((ref) {
+  return MyPrayerRequestsNotifier(
+    ref: ref,
+    source: ref
+        .watch(groupChatFirstPagesProvider)
+        .myPrayerRequests(limit: MyPrayerRequestsNotifier._limit),
+  );
+});

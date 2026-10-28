@@ -26,25 +26,30 @@ class MalaRepositoryImpl implements MalaRepository {
   Stream<Either<Failure, List<AccumulatorGroup>>> watchJoinedAccumulatorGroups(
     String accumulatorId, {
     String? language,
-  }) async* {
-    final userId = await store.currentUserId();
-    yield* _joinedGroupsSource(accumulatorId, userId, language).watch();
+  }) {
+    return joinedAccumulatorGroupsSource(
+      accumulatorId,
+      language: language,
+    ).watch();
   }
 
   @override
   Future<Either<Failure, List<AccumulatorGroup>>> refreshJoinedAccumulatorGroups(
     String accumulatorId, {
     String? language,
-  }) async {
-    final userId = await store.currentUserId();
-    return _joinedGroupsSource(accumulatorId, userId, language).refresh();
+  }) {
+    return joinedAccumulatorGroupsSource(
+      accumulatorId,
+      language: language,
+    ).refresh();
   }
 
-  ScreenCacheSource<List<AccumulatorGroup>> _joinedGroupsSource(
-    String accumulatorId,
-    String? userId,
+  @override
+  ScreenCacheSource<List<AccumulatorGroup>> joinedAccumulatorGroupsSource(
+    String accumulatorId, {
     String? language,
-  ) {
+  }) {
+    final userId = store.currentUserIdSync;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(

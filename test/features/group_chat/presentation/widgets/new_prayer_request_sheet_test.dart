@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 
 import '../../../../helpers/fake_screen_cache_store.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 const _defaultHint = 'How can we pray for you today?';
 
@@ -57,7 +58,9 @@ Future<void> _pump(
   return tester.pumpWidget(
     ProviderScope(
       overrides: [
-        prayerIntentionsProvider.overrideWith((ref) => catalog.asStream()),
+        prayerIntentionsProvider.overrideWith(
+          () => AutoDisposeScreenCacheNotifier((ref, bind) => catalog),
+        ),
         screenCacheStoreProvider.overrideWithValue(FakeScreenCacheStore()),
       ],
       child: MaterialApp(

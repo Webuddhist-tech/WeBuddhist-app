@@ -4,6 +4,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_event
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_cms_item.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_in_person_count.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract class GroupEventComposerRepositoryInterface {
@@ -51,6 +52,11 @@ abstract class GroupEventComposerRepositoryInterface {
   });
 
   Future<Either<Failure, List<GroupEventCmsItem>>> getCmsEvents(
+    String groupId, {
+    required String language,
+  });
+
+  ScreenCacheSource<List<GroupEventCmsItem>> cmsEventsSource(
     String groupId, {
     required String language,
   });

@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_event
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event_draft.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_event_composer_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 /// Null when no LocationIQ token is configured; the venue sheet then offers
 /// the map pin only.
@@ -61,15 +62,25 @@ final groupEventIntentionsProvider =
 
 /// The CMS view of a group's events, drafts included; for people who may post.
 /// Stored list first; `.future` resolves with it, so use `refreshCmsEvents`.
-final groupCmsEventsProvider = StreamProvider.autoDispose
-    .family<List<GroupEventCmsItem>, String>((ref, groupId) {
-      ref.watch(authProvider);
-      final language = ref.watch(contentLanguageProvider);
-      return ref
-          .watch(groupEventComposerRepositoryProvider)
-          .watchCmsEvents(groupId, language: language)
-          .map(
-            (result) =>
-                result.fold((failure) => throw failure, (items) => items),
-          );
+typedef GroupCmsEventsNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      List<GroupEventCmsItem>,
+      List<GroupEventCmsItem>,
+      String
+    >;
+
+final groupCmsEventsProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupCmsEventsNotifier, List<GroupEventCmsItem>, String>(() {
+      return GroupCmsEventsNotifier((ref, groupId, bind) {
+        ref.watch(authProvider);
+        final language = ref.watch(contentLanguageProvider);
+        return bind.source(
+          ref
+              .watch(groupEventComposerRepositoryProvider)
+              .cmsEventsSource(groupId, language: language),
+          select:
+              (result) =>
+                  result.fold((failure) => throw failure, (items) => items),
+        );
+      });
     });

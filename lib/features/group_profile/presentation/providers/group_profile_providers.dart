@@ -25,6 +25,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_an
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 final groupProfileRemoteDatasourceProvider =
     Provider<GroupProfileRemoteDatasource>((ref) {
@@ -44,19 +45,32 @@ final getGroupProfileUseCaseProvider = Provider<GetGroupProfileUseCase>((ref) {
   return GetGroupProfileUseCase(repository.getGroupProfile);
 });
 
-/// Stored profile first, refreshed in the background. `.future` resolves with
-/// the stored value; callers needing fresh data use `refreshGroupProfile`.
-final groupProfileProvider = StreamProvider.autoDispose.family<
+typedef GroupProfileNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupProfile,
+      Either<Failure, GroupProfile>,
+      String
+    >;
+
+/// Stored profile is the first state, refreshed in the background. `.future`
+/// resolves with the stored value; callers needing fresh data use
+/// `refreshGroupProfile`.
+final groupProfileProvider = AsyncNotifierProvider.autoDispose.family<
+  GroupProfileNotifier,
   Either<Failure, GroupProfile>,
   String
->((ref, groupId) {
-  // Rebuild when auth changes so user-specific fields (e.g. is_group_enrolled)
-  // are loaded with the Bearer token attached.
-  ref.watch(authProvider);
-  final language = ref.watch(contentLanguageProvider);
-  return ref
-      .watch(groupProfileRepositoryProvider)
-      .watchGroupProfile(groupId, language: language);
+>(() {
+  return GroupProfileNotifier((ref, groupId, bind) {
+    // Rebuild when auth changes so user-specific fields (e.g. is_group_enrolled)
+    // are loaded with the Bearer token attached.
+    ref.watch(authProvider);
+    final language = ref.watch(contentLanguageProvider);
+    return bind.source(
+      ref
+          .watch(groupProfileRepositoryProvider)
+          .groupProfileSource(groupId, language: language),
+    );
+  });
 });
 
 class GroupPracticesState {
@@ -105,10 +119,14 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
     required GroupProfileRepositoryInterface repository,
     required Ref ref,
     required String groupId,
+    GroupPracticesPage? stored,
   }) : _repository = repository,
        _ref = ref,
        _groupId = groupId,
-       super(const GroupPracticesState());
+       super(const GroupPracticesState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final Ref _ref;
@@ -122,15 +140,6 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
 
     final generation = ++_requestGeneration;
     final language = _ref.read(contentLanguageProvider);
-    final stored =
-        state.practices.isEmpty
-            ? await _repository.readStoredGroupPractices(
-              _groupId,
-              language: language,
-            )
-            : null;
-    if (!mounted || generation != _requestGeneration) return;
-    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(
       isLoading: state.practices.isEmpty,
       clearError: true,
@@ -214,11 +223,16 @@ final groupPracticesProvider = StateNotifierProvider.autoDispose
       groupId,
     ) {
       ref.watch(authProvider);
-      ref.watch(contentLanguageProvider);
+      final language = ref.watch(contentLanguageProvider);
+      final repository = ref.watch(groupProfileRepositoryProvider);
       final notifier = GroupPracticesNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         ref: ref,
         groupId: groupId,
+        stored: repository.readStoredGroupPractices(
+          groupId,
+          language: language,
+        ),
       );
       notifier.loadInitial();
       return notifier;
@@ -262,16 +276,28 @@ class GroupRecitationCollectionKey {
   int get hashCode => Object.hash(groupId, collectionId);
 }
 
-final groupRecitationCollectionDetailProvider = StreamProvider.autoDispose
-    .family<
+typedef GroupRecitationCollectionDetailNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupRecitationCollection,
       Either<Failure, GroupRecitationCollection>,
       GroupRecitationCollectionKey
-    >((ref, key) {
-      ref.watch(authProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.watchRecitationCollectionDetail(
-        collectionId: key.collectionId,
-      );
+    >;
+
+final groupRecitationCollectionDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      GroupRecitationCollectionDetailNotifier,
+      Either<Failure, GroupRecitationCollection>,
+      GroupRecitationCollectionKey
+    >(() {
+      return GroupRecitationCollectionDetailNotifier((ref, key, bind) {
+        ref.watch(authProvider);
+        final repository = ref.watch(groupProfileRepositoryProvider);
+        return bind.source(
+          repository.recitationCollectionDetailSource(
+            collectionId: key.collectionId,
+          ),
+        );
+      });
     });
 
 /// Outcome of logging one chant as completed.
@@ -955,9 +981,13 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
     required GroupProfileRepositoryInterface repository,
     required String groupId,
     this.onMemberRemoved,
+    GroupMembersPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupMembersState());
+       super(const GroupMembersState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
@@ -972,12 +1002,6 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
     if (state.isLoading || state.isLoadingMore) return;
 
     final generation = ++_requestGeneration;
-    final stored =
-        state.members.isEmpty
-            ? await _repository.readStoredGroupMembers(_groupId)
-            : null;
-    if (!mounted || generation != _requestGeneration) return;
-    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(isLoading: state.members.isEmpty, clearError: true);
 
     final result = await _repository.getGroupMembers(
@@ -1167,9 +1191,11 @@ final groupMembersNeedsRefreshProvider = StateProvider.autoDispose
 
 final groupMembersProvider = StateNotifierProvider.autoDispose
     .family<GroupMembersNotifier, GroupMembersState, String>((ref, groupId) {
+      final repository = ref.watch(groupProfileRepositoryProvider);
       return GroupMembersNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupMembers(groupId),
         onMemberRemoved: () {
           ref.invalidate(groupProfileProvider(groupId));
           noteGroupMembershipChanged(ref, groupId);
@@ -1238,9 +1264,13 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     required GroupProfileRepositoryInterface repository,
     required String groupId,
     this.onMemberAdmitted,
+    GroupJoinRequestsPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupJoinRequestsState());
+       super(const GroupJoinRequestsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
@@ -1255,12 +1285,6 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     }
 
     final generation = ++_requestGeneration;
-    final stored =
-        state.requests.isEmpty
-            ? await _repository.readStoredGroupJoinRequests(_groupId)
-            : null;
-    if (!mounted || generation != _requestGeneration) return;
-    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(isLoading: state.requests.isEmpty, clearError: true);
 
     final result = await _repository.getGroupJoinRequests(
@@ -1447,43 +1471,79 @@ final groupJoinRequestsProvider = StateNotifierProvider.autoDispose
       ref,
       groupId,
     ) {
+      final repository = ref.watch(groupProfileRepositoryProvider);
       final notifier = GroupJoinRequestsNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupJoinRequests(groupId),
         onMemberAdmitted: () => noteGroupMembershipChanged(ref, groupId),
       );
       notifier.loadInitial();
       return notifier;
     });
 
-/// Stored events first, refreshed in the background; `.future` resolves with
-/// the stored value, so pull-to-refresh uses `refreshGroupEvents`.
-final groupEventsProvider = StreamProvider.autoDispose
-    .family<Either<Failure, GroupEventsPage>, String>((ref, groupId) {
-      ref.watch(authProvider);
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.watchGroupEvents(groupId, language: language);
+typedef GroupEventsNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupEventsPage,
+      Either<Failure, GroupEventsPage>,
+      String
+    >;
+
+/// Stored events are the first state, refreshed in the background; `.future`
+/// resolves with the stored value, so pull-to-refresh uses `refreshGroupEvents`.
+final groupEventsProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupEventsNotifier, Either<Failure, GroupEventsPage>, String>(() {
+      return GroupEventsNotifier((ref, groupId, bind) {
+        ref.watch(authProvider);
+        final language = ref.watch(contentLanguageProvider);
+        final repository = ref.watch(groupProfileRepositoryProvider);
+        return bind.source(
+          repository.groupEventsSource(groupId, language: language),
+        );
+      });
     });
 
-final groupEventDetailProvider = StreamProvider.autoDispose
-    .family<Either<Failure, GroupEvent>, String>((ref, eventId) {
-      ref.watch(authProvider);
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.watchGroupEventDetail(eventId, language: language);
+typedef GroupEventDetailNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupEvent,
+      Either<Failure, GroupEvent>,
+      String
+    >;
+
+final groupEventDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupEventDetailNotifier, Either<Failure, GroupEvent>, String>(() {
+      return GroupEventDetailNotifier((ref, eventId, bind) {
+        ref.watch(authProvider);
+        final language = ref.watch(contentLanguageProvider);
+        final repository = ref.watch(groupProfileRepositoryProvider);
+        return bind.source(
+          repository.groupEventDetailSource(eventId, language: language),
+        );
+      });
     });
 
 typedef GroupEventLanguageKey = ({String eventId, String language});
 
+typedef GroupEventInLanguageNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupEvent,
+      Either<Failure, GroupEvent>,
+      GroupEventLanguageKey
+    >;
+
 /// Event detail in an explicit language, for the live stream language toggle.
-final groupEventInLanguageProvider = StreamProvider.autoDispose.family<
+final groupEventInLanguageProvider = AsyncNotifierProvider.autoDispose.family<
+  GroupEventInLanguageNotifier,
   Either<Failure, GroupEvent>,
   GroupEventLanguageKey
->((ref, key) {
-  ref.watch(authProvider);
-  final repository = ref.watch(groupProfileRepositoryProvider);
-  return repository.watchGroupEventDetail(key.eventId, language: key.language);
+>(() {
+  return GroupEventInLanguageNotifier((ref, key, bind) {
+    ref.watch(authProvider);
+    final repository = ref.watch(groupProfileRepositoryProvider);
+    return bind.source(
+      repository.groupEventDetailSource(key.eventId, language: key.language),
+    );
+  });
 });
 
 class GroupEventParticipantsState {
@@ -1532,9 +1592,13 @@ class GroupEventParticipantsNotifier
   GroupEventParticipantsNotifier({
     required GroupProfileRepositoryInterface repository,
     required String eventId,
+    GroupEventParticipantsPage? stored,
   }) : _repository = repository,
        _eventId = eventId,
-       super(const GroupEventParticipantsState());
+       super(const GroupEventParticipantsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _eventId;
@@ -1546,12 +1610,6 @@ class GroupEventParticipantsNotifier
     if (state.isLoading || state.isLoadingMore) return;
 
     final generation = ++_requestGeneration;
-    final stored =
-        state.participants.isEmpty
-            ? await _repository.readStoredGroupEventParticipants(_eventId)
-            : null;
-    if (!mounted || generation != _requestGeneration) return;
-    if (stored != null) _applyFirstPage(stored);
     state = state.copyWith(
       isLoading: state.participants.isEmpty,
       clearError: true,
@@ -1661,9 +1719,11 @@ final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
   GroupEventParticipantsState,
   String
 >((ref, eventId) {
+  final repository = ref.watch(groupProfileRepositoryProvider);
   final notifier = GroupEventParticipantsNotifier(
-    repository: ref.watch(groupProfileRepositoryProvider),
+    repository: repository,
     eventId: eventId,
+    stored: repository.readStoredGroupEventParticipants(eventId),
   );
   // Load on creation so the first watch already has participants.
   notifier.loadInitial();

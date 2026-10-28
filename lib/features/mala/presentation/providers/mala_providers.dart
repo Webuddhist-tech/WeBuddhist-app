@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
@@ -123,19 +124,12 @@ final malaSyncManagerProvider = Provider<MalaSyncManager>((ref) {
 
 // ============ Catalogue ============
 
-/// Stored catalogue first (the repository reads Hive), then each refresh
-/// written to it. Re-fetches when the content language changes.
-final malaCatalogueProvider = StreamProvider<Either<Failure, List<Mantra>>>((
-  ref,
+// Each refresh written to Hive re-emits here.
+Stream<Either<Failure, List<Mantra>>> _catalogueUpdates(
+  GetCatalogueUseCase getCatalogue,
+  MalaLocalDataSource local,
+  String language,
 ) async* {
-  if (!_isAuthenticated(ref)) {
-    yield const Left(AuthenticationFailure('Not authenticated'));
-    return;
-  }
-  final language = ref.watch(contentLanguageProvider);
-  final getCatalogue = ref.watch(getCatalogueUseCaseProvider);
-  final local = ref.watch(malaLocalDataSourceProvider);
-
   yield await getCatalogue(language);
 
   await for (final _ in local.watchCatalogue(language)) {
@@ -144,6 +138,30 @@ final malaCatalogueProvider = StreamProvider<Either<Failure, List<Mantra>>>((
       yield Right(cached.map((preset) => preset.toEntity()).toList());
     }
   }
+}
+
+/// Stored catalogue (from Hive) is the first state, then each refresh.
+/// Re-fetches when the content language changes.
+final malaCatalogueProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<Mantra>, Either<Failure, List<Mantra>>>,
+  Either<Failure, List<Mantra>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    if (!_isAuthenticated(ref)) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    final language = ref.watch(contentLanguageProvider);
+    final getCatalogue = ref.watch(getCatalogueUseCaseProvider);
+    final local = ref.watch(malaLocalDataSourceProvider);
+    final stored = local
+        .readCatalogue(language)
+        ?.map((preset) => preset.toEntity())
+        .toList();
+    return bind.stream(
+      stored == null ? null : Right(stored),
+      _catalogueUpdates(getCatalogue, local, language),
+    );
+  });
 });
 
 // ============ Catalogue search (debounced, server-side) ============

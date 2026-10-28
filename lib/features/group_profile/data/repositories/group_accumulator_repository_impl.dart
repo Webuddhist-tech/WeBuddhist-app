@@ -16,15 +16,15 @@ class GroupAccumulatorRepositoryImpl
 
   GroupAccumulatorRepositoryImpl({required this.remote, required this.store});
 
-  Future<ScreenCacheSource<T>> _userSource<T extends Object>(
+  ScreenCacheSource<T> _userSource<T extends Object>(
     String screen, {
     String language = '',
     List<String> params = const [],
     required Future<Map<String, dynamic>> Function() fetchJson,
     required T Function(Map<String, dynamic> json) parse,
     required String failureMessage,
-  }) async {
-    final userId = await store.currentUserId();
+  }) {
+    final userId = store.currentUserIdSync;
     return ScreenCacheSource(
       store: store,
       key: ScreenCacheKey.user(
@@ -44,8 +44,21 @@ class GroupAccumulatorRepositoryImpl
     String groupId, {
     required String language,
     required int limit,
-  }) async* {
-    final source = await _userSource(
+  }) {
+    return groupAccumulatorsSource(
+      groupId,
+      language: language,
+      limit: limit,
+    ).watch();
+  }
+
+  @override
+  ScreenCacheSource<GroupAccumulatorsPage> groupAccumulatorsSource(
+    String groupId, {
+    required String language,
+    required int limit,
+  }) {
+    return _userSource(
       'group_accumulators',
       language: language,
       params: [groupId],
@@ -59,10 +72,9 @@ class GroupAccumulatorRepositoryImpl
       parse: (json) => GroupAccumulatorsPageModel.fromJson(json).toEntity(),
       failureMessage: 'Failed to load group accumulators',
     );
-    yield* source.watch();
   }
 
-  Future<ScreenCacheSource<GroupAccumulatorDetail>> _detailSource(
+  ScreenCacheSource<GroupAccumulatorDetail> _detailSource(
     String accumulatorId,
     String language,
   ) {
@@ -81,31 +93,39 @@ class GroupAccumulatorRepositoryImpl
   }
 
   @override
+  ScreenCacheSource<GroupAccumulatorDetail> groupAccumulatorDetailSource(
+    String accumulatorId, {
+    required String language,
+  }) {
+    return _detailSource(accumulatorId, language);
+  }
+
+  @override
   Stream<Either<Failure, GroupAccumulatorDetail>> watchGroupAccumulator(
     String accumulatorId, {
     required String language,
-  }) async* {
-    yield* (await _detailSource(accumulatorId, language)).watch();
+  }) {
+    return _detailSource(accumulatorId, language).watch();
   }
 
   @override
   Future<Either<Failure, GroupAccumulatorDetail>> refreshGroupAccumulator(
     String accumulatorId, {
     required String language,
-  }) async {
-    return (await _detailSource(accumulatorId, language)).refresh();
+  }) {
+    return _detailSource(accumulatorId, language).refresh();
   }
 
   @override
-  Future<GroupAccumulatorMembersPage?> readStoredGroupAccumulatorMembers(
+  GroupAccumulatorMembersPage? readStoredGroupAccumulatorMembers(
     String accumulatorId, {
     required GroupAccumulatorMemberSort sortBy,
-  }) async {
-    final source = await _membersSource(accumulatorId, limit: 20, sortBy: sortBy);
+  }) {
+    final source = _membersSource(accumulatorId, limit: 20, sortBy: sortBy);
     return source.read();
   }
 
-  Future<ScreenCacheSource<GroupAccumulatorMembersPage>> _membersSource(
+  ScreenCacheSource<GroupAccumulatorMembersPage> _membersSource(
     String accumulatorId, {
     required int limit,
     required GroupAccumulatorMemberSort sortBy,
@@ -233,7 +253,7 @@ class GroupAccumulatorRepositoryImpl
     required GroupAccumulatorMemberSort sortBy,
   }) async {
     if (skip == 0) {
-      final source = await _membersSource(
+      final source = _membersSource(
         accumulatorId,
         limit: limit,
         sortBy: sortBy,

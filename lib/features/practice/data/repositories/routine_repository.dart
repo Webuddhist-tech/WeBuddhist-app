@@ -32,28 +32,30 @@ class RoutineApiRepositoryImpl implements RoutineApiRepository {
   @override
   Stream<Either<Failure, RoutineData>> watchUserRoutine({
     required String language,
-  }) async* {
-    final userId = await _store.currentUserId();
-    if (userId == null || userId.isEmpty) {
-      yield const Left(AuthenticationFailure('Not authenticated'));
-      return;
+  }) {
+    final source = userRoutineSource(language: language);
+    if (source == null) {
+      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
     }
-    yield* _routineSource(userId, language).watch();
+    return source.watch();
   }
 
   @override
   Future<Either<Failure, RoutineData>> refreshUserRoutine({
     required String language,
   }) async {
-    final userId = await _store.currentUserId();
-    if (userId == null || userId.isEmpty) {
+    final source = userRoutineSource(language: language);
+    if (source == null) {
       return const Left(AuthenticationFailure('Not authenticated'));
     }
-    return _routineSource(userId, language).refresh();
+    return source.refresh();
   }
 
   // "No routine yet" is stored as an empty RoutineData, same as getUserRoutine.
-  ScreenCacheSource<RoutineData> _routineSource(String userId, String language) {
+  @override
+  ScreenCacheSource<RoutineData>? userRoutineSource({required String language}) {
+    final userId = _store.currentUserIdSync;
+    if (userId == null || userId.isEmpty) return null;
     return ScreenCacheSource(
       store: _store,
       key: ScreenCacheKey.user(

@@ -2,10 +2,12 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 
 class ConnectEventsState {
   final List<GroupEvent> events;
@@ -56,12 +58,27 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
     required this.ref,
     required this.includeUnfollowed,
     required this.language,
+    required ScreenCacheSource<GroupEventsPage>? source,
     this.eventFormat,
-  }) : super(const ConnectEventsState());
+  }) : _source = source,
+       super(_seed(source));
+
+  // The stored page is the first state, so the first frame never spins.
+  static ConnectEventsState _seed(ScreenCacheSource<GroupEventsPage>? source) {
+    final page = source?.read();
+    if (page == null) return const ConnectEventsState();
+    return ConnectEventsState(
+      events: page.events,
+      hasMore: page.hasMore,
+      skip: page.events.length,
+      hasLoaded: true,
+    );
+  }
 
   final Ref ref;
   final bool includeUnfollowed;
   final String language;
+  final ScreenCacheSource<GroupEventsPage>? _source;
 
   /// `event_format` query value, or null to list every format.
   final String? eventFormat;
@@ -83,17 +100,13 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
       return;
     }
 
-    // Stored first page shows at once; the server's replaces it if changed.
-    state = state.copyWith(isLoading: true, clearError: true);
-    final source = await ref
-        .read(connectRepositoryProvider)
-        .connectEventsFirstPage(
-          includeUnfollowed: includeUnfollowed,
-          language: language,
-          limit: _limit,
-          eventFormat: eventFormat,
-        );
-    if (!mounted) return;
+    final source = _source;
+    if (source == null) {
+      state = const ConnectEventsState(hasMore: false, hasLoaded: true);
+      return;
+    }
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.events.isEmpty, clearError: true);
 
     await loadCachedFirstPage(
       source,
@@ -170,11 +183,25 @@ final myConnectEventsProvider = StateNotifierProvider.autoDispose
     .family<ConnectEventsNotifier, ConnectEventsState, ConnectEventFormatFilter>(
       (ref, filter) {
         final language = ref.watch(contentLanguageProvider);
+        final signedIn = ref.watch(
+          authProvider.select((a) => a.isLoggedIn && !a.isGuest),
+        );
         return ConnectEventsNotifier(
           ref: ref,
           includeUnfollowed: false,
           language: language,
           eventFormat: filter.apiValue,
+          source:
+              signedIn
+                  ? ref
+                      .watch(connectRepositoryProvider)
+                      .connectEventsFirstPage(
+                        includeUnfollowed: false,
+                        language: language,
+                        limit: ConnectEventsNotifier._limit,
+                        eventFormat: filter.apiValue,
+                      )
+                  : null,
         );
       },
     );
@@ -188,5 +215,12 @@ final discoverConnectEventsProvider =
         ref: ref,
         includeUnfollowed: true,
         language: language,
+        source: ref
+            .watch(connectRepositoryProvider)
+            .connectEventsFirstPage(
+              includeUnfollowed: true,
+              language: language,
+              limit: ConnectEventsNotifier._limit,
+            ),
       );
     });

@@ -42,10 +42,10 @@ Future<PlanEmbeddedController> _openPractice(
       overrides: [
         authProvider.overrideWith((ref) => _SignedInAuth()),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) => Stream.value(const Right(_detail)),
+          () => GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) => Stream.value(const Left(NetworkFailure('test'))),
+          () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
       ],
       child: MaterialApp(

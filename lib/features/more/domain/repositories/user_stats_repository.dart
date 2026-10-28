@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/more/domain/entities/mantra_count.dart';
@@ -30,6 +31,15 @@ abstract class UserStatsRepositoryInterface extends Repository {
   });
 
   Stream<Either<Failure, MantraCountPage>> watchMantraCounts({
+    required String language,
+  });
+
+  /// Synchronous builders so a screen can seed its first frame.
+  ScreenCacheSource<SeriesDayCompletedPage> seriesDayCompletedSource({
+    required String language,
+  });
+
+  ScreenCacheSource<MantraCountPage> mantraCountsSource({
     required String language,
   });
 

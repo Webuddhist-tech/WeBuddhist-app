@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_api_models.dart';
 import 'package:flutter_pecha/features/practice/data/models/routine_model.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 /// Domain contract for the remote routine API.
 ///
@@ -23,6 +24,9 @@ abstract class RoutineApiRepository {
   Stream<Either<Failure, RoutineData>> watchUserRoutine({
     required String language,
   });
+
+  /// Built synchronously for first-frame seeding; null while signed out.
+  ScreenCacheSource<RoutineData>? userRoutineSource({required String language});
 
   Future<Either<Failure, RoutineData>> refreshUserRoutine({
     required String language,
