@@ -100,5 +100,20 @@ class AppLanguage {
       name: 'Nepali',
       nativeName: 'नेपाली',
     ),
+    AppLanguage(
+      code: AppConfig.thaiLanguageCode,
+      name: 'Thai',
+      nativeName: 'ไทย',
+    ),
+    AppLanguage(
+      code: AppConfig.burmeseLanguageCode,
+      name: 'Burmese',
+      nativeName: 'မြန်မာ',
+    ),
+    AppLanguage(
+      code: AppConfig.vietnameseLanguageCode,
+      name: 'Vietnamese',
+      nativeName: 'Tiếng Việt',
+    ),
   ];
 }

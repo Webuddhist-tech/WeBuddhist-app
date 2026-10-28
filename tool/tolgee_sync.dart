@@ -19,6 +19,9 @@ const Map<String, String> tolgeeSyncLanguageTags = <String, String>{
   'hi': 'hi',
   'mn': 'mn',
   'ne': 'ne',
+  'th': 'th',
+  'my': 'my',
+  'vi': 'vi-VN',
 };
 
 /// WeBuddhist API the `intentions` command reads. Override with

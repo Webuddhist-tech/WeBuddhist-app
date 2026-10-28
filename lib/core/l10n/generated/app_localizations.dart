@@ -9,7 +9,10 @@ import 'app_localizations_bo.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_hi.dart';
 import 'app_localizations_mn.dart';
+import 'app_localizations_my.dart';
 import 'app_localizations_ne.dart';
+import 'app_localizations_th.dart';
+import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -102,7 +105,10 @@ abstract class AppLocalizations {
     Locale('en'),
     Locale('hi'),
     Locale('mn'),
+    Locale('my'),
     Locale('ne'),
+    Locale('th'),
+    Locale('vi'),
     Locale('zh'),
     Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
   ];
@@ -7535,7 +7541,10 @@ class _AppLocalizationsDelegate
     'en',
     'hi',
     'mn',
+    'my',
     'ne',
+    'th',
+    'vi',
     'zh',
   ].contains(locale.languageCode);
 
@@ -7566,8 +7575,14 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsHi();
     case 'mn':
       return AppLocalizationsMn();
+    case 'my':
+      return AppLocalizationsMy();
     case 'ne':
       return AppLocalizationsNe();
+    case 'th':
+      return AppLocalizationsTh();
+    case 'vi':
+      return AppLocalizationsVi();
     case 'zh':
       return AppLocalizationsZh();
   }

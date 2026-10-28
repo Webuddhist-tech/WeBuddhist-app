@@ -32,6 +32,9 @@ class AppConfig {
   static const String hindiLanguageCode = 'hi';
   static const String mongolianLanguageCode = 'mn';
   static const String nepaliLanguageCode = 'ne';
+  static const String thaiLanguageCode = 'th';
+  static const String burmeseLanguageCode = 'my';
+  static const String vietnameseLanguageCode = 'vi';
   static const String tibetanAdaptationLanguageCode = 'tib';
   static const String tibetanTransliterationLanguageCode = 'tibphono';
   static const List<String> supportedLanguages = [
@@ -42,6 +45,9 @@ class AppConfig {
     'hi',
     'mn',
     'ne',
+    'th',
+    'my',
+    'vi',
   ];
 
   /// Maps a language [localeCode] onto a bundled UI locale.
