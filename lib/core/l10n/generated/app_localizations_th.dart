@@ -1858,6 +1858,12 @@ class AppLocalizationsTh extends AppLocalizations {
   String get group_accumulator_leaderboard => 'อันดับ';
 
   @override
+  String get group_accumulator_everyone => 'ทุกคน';
+
+  @override
+  String get group_accumulator_me => 'ฉัน';
+
+  @override
   String get group_accumulator_my_contributions => 'ยอดที่ฉันร่วมสวด';
 
   @override

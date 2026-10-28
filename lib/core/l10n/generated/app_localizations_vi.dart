@@ -1875,6 +1875,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get group_accumulator_leaderboard => 'Bảng xếp hạng';
 
   @override
+  String get group_accumulator_everyone => 'Mọi người';
+
+  @override
+  String get group_accumulator_me => 'Tôi';
+
+  @override
   String get group_accumulator_my_contributions => 'Đóng góp của tôi';
 
   @override

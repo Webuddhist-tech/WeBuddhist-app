@@ -1892,6 +1892,12 @@ class AppLocalizationsMy extends AppLocalizations {
   String get group_accumulator_leaderboard => 'အဆင့်ဇယား';
 
   @override
+  String get group_accumulator_everyone => 'အားလုံး';
+
+  @override
+  String get group_accumulator_me => 'ကျွန်ုပ်';
+
+  @override
   String get group_accumulator_my_contributions => 'ကျွန်ုပ်၏ ပါဝင်မှုများ';
 
   @override

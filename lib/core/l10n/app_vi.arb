@@ -542,6 +542,8 @@
   "group_accumulator_join_before_practice": "Hãy tham gia tích lũy này trước khi thêm vào pháp tu của bạn",
   "group_accumulator_participants": "{count} người tham gia",
   "group_accumulator_leaderboard": "Bảng xếp hạng",
+  "group_accumulator_everyone": "Mọi người",
+  "group_accumulator_me": "Tôi",
   "group_accumulator_my_contributions": "Đóng góp của tôi",
   "group_accumulator_recited": "Lượt tụng",
   "group_accumulator_total": "Tổng cộng",

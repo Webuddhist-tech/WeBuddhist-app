@@ -542,6 +542,8 @@
   "group_accumulator_join_before_practice": "သင့်ကျင့်စဉ်များထဲ မထည့်မီ ဤစုဆောင်းမှုတွင် ပါဝင်ပါ",
   "group_accumulator_participants": "ပါဝင်သူ {count} ဦး",
   "group_accumulator_leaderboard": "အဆင့်ဇယား",
+  "group_accumulator_everyone": "အားလုံး",
+  "group_accumulator_me": "ကျွန်ုပ်",
   "group_accumulator_my_contributions": "ကျွန်ုပ်၏ ပါဝင်မှုများ",
   "group_accumulator_recited": "ရွတ်ဆိုမှုများ",
   "group_accumulator_total": "စုစုပေါင်း",

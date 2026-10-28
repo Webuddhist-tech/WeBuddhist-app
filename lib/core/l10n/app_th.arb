@@ -542,6 +542,8 @@
   "group_accumulator_join_before_practice": "เข้าร่วมยอดสะสมนี้ก่อนเพิ่มลงในการปฏิบัติของคุณ",
   "group_accumulator_participants": "ผู้เข้าร่วม {count} คน",
   "group_accumulator_leaderboard": "อันดับ",
+  "group_accumulator_everyone": "ทุกคน",
+  "group_accumulator_me": "ฉัน",
   "group_accumulator_my_contributions": "ยอดที่ฉันร่วมสวด",
   "group_accumulator_recited": "จำนวนที่สวด",
   "group_accumulator_total": "รวม",
