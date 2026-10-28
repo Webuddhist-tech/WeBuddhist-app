@@ -119,11 +119,17 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Left(NotFoundFailure('not used'));
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async =>
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async =>
       const Left(NotFoundFailure('not used'));
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async =>
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
+    String groupId, {
+    String? language,
+  }) async =>
       const Left(NotFoundFailure('not used'));
 
   @override

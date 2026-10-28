@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_intent
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_summary_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_mantra_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
@@ -77,8 +79,13 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   List<ChatMessageDTO> history;
   Failure? roomFailure;
 
+  /// Returned on the event room; null for a room without one.
+  ChatRoomMantraDTO? roomMantra;
+  Failure? listFailure;
+
   /// Which room endpoint was asked, `event:<id>` or `group:<id>`.
   final List<String> roomLookups = [];
+  final List<String?> roomLanguages = [];
 
   /// Which send endpoint was used, `event:<id>` or `group:<id>`.
   final List<String> sentTo = [];
@@ -111,11 +118,15 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   List<ChatPrayerUserDTO> supporters = const [];
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async {
     roomLookups.add('event:$eventId');
+    roomLanguages.add(language);
     final failure = roomFailure;
     if (failure != null) return Left(failure);
-    return const Right(
+    return Right(
       ChatRoomDTO(
         id: 'room-1',
         createdBy: 'u1',
@@ -123,13 +134,18 @@ class _FakeGroupChatRepository implements GroupChatRepository {
         eventId: 'e1',
         name: 'Tara',
         updatedAt: '',
+        mantra: roomMantra,
       ),
     );
   }
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async {
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
+    String groupId, {
+    String? language,
+  }) async {
     roomLookups.add('group:$groupId');
+    roomLanguages.add(language);
     final failure = roomFailure;
     if (failure != null) return Left(failure);
     return const Right(
@@ -161,6 +177,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     listedTranslationLanguages.add(translationLanguage);
     final gate = listGate;
     if (gate != null) await gate.future;
+    final failure = listFailure;
+    if (failure != null) return Left(failure);
     final rows =
         intention == null
             ? history
@@ -444,6 +462,14 @@ ChatMessageDTO _byId(PrayerRequestsNotifier notifier, String id) {
   return notifier.state.requests.firstWhere((request) => request.id == id);
 }
 
+class _FixedContentLanguage extends StateNotifier<String>
+    implements ContentLanguageNotifier {
+  _FixedContentLanguage(super.code);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
   late _FakeGroupChatRepository repository;
   late ProviderContainer container;
@@ -451,6 +477,7 @@ void main() {
   ProviderContainer buildContainer({
     PrayerPacing pacing = _instant,
     String translationLanguage = 'EN',
+    String mantraLanguage = 'en',
   }) {
     return ProviderContainer(
       overrides: [
@@ -459,11 +486,23 @@ void main() {
         prayerTranslationLanguageProvider.overrideWithValue(
           translationLanguage,
         ),
+        prayerMantraLanguageProvider.overrideWithValue(mantraLanguage),
       ],
     );
   }
 
   tearDown(() => container.dispose());
+
+  test('the mantra language is the content language, lowercased', () {
+    container = ProviderContainer(
+      overrides: [
+        contentLanguageProvider.overrideWith(
+          (ref) => _FixedContentLanguage('zh-Hans'),
+        ),
+      ],
+    );
+    expect(container.read(prayerMantraLanguageProvider), 'zh-hans');
+  });
 
   group('PrayerRequestsNotifier', () {
     test('resolves the event room, then lists only prayer requests', () async {
@@ -481,6 +520,7 @@ void main() {
       expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
       expect(repository.listedTypes, ['PRAYER']);
       expect(repository.roomLookups, ['event:e1']);
+      expect(repository.roomLanguages, ['en']);
     });
 
     test('a space scope resolves the group room instead', () async {
@@ -494,6 +534,7 @@ void main() {
       await _settle();
 
       expect(repository.roomLookups, ['group:g1']);
+      expect(repository.roomLanguages, ['en']);
       expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
       expect(notifier.state.roomId, 'room-1');
       expect(notifier.state.requests.map((r) => r.id), ['a']);
@@ -874,6 +915,30 @@ void main() {
       await notifier.retry();
       await _settle();
       expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
+    });
+
+    test('a room mantra is kept, and dropped once the room loses it', () async {
+      repository =
+          _FakeGroupChatRepository()
+            ..roomMantra = const ChatRoomMantraDTO(
+              id: 'm1',
+              pronunciation: ' Om Mani Padme Hum ',
+            )
+            ..listFailure = const ServerFailure('boom');
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(notifier.state.mantra, 'Om Mani Padme Hum');
+      expect(notifier.state.error, 'boom');
+
+      repository
+        ..roomMantra = null
+        ..listFailure = null;
+      await notifier.retry();
+      await _settle();
+      expect(notifier.state.roomStatus, PrayerRoomStatus.ready);
+      expect(notifier.state.mantra, isNull);
     });
 
     test('send posts a PRAYER message and inserts it at the top', () async {

@@ -38,7 +38,10 @@ class _FakeRepository extends Fake implements GroupChatRepository {
   Failure? randomFailure;
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async {
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async {
     return const Right(
       ChatRoomDTO(
         id: 'room-1',
@@ -127,6 +130,7 @@ Future<void> _pump(WidgetTester tester, _FakeRepository repository) async {
           const PrayerPacing(batchWindow: Duration.zero),
         ),
         prayerTranslationLanguageProvider.overrideWithValue('EN'),
+        prayerMantraLanguageProvider.overrideWithValue('en'),
       ],
       child: const MaterialApp(
         locale: Locale('en'),
