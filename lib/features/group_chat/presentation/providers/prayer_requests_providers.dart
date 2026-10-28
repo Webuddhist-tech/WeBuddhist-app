@@ -467,7 +467,11 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       clearError: true,
     );
     if (seeded && !state.filter.byIntention && !state.filter.mine) {
-      _publishCount(state.total);
+      // Runs during provider creation; another provider cannot change yet.
+      final total = state.total;
+      Future.microtask(() {
+        if (mounted) _publishCount(total);
+      });
     }
     final stored = state.requests.isEmpty ? _readSnapshot() : null;
     if (stored != null && stored.roomId.isNotEmpty) {

@@ -18,6 +18,10 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_
 import 'package:flutter_pecha/features/push_notifications/domain/entities/push_message.dart';
 import 'package:flutter_pecha/features/push_notifications/domain/repositories/push_messaging_repository.dart';
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_first_pages.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
+import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -66,6 +70,40 @@ class _FakeRepository extends Fake implements GroupChatRepository {
   }
 
   @override
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async {
+    calls++;
+    final f = failure;
+    if (f != null) return Left(f);
+    return Right(_room('room-1'));
+  }
+
+  @override
+  Future<Either<Failure, ChatMessagesPage>> listMessages(
+    String roomId, {
+    int skip = 0,
+    int limit = 20,
+    String? messageType,
+    String? sort,
+    String? intention,
+    String? translationLanguage,
+  }) async {
+    calls++;
+    final f = failure;
+    if (f != null) return Left(f);
+    return Right(
+      ChatMessagesPage(
+        messages: requests,
+        skip: skip,
+        limit: limit,
+        total: requests.length,
+      ),
+    );
+  }
+
+  @override
   Future<Either<Failure, List<ChatPrayerIntentionDTO>>> listIntentions() async {
     calls++;
     final f = failure;
@@ -85,6 +123,14 @@ class _MemoryStorage extends Fake implements StorageService {
     values[key] = value as Object;
     return true;
   }
+}
+
+class _FixedContentLanguage extends StateNotifier<String>
+    implements ContentLanguageNotifier {
+  _FixedContentLanguage() : super('en');
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _SilentPushes extends Fake implements PushMessagingRepository {
@@ -132,9 +178,49 @@ void main() {
         screenCacheStoreProvider.overrideWithValue(store),
         storageServiceProvider.overrideWithValue(_MemoryStorage()),
         pushMessagingRepositoryProvider.overrideWithValue(_SilentPushes()),
+        contentLanguageProvider.overrideWith((ref) => _FixedContentLanguage()),
       ],
     );
     addTearDown(container.dispose);
+  });
+
+  test('a seeded prayer sheet builds, refreshes and publishes its count',
+      () async {
+    const scope = PrayerRoomScope.event('e1');
+    final key = container
+        .read(groupChatFirstPagesProvider)
+        .prayerRoom(
+          scope,
+          filter: PrayerRequestsFilter.initial,
+          translationLanguage: container.read(prayerTranslationLanguageProvider),
+          limit: 30,
+        )
+        .key;
+    store.entries[key] = jsonEncode(
+      PrayerRoomSnapshot(
+        roomId: 'room-1',
+        page: ChatMessagesPage(
+          messages: [_request('a')],
+          skip: 0,
+          limit: 30,
+          total: 1,
+        ),
+      ).toJson(),
+    );
+    repository.requests = [_request('a'), _request('b')];
+
+    container.listen(prayerRequestsProvider(scope), (_, __) {});
+    container.listen(prayerRequestCountProvider(scope), (_, __) {});
+    final first = container.read(prayerRequestsProvider(scope));
+    expect(first.requests.map((r) => r.id), ['a']);
+    expect(first.isLoading, isFalse);
+    await _settle();
+
+    expect(container.read(prayerRequestCountProvider(scope)), isNotNull);
+    expect(
+      container.read(prayerRequestsProvider(scope)).requests.map((r) => r.id),
+      ['a', 'b'],
+    );
   });
 
   test('chat rooms show the stored walk first, then the fresh one', () async {
