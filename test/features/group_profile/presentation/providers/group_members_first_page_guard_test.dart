@@ -67,7 +67,8 @@ void main() {
     await first;
     expect(_ids(notifier), ['a', 'c']);
 
-    await notifier.loadMore().then((_) {});
+    unawaited(notifier.loadMore());
+    await pumpEventQueue();
     expect(repository.requestedSkips, [0, 2]);
   });
 

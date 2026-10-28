@@ -1022,7 +1022,7 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
-    if (state.isLoading || state.isLoadingMore) return;
+    if (state.isLoading) return;
 
     final generation = ++_requestGeneration;
     state = state.copyWith(isLoading: state.members.isEmpty, clearError: true);
@@ -1081,8 +1081,8 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
       limit: _limit,
     );
 
-    if (!mounted || generation != _requestGeneration) return;
-    if (epoch != _pageEpoch) {
+    if (!mounted) return;
+    if (generation != _requestGeneration || epoch != _pageEpoch) {
       // Page one was replaced meanwhile; this page was computed against it.
       state = state.copyWith(isLoadingMore: false);
       return;
