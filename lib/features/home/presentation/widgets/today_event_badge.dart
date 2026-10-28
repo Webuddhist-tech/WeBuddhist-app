@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// One event the home pill can show or list.
 class TodayEventBadgeItem {
@@ -317,7 +318,7 @@ class _Avatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: size,
                   height: size,

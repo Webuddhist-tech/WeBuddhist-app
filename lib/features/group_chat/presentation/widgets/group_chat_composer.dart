@@ -4,6 +4,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Message composer pinned to the bottom of the chat.
 ///
@@ -118,7 +119,7 @@ class _OwnAvatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: GroupChatComposer._avatarSize,
                   height: GroupChatComposer._avatarSize,

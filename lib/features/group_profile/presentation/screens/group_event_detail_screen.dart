@@ -1281,7 +1281,7 @@ class _EventGroupRow extends ConsumerWidget {
                 backgroundColor:
                     isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
                 backgroundImage:
-                    avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                    avatarUrl.isNotEmpty ? avatarUrl.cachedNetworkImageProvider : null,
                 onBackgroundImageError:
                     avatarUrl.isNotEmpty ? reportImageLoadError : null,
                 child:

@@ -24,6 +24,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_pecha/core/cache/app_image_cache_manager.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -399,12 +401,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   ///   — this is the layer that causes stale images even after disk eviction.
   void _evictAvatarFromAllCaches(String url) {
     if (url.isEmpty) return;
-    final stableKey =
-        Uri.tryParse(url)?.replace(query: '', fragment: '').toString() ?? url;
-    // Disk + flutter_cache_manager memory store
-    unawaited(CachedNetworkImage.evictFromCache(url, cacheKey: stableKey));
-    // Flutter's imageCache (decoded pixel store)
-    unawaited(CachedNetworkImageProvider(url, cacheKey: stableKey).evict());
+    unawaited(appImageCacheManager.removeFile(stableNetworkImageCacheKey(url)));
+    // Each display size decodes under its own key, so drop every decoded
+    // image, live ones included; they come back from disk.
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
   }
 
   void _showAvatarUploadError(String? rawError) {

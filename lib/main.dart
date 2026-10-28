@@ -64,6 +64,9 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Covers from every tab share this budget; the 100 MB default evicts them
+  // between tab switches and they come back through a placeholder.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20;
   // Portrait only; unawaited: a headless (audio_service) engine never replies.
   unawaited(
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),

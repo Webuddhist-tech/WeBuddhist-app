@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_react
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reactions.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// One person in the who-reacted list, with the emoji they used.
 class _ReactionEntry {
@@ -457,7 +458,7 @@ class _Avatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: _ReactionRow._avatarSize,
                   height: _ReactionRow._avatarSize,
