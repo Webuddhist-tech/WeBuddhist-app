@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -171,6 +172,48 @@ void main() {
       final sections = [_section('late', 5, 9)];
       expect(innermostSectionHolding(sections, 2), isNull);
       expect(innermostSectionHolding(sections, 12), isNull);
+    });
+  });
+
+  group('titles in the original\'s script', () {
+    final service = TransliterationService.standard();
+    const heading = '༄༅། །སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།';
+
+    String inScript(String title, String? scriptId, {String language = 'bo'}) =>
+        readerTitleInScript(
+          service,
+          title: title,
+          language: language,
+          scriptId: scriptId,
+        );
+
+    test('a Tibetan heading in Roman phonetics', () {
+      expect(inScript(heading, 'phonetic'), 'dröl ma nyer chik la tö pa');
+    });
+
+    test('a Tibetan heading in Devanagari', () {
+      expect(inScript(heading, 'phonetic:hi'), 'द्रोल् म ञेर् छिक् ल तो प');
+    });
+
+    test('no script, or no converter for the language: as written', () {
+      expect(inScript(heading, null), heading);
+      expect(
+        inScript('Praises to Tārā', 'phonetic', language: 'en'),
+        'Praises to Tārā',
+      );
+    });
+
+    test('the leading marks go before converting, on one line', () {
+      expect(stripTitleMarks(heading), 'སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།');
+      expect(stripTitleMarks('༄༅།'), '');
+      // Shads inside a title break lines in phonetics; a title stays on one.
+      final twoLines = inScript('བསྟོད་པ། །དངོས།', 'phonetic');
+      expect(twoLines, isNot(contains('<br>')));
+      expect(twoLines, isNot(contains('\n')));
+    });
+
+    test('a title of marks alone stays as it is', () {
+      expect(inScript('༄༅།', 'phonetic'), '༄༅།');
     });
   });
 }

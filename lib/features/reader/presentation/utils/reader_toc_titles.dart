@@ -1,4 +1,32 @@
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
+
+/// Leading head marks and shads (༄༅། །): they open a title, and say nothing
+/// in another script.
+final _titleMarks = RegExp(r'^[༁-༊།-༔\s]+');
+
+/// [title] with its leading ༄༅། ། marks taken off.
+String stripTitleMarks(String title) =>
+    title.replaceFirst(_titleMarks, '').trim();
+
+/// A title in [language] as the reader shows it once that language's
+/// original is shown in [scriptId]: without its leading marks, through the
+/// same converter as the verses, on one line. The service caches each title
+/// per script. Without a script the title is unchanged.
+String readerTitleInScript(
+  TransliterationService service, {
+  required String title,
+  required String language,
+  required String? scriptId,
+}) {
+  if (scriptId == null || !service.supports(language)) return title;
+  final bare = stripTitleMarks(title);
+  if (bare.isEmpty) return title;
+  return service
+      .convertHtml(bare, languageCode: language, toScriptId: scriptId)
+      .replaceAll(RegExp(r'\s*<br>\s*'), ' ')
+      .trim();
+}
 
 /// The translation's title for each section of the [original], by the
 /// original section's id. Library tables of contents hold titles only in

@@ -11,10 +11,12 @@ import 'package:flutter_pecha/features/reader/data/models/flattened_item.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
@@ -656,7 +658,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       textTitle: section.title ?? '',
       textLanguage: view.language,
     );
-    return (title.title, title.language);
+    return _inScript(view, (title.title, title.language));
   }
 
   /// A section of the whole table of contents as the navigator lists it.
@@ -676,7 +678,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       textTitle: textTitle,
       textLanguage: textLanguage,
     );
-    return (title.title, title.language);
+    return _inScript(view, (title.title, title.language));
   }
 
   /// The sections the pill counts, text by text: a text's sections, or the
@@ -702,7 +704,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (widget.sources.length > 1 && task != null && task.trim().isNotEmpty) {
       return task;
     }
-    return first.state.openedText?.title ?? '';
+    // The text's own title: in the original's script when it is shown in
+    // another.
+    final title = first.state.openedText?.title ?? '';
+    return _inScript(first, (title, first.language)).$1;
   }
 
   // ─── Sections navigator ──────────────────────────────────────────────────
@@ -1743,10 +1748,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return matches ? mark.label : null;
   }
 
-  static String _numeralLanguage(_SourceView view) =>
-      view.secondaryActive
-          ? view.dualSettings.secondary.languageCode
-          : view.language;
+  String _numeralLanguage(_SourceView view) {
+    if (view.secondaryActive) return view.dualSettings.secondary.languageCode;
+    // The original shown in another script counts in that script's numerals.
+    final scriptId = view.originalScriptId;
+    if (scriptId == null) return view.language;
+    return ref
+            .read(transliterationServiceProvider)
+            .fontLanguageFor(view.language, scriptId) ??
+        view.language;
+  }
 
   /// Whether a downloaded font picked for these texts' lines is still
   /// loading, for a short while at most. Defaults are not waited for.
@@ -1862,6 +1873,14 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
               : null,
       outline: outline,
       translationTitles: translationTitles,
+      originalScriptId: get(
+        readerOriginalScriptProvider(
+          ReaderScriptScope(
+            scope: params.settingsScope,
+            language: state.textDetail?.language ?? 'en',
+          ),
+        ),
+      ),
     );
   }
 
@@ -1872,7 +1891,30 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (view.secondaryActive && translated != null && translated.isNotEmpty) {
       return (translated, translation.languageCode);
     }
-    return (view.state.openedText?.title ?? '', view.language);
+    return _inScript(view, (view.state.openedText?.title ?? '', view.language));
+  }
+
+  /// [title], when it is in the original's language and the original is
+  /// shown in another script, in that script, with the language its font
+  /// comes from; any other title as it is.
+  (String, String) _inScript(_SourceView view, (String, String) title) {
+    final scriptId = view.originalScriptId;
+    final (text, language) = title;
+    if (scriptId == null ||
+        TransliterationService.normalizeLanguage(language) !=
+            TransliterationService.normalizeLanguage(view.language)) {
+      return title;
+    }
+    final service = ref.read(transliterationServiceProvider);
+    return (
+      readerTitleInScript(
+        service,
+        title: text,
+        language: language,
+        scriptId: scriptId,
+      ),
+      service.fontLanguageFor(language, scriptId) ?? language,
+    );
   }
 
   /// Handle initial scroll to segment. Skipped while collapsed — the first
@@ -2285,6 +2327,9 @@ class _SourceView {
   /// The translation's title for each section, by the original's id.
   final Map<String, String> translationTitles;
 
+  /// The script the original is shown in; null as written.
+  final String? originalScriptId;
+
   const _SourceView({
     required this.index,
     required this.params,
@@ -2298,6 +2343,7 @@ class _SourceView {
     this.collapsedHeadings,
     this.outline,
     this.translationTitles = const {},
+    this.originalScriptId,
   });
 
   String get language => state.textDetail?.language ?? 'en';

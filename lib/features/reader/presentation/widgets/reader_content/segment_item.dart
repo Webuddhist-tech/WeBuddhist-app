@@ -86,9 +86,10 @@ class SegmentItem extends ConsumerWidget {
           ),
           Padding(
             padding: EdgeInsets.only(top: gaps.inPair),
+            // Numerals follow the script the line is shown in.
             child: SegmentNumber(
               label: segment.displayNumber,
-              language: language,
+              language: primary.fontLanguage,
             ),
           ),
         ],
