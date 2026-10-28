@@ -22,6 +22,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_pr
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_live_pill.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_player_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
@@ -435,13 +436,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (url == null) return;
 
     final previous = _audioController;
+    // Stop the old file now, but dispose it after this frame. The play
+    // button and progress bar drop their listeners during the rebuild.
+    previous?.cancel();
     _audioController = PlanSegmentAudioController(
       url: url,
       startMs: 0,
       endMs: null,
       onSegmentComplete: () {},
     );
-    previous?.dispose();
+    if (previous != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => previous.dispose());
+    }
     unawaited(_audioController!.maybeAutoPlay());
   }
 
@@ -859,14 +865,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   if (_hasAudio)
                     Padding(
                       // Hug the action bar with a tight gap when it is open;
-                      // otherwise keep the original floating offset above bottom.
+                      // otherwise keep the original floating offset above the
+                      // navigation strip.
                       padding: EdgeInsets.only(
                         bottom:
                             isActionBarVisible
                                 ? _audioActionBarGap
                                 : bottomInset + _audioBottomGap,
                       ),
-                      child: Center(child: _buildAudioButton()),
+                      child: _buildAudioCluster(),
                     ),
                   if (isActionBarVisible)
                     _buildSegmentActionBar(active, activeNotifier),
@@ -946,6 +953,34 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       );
     }
     PlanNavigator.pop(context);
+  }
+
+  /// Play button with the progress line and speed control under it.
+  /// Group recitations also show the recording title; plan tasks do not.
+  Widget _buildAudioCluster() {
+    final title = _audioVersionTitle;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(child: _buildAudioButton()),
+        PlanAudioPlayerBar(
+          controller: _audioController,
+          versionTitle: title,
+          onVersionTap:
+              title == null
+                  ? null
+                  : () => unawaited(_openCollectionAudioSheet()),
+        ),
+      ],
+    );
+  }
+
+  /// Recording name from the backend, for a group recitation that has one.
+  String? get _audioVersionTitle {
+    if (!_hasCollectionAudioChoices) return null;
+    final title = _currentCollectionTrack?.title.trim();
+    if (title == null || title.isEmpty) return null;
+    return title;
   }
 
   /// The floating play control. Plan audio toggles the current segment.

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/utils/audio_url.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_progress.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Visual state of the play/pause button driven by [PlanSegmentAudioController].
@@ -31,7 +32,17 @@ class PlanSegmentAudioController extends ChangeNotifier {
     required this.startMs,
     required this.endMs,
     required this.onSegmentComplete,
-  });
+  }) : progress = ValueNotifier(
+         describePlanAudioProgress(
+           position: Duration.zero,
+           startMs: startMs,
+           endMs: endMs,
+         ),
+       );
+
+  /// Speed chosen from the picker. Kept for the rest of the app session so
+  /// the next plan task or recording starts at the same speed.
+  static double preferredSpeed = 1.0;
 
   /// Resolved audio URL (subtask audio takes precedence over day audio).
   /// Null when this item has no playable audio.
@@ -45,9 +56,17 @@ class PlanSegmentAudioController extends ChangeNotifier {
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSub;
   StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration?>? _durationSub;
+  Duration? _fileDuration;
+
+  /// Elapsed time within this task's slice. Updated on its own so the play
+  /// button does not rebuild on every tick.
+  final ValueNotifier<PlanAudioProgress> progress;
 
   PlanAudioButtonState _buttonState = PlanAudioButtonState.play;
   PlanAudioButtonState get buttonState => _buttonState;
+
+  double get speed => preferredSpeed;
 
   bool get hasAudio => hasPlayableAudio(url);
 
@@ -61,10 +80,37 @@ class PlanSegmentAudioController extends ChangeNotifier {
 
   bool _isDisposed = false;
 
+  /// True after [dispose]. Listeners use it to skip detaching from a player
+  /// that has already gone away.
+  bool get isDisposed => _isDisposed;
+
   void _setButtonState(PlanAudioButtonState state) {
     if (_isDisposed || _buttonState == state) return;
     _buttonState = state;
     notifyListeners();
+  }
+
+  /// Applies [speed] to the current player, and to the next one in this session.
+  Future<void> setSpeed(double speed) async {
+    preferredSpeed = speed;
+    await _player?.setSpeed(speed);
+    if (!_isDisposed) notifyListeners();
+  }
+
+  void _publishProgress(Duration rawPosition) {
+    if (_isDisposed) return;
+    final next = describePlanAudioProgress(
+      position: rawPosition,
+      fileDuration: _fileDuration,
+      startMs: startMs,
+      endMs: endMs,
+    );
+    final current = progress.value;
+    final sameSecond =
+        current.position.inMilliseconds ~/ 200 ==
+        next.position.inMilliseconds ~/ 200;
+    if (sameSecond && current.duration == next.duration) return;
+    progress.value = next;
   }
 
   /// Begin playback if this item has audio. Safe to call once after build.
@@ -125,10 +171,15 @@ class PlanSegmentAudioController extends ChangeNotifier {
       // Tear down stale subscriptions before rebinding.
       _playerStateSub?.cancel();
       _positionSub?.cancel();
+      _durationSub?.cancel();
       _playerStateSub = null;
       _positionSub = null;
+      _durationSub = null;
 
       await _player!.setUrl(url!);
+      if (_isDisposed || sessionId != _audioSessionId) return;
+
+      await _player!.setSpeed(preferredSpeed);
       if (_isDisposed || sessionId != _audioSessionId) return;
 
       await _player!.seek(Duration(milliseconds: startMs ?? 0));
@@ -144,6 +195,10 @@ class PlanSegmentAudioController extends ChangeNotifier {
           .skip(1)
           .listen(_onPlayerState);
       _positionSub = _player!.positionStream.listen(_onPosition);
+      _durationSub = _player!.durationStream.listen((duration) {
+        _fileDuration = duration;
+        _publishProgress(_player?.position ?? Duration.zero);
+      });
 
       // Fire-and-forget: play() completes only when playback stops.
       _player!.play();
@@ -187,6 +242,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   /// Position stream callback. Triggers segment completion once when the
   /// [endMs] boundary is reached. Only relevant when a window is defined.
   void _onPosition(Duration position) {
+    _publishProgress(position);
     if (_hasCompleted) return;
     final end = endMs;
     if (end == null) return;
@@ -213,8 +269,10 @@ class PlanSegmentAudioController extends ChangeNotifier {
     _hasCompleted = true; // prevent late-firing position callbacks
     _playerStateSub?.cancel();
     _positionSub?.cancel();
+    _durationSub?.cancel();
     _playerStateSub = null;
     _positionSub = null;
+    _durationSub = null;
     final player = _player;
     if (player != null) {
       // Fire-and-forget; dispose() waits for it before freeing the player.
@@ -229,6 +287,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   void dispose() {
     _isDisposed = true;
     cancel();
+    progress.dispose();
     final player = _player;
     _player = null;
     if (player != null) {

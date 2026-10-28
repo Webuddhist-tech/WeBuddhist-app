@@ -1247,6 +1247,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get collection_audio_versions => 'Audio versions';
 
   @override
+  String get playback_speed => 'Playback speed';
+
+  @override
   String get image => 'Зураг';
 
   @override

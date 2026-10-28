@@ -2440,6 +2440,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get playback_speed => TolgeeBridge.get(
+    localeName,
+    'playback_speed',
+    () => _fallback.playback_speed,
+  );
+
+  @override
   String get image =>
       TolgeeBridge.get(localeName, 'image', () => _fallback.image);
 
