@@ -231,6 +231,7 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
   WidgetTester tester,
   Map<String, List<String>?> picks, {
   required int verse,
+  ValueNotifier<double>? progress,
 }) async {
   final channel = _FakeChannel();
   final live = RecitationLiveNotifier(
@@ -285,6 +286,7 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
                   navigationContext: ctx,
                 ),
             ],
+            progress: progress,
           ),
         ),
       ),
@@ -427,6 +429,24 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('a plan task\'s progress line', () {
+    testWidgets('counts the task\'s verses, not only those loaded', (
+      tester,
+    ) async {
+      final progress = ValueNotifier<double>(0);
+      // Sixty picked verses; only the first page of twenty is in.
+      await _pumpLivePlan(tester, {
+        'A': [for (var n = 1; n <= 60; n++) 'A-$n'],
+      }, verse: 1, progress: progress);
+      expect(_loadedVerses(tester).length, lessThan(60));
+
+      // A few verses fit on screen: a small share of sixty.
+      expect(progress.value, greaterThan(0));
+      expect(progress.value, lessThan(0.2));
+      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 

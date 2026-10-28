@@ -91,4 +91,47 @@ void main() {
       expect(readerProgress(lastVisibleRow: 0, rowCount: 0), 0);
     });
   });
+
+  group('plan task progress', () {
+    test('counts the task\'s verses, not the rows loaded so far', () {
+      // Twenty picked verses, the first ten loaded and the last of them on
+      // screen: half way, not the end.
+      expect(
+        readerTaskProgress(sourceVerses: [20], source: 0, verseInSource: 10),
+        0.5,
+      );
+    });
+
+    test('earlier texts count in full', () {
+      expect(
+        readerTaskProgress(
+          sourceVerses: [10, 10],
+          source: 1,
+          verseInSource: 5,
+        ),
+        0.75,
+      );
+    });
+
+    test('a text not started yet keeps the line short of the end', () {
+      final value = readerTaskProgress(
+        sourceVerses: [10, null],
+        source: 0,
+        verseInSource: 10,
+      );
+      expect(value, lessThan(1));
+      expect(value, closeTo(10 / 11, 1e-9));
+    });
+
+    test('reaches the end on the task\'s last verse', () {
+      expect(
+        readerTaskProgress(
+          sourceVerses: [5, 30],
+          source: 1,
+          verseInSource: 30,
+        ),
+        1,
+      );
+    });
+  });
 }

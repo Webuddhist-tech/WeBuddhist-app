@@ -249,7 +249,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   }
 
   /// The progress line: the last verse on screen out of the text's verses,
-  /// or, on a plan task's page, the last row on screen out of its rows.
+  /// or, on a plan task's page, out of the task's verses across its texts,
+  /// loaded or not (see [readerTaskProgress]).
   void _updateProgress() {
     final progress = widget.progress;
     final layout = _layout;
@@ -262,6 +263,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (last == null) return;
     if (last >= layout.entries.length) last = layout.entries.length - 1;
 
+    if (_isCollapsed) {
+      final task = _taskProgress(layout, last);
+      if (task != null) {
+        progress.value = task;
+        return;
+      }
+    }
     int? verse;
     var totalVerses = 0;
     if (!_isCollapsed) {
@@ -277,6 +285,47 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       lastVisibleRow: last,
       rowCount: layout.entries.length,
     );
+  }
+
+  /// A plan task's progress with the last verse on screen at or before
+  /// entry [last]; null when no verse is on screen yet.
+  double? _taskProgress(_PageLayout layout, int last) {
+    for (var i = last; i >= 0; i--) {
+      final entry = layout.entries[i];
+      final segment = entry.item?.segment;
+      if (segment == null) continue;
+      final source = entry.source;
+      final state = ref.read(readerNotifierProvider(widget.sources[source]));
+      final active = _activeSegmentIdsOf(source, state);
+      final int verseInSource;
+      if (active.isEmpty) {
+        verseInSource = segment.segmentNumber;
+      } else {
+        final at = active.indexOf(segment.segmentId);
+        if (at < 0) continue;
+        verseInSource = at + 1;
+      }
+      return readerTaskProgress(
+        sourceVerses: [
+          for (var s = 0; s < widget.sources.length; s++)
+            _taskSourceVerses(s),
+        ],
+        source: source,
+        verseInSource: verseInSource,
+      );
+    }
+    return null;
+  }
+
+  /// Source [index]'s verses in a plan task: its picked verses, or a whole
+  /// text's total once it has started; null until then.
+  int? _taskSourceVerses(int index) {
+    final picked = widget.sources[index].segmentIds;
+    if (picked != null && picked.isNotEmpty) return picked.length;
+    if (index >= _startedCount) return null;
+    final total =
+        ref.read(readerNotifierProvider(widget.sources[index])).totalSegments;
+    return total > 0 ? total : null;
   }
 
   // ─── Sources and the rendered list ───────────────────────────────────────

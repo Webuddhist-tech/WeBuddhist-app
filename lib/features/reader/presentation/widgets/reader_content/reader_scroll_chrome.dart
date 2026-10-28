@@ -53,9 +53,9 @@ class ReaderFocusMode {
 /// line under the header.
 ///
 /// A whole text is measured by its verses, since it loads page by page:
-/// [lastVerseNumber] (the last verse on screen) out of [totalVerses]. A
-/// plan task's texts load completely, so it is measured by rows:
-/// [lastVisibleRow] out of [rowCount].
+/// [lastVerseNumber] (the last verse on screen) out of [totalVerses].
+/// Without verses to go by it falls back to rows: [lastVisibleRow] out of
+/// [rowCount]. A plan task uses [readerTaskProgress].
 double readerProgress({
   int? lastVerseNumber,
   int totalVerses = 0,
@@ -71,4 +71,29 @@ double readerProgress({
     value = 0;
   }
   return math.min(1, math.max(0, value));
+}
+
+/// How far through a plan task the reader is, from 0 to 1, counted in
+/// verses across its texts, loaded or not: the texts before [source] in
+/// full, then [verseInSource] (the last verse on screen, counted from 1)
+/// of [source]'s. [sourceVerses] is each text's verse count: its picked
+/// verses, or a whole text's total; null while a whole text that has not
+/// started is unknown. An unknown text counts as one verse still to read,
+/// so the line cannot reach the end before it is known.
+double readerTaskProgress({
+  required List<int?> sourceVerses,
+  required int source,
+  required int verseInSource,
+}) {
+  int count(int? verses) => verses == null || verses < 1 ? 1 : verses;
+  var total = 0;
+  var done = 0;
+  for (var i = 0; i < sourceVerses.length; i++) {
+    final verses = count(sourceVerses[i]);
+    total += verses;
+    if (i < source) done += verses;
+  }
+  if (total == 0) return 0;
+  done += verseInSource;
+  return math.min(1, math.max(0, done / total));
 }
