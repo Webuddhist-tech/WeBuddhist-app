@@ -34,6 +34,7 @@ class ScreenCacheSource<T extends Object> {
   Stream<Either<Failure, T>> watch() {
     late final StreamController<Either<Failure, T>> controller;
     StreamSubscription<void>? changes;
+    StreamSubscription<void>? fresh;
     String? lastRaw;
 
     void emit(String raw) {
@@ -53,6 +54,8 @@ class ScreenCacheSource<T extends Object> {
         final raw = store.read(key);
         if (raw != null) emit(raw);
       });
+      // A fetch the store could not keep still reaches the screen.
+      fresh = store.fresh(key).listen(emit);
       try {
         emit(await store.revalidate(key, _fetchEncoded));
       } catch (e, st) {
@@ -67,6 +70,7 @@ class ScreenCacheSource<T extends Object> {
       onListen: start,
       onCancel: () async {
         await changes?.cancel();
+        await fresh?.cancel();
         await controller.close();
       },
     );

@@ -344,6 +344,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     // A seeded list keeps quiet about a failed re-read, like a stored one.
     _seededFromStore = state.requests.isNotEmpty;
     load();
+    _creating = false;
   }
 
   // The stored room and page are the first state, so the sheet opens filled.
@@ -376,6 +377,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   final Ref ref;
   final PrayerRoomScope scope;
   static const int _limit = 30;
+
+  /// True until the constructor returns: Riverpod forbids changing another
+  /// provider while this one is being created.
+  bool _creating = true;
 
   String get _translationLanguage =>
       ref.read(prayerTranslationLanguageProvider);
@@ -467,11 +472,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       clearError: true,
     );
     if (seeded && !state.filter.byIntention && !state.filter.mine) {
-      // Runs during provider creation; another provider cannot change yet.
-      final total = state.total;
-      Future.microtask(() {
-        if (mounted) _publishCount(total);
-      });
+      _publishCount(state.total);
     }
     final stored = state.requests.isEmpty ? _readSnapshot() : null;
     if (stored != null && stored.roomId.isNotEmpty) {
@@ -661,6 +662,12 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   void _publishCount(int count) {
+    if (_creating) {
+      Future.microtask(() {
+        if (mounted) _publishCount(count);
+      });
+      return;
+    }
     ref.read(prayerRequestCountProvider(scope).notifier).state = count;
   }
 

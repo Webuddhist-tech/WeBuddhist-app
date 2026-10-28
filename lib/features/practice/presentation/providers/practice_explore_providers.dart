@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/series_remote_datasource.dart';
 import 'package:flutter_pecha/features/home/domain/entities/series.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_remote_datasource.dart';
@@ -77,6 +78,7 @@ final practiceExploreTimersProvider = AsyncNotifierProvider<
   Either<Failure, List<PresetTimer>>
 >(() {
   return ScreenCacheNotifier((ref, bind) {
+    ref.watch(authProvider);
     return bind.source(
       ref.watch(practiceExploreRepositoryProvider).timersSource(),
     );

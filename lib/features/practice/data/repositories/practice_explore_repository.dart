@@ -128,10 +128,15 @@ class PracticeExploreRepository {
     );
   }
 
+  // `/timers` carries the signed-in user's own timers, so the key is theirs.
   ScreenCacheSource<List<PresetTimer>> timersSource() {
     return ScreenCacheSource(
       store: store,
-      key: ScreenCacheKey.public('practice_explore_timers', language: 'all'),
+      key: ScreenCacheKey.user(
+        'practice_explore_timers',
+        userId: store.currentUserIdSync,
+        language: 'all',
+      ),
       fetchJson: () async {
         final models = await timersRemote.fetchPresetTimers();
         return models.map((m) => m.toJson()).toList();

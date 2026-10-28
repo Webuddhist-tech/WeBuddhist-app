@@ -10,6 +10,11 @@ import '../../../helpers/fake_screen_cache_store.dart';
 
 const _key = 'v1:p:en:thing';
 
+class _FullStore extends FakeScreenCacheStore {
+  @override
+  Future<bool> save(String key, String json) async => throw StateError('full');
+}
+
 void main() {
   late FakeScreenCacheStore store;
   late List<Object> responses;
@@ -146,6 +151,22 @@ void main() {
   test('refresh returns the mapped failure when the fetch throws', () async {
     final result = await source().refresh();
     expect(result.getLeft().toNullable(), isA<NetworkFailure>());
+  });
+
+  test('a refresh the store cannot keep still reaches the open stream',
+      () async {
+    store = _FullStore();
+    final src = source();
+    final events = await collect(src.watch());
+    expect(events.single.isLeft(), isTrue);
+
+    responses = [
+      {'v': 'fresh'},
+    ];
+    expect(await src.refresh(), const Right<Failure, String>('fresh'));
+    await pumpEventQueue();
+    expect(events.last, const Right<Failure, String>('fresh'));
+    expect(store.entries, isEmpty);
   });
 
   test('watch and a concurrent refresh share one fetch', () async {

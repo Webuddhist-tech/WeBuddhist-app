@@ -223,6 +223,39 @@ void main() {
     );
   });
 
+  test('a stored empty page publishes its count after creation', () async {
+    const scope = PrayerRoomScope.event('e1');
+    final key = container
+        .read(groupChatFirstPagesProvider)
+        .prayerRoom(
+          scope,
+          filter: PrayerRequestsFilter.initial,
+          translationLanguage: container.read(prayerTranslationLanguageProvider),
+          limit: 30,
+        )
+        .key;
+    store.entries[key] = jsonEncode(
+      const PrayerRoomSnapshot(
+        roomId: 'room-1',
+        page: ChatMessagesPage(messages: [], skip: 0, limit: 30, total: 0),
+      ).toJson(),
+    );
+    repository.requests = [_request('a')];
+
+    container.listen(prayerRequestsProvider(scope), (_, __) {});
+    container.listen(prayerRequestCountProvider(scope), (_, __) {});
+    final first = container.read(prayerRequestsProvider(scope));
+    expect(first.roomId, 'room-1');
+    expect(first.requests, isEmpty);
+    await _settle();
+
+    expect(container.read(prayerRequestCountProvider(scope)), 1);
+    expect(
+      container.read(prayerRequestsProvider(scope)).requests.map((r) => r.id),
+      ['a'],
+    );
+  });
+
   test('chat rooms show the stored walk first, then the fresh one', () async {
     final key = ScreenCacheKey.user(
       'chat_rooms',

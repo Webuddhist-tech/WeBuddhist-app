@@ -50,7 +50,11 @@ void main() {
   late FakeScreenCacheStore store;
   late _FakeTimers timers;
   late PracticeExploreRepository repo;
-  final key = ScreenCacheKey.public('practice_explore_timers', language: 'all');
+  final key = ScreenCacheKey.user(
+    'practice_explore_timers',
+    userId: 'user-1',
+    language: 'all',
+  );
 
   setUp(() {
     store = FakeScreenCacheStore();

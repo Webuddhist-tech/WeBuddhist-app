@@ -20,6 +20,7 @@ class ScreenCacheStore {
   static const String _indexPrefix = '${versionPrefix}__index:';
 
   final Map<String, Future<String>> _inFlight = {};
+  final _fresh = StreamController<(String, String)>.broadcast();
 
   /// Keys per group, least recently used first.
   final Map<String, List<String>> _recent = {};
@@ -136,6 +137,11 @@ class ScreenCacheStore {
     return box.watch(key: key).map((_) => null);
   }
 
+  /// Every payload [revalidate] fetched for [key], stored or not.
+  Stream<String> fresh(String key) {
+    return _fresh.stream.where((e) => e.$1 == key).map((e) => e.$2);
+  }
+
   /// Fetches, saves and returns the JSON; concurrent callers share one fetch.
   Future<String> revalidate(String key, Future<String> Function() fetchJson) {
     return _inFlight[key] ??= fetchJson()
@@ -146,6 +152,7 @@ class ScreenCacheStore {
           } catch (e, st) {
             _logger.warning('Could not store $key', e, st);
           }
+          _fresh.add((key, json));
           return json;
         })
         .whenComplete(() {
