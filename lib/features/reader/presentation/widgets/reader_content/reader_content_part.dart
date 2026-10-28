@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
 import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
@@ -172,6 +173,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Counts the live scrolls, so only the latest one hands the page back.
   int _liveScroll = 0;
   bool _liveInitialized = false;
+
+  /// Set once the page has shown; after that a font arriving only reflows
+  /// it, so the list and its scroll position stay.
+  bool _pageShown = false;
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
   int _liveGeneration = 0;
@@ -1653,6 +1658,29 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Source [index] as the list draws it, watched in build.
   _SourceView _watchView(int index) => _viewOf(index, watch: true);
 
+  /// Whether a downloaded font picked for these texts' lines is still
+  /// loading, for a short while at most. Defaults are not waited for.
+  bool _waitingForPickedFonts(List<_SourceView> views) {
+    final fonts = ref.watch(readerFontsProvider);
+    final picked = {
+      for (final view in views)
+        ...fonts.pickedDownloads(
+          original:
+              view.showOriginal ? ReaderScript.ofLanguage(view.language) : null,
+          translation:
+              view.secondaryActive
+                  ? ReaderScript.ofLanguage(
+                    view.dualSettings.secondary.languageCode,
+                  )
+                  : null,
+        ),
+    };
+    if (picked.isEmpty) return false;
+    return ref
+        .watch(readerFontPreloadProvider(readerFontPreloadKey(picked)))
+        .isLoading;
+  }
+
   /// Source [index] as the list draws it: watched in build, read outside it.
   /// A read takes the translation only once build has subscribed to it.
   _SourceView _viewOf(int index, {required bool watch}) {
@@ -1829,6 +1857,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (content == null || content.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (!_pageShown && _waitingForPickedFonts(views)) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    _pageShown = true;
 
     // First live evaluation once content is on screen: lands a late joiner
     // on the live line, or pauses if they opened a different text.
@@ -2276,11 +2308,9 @@ class _SourceTitle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (title.isEmpty) return const SizedBox.shrink();
     final style = ReaderStyle.of(context, ref);
-    // A top-level heading's size.
-    final metrics = style.type.heading(
-      0,
-      ReaderScript.of(title, language: language),
-    );
+    // A top-level heading's size and font.
+    final script = ReaderScript.of(title, language: language);
+    final metrics = style.type.heading(0, script);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         ReaderConstants.segmentHorizontalPadding,
@@ -2294,7 +2324,7 @@ class _SourceTitle extends ConsumerWidget {
         style: TextStyle(
           fontSize: metrics.fontSize,
           fontWeight: metrics.fontWeight,
-          fontFamily: style.type.family(language),
+          fontFamily: style.type.headingFamily(language, script),
           color: style.palette.heading,
           height: metrics.height,
         ),

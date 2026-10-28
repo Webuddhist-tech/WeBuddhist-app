@@ -112,17 +112,31 @@ class InterlinearSegmentItem extends ConsumerWidget {
     // the original it is the text, so it takes the text's colour.
     final Color secondaryColor =
         layers.original ? style.palette.translation : style.palette.text;
-    final originalMetrics = style.type.line(
-      layers.translation
-          ? ReaderTextRole.originalWithTranslation
-          : ReaderTextRole.originalAlone,
-      ReaderScript.of(primary.html, language: primary.fontLanguage),
+    final originalRole =
+        layers.translation
+            ? ReaderTextRole.originalWithTranslation
+            : ReaderTextRole.originalAlone;
+    final originalScript = ReaderScript.of(
+      primary.html,
+      language: primary.fontLanguage,
+    );
+    final originalMetrics = style.type.line(originalRole, originalScript);
+    final translationRole =
+        layers.original
+            ? ReaderTextRole.translationUnder
+            : ReaderTextRole.translationAlone;
+    final translationScript = ReaderScript.of(
+      secondary.text,
+      language: secondarySlot.languageCode,
     );
     final translationMetrics = style.type.line(
-      layers.original
-          ? ReaderTextRole.translationUnder
-          : ReaderTextRole.translationAlone,
-      ReaderScript.of(secondary.text, language: secondarySlot.languageCode),
+      translationRole,
+      translationScript,
+    );
+    final translationFamily = style.type.family(
+      secondarySlot.languageCode,
+      role: translationRole,
+      script: translationScript,
     );
 
     return AnimatedOpacity(
@@ -174,6 +188,11 @@ class InterlinearSegmentItem extends ConsumerWidget {
                           fontWeight:
                               typeStyle.fontWeight ??
                               originalMetrics.fontWeight,
+                          fontFamily: style.type.family(
+                            primary.fontLanguage,
+                            role: originalRole,
+                            script: originalScript,
+                          ),
                         ),
                         // Original and its translation belong together; the
                         // larger gap goes between verses, below.
@@ -182,9 +201,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
                       if (layers.translation && secondary.isPlaceholder)
                         _SecondaryPlaceholder(
                           text: secondary.text,
-                          fontFamily: style.type.family(
-                            secondarySlot.languageCode,
-                          ),
+                          fontFamily: translationFamily,
                           metrics: translationMetrics,
                           color: secondaryColor,
                         )
@@ -203,6 +220,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
                           fontWeight:
                               typeStyle.fontWeight ??
                               translationMetrics.fontWeight,
+                          fontFamily: translationFamily,
                         ),
                       const SizedBox(height: 16),
                     ],

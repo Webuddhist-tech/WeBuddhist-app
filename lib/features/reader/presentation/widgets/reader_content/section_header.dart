@@ -27,8 +27,8 @@ class SectionHeader extends ConsumerWidget {
     if (title == null || title.isEmpty) return const SizedBox.shrink();
 
     final style = ReaderStyle.of(context, ref);
-    final fontFamily = style.type.family(language);
     final script = ReaderScript.of(title, language: language);
+    final fontFamily = style.type.headingFamily(language, script);
     final metrics = style.type.heading(depth, script);
 
     return Padding(

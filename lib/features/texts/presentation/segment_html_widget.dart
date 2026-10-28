@@ -28,6 +28,9 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
   final FontStyle? fontStyle;
   final FontWeight? fontWeight;
 
+  /// The font family; null uses [language]'s content font.
+  final String? fontFamily;
+
   const SegmentHtmlWidget({
     super.key,
     required this.htmlContent,
@@ -39,6 +42,7 @@ class SegmentHtmlWidget extends ConsumerStatefulWidget {
     this.textColor,
     this.fontStyle,
     this.fontWeight,
+    this.fontFamily,
   });
 
   @override
@@ -80,7 +84,7 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
           lineHeight: lineHeight == null ? null : LineHeight(lineHeight),
           margin: Margins.zero,
           color: widget.textColor,
-          fontFamily: getFontFamily(widget.language),
+          fontFamily: widget.fontFamily ?? getFontFamily(widget.language),
           fontStyle: widget.fontStyle,
           fontWeight: widget.fontWeight,
           padding: HtmlPaddings.zero,

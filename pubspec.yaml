@@ -228,6 +228,12 @@ flutter:
       fonts:
         - asset: assets/fonts/WBTibetanContent.ttf
           style: normal
+    # Jomolhari, rebuilt and renamed like WBTibetanContent; a reader font
+    # choice for Tibetan.
+    - family: WBTibetanUchen
+      fonts:
+        - asset: assets/fonts/WBTibetanUchen.ttf
+          style: normal
 # To add assets to your application, add an assets section, like this:
 # assets:
 #   - images/a_dot_burr.jpeg
