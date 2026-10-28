@@ -79,15 +79,18 @@ class SectionHeader extends ConsumerWidget {
                 color: style.palette.divider,
               ),
             ),
-          if (place != null)
+          // A heading the pill does not count still carries the live round.
+          if (place != null || overlineTrailing != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: _Overline(
                 text: readerSectionOverline(
-                  context.l10n.reader_section_position(
-                    '${place.position}',
-                    '${place.total}',
-                  ),
+                  place == null
+                      ? null
+                      : context.l10n.reader_section_position(
+                        '${place.position}',
+                        '${place.total}',
+                      ),
                   trailing: overlineTrailing,
                   script: numeralScript,
                 ),
@@ -125,13 +128,16 @@ class SectionHeader extends ConsumerWidget {
 }
 
 /// The overline's text: [label] ("Section 5 / 15") in capitals, its digits
-/// in [script], and [trailing] after a "·".
+/// in [script], and [trailing] after a "·"; either may be left out.
 String readerSectionOverline(
-  String label, {
+  String? label, {
   String? trailing,
   required ReaderScript script,
 }) {
-  final text = trailing == null ? label : '$label · $trailing';
+  final text = [
+    if (label != null) label,
+    if (trailing != null) trailing,
+  ].join(' · ');
   return readerNumerals(text.toUpperCase(), script);
 }
 

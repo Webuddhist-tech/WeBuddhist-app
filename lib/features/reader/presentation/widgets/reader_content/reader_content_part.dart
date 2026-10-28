@@ -31,7 +31,10 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_conten
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_skeleton.dart';
+import 'package:flutter_pecha/features/recitation/data/models/edition_live_settings.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_settings_providers.dart';
+import 'package:flutter_pecha/features/recitation/presentation/utils/live_round.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -187,6 +190,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   /// A live room is being followed (not paused): other verses are muted.
   bool _followingLive = false;
+
+  /// The live round and the section whose heading shows it; set in build
+  /// while following.
+  _LiveRoundMark? _liveRound;
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
   int _liveGeneration = 0;
@@ -1670,6 +1677,72 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   /// The language [view]'s numbers are written in: the translation's when
   /// one is shown, else the original's.
+  /// While following, the room's round and the section the live verse is
+  /// in, whose heading shows it; null outside a round.
+  _LiveRoundMark? _liveRoundOn(
+    _PageLayout layout,
+    RecitationLivePosition? position,
+    String? liveSegmentId,
+  ) {
+    final round = position?.roundNumber;
+    if (position == null || round == null || liveSegmentId == null) {
+      return null;
+    }
+    final jumps =
+        ref.watch(editionReturnJumpsProvider(position.textId)).valueOrNull ??
+        const <ReturnJump>[];
+    for (var i = 0; i < layout.entries.length; i++) {
+      final entry = layout.entries[i];
+      final segment = entry.item?.segment;
+      if (segment == null || segment.segmentId != liveSegmentId) continue;
+      final sectionIndex = layout.sectionOfEntry[i];
+      if (sectionIndex < 0) return null;
+      final section = layout.sections[sectionIndex];
+      final content =
+          ref
+              .read(readerNotifierProvider(widget.sources[entry.source]))
+              .content;
+      final live = liveRound(
+        roundNumber: round,
+        jumps: jumps,
+        liveVerse: segment.segmentNumber,
+        verseNumberOf: (segmentId) {
+          final at = content?.resolveSegmentIndex(segmentId);
+          return at == null ? null : content!.items[at].segment?.segmentNumber;
+        },
+      );
+      if (live == null) return null;
+      final total = live.total;
+      return (
+        source: section.source,
+        sectionId: section.id,
+        place: _sectionPlaces[(section.source, section.id)],
+        label:
+            total == null
+                ? context.l10n.reader_round_number('${live.current}')
+                : context.l10n.reader_round_position(
+                  '${live.current}',
+                  '$total',
+                ),
+      );
+    }
+    return null;
+  }
+
+  /// The live round for the heading of [sectionId] in [source], counted at
+  /// [place]: a translation's own heading matches by its place.
+  String? _liveRoundFor(
+    int source,
+    String sectionId,
+    ReaderSectionPlace? place,
+  ) {
+    final mark = _liveRound;
+    if (mark == null || mark.source != source) return null;
+    final matches =
+        mark.sectionId == sectionId || (place != null && place == mark.place);
+    return matches ? mark.label : null;
+  }
+
   static String _numeralLanguage(_SourceView view) =>
       view.secondaryActive
           ? view.dualSettings.secondary.languageCode
@@ -1942,6 +2015,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     };
     _followingLive =
         _isLiveRecitation && liveMode == RecitationLiveFollowMode.following;
+    _liveRound =
+        _followingLive
+            ? _liveRoundOn(layout, livePosition, liveSegmentId)
+            : null;
 
     return Column(
       children: [
@@ -2082,14 +2159,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       header: (section, depth) {
         if (view.translationHeadings) return const SizedBox.shrink();
         final (title, headingLanguage) = _headingText(view, section);
+        final place = _sectionPlaces[(view.index, section.id)];
         return SectionHeader(
           section:
               title == section.title ? section : section.copyWith(title: title),
           depth: depth,
           language: headingLanguage,
           showDivider: depth > 0 && (previousItem?.isSegment ?? false),
-          place: _sectionPlaces[(view.index, section.id)],
+          place: place,
           numeralLanguage: _numeralLanguage(view),
+          overlineTrailing: _liveRoundFor(view.index, section.id, place),
         );
       },
       segment: (segment, depth, sectionId) {
@@ -2134,6 +2213,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           final firstVerse =
               previousItem == null ||
               segment.segmentId == state.content?.firstSegmentId;
+          // Of the headings opening at a verse the pill counts the
+          // innermost; outer ones only group it.
+          final places = [
+            for (var i = 0; i < headings.length; i++)
+              _sectionPlaces[(view.index, headings[i].section.id)] ??
+                  (i == headings.length - 1
+                      ? _sectionPlacesByVerse[(view.index, segment.segmentId)]
+                      : null),
+          ];
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -2144,17 +2232,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   language: secondarySlot.languageCode,
                   // Like the original's: a nested heading after lines.
                   showDivider: i == 0 && headings[i].depth > 0 && !firstVerse,
-                  // Of the headings opening at a verse the pill counts the
-                  // innermost; outer ones only group it.
-                  place:
-                      _sectionPlaces[(view.index, headings[i].section.id)] ??
-                      (i == headings.length - 1
-                          ? _sectionPlacesByVerse[(
-                            view.index,
-                            segment.segmentId,
-                          )]
-                          : null),
+                  place: places[i],
                   numeralLanguage: _numeralLanguage(view),
+                  overlineTrailing: _liveRoundFor(
+                    view.index,
+                    headings[i].section.id,
+                    places[i],
+                  ),
                 ),
               verse,
             ],
@@ -2263,6 +2347,10 @@ class _Entry {
 }
 
 /// The list and its table of contents, as built from the started sources.
+/// The live round as a heading shows it, and the section it belongs to.
+typedef _LiveRoundMark =
+    ({int source, String sectionId, ReaderSectionPlace? place, String label});
+
 class _PageLayout {
   final List<_Entry> entries;
   final List<ReaderPageSection> sections;

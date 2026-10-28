@@ -77,6 +77,24 @@ void main() {
     expect(find.text('SECTION ༥ / ༡༥ · ROUND ༢ / ༣'), findsOneWidget);
   });
 
+  testWidgets('a heading the pill does not count still shows the live round', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        SectionHeader(
+          section: _section(title: 'Sub'),
+          depth: 1,
+          language: language,
+          numeralLanguage: 'en',
+          overlineTrailing: 'Round 2 / 3',
+        ),
+      ),
+    );
+
+    expect(find.text('ROUND 2 / 3'), findsOneWidget);
+  });
+
   testWidgets('a heading the pill does not count has no overline', (
     tester,
   ) async {
