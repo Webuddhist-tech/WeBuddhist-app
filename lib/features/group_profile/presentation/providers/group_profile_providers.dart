@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
@@ -82,6 +84,10 @@ class GroupPracticesState {
   final bool hasMore;
   final int skip;
 
+  /// True once a stored or fetched first page settled, even an empty one, so
+  /// the tab bar can lay out without waiting.
+  final bool hasLoaded;
+
   const GroupPracticesState({
     this.practices = const [],
     this.total = 0,
@@ -90,6 +96,7 @@ class GroupPracticesState {
     this.error,
     this.hasMore = true,
     this.skip = 0,
+    this.hasLoaded = false,
   });
 
   GroupPracticesState copyWith({
@@ -100,6 +107,7 @@ class GroupPracticesState {
     String? error,
     bool? hasMore,
     int? skip,
+    bool? hasLoaded,
     bool clearError = false,
   }) {
     return GroupPracticesState(
@@ -110,6 +118,7 @@ class GroupPracticesState {
       error: clearError ? null : error ?? this.error,
       hasMore: hasMore ?? this.hasMore,
       skip: skip ?? this.skip,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
     );
   }
 }
@@ -169,6 +178,7 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
         state = state.copyWith(
           isLoading: false,
           error: state.practices.isEmpty ? failure.message : null,
+          hasLoaded: true,
         );
       },
       _applyFirstPage,
@@ -183,6 +193,7 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
       isLoading: false,
       hasMore: page.hasMore,
       skip: page.practices.length,
+      hasLoaded: true,
       clearError: true,
     );
   }
@@ -604,18 +615,26 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
   final Ref _ref;
   final GroupFollowKey _key;
   final bool _isAuthenticated;
+  final bool _seeded;
+  // Bumped by every join or leave so a late status check cannot undo it.
+  int _membershipEpoch = 0;
 
   GroupFollowNotifier({
     required GroupProfileRepositoryInterface repository,
     required Ref ref,
     required GroupFollowKey key,
     required bool isAuthenticated,
+    bool? storedStatus,
   }) : _repository = repository,
        _ref = ref,
        _key = key,
        _isAuthenticated = isAuthenticated,
+       _seeded = storedStatus != null,
        super(
-         key.loadInitialStatus
+         // A stored membership paints the row; the check runs behind it.
+         storedStatus != null
+             ? GroupFollowSuccess(isFollowing: storedStatus)
+             : key.loadInitialStatus
              ? const GroupFollowLoading(isInitialCheck: true)
              : const GroupFollowSuccess(isFollowing: false),
        ) {
@@ -692,24 +711,36 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
       return;
     }
 
+    final epoch = _membershipEpoch;
     final result = await _repository.checkFollowStatus(
       _key.groupId,
       _key.groupType,
     );
-    if (!mounted) return;
+    if (!mounted || epoch != _membershipEpoch) return;
 
     // A failed check is unknown, not a confirmed non-member: record it as a
-    // failure so membership stays unconfirmed. The network layer has already
-    // retried; a page refresh re-runs the check.
+    // failure so membership stays unconfirmed, unless a stored membership is
+    // already showing. The network layer has already retried; a page refresh
+    // re-runs the check.
     result.fold(
-      (failure) => state = GroupFollowFailure(failure),
-      (isFollowing) => state = GroupFollowSuccess(isFollowing: isFollowing),
+      (failure) {
+        if (!_seeded) state = GroupFollowFailure(failure);
+      },
+      (isFollowing) {
+        final current = state;
+        if (current is GroupFollowSuccess &&
+            current.isFollowing == isFollowing) {
+          return;
+        }
+        state = GroupFollowSuccess(isFollowing: isFollowing);
+      },
     );
   }
 
   Future<bool> follow({GroupProfile? connectGroup}) async {
     if (state is GroupFollowLoading) return false;
     final wasFollowing = lastConfirmedGroupMembership(state);
+    _membershipEpoch++;
     state = GroupFollowLoading(wasFollowing: wasFollowing);
 
     final result = await _repository.followGroup(_key.groupId, _key.groupType);
@@ -773,9 +804,13 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
     required bool incrementCount,
   }) {
     final previousDelta = _currentCountDelta();
+    _membershipEpoch++;
     state = GroupFollowSuccess(
       isFollowing: true,
       countDelta: incrementCount ? previousDelta + 1 : previousDelta,
+    );
+    unawaited(
+      _repository.saveFollowStatus(_key.groupId, _key.groupType, true),
     );
     _invalidateGroupProfile();
     _refreshGroupMembers();
@@ -795,6 +830,7 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
     if (state is GroupFollowLoading) return false;
     final previousDelta = _currentCountDelta();
     final wasFollowing = lastConfirmedGroupMembership(state);
+    _membershipEpoch++;
     state = GroupFollowLoading(wasFollowing: wasFollowing);
 
     final result = await _repository.unfollowGroup(
@@ -809,9 +845,13 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
         return false;
       },
       (_) async {
+        _membershipEpoch++;
         state = GroupFollowSuccess(
           isFollowing: false,
           countDelta: previousDelta - 1,
+        );
+        unawaited(
+          _repository.saveFollowStatus(_key.groupId, _key.groupType, false),
         );
         _invalidateGroupProfile();
         _refreshGroupMembers();
@@ -836,11 +876,16 @@ final groupFollowProvider = StateNotifierProvider.autoDispose
       final authState = ref.watch(authProvider);
       final isAuthenticated = !authState.isGuest && authState.isLoggedIn;
 
+      final repository = ref.watch(groupProfileRepositoryProvider);
       return GroupFollowNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         ref: ref,
         key: key,
         isAuthenticated: isAuthenticated,
+        storedStatus:
+            isAuthenticated && key.loadInitialStatus
+                ? repository.readStoredFollowStatus(key.groupId, key.groupType)
+                : null,
       );
     });
 

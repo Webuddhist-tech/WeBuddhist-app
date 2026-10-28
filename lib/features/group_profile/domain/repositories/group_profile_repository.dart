@@ -88,9 +88,20 @@ abstract class GroupProfileRepositoryInterface {
 
   GroupReportsPage? readStoredGroupReports(String groupId);
 
+  /// Revalidates and stores the viewer's membership.
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
     GroupType groupType,
+  );
+
+  /// Stored membership, so the follow row paints before the check returns.
+  bool? readStoredFollowStatus(String groupId, GroupType groupType);
+
+  /// Records a join or leave the server accepted, for the next open.
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
   );
 
   Future<Either<Failure, void>> followGroup(

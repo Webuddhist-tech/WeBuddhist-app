@@ -52,6 +52,16 @@ class _SlowJoinRepository extends Fake
 class _FakeProfileRepository extends Fake
     implements GroupProfileRepositoryInterface {
   @override
+  bool? readStoredFollowStatus(String groupId, GroupType groupType) => null;
+
+  @override
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
+  ) async {}
+
+  @override
   GroupPracticesPage? readStoredGroupPractices(
     String groupId, {
     required String language,

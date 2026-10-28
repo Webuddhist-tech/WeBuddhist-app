@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
@@ -346,27 +348,48 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     }
   }
 
+  ScreenCacheSource<bool> _followStatusSource(
+    String groupId,
+    GroupType groupType,
+  ) {
+    return _userSource(
+      'group_follow_status',
+      params: [groupType.isPage ? 'page' : 'community', groupId],
+      fetchJson:
+          () async => {
+            'is_following': await remote.checkFollowStatus(groupId, groupType),
+          },
+      parse: (json) => json['is_following'] == true,
+      failureMessage:
+          groupType.isPage
+              ? 'Failed to check follow status'
+              : 'Failed to check join status',
+    );
+  }
+
+  @override
+  bool? readStoredFollowStatus(String groupId, GroupType groupType) {
+    return _followStatusSource(groupId, groupType).read();
+  }
+
+  @override
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
+  ) async {
+    final source = _followStatusSource(groupId, groupType);
+    await source.store
+        .save(source.key, jsonEncode({'is_following': isFollowing}))
+        .catchError((Object _) => false);
+  }
+
   @override
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
     GroupType groupType,
-  ) async {
-    try {
-      final isFollowing = await remote.checkFollowStatus(groupId, groupType);
-      return Right(isFollowing);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on AuthenticationException catch (e) {
-      return Left(AuthenticationFailure(e.message));
-    } catch (e) {
-      return Left(
-        UnknownFailure(
-          groupType.isPage
-              ? 'Failed to check follow status: $e'
-              : 'Failed to check join status: $e',
-        ),
-      );
-    }
+  ) {
+    return _followStatusSource(groupId, groupType).refresh();
   }
 
   @override

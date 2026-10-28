@@ -50,12 +50,12 @@ final groupMyPermissionProvider = AsyncNotifierProvider.autoDispose
     });
 
 /// Whether the signed-in user may publish posts in the group.
-final groupPostPermissionProvider = FutureProvider.autoDispose
-    .family<bool, String>((ref, groupId) async {
-      final permission = await ref.watch(
-        groupMyPermissionProvider(groupId).future,
-      );
-      return permission?.canCreateContent ?? false;
+final groupPostPermissionProvider = Provider.autoDispose
+    .family<AsyncValue<bool>, String>((ref, groupId) {
+      // Derived synchronously, so a stored permission never shows a loader.
+      return ref
+          .watch(groupMyPermissionProvider(groupId))
+          .whenData((permission) => permission?.canCreateContent ?? false);
     });
 
 class GroupPostsState {
