@@ -4037,6 +4037,18 @@ abstract class AppLocalizations {
   /// **'Leaderboard'**
   String get group_accumulator_leaderboard;
 
+  /// No description provided for @group_accumulator_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone'**
+  String get group_accumulator_everyone;
+
+  /// No description provided for @group_accumulator_me.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get group_accumulator_me;
+
   /// No description provided for @group_accumulator_my_contributions.
   ///
   /// In en, this message translates to:

@@ -813,6 +813,8 @@
   "group_accumulator_join_error": "संचयमा सामेल हुन असमर्थ। कृपया फेरि प्रयास गर्नुहोस्",
   "group_accumulator_participants": "{count} सहभागी",
   "group_accumulator_leaderboard": "लिडरबोर्ड",
+  "group_accumulator_everyone": "सबै",
+  "group_accumulator_me": "म",
   "group_accumulator_my_contributions": "मेरो योगदान",
   "group_accumulator_recited": "जप",
   "group_accumulator_total": "कुल",

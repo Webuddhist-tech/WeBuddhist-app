@@ -2267,6 +2267,12 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_accumulator_leaderboard => 'लिडरबोर्ड';
 
   @override
+  String get group_accumulator_everyone => 'सबै';
+
+  @override
+  String get group_accumulator_me => 'म';
+
+  @override
   String get group_accumulator_my_contributions => 'मेरो योगदान';
 
   @override

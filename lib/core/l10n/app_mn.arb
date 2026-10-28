@@ -813,6 +813,8 @@
   "group_accumulator_join_error": "Хуримтлалд нэгдэх боломжгүй байна. Дахин оролдоно уу",
   "group_accumulator_participants": "{count} оролцогч",
   "group_accumulator_leaderboard": "Тэргүүлэгчдийн самбар",
+  "group_accumulator_everyone": "Бүгд",
+  "group_accumulator_me": "Би",
   "group_accumulator_my_contributions": "Миний хувь нэмэр",
   "group_accumulator_recited": "Уншсан",
   "group_accumulator_total": "Нийт",

@@ -63,9 +63,34 @@ class GroupAccumulator extends Equatable {
   ];
 }
 
+class GroupAccumulatorLink extends Equatable {
+  final String id;
+  final String url;
+  final String linkType;
+  final String? videoId;
+  final String title;
+  final int displayOrder;
+
+  const GroupAccumulatorLink({
+    required this.id,
+    required this.url,
+    required this.linkType,
+    this.videoId,
+    this.title = '',
+    this.displayOrder = 0,
+  });
+
+  bool get isYoutube => linkType.toUpperCase() == 'YOUTUBE';
+
+  @override
+  List<Object?> get props => [id, url, linkType, videoId, title, displayOrder];
+}
+
 class GroupAccumulatorDetail extends GroupAccumulator {
   final int totalTodayCount;
   final GroupAccumulatorUserContribution? user;
+  final String? description;
+  final List<GroupAccumulatorLink> links;
 
   const GroupAccumulatorDetail({
     required super.id,
@@ -83,7 +108,26 @@ class GroupAccumulatorDetail extends GroupAccumulator {
     super.totalCount = 0,
     this.totalTodayCount = 0,
     this.user,
+    this.description,
+    this.links = const [],
   });
+
+  List<GroupAccumulatorLink> get youtubeLinks {
+    final videos = [
+      for (final link in links)
+        if (link.isYoutube && link.url.trim().isNotEmpty) link,
+    ]..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
+    return videos;
+  }
+
+  @override
+  List<Object?> get props => [
+    ...super.props,
+    totalTodayCount,
+    user,
+    description,
+    links,
+  ];
 }
 
 class GroupAccumulatorUserContribution extends Equatable {
