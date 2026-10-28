@@ -1335,7 +1335,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       }
       _liveJumpInFlight = true;
       try {
-        located = await _loadLive(position);
+        // Stop walking toward this verse once a newer position arrives or
+        // following ends.
+        located = await _loadLive(
+          position,
+          wanted:
+              () => generation == _liveGeneration && _stillFollowingLive(),
+        );
       } finally {
         _liveJumpInFlight = false;
       }
@@ -1346,7 +1352,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         unawaited(_applyLive(pending));
         return;
       }
-      if (generation != _liveGeneration) return;
+      // Paused meanwhile: the loading stopped, which is not being out of
+      // sync. Rejoining applies the position again.
+      if (generation != _liveGeneration || !_stillFollowingLive()) return;
       if (located == null) {
         liveNotifier.setOutOfSync(true);
         return;
@@ -1365,11 +1373,22 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     );
   }
 
+  /// Whether the reader still follows the live room (not paused or off).
+  bool _stillFollowingLive() {
+    final eventId = _liveEventId;
+    return eventId != null &&
+        ref.read(recitationLiveProvider(eventId)).isFollowing;
+  }
+
   /// Brings [position] into a loaded text and returns where it landed. A
   /// collapsed page follows it only within a source's own verses, loading
   /// forward to them and starting the source that names the operator's text;
-  /// a whole text loads the page around it.
-  Future<(int, String)?> _loadLive(RecitationLivePosition position) async {
+  /// a whole text loads the page around it. Gives up, returning null, as
+  /// soon as [wanted] says the position is no longer the one to follow.
+  Future<(int, String)?> _loadLive(
+    RecitationLivePosition position, {
+    required bool Function() wanted,
+  }) async {
     if (!_isCollapsed) {
       final notifier = ref.read(
         readerNotifierProvider(widget.sources.first).notifier,
@@ -1406,8 +1425,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       final active = _activeSegmentIdsOf(i, state);
       if (active.isNotEmpty && !active.contains(local)) continue;
       if (state.content?.containsSegment(local) != true) {
-        if (!await _loadForwardTo(i, local)) continue;
-        if (!mounted) return null;
+        final arrived = await _loadForwardTo(i, local, wanted: wanted);
+        if (!mounted || !wanted()) return null;
+        if (!arrived) continue;
         state = ref.read(readerNotifierProvider(params));
       }
       final content = state.content;
@@ -1424,11 +1444,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// page from where reading would load next. A page fetched at [segmentId]
   /// itself would be appended after the loaded ones and skip every verse in
   /// between. False when the verse never arrives: the source ran out, a
-  /// fetch failed, or a page brought nothing new.
-  Future<bool> _loadForwardTo(int index, String segmentId) async {
+  /// fetch failed, or a page brought nothing new. [wanted] is asked before
+  /// each page; once it says no, loading stops there.
+  Future<bool> _loadForwardTo(
+    int index,
+    String segmentId, {
+    bool Function()? wanted,
+  }) async {
     final params = widget.sources[index];
     final notifier = ref.read(readerNotifierProvider(params).notifier);
-    while (mounted) {
+    while (mounted && (wanted?.call() ?? true)) {
       final state = ref.read(readerNotifierProvider(params));
       if (state.isLoadingNext) {
         // A page reading asked for is on its way; it may bring the verse.

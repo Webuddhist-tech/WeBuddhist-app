@@ -232,6 +232,7 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
   Map<String, List<String>?> picks, {
   required int verse,
   ValueNotifier<double>? progress,
+  Duration pageDelay = Duration.zero,
 }) async {
   final channel = _FakeChannel();
   final live = RecitationLiveNotifier(
@@ -267,6 +268,7 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
         textsRepositoryProvider.overrideWithValue(_SameTextAligner()),
         textDetailsFutureProvider.overrideWith((ref, params) async {
           fetches.add(params);
+          if (pageDelay > Duration.zero) await Future.delayed(pageDelay);
           return Right<Failure, ReaderResponse>(_planPage(params));
         }),
         recitationLiveProvider.overrideWith((ref, id) => live),
@@ -446,6 +448,36 @@ void main() {
       // A few verses fit on screen: a small share of sixty.
       expect(progress.value, greaterThan(0));
       expect(progress.value, lessThan(0.2));
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  });
+
+  group('loading toward a far live verse', () {
+    testWidgets('stops between pages once the reader pauses', (tester) async {
+      // A plan task, so live walks page by page; each page takes a while
+      // and verse 75 is four pages away.
+      final (live, fetches) = await _pumpLivePlan(
+        tester,
+        {
+          'A': null,
+          'B': ['B-1', 'B-2'],
+        },
+        verse: 75,
+        pageDelay: const Duration(seconds: 1),
+      );
+      expect(_loadedVerses(tester), isNot(contains(75)));
+
+      live.pauseFollowing();
+      final asked = fetches.length;
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+
+      // At most the page already asked for lands; nothing more is fetched
+      // toward the old verse, and pausing is not being out of sync.
+      expect(fetches.length, lessThanOrEqualTo(asked));
+      expect(_loadedVerses(tester), isNot(contains(75)));
+      expect(live.state.outOfSync, isFalse);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });
