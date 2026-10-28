@@ -1450,20 +1450,30 @@ class _EventInfoCard extends ConsumerWidget {
     final locale = intlFormatLocaleOf(context);
     final end = event.endDate?.toLocal();
     final now = DateTime.now();
-    // Drop the year when the whole range sits in the current year.
-    final showYear =
-        start.year != now.year || (end != null && end.year != now.year);
-    final datePattern = showYear ? 'd MMM y' : 'd MMM';
-    String day(DateTime value) => DateFormat(datePattern, locale).format(value);
     String time(DateTime value) => formatGroupEventTime(value, locale);
 
     final startZone = _utcOffsetLabel(start);
+    final endDate = end;
+    // Single-day labels still drop the year when it is this year. A multi-day
+    // range always keeps the year, once at the end unless the years differ.
+    final dates =
+        endDate != null && !DateUtils.isSameDay(start, endDate)
+            ? formatGroupEventDayRange(
+              start,
+              endDate,
+              locale,
+              separator: ' – ',
+            )
+            : DateFormat(
+              start.year != now.year ||
+                      (endDate != null && endDate.year != now.year)
+                  ? 'd MMM y'
+                  : 'd MMM',
+              locale,
+            ).format(start);
     if (end == null || end.isAtSameMomentAs(start)) {
-      return '${day(start)} · ${time(start)} · $startZone';
+      return '$dates · ${time(start)} · $startZone';
     }
-
-    final isMultiDay = !DateUtils.isSameDay(start, end);
-    final dates = isMultiDay ? '${day(start)} – ${day(end)}' : day(start);
     final endZone = _utcOffsetLabel(end);
     // A range crossing a DST switch has two offsets, so label each end.
     if (startZone != endZone) {
