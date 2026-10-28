@@ -198,7 +198,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/segment-bg/
     - assets/images/verse-bg/
     - assets/images/tag_cover/
     - assets/images/recitation_cover/
