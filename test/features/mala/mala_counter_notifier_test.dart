@@ -464,9 +464,15 @@ void main() {
     await notifier.whenSeeded;
     notifier.dispose();
 
-    // A recreated notifier (catalogue refresh) starts textured even when the
-    // sync user id is unavailable.
-    final recreated = MalaCounterNotifier(
+    // The in-process memo is per account: an unknown owner starts blank and
+    // another account gets its own stored artwork, not user-1's.
+    const otherBytes = [0x52, 0x49, 0x46, 0x46];
+    await local.write(
+      'user-2',
+      'chenrezig',
+      LocalMalaState(beadImageBase64: base64Encode(otherBytes)),
+    );
+    MalaCounterNotifier unknownOwner() => MalaCounterNotifier(
       mantra: mantra,
       local: local,
       getAccumulatorDetail: getDetail,
@@ -475,9 +481,23 @@ void main() {
       currentUserId: () async => userId,
       currentUserIdSync: () => null,
     );
-    expect(recreated.state.beadImageBytes, Uint8List.fromList(imageBytes));
-    await recreated.whenSeeded;
-    recreated.dispose();
+    final blank = unknownOwner();
+    expect(blank.state.beadImageBytes, isNull);
+    await blank.whenSeeded;
+    blank.dispose();
+
+    final other = MalaCounterNotifier(
+      mantra: mantra,
+      local: local,
+      getAccumulatorDetail: getDetail,
+      deleteUserAccumulator: delete,
+      sync: sync,
+      currentUserId: () async => 'user-2',
+      currentUserIdSync: () => 'user-2',
+    );
+    expect(other.state.beadImageBytes, Uint8List.fromList(otherBytes));
+    await other.whenSeeded;
+    other.dispose();
   });
 
   test('stores bead bytes after retrying expired presigned URL', () async {

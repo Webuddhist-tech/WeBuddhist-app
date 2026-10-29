@@ -226,5 +226,22 @@ void main() {
       expect(notifier.state, isA<GroupFollowLoading>());
       notifier.dispose();
     });
+
+    test('a late check result re-saves a completed join', () async {
+      final notifier = seeded(false);
+      unawaited(notifier.follow());
+      repository.follow.complete(const Right(null));
+      await pumpEventQueue();
+      expect(repository.savedStatuses, [true]);
+
+      // The check's refresh stored `false` on its way back; the notifier
+      // must put the join's answer back.
+      repository.status.complete(const Right(false));
+      await pumpEventQueue();
+
+      expect(isPrivateGroupMember(followState: notifier.state), isTrue);
+      expect(repository.savedStatuses.last, isTrue);
+      notifier.dispose();
+    });
   });
 }

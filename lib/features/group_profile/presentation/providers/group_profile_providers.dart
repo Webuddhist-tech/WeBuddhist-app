@@ -716,7 +716,21 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
       _key.groupId,
       _key.groupType,
     );
-    if (!mounted || epoch != _membershipEpoch) return;
+    if (!mounted) return;
+    if (epoch != _membershipEpoch) {
+      // The check already stored its stale answer; restore the action's.
+      final current = state;
+      if (current is GroupFollowSuccess) {
+        unawaited(
+          _repository.saveFollowStatus(
+            _key.groupId,
+            _key.groupType,
+            current.isFollowing,
+          ),
+        );
+      }
+      return;
+    }
 
     // A failed check is unknown, not a confirmed non-member: record it as a
     // failure so membership stays unconfirmed, unless a stored membership is

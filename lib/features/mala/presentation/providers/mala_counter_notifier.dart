@@ -112,30 +112,40 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
     String? userId,
   ) {
     final base = MalaCounterState(beadsPerRound: mantra.beadsPerRound);
-    final memo = _skinMemo[mantra.presetId];
+    if (userId == null || userId.isEmpty) return base;
+    final memo = _skinMemo[_skinKey(userId, mantra.presetId)];
     if (memo != null) {
       return base.copyWith(
         beadImageUrl: memo.url ?? mantra.beadImageUrl,
         beadImageBytes: memo.bytes,
       );
     }
-    if (userId == null || userId.isEmpty) return base;
     final cached = local.read(userId, mantra.presetId);
     final bytes = cached.beadImageBytes;
-    if (bytes != null) _rememberSkin(mantra.presetId, cached.beadImageUrl, bytes);
+    if (bytes != null) {
+      _rememberSkin(userId, mantra.presetId, cached.beadImageUrl, bytes);
+    }
     return base.copyWith(
       beadImageUrl: cached.beadImageUrl ?? mantra.beadImageUrl,
       beadImageBytes: bytes,
     );
   }
 
-  /// Skins seen this process, by preset. The counter provider is keyed by the
-  /// whole [Mantra], so a catalogue refresh with new presigned URLs recreates
-  /// the notifier; this keeps the strand textured across that swap.
+  /// Skins seen this process, by user and preset. The counter provider is
+  /// keyed by the whole [Mantra], so a catalogue refresh with new presigned
+  /// URLs recreates the notifier; this keeps the strand textured across that.
   static final Map<String, ({String? url, Uint8List bytes})> _skinMemo = {};
 
-  static void _rememberSkin(String presetId, String? url, Uint8List bytes) {
-    _skinMemo[presetId] = (url: url, bytes: bytes);
+  static String _skinKey(String userId, String presetId) =>
+      '$userId:$presetId';
+
+  static void _rememberSkin(
+    String userId,
+    String presetId,
+    String? url,
+    Uint8List bytes,
+  ) {
+    _skinMemo[_skinKey(userId, presetId)] = (url: url, bytes: bytes);
   }
 
   @visibleForTesting
@@ -375,11 +385,11 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
     bool refetchDetailOnFailure = true,
   }) async {
     final localState = _local.read(userId, _presetId);
-    final memo = _skinMemo[_presetId];
+    final memo = _skinMemo[_skinKey(userId, _presetId)];
     final cachedBytes = memo?.bytes ?? localState.beadImageBytes;
     if (cachedBytes != null) {
       if (memo == null) {
-        _rememberSkin(_presetId, localState.beadImageUrl, cachedBytes);
+        _rememberSkin(userId, _presetId, localState.beadImageUrl, cachedBytes);
       }
       if (!mounted) return;
       state = state.copyWith(
@@ -453,7 +463,7 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
       ),
     );
     final stored = Uint8List.fromList(bytes);
-    _rememberSkin(_presetId, imageUrl, stored);
+    _rememberSkin(userId, _presetId, imageUrl, stored);
     if (!mounted) return;
     state = state.copyWith(beadImageUrl: imageUrl, beadImageBytes: stored);
   }
