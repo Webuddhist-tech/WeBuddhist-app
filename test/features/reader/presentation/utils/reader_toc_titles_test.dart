@@ -215,5 +215,56 @@ void main() {
     test('a title of marks alone stays as it is', () {
       expect(inScript('༄༅།', 'phonetic'), '༄༅།');
     });
+
+    test('a Pali title written in Roman, in Devanagari', () {
+      expect(
+        inScript('Tisaraṇa Aṭṭhasīla', 'hi', language: 'pi'),
+        'तिसरण अट्ठसील',
+      );
+    });
+  });
+
+  group('a text\'s title as the page shows it', () {
+    final service = TransliterationService.standard();
+    const original = 'སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།';
+
+    ({String title, String language}) titleOf({
+      String? scriptId,
+      String? translationTitle,
+      String? translationLanguage,
+    }) => readerTextTitle(
+      service,
+      title: original,
+      language: 'bo',
+      scriptId: scriptId,
+      translationTitle: translationTitle,
+      translationLanguage: translationLanguage,
+    );
+
+    test('a shown translation names the text in its language', () {
+      final title = titleOf(
+        scriptId: 'phonetic',
+        translationTitle: 'Praises to the Twenty-One Tārās',
+        translationLanguage: 'en',
+      );
+      expect(title.title, 'Praises to the Twenty-One Tārās');
+      expect(title.language, 'en');
+    });
+
+    test('a translation without a title leaves the original\'s', () {
+      final title = titleOf(translationTitle: '', translationLanguage: 'en');
+      expect(title.title, original);
+      expect(title.language, 'bo');
+    });
+
+    test('without a translation: the original, in its script', () {
+      expect(titleOf(), (title: original, language: 'bo'));
+      final roman = titleOf(scriptId: 'phonetic');
+      expect(roman.title, 'dröl ma nyer chik la tö pa');
+      expect(
+        roman.language,
+        service.fontLanguageFor('bo', 'phonetic') ?? 'bo',
+      );
+    });
   });
 }

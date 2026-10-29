@@ -1887,11 +1887,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// A text's title as the page reads it: its translation's when one shows.
   (String, String) _titleOf(_SourceView view) {
     final translation = view.dualSettings.secondary;
-    final translated = translation.versionLabel;
-    if (view.secondaryActive && translated != null && translated.isNotEmpty) {
-      return (translated, translation.languageCode);
-    }
-    return _inScript(view, (view.state.openedText?.title ?? '', view.language));
+    final title = readerTextTitle(
+      ref.read(transliterationServiceProvider),
+      title: view.state.openedText?.title ?? '',
+      language: view.language,
+      scriptId: view.originalScriptId,
+      translationTitle: view.secondaryActive ? translation.versionLabel : null,
+      translationLanguage:
+          view.secondaryActive ? translation.languageCode : null,
+    );
+    return (title.title, title.language);
   }
 
   /// [title], when it is in the original's language and the original is

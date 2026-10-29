@@ -58,27 +58,27 @@ class _SwipeNavigationWrapperState
 
     final canSwipe = navigationContext != null && navigationContext.canSwipe;
 
-    // The text's title in the script its original is shown in.
+    // The text's title as the page shows it: the translation's when one is
+    // shown, else the original's in the script it is shown in.
     final language = widget.textDetail.language;
+    final scope = widget.params.settingsScope;
     final scriptId = ref.watch(
       readerOriginalScriptProvider(
-        ReaderScriptScope(
-          scope: widget.params.settingsScope,
-          language: language,
-        ),
+        ReaderScriptScope(scope: scope, language: language),
       ),
     );
-    final transliteration = ref.watch(transliterationServiceProvider);
-    final title = readerTitleInScript(
-      transliteration,
+    final dualSettings = ref.watch(readerDualSettingsProvider(scope));
+    final translation = dualSettings.secondary;
+    final translationShown =
+        dualSettings.secondaryEnabled && translation.versionId != null;
+    final (:title, language: titleLanguage) = readerTextTitle(
+      ref.watch(transliterationServiceProvider),
       title: widget.textDetail.title,
       language: language,
       scriptId: scriptId,
+      translationTitle: translationShown ? translation.versionLabel : null,
+      translationLanguage: translationShown ? translation.languageCode : null,
     );
-    final titleLanguage =
-        scriptId == null
-            ? language
-            : transliteration.fontLanguageFor(language, scriptId) ?? language;
 
     return GestureDetector(
       onHorizontalDragEnd:

@@ -28,6 +28,35 @@ String readerTitleInScript(
       .trim();
 }
 
+/// A text's title as the page shows it, and the language its font comes
+/// from: the shown translation's title ([translationTitle], in
+/// [translationLanguage]) when it has one, else [title] in the script its
+/// original is shown in.
+({String title, String language}) readerTextTitle(
+  TransliterationService service, {
+  required String title,
+  required String language,
+  required String? scriptId,
+  String? translationTitle,
+  String? translationLanguage,
+}) {
+  if (translationLanguage != null &&
+      translationTitle != null &&
+      translationTitle.isNotEmpty) {
+    return (title: translationTitle, language: translationLanguage);
+  }
+  if (scriptId == null) return (title: title, language: language);
+  return (
+    title: readerTitleInScript(
+      service,
+      title: title,
+      language: language,
+      scriptId: scriptId,
+    ),
+    language: service.fontLanguageFor(language, scriptId) ?? language,
+  );
+}
+
 /// The translation's title for each section of the [original], by the
 /// original section's id. Library tables of contents hold titles only in
 /// their own edition's language, so the translation's sections are matched
