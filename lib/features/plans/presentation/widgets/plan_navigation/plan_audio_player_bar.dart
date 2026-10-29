@@ -7,12 +7,14 @@ import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigatio
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_segment_audio_controller.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/playback_speed_sheet.dart';
 
-/// Progress line, optional recording title, and speed control.
+/// Progress line, optional recording title, speed, and repeat.
 ///
 /// Sits under the round play button on plan tasks and group recitations.
 /// The line shows elapsed time only — it does not seek. [versionTitle] is the
 /// recording name from the backend; plan tasks leave it null and the pill
-/// stays hidden. A long title ellipsizes so the speed control stays visible.
+/// stays hidden. A long title ellipsizes so speed and repeat stay visible.
+/// Repeat is off until tapped: the slice plays once, then stops or advances.
+/// On, it loops, and the choice carries to the next task or recording.
 class PlanAudioPlayerBar extends StatefulWidget {
   const PlanAudioPlayerBar({
     super.key,
@@ -77,16 +79,35 @@ class _PlanAudioPlayerBarState extends State<PlanAudioPlayerBar> {
   double get _speed =>
       widget.controller?.speed ?? PlanSegmentAudioController.preferredSpeed;
 
-  Future<void> _pickSpeed() async {
-    final picked = await showPlaybackSpeedSheet(context, selected: _speed);
-    if (!mounted || picked == null) return;
+  bool get _repeat =>
+      widget.controller?.repeat ?? PlanSegmentAudioController.preferredRepeat;
+
+  void _toggleRepeat() {
+    final next = !_repeat;
     final controller = widget.controller;
     if (controller == null) {
-      PlanSegmentAudioController.preferredSpeed = picked;
+      PlanSegmentAudioController.preferredRepeat = next;
       setState(() {});
       return;
     }
-    await controller.setSpeed(picked);
+    controller.setRepeat(next);
+  }
+
+  Future<void> _pickSpeed() {
+    return showPlaybackSpeedSheet(
+      context,
+      selected: _speed,
+      onChanged: (speed) {
+        if (!mounted) return;
+        final controller = widget.controller;
+        if (controller == null) {
+          PlanSegmentAudioController.preferredSpeed = speed;
+          setState(() {});
+          return;
+        }
+        controller.setSpeed(speed);
+      },
+    );
   }
 
   @override
@@ -122,6 +143,11 @@ class _PlanAudioPlayerBarState extends State<PlanAudioPlayerBar> {
                   speed: _speed,
                   color: onSurface,
                   onTap: _pickSpeed,
+                ),
+                _RepeatButton(
+                  repeating: _repeat,
+                  color: onSurface,
+                  onTap: _toggleRepeat,
                 ),
               ],
             ),
@@ -288,6 +314,55 @@ class _SpeedButton extends StatelessWidget {
             color: color,
             fontSize: 15,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RepeatButton extends StatelessWidget {
+  const _RepeatButton({
+    required this.repeating,
+    required this.color,
+    required this.onTap,
+  });
+
+  final bool repeating;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconColor = repeating ? Theme.of(context).colorScheme.surface : color;
+    final icon = Icon(AppAssets.repeat, size: 16, color: iconColor);
+
+    return Semantics(
+      button: true,
+      toggled: repeating,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Center(
+            child:
+                repeating
+                    ? Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: icon,
+                    )
+                    : icon,
           ),
         ),
       ),

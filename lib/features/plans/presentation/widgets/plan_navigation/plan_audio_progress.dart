@@ -27,15 +27,11 @@ class PlanAudioProgress {
   int get hashCode => Object.hash(position, duration);
 }
 
-/// Speeds offered by the playback picker, in order.
-const List<double> planPlaybackSpeeds = <double>[
-  0.5,
-  0.75,
-  1.0,
-  1.25,
-  1.5,
-  2.0,
-];
+/// Preset speeds on the playback sheet, in order.
+///
+/// The slider can sit between these, from the first value to the last, in
+/// steps of 0.01.
+const List<double> planPlaybackSpeeds = <double>[0.5, 0.75, 1.0, 1.25, 1.5];
 
 /// Maps a raw player position onto the slice from [startMs] to [endMs].
 ///

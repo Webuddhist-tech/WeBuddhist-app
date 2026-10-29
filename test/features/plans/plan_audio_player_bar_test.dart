@@ -11,6 +11,7 @@ void main() {
 
   setUp(() {
     PlanSegmentAudioController.preferredSpeed = 1.0;
+    PlanSegmentAudioController.preferredRepeat = false;
     controller = PlanSegmentAudioController(
       url: 'https://cdn/a.mp3',
       startMs: 0,
@@ -21,6 +22,7 @@ void main() {
 
   tearDown(() async {
     PlanSegmentAudioController.preferredSpeed = 1.0;
+    PlanSegmentAudioController.preferredRepeat = false;
     controller.dispose();
   });
 
@@ -37,6 +39,7 @@ void main() {
     expect(find.text('0:54'), findsOneWidget);
     expect(find.text('2:40'), findsOneWidget);
     expect(find.text('1.0×'), findsOneWidget);
+    expect(find.byIcon(AppAssets.repeat), findsOneWidget);
     expect(find.byIcon(AppAssets.speakerSimpleHigh), findsNothing);
     expect(find.byType(Slider), findsNothing);
   });
@@ -75,19 +78,104 @@ void main() {
     expect(find.text('1.0×'), findsOneWidget);
   });
 
-  testWidgets('the speed control opens a picker', (tester) async {
+  testWidgets('the speed control opens a picker that applies live', (
+    tester,
+  ) async {
     await tester.pumpWidget(_host(PlanAudioPlayerBar(controller: controller)));
 
     await tester.tap(find.text('1.0×'));
     await tester.pumpAndSettle();
 
     expect(find.text('Playback speed'), findsOneWidget);
-    await tester.tap(find.text('1.25×'));
-    await tester.pumpAndSettle();
+    expect(find.text('1.00x'), findsOneWidget);
+    expect(find.text('Normal'), findsOneWidget);
+
+    await tester.tap(find.text('1.25'));
+    await tester.pump();
 
     expect(controller.speed, 1.25);
+    expect(find.text('1.25x'), findsOneWidget);
+    expect(find.text('Playback speed'), findsOneWidget);
+
+    await tester.tap(find.byIcon(AppAssets.x));
+    await tester.pumpAndSettle();
+
     expect(find.text('1.25×'), findsOneWidget);
     expect(find.text('Playback speed'), findsNothing);
+  });
+
+  testWidgets('plus and minus step the speed by 0.01', (tester) async {
+    await tester.pumpWidget(_host(PlanAudioPlayerBar(controller: controller)));
+
+    await tester.tap(find.text('1.0×'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(AppAssets.plus));
+    await tester.pump();
+    expect(controller.speed, closeTo(1.01, 0.001));
+    expect(find.text('1.01x'), findsOneWidget);
+    expect(find.text('Playback speed'), findsOneWidget);
+
+    await tester.tap(find.byIcon(AppAssets.minus));
+    await tester.pump();
+    expect(controller.speed, closeTo(1.0, 0.001));
+    expect(find.text('1.00x'), findsOneWidget);
+  });
+
+  testWidgets('repeat starts off and loops until tapped again', (tester) async {
+    await tester.pumpWidget(_host(PlanAudioPlayerBar(controller: controller)));
+
+    final context = tester.element(find.byType(PlanAudioPlayerBar));
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final surface = Theme.of(context).colorScheme.surface;
+
+    Icon repeatIcon() => tester.widget<Icon>(find.byIcon(AppAssets.repeat));
+
+    expect(controller.repeat, isFalse);
+    expect(repeatIcon().color, onSurface);
+
+    await tester.tap(find.byIcon(AppAssets.repeat));
+    await tester.pump();
+
+    expect(controller.repeat, isTrue);
+    expect(repeatIcon().color, surface);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).shape == BoxShape.circle,
+      ),
+      findsOneWidget,
+    );
+
+    final next = PlanSegmentAudioController(
+      url: 'https://cdn/b.mp3',
+      startMs: 0,
+      endMs: null,
+      onSegmentComplete: () {},
+    );
+    addTearDown(next.dispose);
+    expect(next.repeat, isTrue);
+
+    await tester.tap(find.byIcon(AppAssets.repeat));
+    await tester.pump();
+
+    expect(controller.repeat, isFalse);
+    expect(next.repeat, isFalse);
+    expect(repeatIcon().color, onSurface);
+  });
+
+  testWidgets('repeat is remembered before a recording has started', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host(const PlanAudioPlayerBar(controller: null)));
+
+    await tester.tap(find.byIcon(AppAssets.repeat));
+    await tester.pump();
+
+    expect(PlanSegmentAudioController.preferredRepeat, isTrue);
+    expect(controller.repeat, isTrue);
   });
 }
 
