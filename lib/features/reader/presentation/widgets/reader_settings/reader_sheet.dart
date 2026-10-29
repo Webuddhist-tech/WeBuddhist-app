@@ -240,7 +240,7 @@ class ReaderSheetCapsLabel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ReaderPalette.resolve(Theme.of(context), ref);
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 4),
+      padding: const EdgeInsets.only(top: 2, bottom: 4),
       child: Text(
         label.toUpperCase(),
         style: readerSheetText(
@@ -588,14 +588,22 @@ class ReaderSheetChip extends ConsumerWidget {
   }
 }
 
-/// Chips in rows that wrap.
+/// Chips in rows that wrap, [spacing] apart: 16 for Display's font pills,
+/// 8 for the Languages sheet's chips. Rows are 8 apart: each chip's tap
+/// target reaches past what it draws, so rows overlap by that much.
 class ReaderSheetChips extends StatelessWidget {
-  const ReaderSheetChips({super.key, required this.children});
+  const ReaderSheetChips({
+    super.key,
+    required this.children,
+    this.spacing = 16,
+  });
 
   final List<Widget> children;
+  final double spacing;
 
   @override
-  Widget build(BuildContext context) => Wrap(spacing: 16, children: children);
+  Widget build(BuildContext context) =>
+      Wrap(spacing: spacing, runSpacing: -6, children: children);
 }
 
 /// The A | A buttons, side by side: one size step down, one up. Each shows
