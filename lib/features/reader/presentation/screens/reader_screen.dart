@@ -768,6 +768,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             bottom: bottomInset + _audioBottomGap,
             child: Center(child: _buildAudioButton()),
           ),
+        // The status bar dims with the text while a verse's sheet is open.
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: MediaQuery.paddingOf(context).top,
+          child: _verseSheetDim(isPanelOpen),
+        ),
         // Main content area
         SafeArea(
           child: Column(
@@ -777,7 +785,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 visible: _isAppBarVisible,
                 duration: ReaderConstants.focusModeDuration,
                 curve: ReaderConstants.focusModeCurve,
-                child: _buildAppBar(context),
+                // Dimmed with the text while a verse's sheet is open (WF13).
+                child: Stack(
+                  children: [
+                    _buildAppBar(context),
+                    Positioned.fill(child: _verseSheetDim(isPanelOpen)),
+                  ],
+                ),
               ),
               // Main scrollable content
               Expanded(
@@ -836,6 +850,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       ],
     );
   }
+
+  /// The dim over what sits above an open verse sheet, as over the text
+  /// (see [ReaderVerseSplitView.dim]); taps pass through it.
+  Widget _verseSheetDim(bool open) => IgnorePointer(
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      color: Colors.black.withValues(
+        alpha: open ? ReaderVerseSplitView.dim : 0,
+      ),
+    ),
+  );
 
   /// The follow control whenever a recitation is being followed, including a
   /// plan task that is not itself live. A static label when the task is live

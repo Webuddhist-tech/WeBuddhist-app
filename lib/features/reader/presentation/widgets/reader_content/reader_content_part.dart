@@ -722,6 +722,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
     final picked = await showReaderSheet<ReaderPageSection>(
       context,
+      dim: ReaderSheetDim.sections,
       builder:
           (_) =>
               ReaderSectionsSheet(snapshot: _sections, current: _currentSectionKey),

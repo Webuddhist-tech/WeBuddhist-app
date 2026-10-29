@@ -74,7 +74,8 @@ void main() {
       }
     });
 
-    test('dark drawers are the page with 32% black over it', () {
+    test('dark drawers are the page with 32% black over it, light ones '
+        'the mocks\' near-white', () {
       final dark = ReaderPalette.of(ReaderBackground.gold, Brightness.dark);
       expect(
         dark.drawerBackground,
@@ -84,7 +85,44 @@ void main() {
         ),
       );
       final light = ReaderPalette.of(ReaderBackground.gold, Brightness.light);
-      expect(light.drawerBackground, ReaderBackground.gold.light);
+      expect(_hex(light.drawerBackground), '#FBF9F4');
+      expect(
+        ReaderPalette.of(
+          ReaderBackground.plum,
+          Brightness.light,
+        ).drawerBackground,
+        light.drawerBackground,
+      );
+    });
+
+    test('sheet colours are the ones measured on the mocks', () {
+      final light = ReaderPalette.of(
+        ReaderBackground.ricePaper,
+        Brightness.light,
+      );
+      final dark = ReaderPalette.of(
+        ReaderBackground.ricePaper,
+        Brightness.dark,
+      );
+      // WF13/WF19 tabs, WF17 rules, WF11 current row and muted text.
+      expect(_hex(light.drawerChip), '#F2E7D7');
+      expect(_hex(light.drawerDivider), '#E9DFD0');
+      expect(_hex(light.sheetCurrentRow), '#EDE3D4');
+      expect(_hex(light.sheetMuted), '#605D58');
+      // WF18 chips and WF12 current row and muted text.
+      expect(_hex(dark.drawerChip), '#333333');
+      expect(_hex(dark.sheetCurrentRow), '#383838');
+      expect(_hex(dark.sheetMuted), '#CACACA');
+      // The White background's rules (BG 4L+).
+      expect(
+        _hex(
+          ReaderPalette.of(
+            ReaderBackground.white,
+            Brightness.light,
+          ).drawerDivider,
+        ),
+        '#E9E9E9',
+      );
     });
 
     test('fixed colours', () {

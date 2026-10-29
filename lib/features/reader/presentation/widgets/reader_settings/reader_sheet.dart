@@ -55,18 +55,90 @@ TextStyle readerSheetText(
 /// The smallest a tap target on a sheet may be, either way.
 const double readerSheetTapTarget = 44;
 
+/// The handle's gap from a sheet's top edge, 8 on every mock; the title row
+/// follows right under the handle, so every sheet's header lines up.
+const double readerSheetHandleTop = 8;
+
+/// A sheet header's icon buttons: [readerSheetTapTarget] square, not
+/// padded out to Material's 48.
+final ButtonStyle readerSheetIconButtonStyle = IconButton.styleFrom(
+  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+);
+
+/// How much each sheet dims the page behind it, as measured on its mock.
+abstract final class ReaderSheetDim {
+  /// Display (WF17): light, so size and background changes show on the page.
+  static const double display = 0.12;
+
+  /// Languages (WF21) and Sections (WF11).
+  static const double languages = 0.34;
+  static const double sections = 0.34;
+
+  /// More settings (WF19) and More (WF23).
+  static const double moreSettings = 0.40;
+  static const double more = 0.40;
+}
+
 /// Shows a reader sheet built by [builder]: it is as tall as its content,
-/// up to most of the screen, and closes on a drag down.
+/// up to most of the screen, and closes on a drag down. The page behind it
+/// is dimmed by [dim] black; a sheet changes that while open with
+/// [setReaderSheetDim].
 Future<T?> showReaderSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
-}) => showModalBottomSheet<T>(
-  context: context,
-  backgroundColor: Colors.transparent,
-  isScrollControlled: true,
-  useSafeArea: true,
-  builder: builder,
-);
+  required double dim,
+}) {
+  final navigator = Navigator.of(context);
+  final localizations = MaterialLocalizations.of(context);
+  return navigator.push(
+    _ReaderSheetRoute<T>(
+      dim: dim,
+      builder: builder,
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
+      barrierLabel: localizations.scrimLabel,
+      barrierOnTapHint: localizations.scrimOnTapHint(
+        localizations.bottomSheetLabel,
+      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+    ),
+  );
+}
+
+/// Sets how much the page behind the sheet at [context] is dimmed.
+void setReaderSheetDim(BuildContext context, double dim) {
+  final route = ModalRoute.of(context);
+  if (route is _ReaderSheetRoute) route.dim = dim;
+}
+
+/// A bottom sheet route whose dim can change while it is open.
+class _ReaderSheetRoute<T> extends ModalBottomSheetRoute<T> {
+  _ReaderSheetRoute({
+    required double dim,
+    required super.builder,
+    super.capturedThemes,
+    super.barrierLabel,
+    super.barrierOnTapHint,
+    super.backgroundColor,
+    required super.isScrollControlled,
+    super.useSafeArea,
+  }) : _dim = dim;
+
+  double _dim;
+
+  set dim(double value) {
+    if (value == _dim) return;
+    _dim = value;
+    changedInternalState();
+  }
+
+  @override
+  Color get barrierColor => Colors.black.withValues(alpha: _dim);
+}
 
 /// A sheet over the reader: a handle, its [title] with ✕ (and ← when
 /// [onBack] is set), then [child], in the drawer colours of the reader's
@@ -139,7 +211,7 @@ class ReaderSheet extends ConsumerWidget {
             children: [
               Center(
                 child: Container(
-                  margin: const EdgeInsets.only(top: 10),
+                  margin: const EdgeInsets.only(top: readerSheetHandleTop),
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
@@ -226,6 +298,8 @@ class _SheetIconButton extends StatelessWidget {
   Widget build(BuildContext context) => IconButton(
     icon: Icon(icon, size: 22, color: color),
     tooltip: tooltip,
+    // 44 rather than Material's 48, so the title row is 44 tall.
+    style: readerSheetIconButtonStyle,
     constraints: const BoxConstraints(
       minWidth: readerSheetTapTarget,
       minHeight: readerSheetTapTarget,

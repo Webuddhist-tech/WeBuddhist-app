@@ -35,7 +35,9 @@ import 'package:share_plus/share_plus.dart';
 
 /// The text with the selected verse's sheet below it (WF13–WF16): the split
 /// view. The sheet takes the part of the height the split ratio leaves it,
-/// and is dragged by its top to resize or close.
+/// and is dragged by its top to resize or close. While it is open the text
+/// is dimmed by [dim] black, taps still reaching it, and the sheet casts a
+/// soft shadow up onto it.
 class ReaderVerseSplitView extends ConsumerWidget {
   const ReaderVerseSplitView({
     super.key,
@@ -45,6 +47,9 @@ class ReaderVerseSplitView extends ConsumerWidget {
 
   final ReaderParams params;
   final Widget mainContent;
+
+  /// As measured on WF13: the text, the verse's card included, at 90%.
+  static const double dim = 0.10;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,15 +64,49 @@ class ReaderVerseSplitView extends ConsumerWidget {
           children: [
             SizedBox(
               height: availableHeight - sheetHeight,
-              child: mainContent,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  mainContent,
+                  IgnorePointer(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      color: Colors.black.withValues(
+                        alpha: segment == null ? 0 : dim,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (segment != null)
-              SizedBox(
-                height: sheetHeight,
-                child: ReaderVerseSheet(
-                  segment: segment,
-                  params: params,
-                  availableHeight: availableHeight,
+              // The dimmed page shows past the sheet's rounded corners.
+              ColoredBox(
+                color: Color.alphaBlend(
+                  Colors.black.withValues(alpha: dim),
+                  ReaderPalette.resolve(Theme.of(context), ref).background,
+                ),
+                // The shadow fades up over the text's last 30 points (WF16).
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.14),
+                        blurRadius: 30,
+                      ),
+                    ],
+                  ),
+                  child: SizedBox(
+                    height: sheetHeight,
+                    child: ReaderVerseSheet(
+                      segment: segment,
+                      params: params,
+                      availableHeight: availableHeight,
+                    ),
+                  ),
                 ),
               ),
           ],
@@ -164,7 +203,7 @@ class _ReaderVerseSheetState extends ConsumerState<ReaderVerseSheet> {
               children: [
                 Center(
                   child: Container(
-                    margin: const EdgeInsets.only(top: 10, bottom: 8),
+                    margin: const EdgeInsets.only(top: readerSheetHandleTop),
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
@@ -185,7 +224,7 @@ class _ReaderVerseSheetState extends ConsumerState<ReaderVerseSheet> {
           ),
           if (tabs.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: ReaderSheetSegments<ReaderResourceTab>(
                 values: tabs,
                 selected: tabs.contains(open) ? open! : tabs.first,
@@ -222,7 +261,7 @@ class _ReaderVerseSheetState extends ConsumerState<ReaderVerseSheet> {
                 params: widget.params,
                 rootText: true,
               ),
-              ReaderResourceTab.videos => _VideosTab(
+              ReaderResourceTab.videos => ReaderVideosTab(
                 videos: info.valueOrNull?.videos ?? const [],
                 onOpened: () => _track(ReaderAction.video),
               ),
@@ -423,6 +462,7 @@ class _VerseHeaderState extends ConsumerState<_VerseHeader> {
     }) => IconButton(
       tooltip: tooltip,
       onPressed: busy ? null : onTap,
+      style: readerSheetIconButtonStyle,
       constraints: const BoxConstraints(
         minWidth: readerSheetTapTarget,
         minHeight: readerSheetTapTarget,
@@ -488,9 +528,14 @@ String readerPlainText(String html) {
   return text.replaceAll(RegExp(r'<[^>]*>'), '').trim();
 }
 
-/// The Videos tab: the videos about the verse. A tap plays one.
-class _VideosTab extends StatelessWidget {
-  const _VideosTab({required this.videos, required this.onOpened});
+/// The Videos tab (WF16): the videos about the verse, two to a row, each a
+/// thumbnail with a play mark and its title. A tap plays one.
+class ReaderVideosTab extends ConsumerWidget {
+  const ReaderVideosTab({
+    super.key,
+    required this.videos,
+    required this.onOpened,
+  });
 
   final List<SegmentVideo> videos;
   final VoidCallback onOpened;
@@ -509,55 +554,120 @@ class _VideosTab extends StatelessWidget {
   }
 
   @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final style = ReaderStyle.of(context, ref);
+    final palette = style.palette;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      children: [
+        Wrap(
+          spacing: _gap,
+          runSpacing: 20,
+          children: [
+            for (final video in videos)
+              LayoutBuilder(
+                builder: (context, _) {
+                  final width =
+                      (MediaQuery.sizeOf(context).width - 32 - _gap) / 2;
+                  return SizedBox(
+                    width: width,
+                    child: _VideoCard(
+                      video: video,
+                      palette: palette,
+                      titleFamily: style.type.family('en'),
+                      onTap: () => _play(context, video),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static const double _gap = 12;
+}
+
+/// [video] as WF16 draws it: a rounded 16:9 thumbnail with the play mark,
+/// then its title on up to two lines.
+class _VideoCard extends StatelessWidget {
+  const _VideoCard({
+    required this.video,
+    required this.palette,
+    required this.titleFamily,
+    required this.onTap,
+  });
+
+  final SegmentVideo video;
+  final ReaderPalette palette;
+  final String titleFamily;
+  final VoidCallback onTap;
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final placeholder = theme.colorScheme.onSurface.withValues(alpha: 0.08);
-    return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      itemCount: videos.length,
-      separatorBuilder: (_, __) => const SizedBox(width: 16),
-      itemBuilder: (context, index) {
-        final video = videos[index];
-        return SizedBox(
-          width:
-              (MediaQuery.sizeOf(context).width * 0.46)
-                  .clamp(160.0, 232.0)
-                  .toDouble(),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: () => _play(context, video),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: CachedNetworkImage(
+    final placeholder = ColoredBox(color: palette.drawerChip);
+    return Semantics(
+      button: true,
+      label: video.title,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedNetworkImage(
                       imageUrl: video.thumbnailUrl,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => ColoredBox(color: placeholder),
-                      errorWidget:
-                          (_, __, ___) => ColoredBox(color: placeholder),
+                      placeholder: (_, __) => placeholder,
+                      errorWidget: (_, __, ___) => placeholder,
                     ),
-                  ),
+                    Center(
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.45),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: const Icon(
+                          AppAssets.play,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  video.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    height: 1.15,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 8),
+            Text(
+              video.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: titleFamily,
+                fontSize: 14,
+                height: 1.3,
+                color: palette.ink,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

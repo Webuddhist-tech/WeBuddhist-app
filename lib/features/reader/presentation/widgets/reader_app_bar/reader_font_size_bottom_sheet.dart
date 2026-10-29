@@ -59,11 +59,20 @@ class ReaderDisplaySheet extends ConsumerStatefulWidget {
 class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
   bool _moreSettings = false;
 
+  /// More settings dims the page more than Display (WF19, WF17).
+  void _showMoreSettings(bool shown) {
+    setReaderSheetDim(
+      context,
+      shown ? ReaderSheetDim.moreSettings : ReaderSheetDim.display,
+    );
+    setState(() => _moreSettings = shown);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_moreSettings) {
       return _MoreSettingsPage(
-        onBack: () => setState(() => _moreSettings = false),
+        onBack: () => _showMoreSettings(false),
         onChangeLanguages: widget.onChangeLanguages,
       );
     }
@@ -142,7 +151,7 @@ class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
             ReaderSheetRow(
               label: l10n.reader_more_settings,
               trailing: const Icon(AppAssets.caretRight),
-              onTap: () => setState(() => _moreSettings = true),
+              onTap: () => _showMoreSettings(true),
             ),
           ],
         ],
@@ -473,6 +482,7 @@ void showReaderDisplaySheet(
 }) {
   showReaderSheet<void>(
     context,
+    dim: ReaderSheetDim.display,
     builder:
         (_) => ReaderDisplaySheet(
           scope: scope,

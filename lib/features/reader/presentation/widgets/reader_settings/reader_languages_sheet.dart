@@ -472,6 +472,7 @@ Future<void> showReaderLanguagesSheet(
 }) {
   return showReaderSheet<void>(
     context,
+    dim: ReaderSheetDim.languages,
     builder:
         (_) => ReaderLanguagesSheet(
           scope: scope,

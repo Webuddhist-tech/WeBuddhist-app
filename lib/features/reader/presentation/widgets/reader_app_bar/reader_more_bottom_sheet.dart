@@ -189,6 +189,7 @@ void showReaderMoreBottomSheet(
 }) {
   showReaderSheet<void>(
     context,
+    dim: ReaderSheetDim.more,
     builder:
         (_) => ReaderMoreBottomSheet(
           textId: textId,

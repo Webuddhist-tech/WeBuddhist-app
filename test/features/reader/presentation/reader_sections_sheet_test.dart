@@ -56,6 +56,7 @@ Future<ValueNotifier<ReaderPageSection?>> _open(
                   onPressed: () async {
                     picked.value = await showReaderSheet<ReaderPageSection>(
                       context,
+                      dim: ReaderSheetDim.sections,
                       builder:
                           (_) => ReaderSectionsSheet(
                             snapshot: ValueNotifier(snapshot),
