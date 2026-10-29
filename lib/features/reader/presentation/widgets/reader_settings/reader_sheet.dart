@@ -512,6 +512,10 @@ class ReaderSheetLabel extends ConsumerWidget {
 
 /// One of a few choices side by side in a rounded track, the chosen one
 /// raised in white as WF19/WF20 draw it (Compact · Normal · Relaxed).
+///
+/// The track is drawn 40 tall, the chosen one inset 3 (WF13, WF15, WF19);
+/// each choice answers taps over [height], 2 past the track either way, so
+/// it is the Sheets card's 44 high. Spacing around it allows for the 2.
 class ReaderSheetSegments<T> extends ConsumerWidget {
   const ReaderSheetSegments({
     super.key,
@@ -526,57 +530,75 @@ class ReaderSheetSegments<T> extends ConsumerWidget {
   final String Function(T value) labelOf;
   final ValueChanged<T> onSelected;
 
+  /// The height taps are answered over; the track is 4 less.
+  static const double height = readerSheetTapTarget;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ReaderPalette.resolve(Theme.of(context), ref);
-    return Container(
-      // 40 tall, the chosen one inset 3 (WF13, WF15, WF19).
-      height: 40,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: palette.drawerChip,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+    return SizedBox(
+      height: height,
+      child: Stack(
         children: [
-          for (final value in values)
-            Expanded(
-              child: Semantics(
-                button: true,
-                selected: value == selected,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    onSelected(value);
-                  },
-                  child: Container(
-                    alignment: Alignment.center,
-                    decoration:
-                        value == selected
-                            ? BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                            )
-                            : null,
-                    child: Text(
-                      labelOf(value),
-                      style: readerSheetText(
-                        context,
-                        value == selected
-                            ? ReaderSheetTextRole.segmentSelected
-                            : ReaderSheetTextRole.segment,
-                        // The raised segment is white in light and dark.
-                        color:
-                            value == selected
-                                ? ReaderPalette.inkLight
-                                : palette.ink,
+          Positioned.fill(
+            top: 2,
+            bottom: 2,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: palette.drawerChip,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Row(
+              children: [
+                for (final value in values)
+                  Expanded(
+                    child: Semantics(
+                      button: true,
+                      selected: value == selected,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          onSelected(value);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Container(
+                            alignment: Alignment.center,
+                            decoration:
+                                value == selected
+                                    ? BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(6),
+                                    )
+                                    : null,
+                            child: Text(
+                              labelOf(value),
+                              style: readerSheetText(
+                                context,
+                                value == selected
+                                    ? ReaderSheetTextRole.segmentSelected
+                                    : ReaderSheetTextRole.segment,
+                                // The raised segment is white in light and
+                                // dark.
+                                color:
+                                    value == selected
+                                        ? ReaderPalette.inkLight
+                                        : palette.ink,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+              ],
             ),
+          ),
         ],
       ),
     );

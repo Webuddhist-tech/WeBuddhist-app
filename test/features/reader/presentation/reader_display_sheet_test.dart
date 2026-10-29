@@ -214,6 +214,16 @@ void main() {
   });
 
   group('More settings', () {
+    testWidgets('every tap target is at least 44 x 44, here and on Display', (
+      tester,
+    ) async {
+      await _open(tester);
+      expect(_smallTapTargets(tester), isEmpty, reason: 'Display');
+      await tester.tap(find.text('More settings'));
+      await tester.pumpAndSettle();
+      expect(_smallTapTargets(tester), isEmpty, reason: 'More settings');
+    });
+
     testWidgets('spacing and verse numbers, and back to Display', (
       tester,
     ) async {
@@ -256,6 +266,54 @@ void main() {
       expect(find.byType(ReaderDisplaySheet), findsNothing);
     });
   });
+}
+
+/// Every tap target on the open sheet that is under the Sheets card's
+/// 44 x 44, by what it says or is.
+List<String> _smallTapTargets(WidgetTester tester) {
+  final sheet = find.byType(ReaderDisplaySheet);
+  final targets = find.descendant(
+    of: sheet,
+    matching: find.byWidgetPredicate(
+      (w) =>
+          (w is GestureDetector && w.onTap != null) ||
+          (w is InkWell && w.onTap != null) ||
+          (w is IconButton && w.onPressed != null),
+    ),
+  );
+  // A switch's own drawing sits under an AbsorbPointer: the tap target
+  // around it is what answers.
+  bool absorbed(Element element) {
+    var found = false;
+    element.visitAncestorElements((ancestor) {
+      final widget = ancestor.widget;
+      found = widget is AbsorbPointer && widget.absorbing;
+      return !found;
+    });
+    return found;
+  }
+
+  return [
+    for (final element in targets.evaluate())
+      if (!absorbed(element) &&
+          (element.size!.width < 44 || element.size!.height < 44))
+        '${_labelOf(element)} ${element.size!.width.toStringAsFixed(1)}'
+            'x${element.size!.height.toStringAsFixed(1)}',
+  ];
+}
+
+String _labelOf(Element element) {
+  String? label;
+  void visit(Element e) {
+    if (label != null) return;
+    final widget = e.widget;
+    if (widget is Text) label = widget.data;
+    if (widget is Icon) label = 'icon';
+    e.visitChildElements(visit);
+  }
+
+  visit(element);
+  return label ?? element.widget.runtimeType.toString();
 }
 
 /// Opens the Display sheet the way the reader does, on a 390 x 844 phone.

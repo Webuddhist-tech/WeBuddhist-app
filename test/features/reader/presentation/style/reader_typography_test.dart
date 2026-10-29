@@ -203,6 +203,48 @@ void main() {
     });
   });
 
+  group('headings by depth', () {
+    // ×1.2 / 1.0 / 0.9 of the script's "alone" size.
+    final type = _at(3);
+
+    test('Latin 22 / 18 / 16, Tibetan 32 / 27 / 24', () {
+      expect([for (var d = 0; d < 3; d++) type.heading(d, ReaderScript.latin)]
+          .map((m) => m.fontSize), [22, 18, 16]);
+      expect([for (var d = 0; d < 3; d++) type.heading(d, ReaderScript.tibetan)]
+          .map((m) => m.fontSize), [32, 27, 24]);
+    });
+
+    test('deeper levels stay at 0.9', () {
+      expect(type.heading(5, ReaderScript.latin).fontSize, 16);
+    });
+  });
+
+  group('interface text', () {
+    test('script factors: Tibetan 1.5, Chinese 1.05, the others 1', () {
+      expect({for (final s in ReaderScript.values) s: s.interfaceScale}, {
+        ReaderScript.latin: 1.0,
+        ReaderScript.tibetan: 1.5,
+        ReaderScript.chinese: 1.05,
+        ReaderScript.devanagari: 1.0,
+        ReaderScript.cyrillic: 1.0,
+      });
+    });
+
+    test('section pill 14 (Tibetan 21, Chinese 15); bar and Live pill 13 '
+        '(Tibetan 20, Chinese 14)', () {
+      List<double> sizes(double size) => [
+        for (final s in [
+          ReaderScript.latin,
+          ReaderScript.tibetan,
+          ReaderScript.chinese,
+        ])
+          ReaderTypography.chromeSize(size, s),
+      ];
+      expect(sizes(ReaderTypography.sectionPillSize), [14, 21, 15]);
+      expect(sizes(ReaderTypography.bottomBarSize), [13, 20, 14]);
+    });
+  });
+
   test('each line follows its own step', () {
     const type = ReaderTypography(
       settings: ReaderTextSize(originalStep: 1, translationStep: 7),

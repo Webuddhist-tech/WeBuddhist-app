@@ -82,6 +82,10 @@ void main() {
       final label = tester.getRect(number);
       expect(label.top, greaterThanOrEqualTo(text.bottom));
       expect(label.right, closeTo(800 - 16, 0.5));
+      // Medium, at the card's Tibetan verse number size (16 at step 3).
+      final style = tester.widget<Text>(number).style!;
+      expect(style.fontWeight, FontWeight.w500);
+      expect(style.fontSize, 16);
     });
 
     testWidgets('hidden while verse numbers are turned off', (tester) async {

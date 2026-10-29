@@ -217,7 +217,8 @@ class _MoreSettingsPage extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ReaderSheetLabel(l10n.reader_spacing),
-          const SizedBox(height: 8),
+          // 8 to the drawn track: its tap target reaches 2 above it.
+          const SizedBox(height: 6),
           ReaderSheetSegments<ReaderSpacing>(
             values: ReaderSpacing.values,
             selected: spacing,
@@ -229,7 +230,7 @@ class _MoreSettingsPage extends ConsumerWidget {
                 },
             onSelected: ref.read(readerTextSizeProvider.notifier).setSpacing,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           ReaderSheetLabel(l10n.reader_in_the_text),
           const SizedBox(height: 4),
           ReaderSheetRow(

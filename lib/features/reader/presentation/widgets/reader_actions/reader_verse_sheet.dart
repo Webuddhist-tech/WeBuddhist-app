@@ -224,7 +224,9 @@ class _ReaderVerseSheetState extends ConsumerState<ReaderVerseSheet> {
           ),
           if (tabs.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              // The track lands 72 below the top, as WF13; its tap target
+              // reaches 2 past it either way.
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
               child: ReaderSheetSegments<ReaderResourceTab>(
                 values: tabs,
                 selected: tabs.contains(open) ? open! : tabs.first,
