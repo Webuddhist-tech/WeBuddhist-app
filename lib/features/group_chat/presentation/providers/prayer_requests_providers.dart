@@ -99,8 +99,8 @@ class _PendingPrayers {
   int get outstanding => queued + inFlight;
 }
 
-/// What changed on screen while a first page was being fetched. That page
-/// was read before these changes, so they are laid back over it.
+/// What changed on screen while a list read was being fetched. That read
+/// was taken before these changes, so they are laid back over it.
 class _ChangesDuringFetch {
   /// Rows that came in by send or socket, with the viewer they came for.
   final Map<String, (ChatMessageDTO, String?)> added = {};
@@ -434,8 +434,20 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// The list on screen came from the device, so a failed re-read stays quiet.
   bool _seededFromStore = false;
 
-  /// Set while a first page is out; see [_ChangesDuringFetch].
-  _ChangesDuringFetch? _changes;
+  /// One per list read still out; see [_ChangesDuringFetch].
+  final List<_ChangesDuringFetch> _trackers = [];
+
+  /// Numbers each list read as it goes out, and the latest one shown, so an
+  /// older read landing late never replaces a newer one.
+  int _readSeq = 0;
+  int _shownRead = 0;
+
+  /// Records a local change on every list read still out.
+  void _track(void Function(_ChangesDuringFetch changes) record) {
+    for (final changes in _trackers) {
+      record(changes);
+    }
+  }
 
   /// Live requests counted but not in the list: outside the intention in
   /// view (null) or held for the end of a sort still paging (the row, in
@@ -588,13 +600,22 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         _applyFirstPage(stored.page);
       }
     }
-    final changes = _changes = _ChangesDuringFetch();
-    final result = await _fetchPage(roomId, skip: 0);
-    if (identical(_changes, changes)) _changes = null;
+    final read = ++_readSeq;
+    final changes = _ChangesDuringFetch();
+    _trackers.add(changes);
+    final Either<Failure, ChatMessagesPage> result;
+    try {
+      result = await _fetchPage(roomId, skip: 0);
+    } finally {
+      _trackers.remove(changes);
+    }
     if (!mounted || generation != _listGeneration) return;
 
     final seeded = _seededFromStore;
     _seededFromStore = false;
+    // A refresh sent after this page has already shown newer rows.
+    if (read < _shownRead) return;
+    _shownRead = read;
     result.fold(
       (failure) {
         state = state.copyWith(
@@ -678,9 +699,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// After a fresh first page: rows sent or pushed while it was out go back
   /// in, and taps not yet confirmed are shown over the fresh counts.
   void _reapplyLocal(ChatMessagesPage page, _ChangesDuringFetch changes) {
-    for (final (message, viewerId) in changes.added.values) {
-      appendLive(message, viewerId: viewerId);
-    }
+    _reappendAdded(changes);
     for (final entry in _pending.entries) {
       ChatMessageDTO? row;
       for (final message in page.messages) {
@@ -695,6 +714,13 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         recentPrayers: row.recentPrayers,
       );
       _render(entry.key, entry.value);
+    }
+  }
+
+  /// Rows sent or pushed while a read was out; the read predates them.
+  void _reappendAdded(_ChangesDuringFetch changes) {
+    for (final (message, viewerId) in changes.added.values) {
+      appendLive(message, viewerId: viewerId);
     }
   }
 
@@ -827,23 +853,32 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final roomId = state.roomId;
     if (roomId == null) return false;
     final generation = _listGeneration;
+    final read = ++_readSeq;
     final window = math.max(_limit, state.skip);
     final rows = <ChatMessageDTO>[];
     final seen = <String>{};
     var total = 0;
-    for (var skip = 0; skip < window; skip += _windowLimit) {
-      final result = await _fetchPage(
-        roomId,
-        skip: skip,
-        limit: math.min(_windowLimit, window - skip),
-      );
-      if (!mounted || generation != _listGeneration) return false;
-      final page = result.getRight().toNullable();
-      if (page == null) return false;
-      total = page.total;
-      rows.addAll(page.messages.where((row) => seen.add(row.id)));
-      if (page.messages.length < _windowLimit) break;
+    final changes = _ChangesDuringFetch();
+    _trackers.add(changes);
+    try {
+      for (var skip = 0; skip < window; skip += _windowLimit) {
+        final result = await _fetchPage(
+          roomId,
+          skip: skip,
+          limit: math.min(_windowLimit, window - skip),
+        );
+        if (!mounted || generation != _listGeneration) return false;
+        final page = result.getRight().toNullable();
+        if (page == null) return false;
+        total = page.total;
+        rows.addAll(page.messages.where((row) => seen.add(row.id)));
+        if (page.messages.length < _windowLimit) break;
+      }
+    } finally {
+      _trackers.remove(changes);
     }
+    if (read < _shownRead) return false;
+    _shownRead = read;
 
     final known = {
       for (final request in state.requests) request.id,
@@ -853,14 +888,19 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         total > state.total ||
         rows.any((row) => _isLive(row) && !known.contains(row.id));
     final heldById = {for (final request in state.requests) request.id: request};
-    _applyFirstPage(
+    final page = _withLocalChanges(
       ChatMessagesPage(
         messages: [for (final row in rows) _newerOf(heldById[row.id], row)],
         skip: 0,
         limit: window,
         total: total,
       ),
+      changes,
     );
+    _applyFirstPage(page);
+    _reappendAdded(changes);
+    // The server's rows, not the merged ones: a held copy's optimistic taps
+    // are not confirmed.
     for (final row in rows) {
       final pending = _pending[row.id];
       if (pending == null) continue;
@@ -957,7 +997,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           );
           return message;
         });
-        _changes?.edited.add(messageId);
+        _track((changes) => changes.edited.add(messageId));
       }
       return message;
     });
@@ -980,7 +1020,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         intention: message.intention,
       ),
     );
-    _changes?.edited.add(message.id);
+    _track((changes) => changes.edited.add(message.id));
   }
 
   /// An edit onto the row as it is now. A new body makes the old translation
@@ -1081,7 +1121,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           clearCompletedAt: !completed,
         ),
       );
-      _changes?.edited.add(messageId);
+      _track((changes) => changes.edited.add(messageId));
       return unit;
     });
   }
@@ -1096,7 +1136,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (state.roomId != null && message.roomId != state.roomId) return;
     if (state.requests.any((existing) => existing.id == message.id)) return;
     if (_unlisted.containsKey(message.id)) return;
-    _changes?.added[message.id] = (message, viewerId);
+    _track((changes) => changes.added[message.id] = (message, viewerId));
     final viewer = viewerId?.trim() ?? '';
     final listed =
         state.filter.mine
@@ -1142,8 +1182,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// place a picked request is shown.
   void _dropRow(String messageId, {required bool inRoom}) {
     if (inRoom) {
-      _changes?.deleted.add(messageId);
-      _changes?.added.remove(messageId);
+      _track((changes) {
+        changes.deleted.add(messageId);
+        changes.added.remove(messageId);
+      });
     }
     if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
     final unlisted = _unlisted.containsKey(messageId);

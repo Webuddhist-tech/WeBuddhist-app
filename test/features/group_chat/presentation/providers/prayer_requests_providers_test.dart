@@ -2060,6 +2060,69 @@ void main() {
       expect(notifier.state.hasMore, isFalse);
     });
 
+    test('a request sent during a refresh survives it', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.listGate = Completer<void>();
+      final refresh = notifier.refreshLatest();
+      await _settle();
+      notifier.appendLive(_prayer('b'));
+      repository.listGate!.complete();
+      repository.listGate = null;
+      await refresh;
+
+      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+      expect(notifier.state.total, 2);
+    });
+
+    test('a request deleted during a refresh stays gone', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.listGate = Completer<void>();
+      final refresh = notifier.refreshLatest();
+      await _settle();
+      notifier.applyDeletion('a');
+      repository.listGate!.complete();
+      repository.listGate = null;
+      await refresh;
+
+      expect(notifier.state.requests.map((r) => r.id), ['b']);
+      expect(notifier.state.total, 1);
+    });
+
+    test('an older refresh landing late is dropped', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final slow = Completer<void>();
+      repository.listGate = slow;
+      final older = notifier.refreshLatest();
+      await _settle();
+      repository.listGate = null;
+      repository.history = [_prayer('b'), _prayer('a')];
+      await notifier.refreshLatest();
+      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+
+      // The slow read was taken before 'b' existed.
+      repository.history = [_prayer('a')];
+      slow.complete();
+      await older;
+      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+    });
+
     test('applyDeletion drops the request', () async {
       repository = _FakeGroupChatRepository(
         history: [_prayer('a'), _prayer('b')],

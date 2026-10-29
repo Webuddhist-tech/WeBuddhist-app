@@ -40,6 +40,9 @@ class _FixedContentLanguage extends StateNotifier<String>
 class _FakePostRepository extends Fake implements GroupPostRepositoryInterface {
   int fetches = 0;
 
+  /// Newest first, as the group's posts come back.
+  List<String> postIds = [];
+
   @override
   Future<Either<Failure, ConnectPostsPage>> getGroupPosts(
     String groupId, {
@@ -48,7 +51,21 @@ class _FakePostRepository extends Fake implements GroupPostRepositoryInterface {
   }) async {
     fetches++;
     return Right(
-      ConnectPostsPage(posts: const [], skip: skip, limit: limit, total: 0),
+      ConnectPostsPage(
+        posts: [
+          for (final id in postIds.skip(skip).take(limit))
+            ConnectPost(
+              id: id,
+              groupId: groupId,
+              caption: id,
+              status: 'published',
+              creatorName: 'Tenzin',
+            ),
+        ],
+        skip: skip,
+        limit: limit,
+        total: postIds.length,
+      ),
     );
   }
 
@@ -157,6 +174,25 @@ void main() {
     await settle();
     expect(posts.fetches, before + 1);
     expect(profile.refreshes, 0);
+  });
+
+  test('a new post keeps the pages already loaded', () async {
+    posts.postIds = [for (var i = 25; i > 0; i--) 'p$i'];
+    signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 1)});
+    container.listen(groupPostsProvider('g1'), (_, _) {});
+    await pumpEventQueue();
+    await container.read(groupPostsProvider('g1').notifier).loadMore();
+    expect(container.read(groupPostsProvider('g1')).posts, hasLength(25));
+
+    posts.postIds = ['p26', ...posts.postIds];
+    signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 2)});
+    await settle();
+
+    final state = container.read(groupPostsProvider('g1'));
+    expect(state.posts, hasLength(26));
+    expect(state.posts.first.id, 'p26');
+    expect(state.posts.last.id, 'p1');
+    expect(state.hasMore, isFalse);
   });
 
   test('an events signal revalidates the events source while shown', () async {

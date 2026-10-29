@@ -27,10 +27,10 @@ final groupSignalsProvider = Provider.autoDispose.family<void, String>((
   );
 });
 
-/// Reloads the posts list in place when it is on screen.
+/// Merges new posts in when the list is on screen, keeping loaded pages.
 void refreshGroupPostsIfShown(Ref ref, String groupId) {
   if (!ref.exists(groupPostsProvider(groupId))) return;
-  ref.read(groupPostsProvider(groupId).notifier).loadInitial();
+  ref.read(groupPostsProvider(groupId).notifier).refreshLatest();
 }
 
 /// Revalidates the events source (its stream updates the bound provider)

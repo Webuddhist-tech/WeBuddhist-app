@@ -126,6 +126,9 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   bool _firstPageInFlight = false;
   int _pageEpoch = 0;
 
+  /// Numbers merged refreshes so an older one landing late is dropped.
+  int _refreshSeq = 0;
+
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
@@ -199,8 +202,11 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
+        // A merged refresh or an own post can already hold some of these.
+        final known = {for (final post in state.posts) post.id};
+        final fresh = page.posts.where((post) => !known.contains(post.id));
         state = state.copyWith(
-          posts: [...state.posts, ...page.posts],
+          posts: [...state.posts, ...fresh],
           total: page.total,
           isLoadingMore: false,
           hasMore: page.hasMore,
@@ -208,6 +214,38 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
           clearError: true,
         );
       },
+    );
+  }
+
+  /// Re-reads the first page after someone posts and merges it by id: new
+  /// posts go on top and the pages already loaded stay.
+  Future<void> refreshLatest() async {
+    if (state.isLoading || !state.hasLoaded) return;
+    final generation = _requestGeneration;
+    final seq = ++_refreshSeq;
+    final result = await _repository.getGroupPosts(
+      _groupId,
+      skip: 0,
+      limit: _limit,
+    );
+    if (!mounted || generation != _requestGeneration || seq != _refreshSeq) {
+      return;
+    }
+    final page = result.getRight().toNullable();
+    if (page == null) return;
+
+    final fetched = {for (final post in page.posts) post.id: post};
+    final held = {for (final post in state.posts) post.id};
+    final added = page.posts.where((post) => !held.contains(post.id)).toList();
+    final skip = state.skip + added.length;
+    state = state.copyWith(
+      posts: [
+        ...added,
+        for (final post in state.posts) fetched[post.id] ?? post,
+      ],
+      total: page.total,
+      hasMore: skip < page.total,
+      skip: skip,
     );
   }
 
