@@ -740,6 +740,61 @@ void main() {
       expect(state().splitRatio, 0.3);
     });
 
+    test('follows the verse scrolled to the top, height and tab kept',
+        () async {
+      final notifier = await selected();
+      notifier.openResourceTab('E2-1', ReaderResourceTab.versions);
+      notifier.updateSplitRatio(0.3);
+
+      notifier.followVerse(next);
+      expect(state().selectedSegment, next);
+      expect(state().translationSegmentId, 'E2-2');
+      expect(state().splitRatio, 0.3);
+
+      // Following the verse it is on keeps it open.
+      notifier.followVerse(next);
+      expect(state().hasSelection, isTrue);
+
+      // With no sheet open there is nothing to follow.
+      notifier.closeVerseSheet();
+      notifier.followVerse(verse);
+      expect(state().hasSelection, isFalse);
+    });
+
+    test('a kept tab the new verse has nothing for gives way', () async {
+      final notifier = await selected();
+      notifier.openResourceTab('E2-1', ReaderResourceTab.commentary);
+      notifier.followVerse(next);
+
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-2',
+          hasCommentaries: false,
+          hasVersions: true,
+          hasVideos: false,
+          hasRootText: false,
+        ),
+        ReaderResourceTab.versions,
+      );
+      expect(state().translationSegmentId, 'E2-2');
+      expect(state().isCommentaryOpen, isFalse);
+
+      // A verse with nothing at all leaves no tab open.
+      notifier.followVerse(verse);
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-1',
+          hasCommentaries: false,
+          hasVersions: false,
+          hasVideos: false,
+          hasRootText: false,
+        ),
+        isNull,
+      );
+      expect(state().resourceTab, isNull);
+      expect(state().selectedSegment, verse);
+    });
+
     test('closing it, or tapping the verse again, leaves nothing open',
         () async {
       final notifier = await selected();

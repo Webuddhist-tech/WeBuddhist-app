@@ -36,6 +36,8 @@ class ReaderPalette {
     required this.drawerChip,
     required this.drawerDivider,
     required this.drawerHandle,
+    required this.chipFill,
+    required this.chipOutline,
     required this.sheetMuted,
     required this.sheetCurrentRow,
     required this.selectedChip,
@@ -95,6 +97,12 @@ class ReaderPalette {
   final Color drawerDivider;
   final Color drawerHandle;
 
+  /// An unselected chip's fill and edge: in light only an edge, as every
+  /// light mock draws it (WF13, WF17, WF21); in dark filled as the card
+  /// gives (WF18).
+  final Color chipFill;
+  final Color chipOutline;
+
   /// The sections sheet: secondary text and the row on screen.
   final Color sheetMuted;
   final Color sheetCurrentRow;
@@ -121,6 +129,9 @@ class ReaderPalette {
 
   /// Sheets in light mode, on every background, as the mocks draw them.
   static const Color drawerLight = Color(0xFFFBF9F4);
+
+  /// An unselected chip's edge in light, the same on every background.
+  static const Color chipOutlineLight = Color(0xFFDADADA);
 
   /// The palette for the reader's picked background and [theme]'s
   /// brightness.
@@ -150,6 +161,8 @@ class ReaderPalette {
     // on White); the dark ones over the sheet.
     final onDrawer = isDark ? drawer : page;
     final liveHighlight = shade(0.08, 0.10);
+    final drawerChip = shade(0.06, 0.12, over: onDrawer);
+    final drawerDivider = shade(0.10, 0.12, over: onDrawer);
     return ReaderPalette(
       background: page,
       ink: ink,
@@ -173,9 +186,11 @@ class ReaderPalette {
       // (dark Gold, Sky, Robe Saffron); the translation's does not.
       pillMuted: translation,
       drawerBackground: drawer,
-      drawerChip: shade(0.06, 0.12, over: onDrawer),
-      drawerDivider: shade(0.10, 0.12, over: onDrawer),
+      drawerChip: drawerChip,
+      drawerDivider: drawerDivider,
       drawerHandle: shade(0.55, 0.40, over: drawer),
+      chipFill: isDark ? drawerChip : drawer,
+      chipOutline: isDark ? drawerDivider : chipOutlineLight,
       // The sheets' secondary text and current row are drawn as the
       // translation and the live verse's card (WF11, WF12, WF19, WF20).
       sheetMuted: translation,

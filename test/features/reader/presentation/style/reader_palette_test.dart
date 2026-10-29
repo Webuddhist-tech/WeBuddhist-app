@@ -109,8 +109,12 @@ void main() {
       expect(_hex(light.drawerDivider), '#E9DFD0');
       expect(_hex(light.sheetCurrentRow), '#EDE3D4');
       expect(_hex(light.sheetMuted), '#605D58');
+      // Unselected chips: an edge only in light (WF13, WF17, WF21).
+      expect(light.chipFill, light.drawerBackground);
+      expect(_hex(light.chipOutline), '#DADADA');
       // WF18 chips and WF12 current row and muted text.
       expect(_hex(dark.drawerChip), '#333333');
+      expect(dark.chipFill, dark.drawerChip);
       expect(_hex(dark.sheetCurrentRow), '#383838');
       expect(_hex(dark.sheetMuted), '#CACACA');
       // The White background's rules (BG 4L+).

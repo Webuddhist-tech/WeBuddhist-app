@@ -924,6 +924,15 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     );
   }
 
+  /// Moves the open sheet to [segment], the verse scrolled to the top of
+  /// the text, keeping its height and tab. Does nothing with no sheet open
+  /// or when [segment] is already its verse.
+  void followVerse(Segment segment) {
+    if (_isDisposed || !state.hasSelection) return;
+    if (state.selectedSegment!.segmentId == segment.segmentId) return;
+    toggleSegmentSelection(segment);
+  }
+
   /// Closes the verse sheet: no verse selected, no tab open.
   void closeVerseSheet() {
     if (_isDisposed) return;
@@ -938,7 +947,9 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// Opens the selected verse's first tab with something, once its counts
   /// are known: the one a plan task asks for (see [autoOpenPlanPanel]),
   /// else Commentary, Versions, Videos, then Root text. Does nothing when
-  /// [segmentId] is no longer selected or a tab is open. The tab opened.
+  /// [segmentId] is no longer selected or the open tab has something for
+  /// it; an open tab it has nothing for, kept from the verse before, gives
+  /// way, and closes when no tab has anything. The tab opened.
   ReaderResourceTab? openFirstResourceTab(
     String segmentId, {
     required bool hasCommentaries,
@@ -948,7 +959,21 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   }) {
     if (_isDisposed) return null;
     if (state.selectedSegment?.segmentId != segmentId) return null;
-    if (state.resourceTab != null) return null;
+    final open = state.resourceTab;
+    if (open != null) {
+      final hasOpen = switch (open) {
+        ReaderResourceTab.commentary => hasCommentaries,
+        ReaderResourceTab.versions => hasVersions,
+        ReaderResourceTab.videos => hasVideos,
+        ReaderResourceTab.rootText => hasRootText,
+      };
+      if (hasOpen) return null;
+      state = state.copyWith(
+        clearCommentarySegmentId: true,
+        clearTranslationSegmentId: true,
+        clearVideosSegmentId: true,
+      );
+    }
     if (autoOpenPlanPanel(
       segmentId,
       hasCommentaries: hasCommentaries,

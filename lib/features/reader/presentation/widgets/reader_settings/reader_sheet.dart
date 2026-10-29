@@ -530,7 +530,8 @@ class ReaderSheetSegments<T> extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ReaderPalette.resolve(Theme.of(context), ref);
     return Container(
-      height: 38,
+      // 40 tall, the chosen one inset 3 (WF13, WF15, WF19).
+      height: 40,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: palette.drawerChip,
@@ -641,10 +642,9 @@ class ReaderSheetChip extends ConsumerWidget {
             constraints: const BoxConstraints(minHeight: 30, minWidth: 44),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: selected ? palette.selectedChip : palette.drawerChip,
+              color: selected ? palette.selectedChip : palette.chipFill,
               borderRadius: BorderRadius.circular(15),
-              border:
-                  selected ? null : Border.all(color: palette.drawerDivider),
+              border: selected ? null : Border.all(color: palette.chipOutline),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

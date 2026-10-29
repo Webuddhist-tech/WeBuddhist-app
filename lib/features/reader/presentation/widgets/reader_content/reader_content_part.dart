@@ -23,6 +23,7 @@ import 'package:flutter_pecha/features/reader/presentation/style/reader_style.da
 import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_top_verse.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_live_follow.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
@@ -205,6 +206,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   final Map<String, String> _liveAliases = {};
   DateTime? _lastUserPointerAt;
 
+  /// The person scrolled with a verse's sheet open: once the scroll
+  /// settles, the sheet moves to the verse at the top.
+  bool _followTopVerse = false;
+
   @override
   void initState() {
     super.initState();
@@ -233,6 +238,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _debounceTimer = Timer(ReaderConstants.scrollDebounce, () {
       _checkPaginationThresholds();
       _reportFurthestSegment();
+      _followScroll();
     });
 
     _updateCurrentSection();
@@ -265,6 +271,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         !_isUserScrolling && (_isProgrammaticScroll || !_recentUserGesture);
     // Any scroll by the person leaves the live recitation.
     if (!byApp && delta != 0 && _isLiveRecitation) _pauseLiveFollow();
+    if (!byApp && delta != 0) _followTopVerse = true;
     // Paused, the page reads like the normal reader: bringing a verse up
     // above its sheet leaves the bars, and the Paused pill, where they are.
     if (byApp && !_isFollowingLive) return;
@@ -1148,9 +1155,53 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _openFirstTab(index, segment.segmentId);
   }
 
+  /// After the person's scroll settles with a verse's sheet open, the
+  /// sheet moves to the verse now at the top of the text, among its own
+  /// source's verses, keeping its height and tab. The text stays where the
+  /// person left it.
+  void _followScroll() {
+    if (!_followTopVerse || !mounted) return;
+    _followTopVerse = false;
+    if (_isProgrammaticScroll) return;
+    final index = _selectedSourceIndex();
+    if (index == null) return;
+    final entries = _currentEntries();
+    final top = readerTopVerseEntry(
+      _itemPositionsListener.itemPositions.value,
+      (i) =>
+          i < entries.length &&
+          entries[i].source == index &&
+          (entries[i].item?.isSegment ?? false),
+    );
+    final segment = top == null ? null : entries[top].item?.segment;
+    if (segment == null) return;
+    final params = widget.sources[index];
+    if (ref.read(readerNotifierProvider(params)).selectedSegment?.segmentId ==
+        segment.segmentId) {
+      return;
+    }
+    ref.read(readerNotifierProvider(params).notifier).followVerse(segment);
+    _openFirstTab(index, segment.segmentId, scroll: false);
+  }
+
+  /// The started source whose verse has its sheet open, if any.
+  int? _selectedSourceIndex() {
+    for (var i = 0; i < _startedCount; i++) {
+      if (ref.read(readerNotifierProvider(widget.sources[i])).hasSelection) {
+        return i;
+      }
+    }
+    return null;
+  }
+
   /// A tab the segment has nothing for is skipped. A failed count is not a
-  /// zero: Commentary opens and shows its own error.
-  Future<void> _openFirstTab(int index, String segmentId) async {
+  /// zero: Commentary opens and shows its own error. A tapped verse is
+  /// brought to the top of the text ([scroll]).
+  Future<void> _openFirstTab(
+    int index,
+    String segmentId, {
+    bool scroll = true,
+  }) async {
     SegmentInfo? info;
     try {
       info = await ref.read(segmentInfoFutureProvider(segmentId).future);
@@ -1174,7 +1225,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       hasRootText: info?.relatedText.hasRootText ?? false,
     );
     // The verse stays in view above its sheet.
-    _scrollToSegment(segmentId, alignment: 0.0);
+    if (scroll) _scrollToSegment(segmentId, alignment: 0.0);
   }
 
   void _scrollToSegment(String segmentId, {double? alignment}) {
