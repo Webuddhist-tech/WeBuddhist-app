@@ -84,6 +84,28 @@ final groupAccumulatorDetailProvider = AsyncNotifierProvider.autoDispose.family<
   });
 });
 
+/// The server's detail, for anything that hands the user's count on (the
+/// reader mirrors it exactly). The stored copy can be behind chants made
+/// elsewhere, so it is only used, with [allowStored], when the fetch fails.
+Future<GroupAccumulatorDetail?> fetchFreshGroupAccumulatorDetail(
+  ProviderContainer container,
+  String accumulatorId, {
+  bool allowStored = true,
+}) async {
+  final repository = container.read(groupAccumulatorRepositoryProvider);
+  final language = container.read(contentLanguageProvider);
+  final fresh = await repository.refreshGroupAccumulator(
+    accumulatorId,
+    language: language,
+  );
+  final detail = fresh.fold((_) => null, (d) => d);
+  if (detail != null || !allowStored) return detail;
+  final stored = await container.read(
+    groupAccumulatorDetailProvider(accumulatorId).future,
+  );
+  return stored.fold((_) => null, (d) => d);
+}
+
 @immutable
 class GroupAccumulatorMembersKey {
   final String accumulatorId;

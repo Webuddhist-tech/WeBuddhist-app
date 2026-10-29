@@ -2309,4 +2309,62 @@ void main() {
       );
     });
   });
+
+  group('changes while page one is re-read', () {
+    test('a delete and a send made meanwhile survive the stale page', () async {
+      repository = _StaleReadRepository(
+        history: [_prayer('a'), _prayer('b')],
+      );
+      container = buildContainer();
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
+
+      // Re-read page one; the server answers with what it had at the start.
+      final gate = Completer<void>();
+      repository.listGate = gate;
+      unawaited(notifier.retry());
+      await _settle();
+
+      await notifier.delete('a');
+      await notifier.send('new one', intention: 'healing');
+      gate.complete();
+      await _settle();
+
+      final ids = notifier.state.requests.map((r) => r.id).toList();
+      expect(ids, isNot(contains('a')));
+      expect(ids, containsAll(['b', 'sent']));
+    });
+  });
+}
+
+/// Reads its rows when a page is asked for, before the gate opens, as a
+/// request already on its way would.
+class _StaleReadRepository extends _FakeGroupChatRepository {
+  _StaleReadRepository({super.history});
+
+  @override
+  Future<Either<Failure, ChatMessagesPage>> listMessages(
+    String roomId, {
+    int skip = 0,
+    int limit = 20,
+    String? messageType,
+    String? sort,
+    String? intention,
+    String? translationLanguage,
+  }) async {
+    final snapshot = List.of(history);
+    final gate = listGate;
+    listGate = null;
+    if (gate != null) await gate.future;
+    final end = (skip + limit).clamp(0, snapshot.length);
+    return Right(
+      ChatMessagesPage(
+        messages: snapshot.sublist(skip.clamp(0, snapshot.length), end),
+        skip: skip,
+        limit: limit,
+        total: snapshot.length,
+      ),
+    );
+  }
 }

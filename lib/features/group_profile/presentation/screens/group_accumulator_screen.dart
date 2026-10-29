@@ -47,6 +47,9 @@ class _GroupAccumulatorScreenState
   bool _isJoining = false;
   bool _viewTracked = false;
 
+  /// Set while Recite fetches the server count, so a double tap opens once.
+  bool _isFetchingCount = false;
+
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(
@@ -336,6 +339,20 @@ class _GroupAccumulatorScreenState
       return;
     }
 
+    // The detail on screen may still be the stored copy; the reader mirrors
+    // this count, so it has to be the server's.
+    if (_isFetchingCount) return;
+    _isFetchingCount = true;
+    final container = ProviderScope.containerOf(context, listen: false);
+    final GroupAccumulatorDetail? fresh;
+    try {
+      fresh = await fetchFreshGroupAccumulatorDetail(container, detail.id);
+    } finally {
+      _isFetchingCount = false;
+    }
+    if (!context.mounted) return;
+    final startCount = (fresh ?? detail).user?.totalCount ?? 0;
+
     final ended = isPastEndDate(detail.endDate, DateTime.now());
     final sessionCount = await context.push<int>(
       '/reader/$textId',
@@ -348,7 +365,7 @@ class _GroupAccumulatorScreenState
             _resolveGroupName(detail.groupId)?.trim().isNotEmpty == true
                 ? _resolveGroupName(detail.groupId)!.trim()
                 : null,
-        groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+        groupAccumulatorSessionCount: startCount,
         groupAccumulatorEnded: ended,
       ),
     );

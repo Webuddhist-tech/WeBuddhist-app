@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/auth_notifier
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
+import 'package:flutter_pecha/features/group_profile/domain/repositories/group_accumulator_repository.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_accumulator_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
@@ -16,6 +17,22 @@ import 'package:fpdart/fpdart.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// The launcher asks the server for the count it hands on.
+class _FreshDetailRepository implements GroupAccumulatorRepositoryInterface {
+  _FreshDetailRepository([this.fresh = const Right(_detail)]);
+
+  final Either<Failure, GroupAccumulatorDetail> fresh;
+
+  @override
+  Future<Either<Failure, GroupAccumulatorDetail>> refreshGroupAccumulator(
+    String accumulatorId, {
+    required String language,
+  }) async => fresh;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -35,14 +52,19 @@ const _detail = GroupAccumulatorDetail(
 Future<PlanEmbeddedController> _openPractice(
   WidgetTester tester, {
   String? eventId,
+  GroupAccumulatorDetail stored = _detail,
+  Either<Failure, GroupAccumulatorDetail> fresh = const Right(_detail),
 }) async {
   final controller = PlanEmbeddedController();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         authProvider.overrideWith((ref) => _SignedInAuth()),
+        groupAccumulatorRepositoryProvider.overrideWithValue(
+          _FreshDetailRepository(fresh),
+        ),
         groupAccumulatorDetailProvider.overrideWith(
-          () => GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
+          () => GroupAccumulatorDetailNotifier.fixed(Right(stored)),
         ),
         groupProfileProvider.overrideWith(
           () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
@@ -110,5 +132,46 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
+  });
+
+  group('the count handed to the reader', () {
+    GroupAccumulatorDetail withCount(int count) => GroupAccumulatorDetail(
+      id: _detail.id,
+      presetAccumulatorId: _detail.presetAccumulatorId,
+      textId: _detail.textId,
+      groupId: _detail.groupId,
+      title: _detail.title,
+      isJoined: true,
+      user: GroupAccumulatorUserContribution(totalCount: count),
+    );
+
+    testWidgets('is the server\'s, not a stored copy that is behind', (
+      tester,
+    ) async {
+      final controller = await _openPractice(
+        tester,
+        stored: withCount(80),
+        fresh: Right(withCount(100)),
+      );
+
+      expect(controller.navigationContext?.groupAccumulatorSessionCount, 100);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    });
+
+    testWidgets('falls back to the stored copy when offline', (tester) async {
+      final controller = await _openPractice(
+        tester,
+        stored: withCount(80),
+        fresh: const Left(NetworkFailure('offline')),
+      );
+
+      expect(controller.isOpen, isTrue);
+      expect(controller.navigationContext?.groupAccumulatorSessionCount, 80);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    });
   });
 }

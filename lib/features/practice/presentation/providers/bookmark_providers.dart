@@ -389,8 +389,15 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
   }
 
   void _onList(List<BookmarkDTO> list) {
-    state = BookmarksState(bookmarks: _newestFirst(list), isLoading: false);
+    // A list fetched before a removal finished still holds that bookmark.
+    final visible = _removedIds.isEmpty
+        ? list
+        : list.where((b) => !_removedIds.contains(b.id)).toList();
+    state = BookmarksState(bookmarks: _newestFirst(visible), isLoading: false);
   }
+
+  /// Bookmarks the user removed while this screen is open.
+  final Set<String> _removedIds = {};
 
   @override
   void dispose() {
@@ -402,6 +409,7 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
   /// Returns `true` on success.
   Future<bool> remove(BookmarkDTO bookmark) async {
     final previous = state.bookmarks;
+    _removedIds.add(bookmark.id);
     state = state.copyWith(
       bookmarks: previous.where((b) => b.id != bookmark.id).toList(),
       clearError: true,
@@ -412,15 +420,29 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
     return result.fold(
       (failure) {
         _logger.error('Failed to remove bookmark: ${failure.message}');
+        _removedIds.remove(bookmark.id);
         state = state.copyWith(bookmarks: previous);
         return false;
       },
       (_) {
         // Bring the stored list in line so it never resurrects the bookmark.
-        unawaited(_repository.refreshBookmarks(language: _language));
+        unawaited(_storeWithout(bookmark.id));
         return true;
       },
     );
+  }
+
+  /// A refresh joins any fetch already running, which may have started
+  /// before the delete; one more round then stores the list without it.
+  Future<void> _storeWithout(String bookmarkId) async {
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final result = await _repository.refreshBookmarks(language: _language);
+      final stale = result.fold(
+        (_) => false,
+        (list) => list.any((b) => b.id == bookmarkId),
+      );
+      if (!stale) return;
+    }
   }
 }
 

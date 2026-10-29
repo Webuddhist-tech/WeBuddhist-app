@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -112,11 +115,16 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
   bool _firstPageInFlight = false;
   int _pageEpoch = 0;
 
+  /// Bumped when an edit, completion or delete starts. A first page fetched
+  /// across one may predate it, so that page is dropped and read again.
+  int _mutations = 0;
+
   /// Shows the stored first page, then reads it again. A page still in
   /// flight is dropped when it lands, so its loading flag is cleared here.
   Future<void> load() async {
     if (state.isLoading) return;
     final generation = ++_generation;
+    final mutationsAtStart = _mutations;
     // Only an empty list shows the loader; a seeded one refreshes silently.
     state = state.copyWith(
       isLoading: state.requests.isEmpty,
@@ -128,7 +136,10 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
     try {
       await loadCachedFirstPage(
         _source,
-        isCurrent: () => mounted && generation == _generation,
+        isCurrent: () =>
+            mounted &&
+            generation == _generation &&
+            _mutations == mutationsAtStart,
         seed: state.requests.isEmpty,
         fetch: () => _repository.listMyPrayerRequests(skip: 0, limit: _limit),
         encode: (page) => page.toJson(),
@@ -155,6 +166,11 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
       );
     } finally {
       _firstPageInFlight = false;
+    }
+    if (mounted &&
+        generation == _generation &&
+        _mutations != mutationsAtStart) {
+      unawaited(load());
     }
   }
 
@@ -210,6 +226,7 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
     if (request == null) {
       return const Left(NotFoundFailure('Prayer request not found'));
     }
+    _mutations++;
     final result = await _repository.setMessageCompleted(
       request.roomId,
       messageId: messageId,
@@ -226,6 +243,7 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
           clearCompletedAt: !completed,
         ),
       );
+      _storeFirstPage();
       return unit;
     });
   }
@@ -240,6 +258,7 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
     if (request == null) {
       return const Left(NotFoundFailure('Prayer request not found'));
     }
+    _mutations++;
     final result = await _repository.updateMessage(
       request.roomId,
       messageId: messageId,
@@ -259,6 +278,7 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
           );
           return message;
         });
+        _storeFirstPage();
       }
       return message;
     });
@@ -270,6 +290,7 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
     if (request == null) {
       return const Left(NotFoundFailure('Prayer request not found'));
     }
+    _mutations++;
     final result = await _repository.deleteMessage(
       request.roomId,
       messageId: messageId,
@@ -281,8 +302,25 @@ class MyPrayerRequestsNotifier extends StateNotifier<MyPrayerRequestsState> {
         total: state.total > 0 ? state.total - 1 : 0,
         skip: state.skip > 0 ? state.skip - 1 : 0,
       );
+      _storeFirstPage();
     });
     return result;
+  }
+
+  /// Keeps the stored first page in step with a change made here, so the
+  /// next open does not show the row as it was.
+  void _storeFirstPage() {
+    final page = ChatMessagesPage(
+      messages: state.requests.take(_limit).toList(),
+      skip: 0,
+      limit: _limit,
+      total: state.total,
+    );
+    unawaited(
+      _source.store
+          .save(_source.key, jsonEncode(page.toJson()))
+          .catchError((Object _) => false),
+    );
   }
 
   ChatMessageDTO? _find(String messageId) {

@@ -97,6 +97,19 @@ class _PendingPrayers {
   int get outstanding => queued + inFlight;
 }
 
+/// What changed on screen while a first page was being fetched. That page
+/// was read before these changes, so they are laid back over it.
+class _ChangesDuringFetch {
+  /// Rows that came in by send or socket, with the viewer they came for.
+  final Map<String, (ChatMessageDTO, String?)> added = {};
+
+  /// Rows deleted from the room.
+  final Set<String> deleted = {};
+
+  /// Ids whose body, intention or completion was changed here.
+  final Set<String> edited = {};
+}
+
 /// Taps on one request still to send after the sheet closed.
 class _Leftover {
   _Leftover(this.left, this.notBefore);
@@ -416,6 +429,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// The list on screen came from the device, so a failed re-read stays quiet.
   bool _seededFromStore = false;
 
+  /// Set while a first page is out; see [_ChangesDuringFetch].
+  _ChangesDuringFetch? _changes;
+
   /// Live requests counted but not in the list: outside the intention in
   /// view (null) or held for the end of a sort still paging (the row, in
   /// [PrayerRequestsState.total]). Dedupes the REST reply against the echo.
@@ -567,7 +583,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         _applyFirstPage(stored.page);
       }
     }
+    final changes = _changes = _ChangesDuringFetch();
     final result = await _fetchPage(roomId, skip: 0);
+    if (identical(_changes, changes)) _changes = null;
     if (!mounted || generation != _listGeneration) return;
 
     final seeded = _seededFromStore;
@@ -581,8 +599,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           clearError: seeded,
         );
       },
-      (page) {
+      (fetched) {
+        final page = _withLocalChanges(fetched, changes);
         _applyFirstPage(page);
+        _reapplyLocal(page, changes);
         unawaited(
           ref
               .read(screenCacheStoreProvider)
@@ -618,6 +638,58 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     // Only an unfiltered total is the room's count.
     if (!filter.byIntention && !filter.mine) {
       _publishCount(page.total + held.length);
+    }
+  }
+
+  /// [page] without rows deleted while it was out, and with edits made
+  /// meanwhile kept over the server's older copy.
+  ChatMessagesPage _withLocalChanges(
+    ChatMessagesPage page,
+    _ChangesDuringFetch changes,
+  ) {
+    if (changes.deleted.isEmpty && changes.edited.isEmpty) return page;
+    final messages = <ChatMessageDTO>[];
+    var removed = 0;
+    for (final row in page.messages) {
+      if (changes.deleted.contains(row.id)) {
+        removed++;
+        continue;
+      }
+      final local = changes.edited.contains(row.id) ? _find(row.id) : null;
+      messages.add(
+        local == null
+            ? row
+            : _edited(row, local, body: local.body, intention: local.intention),
+      );
+    }
+    return ChatMessagesPage(
+      messages: messages,
+      skip: page.skip,
+      limit: page.limit,
+      total: _clampCount(page.total - removed),
+    );
+  }
+
+  /// After a fresh first page: rows sent or pushed while it was out go back
+  /// in, and taps not yet confirmed are shown over the fresh counts.
+  void _reapplyLocal(ChatMessagesPage page, _ChangesDuringFetch changes) {
+    for (final (message, viewerId) in changes.added.values) {
+      appendLive(message, viewerId: viewerId);
+    }
+    for (final entry in _pending.entries) {
+      ChatMessageDTO? row;
+      for (final message in page.messages) {
+        if (message.id == entry.key) row = message;
+      }
+      if (row == null) continue;
+      final confirmed = entry.value.confirmed;
+      entry.value.confirmed = _PrayerSnapshot(
+        prayedByMe: confirmed.prayedByMe || row.prayedByMe,
+        prayerCount: math.max(confirmed.prayerCount, row.prayerCount),
+        myPrayerCount: math.max(confirmed.myPrayerCount, row.myPrayerCount),
+        recentPrayers: row.recentPrayers,
+      );
+      _render(entry.key, entry.value);
     }
   }
 
@@ -829,6 +901,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           );
           return message;
         });
+        _changes?.edited.add(messageId);
       }
       return message;
     });
@@ -851,6 +924,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         intention: message.intention,
       ),
     );
+    _changes?.edited.add(message.id);
   }
 
   /// An edit onto the row as it is now. A new body makes the old translation
@@ -951,6 +1025,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           clearCompletedAt: !completed,
         ),
       );
+      _changes?.edited.add(messageId);
       return unit;
     });
   }
@@ -965,6 +1040,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (state.roomId != null && message.roomId != state.roomId) return;
     if (state.requests.any((existing) => existing.id == message.id)) return;
     if (_unlisted.containsKey(message.id)) return;
+    _changes?.added[message.id] = (message, viewerId);
     final viewer = viewerId?.trim() ?? '';
     final listed =
         state.filter.mine
@@ -1009,6 +1085,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// filter in view, so it leaves the spotlight too, which may be the only
   /// place a picked request is shown.
   void _dropRow(String messageId, {required bool inRoom}) {
+    if (inRoom) {
+      _changes?.deleted.add(messageId);
+      _changes?.added.remove(messageId);
+    }
     if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
     final unlisted = _unlisted.containsKey(messageId);
     final held = _unlisted.remove(messageId);
