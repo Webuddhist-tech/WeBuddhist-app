@@ -2320,6 +2320,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get group_chat_load_failed => 'Không thể tải tin nhắn';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found =>
       'Tin nhắn này không còn trong cuộc trò chuyện';
 

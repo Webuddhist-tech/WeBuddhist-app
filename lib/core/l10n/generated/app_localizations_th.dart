@@ -2301,6 +2301,9 @@ class AppLocalizationsTh extends AppLocalizations {
   String get group_chat_load_failed => 'ไม่สามารถโหลดข้อความได้';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found => 'ข้อความนี้ไม่อยู่ในแชทแล้ว';
 
   @override
