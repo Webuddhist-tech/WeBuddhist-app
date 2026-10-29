@@ -321,11 +321,13 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   /// changes an event, keeping the pages already loaded and where paging
   /// stands. Practices are left as they are.
   Future<void> refreshLatest() async {
-    if (_feedSource == null || !state.hasLoaded) return;
+    if (_feedSource == null) return;
     if (state.isLoading || _firstPageInFlight || _refreshing) {
       _refreshAgain = true;
       return;
     }
+    // Nothing shown and nothing loading: the first load reads fresh anyway.
+    if (!state.hasLoaded) return;
     _refreshing = true;
     final generation = _loadGeneration;
     final updated = _updatedDuringRefresh = {};

@@ -220,6 +220,15 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       ];
     }
 
+    // A fetched row carries its own deletion, but replies quoting it do not,
+    // and with signals that is how another member's delete arrives.
+    for (final message in messages) {
+      final deletedAt = message.deletedAt;
+      if (deletedAt != null) {
+        _deletedOriginals.putIfAbsent(message.id, () => deletedAt);
+      }
+    }
+
     // Quotes of every original known to be gone, whether or not a fetch was
     // running: the page just committed carries those quotes as live.
     if (_deletedOriginals.isNotEmpty) {

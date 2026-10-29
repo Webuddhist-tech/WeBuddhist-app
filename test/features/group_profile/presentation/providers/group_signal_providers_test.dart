@@ -45,7 +45,7 @@ class _FakePostRepository extends Fake implements GroupPostRepositoryInterface {
   /// Newest first, as the group's posts come back.
   List<String> postIds = [];
 
-  /// Holds the next fetch until completed; the page is read on release.
+  /// Holds the next fetch, which has already read [postIds].
   Completer<void>? gate;
 
   @override
@@ -55,13 +55,14 @@ class _FakePostRepository extends Fake implements GroupPostRepositoryInterface {
     required int limit,
   }) async {
     fetches++;
+    final ids = postIds;
     final held = gate;
     gate = null;
     if (held != null) await held.future;
     return Right(
       ConnectPostsPage(
         posts: [
-          for (final id in postIds.skip(skip).take(limit))
+          for (final id in ids.skip(skip).take(limit))
             ConnectPost(
               id: id,
               groupId: groupId,
@@ -72,7 +73,7 @@ class _FakePostRepository extends Fake implements GroupPostRepositoryInterface {
         ],
         skip: skip,
         limit: limit,
-        total: postIds.length,
+        total: ids.length,
       ),
     );
   }
@@ -208,6 +209,28 @@ void main() {
     // The post the new one pushed past the window comes back with paging.
     await container.read(groupPostsProvider('g1').notifier).loadMore();
     expect(container.read(groupPostsProvider('g1')).posts.last.id, 'p1');
+  });
+
+  test('a signal during the first load refreshes once it lands', () async {
+    posts.postIds = ['p1'];
+    signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 1)});
+    await pumpEventQueue();
+    final held = Completer<void>();
+    posts.gate = held;
+    container.listen(groupPostsProvider('g1'), (_, _) {});
+    await pumpEventQueue();
+
+    // Someone posts after the load read the server.
+    posts.postIds = ['p2', 'p1'];
+    signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 2)});
+    await settle();
+    held.complete();
+    await pumpEventQueue();
+
+    expect(
+      container.read(groupPostsProvider('g1')).posts.map((p) => p.id),
+      ['p2', 'p1'],
+    );
   });
 
   test('a post deleted elsewhere leaves the list', () async {

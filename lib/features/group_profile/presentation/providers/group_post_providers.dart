@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
@@ -145,6 +146,10 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   /// Set while a refresh is out; see [_PostChanges].
   _PostChanges? _changes;
 
+  /// A signal came while the first page was out, so a refresh runs once it
+  /// lands; that read may predate the change.
+  bool _refreshAgain = false;
+
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
@@ -176,6 +181,10 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
       },
       _applyFirstPage,
     );
+    if (_refreshAgain) {
+      _refreshAgain = false;
+      unawaited(refreshLatest());
+    }
   }
 
   void _applyFirstPage(ConnectPostsPage page, {bool fresh = true}) {
@@ -237,7 +246,11 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   /// on top with no gap behind them and deleted ones leave. A post pushed
   /// past the window by new ones comes back with the next page.
   Future<void> refreshLatest() async {
-    if (state.isLoading || !state.hasLoaded) return;
+    if (state.isLoading || _firstPageInFlight) {
+      _refreshAgain = true;
+      return;
+    }
+    if (!state.hasLoaded) return;
     final generation = _requestGeneration;
     final seq = ++_refreshSeq;
     final changes = _changes = _PostChanges();

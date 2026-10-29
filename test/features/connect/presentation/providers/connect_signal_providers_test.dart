@@ -352,6 +352,29 @@ void main() {
   });
 
   group('myFeedSignalsProvider', () {
+    test('a signal during the first load refreshes once it lands', () async {
+      remote.feedPostIds = ['p1'];
+      container.listen(myUnifiedConnectFeedProvider, (_, _) {});
+      final feed = container.read(myUnifiedConnectFeedProvider.notifier);
+      final held = Completer<void>();
+      remote.feedGate = held;
+      feed.ensureLoaded();
+      await pumpEventQueue();
+
+      remote.feedPostIds = ['p2', 'p1'];
+      await feed.refreshLatest();
+      held.complete();
+      await pumpEventQueue();
+
+      expect(
+        container
+            .read(myUnifiedConnectFeedProvider)
+            .feedItems
+            .map((item) => item.post?.id),
+        ['p2', 'p1'],
+      );
+    });
+
     test('a pull-to-refresh is not undone by an older background read', () async {
       remote.feedPostIds = ['p1'];
       container.listen(myUnifiedConnectFeedProvider, (_, _) {});

@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier
 import 'package:flutter_pecha/features/auth/presentation/state/user_state.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_room_live_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
@@ -130,6 +131,37 @@ void main() {
       expect(ids(), ['m2', 'm1']);
     },
   );
+
+  test('another member deleting a loaded original stamps its quotes', () async {
+    const parent = ChatMessageParentDTO(
+      id: 'm1',
+      senderId: 'b',
+      senderEmail: 'b@example.com',
+      body: 'm1',
+      createdAt: '2026-10-29T10:00:00Z',
+    );
+    final reply = _message('m2').copyWith(parent: parent);
+    build(messages: [reply, _message('m1')]);
+    await _settle();
+    signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 1)});
+    await _settle();
+
+    // The server marks the original, not the quote embedded in the reply.
+    repository.messages = [
+      reply,
+      _message('m1').copyWith(deletedAt: '2026-10-29T11:00:00Z'),
+    ];
+    signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 2)});
+    await _settle();
+
+    final quote =
+        container
+            .read(groupChatThreadProvider('room-1'))
+            .messages
+            .firstWhere((m) => m.id == 'm2')
+            .parent;
+    expect(quote?.deletedAt, '2026-10-29T11:00:00Z');
+  });
 
   test('a change on an older loaded page reaches its row', () async {
     build(messages: [for (var i = 40; i > 0; i--) _message('m$i')]);
