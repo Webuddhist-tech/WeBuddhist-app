@@ -224,6 +224,52 @@ void main() {
     });
   });
 
+  group('the sheet\'s group headings', () {
+    // A puja: the text's heading over three parts; the second part groups
+    // two sections, one of them grouping two more.
+    final puja = _section('puja', 1, 60);
+    final praises = _section('praises', 1, 20, depth: 1);
+    final explanation = _section('explanation', 21, 50, depth: 1);
+    final peaceful = _section('peaceful', 21, 30, depth: 2);
+    final body = _section('body', 21, 25, depth: 3);
+    final colour = _section('colour', 26, 30, depth: 3);
+    final victors = _section('victors', 31, 50, depth: 2);
+    final after = _section('after', 51, 60, depth: 1);
+    final tambura = _section('tambura', 51, 60, depth: 2);
+    final titled = [
+      puja,
+      praises,
+      explanation,
+      peaceful,
+      body,
+      colour,
+      victors,
+      after,
+      tambura,
+    ];
+    final sections = [praises, body, colour, victors, tambura];
+
+    test('a section sits under its outermost group, the text left out', () {
+      final groups = readerSectionGroups(
+        titled,
+        sections,
+        textHeadingId: 'puja',
+      );
+      expect(groups.containsKey('praises'), isFalse);
+      // Under "peaceful" too, but one level: the outer group names them.
+      expect(groups['body']?.id, 'explanation');
+      expect(groups['colour']?.id, 'explanation');
+      expect(groups['victors']?.id, 'explanation');
+      expect(groups['tambura']?.id, 'after');
+    });
+
+    test('on a page of several texts the text heading groups them too', () {
+      final groups = readerSectionGroups(titled, sections);
+      expect(groups['praises']?.id, 'puja');
+      expect(groups['tambura']?.id, 'puja');
+    });
+  });
+
   group('a text\'s title as the page shows it', () {
     final service = TransliterationService.standard();
     const original = 'སྒྲོལ་མ་ཉེར་གཅིག་ལ་བསྟོད་པ།';

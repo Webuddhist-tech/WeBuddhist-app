@@ -158,6 +158,38 @@ List<TextOutlineSection> readerPageSections(List<TextOutlineSection> titled) {
   ];
 }
 
+/// The group heading each of the page's [sections] sits under in the
+/// sections sheet, by section id: of [titled], the headings that only group
+/// sections (not among [sections]), other than [textHeadingId], the one
+/// naming the text. One level, as the design draws it: a section sits under
+/// the outermost group holding it, so a label never comes back after a
+/// deeper one. A section under no group is left out.
+Map<String, TextOutlineSection> readerSectionGroups(
+  List<TextOutlineSection> titled,
+  List<TextOutlineSection> sections, {
+  String? textHeadingId,
+}) {
+  final sectionIds = {for (final section in sections) section.id};
+  final grouping = [
+    for (final heading in titled)
+      if (!sectionIds.contains(heading.id) && heading.id != textHeadingId)
+        heading,
+  ];
+  final groups = <String, TextOutlineSection>{};
+  for (final section in sections) {
+    TextOutlineSection? group;
+    for (final candidate in grouping) {
+      if (candidate.depth < section.depth &&
+          candidate.holds(section.number) &&
+          (group == null || candidate.depth < group.depth)) {
+        group = candidate;
+      }
+    }
+    if (group != null) groups[section.id] = group;
+  }
+  return groups;
+}
+
 /// The innermost of [sections] holding the verse numbered [verseNumber],
 /// or null. [sections] are in reading order with each heading before the
 /// ones nested in it, so their opening verses never go down.

@@ -30,7 +30,7 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_conten
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_pill.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_skeleton.dart';
 import 'package:flutter_pecha/features/recitation/data/models/edition_live_settings.dart';
@@ -389,6 +389,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final sections = <ReaderPageSection>[];
     final texts = <ReaderPageText>[];
     final sectionIndexByKey = <String, int>{};
+    // The heading each section sits under in the sheet, by section key.
+    final groups = <String, (String, String)>{};
     // Headings drawn so far, by the source and entry they were drawn at.
     final drawn = <String, (int, int)>{};
     // The original's heading in effect at each depth.
@@ -502,6 +504,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           segmentId: section.segmentId,
         );
       }
+      // Headings that only group sections ("AFTER THE PUJA") head them in
+      // the sheet; the one naming the text does too on a page of several
+      // texts.
+      readerSectionGroups(
+        titled,
+        outlined,
+        textHeadingId: views.length > 1 ? null : titleSectionId,
+      ).forEach((id, group) {
+        groups['${view.index}:$id'] = _outlineTitle(view, group);
+      });
       // Where each heading and verse of this source sits in the list.
       final headerEntry = <String, int>{};
       final verseEntry = <int, int>{};
@@ -636,6 +648,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       sections: sections,
       texts: texts,
       sectionOfEntry: sectionOfEntry,
+      groups: groups,
     );
   }
 
@@ -697,19 +710,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         ),
   ];
 
-  /// What the sections are of: the plan task on a page of several texts,
-  /// else the text.
-  String _pageTitle(_SourceView first) {
-    final task = widget.sources.first.navigationContext?.currentItem?.title;
-    if (widget.sources.length > 1 && task != null && task.trim().isNotEmpty) {
-      return task;
-    }
-    // The text's own title: in the original's script when it is shown in
-    // another.
-    final title = first.state.openedText?.title ?? '';
-    return _inScript(first, (title, first.language)).$1;
-  }
-
   // ─── Sections navigator ──────────────────────────────────────────────────
 
   Future<void> _openSectionsSheet() async {
@@ -718,15 +718,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (_startedCount < widget.sources.length) {
       setState(() => _startedCount = widget.sources.length);
     }
-    final picked = await showModalBottomSheet<ReaderPageSection>(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(ReaderPanelConstants.topRadius),
-        ),
-      ),
-      isScrollControlled: true,
+    final picked = await showReaderSheet<ReaderPageSection>(
+      context,
       builder:
           (_) =>
               ReaderSectionsSheet(snapshot: _sections, current: _currentSectionKey),
@@ -1682,6 +1675,20 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   /// The language [view]'s numbers are written in: the translation's when
   /// one is shown, else the original's.
+  /// The key of the section holding the verse [liveSegmentId], when it is
+  /// on the page.
+  static String? _liveSectionKey(_PageLayout layout, String? liveSegmentId) {
+    if (liveSegmentId == null) return null;
+    for (var i = 0; i < layout.entries.length; i++) {
+      if (layout.entries[i].item?.segment?.segmentId != liveSegmentId) {
+        continue;
+      }
+      final section = layout.sectionOfEntry[i];
+      return section < 0 ? null : layout.sections[section].key;
+    }
+    return null;
+  }
+
   /// While following, the room's round and the section the live verse is
   /// in, whose heading shows it; null outside a round.
   _LiveRoundMark? _liveRoundOn(
@@ -2026,9 +2033,27 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Texts not started yet are listed as loading until they are.
     final pending = widget.sources.length - _startedCount;
     final snapshot = ReaderSectionsSnapshot(
-      title: _pageTitle(first),
-      texts: layout.texts,
+      sections: [
+        for (final text in layout.texts)
+          for (final section
+              in layout.sections.any((s) => s.source == text.source)
+                  ? layout.sections.where((s) => s.source == text.source)
+                  : [text.start])
+            ReaderSheetSection(
+              // The section a text is named after goes to the text's start,
+              // loading it when the page was opened further in.
+              section:
+                  section.id == text.titleSectionId ? text.start : section,
+              numeralLanguage: _numeralLanguage(views[section.source]),
+              group: layout.groups[section.key]?.$1,
+              groupLanguage: layout.groups[section.key]?.$2,
+            ),
+      ],
       pendingSources: pending,
+      liveKey:
+          _isLiveRecitation && liveMode == RecitationLiveFollowMode.following
+              ? _liveSectionKey(layout, liveSegmentId)
+              : null,
     );
     if (snapshot != _sections.value) {
       // The sheet, in its own route, listens: not during this build.
@@ -2410,11 +2435,16 @@ class _PageLayout {
   /// Each entry's section, -1 for one past the last section.
   final List<int> sectionOfEntry;
 
+  /// The group heading over a section in the sheet, and its language, by
+  /// the section's key.
+  final Map<String, (String, String)> groups;
+
   const _PageLayout({
     required this.entries,
     required this.sections,
     required this.texts,
     required this.sectionOfEntry,
+    required this.groups,
   });
 }
 
