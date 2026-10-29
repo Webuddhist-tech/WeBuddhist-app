@@ -39,14 +39,12 @@ import 'package:flutter_pecha/features/reader/domain/services/navigation_service
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/segement_action_bar.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_actions/reader_verse_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_app_bar.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_languages_button.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_more_bottom_sheet.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_split_view.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/reader_translation_split_view.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_gestures/swipe_navigation_wrapper.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_search/reader_search_delegate.dart';
@@ -96,11 +94,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// reader content (no action bar). Matches the original floating offset.
   static const double _audioBottomGap = 76;
 
-  /// Tighter gap used when the audio button sits directly above the segment
-  /// action bar, so the button hugs the bar instead of leaving a large empty
-  /// band of background between them.
-  static const double _audioActionBarGap = 16;
-
   /// Lets the audio button keep its state when it is reparented between the
   /// behind-panel slot and the bottom overlay.
   final GlobalKey _audioButtonKey = GlobalKey();
@@ -113,8 +106,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// How far through the page the reader is, for the header's progress line.
   final ValueNotifier<double> _progress = ValueNotifier(0);
   double _bottomOverlayHeight = 0;
-  // Scroll controller callback
-  void Function(String segmentId, {double? alignment})? _scrollToSegment;
   VoidCallback? _scrollToTop;
 
   // Group accumulation chant session
@@ -628,9 +619,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final readerTheme = _readerTheme(context);
     // The embedded host drops its video to audio while a panel is open.
     ref.listen(
-      readerNotifierProvider(
-        _activeParams,
-      ).select((s) => s.isCommentaryOpen || s.isTranslationOpen),
+      readerNotifierProvider(_activeParams).select((s) => s.hasSelection),
       (_, isPanelOpen) =>
           PlanEmbeddedScope.maybeOf(context)?.setPanelOpen(isPanelOpen),
     );
@@ -740,10 +729,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       );
     }
 
-    final isPanelOpen = active.isCommentaryOpen || active.isTranslationOpen;
-    final isActionBarVisible = active.hasSelection && !isPanelOpen;
-    final isBottomOverlayVisible =
-        !isPanelOpen && (_hasAudio || isActionBarVisible);
+    // A selected verse has its sheet open below the text.
+    final isPanelOpen = active.hasSelection;
+    final isBottomOverlayVisible = !isPanelOpen && _hasAudio;
     final chantBarHeight =
         _isGroupAccumulatorChant ? GroupAccumulatorChantBar.barHeight : 0.0;
     final chantMantra = _chantMantra;
@@ -797,29 +785,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   params: _activeParams,
                   textDetail: state.textDetail!,
                   isAppBarVisible: _isAppBarVisible,
-                  child: ReaderTranslationSplitView(
+                  child: ReaderVerseSplitView(
                     params: _activeParams,
-                    // Reader content with scroll detection. The segment
-                    // action bar is hosted in the screen-level bottom
-                    // overlay so it can share a fixed gap with the
-                    // floating audio button.
-                    mainContent: ReaderCommentarySplitView(
-                      params: _activeParams,
-                      mainContent: ReaderContentPart(
-                        sources: _sources,
-                        initialSegmentId: widget.segmentId,
-                        bottomPadding: contentBottomPadding,
-                        chantSessionFooter: chantFooter,
-                        onSourceSelected: _onSourceSelected,
-                        onScrollDirectionChanged: _onScrollDirectionChanged,
-                        progress: _progress,
-                        onScrollControllerReady: (scrollFn) {
-                          _scrollToSegment = scrollFn;
-                        },
-                        onScrollToTopReady: (scrollFn) {
-                          _scrollToTop = scrollFn;
-                        },
-                      ),
+                    mainContent: ReaderContentPart(
+                      sources: _sources,
+                      initialSegmentId: widget.segmentId,
+                      bottomPadding: contentBottomPadding,
+                      chantSessionFooter: chantFooter,
+                      onSourceSelected: _onSourceSelected,
+                      onScrollDirectionChanged: _onScrollDirectionChanged,
+                      progress: _progress,
+                      onScrollToTopReady: (scrollFn) {
+                        _scrollToTop = scrollFn;
+                      },
                     ),
                   ),
                 ),
@@ -837,41 +815,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             ],
           ),
         ),
-        // Bottom overlay (only when no panel is open): the floating audio
-        // button sits above the segment action bar, sharing a fixed gap so
-        // the two never overlap. When neither is present this branch is
-        // skipped entirely.
+        // Bottom overlay (only while no verse sheet is open): the floating
+        // audio button.
         if (isBottomOverlayVisible)
           Positioned(
             left: 0,
             right: 0,
-            bottom: isActionBarVisible ? 0 : chantBarHeight,
+            bottom: chantBarHeight,
             child: _MeasuredSize(
               onChange: (size) {
                 if ((_bottomOverlayHeight - size.height).abs() < 1) return;
                 setState(() => _bottomOverlayHeight = size.height);
               },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                // Stretch so the action bar spans full width; the audio button
-                // is centered explicitly.
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_hasAudio)
-                    Padding(
-                      // Hug the action bar with a tight gap when it is open;
-                      // otherwise keep the original floating offset above bottom.
-                      padding: EdgeInsets.only(
-                        bottom:
-                            isActionBarVisible
-                                ? _audioActionBarGap
-                                : bottomInset + _audioBottomGap,
-                      ),
-                      child: Center(child: _buildAudioButton()),
-                    ),
-                  if (isActionBarVisible)
-                    _buildSegmentActionBar(active, activeNotifier),
-                ],
+              child: Padding(
+                padding: EdgeInsets.only(bottom: bottomInset + _audioBottomGap),
+                child: Center(child: _buildAudioButton()),
               ),
             ),
           ),
@@ -958,26 +916,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       return CollectionAudioPlayButton(onPressed: _playCurrentCollectionAudio);
     }
     return PlanAudioButton(key: _audioButtonKey, controller: _audioController!);
-  }
-
-  /// Segment action bar wired to the reader notifier. Scrolls the selected
-  /// segment to the top when a commentary/translation panel is opened.
-  Widget _buildSegmentActionBar(ReaderState state, ReaderNotifier notifier) {
-    return SegmentActionBar(
-      segment: state.selectedSegment!,
-      params: _activeParams,
-      onClose: () => notifier.selectSegment(null),
-      onOpenCommentary: () {
-        if (_scrollToSegment != null && state.selectedSegment != null) {
-          _scrollToSegment!(state.selectedSegment!.segmentId, alignment: 0.0);
-        }
-      },
-      onOpenTranslation: () {
-        if (_scrollToSegment != null && state.selectedSegment != null) {
-          _scrollToSegment!(state.selectedSegment!.segmentId, alignment: 0.0);
-        }
-      },
-    );
   }
 
   /// Wraps a status view (loading / error / empty) in a [SafeArea] with a

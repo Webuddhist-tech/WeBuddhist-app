@@ -44,15 +44,30 @@ Future<FakeLocalStorage> _pump(
   return storage;
 }
 
-SegmentItem _alone({bool isLive = false, bool followingLive = false}) =>
-    SegmentItem(
-      segment: _segment,
-      depth: 0,
-      language: 'bo',
-      scope: _scope,
-      isLive: isLive,
-      followingLive: followingLive,
-    );
+SegmentItem _alone({
+  bool isLive = false,
+  bool followingLive = false,
+  bool isSelected = false,
+}) => SegmentItem(
+  segment: _segment,
+  depth: 0,
+  language: 'bo',
+  scope: _scope,
+  isLive: isLive,
+  followingLive: followingLive,
+  isSelected: isSelected,
+);
+
+/// The colour of the card under the verse; transparent without one.
+Color? _cardColor(WidgetTester tester) {
+  final card = tester.widget<AnimatedContainer>(
+    find.descendant(
+      of: find.byType(ReaderVerseFrame),
+      matching: find.byType(AnimatedContainer),
+    ),
+  );
+  return (card.decoration! as BoxDecoration).color;
+}
 
 void main() {
   group('verse number', () {
@@ -200,6 +215,21 @@ void main() {
       final decoration = card.decoration! as BoxDecoration;
       expect(decoration.borderRadius, BorderRadius.circular(12));
       expect(decoration.color, isNot(Colors.transparent));
+    });
+
+    testWidgets('the verse whose sheet is open sits on the card, not underlined',
+        (tester) async {
+      await _pump(tester, _alone());
+      expect(_cardColor(tester), Colors.transparent);
+
+      await _pump(tester, _alone(isSelected: true));
+      expect(_cardColor(tester), isNot(Colors.transparent));
+      expect(
+        tester
+            .widgetList<SegmentHtmlWidget>(find.byType(SegmentHtmlWidget))
+            .every((line) => !line.isSelected),
+        isTrue,
+      );
     });
 
     testWidgets('a verse does not move when it becomes live', (tester) async {

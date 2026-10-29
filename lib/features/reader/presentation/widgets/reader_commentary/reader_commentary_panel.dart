@@ -4,7 +4,6 @@ import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_list_order.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_bottom_panel_shell.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_content_block.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_metadata_tile.dart';
@@ -22,60 +21,43 @@ final _expandedMetadataIndexProvider = StateProvider.family<int?, String>(
   (ref, segmentId) => null,
 );
 
+/// The verse sheet's Commentary tab: the verse's commentaries.
 class ReaderCommentaryPanel extends ConsumerWidget {
   final String segmentId;
   final String textLanguage;
   final ReaderParams params;
-  final double availableHeight;
 
   const ReaderCommentaryPanel({
     super.key,
     required this.segmentId,
     required this.textLanguage,
     required this.params,
-    required this.availableHeight,
   });
-
-  void _resetExpansion(WidgetRef ref) {
-    ref.read(_expandedContentIndexProvider(segmentId).notifier).state = null;
-    ref.read(_expandedMetadataIndexProvider(segmentId).notifier).state = null;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = context.l10n;
-    final notifier = ref.read(readerNotifierProvider(params).notifier);
     final segmentCommentaries = ref.watch(
       segmentCommentaryFutureProvider(segmentId),
     );
 
-    return ReaderBottomPanelShell(
-      title: localizations.text_commentary,
-      params: params,
-      availableHeight: availableHeight,
-      onDismiss: () {
-        notifier.closeCommentary();
-        _resetExpansion(ref);
-      },
-      child: segmentCommentaries.when(
-        data:
-            (data) => _CommentaryList(
-              commentaries: data.commentaries,
-              segmentId: segmentId,
-              textLanguage: textLanguage,
-              commentaryTextId:
-                  params.navigationContext?.currentItem?.commentaryTextId,
-            ),
-        error:
-            (error, _) => _ErrorState(
-              error: error,
-              onRetry:
-                  () => ref.invalidate(
-                    segmentCommentaryFutureProvider(segmentId),
-                  ),
-            ),
-        loading: () => const CommentarySkeleton(),
-      ),
+    return segmentCommentaries.when(
+      data:
+          (data) => _CommentaryList(
+            commentaries: data.commentaries,
+            segmentId: segmentId,
+            textLanguage: textLanguage,
+            commentaryTextId:
+                params.navigationContext?.currentItem?.commentaryTextId,
+          ),
+      error:
+          (error, _) => _ErrorState(
+            error: error,
+            onRetry:
+                () => ref.invalidate(
+                  segmentCommentaryFutureProvider(segmentId),
+                ),
+          ),
+      loading: () => const CommentarySkeleton(),
     );
   }
 }

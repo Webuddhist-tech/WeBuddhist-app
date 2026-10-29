@@ -265,7 +265,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         !_isUserScrolling && (_isProgrammaticScroll || !_recentUserGesture);
     // Any scroll by the person leaves the live recitation.
     if (!byApp && delta != 0 && _isLiveRecitation) _pauseLiveFollow();
-    if (byApp && !_isLiveRecitation) return;
+    // Paused, the page reads like the normal reader: bringing a verse up
+    // above its sheet leaves the bars, and the Paused pill, where they are.
+    if (byApp && !_isFollowingLive) return;
     if (!_focusMode.scrolled(delta, countUp: !byApp)) return;
     final hide = !_focusMode.barsVisible;
     widget.onScrollDirectionChanged?.call(hide);
@@ -1117,12 +1119,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     });
   }
 
-  /// Selects [segment] of source [index], the only source with a selection.
-  /// A plan task with commentary or versions set to open does that here
-  /// once the segment's counts arrive, and the verse is brought to the top
-  /// the way those buttons do. Closing that sheet leaves the segment
-  /// selected, so the resources sheet is what's left.
+  /// Selects [segment] of source [index], the only source with a selection,
+  /// which opens its sheet below the text. Once the segment's counts arrive
+  /// the sheet opens its first tab with something (the one a plan task asks
+  /// for, if any), and the verse is brought to the top of the text.
   void _onSegmentTap(int index, Segment segment) {
+    // A tap is not a scroll: the list moving as the verse's sheet opens,
+    // and bringing the verse up above it, are the app's own.
+    _isUserScrolling = false;
+    _lastUserPointerAt = null;
     // Opening a verse's resources leaves the live recitation.
     if (_isLiveRecitation) _pauseLiveFollow();
     final params = widget.sources[index];
@@ -1132,8 +1137,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         readerNotifierProvider(widget.sources[i]).notifier,
       );
       other.selectSegment(null);
-      other.closeCommentary();
-      other.closeTranslation();
     }
     widget.onSourceSelected?.call(params);
     final notifier = ref.read(readerNotifierProvider(params).notifier);
@@ -1141,18 +1144,12 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final deselecting = before.selectedSegment?.segmentId == segment.segmentId;
     notifier.toggleSegmentSelection(segment);
     if (deselecting) return;
-
-    final item = params.navigationContext?.currentItem;
-    if (item == null ||
-        (!item.autoOpenCommentary && !item.autoOpenTranslation)) {
-      return;
-    }
-    _autoOpenPlanPanel(index, segment.segmentId);
+    _openFirstTab(index, segment.segmentId);
   }
 
-  /// A segment with no commentaries or versions does not get an empty sheet.
-  /// A failed count is not a zero: the sheet opens and shows its own error.
-  Future<void> _autoOpenPlanPanel(int index, String segmentId) async {
+  /// A tab the segment has nothing for is skipped. A failed count is not a
+  /// zero: Commentary opens and shows its own error.
+  Future<void> _openFirstTab(int index, String segmentId) async {
     SegmentInfo? info;
     try {
       info = await ref.read(segmentInfoFutureProvider(segmentId).future);
@@ -1160,14 +1157,23 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _logger.warning('Segment info for $segmentId not loaded', e, st);
     }
     if (!mounted) return;
-    final opened = ref
-        .read(readerNotifierProvider(widget.sources[index]).notifier)
-        .autoOpenPlanPanel(
-          segmentId,
-          hasCommentaries: info == null || info.relatedText.commentaries > 0,
-          hasVersions: info == null || info.translations > 0,
-        );
-    if (opened) _scrollToSegment(segmentId, alignment: 0.0);
+    final notifier = ref.read(
+      readerNotifierProvider(widget.sources[index]).notifier,
+    );
+    if (ref.read(readerNotifierProvider(widget.sources[index])).selectedSegment
+            ?.segmentId !=
+        segmentId) {
+      return;
+    }
+    notifier.openFirstResourceTab(
+      segmentId,
+      hasCommentaries: info == null || info.relatedText.commentaries > 0,
+      hasVersions: info == null || info.translations > 0,
+      hasVideos: info?.videos.isNotEmpty ?? false,
+      hasRootText: info?.relatedText.hasRootText ?? false,
+    );
+    // The verse stays in view above its sheet.
+    _scrollToSegment(segmentId, alignment: 0.0);
   }
 
   void _scrollToSegment(String segmentId, {double? alignment}) {
@@ -1644,6 +1650,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           _scrollToLiveSegment(source, segmentId, round, settling: true);
         });
     return true;
+  }
+
+  /// Whether the page follows the live recitation right now.
+  bool get _isFollowingLive {
+    final eventId = _liveEventId;
+    return eventId != null &&
+        ref.read(recitationLiveProvider(eventId)).isFollowing;
   }
 
   /// Leaves the live recitation: the Live pill turns to Paused, the page stops

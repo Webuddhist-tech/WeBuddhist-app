@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_bottom_panel_shell.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_content_block.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_metadata_tile.dart';
@@ -21,11 +20,11 @@ final _expandedMetadataIndexProvider = StateProvider.family<int?, String>(
   (ref, segmentId) => null,
 );
 
+/// The verse sheet's Versions tab, or with [rootText] its Root text tab.
 class ReaderTranslationPanel extends ConsumerWidget {
   final String segmentId;
   final String textLanguage;
   final ReaderParams params;
-  final double availableHeight;
 
   /// Shows the root work of a commentary instead of the versions.
   final bool rootText;
@@ -35,51 +34,34 @@ class ReaderTranslationPanel extends ConsumerWidget {
     required this.segmentId,
     required this.textLanguage,
     required this.params,
-    required this.availableHeight,
     this.rootText = false,
   });
 
-  void _resetExpansion(WidgetRef ref) {
-    ref.read(_expandedContentIndexProvider(segmentId).notifier).state = null;
-    ref.read(_expandedMetadataIndexProvider(segmentId).notifier).state = null;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = context.l10n;
-    final notifier = ref.read(readerNotifierProvider(params).notifier);
     final provider =
         rootText
             ? segmentRootTextsFutureProvider(segmentId)
             : segmentTranslationsFutureProvider(segmentId);
     final segmentTranslations = ref.watch(provider);
 
-    return ReaderBottomPanelShell(
-      title: rootText ? localizations.root_text : localizations.version,
-      params: params,
-      availableHeight: availableHeight,
-      onDismiss: () {
-        notifier.closeTranslation();
-        _resetExpansion(ref);
-      },
-      child: segmentTranslations.when(
-        data:
-            (data) => _TranslationList(
-              translations: data.translations,
-              segmentId: segmentId,
-              textLanguage: textLanguage,
-              translationTextId:
-                  rootText
-                      ? null
-                      : params.navigationContext?.currentItem?.translationTextId,
-            ),
-        error:
-            (error, _) => _ErrorState(
-              error: error,
-              onRetry: () => ref.invalidate(provider),
-            ),
-        loading: () => const CommentarySkeleton(),
-      ),
+    return segmentTranslations.when(
+      data:
+          (data) => _TranslationList(
+            translations: data.translations,
+            segmentId: segmentId,
+            textLanguage: textLanguage,
+            translationTextId:
+                rootText
+                    ? null
+                    : params.navigationContext?.currentItem?.translationTextId,
+          ),
+      error:
+          (error, _) => _ErrorState(
+            error: error,
+            onRetry: () => ref.invalidate(provider),
+          ),
+      loading: () => const CommentarySkeleton(),
     );
   }
 }

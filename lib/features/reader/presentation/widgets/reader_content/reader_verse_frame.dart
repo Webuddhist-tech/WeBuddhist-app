@@ -26,10 +26,11 @@ ReaderVerseColors readerVerseColors(
 }
 
 /// One verse on the page: its side margins and the space around it, and the
-/// rounded card it sits on while it is the live verse.
+/// rounded card it sits on while it is the live verse, or the verse whose
+/// sheet is open (WF13).
 ///
 /// Every verse keeps the card's padding, so a verse does not move when it
-/// becomes live. Half the gap between verses goes above it, half below.
+/// gets the card. Half the gap between verses goes above it, half below.
 class ReaderVerseFrame extends StatelessWidget {
   const ReaderVerseFrame({
     super.key,
@@ -37,6 +38,7 @@ class ReaderVerseFrame extends StatelessWidget {
     required this.verseGap,
     required this.child,
     this.isLive = false,
+    this.isSelected = false,
     this.isGreyedOut = false,
     this.onTap,
   });
@@ -47,6 +49,9 @@ class ReaderVerseFrame extends StatelessWidget {
   final double verseGap;
   final Widget child;
   final bool isLive;
+
+  /// Its sheet is open below the text.
+  final bool isSelected;
   final bool isGreyedOut;
   final VoidCallback? onTap;
 
@@ -70,7 +75,10 @@ class ReaderVerseFrame extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           decoration: BoxDecoration(
-            color: isLive ? style.palette.liveHighlight : Colors.transparent,
+            color:
+                isLive || isSelected
+                    ? style.palette.liveHighlight
+                    : Colors.transparent,
             borderRadius: radius,
           ),
           child: Material(

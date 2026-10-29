@@ -67,6 +67,7 @@ class SegmentItem extends ConsumerWidget {
       style: style,
       verseGap: gaps.verse,
       isLive: isLive,
+      isSelected: isSelected,
       isGreyedOut: isGreyedOut,
       onTap: onTap,
       child: Column(
@@ -78,7 +79,6 @@ class SegmentItem extends ConsumerWidget {
             fontSize: metrics.fontSize,
             lineHeight: metrics.height,
             language: primary.fontLanguage,
-            isSelected: isSelected,
             textColor: colors.original,
             fontStyle: typeStyle.fontStyle ?? metrics.fontStyle,
             fontWeight: typeStyle.fontWeight ?? metrics.fontWeight,

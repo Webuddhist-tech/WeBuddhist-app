@@ -162,7 +162,6 @@ class InterlinearSegmentItem extends ConsumerWidget {
       fontSize: originalMetrics.fontSize,
       lineHeight: originalMetrics.height,
       language: primary.fontLanguage,
-      isSelected: isSelected,
       textColor: colors.original,
       fontStyle: typeStyle.fontStyle ?? originalMetrics.fontStyle,
       fontWeight: typeStyle.fontWeight ?? originalMetrics.fontWeight,
@@ -178,7 +177,6 @@ class InterlinearSegmentItem extends ConsumerWidget {
       fontSize: translationMetrics.fontSize,
       lineHeight: translationMetrics.height,
       language: secondarySlot.languageCode,
-      isSelected: isSelected,
       textColor: colors.translation,
       fontStyle: typeStyle.fontStyle ?? translationMetrics.fontStyle,
       fontWeight: typeStyle.fontWeight ?? translationMetrics.fontWeight,
@@ -197,10 +195,12 @@ class InterlinearSegmentItem extends ConsumerWidget {
             ? const SizedBox.shrink()
             : translation(lines.translation.single);
 
+    // The card marks the selected verse; its lines are not underlined.
     return ReaderVerseFrame(
       style: style,
       verseGap: gaps.verse,
       isLive: isLive,
+      isSelected: isSelected,
       isGreyedOut: isGreyedOut,
       onTap: onTap,
       child: Column(
