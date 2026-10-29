@@ -4,14 +4,11 @@
   "sign_in": "साइन इन करें",
   "logout": "लॉग आउट",
   "onboarding_welcome": "आपका स्वागत है",
-  "onboarding_setup_subtitle": "आइए, आपका सेटअप करते हैं — इसमें बस एक मिनट लगेगा",
   "onboarding_tagline": "सीखें, अभ्यास करें और जुड़ें। हर दिन।",
-  "onboarding_quote": "बूँद-बूँद से घड़ा भर जाता है। उसी प्रकार बुद्धिमान व्यक्ति थोड़ा-थोड़ा करके स्वयं को पुण्य से भर लेता है।",
   "onboarding_find_peace": "शुरू करें",
   "onboarding_continue": "जारी रखें",
   "onboarding_first_question": "अपनी भाषा चुनें",
   "onboarding_language_subtitle": "इससे ऐप की भाषा सेट होती है",
-  "onboarding_choose_option": "कम से कम एक चुनें:",
   "onboarding_all_set": "सब तैयार है",
   "onboarding_all_set_description": "आपके लिए यह सब इंतज़ार कर रहा है:",
   "onboarding_all_set_practice_title": "अभ्यास",
@@ -19,18 +16,7 @@
   "onboarding_all_set_connect_title": "जुड़ें",
   "onboarding_all_set_connect_body": "स्पेस, कार्यक्रम, न्यूज़फ़ीड और चैट",
   "home_today": "आज",
-  "home_good_morning": "नमस्कार",
-  "home_good_afternoon": "नमस्कार",
-  "home_good_evening": "नमस्कार",
-  "home_meditationTitle": "ध्यान",
-  "home_prayerTitle": "आज की प्रार्थना",
-  "home_scripture": "निर्देशित ग्रंथ",
-  "home_meditation": "निर्देशित ध्यान",
-  "home_goDeeper": "और गहराई में जाएँ",
-  "home_intention": "आज के लिए मेरा संकल्प",
-  "home_recitation": "पाठ",
   "home_overall_stats": "संपूर्ण आँकड़े",
-  "home_plans": "योजनाएँ",
   "home_plans_count": "{count} योजनाएँ",
   "@home_plans_count": {
     "placeholders": {
@@ -114,11 +100,9 @@
   "preset_timers": "पूर्व-निर्धारित टाइमर",
   "meditation_timer": "ध्यान टाइमर",
   "timer_min": "मिनट",
-  "timer_start": "शुरू करें",
   "timer_finish": "समाप्त करें",
   "timer_discard_session": "सत्र छोड़ें",
   "home_hello_prefix": "नमस्ते, ",
-  "home_greeting_fallback_name": "मित्र",
   "home_share_prompt": "{appName} पसंद आ रहा है?",
   "@home_share_prompt": {
     "placeholders": {
@@ -138,17 +122,14 @@
   "nav_me": "मैं",
   "tab_practices": "अभ्यास",
   "text_search": "खोजें",
-  "text_toc_versions": "संस्करण",
   "text_commentary": "टीकाएँ",
   "resources": "संसाधन",
   "no_translation": "कोई अनुवाद नहीं मिला",
-  "text_close_commentary": "टीका बंद करें",
   "show_more": "और दिखाएँ",
   "show_less": "कम दिखाएँ",
   "more": "और",
   "less": "कम",
   "no_content": "कोई सामग्री नहीं मिली",
-  "no_commentary": "कोई टीका नहीं मिली",
   "commentary_not_available_for_language": "{language} में टीका उपलब्ध नहीं",
   "@commentary_not_available_for_language": {
     "placeholders": {
@@ -158,17 +139,8 @@
     }
   },
   "loading": "लोड हो रहा है...",
-  "choose_bg_image": "बैकग्राउंड इमेज चुनें",
   "save": "सेव करें",
   "done": "हो गया",
-  "customise_message": "टेक्स्ट स्टाइल बदलने के लिए कस्टमाइज़ आइकन पर टैप करें",
-  "download_image": "इमेज डाउनलोड करें",
-  "no_images_available": "कोई इमेज उपलब्ध नहीं है",
-  "customise_text": "टेक्स्ट कस्टमाइज़ करें",
-  "text_size": "टेक्स्ट का आकार",
-  "text_color": "टेक्स्ट का रंग",
-  "text_shadow": "टेक्स्ट शैडो",
-  "apply": "लागू करें",
   "my_plans": "मेरी योजनाएँ",
   "browse_plans": "योजनाएँ देखें",
   "plan_info": "योजना की जानकारी",
@@ -188,15 +160,10 @@
   "search_for_plans": "योजनाएँ खोजें",
   "no_plans_found": "कोई योजना नहीं मिली",
   "no_days_available": "कोई दिन नहीं मिला",
-  "recitations_title": "पाठ",
-  "recitations_my_recitations": "मेरे पाठ",
-  "browse_recitations": "पाठ देखें",
   "recitations_search": "पाठ खोजें...",
   "recitations_search_for": "पाठ खोजें",
   "recitations_no_found": "कोई पाठ नहीं मिला",
   "recitations_no_content": "कोई पाठ उपलब्ध नहीं",
-  "recitations_no_saved": "कोई सेव किया हुआ पाठ नहीं है",
-  "recitations_login_prompt": "अपने सेव किए गए पाठ देखने के लिए साइन इन करें",
   "my_recitation_collection_new_title": "नया संग्रह",
   "my_recitation_collection_next": "आगे",
   "my_recitation_collection_create": "बनाएँ",
@@ -257,39 +224,10 @@
   "auth_drawer_subtitle": "किसी भी डिवाइस पर, जहाँ भी आप जाएँ, अपना अभ्यास जारी रखें",
   "routine_delete_block_message": "टाइम ब्लॉक और उसकी सभी सामग्री हटा दी जाएगी",
   "something_went_wrong": "कुछ गलत हो गया। कृपया फिर से प्रयास करें",
-  "onboarding_quote_citation": "— Dhammapada 122",
-  "onboarding_traditions_question": "आप किन परंपराओं\nका पालन करते हैं?",
   "onboarding_tradition_title": "आप बुद्ध की शिक्षाओं का अनुसरण कैसे करते हैं?",
   "onboarding_tradition_subtitle": "अपनी सामग्री के लिए एक या अधिक परंपराएँ चुनें। आप इसे कभी भी सेटिंग्स में बदल सकते हैं।",
-  "onboarding_tradition_option_intro": "के माध्यम से:",
   "onboarding_tradition_show_all_title": "मुझे सब कुछ दिखाएँ",
-  "onboarding_skip_for_now": "अभी के लिए छोड़ें",
-  "onboarding_add_another_tradition": "एक और परंपरा जोड़ें",
-  "onboarding_select_all": "सभी चुनें",
-  "onboarding_event_enrollment_error": "आपका नामांकन नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
-  "audio_init_error": "ऑडियो प्लेयर शुरू नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
-  "meditation_audio_load_error": "लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
-  "prayer_audio_load_error": "ऑडियो लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
   "home_no_series_found": "कोई सीरीज़ नहीं मिली",
-  "onboarding_event_question": "क्या आप किसी इवेंट से जुड़े हैं?",
-  "onboarding_event_optional": "वैकल्पिक · नामांकन के लिए टैप करें",
-  "onboarding_event_duration": "{description} · {days} दिन",
-  "@onboarding_event_duration": {
-    "placeholders": {
-      "description": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "onboarding_event_reminder_note": "हम आपको रोज़ सुबह 7:30 बजे एक रिमाइंडर भेजेंगे। (कभी भी बदलें।)",
-  "tradition_theravada": "थेरवाद",
-  "tradition_zen": "ज़ेन",
-  "tradition_tibetan_buddhism": "तिब्बती बौद्ध धर्म",
-  "tradition_pure_land": "शुद्ध भूमि",
-  "tradition_ambedkar_buddhism": "आंबेडकर बौद्ध धर्म",
   "plan_go_to_practice": "अभ्यास पर जाएँ",
   "plan_starts_soon_title": "जल्द शुरू होगा",
   "plan_joining_late_title": "प्रारंभ तिथि के बाद शामिल हो रहे हैं",
@@ -299,34 +237,13 @@
   "plans_empty_title": "और भी आ रहा है",
   "plans_empty_subtitle": "हमारी लाइब्रेरी बढ़ रही है। जल्द फिर देखें।",
   "find_plans_load_error": "लोड नहीं हो सका।\nअपना कनेक्शन जाँचें और फिर से प्रयास करें",
-  "connect_coming_soon_subtitle": "मार्ग पर आपका साथ देने के लिए शिक्षक, समुदाय, चुनौतियाँ और इवेंट",
   "explore_coming_soon_subtitle": "अभ्यास, शिक्षाएँ और सामुदायिक इवेंट खोजने के लिए एक चुनिंदा स्थान",
   "learn_coming_soon_subtitle": "आपकी निजी अध्ययन योजनाएँ, रोज़मर्रा की ज़िंदगी में ढलने के लिए बनाई गईं",
   "creator_featured_plan": "विशेष योजनाएँ",
   "home_no_tags_found": "कोई टैग नहीं मिला",
   "home_celebrated_by": "इनके द्वारा मनाया जाता है:",
-  "reader_settings_tooltip": "रीडर सेटिंग्स",
-  "reader_translate_tooltip": "अनुवाद दिखाएँ",
-  "reader_translate_unavailable": "इस पाठ के लिए अनुवाद उपलब्ध नहीं है",
   "reader_font_size_tooltip": "फ़ॉन्ट आकार",
-  "reader_version_title": "संस्करण · {language}",
-  "@reader_version_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
-  "reader_script_title": "लिपि · {language}",
-  "@reader_script_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_versions_load_error": "संस्करण लोड नहीं हो सके",
-  "reader_scripts_load_error": "लिपियाँ लोड नहीं हो सकीं",
   "reader_languages_load_error": "भाषाएँ लोड नहीं हो सकीं",
   "reader_no_versions_in_language": "{language} में कोई संस्करण उपलब्ध नहीं",
   "@reader_no_versions_in_language": {
@@ -336,35 +253,12 @@
       }
     }
   },
-  "reader_no_scripts_in_language": "{language} में कोई लिपि उपलब्ध नहीं",
-  "@reader_no_scripts_in_language": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_no_languages": "इस पाठ के लिए कोई भाषा उपलब्ध नहीं",
   "reader_license": "लाइसेंस",
-  "reader_version_details_load_error": "संस्करण विवरण लोड नहीं हो सके",
-  "reader_no_version_info": "इस संस्करण के लिए कोई अतिरिक्त जानकारी उपलब्ध नहीं है",
-  "recitation_unavailable": "पाठ सामग्री इस समय उपलब्ध नहीं है।\nबाद में फिर प्रयास करें या सहायता से संपर्क करें",
-  "recitation_sign_in_required": "इस पाठ तक पहुँचने के लिए साइन इन करें",
-  "my_recitations_load_error": "लोड नहीं हो सका।\nअपना कनेक्शन जाँचें और फिर से प्रयास करें",
-  "recitations_load_error": "पाठ लोड नहीं हो सके।\nबाद में फिर प्रयास करें",
   "text_search_hint": "खोजने के लिए टाइप करें",
   "text_search_press_button": "खोजने के लिए सर्च बटन दबाएँ",
   "text_search_error": "खोज नहीं हो सकी।\nकृपया फिर से प्रयास करें",
-  "unknown_error": "अज्ञात त्रुटि",
   "create_image_share_error": "शेयर नहीं हो सका। कृपया फिर से प्रयास करें",
-  "version_search_no_results": "\"{query}\" के लिए कोई संस्करण नहीं मिला",
-  "@version_search_no_results": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "my_plans_sign_in_prompt": "अपनी योजनाएँ देखने के लिए साइन इन करें",
   "plan_starts_soon_message": "{date} को शुरू होगा। आप अभी सामग्री देख सकते हैं",
   "@plan_starts_soon_message": {
@@ -390,8 +284,6 @@
   "share": "शेयर करें",
   "bookmark": "बुकमार्क",
   "collection_audio_versions": "Audio versions",
-  "image": "इमेज",
-  "feedback": "फ़ीडबैक",
   "author": "लेखक",
   "plans_created": "बनाई गई योजनाएँ",
   "ai_confirm": "पुष्टि करें",
@@ -415,7 +307,6 @@
   "routine_add_session": "सत्र में जोड़ें",
   "routine_edit_title": "अपनी दिनचर्या एडिट करें",
   "routine_delete_block": "ब्लॉक हटाएँ",
-  "routine_delete_time_block": "टाइम ब्लॉक हटाएँ",
   "routine_add_plan": "योजना जोड़ें",
   "routine_add_recitation": "पाठ जोड़ें",
   "routine_add_plan_to_routine": "दिनचर्या में जोड़ें",
@@ -460,7 +351,6 @@
   "continueWithGoogle": "Google के साथ जारी रखें",
   "continueWithApple": "Apple के साथ जारी रखें",
   "continueWithPhone": "फ़ोन के साथ जारी रखें",
-  "continueAsGuest": "अतिथि के रूप में जारी रखें",
   "exploreAsGuest": "अतिथि के रूप में एक्सप्लोर करें",
   "signIn": "साइन इन",
   "profileError": "प्रोफ़ाइल लोड करने में त्रुटि",
@@ -478,7 +368,6 @@
   "unableToLoad": "लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
   "somethingWrong": "कुछ गलत हो गया। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
   "source": "स्रोत",
-  "searchResults": "खोज परिणाम",
   "noTasks": "कोई कार्य उपलब्ध नहीं",
   "taskNotFound": "कार्य नहीं मिला",
   "updateTaskError": "कार्य की स्थिति अपडेट नहीं हो सकी",
@@ -493,8 +382,6 @@
   "removeItem": "आइटम हटाएँ?",
   "removeConfirmation": "\"{itemName}\" इस ब्लॉक से हटा दिया जाएगा",
   "shareError": "शेयर नहीं हो सका। कृपया फिर से प्रयास करें",
-  "updateOrderError": "क्रम अपडेट नहीं हो सका। कृपया फिर से प्रयास करें",
-  "loadFailed": "लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से प्रयास करें",
   "captureError": "QR कोड कैप्चर नहीं हो सका। कृपया फिर से प्रयास करें",
   "qrShareError": "QR कोड शेयर नहीं हो सका। बाद में फिर प्रयास करें",
   "errorDetail": "त्रुटि: {error}",
@@ -544,21 +431,12 @@
   "plan_status_on_track": "सही राह पर",
   "start_now": "अभी शुरू करें",
   "plan_enroll": "नामांकन करें",
-  "show_second_version": "दूसरा संस्करण दिखाएँ",
-  "enable_add_msg": "मुख्य पाठ के साथ अनुवाद या उच्चारण जोड़ें",
-  "main_version": "मुख्य संस्करण",
-  "second_version": "दूसरा संस्करण",
-  "second_version_msg": "दूसरा संस्करण मुख्य पाठ के हर श्लोक के नीचे दिखाई देगा",
   "root_text": "मूल पाठ",
   "version": "संस्करण",
-  "parallel_version": "समानांतर संस्करण",
   "reader_languages_title": "भाषाएँ",
   "reader_original_label": "मूल",
   "reader_translation_label": "अनुवाद",
   "version_not_available": "उपलब्ध नहीं है",
-  "read_full_text": "पूरा पाठ पढ़ें",
-  "reader_source_label": "स्रोत",
-  "reader_license_label": "लाइसेंस",
   "series_stats": "{planCount} अध्याय · {totalDays} दिन",
   "@series_stats": {
     "placeholders": {
@@ -582,8 +460,6 @@
   "settings_feedback_row": "फ़ीडबैक",
   "edit_profile_title": "प्रोफ़ाइल एडिट करें",
   "edit_profile_save": "सेव करें",
-  "edit_profile_first_name": "पहला नाम",
-  "edit_profile_last_name": "अंतिम नाम",
   "edit_profile_display_name": "प्रदर्शन नाम",
   "edit_profile_bio": "बायो",
   "edit_profile_bio_hint": "अपने बारे में थोड़ा बताएँ",
@@ -641,22 +517,10 @@
   "accumulations_search_for": "संचय खोजें",
   "accumulations_no_found": "कोई संचय नहीं मिला",
   "me_accumulation": "कुल संचय",
-  "me_counts": "बार",
   "me_minutes": "मिनट",
   "me_hours": "घंटे",
   "me_total_meditation_time": "कुल ध्यान समय",
   "me_days_plan_practiced_suffix": "कुल पूरे किए गए योजना दिवस",
-  "me_streak_share_message": "मैं {appName} पर {count} दिन की स्ट्रीक पर हूँ!",
-  "@me_streak_share_message": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "appName": {
-        "type": "String"
-      }
-    }
-  },
   "me_streak_share_quote": "WeBuddhist पर मेरी मौजूदा स्ट्रीक!",
   "me_streak_days_count": "{count} दिन",
   "@me_streak_days_count": {
@@ -680,17 +544,6 @@
   "calendar_upcoming_events": "आगामी इवेंट",
   "calendar_day_short": "दिन",
   "calendar_day_label": "दिन",
-  "calendar_day_month": "दिन {day} · माह {month}",
-  "@calendar_day_month": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      }
-    }
-  },
   "calendar_lunar_month": "{ordinal} चंद्र माह",
   "@calendar_lunar_month": {
     "placeholders": {
@@ -700,13 +553,8 @@
     }
   },
   "moon_phase_new_moon": "अमावस्या",
-  "moon_phase_waxing_crescent": "बढ़ता अर्धचंद्र",
   "moon_phase_first_quarter": "प्रथम चतुर्थांश",
-  "moon_phase_waxing_gibbous": "बढ़ता उपपूर्ण चंद्र",
   "moon_phase_full_moon": "पूर्णिमा",
-  "moon_phase_waning_gibbous": "घटता उपपूर्ण चंद्र",
-  "moon_phase_last_quarter": "अंतिम चतुर्थांश",
-  "moon_phase_waning_crescent": "घटता अर्धचंद्र",
   "join": "शामिल हों",
   "group_member": "सदस्य",
   "group_members": "सदस्य",
@@ -854,7 +702,6 @@
   "search_for_groups": "स्पेस की खोज करें",
   "no_groups_found": "कोई मिलता-जुलता स्पेस नहीं मिला",
   "connect_groups_empty_title": "अभी कोई समूह नहीं",
-  "connect_groups_empty_subtitle": "बधाई हो, आप हमारे सभी स्पेस में शामिल हो चुके हैं! जल्द फिर देखें। नए स्पेस आ रहे हैं...",
   "connect_groups_load_error": "समूह लोड नहीं हो सके।\nअपना कनेक्शन जाँचें और फिर से प्रयास करें",
   "weekday_monday": "सोम",
   "weekday_tuesday": "मंगल",
@@ -866,11 +713,8 @@
   "reader_search_failed": "खोज विफल रही।\nकृपया पुनः प्रयास करें",
   "reader_swipe_up_for_more": "अधिक के लिए ऊपर स्वाइप करें",
   "reader_videos": "वीडियो",
-  "reader_about_this_version": "इस संस्करण के बारे में",
-  "reader_version_count": "{count, plural,\n=1 {1 संस्करण}\nother {{count} संस्करण}\n}",
   "mala_no_mantras": "कोई मंत्र उपलब्ध नहीं",
   "mala_count_load_error": "आपकी गिनती लोड नहीं हो सकी",
-  "mala_mantra_label": "मंत्र",
   "bookmarks_empty_all_title": "अभी तक कुछ भी बुकमार्क नहीं किया गया",
   "bookmarks_empty_all_subtitle": "इसे यहाँ सहेजने के लिए किसी भी चीज़ को बुकमार्क करें",
   "bookmarks_empty_plans_title": "अभी तक कोई योजना बुकमार्क नहीं की गई",
@@ -913,41 +757,28 @@
   "link_invalid": "अमान्य URL",
   "author_no_plans": "अभी तक कोई योजना नहीं बनाई गई",
   "author_plans_load_error": "योजनाएँ लोड करने में असमर्थ",
-  "source_with_value": "स्रोत: {value}",
-  "license_with_value": "लाइसेंस: {value}",
-  "loading_previous_pages": "पिछला लोड हो रहा है... ({count} पृष्ठ)",
-  "loading_more_pages": "और लोड हो रहा है... ({count} पृष्ठ)",
   "drag_to_resize": "आकार बदलने के लिए खींचें",
   "day_completion_share_message": "मैंने WeBuddhist पर अपने अभ्यास का एक दिन पूरा किया। मेरे साथ जुड़ें और साथ मिलकर रोज़ाना अभ्यास की आदत बनाएं।",
   "group_accumulator_share_message": "मैं WeBuddhist पर {group} स्पेस के संचय \"{accumulation}\" में भाग ले रहा हूँ। आप भी मेरे साथ जुड़ें!",
   "group_accumulator_share_message_no_group": "मैं WeBuddhist पर \"{accumulation}\" संचय में भाग ले रहा हूँ। आप भी मेरे साथ जुड़ें!",
   "connect_tab_feed": "फ़ीड",
   "connect_tab_events": "कार्यक्रम",
-  "connect_tab_posts": "पोस्ट",
   "connect_tab_practices": "अभ्यास",
   "connect_tab_groups": "स्पेस",
   "connect_segment_my": "आपके स्पेस",
   "connect_segment_discover": "खोजें",
-  "connect_empty_discover_posts": "खोजने के लिए कोई पोस्ट नहीं",
   "connect_empty_discover_events": "खोजने के लिए कोई कार्यक्रम नहीं",
   "connect_empty_discover_feed": "खोजने के लिए कुछ नहीं",
   "connect_empty_discover_groups": "खोजने के लिए कोई स्पेस नहीं",
-  "connect_empty_discover_practices": "खोजने के लिए कोई अभ्यास नहीं",
   "connect_all_groups": "सभी स्पेस",
   "connect_my_empty_feed_title": "कोई नया अपडेट नहीं",
   "connect_my_empty_events_title": "कोई आगामी कार्यक्रम नहीं",
-  "connect_my_empty_posts_title": "अभी कोई पोस्ट नहीं",
   "connect_my_empty_groups_title": "अभी कोई समूह नहीं",
   "connect_my_empty_feed_subtitle": "आपके स्पेस ने कुछ नया साझा नहीं किया है",
   "connect_my_empty_events_subtitle": "आपके स्पेस ने कोई कार्यक्रम तय नहीं किया है",
-  "connect_my_empty_posts_subtitle": "आपके स्पेस ने कुछ भी पोस्ट नहीं किया है",
   "connect_my_empty_groups_subtitle": "आपने अभी तक कोई समूह नहीं जोड़ा है। साथ अभ्यास करने के लिए समुदाय खोजें।",
   "connect_my_empty_feed_browse": "देखें अन्य स्पेस क्या साझा कर रहे हैं",
   "connect_my_empty_events_browse": "खुले कार्यक्रम देखें",
-  "connect_my_empty_posts_browse": "अन्य पोस्ट देखें",
-  "connect_my_empty_practices_title": "अभी तक कोई अभ्यास नहीं",
-  "connect_my_empty_practices_subtitle": "आपके स्पेस ने कोई अभ्यास शुरू नहीं किया है",
-  "connect_my_empty_practices_browse": "अन्य अभ्यास देखें",
   "connect_comment_replying_to": "@{handle} को उत्तर दे रहे हैं",
   "@connect_comment_replying_to": {
     "placeholders": {
@@ -971,7 +802,6 @@
     }
   },
   "connect_post_comments_empty": "अभी कोई टिप्पणी नहीं। बातचीत शुरू करें",
-  "connect_caption_more": "और",
   "connect_online": "ऑनलाइन",
   "home_group_events": "विशेष कार्यक्रम",
   "home_poems": "कविताएँ",
@@ -983,7 +813,6 @@
   "connect_events_filter_empty_in_person": "कोई व्यक्तिगत कार्यक्रम नहीं",
   "connect_events_filter_hybrid": "हाइब्रिड",
   "connect_events_filter_empty_hybrid": "कोई हाइब्रिड इवेंट नहीं",
-  "connect_open": "खोलें",
   "connect_event_fallback_title": "कार्यक्रम",
   "connect_group_fallback_title": "स्पेस",
   "connect_event_participants_attending": "{count} प्रतिभागी",
@@ -996,12 +825,8 @@
   },
   "connect_event_participants_empty": "अभी तक कोई प्रतिभागी नहीं",
   "connect_event_tab_videos": "वीडियो",
-  "connect_event_tab_links": "लिंक",
   "connect_event_tab_about": "परिचय",
   "connect_event_links_title": "इवेंट की ज़्यादा जानकारी",
-  "connect_event_links_empty": "अभी तक कोई लिंक नहीं",
-  "connect_event_link_tap_to_join": "शामिल होने के लिए टैप करें",
-  "connect_event_link_open": "लिंक खोलें",
   "connect_event_date_tba": "तारीख की घोषणा की जाएगी",
   "connect_event_about_empty": "अभी कार्यक्रम की कोई जानकारी नहीं है",
   "timer_notification_in_progress": "ध्यान जारी है",
@@ -1014,7 +839,6 @@
     }
   },
   "timer_notification_complete": "आपका सत्र पूरा हुआ",
-  "group_chat_title": "चैट",
   "chats_title": "चैट",
   "chats_empty_title": "अभी कोई चैट नहीं",
   "chats_empty_body": "चैट शुरू करने के लिए किसी स्पेस में शामिल हों",
@@ -1022,7 +846,6 @@
   "group_chat_not_a_member": "केवल सदस्य ही यह चैट खोल सकते हैं",
   "group_chat_open": "चैट",
   "group_chat_message_hint": "संदेश",
-  "group_chat_join_to_send": "संदेश भेजने के लिए चैट से जुड़ें।",
   "group_chat_today": "आज",
   "group_chat_yesterday": "कल",
   "group_chat_empty_title": "अभी कोई संदेश नहीं",
@@ -1131,7 +954,6 @@
   "event_prayer_load_failed": "प्रार्थना अनुरोध लोड नहीं किए जा सके",
   "event_prayer_closed": "इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं",
   "event_prayer_pray": "प्रार्थना करें",
-  "event_prayer_praying": "प्रार्थना की",
   "connect_event_organizer": "आयोजक",
   "event_prayer_request_count": "{count, plural,\nother {{count} अनुरोध}\n=1 {1 अनुरोध}\none {1 अनुरोध}\n}",
   "@event_prayer_request_count": {
@@ -1175,7 +997,6 @@
   "help_context_photos": "{count, plural, =1{1 फ़ोटो} other{{count} फ़ोटो}}",
   "chat_official_badge": "आधिकारिक",
   "chat_team_reply_time": "आमतौर पर 1 दिन के भीतर जवाब देते हैं",
-  "connect_event_enter": "प्रवेश करें",
   "connect_event_participation_prompt": "आप कैसे शामिल हो रहे हैं?",
   "connect_event_practice_in_person": "व्यक्तिगत रूप से अभ्यास करें",
   "connect_event_practice_online": "ऑनलाइन अभ्यास करें",
@@ -1194,9 +1015,7 @@
   },
   "connect_event_when": "जब",
   "connect_event_where": "कहाँ",
-  "connect_event_practices": "कार्यक्रम के अभ्यास",
   "connect_event_tab_accumulations": "संचय",
-  "connect_event_tab_recitations": "पाठ",
   "connect_event_add_recitations": "पाठ जोड़ें",
   "connect_event_add_recitations_message": "लाइवस्ट्रीम के साथ या इस ऐप के बाहर किए गए पाठ जोड़ें",
   "connect_event_every_day": "हर दिन",
@@ -1220,7 +1039,6 @@
   "player_fullscreen": "पूर्ण स्क्रीन",
   "player_exit_fullscreen": "पूर्ण स्क्रीन से बाहर निकलें",
   "event_live_badge": "लाइव",
-  "event_live_audio": "लाइव ऑडियो",
   "event_live_video_mode": "वीडियो",
   "event_live_audio_mode": "ऑडियो",
   "event_live_go_live": "लाइव",
@@ -1253,14 +1071,6 @@
     }
   },
   "event_prayer_praying_for_you": "आपके लिए प्रार्थना की गई",
-  "event_prayer_praying_for": "{name} के लिए प्रार्थना की गई",
-  "@event_prayer_praying_for": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "event_prayer_your_request": "आपका अनुरोध",
   "event_prayer_supporters_failed": "प्रार्थना करने वालों को लोड नहीं किया जा सका।",
   "event_prayer_no_supporters": "अभी तक किसी ने प्रार्थना नहीं की है",

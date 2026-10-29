@@ -14,10 +14,10 @@ Implementation lives in [`locale_notifier.dart`](locale_notifier.dart).
 
 UI locale is **bounded**. The app can only render chrome in a language it
 ships an ARB for (`L10n.all`: `en`, `zh`, `zh-Hans`, `bo`, `hi`, `mn`,
-`ne`).
+`ne`, `th`, `my`, `vi`).
 
 Content language is **open-ended**. The backend may serve languages the app
-has no UI translation for (`th`, `tib`, `tibphono`, or any code from
+has no UI translation for (`ja`, `tib`, `tibphono`, or any code from
 `availableContentLanguagesProvider`). The raw code is stored and sent
 verbatim.
 
@@ -25,12 +25,12 @@ Selecting such a language keeps chrome in English and content in that
 language. That split is intentional.
 
 ```
-User picks Thai ("th")
+User picks Japanese ("ja")
         │
         ▼
-selectAppLanguage(ref, 'th')
+selectAppLanguage(ref, 'ja')
         │
-        ├── contentLanguageProvider  →  "th"     (sent to APIs)
+        ├── contentLanguageProvider  →  "ja"     (sent to APIs)
         └── localeProvider           →  "en"     (ARB fallback)
 ```
 

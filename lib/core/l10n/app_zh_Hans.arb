@@ -4,33 +4,19 @@
   "sign_in": "登录",
   "logout": "退出登录",
   "onboarding_welcome": "欢迎来到",
-  "onboarding_setup_subtitle": "让我们为您设置，只需一分钟",
   "onboarding_tagline": "学习、修持、连结。每日。",
-  "onboarding_quote": "滴水穿石 ‧ 聚沙成塔",
   "onboarding_find_peace": "立即开始",
   "onboarding_continue": "下一步",
   "onboarding_first_question": "选择您的语言",
   "onboarding_language_subtitle": "这会设置应用程序的语言",
-  "onboarding_choose_option": "至少选择一项",
   "onboarding_all_set": "一切就绪",
   "onboarding_all_set_description": "以下是为您准备的内容：",
   "onboarding_all_set_practice_title": "修持",
   "onboarding_all_set_practice_body": "修持计划、持诵、念珠与禅修",
   "onboarding_all_set_connect_title": "连结",
   "onboarding_all_set_connect_body": "社群、活动、动态与聊天",
-  "home_recitation": "持诵",
   "home_today": "今天",
-  "home_good_morning": "早上好",
-  "home_good_afternoon": "下午好",
-  "home_good_evening": "晚上好",
-  "home_meditationTitle": "禅修",
-  "home_prayerTitle": "今日祈愿文",
-  "home_scripture": "导读经典",
-  "home_meditation": "导引禅修",
-  "home_goDeeper": "深入学习",
-  "home_intention": "我今日的意愿",
   "home_overall_stats": "整体统计",
-  "home_plans": "计划",
   "home_plans_count": "{count} 计划",
   "@home_plans_count": {
     "placeholders": {
@@ -122,11 +108,9 @@
   "preset_timers": "预设计时",
   "meditation_timer": "禅修计时",
   "timer_min": "分钟",
-  "timer_start": "开始",
   "timer_finish": "完成",
   "timer_discard_session": "放弃此次修持",
   "home_hello_prefix": "你好，",
-  "home_greeting_fallback_name": "朋友",
   "home_share_prompt": "喜欢 {appName} 吗？",
   "@home_share_prompt": {
     "placeholders": {
@@ -146,17 +130,14 @@
   "nav_me": "个人",
   "tab_practices": "修持计划",
   "text_search": "搜索",
-  "text_toc_versions": "版本",
   "text_commentary": "注释",
   "resources": "资源",
   "no_translation": "尚无相关翻译",
-  "text_close_commentary": "关闭注释",
   "show_more": "显示更多",
   "show_less": "显示较少",
   "more": "更多",
   "less": "较少",
   "no_content": "尚无相关内容",
-  "no_commentary": "尚无相关注释",
   "commentary_not_available_for_language": "暂无 {language} 注释",
   "@commentary_not_available_for_language": {
     "placeholders": {
@@ -166,17 +147,8 @@
     }
   },
   "loading": "加载中...",
-  "choose_bg_image": "选择背景图片",
   "save": "保存",
   "done": "完成",
-  "customise_message": "点击按钮以调整文字样式",
-  "download_image": "下载图片",
-  "no_images_available": "没有可用的图片",
-  "customise_text": "自订文字样式",
-  "text_size": "文字大小",
-  "text_color": "文字颜色",
-  "text_shadow": "文字阴影",
-  "apply": "套用",
   "my_plans": "我的计划",
   "browse_plans": "浏览修持计划",
   "plan_info": "修持计划内容",
@@ -196,15 +168,10 @@
   "search_for_plans": "搜索计划",
   "no_plans_found": "找不到相关计划",
   "no_days_available": "找不到相关天数",
-  "recitations_title": "唱颂",
-  "recitations_my_recitations": "我的清单",
-  "browse_recitations": "浏览唱诵列表",
   "recitations_search": "搜索",
   "recitations_search_for": "寻找持诵内容",
   "recitations_no_found": "尚无相关持诵内容",
   "recitations_no_content": "没有可用的持诵",
-  "recitations_no_saved": "没有已保存的持诵",
-  "recitations_login_prompt": "请登录以查看您保存的持诵",
   "my_recitation_collection_new_title": "新持诵集",
   "my_recitation_collection_next": "下一步",
   "my_recitation_collection_create": "创建",
@@ -265,35 +232,9 @@
   "auth_drawer_subtitle": "随时随地，在任何设备上继续您的修持",
   "routine_delete_block_message": "这将删除该时段及其中所有内容",
   "something_went_wrong": "出了点问题。请再试一次",
-  "onboarding_quote_citation": "— 法句经 122",
-  "onboarding_traditions_question": "您跟随哪些传承？",
   "onboarding_tradition_title": "您如何依循佛陀的教法？",
   "onboarding_tradition_subtitle": "为您的内容选择一个或多个传承。您随时可以在「设置」中变更。",
-  "onboarding_tradition_option_intro": "通过：",
   "onboarding_tradition_show_all_title": "显示所有内容",
-  "onboarding_skip_for_now": "暂时跳过",
-  "onboarding_add_another_tradition": "添加另一个传承",
-  "onboarding_select_all": "全选",
-  "onboarding_event_enrollment_error": "无法完成注册。请检查您的网络连接，然后再试一次",
-  "onboarding_event_question": "加入即将举办的活动？",
-  "onboarding_event_optional": "选填 · 点击以加入",
-  "onboarding_event_duration": "{description} · {days} 天",
-  "@onboarding_event_duration": {
-    "placeholders": {
-      "description": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "onboarding_event_reminder_note": "我们将在每天早上 7:30 提醒您。(可随时更改。)",
-  "tradition_theravada": "上座部佛教",
-  "tradition_zen": "禅宗",
-  "tradition_tibetan_buddhism": "藏传佛教",
-  "tradition_pure_land": "净土宗",
-  "tradition_ambedkar_buddhism": "安贝卡佛教",
   "plan_go_to_practice": "前往修持计划",
   "plan_starts_soon_title": "计划即将开始",
   "plan_joining_late_title": "在开始日期后加入",
@@ -303,41 +244,30 @@
   "plans_empty_title": "更多内容即将推出",
   "plans_empty_subtitle": "我们将持续添增修持课程，欢迎随时回来浏览。",
   "find_plans_load_error": "无法加载计划，\n请检查你的网络连接后再试。",
-  "connect_coming_soon_subtitle": "在修行路上支持您前行的良师、社群、修持挑战与相关活动",
   "connect_subtitle": "寻找你的社群，一起修持",
   "discover_groups": "探索社群",
   "my_groups": "我的社群",
   "see_all": "查看全部",
   "connect_groups_load_error": "无法加载社群，\n请检查网络连接后重试",
   "connect_groups_empty_title": "尚无社群",
-  "connect_groups_empty_subtitle": "恭喜，您已加入我们所有的共修空间！请稍后再来造访，新共修空间即将上线...",
   "connect_tab_feed": "动态",
   "connect_tab_events": "活动",
-  "connect_tab_posts": "贴文",
   "connect_tab_practices": "修持计划",
   "connect_tab_groups": "社群",
   "connect_segment_my": "您的社群",
   "connect_segment_discover": "探索",
-  "connect_empty_discover_posts": "没有可探索的贴文",
   "connect_empty_discover_events": "没有可探索的活动",
   "connect_empty_discover_feed": "没有可探索的内容",
   "connect_empty_discover_groups": "没有可探索的共修空间",
-  "connect_empty_discover_practices": "没有可探索的修行计划",
   "connect_all_groups": "所有共修空间",
   "connect_my_empty_feed_title": "您的共修空间最近很安静",
   "connect_my_empty_events_title": "没有即将举行的活动",
-  "connect_my_empty_posts_title": "尚无贴文",
   "connect_my_empty_groups_title": "尚未加入社群",
   "connect_my_empty_feed_subtitle": "您的社群还没有分享新内容",
   "connect_my_empty_events_subtitle": "您的社群还没有安排任何活动",
-  "connect_my_empty_posts_subtitle": "您的社群还没有发文",
   "connect_my_empty_groups_subtitle": "你还没有加入任何社群。探索可以一起修持的社群。",
   "connect_my_empty_feed_browse": "看看其他共修空间在分享什么",
   "connect_my_empty_events_browse": "浏览开放活动",
-  "connect_my_empty_posts_browse": "浏览其他贴文",
-  "connect_my_empty_practices_title": "尚无修持计划",
-  "connect_my_empty_practices_subtitle": "您的社群还没有发起任何修持",
-  "connect_my_empty_practices_browse": "浏览其他修持计划",
   "connect_comment_replying_to": "回复 @{handle}",
   "@connect_comment_replying_to": {
     "placeholders": {
@@ -361,7 +291,6 @@
     }
   },
   "connect_post_comments_empty": "还没有留言。开始讨论吧",
-  "connect_caption_more": "更多",
   "connect_online": "在线",
   "connect_ended": "已结束",
   "connect_ended_on": "已于 {date} 结束",
@@ -375,10 +304,8 @@
   "connect_events_filter_empty_in_person": "尚无现场活动",
   "connect_events_filter_hybrid": "混合型",
   "connect_events_filter_empty_hybrid": "没有混合型的活动",
-  "connect_open": "打开",
   "connect_event_fallback_title": "活动",
   "connect_group_fallback_title": "共修空间",
-  "connect_event_enter": "进入",
   "connect_event_participation_prompt": "您会怎么参加?",
   "connect_event_practice_in_person": "现场修持",
   "connect_event_practice_online": "在线修持",
@@ -410,18 +337,12 @@
   "connect_event_participants_empty": "尚无人参加",
   "connect_event_organizer": "主办单位",
   "connect_event_tab_videos": "视频",
-  "connect_event_tab_links": "链接",
   "connect_event_tab_about": "活动介绍",
   "connect_event_links_title": "更多活动介绍",
-  "connect_event_links_empty": "尚无链接",
-  "connect_event_link_tap_to_join": "点击进入",
-  "connect_event_link_open": "打开链接",
   "connect_event_date_tba": "日期尚待公告",
   "connect_event_when": "时间",
   "connect_event_where": "地点",
-  "connect_event_practices": "活动共修内容",
   "connect_event_tab_accumulations": "计数统计",
-  "connect_event_tab_recitations": "持诵",
   "connect_event_add_recitations": "填入您的持诵次数",
   "connect_event_add_recitations_message": "添加您在线直播，或在此应用程序之外已完成的持诵次数",
   "connect_event_every_day": "每天",
@@ -449,34 +370,11 @@
   "explore_coming_soon_subtitle": "探索修持、教法与社群活动的精选空间。",
   "learn_coming_soon_subtitle": "专为您日常生活设计的个人学习计划",
   "creator_featured_plan": "精选计划",
-  "audio_init_error": "无法初始化音频播放器。请检查网络连接后重试。",
-  "meditation_audio_load_error": "无法加载。请检查网络连接后重试",
-  "prayer_audio_load_error": "无法加载音频。请检查网络连接后重试",
   "home_no_series_found": "未找到系列",
   "home_no_tags_found": "找不到该标签",
   "home_celebrated_by": "庆祝者：",
-  "reader_settings_tooltip": "阅读器设置",
-  "reader_translate_tooltip": "显示译文",
-  "reader_translate_unavailable": "此文本没有可用译文",
   "reader_font_size_tooltip": "字体大小",
-  "reader_version_title": "版本 · {language}",
-  "@reader_version_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
-  "reader_script_title": "字体 · {language}",
-  "@reader_script_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_versions_load_error": "无法加载版本",
-  "reader_scripts_load_error": "加载字体失败。",
   "reader_languages_load_error": "无法加载语言",
   "reader_no_versions_in_language": "{language} 尚无可用的版本。",
   "@reader_no_versions_in_language": {
@@ -486,35 +384,12 @@
       }
     }
   },
-  "reader_no_scripts_in_language": "{language} 尚无可用的字体。",
-  "@reader_no_scripts_in_language": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_no_languages": "此文本尚无可用的语言。",
   "reader_license": "授权",
-  "reader_version_details_load_error": "无法加载版本详情。",
-  "reader_no_version_info": "此版本没有其他可用的信息。",
-  "recitation_unavailable": "此唱诵内容目前无法使用。\n请稍后再试或联系客服。",
-  "recitation_sign_in_required": "请登录以使用此唱诵。",
-  "my_recitations_load_error": "无法加载。请检查您的网络连接，然后再试一次。",
-  "recitations_load_error": "无法加载唱诵。\n请稍后再试。",
   "text_search_hint": "输入以搜索",
   "text_search_press_button": "按下搜索按钮以搜索",
   "text_search_error": "无法执行搜索，请再试一次",
-  "unknown_error": "未知错误",
   "create_image_share_error": "无法分享，请再试一次",
-  "version_search_no_results": "找不到「{query}」的版本",
-  "@version_search_no_results": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "my_plans_sign_in_prompt": "登录以查看您的计划",
   "plan_starts_soon_message": "此计划将于 {date} 开始。您可以先浏览内容。",
   "@plan_starts_soon_message": {
@@ -540,8 +415,6 @@
   "share": "分享",
   "bookmark": "书签",
   "collection_audio_versions": "音频版本",
-  "image": "图片",
-  "feedback": "意见回馈",
   "author": "作者",
   "plans_created": "创建的修持计划",
   "ai_confirm": "确认",
@@ -561,7 +434,6 @@
   "routine_session_title_hint": "标题...",
   "routine_expand_all": "全部展开",
   "routine_collapse_all": "全部收合",
-  "routine_delete_time_block": "移除时段",
   "routine_add_plan": "添加计划",
   "routine_add_recitation": "添加持诵",
   "routine_add_plan_to_routine": "添加至日常修持",
@@ -606,7 +478,6 @@
   "continueWithGoogle": "使用 Google 继续",
   "continueWithApple": "使用 Apple 继续",
   "continueWithPhone": "使用电话继续",
-  "continueAsGuest": "以访客身份继续",
   "exploreAsGuest": "以访客身份探索",
   "signIn": "登录",
   "profileError": "加载个人资料时出错",
@@ -624,7 +495,6 @@
   "unableToLoad": "无法加载，请再试一次",
   "somethingWrong": "出了点问题，请检查您的连接并重试",
   "source": "来源",
-  "searchResults": "搜索结果",
   "noTasks": "没有可用任务",
   "taskNotFound": "找不到任务",
   "updateTaskError": "无法更新任务状态",
@@ -667,8 +537,6 @@
       }
     }
   },
-  "updateOrderError": "无法更新顺序。请再试一次",
-  "loadFailed": "无法加载。请检查您的网络连接，然后再试一次。",
   "captureError": "QR code 扫描失败，请再试一次",
   "qrShareError": "无法分享QRcode，请稍后再试",
   "errorDetail": "错误：{error}",
@@ -690,22 +558,13 @@
   "plan_status_on_track": "进度正常！",
   "start_now": "立即开始",
   "plan_enroll": "加入",
-  "show_second_version": "显示次要版本",
-  "enable_add_msg": "打开以同时阅读其他翻译或音译",
-  "main_version": "主要版本",
-  "second_version": "次要版本",
-  "second_version_msg": "次要版本将会显示在主要版本的内文下方",
   "root_text": "根本文",
   "version": "所有版本",
-  "parallel_version": "对读版本",
   "reader_languages_title": "语言",
   "reader_sections_title": "章节",
   "reader_original_label": "原文",
   "reader_translation_label": "译文",
   "version_not_available": "无可用版本",
-  "read_full_text": "阅读完整文本",
-  "reader_source_label": "来源",
-  "reader_license_label": "授权",
   "series_stats": "{planCount} 个章节 · {totalDays} 天",
   "force_update_title": "需要更新",
   "force_update_message": "新版本已上线，请更新后再继续使用。",
@@ -719,8 +578,6 @@
   "settings_feedback_row": "意见回馈",
   "edit_profile_title": "编辑个人资料",
   "edit_profile_save": "保存",
-  "edit_profile_first_name": "名字",
-  "edit_profile_last_name": "姓氏",
   "edit_profile_bio": "自我介绍",
   "edit_profile_bio_hint": "向大家介绍一下自己",
   "edit_profile_delete_account": "删除帐号",
@@ -777,22 +634,10 @@
   "accumulations_search_for": "寻找计数内容",
   "accumulations_no_found": "尚无持诵计数纪录",
   "me_accumulation": "累积总数",
-  "me_counts": "次",
   "me_minutes": "分钟",
   "me_hours": "小时",
   "me_total_meditation_time": "禅修总时间",
   "me_days_plan_practiced_suffix": "天计划已完成",
-  "me_streak_share_message": "我在 {appName} 已连续 {count} 天！",
-  "@me_streak_share_message": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "appName": {
-        "type": "String"
-      }
-    }
-  },
   "me_streak_share_quote": "我在 WeBuddhist 的连续纪录！",
   "me_streak_days_count": "{count} 天",
   "@me_streak_days_count": {
@@ -816,17 +661,6 @@
   "calendar_upcoming_events": "近期活动",
   "calendar_day_short": "日",
   "calendar_day_label": "日",
-  "calendar_day_month": "藏历{month}月{day}日",
-  "@calendar_day_month": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      }
-    }
-  },
   "calendar_lunar_month": "藏历{ordinal}月",
   "@calendar_lunar_month": {
     "placeholders": {
@@ -836,13 +670,8 @@
     }
   },
   "moon_phase_new_moon": "新月",
-  "moon_phase_waxing_crescent": "蛾眉月",
   "moon_phase_first_quarter": "上弦月",
-  "moon_phase_waxing_gibbous": "盈凸月",
   "moon_phase_full_moon": "满月",
-  "moon_phase_waning_gibbous": "亏凸月",
-  "moon_phase_last_quarter": "下弦月",
-  "moon_phase_waning_crescent": "残月",
   "join": "加入",
   "group_member": "位成员",
   "group_members": "位成员",
@@ -1034,11 +863,8 @@
   "reader_search_failed": "搜索失败。\n请重试",
   "reader_swipe_up_for_more": "向上滑动查看更多",
   "reader_videos": "视频",
-  "reader_about_this_version": "关于此版本",
-  "reader_version_count": "{count, plural,\nother {{count} 个版本}\n}",
   "mala_no_mantras": "暂无咒语",
   "mala_count_load_error": "无法加载您的计数",
-  "mala_mantra_label": "咒语",
   "bookmarks_empty_all_title": "尚无书签",
   "bookmarks_empty_all_subtitle": "加入书签，即可将任何内容保存于此。",
   "bookmarks_empty_plans_title": "尚无加入书签的修持计划",
@@ -1095,15 +921,10 @@
   "link_invalid": "无效的网址",
   "author_no_plans": "尚未创建修持计划",
   "author_plans_load_error": "无法加载修持计划",
-  "source_with_value": "来源：{value}",
-  "license_with_value": "授权：{value}",
-  "loading_previous_pages": "正在加载上文……（{count} 页）",
-  "loading_more_pages": "正在加载更多……（{count} 页）",
   "drag_to_resize": "拖动以调整大小",
   "day_completion_share_message": "我刚在 WeBuddhist 上完成了今天的修持。加入我，一起培养每日修持的好习惯。",
   "group_accumulator_share_message": "我正在参加 WeBuddhist 上 {group} 社群的共修计数「{accumulation}」，快来加入我吧！",
   "group_accumulator_share_message_no_group": "我正在参加 WeBuddhist 上的共修计数「{accumulation}」，快来加入我吧！",
-  "group_chat_title": "聊天",
   "chats_title": "聊天室",
   "chats_empty_title": "尚无聊天室",
   "chats_empty_body": "加入共修空间，即可开始聊天",
@@ -1111,7 +932,6 @@
   "group_chat_not_a_member": "只有成员可以打开此聊天室",
   "group_chat_open": "聊天",
   "group_chat_message_hint": "消息",
-  "group_chat_join_to_send": "加入聊天后即可发送消息。",
   "group_chat_today": "今天",
   "group_chat_yesterday": "昨天",
   "group_chat_empty_title": "尚无消息",
@@ -1216,7 +1036,6 @@
   "practice_collection_already_added": "此持诵集已在您的修持中",
   "practice_group_accumulator_already_added": "此共修计数已在您的修持中",
   "event_live_badge": "直播中",
-  "event_live_audio": "直播音频",
   "event_live_video_mode": "视频",
   "event_live_audio_mode": "音频",
   "event_live_go_live": "直播中",
@@ -1244,7 +1063,6 @@
   "event_prayer_load_failed": "无法加载回向祈愿",
   "event_prayer_closed": "本活动的回向名单已关闭",
   "event_prayer_pray": "回向祈愿",
-  "event_prayer_praying": "已回向",
   "event_prayer_my_count": "+{count}",
   "event_prayer_new_request": "添加回向祈愿",
   "event_prayer_edit_request": "编辑回向祈愿内容",
@@ -1273,14 +1091,6 @@
     }
   },
   "event_prayer_praying_for_you": "已为您回向",
-  "event_prayer_praying_for": "已为 {name} 回向",
-  "@event_prayer_praying_for": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "event_prayer_your_request": "您的回向祈愿",
   "event_prayer_supporters_failed": "无法加载正在回向祈愿的人",
   "event_prayer_no_supporters": "目前还没有人回向",
@@ -1336,8 +1146,6 @@
   "connect_failed_load_discover_groups_error": "无法下载社群清单",
   "connect_failed_like_post_error": "无法帮贴文点赞",
   "connect_failed_unlike_post_error": "无法删除贴文点赞",
-  "connect_failed_like_comment_error": "无法帮评论点赞",
-  "connect_failed_unlike_comment_error": "无法取消点赞评论",
   "group_events_load_error": "无法加载活动，请再试一次。",
   "group_events_empty": "暂无活动",
   "group_events_empty_message": "创建您的第一场聚会，成员将会收到通知。",
@@ -1571,7 +1379,6 @@
   "timer_new_title": "新计时器",
   "timer_edit_title": "编辑计时器",
   "timer_your_timers": "您的计时器",
-  "timer_custom_timer": "自定义计时器",
   "timer_ambient_sounds_title": "环境音",
   "timer_ambient_sound_none": "默认（无声音）",
   "timer_ambient_sounds_load_error": "无法加载环境音",
@@ -1584,9 +1391,7 @@
   "timer_duration_must_be_greater_than_error": "时长必须大于 0",
   "splash_tagline_1": "我们佛弟子一起修持",
   "splash_tagline_2": "我们佛弟子每日修持",
-  "timer_list_subtitle": "点按播放即可开始，或创建您自己的计时器。",
   "timer_create_custom": "创建自定义计时器",
-  "timer_create_custom_subtitle": "设置时长、钟声与环境音",
   "timer_starting": "正在开始…",
   "timer_duration_hours": "小时",
   "timer_duration_sec": "秒",

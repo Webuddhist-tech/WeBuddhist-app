@@ -4,33 +4,19 @@
   "sign_in": "Sign in",
   "logout": "Log out",
   "onboarding_welcome": "Welcome to",
-  "onboarding_setup_subtitle": "Let's get you set up, It'll only take a minute",
   "onboarding_tagline": "Learn, practice, and connect. Daily.",
-  "onboarding_quote": "Drop by drop the water pot is filled. Likewise, the wise person, gathering it little by little, fills themselves with good.",
   "onboarding_find_peace": "Get started",
   "onboarding_continue": "Continue",
   "onboarding_first_question": "Choose your language",
   "onboarding_language_subtitle": "This sets the language of the app",
-  "onboarding_choose_option": "Choose at least one:",
   "onboarding_all_set": "You're all set",
   "onboarding_all_set_description": "Here's what's waiting for you:",
   "onboarding_all_set_practice_title": "Practice",
   "onboarding_all_set_practice_body": "Plans, chants, malas and meditation",
   "onboarding_all_set_connect_title": "Connect",
   "onboarding_all_set_connect_body": "Spaces, events, newsfeed and chat",
-  "home_recitation": "recitations",
   "home_today": "Today",
-  "home_good_morning": "Good morning",
-  "home_good_afternoon": "Good afternoon",
-  "home_good_evening": "Good evening",
-  "home_meditationTitle": "Meditation",
-  "home_prayerTitle": "Prayer of the day",
-  "home_scripture": "Guided scripture",
-  "home_meditation": "Guided meditation",
-  "home_goDeeper": "Go deeper",
-  "home_intention": "My intention for today",
   "home_overall_stats": "Overall stats",
-  "home_plans": "plans",
   "home_plans_count": "{count} plans",
   "@home_plans_count": {
     "placeholders": {
@@ -130,11 +116,9 @@
   "preset_timers": "Preset timers",
   "meditation_timer": "Meditation timer",
   "timer_min": "min",
-  "timer_start": "Start",
   "timer_finish": "Finish",
   "timer_discard_session": "Discard session",
   "home_hello_prefix": "Hello, ",
-  "home_greeting_fallback_name": "there",
   "home_share_prompt": "Enjoying {appName}?",
   "@home_share_prompt": {
     "placeholders": {
@@ -154,17 +138,14 @@
   "nav_me": "Me",
   "tab_practices": "Practices",
   "text_search": "Search",
-  "text_toc_versions": "Versions",
   "text_commentary": "Commentaries",
   "resources": "Resources",
   "no_translation": "No translations found",
-  "text_close_commentary": "Close commentary",
   "show_more": "Show more",
   "show_less": "Show less",
   "more": "More",
   "less": "Less",
   "no_content": "No content found",
-  "no_commentary": "No commentaries found",
   "commentary_not_available_for_language": "{language} commentary not available",
   "@commentary_not_available_for_language": {
     "placeholders": {
@@ -174,17 +155,8 @@
     }
   },
   "loading": "Loading...",
-  "choose_bg_image": "Choose a background image",
   "save": "Save",
   "done": "Done",
-  "customise_message": "Tap the customize icon to adjust text style",
-  "download_image": "Download image",
-  "no_images_available": "No images available",
-  "customise_text": "Customize text",
-  "text_size": "Text size",
-  "text_color": "Text color",
-  "text_shadow": "Text shadow",
-  "apply": "Apply",
   "my_plans": "My plans",
   "browse_plans": "Browse plans",
   "plan_info": "Plan info",
@@ -204,15 +176,10 @@
   "search_for_plans": "Search for plans",
   "no_plans_found": "No plans found",
   "no_days_available": "No days found",
-  "recitations_title": "Recitations",
-  "recitations_my_recitations": "My recitations",
-  "browse_recitations": "Browse recitations",
   "recitations_search": "Search for recitations...",
   "recitations_search_for": "Search for recitations",
   "recitations_no_found": "No recitations founds",
   "recitations_no_content": "No recitations available",
-  "recitations_no_saved": "No saved recitations",
-  "recitations_login_prompt": "Sign in to view your saved recitations",
   "my_recitation_collection_new_title": "New Collection",
   "my_recitation_collection_next": "Next",
   "my_recitation_collection_create": "Create",
@@ -273,35 +240,9 @@
   "auth_drawer_subtitle": "Continue your practice on any device, wherever you go",
   "routine_delete_block_message": "The time block and all its items will be removed",
   "something_went_wrong": "Something went wrong. Please try again",
-  "onboarding_quote_citation": "— Dhammapada 122",
-  "onboarding_traditions_question": "Which traditions\ndo you follow?",
   "onboarding_tradition_title": "How do you follow the Buddha’s teachings?",
   "onboarding_tradition_subtitle": "Choose one or more traditions for your content. You can change this anytime in Settings.",
-  "onboarding_tradition_option_intro": "Through:",
   "onboarding_tradition_show_all_title": "Show me everything",
-  "onboarding_skip_for_now": "Skip for now",
-  "onboarding_add_another_tradition": "Add another tradition",
-  "onboarding_select_all": "Select all",
-  "onboarding_event_enrollment_error": "Unable to enroll you. Check your connection and try again",
-  "onboarding_event_question": "Join an\nevent?",
-  "onboarding_event_optional": "Optional · Tap to enroll",
-  "onboarding_event_duration": "{description} · {days} days",
-  "@onboarding_event_duration": {
-    "placeholders": {
-      "description": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "onboarding_event_reminder_note": "We'll send you a daily reminder at 7:30 AM. (Change anytime.)",
-  "tradition_theravada": "Theravada",
-  "tradition_zen": "Zen",
-  "tradition_tibetan_buddhism": "Tibetan Buddhism",
-  "tradition_pure_land": "Pure Land",
-  "tradition_ambedkar_buddhism": "Ambedkar Buddhism",
   "plan_go_to_practice": "Go to practice",
   "plan_starts_soon_title": "Starts soon",
   "plan_joining_late_title": "Joining after start date",
@@ -311,41 +252,30 @@
   "plans_empty_title": "More is on the way",
   "plans_empty_subtitle": "Our library is growing. Check back soon.",
   "find_plans_load_error": "Unable to load.\nCheck your connection and try again",
-  "connect_coming_soon_subtitle": "Teachers, communities, challenges, and events to support you on the path",
   "connect_subtitle": "Find spaces and practice together",
   "discover_groups": "Discover spaces",
   "my_groups": "My spaces",
   "see_all": "See all",
   "connect_groups_load_error": "Unable to load spaces.\nCheck your connection and try again",
   "connect_groups_empty_title": "No more spaces",
-  "connect_groups_empty_subtitle": "Congrats, you've joined all our spaces! Check back soon. New ones are on the way...",
   "connect_tab_feed": "Feed",
   "connect_tab_events": "Events",
-  "connect_tab_posts": "Posts",
   "connect_tab_practices": "Practices",
   "connect_tab_groups": "Spaces",
   "connect_segment_my": "Your spaces",
   "connect_segment_discover": "Discover",
-  "connect_empty_discover_posts": "No posts to discover",
   "connect_empty_discover_events": "No events to discover",
   "connect_empty_discover_feed": "Nothing to discover",
   "connect_empty_discover_groups": "No spaces to discover",
-  "connect_empty_discover_practices": "No practices to discover",
   "connect_all_groups": "All spaces",
   "connect_my_empty_feed_title": "No new updates",
   "connect_my_empty_events_title": "No upcoming events",
-  "connect_my_empty_posts_title": "No posts yet",
   "connect_my_empty_groups_title": "No spaces yet",
   "connect_my_empty_feed_subtitle": "Your spaces haven't shared anything new",
   "connect_my_empty_events_subtitle": "Your spaces haven't scheduled any events",
-  "connect_my_empty_posts_subtitle": "Your spaces haven't posted anything",
   "connect_my_empty_groups_subtitle": "You haven't joined any spaces yet. Discover some to practice with",
   "connect_my_empty_feed_browse": "See what other spaces are sharing",
   "connect_my_empty_events_browse": "Browse open events",
-  "connect_my_empty_posts_browse": "Browse other posts",
-  "connect_my_empty_practices_title": "No practices yet",
-  "connect_my_empty_practices_subtitle": "Your spaces haven't started any practices",
-  "connect_my_empty_practices_browse": "Browse other practices",
   "connect_comment_replying_to": "Replying to @{handle}",
   "@connect_comment_replying_to": {
     "placeholders": {
@@ -369,7 +299,6 @@
     }
   },
   "connect_post_comments_empty": "No comments yet. Start the conversation",
-  "connect_caption_more": "More",
   "connect_online": "Online",
   "connect_ended": "Ended",
   "connect_ended_on": "Ended {date}",
@@ -390,10 +319,8 @@
   "connect_events_filter_empty_in_person": "No in-person events",
   "connect_events_filter_hybrid": "Hybrid",
   "connect_events_filter_empty_hybrid": "No hybrid events",
-  "connect_open": "Open",
   "connect_event_fallback_title": "Event",
   "connect_group_fallback_title": "Space",
-  "connect_event_enter": "Enter",
   "connect_event_participation_prompt": "How are you attending?",
   "connect_event_practice_in_person": "Practice in-person",
   "connect_event_practice_online": "Practice online",
@@ -432,18 +359,12 @@
   "connect_event_participants_empty": "No participants yet",
   "connect_event_organizer": "Organizer",
   "connect_event_tab_videos": "Videos",
-  "connect_event_tab_links": "Links",
   "connect_event_tab_about": "About",
   "connect_event_links_title": "More event details",
-  "connect_event_links_empty": "No links yet",
-  "connect_event_link_tap_to_join": "Tap to join",
-  "connect_event_link_open": "Open link",
   "connect_event_date_tba": "Date to be announced",
   "connect_event_when": "When",
   "connect_event_where": "Where",
-  "connect_event_practices": "Event practices",
   "connect_event_tab_accumulations": "Accumulations",
-  "connect_event_tab_recitations": "Recitations",
   "connect_event_add_recitations": "Add recitations",
   "connect_event_add_recitations_message": "Add recitations you did with the livestream or outside this app",
   "connect_event_every_day": "Every day",
@@ -471,34 +392,11 @@
   "explore_coming_soon_subtitle": "A curated space to discover practices, teachings, and community events",
   "learn_coming_soon_subtitle": "Your personal study plans, designed to fit into everyday life",
   "creator_featured_plan": "Featured plans",
-  "audio_init_error": "Unable to initialize audio player. Check your connection and try again",
-  "meditation_audio_load_error": "Unable to load. Check your connection and try again",
-  "prayer_audio_load_error": "Unable to load audio. Check your connection and try again",
   "home_no_series_found": "No series found",
   "home_no_tags_found": "No tags found",
   "home_celebrated_by": "Celebrated by: ",
-  "reader_settings_tooltip": "Reader settings",
-  "reader_translate_tooltip": "Show translation",
-  "reader_translate_unavailable": "Translation not available for this text",
   "reader_font_size_tooltip": "Font size",
-  "reader_version_title": "Version · {language}",
-  "@reader_version_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
-  "reader_script_title": "Script · {language}",
-  "@reader_script_title": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_versions_load_error": "Unable to load versions",
-  "reader_scripts_load_error": "Failed to load scripts",
   "reader_languages_load_error": "Unable to load languages",
   "reader_no_versions_in_language": "No versions available in {language}",
   "@reader_no_versions_in_language": {
@@ -508,35 +406,12 @@
       }
     }
   },
-  "reader_no_scripts_in_language": "No scripts available in {language}",
-  "@reader_no_scripts_in_language": {
-    "placeholders": {
-      "language": {
-        "type": "String"
-      }
-    }
-  },
   "reader_no_languages": "No languages available for this text",
   "reader_license": "License",
-  "reader_version_details_load_error": "Unable to load version details",
-  "reader_no_version_info": "No additional information is available for this version",
-  "recitation_unavailable": "Recitation content is currently unavailable.\nTry again later or contact support",
-  "recitation_sign_in_required": "Sign in to access this recitation",
-  "my_recitations_load_error": "Unable to load.\nCheck your connection and try again",
-  "recitations_load_error": "Unable to load recitations.\nTry again later",
   "text_search_hint": "Type to search",
   "text_search_press_button": "Press search button to search",
   "text_search_error": "Unable to perform search.\nPlease try again",
-  "unknown_error": "Unknown error",
   "create_image_share_error": "Unable to share. Please try again",
-  "version_search_no_results": "No versions found for \"{query}\"",
-  "@version_search_no_results": {
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "my_plans_sign_in_prompt": "Sign in to view your plans",
   "plan_starts_soon_message": "Starts on {date}. You can browse the content now",
   "@plan_starts_soon_message": {
@@ -562,8 +437,6 @@
   "share": "Share",
   "bookmark": "Bookmark",
   "collection_audio_versions": "Audio versions",
-  "image": "Image",
-  "feedback": "Give feedback",
   "author": "Author",
   "plans_created": "Plans created",
   "ai_confirm": "Confirm",
@@ -590,7 +463,6 @@
   "routine_session_title_hint": "Title...",
   "routine_expand_all": "Expand all",
   "routine_collapse_all": "Collapse all",
-  "routine_delete_time_block": "Remove time block",
   "routine_add_plan": "Add plan",
   "routine_add_recitation": "Add recitation",
   "routine_add_plan_to_routine": "Add to routine",
@@ -635,7 +507,6 @@
   "continueWithGoogle": "Continue with Google",
   "continueWithApple": "Continue with Apple",
   "continueWithPhone": "Continue with phone",
-  "continueAsGuest": "Continue as guest",
   "exploreAsGuest": "Explore as a guest",
   "signIn": "Sign In",
   "profileError": "Error loading profile",
@@ -653,7 +524,6 @@
   "unableToLoad": "Unable to load. Check your connection and try again",
   "somethingWrong": "Something went wrong. Check your connection and try again",
   "source": "Source",
-  "searchResults": "Search results",
   "noTasks": "No tasks available",
   "taskNotFound": "Task not found",
   "updateTaskError": "Unable to update task status",
@@ -668,8 +538,6 @@
   "removeItem": "Remove item?",
   "removeConfirmation": "\"{itemName}\" will be removed from this block",
   "shareError": "Unable to share. Please try again",
-  "updateOrderError": "Unable to update order. Please try again",
-  "loadFailed": "Unable to load. Check your connection and try again",
   "captureError": "Failed to capture QR code. Please try again",
   "qrShareError": "Unable to share QR code. Try again later",
   "errorDetail": "Error: {error}",
@@ -719,22 +587,13 @@
   "plan_status_on_track": "On track!",
   "start_now": "Start now",
   "plan_enroll": "Enroll",
-  "show_second_version": "Show second version",
-  "enable_add_msg": "Enable to add a translation or transliteration alongside the main text",
-  "main_version": "Main version",
-  "second_version": "Second version",
-  "second_version_msg": "The second version will appear below each verse of the main text",
   "root_text": "Root text",
   "version": "Versions",
-  "parallel_version": "Parallel version",
   "reader_languages_title": "Languages",
   "reader_sections_title": "Sections",
   "reader_original_label": "Original",
   "reader_translation_label": "Translation",
   "version_not_available": "Not available",
-  "read_full_text": "Read full text",
-  "reader_source_label": "Source",
-  "reader_license_label": "License",
   "series_stats": "{planCount} CHAPTERS · {totalDays} DAYS",
   "@series_stats": {
     "placeholders": {
@@ -758,8 +617,6 @@
   "settings_feedback_row": "Feedback",
   "edit_profile_title": "Edit profile",
   "edit_profile_save": "Save",
-  "edit_profile_first_name": "First name",
-  "edit_profile_last_name": "Last name",
   "edit_profile_display_name": "Display name",
   "edit_profile_bio": "Bio",
   "edit_profile_bio_hint": "Share a little about yourself",
@@ -817,22 +674,10 @@
   "accumulations_search_for": "Search for accumulations",
   "accumulations_no_found": "No accumulations found",
   "me_accumulation": "Total accumulations",
-  "me_counts": "counts",
   "me_minutes": "minutes",
   "me_hours": "hours",
   "me_total_meditation_time": "Total meditation time",
   "me_days_plan_practiced_suffix": "total plan days completed",
-  "me_streak_share_message": "I'm on a {count}-day streak on {appName}!",
-  "@me_streak_share_message": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "appName": {
-        "type": "String"
-      }
-    }
-  },
   "me_streak_share_quote": "My current streak on WeBuddhist!",
   "me_streak_days_count": "{count} days",
   "@me_streak_days_count": {
@@ -856,17 +701,6 @@
   "calendar_upcoming_events": "Upcoming events",
   "calendar_day_short": "DAY",
   "calendar_day_label": "Day",
-  "calendar_day_month": "Day {day} · Month {month}",
-  "@calendar_day_month": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "month": {
-        "type": "int"
-      }
-    }
-  },
   "calendar_lunar_month": "{ordinal} lunar month",
   "@calendar_lunar_month": {
     "placeholders": {
@@ -876,13 +710,8 @@
     }
   },
   "moon_phase_new_moon": "New moon",
-  "moon_phase_waxing_crescent": "Waxing crescent",
   "moon_phase_first_quarter": "First quarter",
-  "moon_phase_waxing_gibbous": "Waxing gibbous",
   "moon_phase_full_moon": "Full moon",
-  "moon_phase_waning_gibbous": "Waning gibbous",
-  "moon_phase_last_quarter": "Last quarter",
-  "moon_phase_waning_crescent": "Waning crescent",
   "join": "Join",
   "group_member": "member",
   "group_members": "members",
@@ -1231,18 +1060,8 @@
   "reader_search_failed": "Search failed.\nPlease try again",
   "reader_swipe_up_for_more": "Swipe up for more",
   "reader_videos": "Videos",
-  "reader_about_this_version": "About this version",
-  "reader_version_count": "{count, plural,\n=1 {1 version}\nother {{count} versions}\n}",
-  "@reader_version_count": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "mala_no_mantras": "No mantras available",
   "mala_count_load_error": "Could not load your count",
-  "mala_mantra_label": "Mantra",
   "bookmarks_empty_all_title": "Nothing bookmarked yet",
   "bookmarks_empty_all_subtitle": "Bookmark anything to save it here",
   "bookmarks_empty_plans_title": "No plans bookmarked yet",
@@ -1343,38 +1162,6 @@
   "link_invalid": "Invalid URL",
   "author_no_plans": "No plans created yet",
   "author_plans_load_error": "Unable to load plans",
-  "source_with_value": "Source: {value}",
-  "@source_with_value": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "license_with_value": "License: {value}",
-  "@license_with_value": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "loading_previous_pages": "Loading previous... ({count} pages)",
-  "@loading_previous_pages": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "loading_more_pages": "Loading more... ({count} pages)",
-  "@loading_more_pages": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "drag_to_resize": "Drag to resize",
   "day_completion_share_message": "I just completed a day of my practice on WeBuddhist. Join me and build a daily practice habit together.",
   "group_accumulator_share_message": "I am taking part in \"{accumulation}\", an accumulation by {group} on WeBuddhist. Come join me!",
@@ -1396,7 +1183,6 @@
       }
     }
   },
-  "group_chat_title": "Chat",
   "chats_title": "Chats",
   "chats_empty_title": "No chats yet",
   "chats_empty_body": "Join a space to start chatting",
@@ -1404,7 +1190,6 @@
   "group_chat_not_a_member": "Only members can open this chat",
   "group_chat_open": "Chat",
   "group_chat_message_hint": "Message",
-  "group_chat_join_to_send": "Join chat to send message",
   "group_chat_today": "Today",
   "group_chat_yesterday": "Yesterday",
   "group_chat_empty_title": "No messages yet",
@@ -1530,7 +1315,6 @@
   "practice_collection_already_added": "This collection is already in your practices",
   "practice_group_accumulator_already_added": "This accumulation is already in your practices",
   "event_live_badge": "LIVE",
-  "event_live_audio": "Live audio",
   "event_live_video_mode": "Video",
   "event_live_audio_mode": "Audio",
   "event_live_go_live": "Live",
@@ -1577,7 +1361,6 @@
   "group_prayer_closed": "Prayer requests are closed for this space",
   "group_prayer_delete_body": "It will be removed for everyone in this space.",
   "event_prayer_pray": "Pray",
-  "event_prayer_praying": "Prayed",
   "event_prayer_my_count": "+{count}",
   "@event_prayer_my_count": {
     "placeholders": {
@@ -1613,14 +1396,6 @@
     }
   },
   "event_prayer_praying_for_you": "Prayed for you",
-  "event_prayer_praying_for": "Prayed for {name}",
-  "@event_prayer_praying_for": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
   "event_prayer_your_request": "Your request",
   "event_prayer_supporters_failed": "Couldn't load who is praying.",
   "event_prayer_no_supporters": "No one is praying yet",
@@ -1742,8 +1517,6 @@
   "connect_failed_load_discover_groups_error": "Unable to load spaces",
   "connect_failed_like_post_error": "Unable to like post",
   "connect_failed_unlike_post_error": "Unable to unlike post",
-  "connect_failed_like_comment_error": "Unable to like comment",
-  "connect_failed_unlike_comment_error": "Unable to unlike comment",
   "group_events_load_error": "Unable to load events. Please try again.",
   "group_events_empty": "No events yet",
   "group_events_empty_message": "Create your first gathering — members will be notified.",
@@ -2149,7 +1922,6 @@
   "timer_title_hint": "Title...",
   "timer_edit_title": "Edit timer",
   "timer_your_timers": "Your timers",
-  "timer_custom_timer": "Custom timer",
   "timer_ambient_sounds_title": "Ambient sounds",
   "timer_ambient_sound_none": "Default (no sound)",
   "timer_ambient_sounds_load_error": "Unable to load ambient sounds",
@@ -2162,9 +1934,7 @@
   "timer_duration_must_be_greater_than_error": "Duration must be greater than 0",
   "splash_tagline_1": "We Buddhists practice together",
   "splash_tagline_2": "We Buddhists practice daily",
-  "timer_list_subtitle": "Tap play to begin, or build your own.",
   "timer_create_custom": "Create a custom timer",
-  "timer_create_custom_subtitle": "Pick a length and optional background sound",
   "timer_starting": "Starting...",
   "timer_duration_hours": "hours",
   "timer_duration_sec": "sec",

@@ -21,16 +21,8 @@ class AppLocalizationsMn extends AppLocalizations {
   String get onboarding_welcome => 'Тавтай морил';
 
   @override
-  String get onboarding_setup_subtitle =>
-      'Танд тохируулъя, ердөө нэг минут л хангалттай';
-
-  @override
   String get onboarding_tagline =>
       'Сурч, дадлага хийж, холбогдоорой. Өдөр бүр.';
-
-  @override
-  String get onboarding_quote =>
-      'Дусал дуслаар ус сав дүүрдэгийн адил, ухаант хүн ч багаахан багаахнаар хуримтлуулж, өөрийгөө буянаар дүүргэдэг.';
 
   @override
   String get onboarding_find_peace => 'Эхлэх';
@@ -43,9 +35,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get onboarding_language_subtitle => 'Энэ нь аппын хэлийг тохируулна';
-
-  @override
-  String get onboarding_choose_option => 'Дор хаяж нэгийг сонгоно уу:';
 
   @override
   String get onboarding_all_set => 'Бүх зүйл бэлэн боллоо';
@@ -68,43 +57,10 @@ class AppLocalizationsMn extends AppLocalizations {
       'Орон зай, арга хэмжээ, мэдээ болон чат';
 
   @override
-  String get home_recitation => 'Уншлага';
-
-  @override
   String get home_today => 'Өнөөдөр';
 
   @override
-  String get home_good_morning => 'Өглөөний мэнд';
-
-  @override
-  String get home_good_afternoon => 'Өдрийн мэнд';
-
-  @override
-  String get home_good_evening => 'Оройн мэнд';
-
-  @override
-  String get home_meditationTitle => 'Бясалгал';
-
-  @override
-  String get home_prayerTitle => 'Өнөөдрийн залбирал';
-
-  @override
-  String get home_scripture => 'Удирдамжтай бичиг';
-
-  @override
-  String get home_meditation => 'Удирдамжтай бясалгал';
-
-  @override
-  String get home_goDeeper => 'Илүү гүнзгий орно уу';
-
-  @override
-  String get home_intention => 'Өнөөдрийн миний зорилго';
-
-  @override
   String get home_overall_stats => 'Нийт статистик';
-
-  @override
-  String get home_plans => 'Төлөвлөгөө';
 
   @override
   String home_plans_count(int count) {
@@ -265,9 +221,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get timer_min => 'мин';
 
   @override
-  String get timer_start => 'Эхлэх';
-
-  @override
   String get timer_finish => 'Дуусгах';
 
   @override
@@ -275,9 +228,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get home_hello_prefix => 'Сайн байна уу, ';
-
-  @override
-  String get home_greeting_fallback_name => 'найз минь';
 
   @override
   String home_share_prompt(String appName) {
@@ -319,9 +269,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get text_search => 'Хайх';
 
   @override
-  String get text_toc_versions => 'Хувилбарууд';
-
-  @override
   String get text_commentary => 'Тайлбар';
 
   @override
@@ -329,9 +276,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get no_translation => 'Орчуулга олдсонгүй';
-
-  @override
-  String get text_close_commentary => 'Тайлбар хаах';
 
   @override
   String get show_more => 'Илүү ихийг харах';
@@ -349,9 +293,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get no_content => 'Агуулга олдсонгүй';
 
   @override
-  String get no_commentary => 'Тайлбар олдсонгүй';
-
-  @override
   String commentary_not_available_for_language(String language) {
     return '$language хэл дээрх тайлбар байхгүй';
   }
@@ -360,38 +301,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get loading => 'Ачааллаж байна...';
 
   @override
-  String get choose_bg_image => 'Дэвсгэр зураг сонгох';
-
-  @override
   String get save => 'Хадгалах';
 
   @override
   String get done => 'Болсон';
-
-  @override
-  String get customise_message =>
-      'Бичвэрийн загварыг тохируулахын тулд тохируулах дүрс дээр дарна уу';
-
-  @override
-  String get download_image => 'Зураг татах';
-
-  @override
-  String get no_images_available => 'Зураг байхгүй байна';
-
-  @override
-  String get customise_text => 'Бичвэр тохируулах';
-
-  @override
-  String get text_size => 'Бичвэрийн хэмжээ';
-
-  @override
-  String get text_color => 'Бичвэрийн өнгө';
-
-  @override
-  String get text_shadow => 'Бичвэрийн сүүдэр';
-
-  @override
-  String get apply => 'Хэрэглэх';
 
   @override
   String get my_plans => 'Миний төлөвлөгөө';
@@ -454,15 +367,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get no_days_available => 'Өдөр олдсонгүй';
 
   @override
-  String get recitations_title => 'Уншлагууд';
-
-  @override
-  String get recitations_my_recitations => 'Миний уншлага';
-
-  @override
-  String get browse_recitations => 'Уншлага үзэх';
-
-  @override
   String get recitations_search => 'Уншлага хайх...';
 
   @override
@@ -473,13 +377,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get recitations_no_content => 'Уншлага байхгүй байна';
-
-  @override
-  String get recitations_no_saved => 'Хадгалсан уншлага байхгүй';
-
-  @override
-  String get recitations_login_prompt =>
-      'Хадгалсан уншлагаа харахын тулд нэвтэрнэ үү';
 
   @override
   String get my_recitation_collection_new_title => 'Шинэ цуглуулга';
@@ -649,12 +546,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get something_went_wrong => 'Алдаа гарлаа. Дахин оролдоно уу';
 
   @override
-  String get onboarding_quote_citation => '— Дхаммапада 122';
-
-  @override
-  String get onboarding_traditions_question => 'Та ямар уламжлал\nдагадаг вэ?';
-
-  @override
   String get onboarding_tradition_title =>
       'Та Бурхан багшийн сургаалийг хэрхэн дагадаг вэ?';
 
@@ -663,54 +554,7 @@ class AppLocalizationsMn extends AppLocalizations {
       'Агуулгадаа нэг буюу хэд хэдэн уламжлал сонгоно уу. Та үүнийг хүссэн үедээ Тохиргоо хэсэгт өөрчилж болно.';
 
   @override
-  String get onboarding_tradition_option_intro => 'Дараах:';
-
-  @override
   String get onboarding_tradition_show_all_title => 'Бүгдийг харуулах';
-
-  @override
-  String get onboarding_skip_for_now => 'Одоохондоо алгасах';
-
-  @override
-  String get onboarding_add_another_tradition => 'Өөр уламжлал нэмэх';
-
-  @override
-  String get onboarding_select_all => 'Бүгдийг сонгох';
-
-  @override
-  String get onboarding_event_enrollment_error =>
-      'Бүртгэх боломжгүй байна. Холболтоо шалгаад дахин оролдоно уу';
-
-  @override
-  String get onboarding_event_question => 'Арга хэмжээнд\nнэгдэх үү?';
-
-  @override
-  String get onboarding_event_optional =>
-      'Сонголтоор · Бүртгүүлэхийн тулд дарна уу';
-
-  @override
-  String onboarding_event_duration(String description, int days) {
-    return '$description · $days өдөр';
-  }
-
-  @override
-  String get onboarding_event_reminder_note =>
-      'Бид өглөөний 7:30 цагт өдөр тутмын сануулга илгээнэ. (Хүссэн үедээ өөрчилж болно.)';
-
-  @override
-  String get tradition_theravada => 'Теравада';
-
-  @override
-  String get tradition_zen => 'Зэн';
-
-  @override
-  String get tradition_tibetan_buddhism => 'Төвдийн бурханы шашин';
-
-  @override
-  String get tradition_pure_land => 'Цэвэр газар';
-
-  @override
-  String get tradition_ambedkar_buddhism => 'Амбедкарын бурханы шашин';
 
   @override
   String get plan_go_to_practice => 'Дадлага руу очих';
@@ -742,10 +586,6 @@ class AppLocalizationsMn extends AppLocalizations {
       'Ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу';
 
   @override
-  String get connect_coming_soon_subtitle =>
-      'Замд тань туслах багш нар, нийгэмлэгүүд, сорилт болон арга хэмжээнүүд';
-
-  @override
   String get connect_subtitle => 'Бүлгээ олж, хамтдаа дадлага хийгээрэй';
 
   @override
@@ -765,17 +605,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_groups_empty_title => 'Одоогоор бүлэг алга';
 
   @override
-  String get connect_groups_empty_subtitle =>
-      'Баяр хүргэе, та манай бүх орон зайд нэгдсэн байна! Удахгүй дахин шалгаарай. Шинэ орон зайнууд удахгүй нэмэгдэнэ...';
-
-  @override
   String get connect_tab_feed => 'Мэдээ';
 
   @override
   String get connect_tab_events => 'Арга хэмжээ';
-
-  @override
-  String get connect_tab_posts => 'Нийтлэл';
 
   @override
   String get connect_tab_practices => 'Дадлага';
@@ -790,9 +623,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_segment_discover => 'Судлах';
 
   @override
-  String get connect_empty_discover_posts => 'Судлах нийтлэл алга';
-
-  @override
   String get connect_empty_discover_events => 'Судлах арга хэмжээ алга';
 
   @override
@@ -802,9 +632,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_empty_discover_groups => 'Судлах орон зай алга';
 
   @override
-  String get connect_empty_discover_practices => 'Судлах бясалгал алга';
-
-  @override
   String get connect_all_groups => 'Бүх орон зай';
 
   @override
@@ -812,9 +639,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_title => 'Товлосон арга хэмжээ алга';
-
-  @override
-  String get connect_my_empty_posts_title => 'Одоогоор нийтлэл алга';
 
   @override
   String get connect_my_empty_groups_title => 'Одоогоор бүлэг алга';
@@ -828,10 +652,6 @@ class AppLocalizationsMn extends AppLocalizations {
       'Таны орон зайнууд арга хэмжээ товлоогүй байна';
 
   @override
-  String get connect_my_empty_posts_subtitle =>
-      'Таны орон зайнууд юу ч нийтлээгүй байна';
-
-  @override
   String get connect_my_empty_groups_subtitle =>
       'Та одоогоор ямар ч бүлэгт нэгдээгүй байна. Хамтдаа дадлага хийх нийгэмлэгүүдийг судлаарай.';
 
@@ -841,19 +661,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_my_empty_events_browse => 'Нээлттэй арга хэмжээг үзэх';
-
-  @override
-  String get connect_my_empty_posts_browse => 'Бусад нийтлэлийг үзэх';
-
-  @override
-  String get connect_my_empty_practices_title => 'Одоогоор дадлага алга';
-
-  @override
-  String get connect_my_empty_practices_subtitle =>
-      'Таны орон зайнууд ямар ч дадлага эхлүүлээгүй байна';
-
-  @override
-  String get connect_my_empty_practices_browse => 'Бусад бясалгалыг үзэх';
 
   @override
   String connect_comment_replying_to(String handle) {
@@ -893,9 +700,6 @@ class AppLocalizationsMn extends AppLocalizations {
   @override
   String get connect_post_comments_empty =>
       'Одоогоор сэтгэгдэл алга. Яриаг эхлүүлээрэй';
-
-  @override
-  String get connect_caption_more => 'Илүү';
 
   @override
   String get connect_online => 'Онлайн';
@@ -942,16 +746,10 @@ class AppLocalizationsMn extends AppLocalizations {
       'Хосолмол арга хэмжээ байхгүй';
 
   @override
-  String get connect_open => 'Нээх';
-
-  @override
   String get connect_event_fallback_title => 'Арга хэмжээ';
 
   @override
   String get connect_group_fallback_title => 'Орон зай';
-
-  @override
-  String get connect_event_enter => 'Орох';
 
   @override
   String get connect_event_participation_prompt =>
@@ -1014,22 +812,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_tab_videos => 'Бичлэгүүд';
 
   @override
-  String get connect_event_tab_links => 'Холбоосууд';
-
-  @override
   String get connect_event_tab_about => 'Тухай';
 
   @override
   String get connect_event_links_title => 'Үйл явдлын дэлгэрэнгүй мэдээлэл';
-
-  @override
-  String get connect_event_links_empty => 'Одоогоор холбоос алга';
-
-  @override
-  String get connect_event_link_tap_to_join => 'Нэгдэхийн тулд товшино уу';
-
-  @override
-  String get connect_event_link_open => 'Холбоос нээх';
 
   @override
   String get connect_event_date_tba => 'Огноог дараа зарлана';
@@ -1041,13 +827,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get connect_event_where => 'Хаана';
 
   @override
-  String get connect_event_practices => 'Үйл явдлын дадлагууд';
-
-  @override
   String get connect_event_tab_accumulations => 'Хуримтлал';
-
-  @override
-  String get connect_event_tab_recitations => 'Уншлагууд';
 
   @override
   String get connect_event_add_recitations => 'Уншлага нэмэх';
@@ -1097,18 +877,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get creator_featured_plan => 'Онцлох төлөвлөгөө';
 
   @override
-  String get audio_init_error =>
-      'Дуу тоглуулагчийг эхлүүлэх боломжгүй. Холболтоо шалгаад дахин оролдоно уу';
-
-  @override
-  String get meditation_audio_load_error =>
-      'Ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу';
-
-  @override
-  String get prayer_audio_load_error =>
-      'Дуу ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу';
-
-  @override
   String get home_no_series_found => 'Цуврал олдсонгүй';
 
   @override
@@ -1118,32 +886,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get home_celebrated_by => 'Тэмдэглэдэг:';
 
   @override
-  String get reader_settings_tooltip => 'Уншигчийн тохиргоо';
-
-  @override
-  String get reader_translate_tooltip => 'Орчуулга харуулах';
-
-  @override
-  String get reader_translate_unavailable => 'Энэ текстэд орчуулга байхгүй';
-
-  @override
   String get reader_font_size_tooltip => 'Үсгийн хэмжээ';
 
   @override
-  String reader_version_title(String language) {
-    return 'Хувилбар · $language';
-  }
-
-  @override
-  String reader_script_title(String language) {
-    return 'Бичиг · $language';
-  }
-
-  @override
   String get reader_versions_load_error => 'Хувилбаруудыг ачаалж чадсангүй';
-
-  @override
-  String get reader_scripts_load_error => 'Бичгүүдийг ачаалж чадсангүй';
 
   @override
   String get reader_languages_load_error => 'Хэлүүдийг ачаалж чадсангүй';
@@ -1154,38 +900,10 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String reader_no_scripts_in_language(String language) {
-    return '$language хэл дээр бичиг байхгүй';
-  }
-
-  @override
   String get reader_no_languages => 'Энэ бичвэрт хэл байхгүй';
 
   @override
   String get reader_license => 'Лиценз';
-
-  @override
-  String get reader_version_details_load_error =>
-      'Хувилбарын дэлгэрэнгүйг ачаалах боломжгүй';
-
-  @override
-  String get reader_no_version_info => 'Энэ хувилбарт нэмэлт мэдээлэл байхгүй';
-
-  @override
-  String get recitation_unavailable =>
-      'Уншлагын агуулга одоогоор байхгүй байна.\nДараа дахин оролдох эсвэл дэмжлэгтэй холбогдоно уу';
-
-  @override
-  String get recitation_sign_in_required =>
-      'Энэ уншлагыг үзэхийн тулд нэвтэрнэ үү';
-
-  @override
-  String get my_recitations_load_error =>
-      'Ачаалах боломжгүй.\nХолболтоо шалгаад дахин оролдоно уу';
-
-  @override
-  String get recitations_load_error =>
-      'Уншлагуудыг ачаалах боломжгүй.\nДараа дахин оролдоно уу';
 
   @override
   String get text_search_hint => 'Хайхын тулд бичнэ үү';
@@ -1197,16 +915,8 @@ class AppLocalizationsMn extends AppLocalizations {
   String get text_search_error => 'Хайлт хийх боломжгүй.\nДахин оролдоно уу';
 
   @override
-  String get unknown_error => 'Тодорхойгүй алдаа';
-
-  @override
   String get create_image_share_error =>
       'Хуваалцах боломжгүй. Дахин оролдоно уу';
-
-  @override
-  String version_search_no_results(String query) {
-    return '\"$query\"-д тохирох хувилбар олдсонгүй';
-  }
 
   @override
   String get my_plans_sign_in_prompt =>
@@ -1245,12 +955,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get collection_audio_versions => 'Audio versions';
-
-  @override
-  String get image => 'Зураг';
-
-  @override
-  String get feedback => 'Санал хүсэлт';
 
   @override
   String get author => 'Зохиогч';
@@ -1311,9 +1015,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get routine_collapse_all => 'Бүгдийг хураах';
-
-  @override
-  String get routine_delete_time_block => 'Цагийн блокыг устгах';
 
   @override
   String get routine_add_plan => 'Төлөвлөгөө нэмэх';
@@ -1385,9 +1086,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get continueWithPhone => 'Утсаар үргэлжлүүлэх';
 
   @override
-  String get continueAsGuest => 'Зочноор үргэлжлүүлэх';
-
-  @override
   String get exploreAsGuest => 'Зочноор судлах';
 
   @override
@@ -1439,9 +1137,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get source => 'Эх сурвалж';
-
-  @override
-  String get searchResults => 'Хайлтын үр дүн';
 
   @override
   String get noTasks => 'Даалгавар байхгүй байна';
@@ -1498,14 +1193,6 @@ class AppLocalizationsMn extends AppLocalizations {
   }
 
   @override
-  String get updateOrderError =>
-      'Дарааллыг шинэчлэх боломжгүй. Дахин оролдоно уу';
-
-  @override
-  String get loadFailed =>
-      'Ачаалах боломжгүй. Холболтоо шалгаад дахин оролдоно уу';
-
-  @override
   String get captureError => 'QR кодыг авч чадсангүй. Дахин оролдоно уу';
 
   @override
@@ -1539,30 +1226,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get plan_enroll => 'Бүртгүүлэх';
 
   @override
-  String get show_second_version => 'Хоёр дахь хувилбарыг харах';
-
-  @override
-  String get enable_add_msg =>
-      'Үндсэн бичвэрийн хажууд орчуулга эсвэл галиглал нэмэхийн тулд идэвхжүүлнэ үү';
-
-  @override
-  String get main_version => 'Үндсэн хувилбар';
-
-  @override
-  String get second_version => 'Хоёр дахь хувилбар';
-
-  @override
-  String get second_version_msg =>
-      'Хоёр дахь хувилбар нь үндсэн бичвэрийн бадаг бүрийн доор гарч ирнэ';
-
-  @override
   String get root_text => 'Үндсэн бичвэр';
 
   @override
   String get version => 'Хувилбарууд';
-
-  @override
-  String get parallel_version => 'Зэрэгцээ хувилбар';
 
   @override
   String get reader_languages_title => 'Хэлүүд';
@@ -1578,15 +1245,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get version_not_available => 'Байхгүй';
-
-  @override
-  String get read_full_text => 'Бүтэн бичвэрийг унших';
-
-  @override
-  String get reader_source_label => 'Эх сурвалж';
-
-  @override
-  String get reader_license_label => 'Лиценз';
 
   @override
   String series_stats(int planCount, int totalDays) {
@@ -1629,12 +1287,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get edit_profile_save => 'Хадгалах';
-
-  @override
-  String get edit_profile_first_name => 'Нэр';
-
-  @override
-  String get edit_profile_last_name => 'Овог';
 
   @override
   String get edit_profile_display_name => 'Харагдах нэр';
@@ -1787,9 +1439,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get me_accumulation => 'Нийт хуримтлал';
 
   @override
-  String get me_counts => 'удаа';
-
-  @override
   String get me_minutes => 'минут';
 
   @override
@@ -1800,11 +1449,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get me_days_plan_practiced_suffix => 'нийт дуусгасан төлөвлөгөөт өдөр';
-
-  @override
-  String me_streak_share_message(int count, String appName) {
-    return 'Би $appName дээр $count өдрийн дараалалтай байна!';
-  }
 
   @override
   String get me_streak_share_quote =>
@@ -1861,11 +1505,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get calendar_day_label => 'Өдөр';
 
   @override
-  String calendar_day_month(int day, int month) {
-    return '$day-р өдөр · $month-р сар';
-  }
-
-  @override
   String calendar_lunar_month(String ordinal) {
     return '$ordinal билгийн сар';
   }
@@ -1874,25 +1513,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get moon_phase_new_moon => 'Шинэ сар';
 
   @override
-  String get moon_phase_waxing_crescent => 'Өсөх хавирган сар';
-
-  @override
   String get moon_phase_first_quarter => 'Тэргүүн улирал';
 
   @override
-  String get moon_phase_waxing_gibbous => 'Өсөх дугуйвтар сар';
-
-  @override
   String get moon_phase_full_moon => 'Тэргэл сар';
-
-  @override
-  String get moon_phase_waning_gibbous => 'Хорогдох дугуйвтар сар';
-
-  @override
-  String get moon_phase_last_quarter => 'Эцсийн улирал';
-
-  @override
-  String get moon_phase_waning_crescent => 'Хорогдох хавирган сар';
 
   @override
   String get join => 'Нэгдэх';
@@ -2467,27 +2091,10 @@ class AppLocalizationsMn extends AppLocalizations {
   String get reader_videos => 'Бичлэгүүд';
 
   @override
-  String get reader_about_this_version => 'Энэ хувилбарын тухай';
-
-  @override
-  String reader_version_count(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count хувилбар',
-      one: '1 хувилбар',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get mala_no_mantras => 'Тарни алга байна';
 
   @override
   String get mala_count_load_error => 'Таны тоог ачаалж чадсангүй';
-
-  @override
-  String get mala_mantra_label => 'Тарни';
 
   @override
   String get bookmarks_empty_all_title => 'Хараахан хавчуургалаагүй байна';
@@ -2671,26 +2278,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get author_plans_load_error => 'Төлөвлөгөөг ачаалж чадсангүй';
 
   @override
-  String source_with_value(String value) {
-    return 'Эх сурвалж: $value';
-  }
-
-  @override
-  String license_with_value(String value) {
-    return 'Лиценз: $value';
-  }
-
-  @override
-  String loading_previous_pages(int count) {
-    return 'Өмнөхийг ачаалж байна... ($count хуудас)';
-  }
-
-  @override
-  String loading_more_pages(int count) {
-    return 'Илүү ихийг ачаалж байна... ($count хуудас)';
-  }
-
-  @override
   String get drag_to_resize => 'Хэмжээг өөрчлөхийн тулд чирнэ үү';
 
   @override
@@ -2706,9 +2293,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String group_accumulator_share_message_no_group(String accumulation) {
     return 'Би WeBuddhist дээр \"$accumulation\" хуримтлалд оролцож байна. Та ч бас надтай нэгдээрэй!';
   }
-
-  @override
-  String get group_chat_title => 'Чат';
 
   @override
   String get chats_title => 'Чатууд';
@@ -2732,10 +2316,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_chat_message_hint => 'Зурвас';
-
-  @override
-  String get group_chat_join_to_send =>
-      'Мессеж илгээхийн тулд чатад нэгдээрэй.';
 
   @override
   String get group_chat_today => 'Өнөөдөр';
@@ -3035,9 +2615,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get event_live_badge => 'ШУУД';
 
   @override
-  String get event_live_audio => 'Шууд аудио';
-
-  @override
   String get event_live_video_mode => 'Бичлэг';
 
   @override
@@ -3120,9 +2697,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get event_prayer_pray => 'Залбирах';
 
   @override
-  String get event_prayer_praying => 'Залбирсан';
-
-  @override
   String event_prayer_my_count(int count) {
     return '+$count';
   }
@@ -3178,11 +2752,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get event_prayer_praying_for_you => 'Таны төлөө залбирсан';
-
-  @override
-  String event_prayer_praying_for(String name) {
-    return '$name-ийн төлөө залбирсан';
-  }
 
   @override
   String get event_prayer_your_request => 'Таны хүсэлт';
@@ -3470,12 +3039,6 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get connect_failed_unlike_post_error => 'Unable to unlike post';
-
-  @override
-  String get connect_failed_like_comment_error => 'Unable to like comment';
-
-  @override
-  String get connect_failed_unlike_comment_error => 'Unable to unlike comment';
 
   @override
   String get group_events_load_error =>
@@ -4288,9 +3851,6 @@ class AppLocalizationsMn extends AppLocalizations {
   String get timer_your_timers => 'Your timers';
 
   @override
-  String get timer_custom_timer => 'Custom timer';
-
-  @override
   String get timer_ambient_sounds_title => 'Ambient sounds';
 
   @override
@@ -4329,14 +3889,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get splash_tagline_2 => 'We Buddhists practice daily';
 
   @override
-  String get timer_list_subtitle => 'Tap play to begin, or build your own.';
-
-  @override
   String get timer_create_custom => 'Create a custom timer';
-
-  @override
-  String get timer_create_custom_subtitle =>
-      'Pick a length and optional background sound';
 
   @override
   String get timer_starting => 'Starting...';
