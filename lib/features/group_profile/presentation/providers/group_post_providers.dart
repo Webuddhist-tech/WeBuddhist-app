@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_post_remote_datasource.dart';
@@ -240,31 +241,31 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     final generation = _requestGeneration;
     final seq = ++_refreshSeq;
     final changes = _changes = _PostChanges();
-    final window = math.max(_limit, state.skip);
-    final rows = <ConnectPost>[];
-    final seen = <String>{};
-    var total = 0;
+    final LoadedWindow<ConnectPost>? read;
     try {
-      for (var skip = 0; skip < window; skip += _windowLimit) {
-        final result = await _repository.getGroupPosts(
-          _groupId,
-          skip: skip,
-          limit: math.min(_windowLimit, window - skip),
-        );
-        if (!mounted ||
-            generation != _requestGeneration ||
-            seq != _refreshSeq) {
-          return;
-        }
-        final page = result.getRight().toNullable();
-        if (page == null) return;
-        total = page.total;
-        rows.addAll(page.posts.where((post) => seen.add(post.id)));
-        if (page.posts.length < _windowLimit) break;
-      }
+      read = await readLoadedWindow(
+        window: () => math.max(_limit, state.skip),
+        fetch:
+            (skip, limit) async => (await _repository.getGroupPosts(
+              _groupId,
+              skip: skip,
+              limit: limit,
+            )).map((page) => (page.posts, page.total)),
+        idOf: (post) => post.id,
+        isCurrent:
+            () =>
+                mounted &&
+                generation == _requestGeneration &&
+                seq == _refreshSeq,
+        pageLimit: _windowLimit,
+      );
     } finally {
       if (identical(_changes, changes)) _changes = null;
     }
+    if (read == null) return;
+    final rows = read.rows;
+    final total = read.total;
+    final seen = {for (final post in rows) post.id};
 
     // Laid back over the read: what was posted, deleted or edited here
     // after it went out.

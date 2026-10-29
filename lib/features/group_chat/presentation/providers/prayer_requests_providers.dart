@@ -10,6 +10,7 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
 import 'package:flutter_pecha/core/realtime/signal_listener.dart';
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/core/realtime/signal_paths.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_first_pages.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -854,29 +855,28 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (roomId == null) return false;
     final generation = _listGeneration;
     final read = ++_readSeq;
-    final window = math.max(_limit, state.skip);
-    final rows = <ChatMessageDTO>[];
-    final seen = <String>{};
-    var total = 0;
     final changes = _ChangesDuringFetch();
     _trackers.add(changes);
+    final LoadedWindow<ChatMessageDTO>? loaded;
     try {
-      for (var skip = 0; skip < window; skip += _windowLimit) {
-        final result = await _fetchPage(
-          roomId,
-          skip: skip,
-          limit: math.min(_windowLimit, window - skip),
-        );
-        if (!mounted || generation != _listGeneration) return false;
-        final page = result.getRight().toNullable();
-        if (page == null) return false;
-        total = page.total;
-        rows.addAll(page.messages.where((row) => seen.add(row.id)));
-        if (page.messages.length < _windowLimit) break;
-      }
+      loaded = await readLoadedWindow(
+        window: () => math.max(_limit, state.skip),
+        fetch:
+            (skip, limit) async => (await _fetchPage(
+              roomId,
+              skip: skip,
+              limit: limit,
+            )).map((page) => (page.messages, page.total)),
+        idOf: (row) => row.id,
+        isCurrent: () => mounted && generation == _listGeneration,
+        pageLimit: _windowLimit,
+      );
     } finally {
       _trackers.remove(changes);
     }
+    if (loaded == null) return false;
+    final rows = loaded.rows;
+    final total = loaded.total;
     if (read < _shownRead) return false;
     _shownRead = read;
 
@@ -892,7 +892,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
       ChatMessagesPage(
         messages: [for (final row in rows) _newerOf(heldById[row.id], row)],
         skip: 0,
-        limit: window,
+        limit: rows.length,
         total: total,
       ),
       changes,

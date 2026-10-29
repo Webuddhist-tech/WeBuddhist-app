@@ -57,7 +57,7 @@ final myFeedSignalsProvider = Provider.autoDispose<void>((ref) {
         pending.clear();
         // The My feed shows event cards too, so either field refreshes it once.
         if ((posts || events) && ref.exists(myUnifiedConnectFeedProvider)) {
-          ref.read(myUnifiedConnectFeedProvider.notifier).refresh();
+          ref.read(myUnifiedConnectFeedProvider.notifier).refreshLatest();
         }
         if (events) refreshEventListsIfShown(ref);
       });

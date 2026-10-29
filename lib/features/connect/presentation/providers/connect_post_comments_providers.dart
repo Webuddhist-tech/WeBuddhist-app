@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
@@ -54,6 +58,13 @@ class ConnectPostCommentsState {
       orderConnectPostComments(comments);
 }
 
+/// What changed here while a refresh was out; its read predates these.
+class _CommentChanges {
+  final Set<String> added = {};
+  final Set<String> deleted = {};
+  final Map<String, ConnectPostComment> updated = {};
+}
+
 class ConnectPostCommentsNotifier
     extends StateNotifier<ConnectPostCommentsState> {
   ConnectPostCommentsNotifier({
@@ -88,6 +99,19 @@ class ConnectPostCommentsNotifier
   bool _firstPageInFlight = false;
   int _pageEpoch = 0;
 
+  /// The API's largest page, for re-reading loaded comments in few calls.
+  static const int _windowLimit = 100;
+
+  /// Comments posted here, kept until a refresh's window reaches them.
+  final Map<String, ConnectPostComment> _submitted = {};
+
+  /// Set while a refresh is out; see [_CommentChanges].
+  _CommentChanges? _changes;
+  bool _refreshing = false;
+
+  /// A signal came while a read was out, so one more runs once it lands.
+  bool _refreshAgain = false;
+
   /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
@@ -119,6 +143,7 @@ class ConnectPostCommentsNotifier
     } finally {
       _firstPageInFlight = false;
     }
+    _runPendingRefresh();
   }
 
   Future<void> loadMore() async {
@@ -165,38 +190,74 @@ class ConnectPostCommentsNotifier
     );
   }
 
-  /// Re-reads the first page after someone comments and merges it by id, so
-  /// the pages already loaded stay.
+  /// Re-reads every loaded comment after someone comments: new ones join,
+  /// deleted ones leave, and the pages already loaded stay.
   Future<void> refreshLatest() async {
-    if (state.isLoading || _firstPageInFlight) return;
-    _firstPageInFlight = true;
+    if (state.isLoading || _firstPageInFlight || _refreshing) {
+      _refreshAgain = true;
+      return;
+    }
+    _refreshing = true;
+    final changes = _changes = _CommentChanges();
+    final LoadedWindow<ConnectPostComment>? read;
     try {
-      await loadCachedFirstPage(
-        _source,
+      read = await readLoadedWindow(
+        window: () => math.max(_limit, state.skip),
+        fetch:
+            (skip, limit) async => (await ref
+                    .read(connectRepositoryProvider)
+                    .getPostComments(postId: postId, skip: skip, limit: limit))
+                .map((page) => (page.comments, page.total)),
+        idOf: (comment) => comment.id,
         isCurrent: () => mounted,
-        seed: false,
-        apply: (page) {
-          final fetched = {for (final c in page.comments) c.id: c};
-          final held = {for (final c in state.comments) c.id};
-          final added =
-              page.comments.where((c) => !held.contains(c.id)).toList();
-          final skip = state.skip + added.length;
-          state = state.copyWith(
-            comments: [
-              for (final c in state.comments) fetched[c.id] ?? c,
-              ...added,
-            ],
-            hasMore: skip < page.total,
-            skip: skip,
-            total: page.total,
-            clearError: true,
-          );
-        },
-        fail: (_) {},
+        pageLimit: _windowLimit,
       );
     } finally {
-      _firstPageInFlight = false;
+      _refreshing = false;
+      _changes = null;
     }
+    if (read != null) _applyWindow(read, changes);
+    _runPendingRefresh();
+  }
+
+  /// The read, with what changed here after it went out laid back over it.
+  void _applyWindow(
+    LoadedWindow<ConnectPostComment> read,
+    _CommentChanges changes,
+  ) {
+    bool gone(ConnectPostComment comment) =>
+        changes.deleted.contains(comment.id) ||
+        changes.deleted.contains(comment.parentCommentId);
+
+    final readIds = {for (final comment in read.rows) comment.id};
+    _submitted.removeWhere((id, _) => readIds.contains(id));
+    final kept = [
+      for (final comment in read.rows)
+        if (!gone(comment)) changes.updated[comment.id] ?? comment,
+    ];
+    final removed = read.rows.length - kept.length;
+    final addedSince =
+        changes.added.where((id) => !readIds.contains(id)).length;
+    final skip = kept.length;
+    final total = math.max(0, read.total - removed + addedSince);
+    _pageEpoch++;
+    state = state.copyWith(
+      comments: [
+        ...kept,
+        for (final comment in _submitted.values)
+          if (!gone(comment)) comment,
+      ],
+      hasMore: skip < total,
+      skip: skip,
+      total: total,
+      clearError: true,
+    );
+  }
+
+  void _runPendingRefresh() {
+    if (!_refreshAgain || !mounted) return;
+    _refreshAgain = false;
+    unawaited(refreshLatest());
   }
 
   Future<bool> submitComment({
@@ -224,6 +285,8 @@ class ConnectPostCommentsNotifier
         return false;
       },
       (comment) {
+        _submitted[comment.id] = comment;
+        _changes?.added.add(comment.id);
         state = state.copyWith(
           comments: [...state.comments, comment],
           isSubmitting: false,
@@ -243,6 +306,8 @@ class ConnectPostCommentsNotifier
     if (!mounted) return false;
 
     return result.fold((_) => false, (_) {
+      _submitted.remove(commentId);
+      _changes?.deleted.add(commentId);
       final remaining =
           state.comments.where((comment) {
             return comment.id != commentId &&
@@ -273,13 +338,15 @@ class ConnectPostCommentsNotifier
       final updatedComments =
           state.comments.map((item) {
             if (item.id != comment.id) return item;
-            return item.copyWith(
+            final liked = item.copyWith(
               likedByMe: !wasLiked,
               likeCount: nextLikeCountAfterToggle(
                 currentCount: item.likeCount,
                 wasLiked: wasLiked,
               ),
             );
+            _changes?.updated[liked.id] = liked;
+            return liked;
           }).toList();
       state = state.copyWith(comments: updatedComments);
       return true;
@@ -287,6 +354,7 @@ class ConnectPostCommentsNotifier
   }
 
   Future<void> refresh() async {
+    _submitted.clear();
     state = const ConnectPostCommentsState();
     await loadInitial();
   }

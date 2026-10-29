@@ -2100,6 +2100,28 @@ void main() {
       expect(notifier.state.total, 1);
     });
 
+    test('a page loaded during a refresh is not overwritten', () async {
+      final history = [for (var i = 0; i < 45; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      final held = Completer<void>();
+      repository.listGate = held;
+      final refresh = notifier.refreshLatest();
+      await _settle();
+      repository.listGate = null;
+      await notifier.loadMore();
+      expect(notifier.state.requests.length, 45);
+
+      held.complete();
+      await refresh;
+      expect(notifier.state.requests.length, 45);
+      expect(notifier.state.hasMore, isFalse);
+    });
+
     test('an older refresh landing late is dropped', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a')]);
       container = buildContainer();

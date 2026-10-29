@@ -246,6 +246,27 @@ void main() {
     );
   });
 
+  test('a page loaded during a refresh is not overwritten', () async {
+    posts.postIds = [for (var i = 45; i > 0; i--) 'p$i'];
+    signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 1)});
+    container.listen(groupPostsProvider('g1'), (_, _) {});
+    await pumpEventQueue();
+    final notifier = container.read(groupPostsProvider('g1').notifier);
+
+    final held = Completer<void>();
+    posts.gate = held;
+    final refresh = notifier.refreshLatest();
+    await pumpEventQueue();
+    await notifier.loadMore();
+    expect(container.read(groupPostsProvider('g1')).posts, hasLength(40));
+
+    held.complete();
+    await refresh;
+    final state = container.read(groupPostsProvider('g1'));
+    expect(state.posts, hasLength(40));
+    expect(state.skip, 40);
+  });
+
   test('a post deleted here during a refresh stays gone', () async {
     posts.postIds = ['p2', 'p1'];
     signals.emit(path, {'posts_changed_at': DateTime.utc(2026, 1, 1)});
