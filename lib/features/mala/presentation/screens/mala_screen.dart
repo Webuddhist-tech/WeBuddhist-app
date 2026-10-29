@@ -114,6 +114,9 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
   @override
   Widget build(BuildContext context) {
     final catalogue = ref.watch(malaCatalogueProvider);
+    // _buildLoaded calls ref.listen, so it must run in this build method.
+    final mantras = ScreenCacheBuilder.loadedOf(catalogue);
+    final loaded = mantras == null ? null : _buildLoaded(context, mantras);
 
     return Scaffold(
       // Clip the page content to its bounds. The bead strand is drawn with an
@@ -138,7 +141,7 @@ class _MalaScreenState extends ConsumerState<MalaScreen> {
                     onRetry: retry,
                   ),
                 ),
-            data: (mantras) => _buildLoaded(context, mantras),
+            data: (_) => loaded!,
           ),
         ),
       ),

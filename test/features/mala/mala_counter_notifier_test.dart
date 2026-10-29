@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -57,6 +58,7 @@ void main() {
     getDetail = MockGetAccumulatorDetailUseCase();
     sync = MockMalaSyncManager();
     delete = MockDeleteUserAccumulatorUseCase();
+    MalaCounterNotifier.clearSkinMemo();
   });
 
   tearDown(() async {
@@ -431,6 +433,51 @@ void main() {
     // Nothing to push when local and server agree at 0.
     verifyNever(sync.flush(any));
     notifier.dispose();
+  });
+
+  test('cached bead skin is in state before seed resolves the user', () async {
+    const imageBytes = [0x89, 0x50, 0x4E, 0x47];
+    when(getDetail(any)).thenAnswer(
+      (_) async => const Right(MalaCount(accumulatorId: 'acc-1', total: 0)),
+    );
+    await local.write(
+      userId,
+      'chenrezig',
+      LocalMalaState(
+        beadImageUrl: 'https://cdn.example/bead.webp',
+        beadImageBase64: base64Encode(imageBytes),
+      ),
+    );
+
+    final notifier = MalaCounterNotifier(
+      mantra: mantra,
+      local: local,
+      getAccumulatorDetail: getDetail,
+      deleteUserAccumulator: delete,
+      sync: sync,
+      currentUserId: () async => userId,
+      currentUserIdSync: () => userId,
+    );
+
+    expect(notifier.state.beadImageBytes, Uint8List.fromList(imageBytes));
+    expect(notifier.state.beadImageUrl, 'https://cdn.example/bead.webp');
+    await notifier.whenSeeded;
+    notifier.dispose();
+
+    // A recreated notifier (catalogue refresh) starts textured even when the
+    // sync user id is unavailable.
+    final recreated = MalaCounterNotifier(
+      mantra: mantra,
+      local: local,
+      getAccumulatorDetail: getDetail,
+      deleteUserAccumulator: delete,
+      sync: sync,
+      currentUserId: () async => userId,
+      currentUserIdSync: () => null,
+    );
+    expect(recreated.state.beadImageBytes, Uint8List.fromList(imageBytes));
+    await recreated.whenSeeded;
+    recreated.dispose();
   });
 
   test('stores bead bytes after retrying expired presigned URL', () async {

@@ -21,9 +21,13 @@ class ScreenCacheBuilder<T extends Object> extends StatelessWidget {
   final VoidCallback onRetry;
   final Widget Function(Object error, VoidCallback onRetry)? error;
 
+  /// Loaded data, or null while nothing has loaded yet.
+  static T? loadedOf<T extends Object>(AsyncValue<Either<Failure, T>> value) =>
+      value.valueOrNull?.fold<T?>((_) => null, (d) => d);
+
   @override
   Widget build(BuildContext context) {
-    final loaded = value.valueOrNull?.fold<T?>((_) => null, (d) => d);
+    final loaded = loadedOf(value);
     if (loaded != null) return data(loaded);
     if (value.isLoading) return skeleton;
     final failure =

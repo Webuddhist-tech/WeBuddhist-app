@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/storage/preferences_service.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -98,9 +99,22 @@ Future<String?> resolveMalaUserId(Ref ref) async {
   final stored = await ref
       .read(localStorageServiceProvider)
       .get<String>(StorageKeys.currentUserId);
-  if (stored != null && stored.isNotEmpty) return stored;
-  return ref.read(userProvider).user?.id;
+  final id =
+      stored != null && stored.isNotEmpty
+          ? stored
+          : ref.read(userProvider).user?.id;
+  _lastResolvedMalaUserId = id;
+  return id;
 }
+
+String? _lastResolvedMalaUserId;
+
+/// Best-effort sync id for first-frame Hive reads; [resolveMalaUserId] wins.
+String? malaUserIdSync() =>
+    SharedPreferencesService.instance.getSync<String>(
+      StorageKeys.currentUserId,
+    ) ??
+    _lastResolvedMalaUserId;
 
 // ============ Sync manager (app-scoped, kept alive) ============
 
@@ -201,6 +215,7 @@ final malaCounterProvider = StateNotifierProvider.autoDispose
             ref.watch(malaRemoteDataSourceProvider).fetchImageBytes,
         sync: sync,
         currentUserId: () => resolveMalaUserId(ref),
+        currentUserIdSync: malaUserIdSync,
         sound: ref.watch(malaSoundPlayerProvider),
       );
       void onPersonalCountSynced(String presetId) {
