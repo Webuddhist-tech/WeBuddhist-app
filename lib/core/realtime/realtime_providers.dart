@@ -7,10 +7,18 @@ import 'package:flutter_pecha/core/realtime/firestore_realtime_signals.dart';
 import 'package:flutter_pecha/core/realtime/realtime_signals.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Named Firestore database the backend writes signals to (not `(default)`).
+const _signalsDatabaseId = 'app-backend';
+
 /// Null when Firebase did not start or signals are switched off.
 final realtimeSignalsProvider = Provider<RealtimeSignals?>((ref) {
   if (!AppFeatureFlags.kRealtimeSignals || Firebase.apps.isEmpty) return null;
-  return FirestoreRealtimeSignals(FirebaseFirestore.instance);
+  return FirestoreRealtimeSignals(
+    FirebaseFirestore.instanceFor(
+      app: Firebase.app(),
+      databaseId: _signalsDatabaseId,
+    ),
+  );
 });
 
 final firebaseAuthGatewayProvider = Provider<FirebaseAuthGateway?>((ref) {
