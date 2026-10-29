@@ -42,6 +42,15 @@ class OnboardingScreenLanguage extends ConsumerStatefulWidget {
       locale: Locale(AppConfig.mongolianLanguageCode),
       label: 'Монгол',
     ),
+    _LanguageOption(locale: Locale(AppConfig.thaiLanguageCode), label: 'ไทย'),
+    _LanguageOption(
+      locale: Locale(AppConfig.burmeseLanguageCode),
+      label: 'မြန်မာ',
+    ),
+    _LanguageOption(
+      locale: Locale(AppConfig.vietnameseLanguageCode),
+      label: 'Tiếng Việt',
+    ),
   ];
 
   @override
