@@ -31,16 +31,25 @@ enum ReaderSheetTextRole {
 /// role's. Sheets are in Inter; an interface in Tibetan or Chinese keeps the
 /// app's font for its script and is set larger by that script's interface
 /// factor, so labels look the same size.
+///
+/// [label], when given, is the text the style is for: it is sized by the
+/// script its letters are in, so a font or language name in Latin letters
+/// stays the English size in a Tibetan or Chinese interface (WF28, WF32).
 TextStyle readerSheetText(
   BuildContext context,
   ReaderSheetTextRole role, {
   required Color color,
   FontWeight? weight,
+  String? label,
 }) {
   final fontWeight = weight ?? role.weight;
-  final script = ReaderScript.ofLanguage(
-    Localizations.maybeLocaleOf(context)?.languageCode,
-  );
+  final language = Localizations.maybeLocaleOf(context)?.languageCode;
+  // A label in a script the reader has no sizes for (Sinhala, Bengali…)
+  // is set as Latin, not as the interface's script.
+  final script =
+      label == null
+          ? ReaderScript.ofLanguage(language)
+          : ReaderScript.of(label, language: 'en');
   final latin = script == ReaderScript.latin || script == ReaderScript.cyrillic;
   return TextStyle(
     fontSize: ReaderTypography.chromeSize(role.size, script),
@@ -642,6 +651,7 @@ class ReaderSheetChip extends ConsumerWidget {
       context,
       ReaderSheetTextRole.chip,
       color: selected ? palette.selectedChipText : palette.ink,
+      label: label,
     );
     return Semantics(
       button: true,

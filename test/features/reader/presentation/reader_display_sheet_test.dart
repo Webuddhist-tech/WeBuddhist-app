@@ -214,6 +214,17 @@ void main() {
   });
 
   group('More settings', () {
+    testWidgets('the title: at the start over a rule in English, centred '
+        'with no rule in a Tibetan or Chinese interface', (tester) async {
+      for (final (locale, centred) in [('en', false), ('bo', true), ('zh', true)]) {
+        await _open(tester, locale: locale);
+        final sheet = tester.widget<ReaderSheet>(find.byType(ReaderSheet));
+        expect(sheet.centerTitle, centred, reason: locale);
+        expect(sheet.headerRule, !centred, reason: locale);
+        await tester.pumpWidget(const SizedBox());
+      }
+    });
+
     testWidgets('every tap target is at least 44 x 44, here and on Display', (
       tester,
     ) async {
@@ -320,6 +331,7 @@ String _labelOf(Element element) {
 Future<ProviderContainer> _open(
   WidgetTester tester, {
   VoidCallback? onChangeLanguages,
+  String locale = 'en',
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -333,7 +345,7 @@ Future<ProviderContainer> _open(
         ),
       ],
       child: MaterialApp(
-        locale: const Locale('en'),
+        locale: Locale(locale),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(

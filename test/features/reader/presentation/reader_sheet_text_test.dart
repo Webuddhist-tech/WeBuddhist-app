@@ -7,8 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 Future<TextStyle> _styleIn(
   WidgetTester tester,
   String language,
-  ReaderSheetTextRole role,
-) async {
+  ReaderSheetTextRole role, {
+  String? label,
+}) async {
   late TextStyle style;
   await tester.pumpWidget(
     Localizations(
@@ -16,7 +17,12 @@ Future<TextStyle> _styleIn(
       delegates: const [DefaultWidgetsLocalizations.delegate],
       child: Builder(
         builder: (context) {
-          style = readerSheetText(context, role, color: Colors.black);
+          style = readerSheetText(
+            context,
+            role,
+            color: Colors.black,
+            label: label,
+          );
           return const SizedBox();
         },
       ),
@@ -63,6 +69,40 @@ void main() {
     expect(
       (await _styleIn(tester, 'bo', ReaderSheetTextRole.title)).fontFamily,
       isNull,
+    );
+  });
+
+  testWidgets('a label is sized by its own letters: a Latin font name in a '
+      'Tibetan or Chinese interface stays 13, in Inter', (tester) async {
+    for (final language in ['bo', 'zh']) {
+      final style = await _styleIn(
+        tester,
+        language,
+        ReaderSheetTextRole.chip,
+        label: 'Noto Serif Tibetan',
+      );
+      expect(style.fontSize, 13, reason: language);
+      expect(style.fontFamily, ReaderFonts.inter.family(weight: FontWeight.w500));
+    }
+    expect(
+      (await _styleIn(
+        tester,
+        'en',
+        ReaderSheetTextRole.chip,
+        label: 'བོད་ཡིག',
+      )).fontSize,
+      20,
+    );
+    expect(
+      (await _styleIn(tester, 'en', ReaderSheetTextRole.chip, label: '中文'))
+          .fontSize,
+      14,
+    );
+    // A script the reader has no sizes for is set as Latin.
+    expect(
+      (await _styleIn(tester, 'bo', ReaderSheetTextRole.chip, label: 'සිංහල'))
+          .fontSize,
+      13,
     );
   });
 

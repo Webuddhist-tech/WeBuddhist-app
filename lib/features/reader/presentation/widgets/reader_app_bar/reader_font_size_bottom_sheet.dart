@@ -126,11 +126,17 @@ class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
     }
 
     // As WF17: the title at the start with a rule under the header, and a
-    // rule after each group.
+    // rule after each group. A Tibetan or Chinese interface centres the
+    // title with no rule under it, as WF28 and WF33 draw it.
+    final interface = ReaderScript.ofLanguage(
+      Localizations.maybeLocaleOf(context)?.languageCode,
+    );
+    final centred =
+        interface == ReaderScript.tibetan || interface == ReaderScript.chinese;
     return ReaderSheet(
       title: l10n.reader_display_title,
-      centerTitle: false,
-      headerRule: true,
+      centerTitle: centred,
+      headerRule: !centred,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
