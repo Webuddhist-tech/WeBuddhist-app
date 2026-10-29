@@ -15,31 +15,32 @@ class OnboardingScreenLanguage extends ConsumerStatefulWidget {
 
   final VoidCallback onNext;
 
+  // Most-used first, the same order as AppLanguage.bundledFallback.
   static const _languages = [
     _LanguageOption(
       locale: Locale(AppConfig.englishLanguageCode),
       label: 'English',
     ),
-    _LanguageOption(locale: Locale(AppConfig.chineseLanguageCode), label: '中文'),
-    _LanguageOption(
-      locale: Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
-      label: '简体中文',
-    ),
     _LanguageOption(
       locale: Locale(AppConfig.tibetanLanguageCode),
       label: 'བོད་ཡིག',
     ),
+    _LanguageOption(locale: Locale(AppConfig.chineseLanguageCode), label: '中文'),
     _LanguageOption(
       locale: Locale(AppConfig.hindiLanguageCode),
       label: 'हिन्दी',
     ),
     _LanguageOption(
-      locale: Locale(AppConfig.mongolianLanguageCode),
-      label: 'Монгол',
-    ),
-    _LanguageOption(
       locale: Locale(AppConfig.nepaliLanguageCode),
       label: 'नेपाली',
+    ),
+    _LanguageOption(
+      locale: Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans'),
+      label: '简体中文',
+    ),
+    _LanguageOption(
+      locale: Locale(AppConfig.mongolianLanguageCode),
+      label: 'Монгол',
     ),
   ];
 
