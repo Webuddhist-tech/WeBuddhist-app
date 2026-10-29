@@ -1,9 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_first_pages.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
@@ -18,6 +23,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/pending
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 /// Where the room stands: 404 on resolve means chat is switched off.
 enum PrayerRoomStatus { resolving, ready, closed, failed }
@@ -89,6 +95,19 @@ class _PendingPrayers {
   DateTime? notBefore;
 
   int get outstanding => queued + inFlight;
+}
+
+/// What changed on screen while a first page was being fetched. That page
+/// was read before these changes, so they are laid back over it.
+class _ChangesDuringFetch {
+  /// Rows that came in by send or socket, with the viewer they came for.
+  final Map<String, (ChatMessageDTO, String?)> added = {};
+
+  /// Rows deleted from the room.
+  final Set<String> deleted = {};
+
+  /// Ids whose body, intention or completion was changed here.
+  final Set<String> edited = {};
 }
 
 /// Taps on one request still to send after the sheet closed.
@@ -334,13 +353,47 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     : _repository = ref.read(groupChatRepositoryProvider),
       _pacing = ref.read(prayerPacingProvider),
       _sends = ref.read(pendingPrayerSendsProvider),
-      super(const PrayerRequestsState()) {
+      super(_seed(ref, scope)) {
+    // A seeded list keeps quiet about a failed re-read, like a stored one.
+    _seededFromStore = state.requests.isNotEmpty;
     load();
+    _creating = false;
+  }
+
+  // The stored room and page are the first state, so the sheet opens filled.
+  static PrayerRequestsState _seed(Ref ref, PrayerRoomScope scope) {
+    final stored =
+        ref
+            .read(groupChatFirstPagesProvider)
+            .prayerRoom(
+              scope,
+              filter: PrayerRequestsFilter.initial,
+              translationLanguage: ref.read(prayerTranslationLanguageProvider),
+              limit: _limit,
+            )
+            .read();
+    if (stored == null || stored.roomId.isEmpty) {
+      return const PrayerRequestsState();
+    }
+    final page = stored.page;
+    return PrayerRequestsState(
+      roomStatus: PrayerRoomStatus.ready,
+      roomId: stored.roomId,
+      requests: page.messages,
+      total: page.total,
+      hasLoaded: true,
+      hasMore: page.messages.length < page.total,
+      skip: page.messages.length,
+    );
   }
 
   final Ref ref;
   final PrayerRoomScope scope;
   static const int _limit = 30;
+
+  /// True until the constructor returns: Riverpod forbids changing another
+  /// provider while this one is being created.
+  bool _creating = true;
 
   String get _translationLanguage =>
       ref.read(prayerTranslationLanguageProvider);
@@ -368,6 +421,16 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// Bumped on every first-page load, so a page fetched under an earlier
   /// filter is dropped when it lands.
   int _listGeneration = 0;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
+  /// The list on screen came from the device, so a failed re-read stays quiet.
+  bool _seededFromStore = false;
+
+  /// Set while a first page is out; see [_ChangesDuringFetch].
+  _ChangesDuringFetch? _changes;
 
   /// Live requests counted but not in the list: outside the intention in
   /// view (null) or held for the end of a sort still paging (the row, in
@@ -404,14 +467,39 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     )..start();
   }
 
-  /// Resolves the room, then fetches its first page of prayer requests.
+  /// Shows the stored room and page at once, then resolves the room and
+  /// fetches its first page of prayer requests.
   Future<void> load() async {
     if (state.isLoading) return;
+    _firstPageInFlight = true;
+    try {
+      await _load();
+    } finally {
+      _firstPageInFlight = false;
+    }
+  }
+
+  Future<void> _load() async {
+    // A seeded room keeps its rows and status while the server is asked again.
+    final seeded = state.requests.isNotEmpty && state.roomId != null;
     state = state.copyWith(
-      roomStatus: PrayerRoomStatus.resolving,
-      isLoading: true,
+      roomStatus: seeded ? null : PrayerRoomStatus.resolving,
+      isLoading: !seeded,
       clearError: true,
     );
+    if (seeded && !state.filter.byIntention && !state.filter.mine) {
+      _publishCount(state.total);
+    }
+    final stored = state.requests.isEmpty ? _readSnapshot() : null;
+    if (stored != null && stored.roomId.isNotEmpty) {
+      _seededFromStore = true;
+      state = state.copyWith(
+        roomId: stored.roomId,
+        roomStatus: PrayerRoomStatus.ready,
+        clearError: true,
+      );
+      _applyFirstPage(stored.page);
+    }
 
     final language = ref.read(prayerMantraLanguageProvider);
     final roomResult =
@@ -472,42 +560,151 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   Future<void> _loadFirstPage(String roomId) async {
+    final wasInFlight = _firstPageInFlight;
+    _firstPageInFlight = true;
+    try {
+      await _readFirstPage(roomId);
+    } finally {
+      _firstPageInFlight = wasInFlight;
+    }
+  }
+
+  Future<void> _readFirstPage(String roomId) async {
     final generation = ++_listGeneration;
     _pageShifted = false;
     _unlisted.clear();
-    final filter = state.filter;
+    final source = _snapshotSource();
+    // A filter change starts empty; its stored page shows while it re-reads.
+    if (state.requests.isEmpty) {
+      final stored = source.read();
+      if (stored != null && stored.roomId == roomId) {
+        _seededFromStore = true;
+        state = state.copyWith(isLoading: false);
+        _applyFirstPage(stored.page);
+      }
+    }
+    final changes = _changes = _ChangesDuringFetch();
     final result = await _fetchPage(roomId, skip: 0);
+    if (identical(_changes, changes)) _changes = null;
     if (!mounted || generation != _listGeneration) return;
 
+    final seeded = _seededFromStore;
+    _seededFromStore = false;
     result.fold(
       (failure) {
         state = state.copyWith(
           isLoading: false,
           hasLoaded: true,
-          error: failure.message,
+          error: seeded ? null : failure.message,
+          clearError: seeded,
         );
       },
-      (page) {
-        _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
-        final hasMore = page.messages.length < page.total;
-        final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
-        final requests = [...page.messages.where(_isLive), ...held];
-        state = state.copyWith(
-          requests: requests,
-          total: page.total + held.length,
-          isLoading: false,
-          hasLoaded: true,
-          hasMore: hasMore,
-          skip: page.messages.length + held.length,
-          clearError: true,
+      (fetched) {
+        final page = _withLocalChanges(fetched, changes);
+        _applyFirstPage(page);
+        _reapplyLocal(page, changes);
+        unawaited(
+          ref
+              .read(screenCacheStoreProvider)
+              .save(
+                source.key,
+                jsonEncode(
+                  PrayerRoomSnapshot(roomId: roomId, page: page).toJson(),
+                ),
+              )
+              .catchError((Object _) => false),
         );
-        // Only an unfiltered total is the room's count.
-        if (!filter.byIntention && !filter.mine) {
-          _publishCount(page.total + held.length);
-        }
       },
     );
   }
+
+  /// Publishes a first page under the filter in view.
+  void _applyFirstPage(ChatMessagesPage page) {
+    _pageEpoch++;
+    final filter = state.filter;
+    _unlisted.removeWhere((id, _) => page.messages.any((m) => m.id == id));
+    final hasMore = page.messages.length < page.total;
+    final held = hasMore ? const <ChatMessageDTO>[] : _takeHeld();
+    final requests = [...page.messages.where(_isLive), ...held];
+    state = state.copyWith(
+      requests: requests,
+      total: page.total + held.length,
+      isLoading: false,
+      hasLoaded: true,
+      hasMore: hasMore,
+      skip: page.messages.length + held.length,
+      clearError: true,
+    );
+    // Only an unfiltered total is the room's count.
+    if (!filter.byIntention && !filter.mine) {
+      _publishCount(page.total + held.length);
+    }
+  }
+
+  /// [page] without rows deleted while it was out, and with edits made
+  /// meanwhile kept over the server's older copy.
+  ChatMessagesPage _withLocalChanges(
+    ChatMessagesPage page,
+    _ChangesDuringFetch changes,
+  ) {
+    if (changes.deleted.isEmpty && changes.edited.isEmpty) return page;
+    final messages = <ChatMessageDTO>[];
+    var removed = 0;
+    for (final row in page.messages) {
+      if (changes.deleted.contains(row.id)) {
+        removed++;
+        continue;
+      }
+      final local = changes.edited.contains(row.id) ? _find(row.id) : null;
+      messages.add(
+        local == null
+            ? row
+            : _edited(row, local, body: local.body, intention: local.intention),
+      );
+    }
+    return ChatMessagesPage(
+      messages: messages,
+      skip: page.skip,
+      limit: page.limit,
+      total: _clampCount(page.total - removed),
+    );
+  }
+
+  /// After a fresh first page: rows sent or pushed while it was out go back
+  /// in, and taps not yet confirmed are shown over the fresh counts.
+  void _reapplyLocal(ChatMessagesPage page, _ChangesDuringFetch changes) {
+    for (final (message, viewerId) in changes.added.values) {
+      appendLive(message, viewerId: viewerId);
+    }
+    for (final entry in _pending.entries) {
+      ChatMessageDTO? row;
+      for (final message in page.messages) {
+        if (message.id == entry.key) row = message;
+      }
+      if (row == null) continue;
+      final confirmed = entry.value.confirmed;
+      entry.value.confirmed = _PrayerSnapshot(
+        prayedByMe: confirmed.prayedByMe || row.prayedByMe,
+        prayerCount: math.max(confirmed.prayerCount, row.prayerCount),
+        myPrayerCount: math.max(confirmed.myPrayerCount, row.myPrayerCount),
+        recentPrayers: row.recentPrayers,
+      );
+      _render(entry.key, entry.value);
+    }
+  }
+
+  ScreenCacheSource<PrayerRoomSnapshot> _snapshotSource() {
+    return ref
+        .read(groupChatFirstPagesProvider)
+        .prayerRoom(
+          scope,
+          filter: state.filter,
+          translationLanguage: _translationLanguage,
+          limit: _limit,
+        );
+  }
+
+  PrayerRoomSnapshot? _readSnapshot() => _snapshotSource().read();
 
   /// One page under the filter in view: the room's requests, or under
   /// [PrayerRequestsFilter.mine] the viewer's own from the my-requests
@@ -537,6 +734,12 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   }
 
   void _publishCount(int count) {
+    if (_creating) {
+      Future.microtask(() {
+        if (mounted) _publishCount(count);
+      });
+      return;
+    }
     ref.read(prayerRequestCountProvider(scope).notifier).state = count;
   }
 
@@ -554,14 +757,21 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (roomId == null ||
         state.isLoading ||
         state.isLoadingMore ||
-        !state.hasMore) {
+        !state.hasMore ||
+        _firstPageInFlight) {
       return;
     }
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final generation = _listGeneration;
+    final epoch = _pageEpoch;
     final result = await _fetchPage(roomId, skip: state.skip);
     if (!mounted || generation != _listGeneration) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     if (_pageShifted) {
       _pageShifted = false;
@@ -691,6 +901,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           );
           return message;
         });
+        _changes?.edited.add(messageId);
       }
       return message;
     });
@@ -713,6 +924,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
         intention: message.intention,
       ),
     );
+    _changes?.edited.add(message.id);
   }
 
   /// An edit onto the row as it is now. A new body makes the old translation
@@ -813,6 +1025,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
           clearCompletedAt: !completed,
         ),
       );
+      _changes?.edited.add(messageId);
       return unit;
     });
   }
@@ -827,6 +1040,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     if (state.roomId != null && message.roomId != state.roomId) return;
     if (state.requests.any((existing) => existing.id == message.id)) return;
     if (_unlisted.containsKey(message.id)) return;
+    _changes?.added[message.id] = (message, viewerId);
     final viewer = viewerId?.trim() ?? '';
     final listed =
         state.filter.mine
@@ -871,6 +1085,10 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// filter in view, so it leaves the spotlight too, which may be the only
   /// place a picked request is shown.
   void _dropRow(String messageId, {required bool inRoom}) {
+    if (inRoom) {
+      _changes?.deleted.add(messageId);
+      _changes?.added.remove(messageId);
+    }
     if (inRoom && state.spotlight?.id == messageId) clearSpotlight();
     final unlisted = _unlisted.containsKey(messageId);
     final held = _unlisted.remove(messageId);
@@ -1200,12 +1418,23 @@ final prayerRequestsProvider = StateNotifierProvider.autoDispose
       (ref, scope) => PrayerRequestsNotifier(ref: ref, scope: scope),
     );
 
-/// The intention picker's choices, in display order.
-final prayerIntentionsProvider =
-    FutureProvider.autoDispose<List<ChatPrayerIntentionDTO>>((ref) async {
-      final result = await ref.read(groupChatRepositoryProvider).listIntentions();
-      return result.fold((failure) => throw failure, (intentions) => intentions);
-    });
+/// The intention picker's choices, in display order; stored list first.
+final prayerIntentionsProvider = AsyncNotifierProvider.autoDispose<
+  AutoDisposeScreenCacheNotifier<
+    List<ChatPrayerIntentionDTO>,
+    List<ChatPrayerIntentionDTO>
+  >,
+  List<ChatPrayerIntentionDTO>
+>(() {
+  return AutoDisposeScreenCacheNotifier((ref, bind) {
+    return bind.source(
+      ref.watch(groupChatFirstPagesProvider).intentions(),
+      select:
+          (result) =>
+              result.fold((failure) => throw failure, (intentions) => intentions),
+    );
+  });
+});
 
 class PrayerSupportersState extends Equatable {
   /// Newest first.
@@ -1271,48 +1500,90 @@ class PrayerSupportersState extends Equatable {
 
 /// Everyone praying for one request, paged from the who-prayed endpoint.
 class PrayerSupportersNotifier extends StateNotifier<PrayerSupportersState> {
-  PrayerSupportersNotifier({required this.ref, required this.messageId})
-    : super(const PrayerSupportersState()) {
+  PrayerSupportersNotifier({
+    required this.ref,
+    required this.messageId,
+    required ScreenCacheSource<ChatPrayersPage> source,
+  }) : _source = source,
+       super(_seed(source)) {
     load();
+  }
+
+  // The stored page is the first state, so the first frame never spins.
+  static PrayerSupportersState _seed(ScreenCacheSource<ChatPrayersPage> source) {
+    final page = source.read();
+    if (page == null) return const PrayerSupportersState();
+    return PrayerSupportersState(
+      supporters: page.prayers,
+      total: page.total,
+      skip: page.prayers.length,
+      hasLoaded: true,
+      hasMore: page.prayers.isNotEmpty && page.prayers.length < page.total,
+    );
   }
 
   final Ref ref;
   final String messageId;
+  final ScreenCacheSource<ChatPrayersPage> _source;
   static const int _limit = 20;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   GroupChatRepository get _repository => ref.read(groupChatRepositoryProvider);
 
+  /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> load() async {
     if (state.isLoading) return;
-    state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _repository.listPrayers(
-      messageId,
-      skip: 0,
-      limit: _limit,
-    );
-    if (!mounted) return;
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          hasLoaded: true,
-          error: failure.message,
-        );
-      },
-      (page) => state = _merged(const [], 0, page, isLoading: false),
-    );
+    // Only an empty roster shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.supporters.isEmpty, clearError: true);
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        _source,
+        isCurrent: () => mounted,
+        seed: state.supporters.isEmpty,
+        fetch: () => _repository.listPrayers(messageId, skip: 0, limit: _limit),
+        encode: (page) => page.toJson(),
+        apply: (page) {
+          _pageEpoch++;
+          state = _merged(const [], 0, page, isLoading: false);
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(
+                  isLoading: false,
+                  hasLoaded: true,
+                  error: failure.message,
+                ),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    if (state.isLoading ||
+        state.isLoadingMore ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final skip = state.skip;
+    final epoch = _pageEpoch;
     final result = await _repository.listPrayers(
       messageId,
       skip: skip,
       limit: _limit,
     );
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
     result.fold(
       (failure) {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
@@ -1359,7 +1630,15 @@ final prayerRequestCountProvider = StateProvider.autoDispose
     .family<int?, PrayerRoomScope>((ref, scope) => null);
 
 final prayerSupportersProvider = StateNotifierProvider.autoDispose
-    .family<PrayerSupportersNotifier, PrayerSupportersState, String>(
-      (ref, messageId) =>
-          PrayerSupportersNotifier(ref: ref, messageId: messageId),
-    );
+    .family<PrayerSupportersNotifier, PrayerSupportersState, String>((
+      ref,
+      messageId,
+    ) {
+      return PrayerSupportersNotifier(
+        ref: ref,
+        messageId: messageId,
+        source: ref
+            .watch(groupChatFirstPagesProvider)
+            .prayers(messageId, limit: PrayerSupportersNotifier._limit),
+      );
+    });

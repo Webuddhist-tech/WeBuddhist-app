@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -11,6 +14,8 @@ import 'package:flutter_pecha/features/group_profile/data/repositories/group_pro
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_request.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_member.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
@@ -22,6 +27,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_an
 import 'package:flutter_pecha/features/home/presentation/providers/series_enrollment_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 final groupProfileRemoteDatasourceProvider =
     Provider<GroupProfileRemoteDatasource>((ref) {
@@ -32,6 +38,7 @@ final groupProfileRepositoryProvider =
     Provider<GroupProfileRepositoryInterface>((ref) {
       return GroupProfileRepositoryImpl(
         remote: ref.watch(groupProfileRemoteDatasourceProvider),
+        store: ref.watch(screenCacheStoreProvider),
       );
     });
 
@@ -40,16 +47,32 @@ final getGroupProfileUseCaseProvider = Provider<GetGroupProfileUseCase>((ref) {
   return GetGroupProfileUseCase(repository.getGroupProfile);
 });
 
-final groupProfileProvider = FutureProvider.autoDispose.family<
+typedef GroupProfileNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupProfile,
+      Either<Failure, GroupProfile>,
+      String
+    >;
+
+/// Stored profile is the first state, refreshed in the background. `.future`
+/// resolves with the stored value; callers needing fresh data use
+/// `refreshGroupProfile`.
+final groupProfileProvider = AsyncNotifierProvider.autoDispose.family<
+  GroupProfileNotifier,
   Either<Failure, GroupProfile>,
   String
->((ref, groupId) async {
-  // Refetch when auth changes so user-specific fields (e.g. is_group_enrolled)
-  // are loaded with the Bearer token attached.
-  ref.watch(authProvider);
-  final language = ref.watch(contentLanguageProvider);
-  final useCase = ref.watch(getGroupProfileUseCaseProvider);
-  return useCase(GetGroupProfileParams(groupId: groupId, language: language));
+>(() {
+  return GroupProfileNotifier((ref, groupId, bind) {
+    // Rebuild when auth changes so user-specific fields (e.g. is_group_enrolled)
+    // are loaded with the Bearer token attached.
+    ref.watch(authProvider);
+    final language = ref.watch(contentLanguageProvider);
+    return bind.source(
+      ref
+          .watch(groupProfileRepositoryProvider)
+          .groupProfileSource(groupId, language: language),
+    );
+  });
 });
 
 class GroupPracticesState {
@@ -61,6 +84,10 @@ class GroupPracticesState {
   final bool hasMore;
   final int skip;
 
+  /// True once a stored or fetched first page settled, even an empty one, so
+  /// the tab bar can lay out without waiting.
+  final bool hasLoaded;
+
   const GroupPracticesState({
     this.practices = const [],
     this.total = 0,
@@ -69,6 +96,7 @@ class GroupPracticesState {
     this.error,
     this.hasMore = true,
     this.skip = 0,
+    this.hasLoaded = false,
   });
 
   GroupPracticesState copyWith({
@@ -79,6 +107,7 @@ class GroupPracticesState {
     String? error,
     bool? hasMore,
     int? skip,
+    bool? hasLoaded,
     bool clearError = false,
   }) {
     return GroupPracticesState(
@@ -89,6 +118,7 @@ class GroupPracticesState {
       error: clearError ? null : error ?? this.error,
       hasMore: hasMore ?? this.hasMore,
       skip: skip ?? this.skip,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
     );
   }
 }
@@ -98,53 +128,83 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
     required GroupProfileRepositoryInterface repository,
     required Ref ref,
     required String groupId,
+    GroupPracticesPage? stored,
   }) : _repository = repository,
        _ref = ref,
        _groupId = groupId,
-       super(const GroupPracticesState());
+       super(const GroupPracticesState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored, fresh: false);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final Ref _ref;
   final String _groupId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (state.isLoading || state.isLoadingMore) return;
 
     final generation = ++_requestGeneration;
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await _repository.getGroupPractices(
-      _groupId,
-      language: _ref.read(contentLanguageProvider),
-      skip: 0,
-      limit: _limit,
+    final language = _ref.read(contentLanguageProvider);
+    state = state.copyWith(
+      isLoading: state.practices.isEmpty,
+      clearError: true,
     );
+
+    _firstPageInFlight = true;
+    final Either<Failure, GroupPracticesPage> result;
+    try {
+      result = await _repository.getGroupPractices(
+        _groupId,
+        language: language,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (page) {
         state = state.copyWith(
-          practices: page.practices,
-          total: page.total,
           isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.practices.length,
-          clearError: true,
+          error: state.practices.isEmpty ? failure.message : null,
+          hasLoaded: true,
         );
       },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(GroupPracticesPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
+    state = state.copyWith(
+      practices: page.practices,
+      total: page.total,
+      isLoading: false,
+      hasMore: page.hasMore,
+      skip: page.practices.length,
+      hasLoaded: true,
+      clearError: true,
     );
   }
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupPractices(
@@ -155,6 +215,11 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -188,11 +253,16 @@ final groupPracticesProvider = StateNotifierProvider.autoDispose
       groupId,
     ) {
       ref.watch(authProvider);
-      ref.watch(contentLanguageProvider);
+      final language = ref.watch(contentLanguageProvider);
+      final repository = ref.watch(groupProfileRepositoryProvider);
       final notifier = GroupPracticesNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         ref: ref,
         groupId: groupId,
+        stored: repository.readStoredGroupPractices(
+          groupId,
+          language: language,
+        ),
       );
       notifier.loadInitial();
       return notifier;
@@ -236,16 +306,28 @@ class GroupRecitationCollectionKey {
   int get hashCode => Object.hash(groupId, collectionId);
 }
 
-final groupRecitationCollectionDetailProvider = FutureProvider.autoDispose
-    .family<
+typedef GroupRecitationCollectionDetailNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupRecitationCollection,
       Either<Failure, GroupRecitationCollection>,
       GroupRecitationCollectionKey
-    >((ref, key) async {
-      ref.watch(authProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.getRecitationCollectionDetail(
-        collectionId: key.collectionId,
-      );
+    >;
+
+final groupRecitationCollectionDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      GroupRecitationCollectionDetailNotifier,
+      Either<Failure, GroupRecitationCollection>,
+      GroupRecitationCollectionKey
+    >(() {
+      return GroupRecitationCollectionDetailNotifier((ref, key, bind) {
+        ref.watch(authProvider);
+        final repository = ref.watch(groupProfileRepositoryProvider);
+        return bind.source(
+          repository.recitationCollectionDetailSource(
+            collectionId: key.collectionId,
+          ),
+        );
+      });
     });
 
 /// Outcome of logging one chant as completed.
@@ -533,18 +615,26 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
   final Ref _ref;
   final GroupFollowKey _key;
   final bool _isAuthenticated;
+  final bool _seeded;
+  // Bumped by every join or leave so a late status check cannot undo it.
+  int _membershipEpoch = 0;
 
   GroupFollowNotifier({
     required GroupProfileRepositoryInterface repository,
     required Ref ref,
     required GroupFollowKey key,
     required bool isAuthenticated,
+    bool? storedStatus,
   }) : _repository = repository,
        _ref = ref,
        _key = key,
        _isAuthenticated = isAuthenticated,
+       _seeded = storedStatus != null,
        super(
-         key.loadInitialStatus
+         // A stored membership paints the row; the check runs behind it.
+         storedStatus != null
+             ? GroupFollowSuccess(isFollowing: storedStatus)
+             : key.loadInitialStatus
              ? const GroupFollowLoading(isInitialCheck: true)
              : const GroupFollowSuccess(isFollowing: false),
        ) {
@@ -621,24 +711,50 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
       return;
     }
 
+    final epoch = _membershipEpoch;
     final result = await _repository.checkFollowStatus(
       _key.groupId,
       _key.groupType,
     );
     if (!mounted) return;
+    if (epoch != _membershipEpoch) {
+      // The check already stored its stale answer; restore the action's.
+      final current = state;
+      if (current is GroupFollowSuccess) {
+        unawaited(
+          _repository.saveFollowStatus(
+            _key.groupId,
+            _key.groupType,
+            current.isFollowing,
+          ),
+        );
+      }
+      return;
+    }
 
     // A failed check is unknown, not a confirmed non-member: record it as a
-    // failure so membership stays unconfirmed. The network layer has already
-    // retried; a page refresh re-runs the check.
+    // failure so membership stays unconfirmed, unless a stored membership is
+    // already showing. The network layer has already retried; a page refresh
+    // re-runs the check.
     result.fold(
-      (failure) => state = GroupFollowFailure(failure),
-      (isFollowing) => state = GroupFollowSuccess(isFollowing: isFollowing),
+      (failure) {
+        if (!_seeded) state = GroupFollowFailure(failure);
+      },
+      (isFollowing) {
+        final current = state;
+        if (current is GroupFollowSuccess &&
+            current.isFollowing == isFollowing) {
+          return;
+        }
+        state = GroupFollowSuccess(isFollowing: isFollowing);
+      },
     );
   }
 
   Future<bool> follow({GroupProfile? connectGroup}) async {
     if (state is GroupFollowLoading) return false;
     final wasFollowing = lastConfirmedGroupMembership(state);
+    _membershipEpoch++;
     state = GroupFollowLoading(wasFollowing: wasFollowing);
 
     final result = await _repository.followGroup(_key.groupId, _key.groupType);
@@ -702,9 +818,13 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
     required bool incrementCount,
   }) {
     final previousDelta = _currentCountDelta();
+    _membershipEpoch++;
     state = GroupFollowSuccess(
       isFollowing: true,
       countDelta: incrementCount ? previousDelta + 1 : previousDelta,
+    );
+    unawaited(
+      _repository.saveFollowStatus(_key.groupId, _key.groupType, true),
     );
     _invalidateGroupProfile();
     _refreshGroupMembers();
@@ -724,6 +844,7 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
     if (state is GroupFollowLoading) return false;
     final previousDelta = _currentCountDelta();
     final wasFollowing = lastConfirmedGroupMembership(state);
+    _membershipEpoch++;
     state = GroupFollowLoading(wasFollowing: wasFollowing);
 
     final result = await _repository.unfollowGroup(
@@ -738,9 +859,13 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
         return false;
       },
       (_) async {
+        _membershipEpoch++;
         state = GroupFollowSuccess(
           isFollowing: false,
           countDelta: previousDelta - 1,
+        );
+        unawaited(
+          _repository.saveFollowStatus(_key.groupId, _key.groupType, false),
         );
         _invalidateGroupProfile();
         _refreshGroupMembers();
@@ -765,11 +890,16 @@ final groupFollowProvider = StateNotifierProvider.autoDispose
       final authState = ref.watch(authProvider);
       final isAuthenticated = !authState.isGuest && authState.isLoggedIn;
 
+      final repository = ref.watch(groupProfileRepositoryProvider);
       return GroupFollowNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         ref: ref,
         key: key,
         isAuthenticated: isAuthenticated,
+        storedStatus:
+            isAuthenticated && key.loadInitialStatus
+                ? repository.readStoredFollowStatus(key.groupId, key.groupType)
+                : null,
       );
     });
 
@@ -929,55 +1059,79 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
     required GroupProfileRepositoryInterface repository,
     required String groupId,
     this.onMemberRemoved,
+    GroupMembersPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupMembersState());
+       super(const GroupMembersState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored, fresh: false);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
   final VoidCallback? onMemberRemoved;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   final Set<String> _removedUserIds = {};
   final Set<String> _removingUserIds = {};
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
-    if (state.isLoading || state.isLoadingMore) return;
+    if (state.isLoading) return;
 
     final generation = ++_requestGeneration;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: state.members.isEmpty, clearError: true);
 
-    final result = await _repository.getGroupMembers(
-      _groupId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupMembersPage> result;
+    try {
+      result = await _repository.getGroupMembers(
+        _groupId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (page) {
-        final members = _withoutRemoved(page.members);
-        final dropped = page.members.length - members.length;
         state = state.copyWith(
-          members: members,
-          totalMembers: _totalAfterDrop(page.totalMembers, dropped),
           isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.members.length,
-          clearError: true,
+          error: state.members.isEmpty ? failure.message : null,
         );
       },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(GroupMembersPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
+    final members = _withoutRemoved(page.members);
+    final dropped = page.members.length - members.length;
+    state = state.copyWith(
+      members: members,
+      totalMembers: _totalAfterDrop(page.totalMembers, dropped),
+      isLoading: false,
+      hasMore: page.hasMore,
+      skip: page.members.length,
+      clearError: true,
     );
   }
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupMembers(
@@ -986,7 +1140,12 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
       limit: _limit,
     );
 
-    if (!mounted || generation != _requestGeneration) return;
+    if (!mounted) return;
+    if (generation != _requestGeneration || epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -1129,9 +1288,11 @@ final groupMembersNeedsRefreshProvider = StateProvider.autoDispose
 
 final groupMembersProvider = StateNotifierProvider.autoDispose
     .family<GroupMembersNotifier, GroupMembersState, String>((ref, groupId) {
+      final repository = ref.watch(groupProfileRepositoryProvider);
       return GroupMembersNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupMembers(groupId),
         onMemberRemoved: () {
           ref.invalidate(groupProfileProvider(groupId));
           noteGroupMembershipChanged(ref, groupId);
@@ -1200,46 +1361,67 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     required GroupProfileRepositoryInterface repository,
     required String groupId,
     this.onMemberAdmitted,
+    GroupJoinRequestsPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupJoinRequestsState());
+       super(const GroupJoinRequestsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored, fresh: false);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
   final VoidCallback? onMemberAdmitted;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (state.isLoading || state.isLoadingMore || state.isDeciding) {
       return;
     }
 
     final generation = ++_requestGeneration;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: state.requests.isEmpty, clearError: true);
 
-    final result = await _repository.getGroupJoinRequests(
-      _groupId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupJoinRequestsPage> result;
+    try {
+      result = await _repository.getGroupJoinRequests(
+        _groupId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (page) {
         state = state.copyWith(
-          requests: page.requests,
-          total: page.total,
           isLoading: false,
-          hasMore: _hasMore(page.requests.length, page.requests, page.total),
-          skip: page.requests.length,
-          clearError: true,
+          error: state.requests.isEmpty ? failure.message : null,
         );
       },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(GroupJoinRequestsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
+    state = state.copyWith(
+      requests: page.requests,
+      total: page.total,
+      isLoading: false,
+      hasMore: _hasMore(page.requests.length, page.requests, page.total),
+      skip: page.requests.length,
+      clearError: true,
     );
   }
 
@@ -1354,7 +1536,10 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
       return;
     }
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupJoinRequests(
@@ -1364,6 +1549,11 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -1397,38 +1587,79 @@ final groupJoinRequestsProvider = StateNotifierProvider.autoDispose
       ref,
       groupId,
     ) {
+      final repository = ref.watch(groupProfileRepositoryProvider);
       final notifier = GroupJoinRequestsNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupJoinRequests(groupId),
         onMemberAdmitted: () => noteGroupMembershipChanged(ref, groupId),
       );
       notifier.loadInitial();
       return notifier;
     });
 
-final groupEventsProvider = FutureProvider.autoDispose
-    .family<Either<Failure, GroupEventsPage>, String>((ref, groupId) async {
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.getGroupEvents(groupId, language: language);
+typedef GroupEventsNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupEventsPage,
+      Either<Failure, GroupEventsPage>,
+      String
+    >;
+
+/// Stored events are the first state, refreshed in the background; `.future`
+/// resolves with the stored value, so pull-to-refresh uses `refreshGroupEvents`.
+final groupEventsProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupEventsNotifier, Either<Failure, GroupEventsPage>, String>(() {
+      return GroupEventsNotifier((ref, groupId, bind) {
+        ref.watch(authProvider);
+        final language = ref.watch(contentLanguageProvider);
+        final repository = ref.watch(groupProfileRepositoryProvider);
+        return bind.source(
+          repository.groupEventsSource(groupId, language: language),
+        );
+      });
     });
 
-final groupEventDetailProvider = FutureProvider.autoDispose
-    .family<Either<Failure, GroupEvent>, String>((ref, eventId) async {
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      return repository.getGroupEventDetail(eventId, language: language);
+typedef GroupEventDetailNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupEvent,
+      Either<Failure, GroupEvent>,
+      String
+    >;
+
+final groupEventDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupEventDetailNotifier, Either<Failure, GroupEvent>, String>(() {
+      return GroupEventDetailNotifier((ref, eventId, bind) {
+        ref.watch(authProvider);
+        final language = ref.watch(contentLanguageProvider);
+        final repository = ref.watch(groupProfileRepositoryProvider);
+        return bind.source(
+          repository.groupEventDetailSource(eventId, language: language),
+        );
+      });
     });
 
 typedef GroupEventLanguageKey = ({String eventId, String language});
 
+typedef GroupEventInLanguageNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupEvent,
+      Either<Failure, GroupEvent>,
+      GroupEventLanguageKey
+    >;
+
 /// Event detail in an explicit language, for the live stream language toggle.
-final groupEventInLanguageProvider = FutureProvider.autoDispose.family<
+final groupEventInLanguageProvider = AsyncNotifierProvider.autoDispose.family<
+  GroupEventInLanguageNotifier,
   Either<Failure, GroupEvent>,
   GroupEventLanguageKey
->((ref, key) async {
-  final repository = ref.watch(groupProfileRepositoryProvider);
-  return repository.getGroupEventDetail(key.eventId, language: key.language);
+>(() {
+  return GroupEventInLanguageNotifier((ref, key, bind) {
+    ref.watch(authProvider);
+    final repository = ref.watch(groupProfileRepositoryProvider);
+    return bind.source(
+      repository.groupEventDetailSource(key.eventId, language: key.language),
+    );
+  });
 });
 
 class GroupEventParticipantsState {
@@ -1477,50 +1708,77 @@ class GroupEventParticipantsNotifier
   GroupEventParticipantsNotifier({
     required GroupProfileRepositoryInterface repository,
     required String eventId,
+    GroupEventParticipantsPage? stored,
   }) : _repository = repository,
        _eventId = eventId,
-       super(const GroupEventParticipantsState());
+       super(const GroupEventParticipantsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored, fresh: false);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _eventId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (state.isLoading || state.isLoadingMore) return;
 
     final generation = ++_requestGeneration;
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final result = await _repository.getGroupEventParticipants(
-      _eventId,
-      skip: 0,
-      limit: _limit,
+    state = state.copyWith(
+      isLoading: state.participants.isEmpty,
+      clearError: true,
     );
+
+    _firstPageInFlight = true;
+    final Either<Failure, GroupEventParticipantsPage> result;
+    try {
+      result = await _repository.getGroupEventParticipants(
+        _eventId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (page) {
         state = state.copyWith(
-          participants: page.participants,
-          total: page.total,
           isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.participants.length,
-          clearError: true,
+          error: state.participants.isEmpty ? failure.message : null,
         );
       },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(GroupEventParticipantsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
+    state = state.copyWith(
+      participants: page.participants,
+      total: page.total,
+      isLoading: false,
+      hasMore: page.hasMore,
+      skip: page.participants.length,
+      clearError: true,
     );
   }
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupEventParticipants(
@@ -1530,6 +1788,11 @@ class GroupEventParticipantsNotifier
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -1552,11 +1815,17 @@ class GroupEventParticipantsNotifier
     final generation = ++_requestGeneration;
     state = const GroupEventParticipantsState(isLoading: true);
 
-    final result = await _repository.getGroupEventParticipants(
-      _eventId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupEventParticipantsPage> result;
+    try {
+      result = await _repository.getGroupEventParticipants(
+        _eventId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -1565,6 +1834,7 @@ class GroupEventParticipantsNotifier
         state = state.copyWith(isLoading: false, error: failure.message);
       },
       (page) {
+        _pageEpoch++;
         state = state.copyWith(
           participants: page.participants,
           total: page.total,
@@ -1591,9 +1861,11 @@ final groupEventParticipantsProvider = StateNotifierProvider.autoDispose.family<
   GroupEventParticipantsState,
   String
 >((ref, eventId) {
+  final repository = ref.watch(groupProfileRepositoryProvider);
   final notifier = GroupEventParticipantsNotifier(
-    repository: ref.watch(groupProfileRepositoryProvider),
+    repository: repository,
     eventId: eventId,
+    stored: repository.readStoredGroupEventParticipants(eventId),
   );
   // Load on creation so the first watch already has participants.
   notifier.loadInitial();
@@ -1741,31 +2013,42 @@ Future<void> refreshGroupProfilePage({
   final followKey = GroupFollowKey(groupId: groupId, groupType: groupType);
   ref.invalidate(groupFollowProvider(followKey));
 
+  AsyncValue<Either<Failure, GroupProfile>>? refreshed;
   final refreshTasks = <Future<void>>[
     ref
-        .refresh(groupProfileProvider(groupId).future)
-        .then(
-          (result) => result.fold(
+        .read(groupProfileRepositoryProvider)
+        .refreshGroupProfile(
+          groupId,
+          language: ref.read(contentLanguageProvider),
+        )
+        .then((result) {
+          refreshed = AsyncData(result);
+          result.fold(
             (_) {},
             (profile) => reconcileGroupRemovalNotice(ref, profile),
-          ),
-        ),
+          );
+        }),
   ];
 
   if (ref.exists(groupPracticesProvider(groupId))) {
     refreshGroupPractices(ref, groupId);
   }
+  final language = ref.read(contentLanguageProvider);
   if (ref.exists(groupEventsProvider(groupId))) {
     refreshTasks.add(
-      ref.refresh(groupEventsProvider(groupId).future).then((_) {}),
+      ref
+          .read(groupProfileRepositoryProvider)
+          .refreshGroupEvents(groupId, language: language)
+          .then((_) {}),
     );
   }
   // Publishers see the CMS list (drafts included) instead of /events.
   if (ref.exists(groupCmsEventsProvider(groupId))) {
     refreshTasks.add(
       ref
-          .refresh(groupCmsEventsProvider(groupId).future)
-          .then((_) {}, onError: (_) {}),
+          .read(groupEventComposerRepositoryProvider)
+          .refreshCmsEvents(groupId, language: language)
+          .then((_) {}),
     );
   }
   if (ref.exists(groupMembersProvider(groupId))) {
@@ -1774,7 +2057,9 @@ Future<void> refreshGroupProfilePage({
   refreshGroupPosts(ref, groupId);
 
   await Future.wait(refreshTasks);
-  final after = _membershipSize(ref.read(groupProfileProvider(groupId)));
+  final after = _membershipSize(
+    refreshed ?? ref.read(groupProfileProvider(groupId)),
+  );
   if (before != null && after != null && before != after) {
     ref
         .read(groupMembershipEpochProvider(groupId).notifier)

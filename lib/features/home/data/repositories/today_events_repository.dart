@@ -63,6 +63,18 @@ class TodayEventsRepository implements TodayEventsRepositoryInterface {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> refreshTodayEvents({
+    required String language,
+  }) async {
+    try {
+      await _refresh(language);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to refresh today events'));
+    }
+  }
+
   Future<void> _refresh(String language) async {
     final models = await remote.fetchTodayEvents(language: language);
     await local.saveTodayEvents(language, models);

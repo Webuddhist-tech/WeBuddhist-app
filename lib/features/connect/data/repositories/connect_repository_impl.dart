@@ -1,16 +1,28 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_datasource.dart';
+import 'package:flutter_pecha/features/connect/data/models/connect_feed_model.dart';
+import 'package:flutter_pecha/features/connect/data/models/connect_post_comment_model.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
 import 'package:flutter_pecha/features/connect/domain/repositories/connect_repository.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:fpdart/fpdart.dart';
 
 class ConnectRepositoryImpl implements ConnectRepository {
-  ConnectRepositoryImpl({required this.remote});
+  ConnectRepositoryImpl({required this.remote, required this.store});
 
   final ConnectRemoteDatasource remote;
+  final ScreenCacheStore store;
+
+  static const int _myGroupsLimit = 20;
 
   @override
   Future<Either<Failure, DiscoverGroupsPage>> getDiscoverGroups({
@@ -68,6 +80,203 @@ class ConnectRepositoryImpl implements ConnectRepository {
     } catch (e) {
       return Left(UnknownFailure('Failed to load my groups: $e'));
     }
+  }
+
+  @override
+  Stream<Either<Failure, DiscoverGroupsPage>> watchMyGroups({
+    required String language,
+  }) {
+    final source = myGroupsSource(language: language);
+    if (source == null) {
+      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
+    }
+    return source.watch();
+  }
+
+  @override
+  Future<Either<Failure, DiscoverGroupsPage>> refreshMyGroups({
+    required String language,
+  }) async {
+    final source = myGroupsSource(language: language);
+    if (source == null) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    return source.refresh();
+  }
+
+  @override
+  ScreenCacheSource<DiscoverGroupsPage>? myGroupsSource({
+    required String language,
+  }) {
+    final userId = store.currentUserIdSync;
+    if (userId == null || userId.isEmpty) return null;
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user('my_groups', userId: userId, language: language),
+      fetchJson:
+          () => remote.fetchMyGroupsJson(
+            language: language,
+            skip: 0,
+            limit: _myGroupsLimit,
+          ),
+      fromJson:
+          (json) => ConnectRemoteDatasource.parseGroupsPage(
+            json as Map<String, dynamic>,
+            skip: 0,
+            limit: _myGroupsLimit,
+          ),
+      failureMessage: 'Failed to load my groups',
+    );
+  }
+
+  @override
+  ScreenCacheSource<DiscoverGroupsPage> discoverGroupsFirstPage({
+    required String language,
+    required int limit,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'discover_groups',
+        userId: store.currentUserIdSync,
+        language: language,
+      ),
+      fetchJson:
+          () => remote.fetchDiscoverGroupsJson(
+            language: language,
+            skip: 0,
+            limit: limit,
+          ),
+      fromJson:
+          (json) => ConnectRemoteDatasource.parseGroupsPage(
+            json as Map<String, dynamic>,
+            skip: 0,
+            limit: limit,
+          ),
+      failureMessage: 'Failed to load discover groups',
+    );
+  }
+
+  @override
+  ScreenCacheSource<ConnectFeedPage> connectFeedFirstPage({
+    required bool includeUnfollowed,
+    required String language,
+    required int limit,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'connect_feed',
+        userId: store.currentUserIdSync,
+        language: language,
+        params: [includeUnfollowed ? 'discover' : 'mine'],
+      ),
+      fetchJson:
+          () => remote.fetchConnectFeedsJson(
+            includeUnfollowed: includeUnfollowed,
+            language: language,
+            skip: 0,
+            limit: limit,
+          ),
+      fromJson:
+          (json) =>
+              ConnectFeedPageModel.fromJson(
+                json as Map<String, dynamic>,
+                language: language,
+              ).toEntity(),
+      failureMessage: 'Failed to load feed',
+    );
+  }
+
+  @override
+  ScreenCacheSource<GroupEventsPage> connectEventsFirstPage({
+    required bool includeUnfollowed,
+    required String language,
+    required int limit,
+    String? eventFormat,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'connect_events',
+        userId: store.currentUserIdSync,
+        language: language,
+        params: [includeUnfollowed ? 'discover' : 'mine', eventFormat ?? 'all'],
+      ),
+      fetchJson:
+          () => remote.fetchConnectEventsJson(
+            includeUnfollowed: includeUnfollowed,
+            language: language,
+            skip: 0,
+            limit: limit,
+            eventFormat: eventFormat,
+          ),
+      fromJson:
+          (json) =>
+              GroupEventsPageModel.fromJson(
+                json as Map<String, dynamic>,
+                language: language,
+              ).toEntity(),
+      failureMessage: 'Failed to load events',
+    );
+  }
+
+  @override
+  ScreenCacheSource<GroupPracticesPage> connectPracticesFirstPage({
+    required bool includeUnfollowed,
+    required String language,
+    required int limit,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'connect_practices',
+        userId: store.currentUserIdSync,
+        language: language,
+        params: [includeUnfollowed ? 'discover' : 'mine'],
+      ),
+      fetchJson:
+          () => remote.fetchConnectPracticesJson(
+            includeUnfollowed: includeUnfollowed,
+            language: language,
+            skip: 0,
+            limit: limit,
+          ),
+      fromJson:
+          (json) =>
+              GroupPracticesPageModel.fromJson(
+                json as Map<String, dynamic>,
+              ).toEntity(),
+      failureMessage: 'Failed to load group practices',
+    );
+  }
+
+  @override
+  ScreenCacheSource<ConnectPostCommentsPage> postCommentsFirstPage(
+    String postId, {
+    required int limit,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'post_comments',
+        userId: store.currentUserIdSync,
+        language: 'all',
+        params: [postId],
+      ),
+      fetchJson:
+          () => remote.fetchPostCommentsJson(
+            postId: postId,
+            skip: 0,
+            limit: limit,
+          ),
+      fromJson:
+          (json) =>
+              ConnectPostCommentsPageModel.fromJson(
+                json as Map<String, dynamic>,
+              ).toEntity(),
+      failureMessage: 'Failed to load comments',
+    );
   }
 
   @override

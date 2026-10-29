@@ -1,4 +1,6 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_first_pages.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_room_cache.dart';
 import 'package:flutter_pecha/features/group_chat/data/repositories/group_chat_repository_impl.dart';
@@ -15,6 +17,13 @@ final groupChatRemoteDatasourceProvider = Provider<GroupChatRemoteDatasource>((
 final groupChatRepositoryProvider = Provider<GroupChatRepository>((ref) {
   return GroupChatRepositoryImpl(
     remote: ref.watch(groupChatRemoteDatasourceProvider),
+  );
+});
+
+final groupChatFirstPagesProvider = Provider<GroupChatFirstPages>((ref) {
+  return GroupChatFirstPages(
+    repository: ref.watch(groupChatRepositoryProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 

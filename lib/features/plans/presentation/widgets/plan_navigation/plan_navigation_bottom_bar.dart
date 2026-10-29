@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_typography.dart';
 
 /// Shared bottom navigation strip used by both `ReaderScreen` (for
 /// SOURCE_REFERENCE items) and `PlanTextScreen` (for inline TEXT/IMAGE items).
 ///
 /// Renders one of three layouts based on the navigation context:
-/// - **Full controls** (canSwipe): prev arrow, "X of N" + title, next arrow,
+/// - **Full controls** (canSwipe): prev arrow, "Title X / N", next arrow,
 ///   or a finish (✓) button on the last item.
 /// - **Single item** (one navigable subtask): title + finish (✓) button.
 /// - **Minimal** (no plan context, e.g. reader opened from search): title only.
@@ -98,21 +99,25 @@ class PlanNavigationBottomBar extends StatelessWidget {
   Widget _buildFullControls(BuildContext context, NavigationContext ctx) {
     final hasPrevious = ctx.hasPreviousText;
     final hasNext = ctx.hasNextText;
-    final progress = context.l10n.pagination_position(
-      (ctx.currentTextIndex ?? 0) + 1,
-      ctx.planTextItems!.length,
+    final progress = context.l10n.reader_count_position(
+      '${(ctx.currentTextIndex ?? 0) + 1}',
+      '${ctx.planTextItems!.length}',
     );
     final title = ctx.currentItem?.title ?? fallbackTitle;
     void onPop() => Navigator.of(context).maybePop();
 
+    // "Title N / M" on one line; the count keeps its place when the title
+    // is cut short.
     return _buildBalancedRow(
-      center: Column(
+      center: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _TitleText(text: title),
+          Flexible(child: _TitleText(text: title)),
+          const SizedBox(width: 6),
           Text(
             progress,
-            textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontSize: ReaderTypography.bottomBarSize,
               color: Theme.of(
                 context,
               ).textTheme.bodySmall?.color?.withAlpha(180),
@@ -181,7 +186,12 @@ class _TitleText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fontSize = Theme.of(context).textTheme.titleMedium?.fontSize ?? 16;
+    // 13 for Latin, scaled for the script of the title (Tibetan 20, Chinese
+    // 14); it does not follow the reader's size buttons.
+    final fontSize = ReaderTypography.chromeSize(
+      ReaderTypography.bottomBarSize,
+      ReaderScript.of(text),
+    );
 
     return Text(
       text,
@@ -190,8 +200,9 @@ class _TitleText extends StatelessWidget {
       textAlign: TextAlign.center,
       strutStyle: context.tibetanStrutStyle(fontSize),
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontSize: fontSize,
         fontFamily: fontFamily,
-        fontWeight: FontWeight.bold,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

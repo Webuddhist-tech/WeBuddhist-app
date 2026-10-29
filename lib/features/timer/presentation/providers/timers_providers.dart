@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/timer/data/datasource/ambient_sounds_remote_datasource.dart';
@@ -86,18 +87,32 @@ final ambientSoundByIdProvider =
           );
     });
 
-final presetTimersFutureProvider =
-    StreamProvider<Either<Failure, List<PresetTimer>>>((ref) {
-      final auth = ref.watch(authProvider);
-      if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-        return Stream.value(
-          const Left(AuthenticationFailure('Not authenticated')),
-        );
-      }
+// Stored timers are the first state for the signed-in user.
+final presetTimersFutureProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<PresetTimer>, Either<Failure, List<PresetTimer>>>,
+  Either<Failure, List<PresetTimer>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final auth = ref.watch(authProvider);
+    if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
 
-      final repository = ref.watch(timersDomainRepositoryProvider);
-      return repository.watchPresetTimers();
-    });
+    final local = ref.watch(timersLocalDatasourceProvider);
+    final userId = local.currentUserIdSync;
+    final stored =
+        userId == null
+            ? null
+            : local
+                .readPresetTimers(userId, skip: 0, limit: kTimersPageLimit)
+                ?.map((timer) => timer.toEntity())
+                .toList();
+    return bind.stream(
+      stored == null ? null : Right(stored),
+      ref.watch(timersDomainRepositoryProvider).watchPresetTimers(),
+    );
+  });
+});
 
 /// Keeps pending local timer-stop writes moving after connectivity returns.
 final timerSyncBootstrapProvider = Provider<void>((ref) {

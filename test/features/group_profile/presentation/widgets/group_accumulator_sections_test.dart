@@ -22,6 +22,12 @@ class _GuestAuth extends StateNotifier<AuthState> implements AuthNotifier {
 class _FakeAccumulatorRepository extends Fake
     implements GroupAccumulatorRepositoryInterface {
   @override
+  GroupAccumulatorMembersPage? readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  }) => null;
+
+  @override
   Future<Either<Failure, GroupAccumulatorMembersPage>>
   getGroupAccumulatorMembers(
     String accumulatorId, {

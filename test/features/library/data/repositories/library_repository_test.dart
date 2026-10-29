@@ -70,6 +70,124 @@ void main() {
     });
   });
 
+  group('LibraryRepository.getOutline', () {
+    // Root e1: four verses, 1-1 and 1-2 under "One", 1-3 and 1-4 under
+    // "Two". Translation e2 has a preface and lacks 1-3; its own headings
+    // split it differently.
+    Map<String, ResponseBody Function(Uri)> routes() => {
+      '/v2/editions/e1/segmentation/segments':
+          (_) => jsonBody(
+            pageJson([
+              for (var i = 1; i <= 4; i++)
+                segmentJson('p$i', '1-$i', [
+                  [(i - 1) * 3, i * 3],
+                ]),
+            ]),
+          ),
+      '/v2/editions/e1/table-of-contents':
+          (_) => jsonBody([
+            {
+              'id': 'toc1',
+              'edition_id': 'e1',
+              'sections': [
+                {
+                  'id': 'one',
+                  'title': {'bo': 'གཅིག'},
+                  'span': {'start': 0, 'end': 6},
+                },
+                {
+                  'id': 'two',
+                  'title': {'bo': 'གཉིས'},
+                  'span': {'start': 6, 'end': 12},
+                },
+              ],
+            },
+          ]),
+      '/v2/editions/e2/segmentation/segments':
+          (_) => jsonBody(
+            pageJson([
+              segmentJson('t0', 'pre', [
+                [0, 3],
+              ]),
+              segmentJson('t1', '1-1', [
+                [3, 6],
+              ]),
+              segmentJson('t2', '1-2', [
+                [6, 9],
+              ]),
+              segmentJson('t4', '1-4', [
+                [9, 12],
+              ]),
+            ]),
+          ),
+      '/v2/editions/e2/table-of-contents':
+          (_) => jsonBody([
+            {
+              'id': 'toc2',
+              'edition_id': 'e2',
+              'sections': [
+                {
+                  'id': 'preface',
+                  'title': {'en': 'Preface'},
+                  'span': {'start': 0, 'end': 3},
+                },
+                {
+                  'id': 'second',
+                  'title': {'en': 'Second'},
+                  'span': {'start': 9, 'end': 12},
+                },
+              ],
+            },
+          ]),
+      '/v2/editions/e1/alignments/e2':
+          (_) => jsonBody(
+            pageJson([
+              alignmentJson('p1', 't1'),
+              alignmentJson('p2', 't2'),
+              alignmentJson('p4', 't4'),
+            ]),
+          ),
+      '/v2/editions/e2/alignments/e1': (_) => jsonBody(pageJson([])),
+    };
+
+    test('places each heading on the verses it holds', () async {
+      final repository = LibraryTestServer(routes()).repository();
+
+      final outline = await repository.getOutline('e1');
+
+      expect(outline.map((e) => e.id), ['one', 'two']);
+      expect(
+        outline.map((e) => (e.segmentId, e.number, e.endNumber)),
+        [('p1', 1, 2), ('p3', 3, 4)],
+      );
+      expect(outline.first.opensText, isTrue);
+    });
+
+    test('a translation is numbered like the original\'s verses', () async {
+      final repository = LibraryTestServer(routes()).repository();
+
+      final outline = await repository.getOutline(
+        'e2',
+        primaryEditionId: 'e1',
+      );
+
+      // The preface has no counterpart in the original, so no place there.
+      expect(outline.map((e) => e.id), ['second']);
+      expect(outline.single.number, 4);
+      expect(outline.single.segmentId, 't4');
+    });
+
+    test('an edition without a table of contents has no outline', () async {
+      final repository =
+          LibraryTestServer({
+            ...routes(),
+            '/v2/editions/e1/table-of-contents': (_) => jsonBody([]),
+          }).repository();
+
+      expect(await repository.getOutline('e1'), isEmpty);
+    });
+  });
+
   group('LibraryRepository.getYigchungs', () {
     test('returns the spans sorted, once per edition', () async {
       final server = LibraryTestServer({

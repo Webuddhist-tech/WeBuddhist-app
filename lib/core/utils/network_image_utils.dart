@@ -34,3 +34,7 @@ void reportImageLoadError(Object error, StackTrace? stackTrace) {
     ),
   );
 }
+
+/// Widget key that survives presigned-URL signature rotation.
+Key networkImageKey(String? url) =>
+    ValueKey<String?>(url == null ? null : stableNetworkImageCacheKey(url));

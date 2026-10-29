@@ -13,9 +13,9 @@ import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigatio
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_subtask_completion.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/shared/widgets/reusable_youtube_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -122,20 +122,13 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
 
   // ─── Build ─────────────────────────────────────────────────────────────
 
-  ThemeData _readerTheme(BuildContext context) {
-    final theme = Theme.of(context);
-    if (theme.brightness != Brightness.light) return theme;
-
-    return theme.copyWith(
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: theme.appBarTheme.copyWith(backgroundColor: Colors.white),
-    );
-  }
+  ThemeData _readerTheme(BuildContext context) =>
+      ReaderStyle.theme(context, ref);
 
   @override
   Widget build(BuildContext context) {
     final currentItem = widget.navigationContext.currentItem;
-    final fontSize = ref.watch(fontSizeProvider);
+    final fontSize = ReaderTypography.resolve(ref).planTextSize;
     final readerTheme = _readerTheme(context);
 
     if (currentItem == null || !_hasRenderableContent(currentItem)) {

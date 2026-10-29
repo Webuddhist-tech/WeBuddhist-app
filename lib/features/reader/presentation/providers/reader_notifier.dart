@@ -502,21 +502,40 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       if (_isDisposed) return null;
       final local = _localSegmentId(window.content, target);
       if (local == null) return null;
-      final response = window.response;
-      state = state.copyWith(
-        content: window.content,
-        currentSegmentPosition: response.currentSegmentPosition,
-        totalSegments: response.totalSegments,
-        hasNextPage: response.hasNextPage,
-        hasPreviousPage: window.hasPreviousPage,
-        isLoadingNext: false,
-        isLoadingPrevious: false,
-      );
+      _showWindow(window);
       return local;
     } catch (e) {
       _logger.debug('Jump to segment $segmentId failed: $e');
       return null;
     }
+  }
+
+  /// Replaces the loaded window with the text's first page, for going back
+  /// to its start from further in. False when the fetch failed.
+  Future<bool> jumpToStart() async {
+    if (_isDisposed) return false;
+    try {
+      final window = await _fetchWindow();
+      if (_isDisposed) return false;
+      _showWindow(window);
+      return true;
+    } catch (e) {
+      _logger.debug('Jump to the start failed: $e');
+      return false;
+    }
+  }
+
+  void _showWindow(_ContentWindow window) {
+    final response = window.response;
+    state = state.copyWith(
+      content: window.content,
+      currentSegmentPosition: response.currentSegmentPosition,
+      totalSegments: response.totalSegments,
+      hasNextPage: response.hasNextPage,
+      hasPreviousPage: window.hasPreviousPage,
+      isLoadingNext: false,
+      isLoadingPrevious: false,
+    );
   }
 
   /// This version's id for [segmentId]: the loaded line it names (directly

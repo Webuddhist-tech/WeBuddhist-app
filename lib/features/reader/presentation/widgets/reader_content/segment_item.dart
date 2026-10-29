@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/segment_type_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/presentation/segment_html_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +37,7 @@ class SegmentItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fontSize = ref.watch(fontSizeProvider);
+    final style = ReaderStyle.of(context, ref);
     final primary = primarySegmentHtml(
       ref,
       content: segment.content,
@@ -46,6 +45,10 @@ class SegmentItem extends ConsumerWidget {
       scope: scope,
     );
     final typeStyle = SegmentTypeStyle.of(segment.type);
+    final metrics = style.type.line(
+      ReaderTextRole.originalAlone,
+      ReaderScript.of(primary.html, language: primary.fontLanguage),
+    );
 
     return AnimatedOpacity(
       opacity: isGreyedOut ? 0.3 : 1.0,
@@ -57,7 +60,7 @@ class SegmentItem extends ConsumerWidget {
         curve: Curves.easeInOut,
         // Square-edged so the tint reads as a band across the page.
         decoration: BoxDecoration(
-          color: isLive ? liveSegmentHighlightColor(context) : null,
+          color: isLive ? style.palette.liveHighlight : null,
         ),
         child: Material(
           color: Colors.transparent,
@@ -78,18 +81,19 @@ class SegmentItem extends ConsumerWidget {
                 children: [
                   SegmentNumber(
                     label: segment.displayNumber,
-                    fontSize: fontSize,
                     language: language,
                   ),
                   // Segment content
                   SegmentHtmlWidget(
                     htmlContent: primary.html,
                     segmentIndex: segment.segmentNumber,
-                    fontSize: fontSize,
+                    fontSize: metrics.fontSize,
+                    lineHeight: metrics.height,
                     language: primary.fontLanguage,
                     isSelected: isSelected,
-                    fontStyle: typeStyle.fontStyle,
-                    fontWeight: typeStyle.fontWeight,
+                    textColor: style.palette.text,
+                    fontStyle: typeStyle.fontStyle ?? metrics.fontStyle,
+                    fontWeight: typeStyle.fontWeight ?? metrics.fontWeight,
                   ),
                 ],
               ),
@@ -100,9 +104,3 @@ class SegmentItem extends ConsumerWidget {
     );
   }
 }
-
-/// Tint behind the live recitation line, per theme.
-Color liveSegmentHighlightColor(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-        ? AppColors.liveSegmentHighlightDark
-        : AppColors.liveSegmentHighlight;

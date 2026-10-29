@@ -5,7 +5,6 @@ import 'package:flutter_pecha/core/analytics/track_first_value.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
@@ -18,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_body.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 
 class GroupProfileScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -90,30 +90,13 @@ class _GroupProfileScreenState extends ConsumerState<GroupProfileScreen> {
               isDark,
             ),
             Expanded(
-              child: profileAsync.when(
-                skipLoadingOnReload: true,
-                data: (either) {
-                  return either.fold(
-                    (failure) => Center(
-                      child: ErrorStateWidget(
-                        error: failure,
-                        onRetry:
-                            () => ref.invalidate(groupProfileProvider(groupId)),
-                      ),
-                    ),
+              child: ScreenCacheBuilder<GroupProfile>(
+                value: profileAsync,
+                skeleton: const Center(child: CircularProgressIndicator()),
+                onRetry: () => ref.invalidate(groupProfileProvider(groupId)),
+                data:
                     (profile) =>
                         GroupProfileBody(profile: profile, isDark: isDark),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, _) => Center(
-                      child: ErrorStateWidget(
-                        error: error,
-                        onRetry:
-                            () => ref.invalidate(groupProfileProvider(groupId)),
-                      ),
-                    ),
               ),
             ),
           ],

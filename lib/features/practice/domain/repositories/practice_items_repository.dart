@@ -13,4 +13,18 @@ abstract class PracticeItemsRepository {
     required int page,
     required int pageSize,
   });
+
+  /// The stored first page, if any, for an instant first render.
+  PracticeItemsPage? readFirstPage({
+    required PracticeItemsTab tab,
+    required String language,
+    required int pageSize,
+  });
+
+  /// Fetches page 1, stores it when changed, and returns it.
+  Future<Either<Failure, PracticeItemsPage>> refreshFirstPage({
+    required PracticeItemsTab tab,
+    required String language,
+    required int pageSize,
+  });
 }

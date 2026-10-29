@@ -113,6 +113,7 @@ class _GroupEventManageScreenState
     void retry() => ref.invalidate(groupCmsEventsProvider(_groupId));
 
     return itemsAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => ErrorStateWidget(error: error, onRetry: retry),
       data: (items) {

@@ -73,6 +73,7 @@ class LibraryRecitationsRemoteDatasource extends RecitationsRemoteDatasource {
         title: search,
         limit: limit,
         offset: skip,
+        noCache: params.noCache,
       );
       // A text without an edition has nothing to open, so it is not listed;
       // the next offset still counts it so pages never repeat.

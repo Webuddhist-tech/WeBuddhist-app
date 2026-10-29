@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 
 class MeProfileHeader extends StatelessWidget {
   const MeProfileHeader({super.key, required this.user});
@@ -94,29 +94,13 @@ class _Avatar extends StatelessWidget {
       child: ClipOval(
         child:
             avatarUrl.isNotEmpty
-                ? CachedNetworkImage(
+                ? CachedNetworkImageWidget(
                   imageUrl: avatarUrl,
-                  cacheKey:
-                      Uri.tryParse(
-                        avatarUrl,
-                      )?.replace(query: '', fragment: '').toString() ??
-                      avatarUrl,
                   width: MeProfileHeader._avatarSize,
                   height: MeProfileHeader._avatarSize,
                   fit: BoxFit.cover,
-                  placeholder:
-                      (context, url) => const ColoredBox(
-                        color: AppColors.grey300,
-                        child: Center(
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      ),
-                  errorWidget:
-                      (context, url, error) => ColoredBox(
+                  placeholder: const ColoredBox(color: AppColors.grey300),
+                  errorWidget: ColoredBox(
                         color: AppColors.grey300,
                         child: Icon(
                           AppAssets.profile,

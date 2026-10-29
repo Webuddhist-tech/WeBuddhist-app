@@ -107,6 +107,7 @@ dependencies:
   # Equatable
   equatable: ^2.0.7
   cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
 
   # Google fonts
   google_fonts: ^6.2.1

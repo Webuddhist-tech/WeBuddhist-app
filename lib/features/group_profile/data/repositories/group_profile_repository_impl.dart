@@ -1,7 +1,18 @@
+import 'dart:convert';
+
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_profile_remote_datasource.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_join_request_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_member_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_practice_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_profile_model.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_report_model.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_request.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
@@ -16,8 +27,303 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 
 class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
   final GroupProfileRemoteDatasource remote;
+  final ScreenCacheStore store;
 
-  GroupProfileRepositoryImpl({required this.remote});
+  GroupProfileRepositoryImpl({required this.remote, required this.store});
+
+  @override
+  Stream<Either<Failure, GroupProfile>> watchGroupProfile(
+    String groupId, {
+    required String language,
+  }) {
+    return groupProfileSource(groupId, language: language).watch();
+  }
+
+  @override
+  Future<Either<Failure, GroupProfile>> refreshGroupProfile(
+    String groupId, {
+    required String language,
+  }) {
+    return groupProfileSource(groupId, language: language).refresh();
+  }
+
+  // Guests can view profiles, so a missing user id falls back to `anon`.
+  @override
+  ScreenCacheSource<GroupProfile> groupProfileSource(
+    String groupId, {
+    required String language,
+  }) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'group_profile',
+        userId: store.currentUserIdSync,
+        language: language,
+        params: [groupId],
+      ),
+      fetchJson: () => remote.fetchGroupProfileJson(groupId, language: language),
+      fromJson:
+          (json) =>
+              GroupProfileModel.fromJson(json as Map<String, dynamic>).toEntity(),
+      failureMessage: 'Failed to load group profile',
+    );
+  }
+
+  /// User-scoped source keyed by the signed-in user (or `anon`).
+  ScreenCacheSource<T> _userSource<T extends Object>(
+    String screen, {
+    String language = '',
+    List<String> params = const [],
+    required Future<Map<String, dynamic>> Function() fetchJson,
+    required T Function(Map<String, dynamic> json) parse,
+    required String failureMessage,
+  }) {
+    final userId = store.currentUserIdSync;
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        screen,
+        userId: userId,
+        language: language,
+        params: params,
+      ),
+      fetchJson: fetchJson,
+      fromJson: (json) => parse(json as Map<String, dynamic>),
+      failureMessage: failureMessage,
+    );
+  }
+
+  ScreenCacheSource<GroupEventsPage> _eventsSource(
+    String groupId,
+    String language,
+  ) {
+    return _userSource(
+      'group_events',
+      language: language,
+      params: [groupId],
+      fetchJson: () => remote.fetchGroupEventsJson(groupId, language: language),
+      parse:
+          (json) =>
+              GroupEventsPageModel.fromJson(json, language: language).toEntity(),
+      failureMessage: 'Failed to load group events',
+    );
+  }
+
+  @override
+  ScreenCacheSource<GroupEventsPage> groupEventsSource(
+    String groupId, {
+    required String language,
+  }) {
+    return _eventsSource(groupId, language);
+  }
+
+  @override
+  Stream<Either<Failure, GroupEventsPage>> watchGroupEvents(
+    String groupId, {
+    required String language,
+  }) {
+    return _eventsSource(groupId, language).watch();
+  }
+
+  @override
+  Future<Either<Failure, GroupEventsPage>> refreshGroupEvents(
+    String groupId, {
+    required String language,
+  }) {
+    return _eventsSource(groupId, language).refresh();
+  }
+
+  ScreenCacheSource<GroupEvent> _eventDetailSource(
+    String eventId,
+    String language,
+  ) {
+    return _userSource(
+      'group_event',
+      language: language,
+      params: [eventId],
+      fetchJson:
+          () => remote.fetchGroupEventDetailJson(eventId, language: language),
+      parse: (json) => GroupEventModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group event',
+    );
+  }
+
+  @override
+  ScreenCacheSource<GroupEvent> groupEventDetailSource(
+    String eventId, {
+    required String language,
+  }) {
+    return _eventDetailSource(eventId, language);
+  }
+
+  @override
+  Stream<Either<Failure, GroupEvent>> watchGroupEventDetail(
+    String eventId, {
+    required String language,
+  }) {
+    return _eventDetailSource(eventId, language).watch();
+  }
+
+  @override
+  Future<Either<Failure, GroupEvent>> refreshGroupEventDetail(
+    String eventId, {
+    required String language,
+  }) {
+    return _eventDetailSource(eventId, language).refresh();
+  }
+
+  @override
+  ScreenCacheSource<GroupRecitationCollection> recitationCollectionDetailSource({
+    required String collectionId,
+  }) {
+    return _userSource(
+      'group_recitation_collection',
+      params: [collectionId],
+      fetchJson:
+          () => remote.fetchRecitationCollectionDetailJson(
+            collectionId: collectionId,
+          ),
+      parse: (json) => GroupRecitationCollectionModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load recitation collection',
+    );
+  }
+
+  @override
+  Stream<Either<Failure, GroupRecitationCollection>>
+  watchRecitationCollectionDetail({required String collectionId}) {
+    return recitationCollectionDetailSource(collectionId: collectionId).watch();
+  }
+
+  ScreenCacheSource<GroupPracticesPage> _practicesSource(
+    String groupId, {
+    required String language,
+    required int limit,
+  }) {
+    return _userSource(
+      'group_practices',
+      language: language,
+      params: [groupId],
+      fetchJson:
+          () => remote.fetchPracticesJson(
+            groupId: groupId,
+            includeUnfollowed: true,
+            language: language,
+            skip: 0,
+            limit: limit,
+          ),
+      parse: (json) => GroupPracticesPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group practices',
+    );
+  }
+
+  ScreenCacheSource<GroupMembersPage> _membersSource(
+    String groupId, {
+    required int limit,
+  }) {
+    return _userSource(
+      'group_members',
+      params: [groupId],
+      fetchJson:
+          () => remote.fetchGroupMembersJson(groupId, skip: 0, limit: limit),
+      parse: (json) => GroupMembersPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group members',
+    );
+  }
+
+  ScreenCacheSource<GroupEventParticipantsPage> _participantsSource(
+    String eventId, {
+    required int limit,
+  }) {
+    return _userSource(
+      'group_event_participants',
+      params: [eventId],
+      fetchJson:
+          () => remote.fetchGroupEventParticipantsJson(
+            eventId,
+            skip: 0,
+            limit: limit,
+          ),
+      parse:
+          (json) => GroupEventParticipantsPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group event participants',
+    );
+  }
+
+  ScreenCacheSource<GroupJoinRequestsPage> _joinRequestsSource(
+    String groupId, {
+    required int limit,
+  }) {
+    return _userSource(
+      'group_join_requests',
+      params: [groupId],
+      fetchJson:
+          () => remote.fetchGroupJoinRequestsJson(
+            groupId,
+            skip: 0,
+            limit: limit,
+          ),
+      parse: (json) => GroupJoinRequestsPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load join requests',
+    );
+  }
+
+  ScreenCacheSource<GroupReportsPage> _reportsSource(
+    String groupId, {
+    required int limit,
+  }) {
+    return _userSource(
+      'group_reports',
+      params: [groupId],
+      fetchJson:
+          () => remote.fetchGroupReportsJson(
+            groupId,
+            resolved: false,
+            skip: 0,
+            limit: limit,
+          ),
+      parse: (json) => GroupReportsPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load reports',
+    );
+  }
+
+  static const int _firstPageLimit = 20;
+
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) {
+    final source = _practicesSource(
+      groupId,
+      language: language,
+      limit: _firstPageLimit,
+    );
+    return source.read();
+  }
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) {
+    return _membersSource(groupId, limit: _firstPageLimit).read();
+  }
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) {
+    return _participantsSource(eventId, limit: _firstPageLimit).read();
+  }
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) {
+    return _joinRequestsSource(groupId, limit: _firstPageLimit).read();
+  }
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) {
+    return _reportsSource(groupId, limit: _firstPageLimit).read();
+  }
 
   @override
   Future<Either<Failure, GroupProfile>> getGroupProfile(
@@ -42,27 +348,48 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     }
   }
 
+  ScreenCacheSource<bool> _followStatusSource(
+    String groupId,
+    GroupType groupType,
+  ) {
+    return _userSource(
+      'group_follow_status',
+      params: [groupType.isPage ? 'page' : 'community', groupId],
+      fetchJson:
+          () async => {
+            'is_following': await remote.checkFollowStatus(groupId, groupType),
+          },
+      parse: (json) => json['is_following'] == true,
+      failureMessage:
+          groupType.isPage
+              ? 'Failed to check follow status'
+              : 'Failed to check join status',
+    );
+  }
+
+  @override
+  bool? readStoredFollowStatus(String groupId, GroupType groupType) {
+    return _followStatusSource(groupId, groupType).read();
+  }
+
+  @override
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
+  ) async {
+    final source = _followStatusSource(groupId, groupType);
+    await source.store
+        .save(source.key, jsonEncode({'is_following': isFollowing}))
+        .catchError((Object _) => false);
+  }
+
   @override
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
     GroupType groupType,
-  ) async {
-    try {
-      final isFollowing = await remote.checkFollowStatus(groupId, groupType);
-      return Right(isFollowing);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on AuthenticationException catch (e) {
-      return Left(AuthenticationFailure(e.message));
-    } catch (e) {
-      return Left(
-        UnknownFailure(
-          groupType.isPage
-              ? 'Failed to check follow status: $e'
-              : 'Failed to check join status: $e',
-        ),
-      );
-    }
+  ) {
+    return _followStatusSource(groupId, groupType).refresh();
   }
 
   @override
@@ -97,6 +424,14 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
+    if (skip == 0) {
+      final source = _practicesSource(
+        groupId,
+        language: language,
+        limit: limit,
+      );
+      return source.refresh();
+    }
     return _loadPractices(
       groupId: groupId,
       includeUnfollowed: true,
@@ -259,6 +594,7 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
+    if (skip == 0) return _membersSource(groupId, limit: limit).refresh();
     try {
       final model = await remote.fetchGroupMembers(
         groupId,
@@ -398,6 +734,9 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
+    if (skip == 0) {
+      return _participantsSource(eventId, limit: limit).refresh();
+    }
     try {
       final model = await remote.fetchGroupEventParticipants(
         eventId,
@@ -523,6 +862,9 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
+    if (skip == 0 && status == GroupJoinRequestStatus.pending) {
+      return _joinRequestsSource(groupId, limit: limit).refresh();
+    }
     try {
       final model = await remote.fetchGroupJoinRequests(
         groupId,
@@ -554,6 +896,9 @@ class GroupProfileRepositoryImpl implements GroupProfileRepositoryInterface {
     required int skip,
     required int limit,
   }) async {
+    if (skip == 0 && kind == null && resolved == false) {
+      return _reportsSource(groupId, limit: limit).refresh();
+    }
     try {
       final model = await remote.fetchGroupReports(
         groupId,

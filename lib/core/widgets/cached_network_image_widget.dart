@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/cache/app_image_cache_manager.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 bool _isAssetPath(String url) => url.trim().startsWith('assets/');
@@ -75,7 +77,7 @@ String _stableCacheKey(String url) => stableNetworkImageCacheKey(url);
   return (autoWidth, autoHeight);
 }
 
-class CachedNetworkImageWidget extends StatefulWidget {
+class CachedNetworkImageWidget extends StatelessWidget {
   /// Remote http(s) URL, or a bundled asset path starting with `assets/`.
   final String? imageUrl;
 
@@ -119,151 +121,139 @@ class CachedNetworkImageWidget extends StatefulWidget {
   });
 
   @override
-  State<CachedNetworkImageWidget> createState() =>
-      _CachedNetworkImageWidgetState();
-}
-
-class _CachedNetworkImageWidgetState extends State<CachedNetworkImageWidget> {
-  bool _didPrecache = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_didPrecache) return;
-    final url = widget.imageUrl?.trim();
-    if (url == null || url.isEmpty || !_isNetworkUrl(url)) return;
-    _didPrecache = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      precacheImage(
-        CachedNetworkImageProvider(url, cacheKey: _stableCacheKey(url)),
-        context,
-        // Without onError a failed precache is reported as an unhandled
-        // framework error. The CachedNetworkImage built below shows the error
-        // widget, so this only reports the failure as a non-fatal.
-        onError: reportImageLoadError,
-      );
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final trimmed = widget.imageUrl?.trim();
+    final trimmed = imageUrl?.trim();
     final url = (trimmed != null && trimmed.isNotEmpty) ? trimmed : null;
 
     Widget imageWidget;
 
     if (url != null && _isAssetPath(url)) {
       imageWidget = _buildAssetImage(url, context);
-      if (widget.onImageLoaded != null) {
-        imageWidget = _ImageLoadedNotifier(
-          onImageLoaded: widget.onImageLoaded!,
-          imageUrl: url,
-          useAssetImage: true,
-          child: imageWidget,
-        );
-      }
     } else if (url != null && _isNetworkUrl(url)) {
-      final dpr = MediaQuery.of(context).devicePixelRatio;
-      final (memW, memH) = _resolveMemCacheDimensions(
-        devicePixelRatio: dpr,
-        fit: widget.fit,
-        width: widget.width,
-        height: widget.height,
-        memCacheWidth: widget.memCacheWidth,
-        memCacheHeight: widget.memCacheHeight,
-      );
-
-      imageWidget = CachedNetworkImage(
-        imageUrl: url,
-        cacheKey: _stableCacheKey(url),
-        width: widget.width,
-        height: widget.height,
-        fit: widget.fit,
-        // Memory decode only. `maxWidthDiskCache` / `maxHeightDiskCache`
-        // used to be set from the same pair, which made the *stored file*
-        // depend on the size of whichever widget requested it first — while
-        // the cache key deliberately does not include that size. Two widgets
-        // showing one image at different sizes then fight over a single
-        // entry, and the loser can sit on its placeholder indefinitely: a
-        // stalled re-encode never resolves and never errors, so no
-        // `errorWidget` is reached either.
-        //
-        // Dropping them costs some disk, since the original is stored rather
-        // than a shrunken copy, and keeps the whole memory benefit —
-        // `memCacheWidth` / `memCacheHeight` are what bound the decode.
-        memCacheWidth: memW,
-        memCacheHeight: memH,
-        fadeInDuration:
-            widget.fadeInDuration ?? const Duration(milliseconds: 200),
-        placeholderFadeInDuration:
-            widget.placeholderFadeInDuration ?? Duration.zero,
-        placeholder:
-            widget.placeholder != null
-                ? (context, url) => widget.placeholder!
-                : (context, url) => _buildLoadingPlaceholder(),
-        errorWidget:
-            widget.errorWidget != null
-                ? (context, url, error) => widget.errorWidget!
-                : (context, url, error) =>
-                    widget.fallbackAsset != null
-                        ? _buildAssetImage(widget.fallbackAsset!, context)
-                        : _buildErrorWidget(context),
-      );
-
-      if (widget.onImageLoaded != null) {
-        imageWidget = _ImageLoadedNotifier(
-          onImageLoaded: widget.onImageLoaded!,
-          imageUrl: url,
-          useAssetImage: false,
-          child: imageWidget,
-        );
-      }
+      imageWidget = _buildNetworkImage(url, context);
     } else if (url != null) {
       imageWidget =
-          widget.fallbackAsset != null
-              ? _buildAssetImage(widget.fallbackAsset!, context)
+          fallbackAsset != null
+              ? _buildAssetImage(fallbackAsset!, context)
               : _buildErrorWidget(context);
-    } else if (widget.fallbackAsset != null) {
-      imageWidget = _buildAssetImage(widget.fallbackAsset!, context);
-      if (widget.onImageLoaded != null) {
-        imageWidget = _ImageLoadedNotifier(
-          onImageLoaded: widget.onImageLoaded!,
-          imageUrl: widget.fallbackAsset!,
-          useAssetImage: true,
-          child: imageWidget,
-        );
-      }
+    } else if (fallbackAsset != null) {
+      imageWidget = _buildAssetImage(fallbackAsset!, context);
     } else {
       imageWidget = _buildErrorWidget(context);
     }
 
-    if (widget.borderRadius != null) {
-      imageWidget = ClipRRect(
-        borderRadius: widget.borderRadius!,
-        child: imageWidget,
-      );
+    if (borderRadius != null) {
+      imageWidget = ClipRRect(borderRadius: borderRadius!, child: imageWidget);
     }
 
-    if (widget.heroTag != null && widget.heroTag!.isNotEmpty) {
-      imageWidget = Hero(tag: widget.heroTag!, child: imageWidget);
+    if (heroTag != null && heroTag!.isNotEmpty) {
+      imageWidget = Hero(tag: heroTag!, child: imageWidget);
     }
 
     return imageWidget;
   }
 
-  Widget _buildLoadingPlaceholder() {
-    return Container(
-      width: widget.width,
-      height: widget.height,
-      color: Colors.grey.shade200,
-      child: const Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
+  Widget _buildNetworkImage(String url, BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final (memW, memH) = _resolveMemCacheDimensions(
+      devicePixelRatio: dpr,
+      fit: fit,
+      width: width,
+      height: height,
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
+    );
+    if (memW != null || memH != null) {
+      return _networkImage(url, memW, memH);
+    }
+
+    // No bound from the caller: derive one from the layout so a full-width
+    // cover is never decoded at its natural size.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final (layoutW, layoutH) = _resolveMemCacheDimensions(
+          devicePixelRatio: dpr,
+          fit: fit,
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+        );
+        return _networkImage(url, layoutW, layoutH);
+      },
+    );
+  }
+
+  Widget _networkImage(String url, int? memW, int? memH) {
+    final cacheKey = _stableCacheKey(url);
+    final fadeIn = fadeInDuration ?? const Duration(milliseconds: 200);
+
+    Widget image = CachedNetworkImage(
+      imageUrl: url,
+      cacheKey: cacheKey,
+      cacheManager: appImageCacheManager,
+      width: width,
+      height: height,
+      fit: fit,
+      // Memory decode only. `maxWidthDiskCache` / `maxHeightDiskCache`
+      // used to be set from the same pair, which made the *stored file*
+      // depend on the size of whichever widget requested it first — while
+      // the cache key deliberately does not include that size. Two widgets
+      // showing one image at different sizes then fight over a single
+      // entry, and the loser can sit on its placeholder indefinitely: a
+      // stalled re-encode never resolves and never errors, so no
+      // `errorWidget` is reached either.
+      //
+      // Dropping them costs some disk, since the original is stored rather
+      // than a shrunken copy, and keeps the whole memory benefit —
+      // `memCacheWidth` / `memCacheHeight` are what bound the decode.
+      memCacheWidth: memW,
+      memCacheHeight: memH,
+      fadeInDuration: fadeIn,
+      // Crossfade placeholder and image together; the package default keeps
+      // the placeholder on top for a full second.
+      fadeOutDuration: fadeIn,
+      placeholderFadeInDuration: placeholderFadeInDuration ?? Duration.zero,
+      // A re-signed or replaced URL keeps the old image until the new one is
+      // decoded, like stale-while-revalidate for data.
+      useOldImageOnUrlChange: true,
+      placeholder:
+          placeholder != null
+              ? (context, url) => placeholder!
+              : (context, url) => _buildLoadingPlaceholder(context),
+      errorWidget:
+          errorWidget != null
+              ? (context, url, error) => errorWidget!
+              : (context, url, error) =>
+                  fallbackAsset != null
+                      ? _buildAssetImage(fallbackAsset!, context)
+                      : _buildErrorWidget(context),
+    );
+
+    if (onImageLoaded != null) {
+      // Same provider and resize key as the painted image, so listening never
+      // triggers a second decode.
+      image = _ImageLoadedNotifier(
+        onImageLoaded: onImageLoaded!,
+        provider: ResizeImage.resizeIfNeeded(
+          memW,
+          memH,
+          CachedNetworkImageProvider(
+            url,
+            cacheKey: cacheKey,
+            cacheManager: appImageCacheManager,
+          ),
         ),
-      ),
+        child: image,
+      );
+    }
+    return image;
+  }
+
+  Widget _buildLoadingPlaceholder(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: width,
+      height: height,
+      color: isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
     );
   }
 
@@ -275,30 +265,43 @@ class _CachedNetworkImageWidgetState extends State<CachedNetworkImageWidget> {
     // distort the image.
     final (cacheWidth, cacheHeight) = _resolveMemCacheDimensions(
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-      fit: widget.fit,
-      width: widget.width,
-      height: widget.height,
-      memCacheWidth: widget.memCacheWidth,
-      memCacheHeight: widget.memCacheHeight,
+      fit: fit,
+      width: width,
+      height: height,
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
     );
 
-    return Image.asset(
+    Widget image = Image.asset(
       assetPath,
-      width: widget.width,
-      height: widget.height,
-      fit: widget.fit,
+      width: width,
+      height: height,
+      fit: fit,
       cacheWidth: cacheWidth,
       cacheHeight: cacheHeight,
       errorBuilder:
           (context, error, stackTrace) =>
-              widget.errorWidget ?? _buildErrorWidget(context),
+              errorWidget ?? _buildErrorWidget(context),
     );
+
+    if (onImageLoaded != null) {
+      image = _ImageLoadedNotifier(
+        onImageLoaded: onImageLoaded!,
+        provider: ResizeImage.resizeIfNeeded(
+          cacheWidth,
+          cacheHeight,
+          AssetImage(assetPath),
+        ),
+        child: image,
+      );
+    }
+    return image;
   }
 
   Widget _buildErrorWidget(BuildContext context) {
     return Container(
-      width: widget.width,
-      height: widget.height,
+      width: width,
+      height: height,
       color: Colors.grey.shade300,
       child: const Center(
         child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
@@ -310,14 +313,12 @@ class _CachedNetworkImageWidgetState extends State<CachedNetworkImageWidget> {
 class _ImageLoadedNotifier extends StatefulWidget {
   final Widget child;
   final VoidCallback onImageLoaded;
-  final String imageUrl;
-  final bool useAssetImage;
+  final ImageProvider provider;
 
   const _ImageLoadedNotifier({
     required this.child,
     required this.onImageLoaded,
-    required this.imageUrl,
-    this.useAssetImage = false,
+    required this.provider,
   });
 
   @override
@@ -330,20 +331,12 @@ class _ImageLoadedNotifierState extends State<_ImageLoadedNotifier> {
   bool _hasCalledCallback = false;
 
   @override
-  void initState() {
-    super.initState();
-    _setupImageListener();
-  }
-
-  void _setupImageListener() {
-    final ImageProvider imageProvider =
-        widget.useAssetImage
-            ? AssetImage(widget.imageUrl)
-            : CachedNetworkImageProvider(
-              widget.imageUrl,
-              cacheKey: _stableCacheKey(widget.imageUrl),
-            );
-    _imageStream = imageProvider.resolve(const ImageConfiguration());
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_imageStream != null) return;
+    _imageStream = widget.provider.resolve(
+      createLocalImageConfiguration(context),
+    );
     _imageStreamListener = ImageStreamListener((
       ImageInfo image,
       bool synchronousCall,
@@ -353,7 +346,7 @@ class _ImageLoadedNotifierState extends State<_ImageLoadedNotifier> {
         widget.onImageLoaded();
       }
     }, onError: (exception, stackTrace) {});
-    _imageStream?.addListener(_imageStreamListener!);
+    _imageStream!.addListener(_imageStreamListener!);
   }
 
   @override
@@ -372,6 +365,10 @@ class _ImageLoadedNotifierState extends State<_ImageLoadedNotifier> {
 
 extension CachedNetworkImageProviderExtension on String {
   ImageProvider get cachedNetworkImageProvider {
-    return CachedNetworkImageProvider(this, cacheKey: _stableCacheKey(this));
+    return CachedNetworkImageProvider(
+      this,
+      cacheKey: _stableCacheKey(this),
+      cacheManager: appImageCacheManager,
+    );
   }
 }

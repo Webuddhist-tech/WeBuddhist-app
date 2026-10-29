@@ -13,6 +13,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/utils/group_re
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Admin moderation queue: reported posts, comments, and chat messages,
 /// each with the reports filed against it.
@@ -972,7 +973,7 @@ class _UserAvatar extends ConsumerWidget {
         child:
             hasAvatar
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(avatarUrl),
+                  key: networkImageKey(avatarUrl),
                   imageUrl: avatarUrl,
                   width: 28,
                   height: 28,

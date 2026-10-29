@@ -1,4 +1,6 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_post_remote_datasource.dart';
@@ -6,6 +8,8 @@ import 'package:flutter_pecha/features/group_profile/data/repositories/group_pos
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_post_permission.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_post_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
+import 'package:fpdart/fpdart.dart';
 
 final groupPostRemoteDatasourceProvider = Provider<GroupPostRemoteDatasource>((
   ref,
@@ -18,29 +22,40 @@ final groupPostRepositoryProvider = Provider<GroupPostRepositoryInterface>((
 ) {
   return GroupPostRepositoryImpl(
     remote: ref.watch(groupPostRemoteDatasourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
 /// `GET /users/me/permission/{groupId}` for the signed-in user. Guests skip
-/// the request. autoDispose means every visit to the profile fetches fresh.
-final groupMyPermissionProvider = FutureProvider.autoDispose
-    .family<GroupPostPermission?, String>((ref, groupId) async {
-      final authState = ref.watch(authProvider);
-      if (authState.isGuest || !authState.isLoggedIn) return null;
+/// the request. The stored permission shows first and is refreshed each visit.
+typedef GroupMyPermissionNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupPostPermission,
+      GroupPostPermission?,
+      String
+    >;
 
-      final result = await ref
-          .watch(groupPostRepositoryProvider)
-          .getPostPermission(groupId);
-      return result.fold((_) => null, (permission) => permission);
+final groupMyPermissionProvider = AsyncNotifierProvider.autoDispose
+    .family<GroupMyPermissionNotifier, GroupPostPermission?, String>(() {
+      return GroupMyPermissionNotifier((ref, groupId, bind) {
+        final authState = ref.watch(authProvider);
+        if (authState.isGuest || !authState.isLoggedIn) return null;
+
+        return bind.source(
+          ref.watch(groupPostRepositoryProvider).postPermissionSource(groupId),
+          select:
+              (result) => result.fold((_) => null, (permission) => permission),
+        );
+      });
     });
 
 /// Whether the signed-in user may publish posts in the group.
-final groupPostPermissionProvider = FutureProvider.autoDispose
-    .family<bool, String>((ref, groupId) async {
-      final permission = await ref.watch(
-        groupMyPermissionProvider(groupId).future,
-      );
-      return permission?.canCreateContent ?? false;
+final groupPostPermissionProvider = Provider.autoDispose
+    .family<AsyncValue<bool>, String>((ref, groupId) {
+      // Derived synchronously, so a stored permission never shows a loader.
+      return ref
+          .watch(groupMyPermissionProvider(groupId))
+          .whenData((permission) => permission?.canCreateContent ?? false);
     });
 
 class GroupPostsState {
@@ -94,26 +109,41 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   GroupPostsNotifier({
     required GroupPostRepositoryInterface repository,
     required String groupId,
+    ConnectPostsPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupPostsState());
+       super(const GroupPostsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored, fresh: false);
+  }
 
   final GroupPostRepositoryInterface _repository;
   final String _groupId;
   static const int _limit = 20;
   int _requestGeneration = 0;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
 
     final generation = ++_requestGeneration;
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(isLoading: state.posts.isEmpty, clearError: true);
 
-    final result = await _repository.getGroupPosts(
-      _groupId,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, ConnectPostsPage> result;
+    try {
+      result = await _repository.getGroupPosts(
+        _groupId,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -121,28 +151,34 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
       (failure) {
         state = state.copyWith(
           isLoading: false,
-          error: failure.message,
+          error: state.posts.isEmpty ? failure.message : null,
           hasLoaded: true,
         );
       },
-      (page) {
-        state = state.copyWith(
-          posts: page.posts,
-          total: page.total,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.posts.length,
-          hasLoaded: true,
-          clearError: true,
-        );
-      },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(ConnectPostsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
+    state = state.copyWith(
+      posts: page.posts,
+      total: page.total,
+      isLoading: false,
+      hasMore: page.hasMore,
+      skip: page.posts.length,
+      hasLoaded: true,
+      clearError: true,
     );
   }
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
 
+    if (_firstPageInFlight) return;
+
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupPosts(
@@ -152,6 +188,11 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -223,9 +264,11 @@ final groupPostsProvider = StateNotifierProvider.autoDispose
     .family<GroupPostsNotifier, GroupPostsState, String>((ref, groupId) {
       // Refetch on auth changes so `liked_by_me` reflects the current user.
       ref.watch(authProvider);
+      final repository = ref.watch(groupPostRepositoryProvider);
       final notifier = GroupPostsNotifier(
-        repository: ref.watch(groupPostRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupPosts(groupId),
       );
       notifier.loadInitial();
       return notifier;

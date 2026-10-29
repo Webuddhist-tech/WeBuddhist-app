@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 const _languages = [
   AppLanguage(code: 'en', name: 'English', nativeName: 'English'),
@@ -126,7 +127,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         availableContentLanguagesProvider.overrideWith(
-          (ref) async => _languages,
+          () => ScreenCacheNotifier.fixed(_languages),
         ),
         contentLanguageProvider.overrideWith(
           (ref) => _FixedContentLanguage(contentLanguage),

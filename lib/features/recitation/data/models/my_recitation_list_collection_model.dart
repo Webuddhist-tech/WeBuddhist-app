@@ -24,6 +24,14 @@ class MyRecitationListCollectionModel {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'name': name,
+    'collection_id': collectionId,
+    'image_url': imageUrl,
+    'item_count': itemCount,
+  };
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

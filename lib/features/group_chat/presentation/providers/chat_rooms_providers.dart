@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
@@ -110,6 +113,27 @@ class _RoomsWalk {
   /// Set when a page failed. Earlier pages of the same walk are still in
   /// [rooms]; a walk whose first page failed has none.
   final Failure? failure;
+
+  factory _RoomsWalk.fromJson(Map<String, dynamic> json) {
+    return _RoomsWalk(
+      rooms:
+          (json['rooms'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatRoomDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: (json['skip'] as num?)?.toInt() ?? 0,
+      total: (json['total'] as num?)?.toInt() ?? 0,
+      hasMore: json['has_more'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'rooms': rooms.map((room) => room.toJson()).toList(),
+    'skip': skip,
+    'total': total,
+    'has_more': hasMore,
+  };
 }
 
 /// The viewer's group chats and direct chats.
@@ -119,10 +143,38 @@ class _RoomsWalk {
 /// loading this twice for one answer would be the only alternative.
 class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     with WidgetsBindingObserver {
-  ChatRoomsNotifier({required this.ref}) : super(const ChatRoomsState()) {
+  ChatRoomsNotifier({required this.ref}) : super(_seed(ref)) {
+    _seeded = state.rooms.isNotEmpty;
     WidgetsBinding.instance.addObserver(this);
     loadInitial();
   }
+
+  // The stored walk is the first state, so the first frame never spins.
+  static ChatRoomsState _seed(Ref ref) {
+    final store = ref.read(screenCacheStoreProvider);
+    final userId = store.currentUserIdSync?.trim();
+    if (userId == null || userId.isEmpty) return const ChatRoomsState();
+    final raw = store.read(
+      ScreenCacheKey.user('chat_rooms', userId: userId, language: 'all'),
+    );
+    if (raw == null) return const ChatRoomsState();
+    try {
+      final walk = _RoomsWalk.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      if (walk.rooms.isEmpty) return const ChatRoomsState();
+      return ChatRoomsState(
+        rooms: chatListRooms(walk.rooms),
+        hasLoaded: true,
+        hasMore: walk.hasMore,
+        skip: walk.skip,
+        total: walk.total,
+      );
+    } catch (_) {
+      return const ChatRoomsState();
+    }
+  }
+
+  /// True until the first walk settles when the list was seeded from the store.
+  bool _seeded = false;
 
   final Ref ref;
   static const int _limit = 20;
@@ -154,6 +206,9 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   /// its result is dropped instead.
   int _generation = 0;
 
+  // Blocks paging while a walk from the top is in flight.
+  bool _firstPageInFlight = false;
+
   /// Unread counts and last messages both change on the server without the app
   /// hearing about it — the live socket is per-room, and there is no rooms
   /// stream. So this list is refetched on every occasion it could be stale
@@ -172,21 +227,52 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
 
   Future<void> loadInitial() async {
     if (state.isLoading) return;
+    _firstPageInFlight = true;
+    try {
+      await _loadFromTop();
+    } finally {
+      _firstPageInFlight = false;
+    }
+  }
+
+  Future<void> _loadFromTop() async {
     _generation++;
-    // `hasLoaded` waits for the whole walk, not the first page: with a first
-    // page of event rooms the list is still empty when it lands, and marking
-    // it loaded there would flash the empty state before the chats arrive.
-    //
-    // `isLoadingMore` is cleared here rather than when the orphaned page
-    // lands: the bump above has already made that page a no-op, and `isLoading`
-    // holds off any new `loadMore` until this walk is published. Leaving the
-    // flag to the orphan would let it land after a fresh page had gone out and
-    // clear that page's flag from under it.
-    state = state.copyWith(
-      isLoading: true,
-      isLoadingMore: false,
-      clearError: true,
-    );
+    // The last walk stored on this device shows at once when the list is
+    // empty; the fresh walk below replaces it.
+    final stored = state.rooms.isEmpty ? await _readStoredWalk() : null;
+    if (!mounted) return;
+    final hadStored = stored != null || _seeded;
+    _seeded = false;
+    if (stored != null) {
+      _unreadBeyondOffset = null;
+      state = state.copyWith(
+        rooms: chatListRooms(stored.rooms),
+        isLoading: false,
+        isLoadingMore: false,
+        hasLoaded: true,
+        hasMore: stored.hasMore,
+        skip: stored.skip,
+        total: stored.total,
+        hasUnreadBeyondList: false,
+        clearError: true,
+      );
+    } else {
+      // `hasLoaded` waits for the whole walk, not the first page: with a first
+      // page of event rooms the list is still empty when it lands, and marking
+      // it loaded there would flash the empty state before the chats arrive.
+      //
+      // `isLoadingMore` is cleared here rather than when the orphaned page
+      // lands: the bump above has already made that page a no-op, and `isLoading`
+      // holds off any new `loadMore` until this walk is published. Leaving the
+      // flag to the orphan would let it land after a fresh page had gone out and
+      // clear that page's flag from under it.
+      // A list seeded from the store refreshes without a loading flag.
+      state = state.copyWith(
+        isLoading: !hadStored,
+        isLoadingMore: false,
+        clearError: true,
+      );
+    }
 
     final walk = await _walk(skip: 0);
     if (!mounted) return;
@@ -194,14 +280,16 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
     final failure = walk.failure;
     if (failure != null && walk.rooms.isEmpty) {
       // Nothing new landed; whatever was on screen stays, and so does the
-      // paging that goes with it.
+      // paging that goes with it. A stored list stays quiet about it.
       state = state.copyWith(
         isLoading: false,
         hasLoaded: true,
-        error: failure.message,
+        error: hadStored ? null : failure.message,
+        clearError: hadStored,
       );
       return;
     }
+    if (failure == null) unawaited(_storeWalk(walk));
 
     // A fresh list starts with no verdict about what lies beyond it; the scan
     // below earns that again from scratch, since the room it found last time
@@ -229,7 +317,12 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || state.isLoading || !state.hasMore) return;
+    if (state.isLoadingMore ||
+        state.isLoading ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
     final generation = _generation;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
@@ -450,6 +543,39 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
       } catch (_) {
         // Storage is best-effort; the next lookup falls back to the server.
       }
+    }
+  }
+
+  /// Where the last complete walk is kept, per account.
+  Future<String> _walkKey() async {
+    return ScreenCacheKey.user(
+      'chat_rooms',
+      userId: await _loadAccountId(),
+      language: 'all',
+    );
+  }
+
+  Future<_RoomsWalk?> _readStoredWalk() async {
+    final store = ref.read(screenCacheStoreProvider);
+    final key = await _walkKey();
+    final raw = store.read(key);
+    if (raw == null) return null;
+    try {
+      return _RoomsWalk.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      unawaited(store.remove(key));
+      return null;
+    }
+  }
+
+  Future<void> _storeWalk(_RoomsWalk walk) async {
+    try {
+      final key = await _walkKey();
+      await ref
+          .read(screenCacheStoreProvider)
+          .save(key, jsonEncode(walk.toJson()));
+    } catch (_) {
+      // Storage is best-effort; the next load fetches again.
     }
   }
 

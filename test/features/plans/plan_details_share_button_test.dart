@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 /// No-op analytics so PlanDetails' initState tracking is inert in tests.
 class _FakeAnalyticsService implements AnalyticsService {
@@ -77,18 +78,22 @@ UserPlanDayDetailResponse _makeDay({
 List<Override> _overridesFor(UserPlanDayDetailResponse day) => [
   analyticsServiceProvider.overrideWithValue(_FakeAnalyticsService()),
   userPlanDayContentFutureProvider.overrideWith(
-    (ref, params) => Stream.value(Right(day)),
+    () => AutoDisposeScreenCacheFamilyNotifier.fixed(Right(day)),
   ),
   userPlanDaysCompletionStatusProvider.overrideWith(
-    (ref, planId) => Stream.value(Right({1: day.isCompleted})),
+    () => AutoDisposeScreenCacheFamilyNotifier.fixed(
+      Right({1: day.isCompleted}),
+    ),
   ),
   planDaysByPlanIdFutureProvider.overrideWith(
-    (ref, planId) => Stream.value(const Right(<PlanDaysModel>[])),
+    () => ScreenCacheFamilyNotifier.fixed(const Right(<PlanDaysModel>[])),
   ),
   seriesListFutureProvider.overrideWith(
-    (ref) => Stream.value(const Left(NetworkFailure('test'))),
+    () => ScreenCacheNotifier.fixed(const Left(NetworkFailure('test'))),
   ),
-  userSeriesEnrollmentsProvider.overrideWith((ref) => Stream.value(<String>{})),
+  userSeriesEnrollmentsProvider.overrideWith(
+    () => ScreenCacheNotifier.fixed(<String>{}),
+  ),
 ];
 
 Future<void> _pumpDetails(

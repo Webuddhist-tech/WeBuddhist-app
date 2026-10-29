@@ -1,3 +1,5 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -20,18 +22,29 @@ final myRecitationCollectionsRepositoryProvider =
         remoteDatasource: ref.watch(
           myRecitationCollectionsRemoteDatasourceProvider,
         ),
+        store: ref.watch(screenCacheStoreProvider),
       );
     });
 
-/// `GET /users/me/recitation-collections/{collectionId}` for the detail screen.
-final myRecitationCollectionDetailProvider = FutureProvider.autoDispose
-    .family<Either<Failure, MyRecitationCollectionDetailModel>, String>((
-      ref,
-      collectionId,
-    ) {
-      return ref
-          .watch(myRecitationCollectionsRepositoryProvider)
-          .getCollectionDetail(collectionId);
+/// Stored detail is the first state, refreshed in the background.
+final myRecitationCollectionDetailProvider = AsyncNotifierProvider.autoDispose
+    .family<
+      AutoDisposeScreenCacheFamilyNotifier<
+        MyRecitationCollectionDetailModel,
+        Either<Failure, MyRecitationCollectionDetailModel>,
+        String
+      >,
+      Either<Failure, MyRecitationCollectionDetailModel>,
+      String
+    >(() {
+      return AutoDisposeScreenCacheFamilyNotifier((ref, collectionId, bind) {
+        ref.watch(authProvider);
+        return bind.source(
+          ref
+              .watch(myRecitationCollectionsRepositoryProvider)
+              .collectionDetailSource(collectionId),
+        );
+      });
     });
 
 enum MyChantCompletionResult { completed, failed }
@@ -180,9 +193,19 @@ final myRecitationCollectionCompletionProvider = StateNotifierProvider
       return notifier;
     });
 
-final myRecitationCollectionDaysCountProvider = FutureProvider.autoDispose
-    .family<Either<Failure, int>, String>((ref, collectionId) async {
-      return ref
-          .watch(myRecitationCollectionsRepositoryProvider)
-          .getCompletionDaysCount(collectionId);
+final myRecitationCollectionDaysCountProvider = AsyncNotifierProvider
+    .autoDispose
+    .family<
+      AutoDisposeScreenCacheFamilyNotifier<int, Either<Failure, int>, String>,
+      Either<Failure, int>,
+      String
+    >(() {
+      return AutoDisposeScreenCacheFamilyNotifier((ref, collectionId, bind) {
+        ref.watch(authProvider);
+        return bind.source(
+          ref
+              .watch(myRecitationCollectionsRepositoryProvider)
+              .completionDaysCountSource(collectionId),
+        );
+      });
     });

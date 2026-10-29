@@ -8,6 +8,7 @@ import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class GroupJoinRequestsScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -284,7 +285,7 @@ class _GroupJoinRequestTile extends StatelessWidget {
               child:
                   hasAvatar
                       ? CachedNetworkImageWidget(
-                        key: ValueKey(avatarUrl),
+                        key: networkImageKey(avatarUrl),
                         imageUrl: avatarUrl,
                         width: 48,
                         height: 48,

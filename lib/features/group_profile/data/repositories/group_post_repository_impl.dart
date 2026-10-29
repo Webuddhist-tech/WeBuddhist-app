@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exceptions.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/connect/data/models/connect_post_model.dart';
@@ -12,8 +15,68 @@ import 'package:fpdart/fpdart.dart';
 
 class GroupPostRepositoryImpl implements GroupPostRepositoryInterface {
   final GroupPostRemoteDatasource remote;
+  final ScreenCacheStore store;
 
-  GroupPostRepositoryImpl({required this.remote});
+  GroupPostRepositoryImpl({required this.remote, required this.store});
+
+  ScreenCacheSource<T> _userSource<T extends Object>(
+    String screen, {
+    required String groupId,
+    required Future<Map<String, dynamic>> Function() fetchJson,
+    required T Function(Map<String, dynamic> json) parse,
+    required String failureMessage,
+  }) {
+    final userId = store.currentUserIdSync;
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        screen,
+        userId: userId,
+        language: '',
+        params: [groupId],
+      ),
+      fetchJson: fetchJson,
+      fromJson: (json) => parse(json as Map<String, dynamic>),
+      failureMessage: failureMessage,
+    );
+  }
+
+  @override
+  ScreenCacheSource<GroupPostPermission> postPermissionSource(String groupId) {
+    return _userSource(
+      'group_post_permission',
+      groupId: groupId,
+      fetchJson: () => remote.fetchPostPermissionJson(groupId),
+      parse: (json) => GroupPostPermissionModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load post permission',
+    );
+  }
+
+  @override
+  Stream<Either<Failure, GroupPostPermission>> watchPostPermission(
+    String groupId,
+  ) {
+    return postPermissionSource(groupId).watch();
+  }
+
+  @override
+  ConnectPostsPage? readStoredGroupPosts(String groupId) {
+    return _postsSource(groupId, limit: 20).read();
+  }
+
+  ScreenCacheSource<ConnectPostsPage> _postsSource(
+    String groupId, {
+    required int limit,
+  }) {
+    return _userSource(
+      'group_posts',
+      groupId: groupId,
+      fetchJson:
+          () => remote.fetchGroupPostsJson(groupId, skip: 0, limit: limit),
+      parse: (json) => ConnectPostsPageModel.fromJson(json).toEntity(),
+      failureMessage: 'Failed to load group posts',
+    );
+  }
 
   @override
   Future<Either<Failure, GroupPostPermission>> getPostPermission(
@@ -30,7 +93,8 @@ class GroupPostRepositoryImpl implements GroupPostRepositoryInterface {
     String groupId, {
     required int skip,
     required int limit,
-  }) {
+  }) async {
+    if (skip == 0) return _postsSource(groupId, limit: limit).refresh();
     return _guard(
       () async =>
           (await remote.fetchGroupPosts(

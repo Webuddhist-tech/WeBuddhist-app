@@ -37,6 +37,9 @@ class SegmentCommentary {
       count: json['count'] as int? ?? 0,
       source: json['source'] as String?,
       license: json['license'] as String?,
+      translations: (json['translations'] as List<dynamic>? ?? const [])
+          .map((e) => SegmentCommentary.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -49,6 +52,7 @@ class SegmentCommentary {
       'count': count,
       'source': source,
       'license': license,
+      'translations': translations.map((e) => e.toJson()).toList(),
     };
   }
 }

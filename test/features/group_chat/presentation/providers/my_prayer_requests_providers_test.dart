@@ -121,6 +121,11 @@ void main() {
 
   tearDown(() => container.dispose());
 
+  group(
+    'changes during a refresh',
+    () => _changesDuringRefresh((made) => container = made),
+  );
+
   test('lists every request without an event filter, split by state', () async {
     final notifier = start([
       _mine('a'),
@@ -205,6 +210,71 @@ void main() {
     await notifier.delete('a');
     expect(repository.deleted, ['room-1/a']);
     expect(notifier.state.requests.map((r) => r.id), ['c']);
+    expect(notifier.state.total, 1);
+  });
+}
+
+/// A server whose deletes take effect, and whose gated page is read before
+/// the gate opens, as a real request in flight would be.
+class _StaleReadRepository extends _FakeRepository {
+  _StaleReadRepository(super.history);
+
+  @override
+  Future<Either<Failure, ChatMessagesPage>> listMyPrayerRequests({
+    int skip = 0,
+    int limit = 20,
+    String? eventId,
+    String? groupId,
+    bool? isCompleted,
+  }) async {
+    final gate = this.gate;
+    this.gate = null;
+    final snapshot = List.of(history);
+    if (gate != null) await gate.future;
+    final end = (skip + limit).clamp(0, snapshot.length);
+    return Right(
+      ChatMessagesPage(
+        messages: snapshot.sublist(skip.clamp(0, snapshot.length), end),
+        skip: skip,
+        limit: limit,
+        total: snapshot.length,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<Failure, Unit>> deleteMessage(
+    String roomId, {
+    required String messageId,
+  }) async {
+    history = history.where((m) => m.id != messageId).toList();
+    return super.deleteMessage(roomId, messageId: messageId);
+  }
+}
+
+/// [adopt] hands the container to the file's tearDown, which disposes it.
+void _changesDuringRefresh(void Function(ProviderContainer) adopt) {
+  test('a delete made while page one is re-read is not undone', () async {
+    final repository = _StaleReadRepository([_mine('a'), _mine('b')]);
+    final container = ProviderContainer(
+      overrides: [groupChatRepositoryProvider.overrideWithValue(repository)],
+    );
+    adopt(container);
+    container.listen(myPrayerRequestsProvider, (_, _) {});
+    final notifier = container.read(myPrayerRequestsProvider.notifier);
+    await _settle();
+    expect(notifier.state.requests.map((r) => r.id), ['a', 'b']);
+
+    final gate = Completer<void>();
+    repository.gate = gate;
+    unawaited(notifier.load());
+    await _settle();
+
+    await notifier.delete('a');
+    gate.complete();
+    await _settle();
+
+    expect(notifier.state.requests.map((r) => r.id), ['b']);
     expect(notifier.state.total, 1);
   });
 }

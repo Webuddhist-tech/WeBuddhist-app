@@ -1,6 +1,9 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/features/plans/data/datasource/plans_local_datasource.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/domain/usecases/plans_usecases.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/use_case_providers.dart';
@@ -15,32 +18,75 @@ final authorRepositoryProvider = Provider<AuthorRepository>((ref) {
     authorRemoteDatasource: AuthorRemoteDatasource(
       dio: ref.watch(dioProvider),
     ),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
-// Get author by ID provider
-final authorByIdFutureProvider = FutureProvider.family<Either<Failure, AuthorModel>, String>((
-  ref,
-  id,
-) {
-  return ref.watch(authorRepositoryProvider).getAuthorById(id);
+// Stored author is the first state (name kept for callers).
+final authorByIdFutureProvider = AsyncNotifierProvider.family<
+  ScreenCacheFamilyNotifier<AuthorModel, Either<Failure, AuthorModel>, String>,
+  Either<Failure, AuthorModel>,
+  String
+>(() {
+  return ScreenCacheFamilyNotifier((ref, id, bind) {
+    return bind.source(ref.watch(authorRepositoryProvider).authorSource(id));
+  });
 });
 
-// Get plans by author ID provider (using use case)
-final authorPlansFutureProvider =
-    FutureProvider.family<Either<Failure, List<Plan>>, String>((ref, authorId) async {
-      final getPlansUseCase = ref.watch(getPlansUseCaseProvider);
+const _authorPlansLanguage = 'en';
+const _authorPlansLimit = 100;
 
-      final result = await getPlansUseCase(const GetPlansParams(
-        language: 'en',
-        limit: 100,
-      ));
+// Each refresh written to Hive re-emits here.
+Stream<Either<Failure, List<Plan>>> _authorPlansUpdates(
+  GetPlansUseCase getPlans,
+  PlansLocalDatasource local,
+  List<Plan> Function(List<Plan>) byAuthor,
+) async* {
+  final result = await getPlans(
+    const GetPlansParams(language: _authorPlansLanguage, limit: _authorPlansLimit),
+  );
+  yield result.map(byAuthor);
 
-      return result.fold(
-        (failure) => Left(failure),
-        (plans) => Right(plans.where((plan) => plan.authorId == authorId).toList()),
-      );
-    });
+  final key = local.plansKey(
+    language: _authorPlansLanguage,
+    limit: _authorPlansLimit,
+  );
+  await for (final _ in local.watchKey(key)) {
+    final cached = local.readPlans(
+      language: _authorPlansLanguage,
+      limit: _authorPlansLimit,
+    );
+    if (cached != null) {
+      yield Right(byAuthor(cached.map((plan) => plan.toEntity()).toList()));
+    }
+  }
+}
+
+// Stored plans page (from Hive) is the first state, filtered by author.
+final authorPlansFutureProvider = AsyncNotifierProvider.family<
+  ScreenCacheFamilyNotifier<List<Plan>, Either<Failure, List<Plan>>, String>,
+  Either<Failure, List<Plan>>,
+  String
+>(() {
+  return ScreenCacheFamilyNotifier((ref, authorId, bind) {
+    final getPlansUseCase = ref.watch(getPlansUseCaseProvider);
+    final local = ref.watch(plansLocalDatasourceProvider);
+
+    List<Plan> byAuthor(List<Plan> plans) =>
+        plans.where((plan) => plan.authorId == authorId).toList();
+
+    final stored = local.readPlans(
+      language: _authorPlansLanguage,
+      limit: _authorPlansLimit,
+    );
+    return bind.stream(
+      stored == null
+          ? null
+          : Right(byAuthor(stored.map((plan) => plan.toEntity()).toList())),
+      _authorPlansUpdates(getPlansUseCase, local, byAuthor),
+    );
+  });
+});
 
 // Author state notifier for managing local state
 class AuthorState {

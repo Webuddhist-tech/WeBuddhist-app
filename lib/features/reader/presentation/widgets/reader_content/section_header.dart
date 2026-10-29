@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
-import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// A table-of-contents heading; top-level ones also carry their number.
@@ -27,15 +26,10 @@ class SectionHeader extends ConsumerWidget {
     final title = section.title;
     if (title == null || title.isEmpty) return const SizedBox.shrink();
 
-    final fontSize = ref.watch(fontSizeProvider);
-    final theme = Theme.of(context);
-    final fontFamily = getFontFamily(language);
-    final titleColor = theme.textTheme.bodyMedium?.color;
-    final scale = switch (depth) {
-      0 => 1.2,
-      1 => 1.0,
-      _ => 0.9,
-    };
+    final style = ReaderStyle.of(context, ref);
+    final fontFamily = style.type.family(language);
+    final script = ReaderScript.of(title, language: language);
+    final metrics = style.type.heading(depth, script);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -52,34 +46,34 @@ class SectionHeader extends ConsumerWidget {
               child: Divider(
                 height: 1,
                 thickness: 1,
-                color: theme.dividerColor,
+                color: style.palette.divider,
               ),
             ),
           if (depth == 0 && section.sectionNumber > 0) ...[
             Text(
               '${section.sectionNumber}',
               style: TextStyle(
-                fontSize: fontSize * 0.9,
+                fontSize: style.type.sectionNumberSize(script),
                 fontFamily: fontFamily,
-                color: theme.textTheme.bodyMedium?.color,
+                color: style.palette.heading,
               ),
             ),
             Container(
               width: 40,
               height: 1.5,
               margin: const EdgeInsets.only(top: 8, bottom: 20),
-              color: theme.textTheme.bodySmall?.color,
+              color: style.palette.headingRule,
             ),
           ],
           Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: fontSize * scale,
-              fontWeight: FontWeight.w600,
+              fontSize: metrics.fontSize,
+              fontWeight: metrics.fontWeight,
               fontFamily: fontFamily,
-              color: titleColor,
-              height: getLineHeight(language),
+              color: style.palette.heading,
+              height: metrics.height,
             ),
           ),
         ],

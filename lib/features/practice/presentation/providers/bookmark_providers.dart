@@ -1,18 +1,24 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/data/models/bookmark_models.dart';
 import 'package:flutter_pecha/features/practice/data/repositories/bookmark_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 final bookmarkRepositoryProvider = Provider<BookmarkRepository>((ref) {
   return BookmarkRepository(
     remoteDatasource: BookmarkRemoteDatasource(
       dio: ref.watch(dioProvider),
     ),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
@@ -299,13 +305,41 @@ class BookmarksState {
 
 class BookmarksNotifier extends StateNotifier<BookmarksState> {
   BookmarksNotifier(
+    BookmarkRepository repository,
+    String language, {
+    required bool isAuthenticated,
+  }) : this._(
+         repository,
+         language,
+         isAuthenticated: isAuthenticated,
+         source:
+             isAuthenticated
+                 ? repository.bookmarksSource(language: language)
+                 : null,
+       );
+
+  BookmarksNotifier._(
     this._repository,
     this._language, {
     required bool isAuthenticated,
+    required ScreenCacheSource<List<BookmarkDTO>>? source,
   }) : _isAuthenticated = isAuthenticated,
-       super(BookmarksState(isLoading: isAuthenticated)) {
+       super(_seed(source, isAuthenticated: isAuthenticated)) {
     if (isAuthenticated) load();
   }
+
+  // The stored list is the first state, so the first frame never spins.
+  static BookmarksState _seed(
+    ScreenCacheSource<List<BookmarkDTO>>? source, {
+    required bool isAuthenticated,
+  }) {
+    final list = source?.read();
+    if (list == null) return BookmarksState(isLoading: isAuthenticated);
+    return BookmarksState(bookmarks: _newestFirst(list));
+  }
+
+  static List<BookmarkDTO> _newestFirst(List<BookmarkDTO> list) =>
+      [...list]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   final BookmarkRepository _repository;
   final String _language;
@@ -315,34 +349,67 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
   /// empty state belongs.
   final bool _isAuthenticated;
   final _logger = AppLogger('BookmarksNotifier');
+  StreamSubscription<Either<Failure, List<BookmarkDTO>>>? _subscription;
 
+  /// Stored list first, then the server list; retry goes through [refresh].
   Future<void> load() async {
     if (!_isAuthenticated) {
       state = const BookmarksState();
       return;
     }
-    state = state.copyWith(isLoading: true, clearError: true);
-    final result = await _repository.fetchBookmarks(language: _language);
-    if (!mounted) return;
-    result.fold(
-      (failure) {
-        _logger.error('Failed to load bookmarks: ${failure.message}');
-        state = state.copyWith(isLoading: false, error: failure.message);
-      },
-      (list) {
-        final sorted = [...list]
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        state = BookmarksState(bookmarks: sorted, isLoading: false);
-      },
+    if (_subscription != null) return refresh();
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(
+      isLoading: state.bookmarks.isEmpty,
+      clearError: true,
     );
+    _subscription = _repository
+        .watchBookmarks(language: _language)
+        .listen((result) {
+          if (!mounted) return;
+          result.fold(_onFailure, _onList);
+        });
   }
 
-  Future<void> refresh() => load();
+  Future<void> refresh() async {
+    if (!_isAuthenticated) return;
+    if (_subscription == null) return load();
+    state = state.copyWith(clearError: true);
+    final result = await _repository.refreshBookmarks(language: _language);
+    if (!mounted) return;
+    // Applied directly too: with no store there is no change event to wait for.
+    result.fold(_onFailure, _onList);
+  }
+
+  void _onFailure(Failure failure) {
+    _logger.error('Failed to load bookmarks: ${failure.message}');
+    if (state.bookmarks.isEmpty) {
+      state = state.copyWith(isLoading: false, error: failure.message);
+    }
+  }
+
+  void _onList(List<BookmarkDTO> list) {
+    // A list fetched before a removal finished still holds that bookmark.
+    final visible = _removedIds.isEmpty
+        ? list
+        : list.where((b) => !_removedIds.contains(b.id)).toList();
+    state = BookmarksState(bookmarks: _newestFirst(visible), isLoading: false);
+  }
+
+  /// Bookmarks the user removed while this screen is open.
+  final Set<String> _removedIds = {};
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   /// Optimistically removes [bookmark], restoring it if the API call fails.
   /// Returns `true` on success.
   Future<bool> remove(BookmarkDTO bookmark) async {
     final previous = state.bookmarks;
+    _removedIds.add(bookmark.id);
     state = state.copyWith(
       bookmarks: previous.where((b) => b.id != bookmark.id).toList(),
       clearError: true,
@@ -353,11 +420,29 @@ class BookmarksNotifier extends StateNotifier<BookmarksState> {
     return result.fold(
       (failure) {
         _logger.error('Failed to remove bookmark: ${failure.message}');
+        _removedIds.remove(bookmark.id);
         state = state.copyWith(bookmarks: previous);
         return false;
       },
-      (_) => true,
+      (_) {
+        // Bring the stored list in line so it never resurrects the bookmark.
+        unawaited(_storeWithout(bookmark.id));
+        return true;
+      },
     );
+  }
+
+  /// A refresh joins any fetch already running, which may have started
+  /// before the delete; one more round then stores the list without it.
+  Future<void> _storeWithout(String bookmarkId) async {
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final result = await _repository.refreshBookmarks(language: _language);
+      final stale = result.fold(
+        (_) => false,
+        (list) => list.any((b) => b.id == bookmarkId),
+      );
+      if (!stale) return;
+    }
   }
 }
 

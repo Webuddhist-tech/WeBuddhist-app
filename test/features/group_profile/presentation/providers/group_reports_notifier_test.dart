@@ -7,10 +7,37 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
 
 /// Serves [pages] in order, recording the skip each request asked for.
 class _PagingRepository extends Fake
     implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+
   _PagingRepository(this.pages);
 
   final List<GroupReportsPage> pages;
@@ -60,6 +87,30 @@ class _PagingRepository extends Fake
 
 class _MembersRepository extends Fake
     implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+
   _MembersRepository(this.members);
 
   List<GroupMember> members;
@@ -318,6 +369,30 @@ void main() {
 /// A queue of 5000 whose every page carries one more report on comment c1.
 class _LongQueueRepository extends Fake
     implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+
   final List<int> skips = [];
   final List<String> resolvedReportIds = [];
 

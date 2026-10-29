@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/group_chat/data/datasource/chat_link_prev
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_pecha/core/utils/url_opener.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Link attached to a post: a YouTube thumbnail card, an Open Graph preview
 /// card, or a plain link row when no preview is available.
@@ -196,7 +197,7 @@ class _ImagePreviewBody extends StatelessWidget {
         AspectRatio(
           aspectRatio: 16 / 9,
           child: CachedNetworkImageWidget(
-            key: ValueKey(imageUrl),
+            key: networkImageKey(imageUrl),
             imageUrl: imageUrl,
             fit: BoxFit.cover,
             errorWidget: _PreviewFallback(isDark: isDark),

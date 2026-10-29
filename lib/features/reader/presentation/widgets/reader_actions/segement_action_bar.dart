@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +27,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 
 /// Converts HTML to plain text, removing specified elements using regex
 String _htmlToPlainText(String htmlString) {
@@ -731,17 +731,13 @@ class _SegmentVideoCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: CachedNetworkImage(
+              child: CachedNetworkImageWidget(
                 imageUrl: video.thumbnailUrl,
                 fit: BoxFit.cover,
-                placeholder:
-                    (context, url) => ColoredBox(
-                      color: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.08,
-                      ),
-                    ),
-                errorWidget:
-                    (context, url, error) => ColoredBox(
+                placeholder: ColoredBox(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                ),
+                errorWidget: ColoredBox(
                       color: theme.colorScheme.onSurface.withValues(
                         alpha: 0.08,
                       ),
