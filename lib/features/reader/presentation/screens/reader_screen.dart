@@ -1064,6 +1064,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       context,
       scope: _activeParams.settingsScope,
       originalLanguage: state.textDetail?.language,
+      onChangeLanguages: () => _openLanguagesSheet(context),
     );
   }
 

@@ -6772,7 +6772,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_spacing.
   ///
   /// In en, this message translates to:
-  /// **'Spacing'**
+  /// **'Line spacing'**
   String get reader_spacing;
 
   /// No description provided for @reader_spacing_compact.

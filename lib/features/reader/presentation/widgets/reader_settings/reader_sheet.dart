@@ -12,7 +12,14 @@ enum ReaderSheetTextRole {
   group(15, FontWeight.w600),
   row(16, FontWeight.w400),
   caps(11, FontWeight.w600),
-  chip(13, FontWeight.w500);
+  chip(13, FontWeight.w500),
+
+  /// A label over a group of rows ("Line spacing").
+  label(14, FontWeight.w400),
+
+  /// A segmented choice, and the chosen one.
+  segment(14, FontWeight.w400),
+  segmentSelected(14, FontWeight.w600);
 
   const ReaderSheetTextRole(this.size, this.weight);
 
@@ -272,8 +279,9 @@ class ReaderSheetGroupTitle extends ConsumerWidget {
   }
 }
 
-/// A switch in the sheet's selected colour. A [locked] switch is dimmed and
-/// does nothing: the last line still on cannot be turned off.
+/// A switch in the sheet's selected colour, drawn 44 x 26 as WF19 does, in
+/// a 44 high tap target. A [locked] switch is dimmed and does nothing: the
+/// last line still on cannot be turned off.
 class ReaderSheetSwitch extends ConsumerWidget {
   const ReaderSheetSwitch({
     super.key,
@@ -290,53 +298,76 @@ class ReaderSheetSwitch extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ReaderPalette.resolve(Theme.of(context), ref);
     final enabled = !locked && onChanged != null;
-    return Opacity(
-      opacity: locked ? 0.4 : 1,
-      child: AbsorbPointer(
-        absorbing: !enabled,
-        child: AppToggleSwitch(
-          value: value,
-          trackOnColor: palette.selectedChip,
-          trackOffColor: palette.drawerHandle,
-          onChanged: (on) {
-            HapticFeedback.lightImpact();
-            onChanged?.call(on);
-          },
+    void toggle() {
+      HapticFeedback.lightImpact();
+      onChanged?.call(!value);
+    }
+
+    return Semantics(
+      toggled: value,
+      enabled: enabled,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? toggle : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          child: Opacity(
+            opacity: locked ? 0.4 : 1,
+            // The switch draws; the tap target around it answers.
+            child: AbsorbPointer(
+              child: AppToggleSwitch(
+                value: value,
+                width: 44,
+                height: 26,
+                trackOnColor: palette.selectedChip,
+                trackOffColor: palette.drawerHandle,
+                onChanged: (_) {},
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// A row with a [label] that opens something: More settings ›, Change
-/// languages →.
+/// A row of a sheet: a [label] with a [trailing] switch, or a row that
+/// opens something (More settings ›, Change languages →).
 class ReaderSheetRow extends ConsumerWidget {
   const ReaderSheetRow({
     super.key,
     required this.label,
-    required this.onTap,
+    this.onTap,
     this.leading,
     this.trailing,
+    this.labelTrailing,
   });
 
   final String label;
   final VoidCallback? onTap;
   final Widget? leading;
+
+  /// At the end of the row: a switch, or a chevron.
   final Widget? trailing;
+
+  /// Right after the label: an arrow.
+  final Widget? labelTrailing;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final palette = ReaderPalette.resolve(Theme.of(context), ref);
-    return InkWell(
-      onTap:
-          onTap == null
-              ? null
-              : () {
-                HapticFeedback.lightImpact();
-                onTap!();
-              },
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 52),
+    final text = Text(
+      label,
+      style: readerSheetText(
+        context,
+        ReaderSheetTextRole.row,
+        color: palette.ink,
+      ),
+    );
+    final row = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 54),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
           children: [
             if (leading != null) ...[
@@ -346,16 +377,17 @@ class ReaderSheetRow extends ConsumerWidget {
               ),
               const SizedBox(width: 16),
             ],
-            Expanded(
-              child: Text(
-                label,
-                style: readerSheetText(
-                  context,
-                  ReaderSheetTextRole.row,
-                  color: palette.ink,
-                ),
+            if (labelTrailing == null)
+              Expanded(child: text)
+            else ...[
+              Flexible(child: text),
+              const SizedBox(width: 6),
+              IconTheme.merge(
+                data: IconThemeData(color: palette.ink, size: 16),
+                child: labelTrailing!,
               ),
-            ),
+              const Spacer(),
+            ],
             if (trailing != null)
               IconTheme.merge(
                 data: IconThemeData(color: palette.sheetMuted, size: 18),
@@ -363,6 +395,110 @@ class ReaderSheetRow extends ConsumerWidget {
               ),
           ],
         ),
+      ),
+    );
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap!();
+      },
+      child: row,
+    );
+  }
+}
+
+/// A small label over a group of rows, as WF19 sets "Line spacing" and "In
+/// the text".
+class ReaderSheetLabel extends ConsumerWidget {
+  const ReaderSheetLabel(this.label, {super.key});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ReaderPalette.resolve(Theme.of(context), ref);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        label,
+        style: readerSheetText(
+          context,
+          ReaderSheetTextRole.label,
+          color: palette.sheetMuted,
+        ),
+      ),
+    );
+  }
+}
+
+/// One of a few choices side by side in a rounded track, the chosen one
+/// raised in white as WF19/WF20 draw it (Compact · Normal · Relaxed).
+class ReaderSheetSegments<T> extends ConsumerWidget {
+  const ReaderSheetSegments({
+    super.key,
+    required this.values,
+    required this.selected,
+    required this.labelOf,
+    required this.onSelected,
+  });
+
+  final List<T> values;
+  final T selected;
+  final String Function(T value) labelOf;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = ReaderPalette.resolve(Theme.of(context), ref);
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: palette.drawerChip,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          for (final value in values)
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: value == selected,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onSelected(value);
+                  },
+                  child: Container(
+                    alignment: Alignment.center,
+                    decoration:
+                        value == selected
+                            ? BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                            )
+                            : null,
+                    child: Text(
+                      labelOf(value),
+                      style: readerSheetText(
+                        context,
+                        value == selected
+                            ? ReaderSheetTextRole.segmentSelected
+                            : ReaderSheetTextRole.segment,
+                        // The raised segment is white in light and dark.
+                        color:
+                            value == selected
+                                ? ReaderPalette.inkLight
+                                : palette.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

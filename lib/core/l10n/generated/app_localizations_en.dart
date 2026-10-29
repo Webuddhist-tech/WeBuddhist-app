@@ -3866,7 +3866,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_more_settings => 'More settings';
 
   @override
-  String get reader_spacing => 'Spacing';
+  String get reader_spacing => 'Line spacing';
 
   @override
   String get reader_spacing_compact => 'Compact';

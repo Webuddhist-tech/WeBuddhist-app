@@ -10,6 +10,7 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_verse_numbers_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,13 +32,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// and font; then the page background.
 ///
 /// With a [scope] it shows a group for the original (in [originalLanguage])
-/// and one for the translation, each hidden while its line is off. Without
-/// one, for authored plan text, it shows a single size group.
-class ReaderDisplaySheet extends ConsumerWidget {
-  const ReaderDisplaySheet({super.key, this.scope, this.originalLanguage});
+/// and one for the translation, each hidden while its line is off, and
+/// "More settings ›", which turns the sheet to its More settings page.
+/// Without one, for authored plan text, it shows a single size group and
+/// the backgrounds.
+class ReaderDisplaySheet extends ConsumerStatefulWidget {
+  const ReaderDisplaySheet({
+    super.key,
+    this.scope,
+    this.originalLanguage,
+    this.onChangeLanguages,
+  });
 
   final ReaderSettingsScope? scope;
   final String? originalLanguage;
+
+  /// Opens the Languages sheet once this one has closed; "Change
+  /// languages →" is left out without it.
+  final VoidCallback? onChangeLanguages;
 
   /// The smaller A is off when no line can get smaller.
   static bool canDecrease(ReaderTextSize size) =>
@@ -50,11 +62,25 @@ class ReaderDisplaySheet extends ConsumerWidget {
       size.translationStep < ReaderTextSize.maxStep;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReaderDisplaySheet> createState() =>
+      _ReaderDisplaySheetState();
+}
+
+class _ReaderDisplaySheetState extends ConsumerState<ReaderDisplaySheet> {
+  bool _moreSettings = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_moreSettings) {
+      return _MoreSettingsPage(
+        onBack: () => setState(() => _moreSettings = false),
+        onChangeLanguages: widget.onChangeLanguages,
+      );
+    }
     final l10n = context.l10n;
     final size = ref.watch(readerTextSizeProvider);
     final sizes = ref.read(readerTextSizeProvider.notifier);
-    final scope = this.scope;
+    final scope = widget.scope;
 
     final groups = <Widget>[];
     if (scope == null) {
@@ -69,7 +95,8 @@ class ReaderDisplaySheet extends ConsumerWidget {
       final settings = ref.watch(readerDualSettingsProvider(scope));
       final shown = readerShownLines(settings);
       if (shown.original) {
-        final language = originalLanguage ?? settings.primary.languageCode;
+        final language =
+            widget.originalLanguage ?? settings.primary.languageCode;
         final original = _originalScript(context, ref, scope, language);
         groups.add(
           _LineGroup(
@@ -120,6 +147,14 @@ class ReaderDisplaySheet extends ConsumerWidget {
           const SizedBox(height: 12),
           const _BackgroundTiles(),
           const SizedBox(height: 18),
+          if (scope != null) ...[
+            const ReaderSheetDivider(),
+            ReaderSheetRow(
+              label: l10n.reader_more_settings,
+              trailing: const Icon(AppAssets.caretRight),
+              onTap: () => setState(() => _moreSettings = true),
+            ),
+          ],
         ],
       ),
     );
@@ -155,6 +190,70 @@ class ReaderDisplaySheet extends ConsumerWidget {
       // A script's name is written in it.
       script: ReaderScript.of(picked.label, language: fontLanguage ?? language),
       name: picked.label,
+    );
+  }
+}
+
+/// More settings, reached from Display (WF19/WF20): the spacing, whether
+/// verse numbers show, and the way to the Languages sheet. Ritual
+/// instructions join "In the text" once the texts mark their directions.
+class _MoreSettingsPage extends ConsumerWidget {
+  const _MoreSettingsPage({required this.onBack, this.onChangeLanguages});
+
+  final VoidCallback onBack;
+  final VoidCallback? onChangeLanguages;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final spacing = ref.watch(
+      readerTextSizeProvider.select((size) => size.spacing),
+    );
+    final verseNumbers = ref.watch(readerVerseNumbersProvider);
+    return ReaderSheet(
+      title: l10n.reader_more_settings,
+      onBack: onBack,
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ReaderSheetLabel(l10n.reader_spacing),
+          const SizedBox(height: 8),
+          ReaderSheetSegments<ReaderSpacing>(
+            values: ReaderSpacing.values,
+            selected: spacing,
+            labelOf:
+                (value) => switch (value) {
+                  ReaderSpacing.compact => l10n.reader_spacing_compact,
+                  ReaderSpacing.normal => l10n.reader_spacing_normal,
+                  ReaderSpacing.relaxed => l10n.reader_spacing_relaxed,
+                },
+            onSelected: ref.read(readerTextSizeProvider.notifier).setSpacing,
+          ),
+          const SizedBox(height: 16),
+          ReaderSheetLabel(l10n.reader_in_the_text),
+          const SizedBox(height: 4),
+          ReaderSheetRow(
+            label: l10n.reader_verse_numbers,
+            trailing: ReaderSheetSwitch(
+              value: verseNumbers,
+              onChanged:
+                  ref.read(readerVerseNumbersProvider.notifier).setShown,
+            ),
+          ),
+          if (onChangeLanguages != null) ...[
+            const ReaderSheetDivider(),
+            ReaderSheetRow(
+              label: l10n.reader_change_languages,
+              labelTrailing: const Icon(AppAssets.arrowRight),
+              onTap: () {
+                Navigator.of(context).pop();
+                onChangeLanguages!();
+              },
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -380,11 +479,15 @@ void showReaderDisplaySheet(
   BuildContext context, {
   ReaderSettingsScope? scope,
   String? originalLanguage,
+  VoidCallback? onChangeLanguages,
 }) {
   showReaderSheet<void>(
     context,
     builder:
-        (_) =>
-            ReaderDisplaySheet(scope: scope, originalLanguage: originalLanguage),
+        (_) => ReaderDisplaySheet(
+          scope: scope,
+          originalLanguage: originalLanguage,
+          onChangeLanguages: onChangeLanguages,
+        ),
   );
 }

@@ -10,8 +10,10 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_font
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_verse_numbers_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -206,6 +208,97 @@ void main() {
       await tester.tap(find.byTooltip('Smaller text'));
       await tester.pump();
       expect(container.read(readerTextSizeProvider).originalStep, 2);
+      // Nothing more to set for plan text.
+      expect(find.text('More settings'), findsNothing);
     });
   });
+
+  group('More settings', () {
+    testWidgets('spacing and verse numbers, and back to Display', (
+      tester,
+    ) async {
+      final container = await _open(tester);
+      await tester.tap(find.text('More settings'));
+      await tester.pumpAndSettle();
+      expect(find.text('Line spacing'), findsOneWidget);
+      expect(find.text('Background'), findsNothing);
+      // Ritual instructions wait for texts that mark their directions.
+      expect(find.text('Ritual instructions'), findsNothing);
+
+      await tester.tap(find.text('Relaxed'));
+      await tester.pump();
+      expect(
+        container.read(readerTextSizeProvider).spacing,
+        ReaderSpacing.relaxed,
+      );
+
+      expect(container.read(readerVerseNumbersProvider), isTrue);
+      await tester.tap(find.byType(ReaderSheetSwitch));
+      await tester.pump();
+      expect(container.read(readerVerseNumbersProvider), isFalse);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      expect(find.text('Background'), findsOneWidget);
+      expect(find.text('Line spacing'), findsNothing);
+    });
+
+    testWidgets('Change languages closes the sheet, then opens Languages', (
+      tester,
+    ) async {
+      var opened = 0;
+      await _open(tester, onChangeLanguages: () => opened++);
+      await tester.tap(find.text('More settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Change languages'));
+      await tester.pumpAndSettle();
+      expect(opened, 1);
+      expect(find.byType(ReaderDisplaySheet), findsNothing);
+    });
+  });
+}
+
+/// Opens the Display sheet the way the reader does, on a 390 x 844 phone.
+Future<ProviderContainer> _open(
+  WidgetTester tester, {
+  VoidCallback? onChangeLanguages,
+}) async {
+  tester.view.physicalSize = const Size(1170, 2532);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        localStorageServiceProvider.overrideWithValue(FakeLocalStorage()),
+        readerSettingsRemoteDatasourceProvider.overrideWithValue(
+          FakeReaderSettingsDatasource(languages: const [], versions: const {}),
+        ),
+      ],
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder:
+                (context) => TextButton(
+                  onPressed:
+                      () => showReaderDisplaySheet(
+                        context,
+                        scope: _scope,
+                        originalLanguage: 'bo',
+                        onChangeLanguages: onChangeLanguages,
+                      ),
+                  child: const Text('open'),
+                ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('open'));
+  await tester.pumpAndSettle();
+  return ProviderScope.containerOf(
+    tester.element(find.byType(ReaderDisplaySheet)),
+  );
 }
