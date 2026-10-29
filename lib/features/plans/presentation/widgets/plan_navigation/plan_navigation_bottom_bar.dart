@@ -31,6 +31,10 @@ class PlanNavigationBottomBar extends StatelessWidget {
   final VoidCallback? onNextTap;
   final VoidCallback? onFinishedTap;
 
+  /// The hairline above the strip. Hidden when the audio bar sits directly
+  /// on top, so the two read as one piece.
+  final bool showTopBorder;
+
   const PlanNavigationBottomBar({
     super.key,
     required this.navigationContext,
@@ -39,6 +43,7 @@ class PlanNavigationBottomBar extends StatelessWidget {
     this.onPreviousTap,
     this.onNextTap,
     this.onFinishedTap,
+    this.showTopBorder = true,
   });
 
   @override
@@ -55,9 +60,15 @@ class PlanNavigationBottomBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).dividerColor, width: 1),
-        ),
+        border:
+            showTopBorder
+                ? Border(
+                  top: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
+                )
+                : null,
       ),
       child: SafeArea(
         top: false,

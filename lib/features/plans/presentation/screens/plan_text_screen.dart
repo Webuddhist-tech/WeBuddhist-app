@@ -187,7 +187,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: _hasAudio ? 72 : 0,
+                                bottom: _hasAudio ? 84 : 0,
                               ),
                               child: _buildInlineImage(
                                 imageUrl: blocks.first.content,
@@ -210,7 +210,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                           Positioned(
                             left: 0,
                             right: 0,
-                            bottom: 0,
+                            bottom: 12,
                             child: Center(
                               child: PlanAudioButton(
                                 controller: _audioController!,
@@ -225,6 +225,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                   PlanNavigationBottomBar(
                     navigationContext: widget.navigationContext,
                     fallbackTitle: currentItem.title,
+                    showTopBorder: !_hasAudio,
                     onPreviousTap: () => _navigate(SwipeDirection.previous),
                     onNextTap: () => _navigate(SwipeDirection.next),
                     onFinishedTap: _finish,

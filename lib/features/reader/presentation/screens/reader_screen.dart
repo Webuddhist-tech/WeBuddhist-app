@@ -96,6 +96,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// reader content (no action bar). Matches the original floating offset.
   static const double _audioBottomGap = 76;
 
+  /// Space between the round play button and the audio bar.
+  static const double _playBarGap = 12;
+
   /// Tighter gap used when the audio button sits directly above the segment
   /// action bar, so the button hugs the bar instead of leaving a large empty
   /// band of background between them.
@@ -110,6 +113,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   // App bar visibility state
   bool _isAppBarVisible = true;
   double _bottomOverlayHeight = 0;
+
+  /// Height of the navigation strip plus the audio controls sitting on it.
+  double _bottomBarHeight = 0;
   // Scroll controller callback
   void Function(String segmentId, {double? alignment})? _scrollToSegment;
   VoidCallback? _scrollToTop;
@@ -750,8 +756,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     final isPanelOpen = active.isCommentaryOpen || active.isTranslationOpen;
     final isActionBarVisible = active.hasSelection && !isPanelOpen;
-    final isBottomOverlayVisible =
-        !isPanelOpen && (_hasAudio || isActionBarVisible);
+    // The play button and audio bar sit on the navigator. The segment action
+    // bar replaces that navigator, so the controls move into the overlay.
+    final showAudioOnNav = _hasAudio && !isPanelOpen && !isActionBarVisible;
+    final isBottomOverlayVisible = isActionBarVisible;
     final chantBarHeight =
         _isGroupAccumulatorChant ? GroupAccumulatorChantBar.barHeight : 0.0;
     final chantMantra = _chantMantra;
@@ -760,7 +768,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final isChantTargetReady =
         chantMantra != null && _watchChantTargetReady(chantMantra);
     final contentBottomPadding =
-        (isBottomOverlayVisible
+        (showAudioOnNav
+            ? (_bottomBarHeight > 0
+                ? _bottomBarHeight + 16
+                : _selectedSegmentOverlayFallbackHeight)
+            : isBottomOverlayVisible
             ? (_bottomOverlayHeight > 0
                 ? _bottomOverlayHeight + 16
                 : _selectedSegmentOverlayFallbackHeight)
@@ -803,6 +815,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   params: _activeParams,
                   textDetail: state.textDetail!,
                   isAppBarVisible: _isAppBarVisible,
+                  aboveBottomBar:
+                      showAudioOnNav
+                          ? _buildAudioCluster(gap: _playBarGap)
+                          : null,
+                  onBottomBarHeight: (height) {
+                    if ((_bottomBarHeight - height).abs() < 1) return;
+                    setState(() => _bottomBarHeight = height);
+                  },
                   child: ReaderTranslationSplitView(
                     params: _activeParams,
                     // Reader content with scroll detection. The segment
@@ -864,16 +884,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                 children: [
                   if (_hasAudio)
                     Padding(
-                      // Hug the action bar with a tight gap when it is open;
-                      // otherwise keep the original floating offset above the
-                      // navigation strip.
-                      padding: EdgeInsets.only(
-                        bottom:
-                            isActionBarVisible
-                                ? _audioActionBarGap
-                                : bottomInset + _audioBottomGap,
+                      // The segment action bar is open, so the navigator is
+                      // hidden and the audio controls sit just above it.
+                      padding: const EdgeInsets.only(
+                        bottom: _audioActionBarGap,
                       ),
-                      child: _buildAudioCluster(),
+                      child: _buildAudioCluster(gap: _playBarGap),
                     ),
                   if (isActionBarVisible)
                     _buildSegmentActionBar(active, activeNotifier),
@@ -957,12 +973,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   /// Play button with the progress line and speed control under it.
   /// Group recitations also show the recording title; plan tasks do not.
-  Widget _buildAudioCluster() {
+  Widget _buildAudioCluster({required double gap}) {
     final title = _audioVersionTitle;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Center(child: _buildAudioButton()),
+        SizedBox(height: gap),
         PlanAudioPlayerBar(
           controller: _audioController,
           versionTitle: title,

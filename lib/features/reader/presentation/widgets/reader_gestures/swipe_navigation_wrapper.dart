@@ -24,12 +24,21 @@ class SwipeNavigationWrapper extends ConsumerStatefulWidget {
   final TextDetail textDetail;
   final bool isAppBarVisible;
 
+  /// Drawn directly above the navigation strip, with no gap. The reader uses
+  /// this for the play button and audio bar so they share the strip's layout.
+  final Widget? aboveBottomBar;
+
+  /// Reports the height of the navigation strip, including [aboveBottomBar].
+  final ValueChanged<double>? onBottomBarHeight;
+
   const SwipeNavigationWrapper({
     super.key,
     required this.child,
     required this.params,
     required this.textDetail,
     required this.isAppBarVisible,
+    this.aboveBottomBar,
+    this.onBottomBarHeight,
   });
 
   @override
@@ -64,35 +73,49 @@ class _SwipeNavigationWrapperState
               left: 0,
               right: 0,
               bottom: 0,
-              child: PlanNavigationBottomBar(
-                navigationContext: navigationContext,
-                fallbackTitle: widget.textDetail.title,
-                fallbackTitleFontFamily: getFontFamily(
-                  widget.textDetail.language,
+              child: _ReportHeight(
+                onChange: widget.onBottomBarHeight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.aboveBottomBar != null) widget.aboveBottomBar!,
+                    PlanNavigationBottomBar(
+                      navigationContext: navigationContext,
+                      fallbackTitle: widget.textDetail.title,
+                      fallbackTitleFontFamily: getFontFamily(
+                        widget.textDetail.language,
+                      ),
+                      showTopBorder: widget.aboveBottomBar == null,
+                      onPreviousTap:
+                          canSwipe
+                              ? () => _navigate(
+                                navigationContext,
+                                SwipeDirection.previous,
+                              )
+                              : null,
+                      onNextTap:
+                          canSwipe
+                              ? () => _navigate(
+                                navigationContext,
+                                SwipeDirection.next,
+                              )
+                              : null,
+                      onFinishedTap:
+                          navigationContext != null &&
+                                  (navigationContext.source ==
+                                          NavigationSource.plan ||
+                                      navigationContext.source ==
+                                          NavigationSource
+                                              .groupRecitationCollection ||
+                                      navigationContext.source ==
+                                          NavigationSource
+                                              .myRecitationCollection)
+                              ? _finishReading
+                              : null,
+                    ),
+                  ],
                 ),
-                onPreviousTap:
-                    canSwipe
-                        ? () => _navigate(
-                          navigationContext,
-                          SwipeDirection.previous,
-                        )
-                        : null,
-                onNextTap:
-                    canSwipe
-                        ? () =>
-                            _navigate(navigationContext, SwipeDirection.next)
-                        : null,
-                onFinishedTap:
-                    navigationContext != null &&
-                            (navigationContext.source ==
-                                    NavigationSource.plan ||
-                                navigationContext.source ==
-                                    NavigationSource
-                                        .groupRecitationCollection ||
-                                navigationContext.source ==
-                                    NavigationSource.myRecitationCollection)
-                        ? _finishReading
-                        : null,
               ),
             ),
         ],
@@ -173,4 +196,42 @@ class _SwipeNavigationWrapperState
     if (!mounted) return;
     PlanNavigator.pop(context);
   }
+}
+
+/// Tells [onChange] whenever [child] is laid out at a new height.
+class _ReportHeight extends StatefulWidget {
+  const _ReportHeight({required this.onChange, required this.child});
+
+  final ValueChanged<double>? onChange;
+  final Widget child;
+
+  @override
+  State<_ReportHeight> createState() => _ReportHeightState();
+}
+
+class _ReportHeightState extends State<_ReportHeight> {
+  double? _height;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _notify());
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReportHeight oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _notify());
+  }
+
+  void _notify() {
+    if (!mounted) return;
+    final height = context.size?.height;
+    if (height == null || height == _height) return;
+    _height = height;
+    widget.onChange?.call(height);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
