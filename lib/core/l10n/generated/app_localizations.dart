@@ -6871,6 +6871,18 @@ abstract class AppLocalizations {
   /// **'Paused'**
   String get reader_live_paused;
 
+  /// No description provided for @reader_text_smaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller text'**
+  String get reader_text_smaller;
+
+  /// No description provided for @reader_text_larger.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger text'**
+  String get reader_text_larger;
+
   /// No description provided for @reader_section_position.
   ///
   /// In en, this message translates to:

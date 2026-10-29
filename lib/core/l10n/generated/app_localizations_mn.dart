@@ -3958,6 +3958,12 @@ class AppLocalizationsMn extends AppLocalizations {
   String get reader_live_paused => 'Түр зогссон';
 
   @override
+  String get reader_text_smaller => 'Жижиг бичвэр';
+
+  @override
+  String get reader_text_larger => 'Том бичвэр';
+
+  @override
   String reader_section_position(String current, String total) {
     return 'Бүлэг $current / $total';
   }

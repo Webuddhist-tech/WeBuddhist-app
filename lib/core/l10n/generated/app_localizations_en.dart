@@ -3917,6 +3917,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_live_paused => 'Paused';
 
   @override
+  String get reader_text_smaller => 'Smaller text';
+
+  @override
+  String get reader_text_larger => 'Larger text';
+
+  @override
   String reader_section_position(String current, String total) {
     return 'Section $current / $total';
   }

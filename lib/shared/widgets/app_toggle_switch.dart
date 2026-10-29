@@ -13,12 +13,16 @@ class AppToggleSwitch extends StatelessWidget {
     required this.onChanged,
     this.thumbOnColor = Colors.white,
     this.thumbOffColor = Colors.white,
+    this.trackOnColor = _trackOnColor,
+    this.trackOffColor = _trackOffColor,
   });
 
   final bool value;
   final ValueChanged<bool> onChanged;
   final Color thumbOnColor;
   final Color thumbOffColor;
+  final Color trackOnColor;
+  final Color trackOffColor;
 
   static const Color _trackOnColor = Color(0xFF196BF1);
   static const Color _trackOffColor = Color(0xFFADADAD);
@@ -34,7 +38,7 @@ class AppToggleSwitch extends StatelessWidget {
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: value ? _trackOnColor : _trackOffColor,
+          color: value ? trackOnColor : trackOffColor,
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),

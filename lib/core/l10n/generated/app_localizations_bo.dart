@@ -3959,6 +3959,12 @@ class AppLocalizationsBo extends AppLocalizations {
   String get reader_live_paused => 'མཚམས་འཇོག';
 
   @override
+  String get reader_text_smaller => 'ཡི་གེ་ཆུང་དུ་གཏོང་།';
+
+  @override
+  String get reader_text_larger => 'ཡི་གེ་ཆེ་རུ་གཏོང་།';
+
+  @override
   String reader_section_position(String current, String total) {
     return 'ས་བཅད། $current / $total';
   }

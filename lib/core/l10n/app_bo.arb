@@ -1132,6 +1132,8 @@
   "reader_verse_numbers": "ཚིགས་བཅད་ཀྱི་ཨང་།",
   "reader_change_languages": "སྐད་ཡིག་བརྗེ།",
   "reader_live_paused": "མཚམས་འཇོག",
+  "reader_text_smaller": "ཡི་གེ་ཆུང་དུ་གཏོང་།",
+  "reader_text_larger": "ཡི་གེ་ཆེ་རུ་གཏོང་།",
   "reader_section_position": "ས་བཅད། {current} / {total}",
   "reader_round_position": "སྐོར། {current} / {total}",
   "reader_round_number": "སྐོར། {current}",

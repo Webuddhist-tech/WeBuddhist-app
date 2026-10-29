@@ -3962,6 +3962,12 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_live_paused => 'रोकिएको';
 
   @override
+  String get reader_text_smaller => 'सानो पाठ';
+
+  @override
+  String get reader_text_larger => 'ठूलो पाठ';
+
+  @override
   String reader_section_position(String current, String total) {
     return 'खण्ड $current / $total';
   }

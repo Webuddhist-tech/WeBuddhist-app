@@ -109,8 +109,8 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
     final isBookmarked = ref.watch(isBookmarkedProvider(_bookmarkTarget));
 
     final textSize = ref.watch(readerTextSizeProvider);
-    final canDecrease = ReaderFontSizeBottomSheet.canDecrease(textSize);
-    final canIncrease = ReaderFontSizeBottomSheet.canIncrease(textSize);
+    final canDecrease = ReaderDisplaySheet.canDecrease(textSize);
+    final canIncrease = ReaderDisplaySheet.canIncrease(textSize);
 
     return SafeArea(
       top: false,

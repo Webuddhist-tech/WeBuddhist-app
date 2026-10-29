@@ -1957,6 +1957,8 @@
   "reader_verse_numbers": "Verse numbers",
   "reader_change_languages": "Change languages",
   "reader_live_paused": "Paused",
+  "reader_text_smaller": "Smaller text",
+  "reader_text_larger": "Larger text",
   "reader_section_position": "Section {current} / {total}",
   "@reader_section_position": {
     "placeholders": {

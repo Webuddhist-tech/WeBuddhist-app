@@ -1414,6 +1414,8 @@
   "reader_verse_numbers": "偈颂编号",
   "reader_change_languages": "更改语言",
   "reader_live_paused": "已暂停",
+  "reader_text_smaller": "缩小文字",
+  "reader_text_larger": "放大文字",
   "reader_section_position": "第 {current} / {total} 节",
   "reader_round_position": "第 {current} / {total} 轮",
   "reader_round_number": "第 {current} 轮",

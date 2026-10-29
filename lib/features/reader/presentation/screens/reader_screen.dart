@@ -910,9 +910,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         actions: [
           if (liveSyncToggle != null) liveSyncToggle,
           if (prayerRequestsButton != null) prayerRequestsButton,
-          ReaderFontSizeButton(
-            onPressed: () => showFontSizeBottomSheet(context),
-          ),
+          ReaderFontSizeButton(onPressed: () => _openDisplaySheet(context)),
           ReaderLanguagesButton(onPressed: () => _openLanguagesSheet(context)),
         ],
       );
@@ -931,7 +929,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       // menu goes there.
       onMorePressed:
           eventId == null ? () => _openMoreBottomSheet(context) : null,
-      onFontSizePressed: () => showFontSizeBottomSheet(context),
+      onFontSizePressed: () => _openDisplaySheet(context),
     );
   }
 
@@ -1057,6 +1055,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         );
       }
     }
+  }
+
+  /// Sizes, fonts and background, for the lines the active source shows.
+  void _openDisplaySheet(BuildContext context) {
+    final state = ref.read(readerNotifierProvider(_activeParams));
+    showReaderDisplaySheet(
+      context,
+      scope: _activeParams.settingsScope,
+      originalLanguage: state.textDetail?.language,
+    );
   }
 
   /// Lays out the active source's text; the page's other loaded texts

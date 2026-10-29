@@ -3944,6 +3944,12 @@ class AppLocalizationsHi extends AppLocalizations {
   String get reader_live_paused => 'रुका हुआ';
 
   @override
+  String get reader_text_smaller => 'छोटा टेक्स्ट';
+
+  @override
+  String get reader_text_larger => 'बड़ा टेक्स्ट';
+
+  @override
   String reader_section_position(String current, String total) {
     return 'खंड $current / $total';
   }

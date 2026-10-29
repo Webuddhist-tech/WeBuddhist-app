@@ -3796,6 +3796,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_live_paused => '已暫停';
 
   @override
+  String get reader_text_smaller => '縮小文字';
+
+  @override
+  String get reader_text_larger => '放大文字';
+
+  @override
   String reader_section_position(String current, String total) {
     return '第 $current / $total 節';
   }
@@ -7475,6 +7481,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get reader_live_paused => '已暂停';
+
+  @override
+  String get reader_text_smaller => '缩小文字';
+
+  @override
+  String get reader_text_larger => '放大文字';
 
   @override
   String reader_section_position(String current, String total) {

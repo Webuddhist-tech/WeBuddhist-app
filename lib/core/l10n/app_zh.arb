@@ -1126,6 +1126,8 @@
   "reader_verse_numbers": "偈頌編號",
   "reader_change_languages": "更改語言",
   "reader_live_paused": "已暫停",
+  "reader_text_smaller": "縮小文字",
+  "reader_text_larger": "放大文字",
   "reader_section_position": "第 {current} / {total} 節",
   "reader_round_position": "第 {current} / {total} 輪",
   "reader_round_number": "第 {current} 輪",

@@ -1136,6 +1136,8 @@
   "reader_verse_numbers": "श्लोक संख्या",
   "reader_change_languages": "भाषा परिवर्तन गर्नुहोस्",
   "reader_live_paused": "रोकिएको",
+  "reader_text_smaller": "सानो पाठ",
+  "reader_text_larger": "ठूलो पाठ",
   "reader_section_position": "खण्ड {current} / {total}",
   "reader_round_position": "चक्र {current} / {total}",
   "reader_round_number": "चक्र {current}",
