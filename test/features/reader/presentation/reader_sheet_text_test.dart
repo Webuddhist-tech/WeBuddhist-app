@@ -33,7 +33,8 @@ Future<TextStyle> _styleIn(
 
 void main() {
   // The Sheets card: title 17 Semi Bold, group title 15 Semi Bold, row 16,
-  // caps label 11 Semi Bold, chips 13; × Tibetan 1.5 and Chinese 1.05.
+  // caps label 11 Semi Bold, chips 13; × Chinese 1.05, and × Tibetan 1.1 in the
+  // app's Tibetan UI font, as WF27 and WF28 measure.
   const roles = {
     ReaderSheetTextRole.title: (17.0, FontWeight.w600),
     ReaderSheetTextRole.group: (15.0, FontWeight.w600),
@@ -53,7 +54,7 @@ void main() {
     }
   });
 
-  testWidgets('Tibetan and Chinese: × their script factor, own fonts', (
+  testWidgets('Tibetan and Chinese: × their interface factor, own fonts', (
     tester,
   ) async {
     final tibetan = [
@@ -64,7 +65,7 @@ void main() {
       for (final role in roles.keys)
         (await _styleIn(tester, 'zh', role)).fontSize,
     ];
-    expect(tibetan, [26, 23, 24, 17, 20]);
+    expect(tibetan, [19, 17, 18, 12, 14]);
     expect(chinese, [18, 16, 17, 12, 14]);
     expect(
       (await _styleIn(tester, 'bo', ReaderSheetTextRole.title)).fontFamily,
@@ -91,7 +92,7 @@ void main() {
         ReaderSheetTextRole.chip,
         label: 'བོད་ཡིག',
       )).fontSize,
-      20,
+      14,
     );
     expect(
       (await _styleIn(tester, 'en', ReaderSheetTextRole.chip, label: '中文'))

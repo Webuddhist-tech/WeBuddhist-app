@@ -145,10 +145,12 @@ class _GroupHeading extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
       child: Text(
         latin ? label.toUpperCase() : label,
+        // Sized by its own letters, not the interface's.
         style: readerSheetText(
           context,
           ReaderSheetTextRole.caps,
           color: style.palette.sheetMuted,
+          script: script,
         ).copyWith(
           fontFamily: latin ? null : style.type.family(language ?? ''),
         ),
@@ -211,6 +213,7 @@ class _SectionRow extends ConsumerWidget {
                               context,
                               ReaderSheetTextRole.chip,
                               color: muted,
+                              script: numerals,
                             ).copyWith(
                               fontFamilyFallback: readerNumeralFallback(
                                 numerals,
@@ -222,12 +225,15 @@ class _SectionRow extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     section.title,
+                    // Sized by the title's own letters: an English title
+                    // in a Tibetan interface is 16, not 24.
                     style: readerSheetText(
                       context,
                       ReaderSheetTextRole.row,
                       color: isDone ? muted : palette.ink,
+                      weight: isCurrent ? FontWeight.w600 : null,
+                      script: script,
                     ).copyWith(
-                      fontWeight: isCurrent ? FontWeight.w600 : null,
                       height: latin ? 1.25 : style.type.listLineHeight(section.language),
                       fontFamily:
                           latin ? null : style.type.family(section.language),

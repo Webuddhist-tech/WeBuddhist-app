@@ -29,30 +29,32 @@ enum ReaderSheetTextRole {
 
 /// Sheet text for [role] in [color], at [weight] when given in place of the
 /// role's. Sheets are in Inter; an interface in Tibetan or Chinese keeps the
-/// app's font for its script and is set larger by that script's interface
-/// factor, so labels look the same size.
+/// app's font for its script and is set larger, so labels look the same
+/// size ([ReaderTypography.interfaceSize]).
 ///
 /// [label], when given, is the text the style is for: it is sized by the
 /// script its letters are in, so a font or language name in Latin letters
 /// stays the English size in a Tibetan or Chinese interface (WF28, WF32).
+/// [script] names it outright, for text with no letters (a number).
 TextStyle readerSheetText(
   BuildContext context,
   ReaderSheetTextRole role, {
   required Color color,
   FontWeight? weight,
   String? label,
+  ReaderScript? script,
 }) {
   final fontWeight = weight ?? role.weight;
   final language = Localizations.maybeLocaleOf(context)?.languageCode;
   // A label in a script the reader has no sizes for (Sinhala, Bengali…)
   // is set as Latin, not as the interface's script.
-  final script =
+  script ??=
       label == null
           ? ReaderScript.ofLanguage(language)
           : ReaderScript.of(label, language: 'en');
   final latin = script == ReaderScript.latin || script == ReaderScript.cyrillic;
   return TextStyle(
-    fontSize: ReaderTypography.chromeSize(role.size, script),
+    fontSize: ReaderTypography.interfaceSize(role.size, script),
     fontWeight: fontWeight,
     // Inter is a file per weight: the weight picks the file.
     fontFamily: latin ? ReaderFonts.inter.family(weight: fontWeight) : null,
@@ -248,10 +250,13 @@ class ReaderSheet extends ConsumerWidget {
                             title,
                             textAlign:
                                 centerTitle ? TextAlign.center : TextAlign.start,
+                            // By its own letters: a title not yet
+                            // translated stays the English size.
                             style: readerSheetText(
                               context,
                               ReaderSheetTextRole.title,
                               color: palette.ink,
+                              label: title,
                             ),
                           ),
                           if (subtitle != null)

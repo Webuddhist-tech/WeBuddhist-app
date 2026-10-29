@@ -220,6 +220,18 @@ class ReaderTypography {
   static double chromeSize(double size, ReaderScript script) =>
       _round(size * script.interfaceScale);
 
+  /// Tibetan interface text in the app's Tibetan UI font is set ×1.1, not
+  /// the card's ×1.5: that font draws bigger letters per point than the
+  /// mocks', and at ×1.1 labels measure as WF27 and WF28 draw them.
+  static const double tibetanInterfaceScale = 1.1;
+
+  /// Size of interface text (sheets, a heading's overline) written in
+  /// [script], given its Latin [size].
+  static double interfaceSize(double size, ReaderScript script) =>
+      script == ReaderScript.tibetan
+          ? _round(size * tibetanInterfaceScale)
+          : chromeSize(size, script);
+
   /// The sections pill's text.
   static const double sectionPillSize = 14;
 

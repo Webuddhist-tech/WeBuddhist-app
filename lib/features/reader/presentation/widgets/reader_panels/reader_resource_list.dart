@@ -180,6 +180,7 @@ class _SourceLine extends ConsumerWidget {
         ReaderSheetTextRole.chip,
         color: color,
         weight: weight ?? FontWeight.w400,
+        script: script,
       );
       return latin
           ? base

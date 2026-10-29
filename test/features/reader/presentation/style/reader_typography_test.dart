@@ -243,6 +243,14 @@ void main() {
       expect(sizes(ReaderTypography.sectionPillSize), [14, 21, 15]);
       expect(sizes(ReaderTypography.bottomBarSize), [13, 20, 14]);
     });
+
+    test('sheets and overlines in the app\'s Tibetan UI font are ×1.1, '
+        'as WF27 and WF28 measure; other scripts as the chrome', () {
+      expect(ReaderTypography.interfaceSize(17, ReaderScript.tibetan), 19);
+      expect(ReaderTypography.interfaceSize(11, ReaderScript.tibetan), 12);
+      expect(ReaderTypography.interfaceSize(17, ReaderScript.chinese), 18);
+      expect(ReaderTypography.interfaceSize(17, ReaderScript.latin), 17);
+    });
   });
 
   test('each line follows its own step', () {

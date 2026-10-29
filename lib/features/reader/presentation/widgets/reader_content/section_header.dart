@@ -161,7 +161,7 @@ class _Overline extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-        fontSize: ReaderTypography.chromeSize(
+        fontSize: ReaderTypography.interfaceSize(
           SectionHeader.overlineSize,
           script,
         ),
