@@ -127,6 +127,10 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   /// A signal came while a read was out, so one more runs once it lands.
   bool _refreshAgain = false;
 
+  /// Bumped by every full load, so a background read from before it is
+  /// dropped rather than undoing it.
+  int _loadGeneration = 0;
+
   void ensureLoaded() {
     if (_loadRequested) return;
     _loadRequested = true;
@@ -135,6 +139,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
 
   Future<void> loadInitial() async {
     if (state.isLoading) return;
+    _loadGeneration++;
 
     final authState = ref.read(authProvider);
     if (!includeUnfollowed && (authState.isGuest || !authState.isLoggedIn)) {
@@ -322,6 +327,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
       return;
     }
     _refreshing = true;
+    final generation = _loadGeneration;
     final updated = _updatedDuringRefresh = {};
     final LoadedWindow<ConnectFeedItem>? read;
     try {
@@ -338,7 +344,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
                     ))
                 .map((page) => (page.items, page.total)),
         idOf: (item) => item.dedupeKey,
-        isCurrent: () => mounted,
+        isCurrent: () => mounted && generation == _loadGeneration,
         pageLimit: _windowLimit,
       );
     } finally {

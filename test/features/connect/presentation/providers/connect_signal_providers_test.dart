@@ -58,6 +58,9 @@ class _FakeRemote extends ConnectRemoteDatasource {
   /// Newest first, as the feed's post cards come back.
   List<String> feedPostIds = [];
 
+  /// Holds the next feed fetch, which has already read [feedPostIds].
+  Completer<void>? feedGate;
+
   @override
   Future<Map<String, dynamic>> fetchPostCommentsJson({
     required String postId,
@@ -88,9 +91,13 @@ class _FakeRemote extends ConnectRemoteDatasource {
     int limit = 20,
   }) async {
     feedFetches++;
+    final ids = feedPostIds;
+    final held = feedGate;
+    feedGate = null;
+    if (held != null) await held.future;
     return {
       'items': [
-        for (final id in feedPostIds.skip(skip).take(limit))
+        for (final id in ids.skip(skip).take(limit))
           {
             'type': 'post',
             'group_id': 'g1',
@@ -105,7 +112,7 @@ class _FakeRemote extends ConnectRemoteDatasource {
       ],
       'skip': skip,
       'limit': limit,
-      'total': feedPostIds.length,
+      'total': ids.length,
     };
   }
 
@@ -266,6 +273,32 @@ void main() {
       );
     });
 
+    test('a pull-to-refresh is not undone by an older background read', () async {
+      remote.commentIds = ['c0'];
+      container.listen(connectPostCommentsProvider('p1'), (_, _) {});
+      await pumpEventQueue();
+      final notifier = container.read(
+        connectPostCommentsProvider('p1').notifier,
+      );
+
+      final held = Completer<void>();
+      remote.commentGate = held;
+      final background = notifier.refreshLatest();
+      await pumpEventQueue();
+      remote.commentIds = ['c0', 'c1'];
+      await notifier.refresh();
+      held.complete();
+      await background;
+
+      expect(
+        container
+            .read(connectPostCommentsProvider('p1'))
+            .comments
+            .map((c) => c.id),
+        ['c0', 'c1'],
+      );
+    });
+
     test('a comment deleted elsewhere leaves the list', () async {
       remote.commentIds = ['c0', 'c1'];
       container.listen(
@@ -319,6 +352,31 @@ void main() {
   });
 
   group('myFeedSignalsProvider', () {
+    test('a pull-to-refresh is not undone by an older background read', () async {
+      remote.feedPostIds = ['p1'];
+      container.listen(myUnifiedConnectFeedProvider, (_, _) {});
+      final feed = container.read(myUnifiedConnectFeedProvider.notifier);
+      feed.ensureLoaded();
+      await pumpEventQueue();
+
+      final held = Completer<void>();
+      remote.feedGate = held;
+      final background = feed.refreshLatest();
+      await pumpEventQueue();
+      remote.feedPostIds = ['p2', 'p1'];
+      await feed.refresh();
+      held.complete();
+      await background;
+
+      expect(
+        container
+            .read(myUnifiedConnectFeedProvider)
+            .feedItems
+            .map((item) => item.post?.id),
+        ['p2', 'p1'],
+      );
+    });
+
     test('a signal keeps the My feed pages already loaded', () async {
       remote.groupIds = ['g1'];
       remote.feedPostIds = [for (var i = 25; i > 0; i--) 'p$i'];

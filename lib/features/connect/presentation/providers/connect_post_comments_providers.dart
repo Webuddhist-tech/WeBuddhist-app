@@ -112,9 +112,14 @@ class ConnectPostCommentsNotifier
   /// A signal came while a read was out, so one more runs once it lands.
   bool _refreshAgain = false;
 
+  /// Bumped by every full load, so a background read from before it is
+  /// dropped rather than undoing it.
+  int _loadGeneration = 0;
+
   /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
+    _loadGeneration++;
 
     // Only an empty list shows the loader; a seeded one refreshes silently.
     state = state.copyWith(isLoading: state.comments.isEmpty, clearError: true);
@@ -198,6 +203,7 @@ class ConnectPostCommentsNotifier
       return;
     }
     _refreshing = true;
+    final generation = _loadGeneration;
     final changes = _changes = _CommentChanges();
     final LoadedWindow<ConnectPostComment>? read;
     try {
@@ -209,7 +215,7 @@ class ConnectPostCommentsNotifier
                     .getPostComments(postId: postId, skip: skip, limit: limit))
                 .map((page) => (page.comments, page.total)),
         idOf: (comment) => comment.id,
-        isCurrent: () => mounted,
+        isCurrent: () => mounted && generation == _loadGeneration,
         pageLimit: _windowLimit,
       );
     } finally {
