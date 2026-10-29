@@ -267,8 +267,8 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
     unawaited(_resolveRoom());
   }
 
-  /// Follows the room's signal: each refetch it lands marks the room read,
-  /// and a closed room retires the composer. `listenManual` keeps the
+  /// Follows the room's signal: each refetch it lands marks the room read
+  /// while the app is in view, and a closed room retires the composer. `listenManual` keeps the
   /// autoDispose controller alive for the life of this screen.
   void _attachLive(String roomId) {
     _liveSub?.close();
@@ -276,7 +276,10 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
       chatRoomLiveProvider(roomId),
       (previous, next) {
         if (_disposed) return;
-        if (next.refreshes != (previous?.refreshes ?? 0)) {
+        // In the background nothing is seen; the return marks it read.
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        if (next.refreshes != (previous?.refreshes ?? 0) &&
+            (lifecycle == null || lifecycle == AppLifecycleState.resumed)) {
           unawaited(_markRoomRead());
         }
         if (next.closed && !_closed && mounted) {

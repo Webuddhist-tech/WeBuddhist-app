@@ -308,9 +308,13 @@ class _FakeGroupChatRepository implements GroupChatRepository {
     ChatRoomMembersPage(members: [], skip: 0, limit: 0, total: 0),
   );
 
+  final markedRead = <String>[];
+
   @override
-  Future<Either<Failure, Unit>> markRoomRead(String roomId) async =>
-      const Right(unit);
+  Future<Either<Failure, Unit>> markRoomRead(String roomId) async {
+    markedRead.add(roomId);
+    return const Right(unit);
+  }
 
   @override
   Future<Either<Failure, Unit>> reportMessage(
@@ -474,6 +478,7 @@ class _FixedContentLanguage extends StateNotifier<String>
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late _FakeGroupChatRepository repository;
   late ProviderContainer container;
 
@@ -819,17 +824,19 @@ void main() {
       expect(notifier.state.requests.length, 30);
       expect(notifier.state.total, 36);
 
-      // It gained prayers before the reconnect, so it leads the first page.
+      // It gained prayers before the refetch, so it leads the first page and
+      // the last loaded row slides to the next one.
       repository.history = [_prayer('new', count: 5), ...history];
       await notifier.refreshLatest();
       expect(notifier.state.requests.first.id, 'new');
-      expect(notifier.state.requests.length, 31);
+      expect(notifier.state.requests.length, 30);
       expect(notifier.state.total, 36);
+      expect(notifier.state.hasMore, isTrue);
 
       notifier.applyDeletion('new');
       expect(notifier.state.requests.any((r) => r.id == 'new'), isFalse);
       expect(notifier.state.total, 35);
-      expect(notifier.state.skip, 30);
+      expect(notifier.state.skip, 29);
     });
 
     test('a filter change clears a shifted page from before it', () async {
@@ -1942,6 +1949,115 @@ void main() {
       });
       await _settle();
       expect(notifier.state.roomStatus, PrayerRoomStatus.closed);
+    });
+
+    test('a closed room is closed from the first snapshot', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      final signals = FakeRealtimeSignals();
+      container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          prayerPacingProvider.overrideWithValue(_instant),
+          prayerTranslationLanguageProvider.overrideWithValue('EN'),
+          prayerMantraLanguageProvider.overrideWithValue('en'),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => true),
+        ],
+      );
+      final notifier = _keepAlive(container);
+      await _settle();
+      container.listen(
+        prayerRoomLiveProvider((scope: _eventScope, roomId: 'room-1')),
+        (_, _) {},
+      );
+      await _settle();
+
+      signals.emit(SignalPaths.chatRoom('room-1'), {
+        'closed_at': DateTime.utc(2026, 10, 29),
+      });
+      await _settle();
+      expect(notifier.state.roomStatus, PrayerRoomStatus.closed);
+    });
+
+    test('the first snapshot catches up and new requests mark the event read', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      final signals = FakeRealtimeSignals();
+      container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          prayerPacingProvider.overrideWithValue(_instant),
+          prayerTranslationLanguageProvider.overrideWithValue('EN'),
+          prayerMantraLanguageProvider.overrideWithValue('en'),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => true),
+        ],
+      );
+      final notifier = _keepAlive(container);
+      await _settle();
+      container.listen(
+        prayerRoomLiveProvider((scope: _eventScope, roomId: 'room-1')),
+        (_, _) {},
+      );
+      await _settle();
+
+      repository.history = [_prayer('b'), _prayer('a')];
+      final path = SignalPaths.chatRoom('room-1');
+      signals.emit(path, {'prayers_changed_at': DateTime.utc(2026, 10, 29)});
+      await _settle();
+      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+      expect(repository.markedRead, ['room-1']);
+
+      // A prayer on a loaded row is not a new request.
+      repository.history = [_prayer('b', count: 1), _prayer('a')];
+      signals.emit(path, {
+        'prayers_changed_at': DateTime.utc(2026, 10, 29, 0, 1),
+      });
+      await _settle();
+      expect(_byId(notifier, 'b').prayerCount, 1);
+      expect(repository.markedRead, ['room-1']);
+    });
+
+    test('a request added past the end under oldest can be paged to', () async {
+      final history = [for (var i = 0; i < 30; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.setFilter(
+        const PrayerRequestsFilter(sort: PrayerSort.oldest),
+      );
+      expect(notifier.state.hasMore, isFalse);
+
+      repository.history = [...history, _prayer('m30')];
+      await notifier.refreshLatest();
+      expect(notifier.state.requests.length, 30);
+      expect(notifier.state.hasMore, isTrue);
+
+      await notifier.loadMore();
+      expect(notifier.state.requests.last.id, 'm30');
+    });
+
+    test('a refetch reaches rows below the first page', () async {
+      final history = [for (var i = 0; i < 35; i++) _prayer('m$i')];
+      repository = _FakeGroupChatRepository(history: history);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      await notifier.loadMore();
+      expect(notifier.state.requests.length, 35);
+
+      repository.history = [
+        for (final m in history)
+          if (m.id != 'm33') m.id == 'm32' ? _prayer('m32', count: 7) : m,
+      ];
+      await notifier.refreshLatest();
+
+      expect(notifier.state.requests.length, 34);
+      expect(notifier.state.requests.any((r) => r.id == 'm33'), isFalse);
+      expect(_byId(notifier, 'm32').prayerCount, 7);
+      expect(notifier.state.hasMore, isFalse);
     });
 
     test('applyDeletion drops the request', () async {

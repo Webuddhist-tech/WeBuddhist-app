@@ -91,6 +91,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   final String roomId;
   static const int _limit = 30;
 
+  /// The API's largest page, for re-reading loaded history in few calls.
+  static const int _windowLimit = 100;
+
   /// Per message, the sequence number of the most recent toggle and the tail
   /// of its in-flight work. Overlapping taps on one message would otherwise
   /// each derive a baseline from the other's optimistic state, then roll back
@@ -549,29 +552,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       final missed = fetchedIds.difference(heldNow);
 
       state = state.copyWith(
-        messages:
-            state.messages.map((existing) {
-              // A summary held while this page was in flight is newer than the
-              // page and newer than what is held, so it settles the row before
-              // either branch below gets to.
-              final pending = _pendingReactions.remove(existing.id);
-              if (pending != null) {
-                return existing.copyWith(reactions: resolve(pending));
-              }
-
-              final fresh = fetchedById[existing.id];
-              if (fresh == null) return existing;
-
-              // Anything touched since this request was sent is newer than the
-              // page it brought back, whether or not that work has finished by
-              // the time the page arrives.
-              final changed =
-                  (_reactionRevision[existing.id] ?? 0) !=
-                  (revisionsBefore[existing.id] ?? 0);
-              if (changed || _swapping.contains(existing.id)) return existing;
-
-              return fresh;
-            }).toList(),
+        messages: _refreshHeld(fetchedById, revisionsBefore, resolve),
       );
 
       // Oldest first, so each insert lands above the previous one and the
@@ -595,6 +576,90 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     _applyPendingDeletions();
     _dropStalePending();
     return missedIds != null;
+  }
+
+  /// Held rows replaced by their copy in [fetchedById]. A row touched since
+  /// [revisionsBefore] was taken, or mid-swap, keeps what it shows.
+  List<ChatMessageDTO> _refreshHeld(
+    Map<String, ChatMessageDTO> fetchedById,
+    Map<String, int> revisionsBefore,
+    List<ChatMessageReactionDTO> Function(List<ChatMessageReactionDTO>)
+    resolve,
+  ) {
+    return state.messages.map((existing) {
+      // A summary held while this page was in flight is newer than the
+      // page and newer than what is held, so it settles the row before
+      // either branch below gets to.
+      final pending = _pendingReactions.remove(existing.id);
+      if (pending != null) {
+        return existing.copyWith(reactions: resolve(pending));
+      }
+
+      final fresh = fetchedById[existing.id];
+      if (fresh == null) return existing;
+
+      // Anything touched since this request was sent is newer than the
+      // page it brought back, whether or not that work has finished by
+      // the time the page arrives.
+      final changed =
+          (_reactionRevision[existing.id] ?? 0) !=
+          (revisionsBefore[existing.id] ?? 0);
+      if (changed || _swapping.contains(existing.id)) return existing;
+
+      return fresh;
+    }).toList();
+  }
+
+  /// Re-reads the history loaded below the newest page and updates the rows
+  /// held, by id. A signal says only that something changed, so a deletion
+  /// or reaction on an older message would otherwise never show.
+  Future<void> refreshLoaded({
+    String? currentUserId,
+    String? currentUserEmail,
+  }) async {
+    List<ChatMessageReactionDTO> resolve(
+      List<ChatMessageReactionDTO> reactions,
+    ) {
+      if (reactions.isEmpty) return reactions;
+      return chatReactionsForViewer(
+        reactions,
+        currentUserId: currentUserId,
+        currentUserEmail: currentUserEmail,
+      );
+    }
+
+    for (var skip = _limit; skip < state.skip; skip += _windowLimit) {
+      final revisionsBefore = {
+        for (final message in state.messages)
+          message.id: _reactionRevision[message.id] ?? 0,
+      };
+      final result = await _guardFetch(
+        () => ref
+            .read(groupChatRepositoryProvider)
+            .listMessages(
+              roomId,
+              skip: skip,
+              limit: _windowLimit,
+              messageType: ChatMessageDTO.typeText,
+            ),
+      );
+      if (!mounted) return;
+      final page = result.getRight().toNullable();
+      if (page == null) break;
+      final fetchedById = {
+        for (final message in page.messages)
+          message.id:
+              message.reactions.isEmpty
+                  ? message
+                  : message.copyWith(reactions: resolve(message.reactions)),
+      };
+      state = state.copyWith(
+        messages: _refreshHeld(fetchedById, revisionsBefore, resolve),
+      );
+      _applyPendingDeletions();
+      if (page.messages.length < _windowLimit) break;
+    }
+    _dropStalePending();
   }
 
   /// Rewrites one message's reactions from an authoritative summary — the

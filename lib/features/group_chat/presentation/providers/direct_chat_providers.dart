@@ -213,7 +213,9 @@ class DirectChatNotifier extends StateNotifier<DirectChatState>
     }
   }
 
+  /// In the background nothing is seen; the return refreshes and marks it.
   void _markReadIfOnScreen() {
+    if (_suspended) return;
     if (_onScreen) {
       unawaited(markRead());
     } else {

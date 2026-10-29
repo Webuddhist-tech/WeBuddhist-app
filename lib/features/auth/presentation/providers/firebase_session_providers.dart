@@ -74,22 +74,41 @@ class FirebaseSessionNotifier extends StateNotifier<FirebaseSessionState> {
   Timer? _retryTimer;
   int _attempt = 0;
   bool _wantSignedIn = false;
-  bool _signingIn = false;
   bool _signingOut = false;
+
+  /// Bumped on every login and logout; work begun in one session is dropped
+  /// when it finishes in another.
+  int _session = 0;
+
+  /// The session a sign-in is running for, if any.
+  int? _signingInFor;
+
+  /// The Firebase user this session may use. Any other is a previous
+  /// account's.
+  String? _sessionUid;
+
+  bool get _signingIn => _signingInFor == _session;
 
   void onAuthChanged({required bool loggedIn}) {
     if (loggedIn == _wantSignedIn) return;
     _wantSignedIn = loggedIn;
+    final firstSession = _session == 0;
+    _session++;
     _retryTimer?.cancel();
     _attempt = 0;
     if (loggedIn) {
       state = state.copyWith(disabled: false);
-      if (_gateway.currentUid != null) {
-        _setSignedIn(true, uid: _gateway.currentUid);
+      // Only a user persisted from an earlier launch is trusted; after a
+      // logout here, one left over belongs to the account that left.
+      final leftover = _gateway.currentUid;
+      if (firstSession && leftover != null) {
+        _sessionUid = leftover;
+        _setSignedIn(true, uid: leftover);
       } else {
         unawaited(_signIn());
       }
     } else {
+      _sessionUid = null;
       unawaited(_signOut());
     }
   }
@@ -106,10 +125,11 @@ class FirebaseSessionNotifier extends StateNotifier<FirebaseSessionState> {
 
   Future<void> _signIn() async {
     if (_signingIn || !_wantSignedIn || state.disabled) return;
-    _signingIn = true;
+    final session = _session;
+    _signingInFor = session;
     try {
       final result = await _repository.fetchCustomToken();
-      if (!mounted || !_wantSignedIn) return;
+      if (!mounted || session != _session) return;
       final token = result.fold((failure) {
         if (failure is FirebaseDisabledFailure) {
           _logger.info('Firebase disabled on this backend; no live updates');
@@ -123,20 +143,36 @@ class FirebaseSessionNotifier extends StateNotifier<FirebaseSessionState> {
 
       try {
         final uid = await _gateway.signInWithCustomToken(token.token);
-        if (!mounted || !_wantSignedIn) return;
+        if (!mounted) return;
+        if (session != _session) {
+          unawaited(_dropStaleUser(uid));
+          return;
+        }
         if (uid != token.uid) {
           _logger.warning(
             'Firebase uid $uid differs from backend ${token.uid}',
           );
         }
         _attempt = 0;
+        _sessionUid = uid;
         _setSignedIn(true, uid: uid);
       } catch (e) {
-        if (!mounted || !_wantSignedIn) return;
+        if (!mounted || session != _session) return;
         _scheduleRetry('$e');
       }
     } finally {
-      _signingIn = false;
+      if (_signingInFor == session) _signingInFor = null;
+    }
+  }
+
+  /// A sign-in for an ended session landed. Signs it out unless a newer
+  /// sign-in has already replaced it, or it is this session's own user.
+  Future<void> _dropStaleUser(String uid) async {
+    if (_gateway.currentUid != uid || uid == _sessionUid) return;
+    try {
+      await _gateway.signOut();
+    } catch (e) {
+      _logger.warning('Firebase sign-out of a stale user failed: $e');
     }
   }
 
@@ -172,7 +208,9 @@ class FirebaseSessionNotifier extends StateNotifier<FirebaseSessionState> {
       if (_wantSignedIn && !_signingOut && !_signingIn) unawaited(_signIn());
       return;
     }
-    if (_wantSignedIn && !state.signedIn) _setSignedIn(true, uid: uid);
+    if (_wantSignedIn && !state.signedIn && uid == _sessionUid) {
+      _setSignedIn(true, uid: uid);
+    }
   }
 
   /// Idempotent: the sign-in call and the auth stream both report success.

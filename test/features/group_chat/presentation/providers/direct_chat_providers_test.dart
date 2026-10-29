@@ -1,4 +1,5 @@
 
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/realtime/realtime_providers.dart';
 import 'package:flutter_pecha/core/realtime/signal_paths.dart';
@@ -342,7 +343,7 @@ void main() {
       expect(signals.listeners(SignalPaths.chatRoom('dm-1')), 0);
     });
 
-    test('the first snapshot is the baseline, not a change', () async {
+    test('the first snapshot catches the loaded thread up once', () async {
       final repository = _FakeRepository();
       final chat = await _open(repository);
       final pages = repository.pageCount;
@@ -350,9 +351,29 @@ void main() {
 
       chat.signal(DateTime.utc(2026, 10, 16, 12));
       await pumpEventQueue();
+      expect(repository.pageCount, pages + 1);
+      expect(repository.readCount, reads + 1);
 
-      expect(repository.pageCount, pages);
+      chat.signal(DateTime.utc(2026, 10, 16, 12));
+      await pumpEventQueue();
+      expect(repository.pageCount, pages + 1);
+    });
+
+    test('a refetch in the background leaves the room unread', () async {
+      final repository = _FakeRepository();
+      final chat = await _open(repository);
+      chat.signal(DateTime.utc(2026, 10, 16, 12));
+      await pumpEventQueue();
+      final reads = repository.readCount;
+
+      chat.notifier.didChangeAppLifecycleState(AppLifecycleState.paused);
+      chat.signal(DateTime.utc(2026, 10, 16, 12, 1));
+      await pumpEventQueue();
       expect(repository.readCount, reads);
+
+      chat.notifier.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await pumpEventQueue();
+      expect(repository.readCount, reads + 1);
     });
 
     test('a moved signal catches the thread up and marks it read', () async {

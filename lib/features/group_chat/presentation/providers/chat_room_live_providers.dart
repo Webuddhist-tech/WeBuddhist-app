@@ -42,7 +42,7 @@ class ChatRoomLiveState extends Equatable {
 }
 
 /// Keeps one room's thread current from its Firestore signal: a message or
-/// reaction change refetches the first page into [groupChatThreadProvider],
+/// reaction change refetches the loaded window into [groupChatThreadProvider],
 /// merged by id. Shared by group and direct chat.
 ///
 /// The room's reader document is written after the join commits, so the
@@ -83,8 +83,13 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
     } else if (!state.live) {
       state = state.copyWith(live: true);
     }
+    final first = !_diff.hasBaseline;
     final changes = _diff.update(roomId, snapshot);
-    if (changes.isNotEmpty) unawaited(_refreshThread());
+    // The first snapshot is only a baseline, so whatever changed since the
+    // thread loaded is caught up once, here.
+    final catchUp =
+        first && ref.read(groupChatThreadProvider(roomId)).hasLoaded;
+    if (changes.isNotEmpty || catchUp) unawaited(_refreshThread());
   }
 
   void _onError(Object error) {
@@ -103,14 +108,20 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
       do {
         _dirty = false;
         final user = ref.read(userProvider).user;
-        final ok = await ref
-            .read(groupChatThreadProvider(roomId).notifier)
-            .refreshLatest(
-              currentUserId: user?.id?.trim(),
-              currentUserEmail: user?.email,
-            );
+        final thread = ref.read(groupChatThreadProvider(roomId).notifier);
+        final ok = await thread.refreshLatest(
+          currentUserId: user?.id?.trim(),
+          currentUserEmail: user?.email,
+        );
         if (!mounted) return;
-        if (ok) state = state.copyWith(refreshes: state.refreshes + 1);
+        if (ok) {
+          await thread.refreshLoaded(
+            currentUserId: user?.id?.trim(),
+            currentUserEmail: user?.email,
+          );
+          if (!mounted) return;
+          state = state.copyWith(refreshes: state.refreshes + 1);
+        }
       } while (_dirty && mounted);
     } finally {
       _refreshing = false;

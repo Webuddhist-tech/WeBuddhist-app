@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/connect/data/repositories/connect_reposit
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_comments_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_events_remote_datasource.dart';
 import 'package:flutter_pecha/features/home/domain/repositories/home_repository.dart';
@@ -43,7 +44,11 @@ class _FakeRemote extends ConnectRemoteDatasource {
   _FakeRemote() : super(dio: Dio());
 
   int commentFetches = 0;
+  int feedFetches = 0;
   List<String> groupIds = [];
+
+  /// Oldest first, as the post's comments come back.
+  List<String> commentIds = [];
 
   @override
   Future<Map<String, dynamic>> fetchPostCommentsJson({
@@ -52,7 +57,36 @@ class _FakeRemote extends ConnectRemoteDatasource {
     int limit = 20,
   }) async {
     commentFetches++;
-    return {'comments': <Object>[], 'skip': skip, 'limit': limit, 'total': 0};
+    return {
+      'comments': [
+        for (final id in commentIds.skip(skip).take(limit))
+          {'id': id, 'post_id': postId, 'text': id},
+      ],
+      'skip': skip,
+      'limit': limit,
+      'total': commentIds.length,
+    };
+  }
+
+  @override
+  Future<Map<String, dynamic>> fetchConnectFeedsJson({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    feedFetches++;
+    return {'items': <Object>[], 'skip': skip, 'limit': limit, 'total': 0};
+  }
+
+  @override
+  Future<Map<String, dynamic>> fetchConnectPracticesJson({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
+    return {'practices': <Object>[], 'skip': skip, 'limit': limit, 'total': 0};
   }
 
   @override
@@ -168,7 +202,73 @@ void main() {
     });
   });
 
+  group('postCommentsSignalProvider paging', () {
+    final path = SignalPaths.groupPost('g1', 'p1');
+
+    test('a new comment keeps the pages already loaded', () async {
+      remote.commentIds = [for (var i = 0; i < 25; i++) 'c$i'];
+      container.listen(
+        postCommentsSignalProvider((groupId: 'g1', postId: 'p1')),
+        (_, _) {},
+      );
+      container.listen(connectPostCommentsProvider('p1'), (_, _) {});
+      final notifier = container.read(
+        connectPostCommentsProvider('p1').notifier,
+      );
+      await pumpEventQueue();
+      await notifier.loadMore();
+      signals.emit(path, {'comments_changed_at': DateTime.utc(2026, 1, 1)});
+      await pumpEventQueue();
+      expect(container.read(connectPostCommentsProvider('p1')).comments, hasLength(25));
+
+      remote.commentIds = [...remote.commentIds, 'c25'];
+      signals.emit(path, {'comments_changed_at': DateTime.utc(2026, 1, 2)});
+      await pumpEventQueue();
+      final state = container.read(connectPostCommentsProvider('p1'));
+      expect(state.comments, hasLength(25));
+      expect(state.total, 26);
+      expect(state.hasMore, isTrue);
+
+      await notifier.loadMore();
+      expect(
+        container.read(connectPostCommentsProvider('p1')).comments.last.id,
+        'c25',
+      );
+    });
+  });
+
   group('myFeedSignalsProvider', () {
+    test('an events signal refreshes the My feed too', () async {
+      remote.groupIds = ['g1'];
+      container.listen(myFeedSignalsProvider, (_, _) {});
+      container.listen(myGroupsProvider, (_, _) {});
+      container.listen(myUnifiedConnectFeedProvider, (_, _) {});
+      await pumpEventQueue();
+      await pumpEventQueue();
+      final path = SignalPaths.group('g1');
+      signals.emit(path, {
+        'events_changed_at': DateTime.utc(2026, 1, 1),
+        'posts_changed_at': DateTime.utc(2026, 1, 1),
+      });
+      await settle();
+      final before = remote.feedFetches;
+
+      signals.emit(path, {
+        'events_changed_at': DateTime.utc(2026, 1, 2),
+        'posts_changed_at': DateTime.utc(2026, 1, 1),
+      });
+      await settle();
+      expect(remote.feedFetches, before + 1);
+
+      // Both fields in one burst still refresh it once.
+      signals.emit(path, {
+        'events_changed_at': DateTime.utc(2026, 1, 3),
+        'posts_changed_at': DateTime.utc(2026, 1, 3),
+      });
+      await settle();
+      expect(remote.feedFetches, before + 2);
+    });
+
     test('listens to every followed group and follows the list', () async {
       remote.groupIds = ['g2', 'g1'];
       container.listen(myFeedSignalsProvider, (_, _) {});

@@ -73,7 +73,7 @@ group_chat/
 
 ## Notable patterns
 
-- **Signal, then refetch**: nothing arrives over the wire but a timestamp; every change is a `refreshLatest` of the first page merged by id. A foreground push for the open room refetches too, as a backstop
+- **Signal, then refetch**: nothing arrives over the wire but a timestamp; every change refetches the loaded window merged by id (chat: `refreshLatest` then `refreshLoaded`; prayer sheet: `refreshLatest` re-reads every loaded row). The listener's first snapshot catches up once and reads `closed_at`. A foreground push for the open room refetches too, as a backstop
 - **Dedup by id** everywhere: REST send response + the signal-driven refetch produce one row; the signal fires for the viewer's own actions as well
 - **Fetch guards**: deletions/reaction summaries that land while a page is in flight are held and re-applied after the page commits
 - **Reactions**: optimistic, chained per message, swap = POST new then DELETE old; summaries mid-swap are deferred

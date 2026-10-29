@@ -15,8 +15,8 @@ import 'package:flutter_pecha/features/home/presentation/providers/home_group_ev
 import 'package:flutter_pecha/features/home/presentation/providers/use_case_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Reloads a post's comments in place when someone comments. Watched by the
-/// post detail while it knows the post's group.
+/// Merges a post's new comments in when someone comments, keeping the pages
+/// already loaded. Watched by the post detail while it knows the post's group.
 final postCommentsSignalProvider = Provider.autoDispose
     .family<void, ({String groupId, String postId})>((ref, key) {
       listenSignal(
@@ -27,7 +27,7 @@ final postCommentsSignalProvider = Provider.autoDispose
           if (!ref.exists(connectPostCommentsProvider(key.postId))) return;
           ref
               .read(connectPostCommentsProvider(key.postId).notifier)
-              .loadInitial();
+              .refreshLatest();
         },
       );
     });
@@ -52,14 +52,14 @@ final myFeedSignalsProvider = Provider.autoDispose<void>((ref) {
       pending.add(change.field);
       coalesce ??= Timer(const Duration(milliseconds: 500), () {
         coalesce = null;
-        if (pending.remove(SignalFields.postsChangedAt) &&
-            ref.exists(myUnifiedConnectFeedProvider)) {
+        final posts = pending.remove(SignalFields.postsChangedAt);
+        final events = pending.remove(SignalFields.eventsChangedAt);
+        pending.clear();
+        // The My feed shows event cards too, so either field refreshes it once.
+        if ((posts || events) && ref.exists(myUnifiedConnectFeedProvider)) {
           ref.read(myUnifiedConnectFeedProvider.notifier).refresh();
         }
-        if (pending.remove(SignalFields.eventsChangedAt)) {
-          refreshEventListsIfShown(ref);
-        }
-        pending.clear();
+        if (events) refreshEventListsIfShown(ref);
       });
     },
   );

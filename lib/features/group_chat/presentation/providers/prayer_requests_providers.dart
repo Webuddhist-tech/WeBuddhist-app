@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
@@ -392,6 +393,9 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   final PrayerRoomScope scope;
   static const int _limit = 30;
 
+  /// The API's largest page, for re-reading loaded rows in few calls.
+  static const int _windowLimit = 100;
+
   /// True until the constructor returns: Riverpod forbids changing another
   /// provider while this one is being created.
   bool _creating = true;
@@ -713,12 +717,13 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   Future<Either<Failure, ChatMessagesPage>> _fetchPage(
     String roomId, {
     required int skip,
+    int limit = _limit,
   }) {
     final filter = state.filter;
     if (filter.mine) {
       return _repository.listMyPrayerRequests(
         skip: skip,
-        limit: _limit,
+        limit: limit,
         eventId: scope.eventId,
         groupId: scope.groupId,
       );
@@ -726,7 +731,7 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     return _repository.listMessages(
       roomId,
       skip: skip,
-      limit: _limit,
+      limit: limit,
       messageType: ChatMessageDTO.typePrayer,
       sort: filter.sortParam,
       intention: filter.intentionParam,
@@ -812,42 +817,64 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     );
   }
 
-  /// Re-reads the first page after the room's signal moved, merging by id.
-  /// The signal also fires for the viewer's own prayers, so a row with taps
-  /// still on their way keeps its optimistic count, and nobody can un-pray,
-  /// so the larger count wins. Rows below the first page refresh only on a
-  /// scroll back or a reload.
-  Future<void> refreshLatest() async {
+  /// Re-reads every loaded row after the room's signal moved, in the order
+  /// of the filter, so a change below the first page shows and paging sees
+  /// a request added past the end. The signal also fires for the viewer's
+  /// own prayers, so a row with taps still on their way keeps its optimistic
+  /// count, and nobody can un-pray, so the larger count wins. True when a
+  /// request arrived.
+  Future<bool> refreshLatest() async {
     final roomId = state.roomId;
-    if (roomId == null) return;
+    if (roomId == null) return false;
     final generation = _listGeneration;
-    final result = await _fetchPage(roomId, skip: 0);
-    if (!mounted || generation != _listGeneration) return;
-    result.fold((_) {}, (page) {
-      final pageIds = page.messages.map((message) => message.id).toSet();
-      // A held row that gained prayers can be on the first page by now.
-      _unlisted.removeWhere((id, _) => pageIds.contains(id));
-      final heldById = {for (final request in state.requests) request.id: request};
-      final kept = state.requests.where(
-        (request) => !pageIds.contains(request.id),
+    final window = math.max(_limit, state.skip);
+    final rows = <ChatMessageDTO>[];
+    final seen = <String>{};
+    var total = 0;
+    for (var skip = 0; skip < window; skip += _windowLimit) {
+      final result = await _fetchPage(
+        roomId,
+        skip: skip,
+        limit: math.min(_windowLimit, window - skip),
       );
-      final requests = [
-        for (final row in page.messages.where(_isLive))
-          _newerOf(heldById[row.id], row),
-        ...kept,
-      ];
-      state = state.copyWith(
-        requests: requests,
-        total: page.total,
-        skip: state.skip + (requests.length - state.requests.length),
-      );
-      for (final row in page.messages) {
-        final pending = _pending[row.id];
-        if (pending == null) continue;
-        _mergePage(row, pending);
-        _render(row.id, pending);
-      }
-    });
+      if (!mounted || generation != _listGeneration) return false;
+      final page = result.getRight().toNullable();
+      if (page == null) return false;
+      total = page.total;
+      rows.addAll(page.messages.where((row) => seen.add(row.id)));
+      if (page.messages.length < _windowLimit) break;
+    }
+
+    final known = {
+      for (final request in state.requests) request.id,
+      ..._unlisted.keys,
+    };
+    final arrived =
+        total > state.total ||
+        rows.any((row) => _isLive(row) && !known.contains(row.id));
+    final heldById = {for (final request in state.requests) request.id: request};
+    _applyFirstPage(
+      ChatMessagesPage(
+        messages: [for (final row in rows) _newerOf(heldById[row.id], row)],
+        skip: 0,
+        limit: window,
+        total: total,
+      ),
+    );
+    for (final row in rows) {
+      final pending = _pending[row.id];
+      if (pending == null) continue;
+      _mergePage(row, pending);
+      _render(row.id, pending);
+    }
+    return arrived;
+  }
+
+  /// Catches up once the room's listener is live. A first page in flight
+  /// already will.
+  Future<bool> catchUp() async {
+    if (_firstPageInFlight || !state.hasLoaded) return false;
+    return refreshLatest();
   }
 
   /// The page's row, never losing a prayer the held copy already showed.
@@ -1646,18 +1673,40 @@ final prayerSupportersProvider = StateNotifierProvider.autoDispose
 /// is retried.
 final prayerRoomLiveProvider = Provider.autoDispose
     .family<void, ({PrayerRoomScope scope, String roomId})>((ref, key) {
+      final repository = ref.read(groupChatRepositoryProvider);
+      PrayerRequestsNotifier notifier() =>
+          ref.read(prayerRequestsProvider(key.scope).notifier);
+
+      // The sheet is open, so new requests are seen. Events only: a space's
+      // room also holds its chat.
+      Future<void> markReadIfArrived(Future<bool> refresh) async {
+        final arrived = await refresh;
+        if (!arrived || !key.scope.isEvent) return;
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
+          return;
+        }
+        await repository.markRoomRead(key.roomId);
+      }
+
       listenSignal(
         ref,
         path: SignalPaths.chatRoom(key.roomId),
         fields: const {SignalFields.prayersChangedAt, SignalFields.closedAt},
         permissionRetries: 5,
-        onChange: (change) {
-          final notifier = ref.read(prayerRequestsProvider(key.scope).notifier);
-          if (change.field == SignalFields.closedAt) {
-            if (change.current != null) notifier.markClosed();
+        onReady: (snapshot) {
+          if (snapshot[SignalFields.closedAt] != null) {
+            notifier().markClosed();
             return;
           }
-          unawaited(notifier.refreshLatest());
+          unawaited(markReadIfArrived(notifier().catchUp()));
+        },
+        onChange: (change) {
+          if (change.field == SignalFields.closedAt) {
+            if (change.current != null) notifier().markClosed();
+            return;
+          }
+          unawaited(markReadIfArrived(notifier().refreshLatest()));
         },
       );
     });

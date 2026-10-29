@@ -150,8 +150,11 @@ class ConnectPostCommentsNotifier
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
+        // A merged refresh or an own comment can already hold some of these.
+        final known = {for (final comment in state.comments) comment.id};
+        final fresh = page.comments.where((c) => !known.contains(c.id));
         state = state.copyWith(
-          comments: [...state.comments, ...page.comments],
+          comments: [...state.comments, ...fresh],
           isLoadingMore: false,
           hasMore: page.hasMore,
           skip: state.skip + page.comments.length,
@@ -160,6 +163,40 @@ class ConnectPostCommentsNotifier
         );
       },
     );
+  }
+
+  /// Re-reads the first page after someone comments and merges it by id, so
+  /// the pages already loaded stay.
+  Future<void> refreshLatest() async {
+    if (state.isLoading || _firstPageInFlight) return;
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        _source,
+        isCurrent: () => mounted,
+        seed: false,
+        apply: (page) {
+          final fetched = {for (final c in page.comments) c.id: c};
+          final held = {for (final c in state.comments) c.id};
+          final added =
+              page.comments.where((c) => !held.contains(c.id)).toList();
+          final skip = state.skip + added.length;
+          state = state.copyWith(
+            comments: [
+              for (final c in state.comments) fetched[c.id] ?? c,
+              ...added,
+            ],
+            hasMore: skip < page.total,
+            skip: skip,
+            total: page.total,
+            clearError: true,
+          );
+        },
+        fail: (_) {},
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<bool> submitComment({

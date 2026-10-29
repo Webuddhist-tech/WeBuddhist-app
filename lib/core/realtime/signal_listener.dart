@@ -13,12 +13,14 @@ final _logger = AppLogger('SignalListener');
 /// the provider that owns [ref]. Nothing happens until Firebase is signed in;
 /// the provider rebuilds when it is. A refusal that outlives
 /// [permissionRetries] is logged once and the screen keeps fetching as it
-/// does today. [coalesce] folds a burst into one call per field.
+/// does today. [coalesce] folds a burst into one call per field. [onReady]
+/// gets the first snapshot, which is a baseline rather than a change.
 void listenSignal(
   Ref ref, {
   required String path,
   required Set<String> fields,
   required void Function(SignalChange change) onChange,
+  void Function(SignalSnapshot snapshot)? onReady,
   int permissionRetries = 0,
   Duration coalesce = Duration.zero,
 }) {
@@ -35,17 +37,25 @@ void listenSignal(
     changes.forEach(onChange);
   }
 
+  void deliver(SignalChange change) {
+    if (coalesce <= Duration.zero) {
+      onChange(change);
+      return;
+    }
+    pending[change.field] = change;
+    timer ??= Timer(coalesce, flush);
+  }
+
+  final diff = SignalFieldDiff(fields);
   final sub = retryPermissionDenied(
-    () => watchFieldChanges(signals, path, fields),
+    () => signals.watchDoc(path),
     attempts: permissionRetries,
   ).listen(
-    (change) {
-      if (coalesce <= Duration.zero) {
-        onChange(change);
-        return;
-      }
-      pending[change.field] = change;
-      timer ??= Timer(coalesce, flush);
+    (snapshot) {
+      final first = !diff.hasBaseline;
+      final changes = diff.update(path, snapshot);
+      if (first) onReady?.call(snapshot);
+      changes.forEach(deliver);
     },
     onError:
         (Object error) => _logger.debug('No live updates for $path: $error'),

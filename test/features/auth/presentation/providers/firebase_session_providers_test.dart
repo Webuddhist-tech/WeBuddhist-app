@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/domain/repositories/firebase_session_repository.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/firebase_session_providers.dart';
@@ -13,12 +15,24 @@ class _FakeRepository implements FirebaseSessionRepository {
   /// Failures returned before a success; null entries succeed.
   final queue = <Failure?>[];
 
+  /// The account the next token is minted for.
+  String uid = 'u1';
+
+  /// Holds the next call until completed.
+  Completer<void>? gate;
+
   @override
   Future<Either<Failure, FirebaseCustomToken>> fetchCustomToken() async {
     calls++;
+    final mintedFor = uid;
+    final held = gate;
+    gate = null;
+    if (held != null) await held.future;
     final next = queue.isNotEmpty ? queue.removeAt(0) : failure;
     if (next != null) return Left(next);
-    return const Right(FirebaseCustomToken(token: 'token-for-u1', uid: 'u1'));
+    return Right(
+      FirebaseCustomToken(token: 'token-for-$mintedFor', uid: mintedFor),
+    );
   }
 }
 
@@ -137,6 +151,57 @@ void main() {
     await _settle();
 
     expect(repository.calls, 1);
+  });
+
+  test('a token minted before a logout never signs in the next account', () async {
+    final held = Completer<void>();
+    repository.gate = held;
+    notifier.onAuthChanged(loggedIn: true);
+    await _settle();
+    notifier.onAuthChanged(loggedIn: false);
+    await _settle();
+
+    repository.uid = 'u2';
+    notifier.onAuthChanged(loggedIn: true);
+    await _settle();
+    expect(notifier.state.uid, 'u2');
+
+    held.complete();
+    await _settle();
+    expect(gateway.signedInTokens, ['token-for-u2']);
+    expect(notifier.state.uid, 'u2');
+    expect(gateway.uid, 'u2');
+  });
+
+  test('a user left by the previous account is not reused', () async {
+    notifier.onAuthChanged(loggedIn: true);
+    await _settle();
+    notifier.onAuthChanged(loggedIn: false);
+    await _settle();
+
+    gateway.uid = 'u1';
+    repository.uid = 'u2';
+    notifier.onAuthChanged(loggedIn: true);
+    await _settle();
+
+    expect(notifier.state.uid, 'u2');
+    expect(gateway.uid, 'u2');
+  });
+
+  test('a sign-in landing after logout is signed out', () async {
+    final held = Completer<void>();
+    gateway.signInGate = held;
+    notifier.onAuthChanged(loggedIn: true);
+    await _settle();
+    notifier.onAuthChanged(loggedIn: false);
+    await _settle();
+
+    held.complete();
+    await _settle();
+    expect(gateway.signedInTokens, ['token-for-u1']);
+    expect(gateway.uid, isNull);
+    expect(notifier.state.signedIn, isFalse);
+    expect(published, isEmpty);
   });
 
   test('a logout mid-mint drops the sign-in', () async {

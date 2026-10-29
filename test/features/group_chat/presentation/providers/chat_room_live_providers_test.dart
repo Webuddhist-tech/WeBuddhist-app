@@ -75,8 +75,14 @@ void main() {
 
   /// A controller with a short permission retry; [attempts] overrides it and
   /// [denied] refuses that many listens first.
-  void build({int attempts = 5, bool withSignals = true, int denied = 0}) {
+  void build({
+    int attempts = 5,
+    bool withSignals = true,
+    int denied = 0,
+    List<ChatMessageDTO>? messages,
+  }) {
     repository = _FakeRepository();
+    if (messages != null) repository.messages = messages;
     signals = FakeRealtimeSignals();
     if (denied > 0) signals.permissionDeniedUntil(_path, denied);
     live = StateNotifierProvider<ChatRoomLiveNotifier, ChatRoomLiveState>(
@@ -108,20 +114,44 @@ void main() {
           .toList();
 
   test(
-    'the first snapshot sets the baseline and marks the room live',
+    'the first snapshot marks the room live and catches the thread up',
     () async {
       build();
       await _settle();
       final pages = repository.pageCount;
 
+      repository.messages = [_message('m2'), _message('m1')];
       signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 1)});
       await _settle();
 
       expect(state().live, isTrue);
-      expect(state().refreshes, 0);
-      expect(repository.pageCount, pages);
+      expect(state().refreshes, 1);
+      expect(repository.pageCount, pages + 1);
+      expect(ids(), ['m2', 'm1']);
     },
   );
+
+  test('a change on an older loaded page reaches its row', () async {
+    build(messages: [for (var i = 40; i > 0; i--) _message('m$i')]);
+    await _settle();
+    await container.read(groupChatThreadProvider('room-1').notifier).loadMore();
+    signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 1)});
+    await _settle();
+    expect(ids(), hasLength(40));
+
+    repository.messages = [
+      for (final m in repository.messages)
+        m.id == 'm3' ? m.copyWith(deletedAt: '2026-10-29T11:00:00Z') : m,
+    ];
+    signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 2)});
+    await _settle();
+
+    final m3 = container
+        .read(groupChatThreadProvider('room-1'))
+        .messages
+        .firstWhere((m) => m.id == 'm3');
+    expect(m3.deletedAt, isNotNull);
+  });
 
   test('a moved message or reaction field refetches the thread', () async {
     build();
@@ -139,14 +169,14 @@ void main() {
     });
     await _settle();
     expect(ids(), ['m2', 'm1']);
-    expect(state().refreshes, 1);
+    expect(state().refreshes, 2);
 
     signals.emit(_path, {
       'messages_changed_at': DateTime.utc(2026, 1, 2),
       'reactions_changed_at': DateTime.utc(2026, 1, 3),
     });
     await _settle();
-    expect(state().refreshes, 2);
+    expect(state().refreshes, 3);
   });
 
   test('an unrelated field moving does nothing', () async {
@@ -185,7 +215,7 @@ void main() {
     signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 2)});
     await _settle();
 
-    expect(state().refreshes, 0);
+    expect(state().refreshes, 1);
   });
 
   test('a refused listen is retried until the reader exists', () async {

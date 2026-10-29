@@ -13,6 +13,9 @@ class FakeFirebaseAuthGateway implements FirebaseAuthGateway {
   /// Uid the next sign-in reports; defaults to the token's `uid:` suffix.
   String? uidToReturn;
 
+  /// Holds the next sign-in until completed.
+  Completer<void>? signInGate;
+
   final _changes = StreamController<String?>.broadcast();
 
   @override
@@ -30,6 +33,9 @@ class FakeFirebaseAuthGateway implements FirebaseAuthGateway {
   @override
   Future<String> signInWithCustomToken(String token) async {
     signedInTokens.add(token);
+    final held = signInGate;
+    signInGate = null;
+    if (held != null) await held.future;
     final error = signInError;
     signInError = null;
     if (error != null) throw error;
