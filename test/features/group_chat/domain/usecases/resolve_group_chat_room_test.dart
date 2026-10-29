@@ -51,14 +51,13 @@ ChatRoomDTO _room(String id, {String? groupId}) {
   );
 }
 
-/// Serves `getRoom` from [rooms] and pages `listRooms` over [allRooms] like
-/// the API does.
+/// Serves `getRoom` from [rooms] and `getGroupRoom` from [groupRooms].
 class _FakeGroupChatRepository implements GroupChatRepository {
   final Map<String, ChatRoomDTO> rooms = {};
-  List<ChatRoomDTO> allRooms = [];
+  final Map<String, ChatRoomDTO> groupRooms = {};
   Failure? getRoomFailure;
-  Failure? listRoomsFailure;
-  int listRoomsCallCount = 0;
+  Failure? getGroupRoomFailure;
+  int getGroupRoomCallCount = 0;
 
   @override
   Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) async {
@@ -73,21 +72,8 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, ChatRoomsPage>> listRooms({
     int skip = 0,
     int limit = 20,
-  }) async {
-    listRoomsCallCount++;
-    final failure = listRoomsFailure;
-    if (failure != null) return Left(failure);
-    final start = skip.clamp(0, allRooms.length);
-    final end = (skip + limit).clamp(0, allRooms.length);
-    return Right(
-      ChatRoomsPage(
-        rooms: allRooms.sublist(start, end),
-        skip: skip,
-        limit: limit,
-        total: allRooms.length,
-      ),
-    );
-  }
+  }) async =>
+      const Right(ChatRoomsPage(rooms: [], skip: 0, limit: 0, total: 0));
 
   @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
@@ -135,8 +121,14 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
     String groupId, {
     String? language,
-  }) async =>
-      const Left(NotFoundFailure('not used'));
+  }) async {
+    getGroupRoomCallCount++;
+    final failure = getGroupRoomFailure;
+    if (failure != null) return Left(failure);
+    final room = groupRooms[groupId];
+    if (room == null) return const Left(NotFoundFailure('missing'));
+    return Right(room);
+  }
 
   @override
   Future<Either<Failure, ChatMessageDTO>> sendEventMessage(
@@ -251,7 +243,7 @@ void main() {
   });
 
   group('ResolveGroupChatRoom', () {
-    test('uses the cached room without listing rooms', () async {
+    test('uses the cached room without asking the group endpoint', () async {
       repository.rooms['r1'] = _room('r1', groupId: 'g1');
       await cache.write(userId: 'u1', groupId: 'g1', roomId: 'r1');
 
@@ -259,12 +251,12 @@ void main() {
 
       expect(actual, isA<GroupChatRoomFound>());
       expect((actual as GroupChatRoomFound).roomId, 'r1');
-      expect(repository.listRoomsCallCount, 0);
+      expect(repository.getGroupRoomCallCount, 0);
     });
 
     test('drops a cached room the server no longer has', () async {
       await cache.write(userId: 'u1', groupId: 'g1', roomId: 'stale');
-      repository.allRooms = [_room('r2', groupId: 'g1')];
+      repository.groupRooms['g1'] = _room('r2', groupId: 'g1');
 
       final actual = await resolve(userId: 'u1', groupId: 'g1');
 
@@ -280,48 +272,34 @@ void main() {
 
       expect(actual, isA<GroupChatRoomUnavailable>());
       expect(await cache.read(userId: 'u1', groupId: 'g1'), 'r1');
-      expect(repository.listRoomsCallCount, 0);
+      expect(repository.getGroupRoomCallCount, 0);
     });
 
-    test('finds and caches the room on a cold cache', () async {
-      repository.allRooms = [
-        _room('other', groupId: 'g2'),
-        _room('r1', groupId: 'g1'),
-      ];
+    test('fetches and caches the group room on a cold cache', () async {
+      repository.groupRooms['g1'] = _room('r1', groupId: 'g1');
 
       final actual = await resolve(userId: 'u1', groupId: 'g1');
 
       expect((actual as GroupChatRoomFound).roomId, 'r1');
       expect(await cache.read(userId: 'u1', groupId: 'g1'), 'r1');
+      expect(repository.getGroupRoomCallCount, 1);
     });
 
-    test('pages until the group room is found', () async {
-      repository.allRooms = [
-        for (var i = 0; i < 60; i++) _room('filler$i', groupId: 'other$i'),
-        _room('target', groupId: 'g1'),
-      ];
-
-      final actual = await resolve(userId: 'u1', groupId: 'g1');
-
-      expect((actual as GroupChatRoomFound).roomId, 'target');
-      expect(repository.listRoomsCallCount, 2);
-    });
-
-    test('reports missing when the group has no room', () async {
-      repository.allRooms = [_room('other', groupId: 'g2')];
-
-      final actual = await resolve(userId: 'u1', groupId: 'g1');
-
-      expect(actual, isA<GroupChatRoomMissing>());
-      expect(await cache.read(userId: 'u1', groupId: 'g1'), isNull);
-    });
-
-    test('reports unavailable when listing rooms fails', () async {
-      repository.listRoomsFailure = const NetworkFailure('offline');
+    test('reports unavailable when the group room endpoint fails', () async {
+      repository.getGroupRoomFailure = const NetworkFailure('offline');
 
       final actual = await resolve(userId: 'u1', groupId: 'g1');
 
       expect(actual, isA<GroupChatRoomUnavailable>());
+      expect(await cache.read(userId: 'u1', groupId: 'g1'), isNull);
+    });
+
+    test('reports unavailable for an empty group id', () async {
+      expect(
+        await resolve(userId: 'u1', groupId: ''),
+        isA<GroupChatRoomUnavailable>(),
+      );
+      expect(repository.getGroupRoomCallCount, 0);
     });
   });
 }

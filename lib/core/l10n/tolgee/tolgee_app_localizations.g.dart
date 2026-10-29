@@ -4521,6 +4521,13 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get chat_room_closed => TolgeeBridge.get(
+    localeName,
+    'chat_room_closed',
+    () => _fallback.chat_room_closed,
+  );
+
+  @override
   String get group_chat_message_not_found => TolgeeBridge.get(
     localeName,
     'group_chat_message_not_found',

@@ -2208,6 +2208,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get group_chat_load_failed => '無法載入訊息';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found => '此訊息已不在聊天中';
 
   @override

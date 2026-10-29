@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_lazy_segment_mixin.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_my_discover_tab_gate.dart';
@@ -45,6 +46,8 @@ class _ConnectFeedTabState extends ConsumerState<ConnectFeedTab>
 
   @override
   Widget build(BuildContext context) {
+    // Followed groups' signals refetch the My feed while it is shown.
+    ref.watch(myFeedSignalsProvider);
     final myState = ref.watch(myUnifiedConnectFeedProvider);
     final discoverState = ref.watch(discoverUnifiedConnectFeedProvider);
     final myItems = myState.mergedItems;

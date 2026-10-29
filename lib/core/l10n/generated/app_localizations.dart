@@ -4095,6 +4095,12 @@ abstract class AppLocalizations {
   /// **'Messages couldn\'t be loaded'**
   String get group_chat_load_failed;
 
+  /// No description provided for @chat_room_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat has been closed.'**
+  String get chat_room_closed;
+
   /// No description provided for @group_chat_message_not_found.
   ///
   /// In en, this message translates to:

@@ -15,10 +15,6 @@ enum ChatOpenSource {
 
   /// This member's first send created the room.
   firstSend,
-
-  /// The socket reported a room another member created while this screen
-  /// was open.
-  live,
 }
 
 /// What a confirmed reaction toggle did on the server.

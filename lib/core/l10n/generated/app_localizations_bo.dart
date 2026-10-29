@@ -2337,6 +2337,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get group_chat_load_failed => 'འཕྲིན་ཡིག་ལེན་ཐུབ་མ་སོང་།';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found => 'འཕྲིན་ཡིག་འདི་ཁ་བརྡའི་ནང་མི་གནས།';
 
   @override

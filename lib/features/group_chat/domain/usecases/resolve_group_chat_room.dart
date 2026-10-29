@@ -1,5 +1,4 @@
 import 'package:flutter_pecha/core/error/failures.dart';
-import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_room_cache.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
@@ -16,14 +15,8 @@ class GroupChatRoomFound extends GroupChatRoomLookup {
   const GroupChatRoomFound(this.roomId);
 }
 
-/// The group has no room yet. The first send creates it.
-class GroupChatRoomMissing extends GroupChatRoomLookup {
-  const GroupChatRoomMissing();
-}
-
-/// The lookup itself failed, so whether a room exists is unknown. Distinct
-/// from [GroupChatRoomMissing] so a flaky network never presents an existing
-/// conversation as an empty one.
+/// The lookup itself failed, so the room is unknown for now; a flaky network
+/// must never present an existing conversation as an empty one.
 class GroupChatRoomUnavailable extends GroupChatRoomLookup {
   const GroupChatRoomUnavailable();
 }
@@ -43,20 +36,14 @@ class ResolveGroupChatRoom {
   final GroupChatRepository _repository;
   final GroupChatRoomCache _cache;
 
-  /// There is no "room for this group" endpoint, so the caller's rooms are
-  /// paged and matched on `group_id`. Capped: past this the first send is a
-  /// cheaper way to reach the room than paging the whole list.
-  static const int _pageLimit = 50;
-  static const int _maxPages = 4;
-
   Future<GroupChatRoomLookup> call({
     required String userId,
     required String groupId,
   }) async {
-    if (groupId.isEmpty) return const GroupChatRoomMissing();
+    if (groupId.isEmpty) return const GroupChatRoomUnavailable();
     final cached = await _readFromCache(userId: userId, groupId: groupId);
     if (cached != null) return cached;
-    return _findOnServer(userId: userId, groupId: groupId);
+    return _fetchGroupRoom(userId: userId, groupId: groupId);
   }
 
   /// Returns null when the cache cannot answer and the server should be asked.
@@ -78,30 +65,16 @@ class ResolveGroupChatRoom {
     return null;
   }
 
-  Future<GroupChatRoomLookup> _findOnServer({
+  /// `GET /chat/groups/{id}/room` creates the room and joins the caller on
+  /// first use, so a member always gets an id to listen on.
+  Future<GroupChatRoomLookup> _fetchGroupRoom({
     required String userId,
     required String groupId,
   }) async {
-    var skip = 0;
-    for (var page = 0; page < _maxPages; page++) {
-      final result = await _repository.listRooms(skip: skip, limit: _pageLimit);
-      final rooms = result.fold<ChatRoomsPage?>((_) => null, (page) => page);
-      if (rooms == null) return const GroupChatRoomUnavailable();
-      final match = _matchGroupRoom(rooms.rooms, groupId);
-      if (match != null) {
-        await _cache.write(userId: userId, groupId: groupId, roomId: match);
-        return GroupChatRoomFound(match);
-      }
-      skip += rooms.rooms.length;
-      if (rooms.rooms.isEmpty || skip >= rooms.total) break;
-    }
-    return const GroupChatRoomMissing();
-  }
-
-  static String? _matchGroupRoom(List<ChatRoomDTO> rooms, String groupId) {
-    for (final room in rooms) {
-      if (room.groupId == groupId && room.id.isNotEmpty) return room.id;
-    }
-    return null;
+    final result = await _repository.getGroupRoom(groupId);
+    final room = result.fold<ChatRoomDTO?>((_) => null, (room) => room);
+    if (room == null || room.id.isEmpty) return const GroupChatRoomUnavailable();
+    await _cache.write(userId: userId, groupId: groupId, roomId: room.id);
+    return GroupChatRoomFound(room.id);
   }
 }

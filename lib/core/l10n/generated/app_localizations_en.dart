@@ -2302,6 +2302,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get group_chat_load_failed => 'Messages couldn\'t be loaded';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found =>
       'This message is no longer in the chat';
 

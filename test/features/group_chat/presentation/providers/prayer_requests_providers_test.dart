@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
-import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
+import 'package:flutter_pecha/core/realtime/realtime_providers.dart';
+import 'package:flutter_pecha/core/realtime/signal_paths.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
@@ -21,6 +22,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+
+import '../../../../helpers/fake_realtime_signals.dart';
 
 ChatMessageDTO _prayer(
   String id, {
@@ -783,11 +786,7 @@ void main() {
       final pending = notifier.loadMore();
       await _settle();
       // Created after the server read the page: the reply leaves it out.
-      notifier.appendLive(_prayer('new'));
-      notifier.applyPrayersUpdated(
-        [ChatLivePrayerUpdate(messageId: 'new', prayerCount: 2, userIds: [])],
-        viewerId: 'u1',
-      );
+      notifier.appendLive(_prayer('new', count: 2));
       repository.listGate!.complete();
       await pending;
 
@@ -1032,12 +1031,9 @@ void main() {
       );
       final pending = notifier.edit('a', body: 'Edited', intention: healing);
       await _settle();
-      notifier.applyPrayersUpdated(
-        const [
-          ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['u9']),
-        ],
-        viewerId: 'u1',
-      );
+      // Someone prays while the save is in flight; the refetch brings it.
+      repository.history = [_prayer('a', count: 4)];
+      await notifier.refreshLatest();
       repository.updateGate!.complete();
       final result = await pending;
 
@@ -1510,71 +1506,6 @@ void main() {
       expect(_byId(notifier, 'a').myPrayerCount, 1);
     });
 
-    test('a socket update while taps are outstanding is merged, not lost', () async {
-      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
-      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.prayGate = Completer<void>();
-      notifier.pray('a', viewer: me);
-      await _settle();
-      expect(_byId(notifier, 'a').prayerCount, 4);
-
-      // Someone else prays: the broadcast does not yet list the viewer.
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['u9']),
-      ], viewerId: 'me');
-      expect(_byId(notifier, 'a').prayerCount, 5);
-      expect(_byId(notifier, 'a').prayedByMe, isTrue);
-
-      // The echo of the viewer's own prayer lands before the reply.
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(
-          messageId: 'a',
-          prayerCount: 9,
-          userIds: ['u9', 'me'],
-        ),
-      ], viewerId: 'me');
-      expect(_byId(notifier, 'a').prayerCount, 9);
-      expect(_byId(notifier, 'a').recentPrayers, [me]);
-
-      // The reply carries an older count; the newer broadcast wins.
-      repository.prayGate!.complete();
-      await _settle();
-      expect(_byId(notifier, 'a').prayerCount, 9);
-      expect(_byId(notifier, 'a').myPrayerCount, 1);
-    });
-
-    test('a failed call after the broadcast listed me shows one, not the batch', () async {
-      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
-      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
-      container = buildContainer();
-
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.prayGate = Completer<void>();
-      notifier.pray('a', viewer: me);
-      notifier.pray('a', viewer: me);
-      await _settle();
-      // Could be this call landing, or the same account on another device.
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['me']),
-      ], viewerId: 'me');
-
-      repository.prayFailure = const NetworkFailure('dropped');
-      repository.prayGate!.complete();
-      await _settle();
-
-      expect(_byId(notifier, 'a').prayedByMe, isTrue);
-      expect(_byId(notifier, 'a').myPrayerCount, 1);
-      expect(_byId(notifier, 'a').prayerCount, 4);
-      expect(_byId(notifier, 'a').recentPrayers, [me]);
-    });
-
     test('closing the sheet keeps a rate-limited retry on its deadline', () async {
       repository =
           _FakeGroupChatRepository(history: [_prayer('a')])
@@ -1613,10 +1544,10 @@ void main() {
       repository.prayGate = Completer<void>();
       notifier.pray('a');
       await _settle();
-      // Someone else prayed; the broadcast does not list the viewer.
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 4, userIds: ['u9']),
-      ], viewerId: 'me');
+      // Someone else prayed; the refetch lands while the tap is in flight.
+      repository.history = [_prayer('a', count: 4)];
+      await notifier.refreshLatest();
+      expect(_byId(notifier, 'a').prayerCount, 5);
 
       repository.prayFailure = const NetworkFailure('dropped');
       repository.prayGate!.complete();
@@ -1625,6 +1556,54 @@ void main() {
       expect(_byId(notifier, 'a').prayedByMe, isFalse);
       expect(_byId(notifier, 'a').myPrayerCount, 0);
       expect(_byId(notifier, 'a').prayerCount, 4);
+    });
+
+    test('a refetch while taps are outstanding keeps the optimistic count', () async {
+      const me = ChatPrayerUserDTO(userId: 'me', name: 'Tenzin');
+      repository = _FakeGroupChatRepository(history: [_prayer('a', count: 3)]);
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.prayGate = Completer<void>();
+      notifier.pray('a', viewer: me);
+      await _settle();
+      expect(_byId(notifier, 'a').prayerCount, 4);
+
+      // The signal for the viewer's own prayer refetches a page the server
+      // wrote before counting it.
+      repository.history = [_prayer('a', count: 3)];
+      await notifier.refreshLatest();
+      expect(_byId(notifier, 'a').prayerCount, 4);
+      expect(_byId(notifier, 'a').prayedByMe, isTrue);
+      expect(_byId(notifier, 'a').recentPrayers, [me]);
+
+      // A later page already counts it, plus someone else.
+      repository.history = [_prayer('a', count: 9, prayedByMe: true)];
+      await notifier.refreshLatest();
+      expect(_byId(notifier, 'a').prayerCount, 9);
+
+      repository.prayGate!.complete();
+      await _settle();
+      expect(_byId(notifier, 'a').prayerCount, 9);
+      expect(_byId(notifier, 'a').myPrayerCount, 1);
+    });
+
+    test('a refetch never takes a prayer back', () async {
+      repository = _FakeGroupChatRepository(
+        history: [_prayer('a', count: 5, prayedByMe: true)],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+
+      repository.history = [_prayer('a', count: 4)];
+      await notifier.refreshLatest();
+
+      expect(_byId(notifier, 'a').prayerCount, 5);
+      expect(_byId(notifier, 'a').prayedByMe, isTrue);
     });
 
     test('closing the sheet sends queued taps without waiting a window', () async {
@@ -1909,29 +1888,60 @@ void main() {
       expect(_byId(notifier, 'a').myPrayerCount, 1);
     });
 
-    test('applyPrayersUpdated derives prayed_by_me from user_ids', () async {
+    test('refreshLatest takes prayed_by_me from the page', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a', count: 1)]);
       container = buildContainer();
 
       final notifier = _keepAlive(container);
       await _settle();
 
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(
-          messageId: 'a',
-          prayerCount: 12,
-          userIds: ['u9', 'me'],
-        ),
-      ], viewerId: 'me');
+      repository.history = [_prayer('a', count: 12, prayedByMe: true)];
+      await notifier.refreshLatest();
       expect(_byId(notifier, 'a').prayerCount, 12);
       expect(_byId(notifier, 'a').prayedByMe, isTrue);
+    });
 
-      // An unknown viewer keeps whatever was shown.
-      notifier.applyPrayersUpdated(const [
-        ChatLivePrayerUpdate(messageId: 'a', prayerCount: 13, userIds: []),
-      ], viewerId: '');
-      expect(_byId(notifier, 'a').prayerCount, 13);
-      expect(_byId(notifier, 'a').prayedByMe, isTrue);
+    test('the room signal refetches the list and closes the room', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+      final signals = FakeRealtimeSignals();
+      container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          prayerPacingProvider.overrideWithValue(_instant),
+          prayerTranslationLanguageProvider.overrideWithValue('EN'),
+          prayerMantraLanguageProvider.overrideWithValue('en'),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => true),
+        ],
+      );
+      final notifier = _keepAlive(container);
+      await _settle();
+      container.listen(
+        prayerRoomLiveProvider((scope: _eventScope, roomId: 'room-1')),
+        (_, _) {},
+      );
+      await _settle();
+      expect(signals.listeners(SignalPaths.chatRoom('room-1')), 1);
+
+      final path = SignalPaths.chatRoom('room-1');
+      signals.emit(path, {'prayers_changed_at': DateTime.utc(2026, 10, 29)});
+      await _settle();
+      final lists = repository.listedTypes.length;
+
+      repository.history = [_prayer('b'), _prayer('a')];
+      signals.emit(path, {
+        'prayers_changed_at': DateTime.utc(2026, 10, 29, 0, 1),
+      });
+      await _settle();
+      expect(repository.listedTypes.length, lists + 1);
+      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+
+      signals.emit(path, {
+        'prayers_changed_at': DateTime.utc(2026, 10, 29, 0, 1),
+        'closed_at': DateTime.utc(2026, 10, 29, 0, 2),
+      });
+      await _settle();
+      expect(notifier.state.roomStatus, PrayerRoomStatus.closed);
     });
 
     test('applyDeletion drops the request', () async {
