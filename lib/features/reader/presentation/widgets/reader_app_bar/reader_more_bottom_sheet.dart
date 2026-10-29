@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/analytics/share_analytics.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
@@ -8,20 +7,15 @@ import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
-import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
-/// Bottom sheet opened from the reader's three-dot (⋮) button.
-///
-/// Contains:
-///   • Font-size A / A buttons
-///   • Audio versions, when this chant has recordings
-///   • "+ Add to my practices" action
-///   • Bookmark toggle action
+/// The reader's More sheet (⋮), as WF23: Add to my practices, Bookmark and
+/// Share, plus Audio versions and Offline recitation where they apply. The
+/// size buttons are in the Display sheet.
 class ReaderMoreBottomSheet extends ConsumerStatefulWidget {
   const ReaderMoreBottomSheet({
     super.key,
@@ -104,245 +98,80 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n;
+    final palette = ReaderPalette.resolve(Theme.of(context), ref);
     final isBookmarked = ref.watch(isBookmarkedProvider(_bookmarkTarget));
 
-    final textSize = ref.watch(readerTextSizeProvider);
-    final canDecrease = ReaderDisplaySheet.canDecrease(textSize);
-    final canIncrease = ReaderDisplaySheet.canIncrease(textSize);
-
-    return SafeArea(
-      top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Drag handle ────────────────────────────────────────────────
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 8),
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: ReaderPanelConstants.dragHandleColor(context),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-
-          // ── Font size row ──────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _FontSizeButton(
-                    label: 'A',
-                    fontSize: 16,
-                    isEnabled: canDecrease,
-                    onTap:
-                        canDecrease
-                            ? () {
-                              HapticFeedback.lightImpact();
-                              ref
-                                  .read(readerTextSizeProvider.notifier)
-                                  .stepBoth(-1);
-                            }
-                            : null,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _FontSizeButton(
-                    label: 'A',
-                    fontSize: 26,
-                    isEnabled: canIncrease,
-                    onTap:
-                        canIncrease
-                            ? () {
-                              HapticFeedback.lightImpact();
-                              ref
-                                  .read(readerTextSizeProvider.notifier)
-                                  .stepBoth(1);
-                            }
-                            : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          if (widget.onAudioVersions != null) ...[
-            _SectionDivider(theme: theme),
-            ListTile(
-              leading: Icon(
-                AppAssets.speakerSimpleHigh,
-                color: theme.colorScheme.onSurface,
-              ),
-              title: Text(
-                l10n.collection_audio_versions,
-                style: theme.textTheme.bodyLarge,
-              ),
-              trailing: Icon(
-                AppAssets.caretRight,
-                size: 18,
-                color: theme.colorScheme.onSurface,
-              ),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).pop();
-                widget.onAudioVersions?.call();
-              },
-            ),
-          ],
-
-          if (widget.showAddToPractices) ...[
-            // ── Add to my practices ──────────────────────────────────────
-            _SectionDivider(theme: theme),
-            ListTile(
-              leading: Icon(AppAssets.plus, color: theme.colorScheme.onSurface),
-              title: Text(
-                l10n.mala_add_to_practice,
-                style: theme.textTheme.bodyLarge,
-              ),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).pop();
-                widget.onAddToPractices?.call();
-              },
-            ),
-          ],
-
-          if (widget.showOfflineRecitation) ...[
-            _SectionDivider(theme: theme),
-            ListTile(
-              leading: Icon(
-                AppAssets.plusCircle,
-                color: theme.colorScheme.onSurface,
-              ),
-              title: Text(
-                l10n.group_accumulator_offline_recitation,
-                style: theme.textTheme.bodyLarge,
-              ),
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Navigator.of(context).pop();
-                widget.onAddOfflineRecitation?.call();
-              },
-            ),
-          ],
-
-          // ── Bookmark ───────────────────────────────────────────────────
-          _SectionDivider(theme: theme),
-          ListTile(
-            leading:
-                _isBookmarking
-                    ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    )
-                    : Icon(
-                      isBookmarked
-                          ? AppAssets.bookmarkSimpleFill
-                          : AppAssets.bookmarkSimple,
-                      color: theme.colorScheme.onSurface,
-                    ),
-            title: Text(l10n.bookmark, style: theme.textTheme.bodyLarge),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              _toggleBookmark();
-            },
-          ),
-
-          // ── Share ──────────────────────────────────────────────────────
-          _SectionDivider(theme: theme),
-          ListTile(
-            leading:
-                _isSharing
-                    ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    )
-                    : Icon(Icons.share, color: theme.colorScheme.onSurface),
-            title: Text(l10n.share, style: theme.textTheme.bodyLarge),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              _share();
-            },
-          ),
-
-          const SizedBox(height: 8),
-        ],
+    Widget busy() => SizedBox(
+      width: 22,
+      height: 22,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: CircularProgressIndicator(strokeWidth: 2, color: palette.ink),
       ),
     );
-  }
-}
 
-class _SectionDivider extends StatelessWidget {
-  const _SectionDivider({required this.theme});
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) =>
-      Divider(height: 1, thickness: 1, color: theme.dividerColor);
-}
-
-class _FontSizeButton extends StatelessWidget {
-  const _FontSizeButton({
-    required this.label,
-    required this.fontSize,
-    required this.isEnabled,
-    this.onTap,
-  });
-
-  final String label;
-  final double fontSize;
-  final bool isEnabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color:
-                isEnabled
-                    ? theme.colorScheme.surfaceContainerHighest
-                    : theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.5,
-                    ),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.w500,
-              color:
-                  isEnabled
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.4),
-            ),
-          ),
+    final rows = <Widget>[
+      if (widget.onAudioVersions != null)
+        ReaderSheetRow(
+          label: l10n.collection_audio_versions,
+          leading: const Icon(AppAssets.speakerSimpleHigh),
+          trailing: const Icon(AppAssets.caretRight),
+          onTap: () {
+            Navigator.of(context).pop();
+            widget.onAudioVersions?.call();
+          },
         ),
+      if (widget.showAddToPractices)
+        ReaderSheetRow(
+          label: l10n.mala_add_to_practice,
+          leading: const Icon(AppAssets.plus),
+          onTap: () {
+            Navigator.of(context).pop();
+            widget.onAddToPractices?.call();
+          },
+        ),
+      if (widget.showOfflineRecitation)
+        ReaderSheetRow(
+          label: l10n.group_accumulator_offline_recitation,
+          leading: const Icon(AppAssets.plusCircle),
+          onTap: () {
+            Navigator.of(context).pop();
+            widget.onAddOfflineRecitation?.call();
+          },
+        ),
+      ReaderSheetRow(
+        label: l10n.bookmark,
+        leading:
+            _isBookmarking
+                ? busy()
+                : Icon(
+                  isBookmarked
+                      ? AppAssets.bookmarkSimpleFill
+                      : AppAssets.bookmarkSimple,
+                ),
+        onTap: _toggleBookmark,
+      ),
+      ReaderSheetRow(
+        label: l10n.share,
+        leading: _isSharing ? busy() : const Icon(AppAssets.readerShare),
+        onTap: _share,
+      ),
+    ];
+
+    // As WF23: the title centred with ✕, then the actions with rules
+    // between them.
+    return ReaderSheet(
+      title: l10n.more,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) const ReaderSheetDivider(),
+            rows[i],
+          ],
+        ],
       ),
     );
   }
@@ -358,12 +187,8 @@ void showReaderMoreBottomSheet(
   VoidCallback? onAddOfflineRecitation,
   VoidCallback? onAudioVersions,
 }) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+  showReaderSheet<void>(
+    context,
     builder:
         (_) => ReaderMoreBottomSheet(
           textId: textId,

@@ -51,16 +51,6 @@ class ReaderDisplaySheet extends ConsumerStatefulWidget {
   /// languages →" is left out without it.
   final VoidCallback? onChangeLanguages;
 
-  /// The smaller A is off when no line can get smaller.
-  static bool canDecrease(ReaderTextSize size) =>
-      size.originalStep > ReaderTextSize.minStep ||
-      size.translationStep > ReaderTextSize.minStep;
-
-  /// The larger A is off when no line can get larger.
-  static bool canIncrease(ReaderTextSize size) =>
-      size.originalStep < ReaderTextSize.maxStep ||
-      size.translationStep < ReaderTextSize.maxStep;
-
   @override
   ConsumerState<ReaderDisplaySheet> createState() =>
       _ReaderDisplaySheetState();
