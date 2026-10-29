@@ -21,6 +21,7 @@ class LanguagesRemoteDatasource {
         '/languages',
         queryParameters:
             recitationOnly ? const {'recitation_only': true} : null,
+        options: Options(extra: {'no_cache': true}),
       );
 
       if (response.statusCode == 200) {

@@ -51,6 +51,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class GroupProfileBody extends ConsumerStatefulWidget {
   final GroupProfile profile;
@@ -186,6 +187,9 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     _visibleTabs = tabs;
     _tabController = controller;
+    // A tab selected without a swipe, such as Members when it is the only
+    // one, never fires the listener; sync its flags once the frame is up.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onTabChanged());
 
     if (previous != null) {
       previous.removeListener(_onTabChanged);
@@ -420,7 +424,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
       groupPracticesProvider(profile.id).select(
         (state) => (
           state.practices.isNotEmpty,
-          state.isLoading && state.practices.isEmpty,
+          !state.hasLoaded,
         ),
       ),
     );
@@ -993,7 +997,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   child:
                       profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                           ? CachedNetworkImageWidget(
-                            key: ValueKey(profile.avatarUrl),
+                            key: networkImageKey(profile.avatarUrl),
                             imageUrl: profile.avatarUrl,
                             width: 44,
                             height: 44,
@@ -1401,7 +1405,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         child: AspectRatio(
           aspectRatio: 3.5,
           child: CachedNetworkImageWidget(
-            key: ValueKey(profile.bannerUrl),
+            key: networkImageKey(profile.bannerUrl),
             imageUrl: profile.bannerUrl,
             fit: BoxFit.cover,
             errorWidget: Container(

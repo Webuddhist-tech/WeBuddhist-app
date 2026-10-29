@@ -14,6 +14,8 @@ import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 
 class GroupProfileEventsTab extends ConsumerWidget {
   final String groupId;
@@ -46,21 +48,26 @@ class GroupProfileEventsTab extends ConsumerWidget {
 
     final eventsAsync = ref.watch(groupEventsProvider(groupId));
 
-    return eventsAsync.when(
-      data: (either) {
-        return either.fold(
-          (failure) => GroupProfileNestedTabScrollView.centered(
+    return ScreenCacheBuilder<GroupEventsPage>(
+      value: eventsAsync,
+      skeleton: GroupProfileNestedTabScrollView.centered(
+        pageStorageKey: pageStorageKey,
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      onRetry: () => ref.invalidate(groupEventsProvider(groupId)),
+      error:
+          (error, onRetry) => GroupProfileNestedTabScrollView.centered(
             pageStorageKey: pageStorageKey,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: ErrorStateWidget(
-                error: failure,
+                error: error,
                 customMessage: context.l10n.group_events_load_error,
-                onRetry: () => ref.invalidate(groupEventsProvider(groupId)),
+                onRetry: onRetry,
               ),
             ),
           ),
-          (page) {
+      data: (page) {
             if (page.events.isEmpty) {
               return GroupProfileNestedTabScrollView.centered(
                 pageStorageKey: pageStorageKey,
@@ -100,26 +107,7 @@ class GroupProfileEventsTab extends ConsumerWidget {
                 ),
               ],
             );
-          },
-        );
       },
-      loading:
-          () => GroupProfileNestedTabScrollView.centered(
-            pageStorageKey: pageStorageKey,
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-      error:
-          (error, _) => GroupProfileNestedTabScrollView.centered(
-            pageStorageKey: pageStorageKey,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              child: ErrorStateWidget(
-                error: error,
-                customMessage: context.l10n.group_events_load_error,
-                onRetry: () => ref.invalidate(groupEventsProvider(groupId)),
-              ),
-            ),
-          ),
     );
   }
 }
@@ -130,6 +118,7 @@ extension on GroupProfileEventsTab {
     final l10n = context.l10n;
 
     return itemsAsync.when(
+      skipLoadingOnReload: true,
       loading:
           () => GroupProfileNestedTabScrollView.centered(
             pageStorageKey: pageStorageKey,

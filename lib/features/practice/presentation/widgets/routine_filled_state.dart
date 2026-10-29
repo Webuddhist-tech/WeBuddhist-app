@@ -332,8 +332,11 @@ class _RoutineFilledStateState extends ConsumerState<RoutineFilledState> {
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(userRoutineProvider);
-              await ref.read(userRoutineProvider.future);
+              await ref
+                  .read(routineApiRepositoryProvider)
+                  .refreshUserRoutine(
+                    language: ref.read(contentLanguageProvider),
+                  );
               await ref.read(myPlansPaginatedProvider.notifier).refresh();
             },
             child: ListView.builder(

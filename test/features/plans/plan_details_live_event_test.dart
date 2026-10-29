@@ -35,6 +35,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:intl/intl.dart';
 
 import '../group_profile/presentation/widgets/fake_in_app_webview_platform.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
   @override
@@ -206,27 +207,29 @@ Future<void> _pumpLiveEventDetails(
         localStorageServiceProvider.overrideWithValue(_FakeStorage()),
         // Still loading counts as live; a failure means no stream.
         groupEventInLanguageProvider.overrideWith(
-          (ref, key) =>
-              fetch != null
-                  ? fetch()
-                  : streamKnownAbsent
-                  ? Future.value(const Left(NetworkFailure('test')))
-                  : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
+          () => GroupEventInLanguageNotifier(
+            (ref, key, bind) =>
+                fetch != null
+                    ? fetch()
+                    : streamKnownAbsent
+                    ? Future.value(const Left(NetworkFailure('test')))
+                    : (stream ?? Completer<Either<Failure, GroupEvent>>()).future,
+          ),
         ),
         userPlanDayContentFutureProvider.overrideWith(
-          (ref, params) => Stream.value(Right(day)),
+          () => AutoDisposeScreenCacheFamilyNotifier.fixed(Right(day)),
         ),
         userPlanDaysCompletionStatusProvider.overrideWith(
-          (ref, planId) => Stream.value(Right(completion)),
+          () => AutoDisposeScreenCacheFamilyNotifier.fixed(Right(completion)),
         ),
         planDaysByPlanIdFutureProvider.overrideWith(
-          (ref, planId) => Stream.value(const Right(<PlanDaysModel>[])),
+          () => ScreenCacheFamilyNotifier.fixed(const Right(<PlanDaysModel>[])),
         ),
         seriesListFutureProvider.overrideWith(
-          (ref) => Stream.value(const Left(NetworkFailure('test'))),
+          () => ScreenCacheNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
         userSeriesEnrollmentsProvider.overrideWith(
-          (ref) => Stream.value(<String>{}),
+          () => ScreenCacheNotifier.fixed(<String>{}),
         ),
       ],
       child: MaterialApp(

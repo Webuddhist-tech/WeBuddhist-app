@@ -11,6 +11,9 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_su
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+
+import '../../../../helpers/fake_screen_cache_store.dart';
 
 class _FakeRepository implements GroupChatRepository {
   _FakeRepository(this.supporters);
@@ -72,6 +75,7 @@ Future<void> _pump(
         groupChatRepositoryProvider.overrideWithValue(
           _FakeRepository(supporters),
         ),
+        screenCacheStoreProvider.overrideWithValue(FakeScreenCacheStore()),
       ],
       child: MaterialApp(
         locale: const Locale('en'),

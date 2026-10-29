@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_pecha/features/mala/presentation/providers/mala_provider
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_sync_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 final groupAccumulatorRemoteDatasourceProvider =
     Provider<GroupAccumulatorRemoteDatasource>((ref) {
@@ -24,35 +26,85 @@ final groupAccumulatorRepositoryProvider =
     Provider<GroupAccumulatorRepositoryInterface>((ref) {
       return GroupAccumulatorRepositoryImpl(
         remote: ref.watch(groupAccumulatorRemoteDatasourceProvider),
+        store: ref.watch(screenCacheStoreProvider),
       );
     });
 
-final groupAccumulatorsProvider = FutureProvider.autoDispose
-    .family<Either<Failure, GroupAccumulatorsPage>, String>((
-      ref,
-      groupId,
-    ) async {
-      ref.watch(authProvider);
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupAccumulatorRepositoryProvider);
-      return repository.getGroupAccumulators(
+typedef GroupAccumulatorsNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupAccumulatorsPage,
+      Either<Failure, GroupAccumulatorsPage>,
+      String
+    >;
+
+/// Stored page is the first state, refreshed in the background.
+final groupAccumulatorsProvider = AsyncNotifierProvider.autoDispose.family<
+  GroupAccumulatorsNotifier,
+  Either<Failure, GroupAccumulatorsPage>,
+  String
+>(() {
+  return GroupAccumulatorsNotifier((ref, groupId, bind) {
+    ref.watch(authProvider);
+    final language = ref.watch(contentLanguageProvider);
+    final repository = ref.watch(groupAccumulatorRepositoryProvider);
+    return bind.source(
+      repository.groupAccumulatorsSource(
         groupId,
-        skip: 0,
         limit: 20,
         language: language,
-      );
-    });
+      ),
+    );
+  });
+});
 
-final groupAccumulatorDetailProvider = FutureProvider.autoDispose
-    .family<Either<Failure, GroupAccumulatorDetail>, String>((
-      ref,
-      accumulatorId,
-    ) async {
-      ref.watch(authProvider);
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupAccumulatorRepositoryProvider);
-      return repository.getGroupAccumulator(accumulatorId, language: language);
-    });
+typedef GroupAccumulatorDetailNotifier =
+    AutoDisposeScreenCacheFamilyNotifier<
+      GroupAccumulatorDetail,
+      Either<Failure, GroupAccumulatorDetail>,
+      String
+    >;
+
+/// `.future` resolves with the stored detail; use `refreshGroupAccumulator`
+/// when the server copy is required.
+final groupAccumulatorDetailProvider = AsyncNotifierProvider.autoDispose.family<
+  GroupAccumulatorDetailNotifier,
+  Either<Failure, GroupAccumulatorDetail>,
+  String
+>(() {
+  return GroupAccumulatorDetailNotifier((ref, accumulatorId, bind) {
+    ref.watch(authProvider);
+    final language = ref.watch(contentLanguageProvider);
+    final repository = ref.watch(groupAccumulatorRepositoryProvider);
+    return bind.source(
+      repository.groupAccumulatorDetailSource(
+        accumulatorId,
+        language: language,
+      ),
+    );
+  });
+});
+
+/// The server's detail, for anything that hands the user's count on (the
+/// reader mirrors it exactly). The stored copy can be behind chants made
+/// elsewhere, so it is only used, with [allowStored], when the fetch fails.
+Future<GroupAccumulatorDetail?> fetchFreshGroupAccumulatorDetail(
+  ProviderContainer container,
+  String accumulatorId, {
+  bool allowStored = true,
+}) async {
+  final repository = container.read(groupAccumulatorRepositoryProvider);
+  final language = container.read(contentLanguageProvider);
+  final fresh = await repository.refreshGroupAccumulator(
+    accumulatorId,
+    language: language,
+  );
+  final detail = fresh.fold((_) => null, (d) => d);
+  if (detail != null || !allowStored) return detail;
+  final stored = await container.read(
+    groupAccumulatorDetailProvider(accumulatorId).future,
+  );
+  return stored.fold((_) => null, (d) => d);
+}
 
 @immutable
 class GroupAccumulatorMembersKey {
@@ -135,15 +187,30 @@ class GroupAccumulatorMembersNotifier
     required GroupAccumulatorRepositoryInterface repository,
     required this.accumulatorId,
     required this.sortBy,
+    GroupAccumulatorMembersPage? stored,
   }) : _repository = repository,
-       super(const GroupAccumulatorMembersState());
+       super(const GroupAccumulatorMembersState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) {
+      state = state.copyWith(
+        hasLoadedOnce: true,
+        members: stored.members,
+        total: stored.total,
+      );
+    }
+  }
 
   final GroupAccumulatorRepositoryInterface _repository;
   final String accumulatorId;
   final GroupAccumulatorMemberSort sortBy;
   static const _pageSize = 20;
   bool _hasLoaded = false;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial({bool force = false}) async {
     if (_hasLoaded && !force) return;
     _hasLoaded = true;
@@ -152,32 +219,43 @@ class GroupAccumulatorMembersNotifier
       clearError: true,
     );
 
-    final result = await _repository.getGroupAccumulatorMembers(
-      accumulatorId,
-      skip: 0,
-      limit: _pageSize,
-      sortBy: sortBy,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupAccumulatorMembersPage> result;
+    try {
+      result = await _repository.getGroupAccumulatorMembers(
+        accumulatorId,
+        skip: 0,
+        limit: _pageSize,
+        sortBy: sortBy,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
     if (!mounted) return;
 
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
         hasLoadedOnce: true,
-        error: failure,
+        error: state.members.isEmpty ? failure : null,
       ),
-      (page) => state = state.copyWith(
-        isLoading: false,
-        hasLoadedOnce: true,
-        members: page.members,
-        total: page.total,
-      ),
+      (page) {
+        _pageEpoch++;
+        state = state.copyWith(
+          isLoading: false,
+          hasLoadedOnce: true,
+          members: page.members,
+          total: page.total,
+        );
+      },
     );
   }
 
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    if (_firstPageInFlight) return;
 
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final result = await _repository.getGroupAccumulatorMembers(
       accumulatorId,
@@ -186,6 +264,11 @@ class GroupAccumulatorMembersNotifier
       sortBy: sortBy,
     );
     if (!mounted) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) => state = state.copyWith(isLoadingMore: false, error: failure),
@@ -209,10 +292,15 @@ final groupAccumulatorMembersProvider = StateNotifierProvider.autoDispose
       GroupAccumulatorMembersState,
       GroupAccumulatorMembersKey
     >((ref, key) {
+      final repository = ref.watch(groupAccumulatorRepositoryProvider);
       return GroupAccumulatorMembersNotifier(
-        repository: ref.watch(groupAccumulatorRepositoryProvider),
+        repository: repository,
         accumulatorId: key.accumulatorId,
         sortBy: key.sortBy,
+        stored: repository.readStoredGroupAccumulatorMembers(
+          key.accumulatorId,
+          sortBy: key.sortBy,
+        ),
       );
     });
 

@@ -1,9 +1,11 @@
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_report.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fpdart/fpdart.dart';
 
 class GroupReportsState {
   final List<GroupReport> reports;
@@ -71,9 +73,13 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   GroupReportsNotifier({
     required GroupProfileRepositoryInterface repository,
     required String groupId,
+    GroupReportsPage? stored,
   }) : _repository = repository,
        _groupId = groupId,
-       super(const GroupReportsState());
+       super(const GroupReportsState()) {
+    // The stored page is the first state, so the first frame never spins.
+    if (stored != null) _applyFirstPage(stored, fresh: false);
+  }
 
   final GroupProfileRepositoryInterface _repository;
   final String _groupId;
@@ -86,6 +92,10 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   static const int _resolveScanMaxPages = 4;
   int _requestGeneration = 0;
   bool _resolving = false;
+  // A page-two request must not run from the stored offset while page one is
+  // still being refreshed, nor land on a list that page one has replaced.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
 
   /// What the next page asks the server to skip. Counted from what the pages
   /// held on the wire, not from the reports kept: a dropped kind still took
@@ -93,22 +103,29 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
   /// server's own window.
   int _serverOffset = 0;
 
+  /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
     if (_resolving || state.isLoading) return;
 
     final generation = ++_requestGeneration;
     state = state.copyWith(
-      isLoading: true,
+      isLoading: state.reports.isEmpty,
       isLoadingMore: false,
       clearError: true,
     );
 
-    final result = await _repository.getGroupReports(
-      _groupId,
-      resolved: false,
-      skip: 0,
-      limit: _limit,
-    );
+    _firstPageInFlight = true;
+    final Either<Failure, GroupReportsPage> result;
+    try {
+      result = await _repository.getGroupReports(
+        _groupId,
+        resolved: false,
+        skip: 0,
+        limit: _limit,
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
 
     if (!mounted || generation != _requestGeneration) return;
 
@@ -117,20 +134,23 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
         state = state.copyWith(
           isLoading: false,
           hasLoaded: true,
-          error: failure.message,
+          error: state.reports.isEmpty ? failure.message : null,
         );
       },
-      (page) {
-        _serverOffset = page.received;
-        state = state.copyWith(
-          reports: page.reports,
-          total: page.total,
-          isLoading: false,
-          hasLoaded: true,
-          hasMore: _hasMore(page, _serverOffset),
-          clearError: true,
-        );
-      },
+      _applyFirstPage,
+    );
+  }
+
+  void _applyFirstPage(GroupReportsPage page, {bool fresh = true}) {
+    if (fresh) _pageEpoch++;
+    _serverOffset = page.received;
+    state = state.copyWith(
+      reports: page.reports,
+      total: page.total,
+      isLoading: false,
+      hasLoaded: true,
+      hasMore: _hasMore(page, _serverOffset),
+      clearError: true,
     );
   }
 
@@ -141,8 +161,10 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
         state.isLoading) {
       return;
     }
+    if (_firstPageInFlight) return;
 
     final generation = _requestGeneration;
+    final epoch = _pageEpoch;
     state = state.copyWith(isLoadingMore: true, clearError: true);
 
     final result = await _repository.getGroupReports(
@@ -153,6 +175,11 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
     );
 
     if (!mounted || generation != _requestGeneration) return;
+    if (epoch != _pageEpoch) {
+      // Page one was replaced meanwhile; this page was computed against it.
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -323,9 +350,11 @@ class GroupReportsNotifier extends StateNotifier<GroupReportsState> {
 
 final groupReportsProvider = StateNotifierProvider.autoDispose
     .family<GroupReportsNotifier, GroupReportsState, String>((ref, groupId) {
+      final repository = ref.watch(groupProfileRepositoryProvider);
       final notifier = GroupReportsNotifier(
-        repository: ref.watch(groupProfileRepositoryProvider),
+        repository: repository,
         groupId: groupId,
+        stored: repository.readStoredGroupReports(groupId),
       );
       notifier.loadInitial();
       return notifier;

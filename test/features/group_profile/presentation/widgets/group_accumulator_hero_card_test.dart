@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_accumulator.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_hero_card.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/features/mala/presentation/providers/mala_providers.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
@@ -109,7 +110,7 @@ void main() {
       detail: _detail(mantraId: 'mantra-1'),
       overrides: [
         malaCatalogueProvider.overrideWith(
-          (ref) async => const Right([
+          () => ScreenCacheNotifier.fixed(const Right([
             Mantra(
               presetId: 'preset-1',
               mantra: MantraText(
@@ -118,7 +119,7 @@ void main() {
                 pronunciation: 'Om Ah Hung Vajra Guru Padma Siddhi Hung',
               ),
             ),
-          ]),
+          ])),
         ),
       ],
     );
@@ -140,12 +141,12 @@ void main() {
       detail: _detail(mantraId: 'mantra-1'),
       overrides: [
         malaCatalogueProvider.overrideWith(
-          (ref) async => const Right([
+          () => ScreenCacheNotifier.fixed(const Right([
             Mantra(
               presetId: 'preset-1',
               mantra: MantraText(id: 'mantra-1', text: 'ཨོཾ་ཨཱཿ་ཧཱུྃ'),
             ),
-          ]),
+          ])),
         ),
       ],
     );

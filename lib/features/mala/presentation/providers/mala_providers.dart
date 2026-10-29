@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/storage/preferences_service.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -37,6 +40,7 @@ final malaRepositoryProvider = Provider<MalaRepository>((ref) {
   return MalaRepositoryImpl(
     remote: ref.watch(malaRemoteDataSourceProvider),
     local: ref.watch(malaLocalDataSourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
@@ -95,9 +99,22 @@ Future<String?> resolveMalaUserId(Ref ref) async {
   final stored = await ref
       .read(localStorageServiceProvider)
       .get<String>(StorageKeys.currentUserId);
-  if (stored != null && stored.isNotEmpty) return stored;
-  return ref.read(userProvider).user?.id;
+  final id =
+      stored != null && stored.isNotEmpty
+          ? stored
+          : ref.read(userProvider).user?.id;
+  _lastResolvedMalaUserId = id;
+  return id;
 }
+
+String? _lastResolvedMalaUserId;
+
+/// Best-effort sync id for first-frame Hive reads; [resolveMalaUserId] wins.
+String? malaUserIdSync() =>
+    SharedPreferencesService.instance.getSync<String>(
+      StorageKeys.currentUserId,
+    ) ??
+    _lastResolvedMalaUserId;
 
 // ============ Sync manager (app-scoped, kept alive) ============
 
@@ -121,16 +138,44 @@ final malaSyncManagerProvider = Provider<MalaSyncManager>((ref) {
 
 // ============ Catalogue ============
 
-final malaCatalogueProvider = FutureProvider<Either<Failure, List<Mantra>>>((
-  ref,
-) async {
-  if (!_isAuthenticated(ref)) {
-    return const Left(AuthenticationFailure('Not authenticated'));
+// Each refresh written to Hive re-emits here.
+Stream<Either<Failure, List<Mantra>>> _catalogueUpdates(
+  GetCatalogueUseCase getCatalogue,
+  MalaLocalDataSource local,
+  String language,
+) async* {
+  yield await getCatalogue(language);
+
+  await for (final _ in local.watchCatalogue(language)) {
+    final cached = local.readCatalogue(language);
+    if (cached != null) {
+      yield Right(cached.map((preset) => preset.toEntity()).toList());
+    }
   }
-  // Re-fetches when the content language changes so mantra content is
-  // localized. The UI locale can differ from it (see locale/README.md).
-  final language = ref.watch(contentLanguageProvider);
-  return ref.watch(getCatalogueUseCaseProvider)(language);
+}
+
+/// Stored catalogue (from Hive) is the first state, then each refresh.
+/// Re-fetches when the content language changes.
+final malaCatalogueProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<Mantra>, Either<Failure, List<Mantra>>>,
+  Either<Failure, List<Mantra>>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    if (!_isAuthenticated(ref)) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    final language = ref.watch(contentLanguageProvider);
+    final getCatalogue = ref.watch(getCatalogueUseCaseProvider);
+    final local = ref.watch(malaLocalDataSourceProvider);
+    final stored = local
+        .readCatalogue(language)
+        ?.map((preset) => preset.toEntity())
+        .toList();
+    return bind.stream(
+      stored == null ? null : Right(stored),
+      _catalogueUpdates(getCatalogue, local, language),
+    );
+  });
 });
 
 // ============ Catalogue search (debounced, server-side) ============
@@ -170,6 +215,7 @@ final malaCounterProvider = StateNotifierProvider.autoDispose
             ref.watch(malaRemoteDataSourceProvider).fetchImageBytes,
         sync: sync,
         currentUserId: () => resolveMalaUserId(ref),
+        currentUserIdSync: malaUserIdSync,
         sound: ref.watch(malaSoundPlayerProvider),
       );
       void onPersonalCountSynced(String presetId) {

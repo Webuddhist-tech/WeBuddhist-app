@@ -63,8 +63,30 @@ class ReaderVersionDetail {
       ranking: json['ranking'] as int?,
       license: json['license'] as String?,
       isSelected: json['is_selected'] as bool? ?? false,
+      isRoot: json['is_root'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'parent_id': parentId,
+    'priority': priority,
+    'language': language,
+    'type': type,
+    'group_id': groupId,
+    'table_of_contents': tableOfContents,
+    'is_published': isPublished,
+    'created_date': createdDate,
+    'updated_date': updatedDate,
+    'published_date': publishedDate,
+    'published_by': publishedBy,
+    'source_link': sourceLink,
+    'ranking': ranking,
+    'license': license,
+    'is_selected': isSelected,
+    'is_root': isRoot,
+  };
 }
 
 class ReaderVersionsResponse {

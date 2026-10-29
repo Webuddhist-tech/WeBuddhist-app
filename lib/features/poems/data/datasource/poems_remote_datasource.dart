@@ -29,6 +29,25 @@ class PoemsRemoteDatasource {
     String? chapterName,
     String? authorName,
   }) async {
+    final data = await fetchPoemsJson(
+      language: language,
+      skip: skip,
+      limit: limit,
+      chapterName: chapterName,
+      authorName: authorName,
+    );
+    return parsePage(data, skip: skip, limit: limit);
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Object> fetchPoemsJson({
+    required String language,
+    int skip = 0,
+    int limit = 20,
+    String? chapterName,
+    String? authorName,
+    bool noCache = false,
+  }) async {
     try {
       final response = await dio.get(
         '/poems',
@@ -41,10 +60,11 @@ class PoemsRemoteDatasource {
           if (authorName != null && authorName.isNotEmpty)
             'author_name': authorName,
         },
+        options: noCache ? Options(extra: {'no_cache': true}) : null,
       );
 
       if (response.statusCode == 200) {
-        return _parsePage(response.data, skip: skip, limit: limit);
+        return response.data ?? const <dynamic>[];
       }
       _logger.error('Failed to load poems: ${response.statusCode}');
       throw _statusToException(response.statusCode, 'Failed to load poems');
@@ -74,7 +94,7 @@ class PoemsRemoteDatasource {
   /// Tolerates a bare array (`[...]`) or a wrapped envelope
   /// (`{ "poems"|"items"|"results"|"data": [...], "total"?: n }`) since the
   /// exact list envelope isn't guaranteed by the contract.
-  PoemsPageResult _parsePage(
+  static PoemsPageResult parsePage(
     Object? data, {
     required int skip,
     required int limit,

@@ -64,6 +64,20 @@ class RoutineInfoRepository implements RoutineInfoRepositoryInterface {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> refreshRoutineInfo() async {
+    final userId = local.currentUserIdSync ?? await local.currentUserId();
+    if (userId == null || userId.isEmpty) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    try {
+      await _refresh(userId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to refresh routine info'));
+    }
+  }
+
   Future<void> _refresh(String userId) async {
     final model = await remote.fetchRoutineInfo();
     await local.saveRoutineInfo(userId, model);

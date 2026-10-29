@@ -9,6 +9,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  final savedStatuses = <bool>[];
+
+  @override
+  bool? readStoredFollowStatus(String groupId, GroupType groupType) => null;
+
+  @override
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
+  ) async {
+    savedStatuses.add(isFollowing);
+  }
+
   Completer<Either<Failure, bool>> status = Completer();
   Completer<Either<Failure, void>> follow = Completer();
   Completer<Either<Failure, void>> unfollow = Completer();
@@ -164,5 +178,70 @@ void main() {
       canPublishGroupPosts(canCreateContent: false, followState: member),
       isFalse,
     );
+  });
+
+  group('stored membership', () {
+    GroupFollowNotifier seeded(bool stored) => GroupFollowNotifier(
+      repository: repository,
+      ref: container.read(_refProvider),
+      key: _key,
+      isAuthenticated: true,
+      storedStatus: stored,
+    );
+
+    test('paints at once and lets a member post while the check runs', () {
+      final notifier = seeded(true);
+
+      expect(isPrivateGroupMembershipLoading(notifier.state), isFalse);
+      expect(isPrivateGroupMember(followState: notifier.state), isTrue);
+      expect(canPost(notifier.state), isTrue);
+      notifier.dispose();
+    });
+
+    test('a failed check keeps the stored membership', () async {
+      final notifier = seeded(true);
+      repository.status.complete(const Left(_failure));
+      await pumpEventQueue();
+
+      expect(isPrivateGroupMember(followState: notifier.state), isTrue);
+      notifier.dispose();
+    });
+
+    test('a changed server answer replaces the stored one', () async {
+      final notifier = seeded(true);
+      repository.status.complete(const Right(false));
+      await pumpEventQueue();
+
+      expect(isPrivateGroupMember(followState: notifier.state), isFalse);
+      expect(canPost(notifier.state), isFalse);
+      notifier.dispose();
+    });
+
+    test('a late check result does not undo a join in flight', () async {
+      final notifier = seeded(false);
+      unawaited(notifier.follow());
+      repository.status.complete(const Right(false));
+      await pumpEventQueue();
+
+      expect(notifier.state, isA<GroupFollowLoading>());
+      notifier.dispose();
+    });
+
+    test('a late check result re-saves a completed join', () async {
+      final notifier = seeded(false);
+      unawaited(notifier.follow());
+      repository.follow.complete(const Right(null));
+      await pumpEventQueue();
+      expect(repository.savedStatuses, [true]);
+
+      // The check's refresh stored `false` on its way back; the notifier
+      // must put the join's answer back.
+      repository.status.complete(const Right(false));
+      await pumpEventQueue();
+
+      expect(isPrivateGroupMember(followState: notifier.state), isTrue);
+      expect(repository.savedStatuses.last, isTrue);
+      notifier.dispose();
+    });
   });
 }

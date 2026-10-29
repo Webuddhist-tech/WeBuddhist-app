@@ -7,6 +7,7 @@ import 'package:flutter_pecha/features/connect/presentation/utils/connect_feed_m
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 class UnifiedConnectFeedState {
   final List<ConnectFeedItem> feedItems;
@@ -71,12 +72,41 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     required this.ref,
     required this.includeUnfollowed,
     required this.language,
-  }) : super(const UnifiedConnectFeedState());
+    required ScreenCacheSource<ConnectFeedPage>? feedSource,
+    required ScreenCacheSource<GroupPracticesPage>? practicesSource,
+  }) : _feedSource = feedSource,
+       _practicesSource = practicesSource,
+       super(_seed(feedSource, practicesSource));
+
+  // The stored pages are the first state, so the first frame never spins.
+  static UnifiedConnectFeedState _seed(
+    ScreenCacheSource<ConnectFeedPage>? feedSource,
+    ScreenCacheSource<GroupPracticesPage>? practicesSource,
+  ) {
+    final feed = feedSource?.read();
+    if (feed == null) return const UnifiedConnectFeedState();
+    final practices = practicesSource?.read();
+    return UnifiedConnectFeedState(
+      feedItems: feed.items,
+      practices: practices?.practices ?? const [],
+      feedHasMore: feed.hasMore,
+      practicesHasMore: practices?.hasMore ?? false,
+      feedSkip: feed.items.length,
+      practicesSkip: practices?.practices.length ?? 0,
+      hasLoaded: true,
+    );
+  }
 
   final Ref ref;
   final bool includeUnfollowed;
   final String language;
+  final ScreenCacheSource<ConnectFeedPage>? _feedSource;
+  final ScreenCacheSource<GroupPracticesPage>? _practicesSource;
   static const int _limit = 20;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   bool _loadRequested = false;
 
   void ensureLoaded() {
@@ -98,30 +128,48 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
       return;
     }
 
-    state = state.copyWith(isLoading: true, clearError: true);
-
-    final feedFuture = ref.read(connectRepositoryProvider).getConnectFeeds(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: 0,
-      limit: _limit,
+    final feedSource = _feedSource;
+    final practicesSource = _practicesSource;
+    if (feedSource == null || practicesSource == null) {
+      state = const UnifiedConnectFeedState(
+        feedHasMore: false,
+        practicesHasMore: false,
+        hasLoaded: true,
+      );
+      return;
+    }
+    // Only an empty feed shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(
+      isLoading: state.feedItems.isEmpty,
+      clearError: true,
     );
-    final practicesFuture = ref
-        .read(groupProfileRepositoryProvider)
-        .getConnectPractices(
-          includeUnfollowed: includeUnfollowed,
-          language: language,
-          skip: 0,
-          limit: _limit,
-        );
 
-    final feedResult = await feedFuture;
-    final practicesResult = await practicesFuture;
+    final cachedFeed = state.feedItems.isEmpty ? feedSource.read() : null;
+    final cachedPractices = practicesSource.read();
+    if (cachedFeed != null) {
+      state = state.copyWith(
+        feedItems: cachedFeed.items,
+        practices: cachedPractices?.practices ?? const [],
+        isLoading: false,
+        feedHasMore: cachedFeed.hasMore,
+        practicesHasMore: cachedPractices?.hasMore ?? false,
+        feedSkip: cachedFeed.items.length,
+        practicesSkip: cachedPractices?.practices.length ?? 0,
+        hasLoaded: true,
+        clearError: true,
+      );
+    }
+
+    _firstPageInFlight = true;
+    final feedResult = await feedSource.refresh();
+    final practicesResult = await practicesSource.refresh();
+    _firstPageInFlight = false;
 
     if (!mounted) return;
 
     feedResult.fold(
       (failure) {
+        if (cachedFeed != null || state.feedItems.isNotEmpty) return;
         state = state.copyWith(
           isLoading: false,
           error: failure.message,
@@ -129,6 +177,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
         );
       },
       (page) {
+        _pageEpoch++;
         practicesResult.fold(
           (failure) {
             state = state.copyWith(
@@ -160,17 +209,23 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
+    final epoch = _pageEpoch;
 
     final futures = <Future<void>>[];
 
     if (state.feedHasMore) {
-      futures.add(_loadMoreFeed());
+      futures.add(_loadMoreFeed(epoch));
     }
     if (state.practicesHasMore) {
-      futures.add(_loadMorePractices());
+      futures.add(_loadMorePractices(epoch));
     }
 
     await Future.wait(futures);
@@ -179,7 +234,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     state = state.copyWith(isLoadingMore: false);
   }
 
-  Future<void> _loadMoreFeed() async {
+  Future<void> _loadMoreFeed(int epoch) async {
     final result = await ref.read(connectRepositoryProvider).getConnectFeeds(
       includeUnfollowed: includeUnfollowed,
       language: language,
@@ -187,7 +242,8 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
       limit: _limit,
     );
 
-    if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (!mounted || epoch != _pageEpoch) return;
 
     result.fold(
       (failure) {
@@ -204,7 +260,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     );
   }
 
-  Future<void> _loadMorePractices() async {
+  Future<void> _loadMorePractices(int epoch) async {
     final result = await ref
         .read(groupProfileRepositoryProvider)
         .getConnectPractices(
@@ -214,7 +270,8 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
           limit: _limit,
         );
 
-    if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (!mounted || epoch != _pageEpoch) return;
 
     result.fold(
       (failure) {
@@ -234,10 +291,10 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     );
   }
 
+  /// Keeps the feed on screen while the first pages are read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const UnifiedConnectFeedState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void retry() {
@@ -271,10 +328,30 @@ final myUnifiedConnectFeedProvider = StateNotifierProvider.autoDispose<
   UnifiedConnectFeedState
 >((ref) {
   final language = ref.watch(contentLanguageProvider);
+  final signedIn = ref.watch(
+    authProvider.select((a) => a.isLoggedIn && !a.isGuest),
+  );
+  final repository = ref.watch(connectRepositoryProvider);
   return UnifiedConnectFeedNotifier(
     ref: ref,
     includeUnfollowed: false,
     language: language,
+    feedSource:
+        signedIn
+            ? repository.connectFeedFirstPage(
+              includeUnfollowed: false,
+              language: language,
+              limit: UnifiedConnectFeedNotifier._limit,
+            )
+            : null,
+    practicesSource:
+        signedIn
+            ? repository.connectPracticesFirstPage(
+              includeUnfollowed: false,
+              language: language,
+              limit: UnifiedConnectFeedNotifier._limit,
+            )
+            : null,
   );
 });
 
@@ -283,9 +360,20 @@ final discoverUnifiedConnectFeedProvider = StateNotifierProvider.autoDispose<
   UnifiedConnectFeedState
 >((ref) {
   final language = ref.watch(contentLanguageProvider);
+  final repository = ref.watch(connectRepositoryProvider);
   return UnifiedConnectFeedNotifier(
     ref: ref,
     includeUnfollowed: true,
     language: language,
+    feedSource: repository.connectFeedFirstPage(
+      includeUnfollowed: true,
+      language: language,
+      limit: UnifiedConnectFeedNotifier._limit,
+    ),
+    practicesSource: repository.connectPracticesFirstPage(
+      includeUnfollowed: true,
+      language: language,
+      limit: UnifiedConnectFeedNotifier._limit,
+    ),
   );
 });

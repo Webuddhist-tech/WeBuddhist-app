@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
-import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 import 'package:flutter_pecha/core/widgets/skeletons/skeletons.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/plans_by_tag_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/plan_list_view.dart';
+import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,27 +31,16 @@ class PlanListScreen extends ConsumerWidget {
           children: [
             _buildAppBar(context),
             Expanded(
-              child: plansAsync.when(
-                data: (plansEither) {
-                  return plansEither.fold(
-                    (failure) => ErrorStateWidget(
-                      error: failure,
-                      onRetry: () => ref.refresh(plansByTagProvider(tag)),
-                    ),
-                    (plans) {
-                      if (plans.isEmpty) {
-                        return _buildEmptyState(context, localizations, ref);
-                      }
-                      return PlanListView(plans: plans);
-                    },
-                  );
+              child: ScreenCacheBuilder<List<Plan>>(
+                value: plansAsync,
+                skeleton: const PlanListSkeleton(),
+                onRetry: () => ref.invalidate(plansByTagProvider(tag)),
+                data: (plans) {
+                  if (plans.isEmpty) {
+                    return _buildEmptyState(context, localizations, ref);
+                  }
+                  return PlanListView(plans: plans);
                 },
-                loading: () => const PlanListSkeleton(),
-                error:
-                    (error, stackTrace) => ErrorStateWidget(
-                      error: error,
-                      onRetry: () => ref.refresh(plansByTagProvider(tag)),
-                    ),
               ),
             ),
           ],

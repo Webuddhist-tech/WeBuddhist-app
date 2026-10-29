@@ -16,6 +16,17 @@ class UserStatsRemoteDatasource {
     int skip = 0,
     int limit = 20,
   }) async {
+    return MantraCountPageModel.fromJson(
+      await fetchMantraCountsJson(language: language, skip: skip, limit: limit),
+    );
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchMantraCountsJson({
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
     try {
       final response = await dio.get(
         '/users/me/mantra-counts',
@@ -28,9 +39,7 @@ class UserStatsRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return MantraCountPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error('Failed to load mantra counts: ${response.statusCode}');
@@ -49,6 +58,21 @@ class UserStatsRemoteDatasource {
     int skip = 0,
     int limit = 20,
   }) async {
+    return SeriesDayCompletedPageModel.fromJson(
+      await fetchSeriesDayCompletedJson(
+        language: language,
+        skip: skip,
+        limit: limit,
+      ),
+    );
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchSeriesDayCompletedJson({
+    required String language,
+    int skip = 0,
+    int limit = 20,
+  }) async {
     try {
       final response = await dio.get(
         '/users/me/series/day-completed',
@@ -61,9 +85,7 @@ class UserStatsRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return SeriesDayCompletedPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(

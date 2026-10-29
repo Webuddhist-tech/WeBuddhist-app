@@ -162,9 +162,9 @@ class _MyRecitationCollectionScreenState
   }
 
   Future<void> _showCompletionSheet(String collectionName) async {
-    final result = await ref.read(
-      myRecitationCollectionDaysCountProvider(widget.collectionId).future,
-    );
+    final result = await ref
+        .read(myRecitationCollectionsRepositoryProvider)
+        .refreshCompletionDaysCount(widget.collectionId);
     if (!mounted) return;
 
     final dayCount = result.fold((_) => null, (count) => count);

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -86,6 +87,7 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
     Future<List<int>> Function(String url)? downloadImageBytes,
     required MalaSyncManager sync,
     required Future<String?> Function() currentUserId,
+    String? Function()? currentUserIdSync,
     MalaSoundPlayer? sound,
     Duration? seedNetworkTimeout,
   }) : _mantra = mantra,
@@ -98,9 +100,56 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
        _sound = sound,
        _seedNetworkTimeout =
            seedNetworkTimeout ?? _defaultSeedNetworkTimeout,
-       super(MalaCounterState(beadsPerRound: mantra.beadsPerRound)) {
+       super(_initialState(mantra, local, currentUserIdSync?.call())) {
     whenSeeded = seed();
   }
+
+  /// Cached bead skin is read synchronously so the first frame never falls
+  /// back to the drawn bead when Hive already holds it.
+  static MalaCounterState _initialState(
+    Mantra mantra,
+    MalaLocalDataSource local,
+    String? userId,
+  ) {
+    final base = MalaCounterState(beadsPerRound: mantra.beadsPerRound);
+    if (userId == null || userId.isEmpty) return base;
+    final memo = _skinMemo[_skinKey(userId, mantra.presetId)];
+    if (memo != null) {
+      return base.copyWith(
+        beadImageUrl: memo.url ?? mantra.beadImageUrl,
+        beadImageBytes: memo.bytes,
+      );
+    }
+    final cached = local.read(userId, mantra.presetId);
+    final bytes = cached.beadImageBytes;
+    if (bytes != null) {
+      _rememberSkin(userId, mantra.presetId, cached.beadImageUrl, bytes);
+    }
+    return base.copyWith(
+      beadImageUrl: cached.beadImageUrl ?? mantra.beadImageUrl,
+      beadImageBytes: bytes,
+    );
+  }
+
+  /// Skins seen this process, by user and preset. The counter provider is
+  /// keyed by the whole [Mantra], so a catalogue refresh with new presigned
+  /// URLs recreates the notifier; this keeps the strand textured across that.
+  static final Map<String, ({String? url, Uint8List bytes})> _skinMemo = {};
+
+  static String _skinKey(String userId, String presetId) =>
+      '$userId:$presetId';
+
+  static void _rememberSkin(
+    String userId,
+    String presetId,
+    String? url,
+    Uint8List bytes,
+  ) {
+    _skinMemo[_skinKey(userId, presetId)] = (url: url, bytes: bytes);
+  }
+
+  @visibleForTesting
+  static void clearSkinMemo() => _skinMemo.clear();
 
   static const _defaultSeedNetworkTimeout = Duration(seconds: 3);
 
@@ -336,8 +385,12 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
     bool refetchDetailOnFailure = true,
   }) async {
     final localState = _local.read(userId, _presetId);
-    final cachedBytes = localState.beadImageBytes;
+    final memo = _skinMemo[_skinKey(userId, _presetId)];
+    final cachedBytes = memo?.bytes ?? localState.beadImageBytes;
     if (cachedBytes != null) {
+      if (memo == null) {
+        _rememberSkin(userId, _presetId, localState.beadImageUrl, cachedBytes);
+      }
       if (!mounted) return;
       state = state.copyWith(
         beadImageUrl: localState.beadImageUrl ?? state.beadImageUrl,
@@ -409,11 +462,10 @@ class MalaCounterNotifier extends StateNotifier<MalaCounterState> {
         beadImageBase64: base64Encode(bytes),
       ),
     );
+    final stored = Uint8List.fromList(bytes);
+    _rememberSkin(userId, _presetId, imageUrl, stored);
     if (!mounted) return;
-    state = state.copyWith(
-      beadImageUrl: imageUrl,
-      beadImageBytes: Uint8List.fromList(bytes),
-    );
+    state = state.copyWith(beadImageUrl: imageUrl, beadImageBytes: stored);
   }
 
   /// +1 recitation. Monotonic — never decrements. Returns the new total, or

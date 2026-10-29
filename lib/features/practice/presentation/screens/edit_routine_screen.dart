@@ -39,6 +39,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 
 const _uuid = Uuid();
 final _logger = AppLogger('EditRoutineScreen');
@@ -141,6 +142,23 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
   String? _apiRoutineId;
 
   bool _hydratedFromApi = false;
+
+  /// Server routine first so edits never target blocks that no longer exist;
+  /// the stored copy only stands in when the request fails (offline).
+  Future<RoutineData?>? _initialRoutine;
+
+  Future<RoutineData?> _loadInitialRoutine() async {
+    final auth = ref.read(authProvider);
+    if (!auth.isLoggedIn || auth.isGuest) return null;
+    final result = await ref
+        .read(routineApiRepositoryProvider)
+        .refreshUserRoutine(language: ref.read(contentLanguageProvider));
+    return result.fold((failure) {
+      final stored = ref.read(userRoutineProvider).valueOrNull;
+      if (stored != null) return stored;
+      throw Exception(failure.message);
+    }, (data) => data);
+  }
 
   /// Guard so series-enrollment prefill runs exactly once after hydration.
   bool _seriesEnrollmentHydrated = false;
@@ -1555,11 +1573,17 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
     // external invalidations (e.g. ref.invalidate in _saveAndPop) never
     // rebuild the screen mid-editing once hydration is done.
     if (!_hydratedFromApi) {
-      final routineAsync = ref.watch(userRoutineProvider);
-      return routineAsync.when(
-        loading: () => _buildLoadingScaffold(localizations),
-        error: (e, _) => _buildErrorScaffold(e, localizations),
-        data: (routineData) {
+      final initialRoutine = _initialRoutine ??= _loadInitialRoutine();
+      return FutureBuilder<RoutineData?>(
+        future: initialRoutine,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _buildErrorScaffold(snapshot.error!, localizations);
+          }
+          if (snapshot.connectionState != ConnectionState.done) {
+            return _buildLoadingScaffold(localizations);
+          }
+          final routineData = snapshot.data;
           // Data is ready — schedule hydration for the next frame.
           // addPostFrameCallback is used here because calling setState during
           // build is illegal. The _hydratedFromApi guard prevents multiple
@@ -1800,7 +1824,7 @@ class _EditRoutineScreenState extends ConsumerState<EditRoutineScreen> {
                   Text('$e', textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   FilledButton(
-                    onPressed: () => ref.invalidate(userRoutineProvider),
+                    onPressed: () => setState(() => _initialRoutine = null),
                     child: Text(localizations.retry),
                   ),
                 ],

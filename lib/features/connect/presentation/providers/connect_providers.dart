@@ -1,10 +1,14 @@
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_datasource.dart';
 import 'package:flutter_pecha/features/connect/data/repositories/connect_repository_impl.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
 import 'package:flutter_pecha/features/connect/domain/repositories/connect_repository.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,6 +21,7 @@ final connectRemoteDatasourceProvider = Provider<ConnectRemoteDatasource>((
 final connectRepositoryProvider = Provider<ConnectRepository>((ref) {
   return ConnectRepositoryImpl(
     remote: ref.watch(connectRemoteDatasourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
@@ -68,11 +73,30 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
   DiscoverGroupsNotifier({
     required this.repository,
     required this.language,
-  }) : super(const DiscoverGroupsState());
+    required ScreenCacheSource<DiscoverGroupsPage> source,
+  }) : _source = source,
+       super(_seed(source));
+
+  // The stored page is the first state, so the first frame never spins.
+  static DiscoverGroupsState _seed(ScreenCacheSource<DiscoverGroupsPage> source) {
+    final page = source.read();
+    if (page == null) return const DiscoverGroupsState();
+    return DiscoverGroupsState(
+      groups: page.groups,
+      hasMore: page.hasMore,
+      skip: page.groups.length,
+      hasLoaded: true,
+    );
+  }
 
   final ConnectRepository repository;
   final String language;
+  final ScreenCacheSource<DiscoverGroupsPage> _source;
   static const int _limit = 20;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   bool _loadRequested = false;
 
   void ensureLoaded() {
@@ -81,44 +105,53 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
     loadInitial();
   }
 
+  /// Stored first page shows at once; the server's replaces it if changed.
   Future<void> loadInitial() async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true, clearError: true);
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.groups.isEmpty, clearError: true);
 
-    final result = await repository.getDiscoverGroups(
-      language: language,
-      skip: 0,
-      limit: _limit,
-    );
-
-    if (!mounted) return;
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-          hasLoaded: true,
-        );
-      },
-      (page) {
-        state = state.copyWith(
-          groups: page.groups,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.groups.length,
-          hasLoaded: true,
-          clearError: true,
-        );
-      },
-    );
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        _source,
+        isCurrent: () => mounted,
+        seed: state.groups.isEmpty,
+        apply: (page) {
+          _pageEpoch++;
+          state = state.copyWith(
+            groups: page.groups,
+            isLoading: false,
+            hasMore: page.hasMore,
+            skip: page.groups.length,
+            hasLoaded: true,
+            clearError: true,
+          );
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(
+                  isLoading: false,
+                  error: failure.message,
+                  hasLoaded: true,
+                ),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
+    final epoch = _pageEpoch;
 
     final result = await repository.getDiscoverGroups(
       language: language,
@@ -127,6 +160,11 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
     );
 
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -144,10 +182,10 @@ class DiscoverGroupsNotifier extends StateNotifier<DiscoverGroupsState> {
     );
   }
 
+  /// Keeps the list on screen while the first page is read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const DiscoverGroupsState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void removeGroups(Set<String> groupIds) {
@@ -174,9 +212,14 @@ final discoverGroupsProvider =
     StateNotifierProvider.autoDispose<DiscoverGroupsNotifier, DiscoverGroupsState>(
       (ref) {
         final language = ref.watch(contentLanguageProvider);
+        final repository = ref.watch(connectRepositoryProvider);
         return DiscoverGroupsNotifier(
-          repository: ref.watch(connectRepositoryProvider),
+          repository: repository,
           language: language,
+          source: repository.discoverGroupsFirstPage(
+            language: language,
+            limit: DiscoverGroupsNotifier._limit,
+          ),
         );
       },
     );
@@ -189,31 +232,39 @@ final pendingJoinedGroupsProvider =
 final pendingUnjoinedGroupIdsProvider =
     StateProvider<Set<String>>((ref) => const {});
 
-final myGroupsProvider = FutureProvider<DiscoverGroupsPage>((ref) async {
-  final authState = ref.watch(authProvider);
-  if (authState.isGuest || !authState.isLoggedIn) {
-    return const DiscoverGroupsPage(
-      groups: [],
-      skip: 0,
-      limit: 20,
-      total: 0,
+/// Stored page is the first state, refreshed in the background; pull-to-refresh
+/// goes through `refreshMyGroups`, not `ref.refresh`, so the UI keeps its data.
+final myGroupsProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<DiscoverGroupsPage, DiscoverGroupsPage>,
+  DiscoverGroupsPage
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    const empty = DiscoverGroupsPage(groups: [], skip: 0, limit: 20, total: 0);
+    final authState = ref.watch(authProvider);
+    if (authState.isGuest || !authState.isLoggedIn) return empty;
+
+    final language = ref.watch(contentLanguageProvider);
+    final source = ref
+        .watch(connectRepositoryProvider)
+        .myGroupsSource(language: language);
+    if (source == null) return empty;
+    return bind.source(
+      source,
+      select:
+          (result) => result.fold(
+            (failure) => throw Exception(failure.message),
+            (page) {
+              // The stored page arrives during build, when other providers
+              // may not be modified yet.
+              final ids = page.groups.map((g) => g.id).toSet();
+              Future.microtask(
+                () => syncPendingGroupsWithApi(ref: ref, apiGroupIds: ids),
+              );
+              return page;
+            },
+          ),
     );
-  }
-
-  final language = ref.watch(contentLanguageProvider);
-  final repo = ref.watch(connectRepositoryProvider);
-  final result = await repo.getMyGroups(language: language, skip: 0, limit: 20);
-
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (page) {
-      syncPendingGroupsWithApi(
-        ref: ref,
-        apiGroupIds: page.groups.map((g) => g.id).toSet(),
-      );
-      return page;
-    },
-  );
+  });
 });
 
 List<GroupProfile> filterDiscoverGroups({

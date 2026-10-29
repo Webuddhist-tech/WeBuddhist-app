@@ -31,6 +31,13 @@ class UserStatsLocalDatasource {
     );
   }
 
+  /// Same id without an await, so a screen can seed its first frame.
+  String? get currentUserIdSync {
+    return SharedPreferencesService.instance.getSync<String>(
+      StorageKeys.currentUserId,
+    );
+  }
+
   String userStatsKey(String userId) => 'user_stats:$userId';
 
   UserStatsModel? readUserStats(String userId) {

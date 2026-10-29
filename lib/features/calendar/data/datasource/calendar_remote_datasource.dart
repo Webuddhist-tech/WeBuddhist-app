@@ -16,12 +16,18 @@ class CalendarRemoteDatasource {
   /// of that Gregorian month, each carrying its Tibetan lunar data (omitted
   /// lunar days appear with a null gregorian_date).
   Future<CalendarMonthModel> fetchMonth(int year, int month) async {
+    return CalendarMonthModel.fromJson(await fetchMonthJson(year, month));
+  }
+
+  /// Raw month as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchMonthJson(int year, int month) async {
     try {
-      final response = await dio.get('/calendar/$year/$month');
+      final response = await dio.get(
+        '/calendar/$year/$month',
+        options: Options(extra: {'no_cache': true}),
+      );
       if (response.statusCode == 200) {
-        return CalendarMonthModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
       _logger.error('Failed to load calendar month: ${response.statusCode}');
       throw _statusToException(response.statusCode, 'Failed to load calendar');
@@ -33,11 +39,18 @@ class CalendarRemoteDatasource {
 
   /// Endpoint: GET /calendar/today
   Future<CalendarDayModel> fetchToday() async {
+    return CalendarDayModel.fromJson(await fetchTodayJson());
+  }
+
+  Future<Map<String, dynamic>> fetchTodayJson() async {
     try {
-      final response = await dio.get('/calendar/today');
+      final response = await dio.get(
+        '/calendar/today',
+        options: Options(extra: {'no_cache': true}),
+      );
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
-        return CalendarDayModel.fromJson(data['day'] as Map<String, dynamic>);
+        return data['day'] as Map<String, dynamic>;
       }
       _logger.error('Failed to load today: ${response.statusCode}');
       throw _statusToException(response.statusCode, 'Failed to load today');

@@ -8,6 +8,7 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_profile.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Chat top bar: back arrow plus the group identity, matching the back-row
 /// pattern used by the group profile and accumulator screens.
@@ -78,7 +79,7 @@ class _Avatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: GroupChatHeader._avatarSize,
                   height: GroupChatHeader._avatarSize,

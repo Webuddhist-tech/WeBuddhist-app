@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/analytics/clarity_analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
@@ -63,6 +64,9 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Covers from every tab share this budget; the 100 MB default evicts them
+  // between tab switches and they come back through a placeholder.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20;
   // Portrait only; unawaited: a headless (audio_service) engine never replies.
   unawaited(
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
@@ -189,6 +193,14 @@ void main() async {
     _logger.info('Plans local storage initialized');
   } catch (e) {
     _logger.warning('Error initializing plans local storage: $e');
+  }
+
+  // Initialize the shared screen cache (last-known-good data per screen).
+  try {
+    await ScreenCacheStore.init();
+    _logger.info('Screen cache initialized');
+  } catch (e) {
+    _logger.warning('Error initializing screen cache: $e');
   }
 
   // Create provider container for routine storage

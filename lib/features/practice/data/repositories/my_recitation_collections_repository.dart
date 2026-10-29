@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exception_mapper.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/my_recitation_collections_remote_datasource.dart';
@@ -8,8 +11,72 @@ import 'package:flutter_pecha/features/practice/data/models/my_recitation_collec
 
 class MyRecitationCollectionsRepository {
   final MyRecitationCollectionsRemoteDatasource remoteDatasource;
+  final ScreenCacheStore store;
 
-  MyRecitationCollectionsRepository({required this.remoteDatasource});
+  MyRecitationCollectionsRepository({
+    required this.remoteDatasource,
+    required this.store,
+  });
+
+  /// Stored detail first, then revalidated in the background.
+  Stream<Either<Failure, MyRecitationCollectionDetailModel>>
+  watchCollectionDetail(String collectionId) =>
+      collectionDetailSource(collectionId).watch();
+
+  Future<Either<Failure, MyRecitationCollectionDetailModel>>
+  refreshCollectionDetail(String collectionId) =>
+      collectionDetailSource(collectionId).refresh();
+
+  Stream<Either<Failure, int>> watchCompletionDaysCount(String collectionId) =>
+      completionDaysCountSource(collectionId).watch();
+
+  /// Always fetches; use after a completion so the count is current.
+  Future<Either<Failure, int>> refreshCompletionDaysCount(
+    String collectionId,
+  ) => completionDaysCountSource(collectionId).refresh();
+
+  // Built synchronously so a screen can seed its first frame.
+  ScreenCacheSource<MyRecitationCollectionDetailModel> collectionDetailSource(
+    String collectionId,
+  ) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'recitation_collection',
+        userId: store.currentUserIdSync,
+        language: 'all',
+        params: [collectionId],
+      ),
+      fetchJson: () => remoteDatasource.getCollectionDetailJson(collectionId),
+      fromJson:
+          (json) => MyRecitationCollectionDetailModel.fromJson(
+            json as Map<String, dynamic>,
+          ),
+      failureMessage: 'Failed to load collection',
+    );
+  }
+
+  ScreenCacheSource<int> completionDaysCountSource(String collectionId) {
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'recitation_collection_days',
+        userId: store.currentUserIdSync,
+        language: 'all',
+        params: [collectionId],
+      ),
+      fetchJson:
+          () => remoteDatasource.getCompletionDaysCountJson(
+            collectionId: collectionId,
+          ),
+      fromJson:
+          (json) =>
+              MyRecitationCollectionCompletionDaysCountResponse.fromJson(
+                json as Map<String, dynamic>,
+              ).dayCount,
+      failureMessage: 'Failed to load completion day count',
+    );
+  }
 
   Future<Either<Failure, MyRecitationCollectionImageUploadResponse>>
   uploadImage(File file) async {

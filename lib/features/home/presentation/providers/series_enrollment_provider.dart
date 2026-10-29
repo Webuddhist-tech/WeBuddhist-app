@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/home/domain/usecases/enroll_in_series_usecase.dart';
@@ -96,13 +97,24 @@ final seriesEnrollmentProvider = StateNotifierProvider.autoDispose
 /// the network. Returns an empty set on failure too — the Enroll button stays
 /// usable and the user can retry by tapping it; a future call refreshes the
 /// cache. Invalidated after a successful series enrollment.
-final userSeriesEnrollmentsProvider = StreamProvider<Set<String>>((ref) {
-  final auth = ref.watch(authProvider);
-  if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
-    return Stream.value(const <String>{});
-  }
-  final repository = ref.watch(seriesDomainRepositoryProvider);
-  return repository.watchUserSeriesEnrollments().map(
-    (result) => result.fold((_) => const <String>{}, (ids) => ids),
-  );
+final userSeriesEnrollmentsProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<Set<String>, Set<String>>,
+  Set<String>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final auth = ref.watch(authProvider);
+    if (auth.isLoading || !auth.isLoggedIn || auth.isGuest) {
+      return const <String>{};
+    }
+    final local = ref.watch(homeLocalDatasourceProvider);
+    final userId = local.currentUserIdSync;
+    final stored = userId == null ? null : local.readEnrollments(userId);
+    final repository = ref.watch(seriesDomainRepositoryProvider);
+    return bind.stream(
+      stored,
+      repository.watchUserSeriesEnrollments().map(
+        (result) => result.fold((_) => const <String>{}, (ids) => ids),
+      ),
+    );
+  });
 });

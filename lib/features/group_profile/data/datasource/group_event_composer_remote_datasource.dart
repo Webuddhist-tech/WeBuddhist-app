@@ -241,9 +241,24 @@ class GroupEventComposerRemoteDatasource {
     String groupId, {
     required String language,
   }) async {
+    return parseCmsEvents(await fetchCmsEventsJson(groupId), language: language);
+  }
+
+  static List<GroupEventCmsItem> parseCmsEvents(
+    List<Map<String, dynamic>> items, {
+    required String language,
+  }) {
+    return [
+      for (final json in items)
+        GroupEventCmsItem.fromJson(json, language: language),
+    ];
+  }
+
+  /// Every page concatenated, raw, so the screen cache stores what the API sent.
+  Future<List<Map<String, dynamic>>> fetchCmsEventsJson(String groupId) async {
     const limit = 50;
     const maxItems = 200;
-    final items = <GroupEventCmsItem>[];
+    final items = <Map<String, dynamic>>[];
     var skip = 0;
     try {
       while (items.length < maxItems) {
@@ -258,9 +273,7 @@ class GroupEventComposerRemoteDatasource {
             (data['events'] as List<dynamic>? ?? const [])
                 .whereType<Map<String, dynamic>>()
                 .toList();
-        for (final json in page) {
-          items.add(GroupEventCmsItem.fromJson(json, language: language));
-        }
+        items.addAll(page);
         final total = (data['total'] as num?)?.toInt() ?? items.length;
         skip += page.length;
         if (page.isEmpty || skip >= total) break;

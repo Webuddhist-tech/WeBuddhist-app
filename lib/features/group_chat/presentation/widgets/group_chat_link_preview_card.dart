@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// Open Graph card under a message body.
 ///
@@ -52,7 +53,7 @@ class GroupChatLinkPreviewCard extends ConsumerWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: CachedNetworkImageWidget(
-                    key: ValueKey(imageUrl),
+                    key: networkImageKey(imageUrl),
                     imageUrl: imageUrl,
                     width: _thumbnailSize,
                     height: _thumbnailSize,

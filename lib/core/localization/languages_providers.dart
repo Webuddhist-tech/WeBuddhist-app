@@ -1,3 +1,7 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/localization/app_language.dart';
@@ -11,39 +15,80 @@ final languagesRemoteDatasourceProvider = Provider<LanguagesRemoteDatasource>((
   return LanguagesRemoteDatasource(dio: ref.watch(dioProvider));
 });
 
+/// Stored list per endpoint; languages are not themselves localized.
+ScreenCacheSource<List<AppLanguage>> _languagesSource(
+  Ref ref, {
+  required bool recitationOnly,
+}) {
+  final datasource = ref.watch(languagesRemoteDatasourceProvider);
+  return ScreenCacheSource<List<AppLanguage>>(
+    store: ref.watch(screenCacheStoreProvider),
+    key: ScreenCacheKey.public(
+      recitationOnly ? 'languages_recitation' : 'languages',
+      language: 'all',
+    ),
+    fetchJson:
+        () async =>
+            (await datasource.fetchLanguages(recitationOnly: recitationOnly))
+                .map((language) => language.toJson())
+                .toList(),
+    fromJson:
+        (json) =>
+            (json as List)
+                .map((e) => AppLanguage.fromJson(e as Map<String, dynamic>))
+                .toList(),
+    failureMessage: 'Failed to load languages',
+  );
+}
+
 /// Content languages the backend can serve, used to build the language picker.
 ///
-/// Falls back to [AppLanguage.bundledFallback] on any error (offline, first
-/// launch, malformed response) so the picker always has something to show. When
-/// the backend returns an empty list, the bundled set is used too.
-final availableContentLanguagesProvider = FutureProvider<List<AppLanguage>>((
-  ref,
-) async {
-  try {
-    final languages =
-        await ref.watch(languagesRemoteDatasourceProvider).fetchLanguages();
+/// The stored list shows first; the server answer then replaces it and runs the
+/// kill-switch reconciliation. Falls back to [AppLanguage.bundledFallback] when
+/// nothing is stored and the fetch fails, so the picker always has something to
+/// show. When the backend returns an empty list, the bundled set is used too.
+final availableContentLanguagesProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<AppLanguage>, List<AppLanguage>>,
+  List<AppLanguage>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final source = _languagesSource(ref, recitationOnly: false);
+    final cached = source.read();
+    return bind.stream(
+      cached != null && cached.isNotEmpty ? cached : null,
+      _availableUpdates(ref, source, cached),
+    );
+  });
+});
 
-    // Reaching here means the fetch succeeded, so this is an authoritative
-    // answer (an empty list included) — offline/parse errors throw into the
-    // catch below. Enforce the server-side kill switch here, before the empty
-    // list is ever swapped for the bundled fallback, and keep the UI locale
-    // paired with the content language exactly like a normal selection.
+Stream<List<AppLanguage>> _availableUpdates(
+  Ref ref,
+  ScreenCacheSource<List<AppLanguage>> source,
+  List<AppLanguage>? cached,
+) async* {
+  final result = await source.refresh();
+  final languages = result.getRight().toNullable();
+  if (languages == null) {
+    // Offline / parse error: keep the stored selection untouched and show the
+    // bundled list. Reconciliation deliberately does not run on this path.
+    if (cached == null || cached.isEmpty) yield AppLanguage.bundledFallback;
+    return;
+  }
+
+  // An authoritative answer (an empty list included): enforce the server-side
+  // kill switch before the empty list is ever swapped for the bundled fallback,
+  // and keep the UI locale paired with the content language.
+  try {
     final switched = await ref
         .read(contentLanguageProvider.notifier)
         .reconcileToAvailable(languages.map((l) => l.code).toList());
     if (switched != null) {
       await ref.read(localeProvider.notifier).applyUiLocaleForContent(switched);
     }
+  } catch (_) {}
 
-    // Show the bundled list only so the picker is never blank; reconciliation
-    // above already ran authoritatively regardless of what we display.
-    return languages.isNotEmpty ? languages : AppLanguage.bundledFallback;
-  } catch (_) {
-    // Offline / parse error: keep the stored selection untouched and show the
-    // bundled list. Reconciliation deliberately does not run on this path.
-    return AppLanguage.bundledFallback;
-  }
-});
+  yield languages.isNotEmpty ? languages : AppLanguage.bundledFallback;
+}
 
 /// Synchronous view of [availableContentLanguagesProvider] for UI that needs a
 /// list immediately. Uses the fetched value when ready; otherwise
@@ -53,14 +98,29 @@ final resolvedContentLanguagesProvider = Provider<List<AppLanguage>>((ref) {
       AppLanguage.bundledFallback;
 });
 
-final recitationContentLanguagesProvider = FutureProvider<List<AppLanguage>>((
-  ref,
-) async {
-  try {
-    return await ref
-        .watch(languagesRemoteDatasourceProvider)
-        .fetchLanguages(recitationOnly: true);
-  } catch (_) {
-    return AppLanguage.bundledFallback;
-  }
+final recitationContentLanguagesProvider = AsyncNotifierProvider<
+  ScreenCacheNotifier<List<AppLanguage>, List<AppLanguage>>,
+  List<AppLanguage>
+>(() {
+  return ScreenCacheNotifier((ref, bind) {
+    final source = _languagesSource(ref, recitationOnly: true);
+    final cached = source.read();
+    return bind.stream(
+      cached != null && cached.isNotEmpty ? cached : null,
+      _recitationUpdates(source, cached),
+    );
+  });
 });
+
+Stream<List<AppLanguage>> _recitationUpdates(
+  ScreenCacheSource<List<AppLanguage>> source,
+  List<AppLanguage>? cached,
+) async* {
+  final result = await source.refresh();
+  final languages = result.getRight().toNullable();
+  if (languages != null) {
+    yield languages;
+  } else if (cached == null || cached.isEmpty) {
+    yield AppLanguage.bundledFallback;
+  }
+}

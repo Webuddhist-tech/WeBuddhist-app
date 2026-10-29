@@ -8,6 +8,8 @@ import 'package:flutter_pecha/features/home/home.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_video_model.dart';
 import 'package:flutter_pecha/shared/widgets/reusable_youtube_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
+import 'package:flutter_pecha/core/cache/app_image_cache_manager.dart';
 
 /// Plan-day YouTube. Shorts stay in the vertical carousel; longer videos,
 /// including a past event's session recordings, play as normal 16:9 videos.
@@ -384,7 +386,11 @@ class _ThumbnailOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return CachedNetworkImage(
       imageUrl: video.thumbnailUrl,
+      cacheKey: stableNetworkImageCacheKey(video.thumbnailUrl),
+      cacheManager: appImageCacheManager,
       fit: BoxFit.cover,
+      fadeOutDuration: const Duration(milliseconds: 200),
+      useOldImageOnUrlChange: true,
       color: isDark ? Colors.black26 : null,
       colorBlendMode: isDark ? BlendMode.darken : null,
       placeholder:

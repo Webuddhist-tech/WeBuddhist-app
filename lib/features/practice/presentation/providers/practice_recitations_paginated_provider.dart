@@ -1,3 +1,7 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -6,6 +10,7 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/recitation/data/datasource/recitations_remote_datasource.dart';
 import 'package:flutter_pecha/features/recitation/data/models/my_recitation_list_collection_model.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitations_page_response.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_search_provider.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_datasource_provider.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_providers.dart';
@@ -65,24 +70,98 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
   final RecitationsRemoteDatasource _datasource;
   final String _languageCode;
   final bool _includeCollections;
-  bool _loadInFlight = false;
+  final ScreenCacheSource<RecitationsPageResponse> _source;
+  bool _firstPageInFlight = false;
+
+  // Bumped whenever page one is applied, so a stale page is dropped.
+  int _pageEpoch = 0;
 
   PracticeRecitationsNotifier({
     required RecitationsRemoteDatasource datasource,
+    required ScreenCacheStore store,
     required String languageCode,
     required bool includeCollections,
     bool deferLoad = false,
+  }) : this._(
+         datasource: datasource,
+         languageCode: languageCode,
+         includeCollections: includeCollections,
+         deferLoad: deferLoad,
+         source: firstPageSource(
+           datasource: datasource,
+           store: store,
+           languageCode: languageCode,
+           includeCollections: includeCollections,
+         ),
+       );
+
+  PracticeRecitationsNotifier._({
+    required RecitationsRemoteDatasource datasource,
+    required String languageCode,
+    required bool includeCollections,
+    required bool deferLoad,
+    required ScreenCacheSource<RecitationsPageResponse> source,
   }) : _datasource = datasource,
        _languageCode = languageCode,
        _includeCollections = includeCollections,
-       super(
-         deferLoad
-             ? const PracticeRecitationsState(isLoading: true)
-             : const PracticeRecitationsState(),
-       ) {
+       _source = source,
+       super(_seed(source, deferLoad: deferLoad)) {
     if (!deferLoad) {
       loadInitial();
     }
+  }
+
+  // The stored page is the first state, so the first frame never spins.
+  static PracticeRecitationsState _seed(
+    ScreenCacheSource<RecitationsPageResponse> source, {
+    required bool deferLoad,
+  }) {
+    final page = source.read();
+    if (page == null) return PracticeRecitationsState(isLoading: deferLoad);
+    return PracticeRecitationsState(
+      recitations: page.recitations,
+      collections: page.collections,
+      hasMore: page.hasMore,
+      skip: page.nextSkip,
+      total: page.total,
+    );
+  }
+
+  /// Page 1 is stored per language (per user when collections are included).
+  static ScreenCacheSource<RecitationsPageResponse> firstPageSource({
+    required RecitationsRemoteDatasource datasource,
+    required ScreenCacheStore store,
+    required String languageCode,
+    required bool includeCollections,
+  }) {
+    final key =
+        includeCollections
+            ? ScreenCacheKey.user(
+              'chants_page1',
+              userId: store.currentUserIdSync,
+              language: languageCode,
+            )
+            : ScreenCacheKey.public('chants_page1', language: languageCode);
+    return ScreenCacheSource(
+      store: store,
+      key: key,
+      fetchJson: () async {
+        final page = await datasource.fetchRecitationsPage(
+          queryParams: RecitationsQueryParams(
+            language: languageCode,
+            skip: 0,
+            limit: practiceRecitationsPageSize,
+            shouldIncludeCollections: includeCollections,
+            noCache: true,
+          ),
+        );
+        return page.toJson();
+      },
+      fromJson:
+          (json) =>
+              RecitationsPageResponse.fromJson(json as Map<String, dynamic>),
+      failureMessage: 'Failed to load chants',
+    );
   }
 
   RecitationsQueryParams _queryParams({required int skip}) {
@@ -94,44 +173,68 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
     );
   }
 
+  void _applyFirstPage(RecitationsPageResponse page) {
+    _pageEpoch++;
+    state = PracticeRecitationsState(
+      recitations: page.recitations,
+      collections: page.collections,
+      isLoading: false,
+      hasMore: page.hasMore,
+      skip: page.nextSkip,
+      total: page.total,
+    );
+  }
+
+  /// Shows the stored first page at once, then replaces it if the server
+  /// page changed; a failed refresh keeps whatever is on screen.
   Future<void> loadInitial() async {
-    if (_loadInFlight) return;
+    if (_firstPageInFlight) return;
 
-    _loadInFlight = true;
-    state = state.copyWith(isLoading: true, error: null);
-
+    _firstPageInFlight = true;
     try {
-      final page = await _datasource.fetchRecitationsPage(
-        queryParams: _queryParams(skip: 0),
-      );
+      final source = _source;
+      final cached = state.isEmpty ? source.read() : null;
+      if (cached != null) {
+        _applyFirstPage(cached);
+      } else if (state.isEmpty) {
+        state = state.copyWith(isLoading: true, error: null);
+      } else {
+        state = state.copyWith(error: null);
+      }
 
+      final result = await source.refresh();
       if (!mounted) return;
-      _logger.debug(
-        'Loaded ${page.recitations.length} recitations, '
-        '${page.collections.length} collections '
-        '(includeCollections=$_includeCollections)',
+      result.fold(
+        (failure) {
+          _logger.error('Initial recitations load failed: ${failure.message}');
+          if (state.isEmpty) {
+            state = state.copyWith(isLoading: false, error: failure.message);
+          }
+        },
+        (page) {
+          _logger.debug(
+            'Loaded ${page.recitations.length} recitations, '
+            '${page.collections.length} collections '
+            '(includeCollections=$_includeCollections)',
+          );
+          _applyFirstPage(page);
+        },
       );
-      state = PracticeRecitationsState(
-        recitations: page.recitations,
-        collections: page.collections,
-        isLoading: false,
-        hasMore: page.hasMore,
-        skip: page.nextSkip,
-        total: page.total,
-      );
-    } catch (e) {
-      _logger.error('Initial recitations load failed', e);
-      if (!mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
     } finally {
-      _loadInFlight = false;
+      _firstPageInFlight = false;
     }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || state.isLoading || !state.hasMore) return;
+    if (state.isLoadingMore ||
+        state.isLoading ||
+        !state.hasMore ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, error: null);
+    final epoch = _pageEpoch;
 
     try {
       final page = await _datasource.fetchRecitationsPage(
@@ -139,6 +242,11 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
       );
 
       if (!mounted) return;
+      // Page one was replaced meanwhile; this page belongs to the old list.
+      if (epoch != _pageEpoch) {
+        state = state.copyWith(isLoadingMore: false);
+        return;
+      }
       final updatedRecitations = [...state.recitations, ...page.recitations];
       state = state.copyWith(
         recitations: updatedRecitations,
@@ -162,10 +270,8 @@ class PracticeRecitationsNotifier extends StateNotifier<PracticeRecitationsState
     }
   }
 
-  Future<void> refresh() async {
-    state = const PracticeRecitationsState(isLoading: true);
-    await loadInitial();
-  }
+  /// Pull-to-refresh keeps the current list visible while page 1 reloads.
+  Future<void> refresh() => loadInitial();
 }
 
 class PracticeRecitationsLanguageNotifier extends StateNotifier<String> {
@@ -252,9 +358,11 @@ final practiceRecitationsPaginatedProvider = StateNotifierProvider.autoDispose
       // Defer the first fetch until auth is ready so a logged-in session
       // attaches Bearer + should_include_collections on the first request.
       final datasource = ref.watch(recitationsRemoteDatasourceProvider);
+      final store = ref.watch(screenCacheStoreProvider);
       if (isAuthLoading) {
         return PracticeRecitationsNotifier(
           datasource: datasource,
+          store: store,
           languageCode: languageCode,
           includeCollections: false,
           deferLoad: true,
@@ -263,6 +371,7 @@ final practiceRecitationsPaginatedProvider = StateNotifierProvider.autoDispose
 
       return PracticeRecitationsNotifier(
         datasource: datasource,
+        store: store,
         languageCode: languageCode,
         includeCollections: isLoggedIn && !isGuest,
       );
@@ -280,6 +389,7 @@ final practiceRecitationsCatalogueProvider = StateNotifierProvider.autoDispose
     ) {
       return PracticeRecitationsNotifier(
         datasource: ref.watch(recitationsRemoteDatasourceProvider),
+        store: ref.watch(screenCacheStoreProvider),
         languageCode: languageCode,
         includeCollections: false,
       );

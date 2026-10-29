@@ -33,7 +33,6 @@ export 'data/datasource/featured_day_remote_datasource.dart';
 
 // Presentation - Providers
 export 'presentation/providers/tags_provider.dart';
-export 'presentation/providers/featured_day_provider.dart';
 export 'presentation/providers/plans_by_tag_provider.dart';
 
 // Data - Repositories

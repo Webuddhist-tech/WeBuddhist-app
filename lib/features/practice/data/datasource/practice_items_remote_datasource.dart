@@ -18,6 +18,23 @@ class PracticeItemsRemoteDatasource {
     required int page,
     required int pageSize,
   }) async {
+    return PracticeItemsResponseModel.fromJson(
+      await fetchPracticeItemsJson(
+        tab: tab,
+        language: language,
+        page: page,
+        pageSize: pageSize,
+      ),
+    );
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchPracticeItemsJson({
+    required PracticeItemsTab tab,
+    required String language,
+    required int page,
+    required int pageSize,
+  }) async {
     try {
       final response = await _dio.get(
         '/practice/items',
@@ -27,6 +44,7 @@ class PracticeItemsRemoteDatasource {
           'page': page,
           'page_size': pageSize,
         },
+        options: Options(extra: {'no_cache': true}),
       );
 
       final data = response.data;
@@ -34,7 +52,7 @@ class PracticeItemsRemoteDatasource {
         _logger.error('Unexpected /practice/items payload type: ${data.runtimeType}');
         throw const ServerException('Invalid response from /practice/items');
       }
-      return PracticeItemsResponseModel.fromJson(data);
+      return data;
     } on DioException catch (e) {
       _logger.error('Dio error in fetchPracticeItems', e);
       throw _dioToException(e, 'Failed to load practice items');

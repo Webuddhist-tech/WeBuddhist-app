@@ -13,6 +13,9 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/random_pr
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+
+import '../../../../helpers/fake_screen_cache_store.dart';
 
 const _scope = PrayerRoomScope.event('e1');
 
@@ -126,6 +129,7 @@ Future<void> _pump(WidgetTester tester, _FakeRepository repository) async {
     ProviderScope(
       overrides: [
         groupChatRepositoryProvider.overrideWithValue(repository),
+        screenCacheStoreProvider.overrideWithValue(FakeScreenCacheStore()),
         prayerPacingProvider.overrideWithValue(
           const PrayerPacing(batchWindow: Duration.zero),
         ),

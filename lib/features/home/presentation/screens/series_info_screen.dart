@@ -12,6 +12,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_pecha/core/utils/network_image_utils.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 
 class SeriesInfoScreen extends ConsumerWidget {
   final String seriesId;
@@ -164,7 +165,7 @@ class SeriesInfoScreen extends ConsumerWidget {
                   isDark ? AppColors.surfaceVariantDark : AppColors.grey100,
               backgroundImage:
                   group.avatarUrl != null && group.avatarUrl!.isNotEmpty
-                      ? NetworkImage(group.avatarUrl!)
+                      ? group.avatarUrl!.cachedNetworkImageProvider
                       : null,
               onBackgroundImageError:
                   group.avatarUrl != null && group.avatarUrl!.isNotEmpty

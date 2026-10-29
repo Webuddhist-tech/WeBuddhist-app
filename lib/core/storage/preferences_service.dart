@@ -24,6 +24,9 @@ class SharedPreferencesService implements StorageService {
     return prefs.get(key) as T?;
   }
 
+  /// Null until the first async read has loaded the preferences.
+  T? getSync<T>(String key) => _prefs?.get(key) as T?;
+
   @override
   Future<bool> set<T>(String key, T value) async {
     final prefs = await _prefsInstance;
