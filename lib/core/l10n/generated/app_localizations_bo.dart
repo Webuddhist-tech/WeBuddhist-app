@@ -3905,6 +3905,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get reader_display_title => 'མངོན་ཚུལ།';
 
   @override
+  String get text_size => 'ཡིག་གཟུགས་ཆེ་ཆུང་།';
+
+  @override
   String get reader_more_settings => 'སྒྲིག་འགོད་གཞན།';
 
   @override

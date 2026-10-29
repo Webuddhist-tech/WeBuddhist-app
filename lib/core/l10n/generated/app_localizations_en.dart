@@ -3863,6 +3863,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_display_title => 'Display';
 
   @override
+  String get text_size => 'Text size';
+
+  @override
   String get reader_more_settings => 'More settings';
 
   @override

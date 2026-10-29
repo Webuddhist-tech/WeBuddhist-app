@@ -1109,6 +1109,7 @@
   "connect_failed_like_post_error": "無法幫貼文點讚",
   "connect_failed_unlike_post_error": "無法刪除貼文點讚",
   "reader_display_title": "顯示",
+  "text_size": "文字大小",
   "reader_more_settings": "更多設定",
   "reader_spacing": "間距",
   "reader_spacing_compact": "緊湊",

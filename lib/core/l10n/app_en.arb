@@ -1939,6 +1939,7 @@
   "timer_duration_hours": "hours",
   "timer_duration_sec": "sec",
   "reader_display_title": "Display",
+  "text_size": "Text size",
   "reader_more_settings": "More settings",
   "reader_spacing": "Line spacing",
   "reader_spacing_compact": "Compact",

@@ -3904,6 +3904,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get reader_display_title => 'Харагдац';
 
   @override
+  String get text_size => 'Бичвэрийн хэмжээ';
+
+  @override
   String get reader_more_settings => 'Бусад тохиргоо';
 
   @override

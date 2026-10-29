@@ -3742,6 +3742,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_display_title => '顯示';
 
   @override
+  String get text_size => '文字大小';
+
+  @override
   String get reader_more_settings => '更多設定';
 
   @override
@@ -7427,6 +7430,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get reader_display_title => '显示';
+
+  @override
+  String get text_size => '文字大小';
 
   @override
   String get reader_more_settings => '更多设置';

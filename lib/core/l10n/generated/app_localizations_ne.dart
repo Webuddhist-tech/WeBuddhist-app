@@ -3908,6 +3908,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_display_title => 'प्रदर्शन';
 
   @override
+  String get text_size => 'पाठको आकार';
+
+  @override
   String get reader_more_settings => 'थप सेटिङहरू';
 
   @override

@@ -3890,6 +3890,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get reader_display_title => 'प्रदर्शन';
 
   @override
+  String get text_size => 'टेक्स्ट का आकार';
+
+  @override
   String get reader_more_settings => 'अधिक सेटिंग्स';
 
   @override

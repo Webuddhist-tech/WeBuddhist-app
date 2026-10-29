@@ -6763,6 +6763,12 @@ abstract class AppLocalizations {
   /// **'Display'**
   String get reader_display_title;
 
+  /// No description provided for @text_size.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get text_size;
+
   /// No description provided for @reader_more_settings.
   ///
   /// In en, this message translates to:

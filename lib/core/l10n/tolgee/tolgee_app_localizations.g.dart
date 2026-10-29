@@ -7671,6 +7671,10 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get text_size =>
+      TolgeeBridge.get(localeName, 'text_size', () => _fallback.text_size);
+
+  @override
   String get reader_more_settings => TolgeeBridge.get(
     localeName,
     'reader_more_settings',
