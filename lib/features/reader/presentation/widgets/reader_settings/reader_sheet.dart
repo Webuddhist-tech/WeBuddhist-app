@@ -27,22 +27,26 @@ enum ReaderSheetTextRole {
   final FontWeight weight;
 }
 
-/// Sheet text for [role] in [color]. Sheets are in Inter; an interface in
-/// Tibetan or Chinese keeps the app's font for its script and is set larger
-/// by that script's interface factor, so labels look the same size.
+/// Sheet text for [role] in [color], at [weight] when given in place of the
+/// role's. Sheets are in Inter; an interface in Tibetan or Chinese keeps the
+/// app's font for its script and is set larger by that script's interface
+/// factor, so labels look the same size.
 TextStyle readerSheetText(
   BuildContext context,
   ReaderSheetTextRole role, {
   required Color color,
+  FontWeight? weight,
 }) {
+  final fontWeight = weight ?? role.weight;
   final script = ReaderScript.ofLanguage(
     Localizations.maybeLocaleOf(context)?.languageCode,
   );
   final latin = script == ReaderScript.latin || script == ReaderScript.cyrillic;
   return TextStyle(
     fontSize: ReaderTypography.chromeSize(role.size, script),
-    fontWeight: role.weight,
-    fontFamily: latin ? ReaderFonts.inter.family(weight: role.weight) : null,
+    fontWeight: fontWeight,
+    // Inter is a file per weight: the weight picks the file.
+    fontFamily: latin ? ReaderFonts.inter.family(weight: fontWeight) : null,
     letterSpacing: role == ReaderSheetTextRole.caps ? 0.6 : null,
     color: color,
   );

@@ -3,22 +3,12 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_content_block.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_metadata_tile.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_section_header.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_resource_list.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/translation_list_order.dart';
 import 'package:flutter_pecha/features/texts/data/models/translation/segment_translation.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-final _expandedContentIndexProvider = StateProvider.family<int?, String>(
-  (ref, segmentId) => null,
-);
-
-final _expandedMetadataIndexProvider = StateProvider.family<int?, String>(
-  (ref, segmentId) => null,
-);
 
 /// The verse sheet's Versions tab, or with [rootText] its Root text tab.
 class ReaderTranslationPanel extends ConsumerWidget {
@@ -49,7 +39,6 @@ class ReaderTranslationPanel extends ConsumerWidget {
       data:
           (data) => _TranslationList(
             translations: data.translations,
-            segmentId: segmentId,
             textLanguage: textLanguage,
             translationTextId:
                 rootText
@@ -66,138 +55,50 @@ class ReaderTranslationPanel extends ConsumerWidget {
   }
 }
 
-class _TranslationList extends ConsumerWidget {
+class _TranslationList extends StatelessWidget {
   const _TranslationList({
     required this.translations,
-    required this.segmentId,
     required this.textLanguage,
     required this.translationTextId,
   });
 
   final List<SegmentTranslation> translations;
-  final String segmentId;
   final String textLanguage;
   final String? translationTextId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (translations.isEmpty) {
       return const _EmptyState();
     }
-
     final order = orderTranslations(
       translations: translations,
       textLanguage: textLanguage,
       translationTextId: translationTextId,
     );
-    final expandedContent = ref.watch(_expandedContentIndexProvider(segmentId));
-    final expandedMetadata = ref.watch(
-      _expandedMetadataIndexProvider(segmentId),
-    );
-
-    final children = <Widget>[];
-    var globalIndex = 0;
     final pinned = order.pinned;
-    if (pinned != null) {
-      final index = globalIndex++;
-      children.add(
-        _TranslationItem(
-          translation: pinned,
-          index: index,
-          segmentId: segmentId,
-          isContentExpanded: expandedContent == index,
-          isMetadataExpanded: expandedMetadata == index,
-        ),
-      );
-    }
-    for (final entry in order.groups) {
-      children.add(
-        ReaderPanelSectionHeader(
-          languageCode: entry.key,
-          count: entry.value.length,
-        ),
-      );
-      for (final translation in entry.value) {
-        final index = globalIndex++;
-        children.add(
-          _TranslationItem(
-            translation: translation,
-            index: index,
-            segmentId: segmentId,
-            isContentExpanded: expandedContent == index,
-            isMetadataExpanded: expandedMetadata == index,
-          ),
-        );
-      }
-    }
-
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: children,
+    return ReaderResourceList(
+      textLanguage: textLanguage,
+      firstLanguage: pinned?.language,
+      entries: [
+        if (pinned != null) _entry(pinned),
+        for (final group in order.groups)
+          for (final translation in group.value) _entry(translation),
+      ],
     );
   }
-}
 
-class _TranslationItem extends ConsumerWidget {
-  const _TranslationItem({
-    required this.translation,
-    required this.index,
-    required this.segmentId,
-    required this.isContentExpanded,
-    required this.isMetadataExpanded,
-  });
-
-  final SegmentTranslation translation;
-  final int index;
-  final String segmentId;
-  final bool isContentExpanded;
-  final bool isMetadataExpanded;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final content = translation.segments
-        .map((s) => normalizeSegmentHtml(s.content))
-        .where((s) => s.isNotEmpty)
-        .join('<br><br>');
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        ReaderPanelConstants.horizontalPadding,
-        ReaderPanelConstants.contentSpacing,
-        ReaderPanelConstants.horizontalPadding,
-        ReaderPanelConstants.itemSpacing,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ReaderPanelContentBlock(
-            content: content,
-            language: translation.language,
-            segmentIndex: index,
-            isExpanded: isContentExpanded,
-            onToggle: () {
-              ref
-                  .read(_expandedContentIndexProvider(segmentId).notifier)
-                  .state = isContentExpanded ? null : index;
-            },
-          ),
-          const SizedBox(height: ReaderPanelConstants.contentSpacing),
-          ReaderPanelMetadataTile(
-            title: translation.title,
-            language: translation.language,
-            source: translation.source,
-            license: translation.license,
-            isExpanded: isMetadataExpanded,
-            onToggle: () {
-              ref
-                  .read(_expandedMetadataIndexProvider(segmentId).notifier)
-                  .state = isMetadataExpanded ? null : index;
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  static ReaderResourceEntry _entry(SegmentTranslation translation) =>
+      ReaderResourceEntry(
+        content: translation.segments
+            .map((s) => normalizeSegmentHtml(s.content))
+            .where((s) => s.isNotEmpty)
+            .join('<br><br>'),
+        language: translation.language,
+        title: translation.title,
+        source: translation.source,
+        license: translation.license,
+      );
 }
 
 class _EmptyState extends StatelessWidget {

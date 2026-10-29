@@ -201,17 +201,22 @@ class _ReaderVerseSheetState extends ConsumerState<ReaderVerseSheet> {
             ),
           Expanded(
             child: switch (open) {
+              // Keyed by verse: a new verse's list starts on its first
+              // language with nothing opened.
               ReaderResourceTab.commentary => ReaderCommentaryPanel(
+                key: ValueKey('commentary-$segmentId'),
                 segmentId: segmentId,
                 textLanguage: language,
                 params: widget.params,
               ),
               ReaderResourceTab.versions => ReaderTranslationPanel(
+                key: ValueKey('versions-$segmentId'),
                 segmentId: segmentId,
                 textLanguage: language,
                 params: widget.params,
               ),
               ReaderResourceTab.rootText => ReaderTranslationPanel(
+                key: ValueKey('root-$segmentId'),
                 segmentId: segmentId,
                 textLanguage: language,
                 params: widget.params,
