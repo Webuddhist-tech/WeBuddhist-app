@@ -4346,4 +4346,97 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get timer_duration_sec => 'sec';
+
+  @override
+  String get reader_display_title => 'མངོན་ཚུལ།';
+
+  @override
+  String get reader_more_settings => 'སྒྲིག་འགོད་གཞན།';
+
+  @override
+  String get reader_spacing => 'བར་ཐག';
+
+  @override
+  String get reader_spacing_compact => 'དམ་པོ།';
+
+  @override
+  String get reader_spacing_normal => 'རྒྱུན་ལྡན།';
+
+  @override
+  String get reader_spacing_relaxed => 'ལྷོད་པོ།';
+
+  @override
+  String get reader_background => 'རྒྱབ་ལྗོངས།';
+
+  @override
+  String get reader_background_rice_paper => 'ཤོག་བུ།';
+
+  @override
+  String get reader_background_gold => 'གསེར་མདོག';
+
+  @override
+  String get reader_background_sky => 'ནམ་མཁའི་མདོག';
+
+  @override
+  String get reader_background_white => 'དཀར་པོ།';
+
+  @override
+  String get reader_background_plum => 'སྨུག་པོ།';
+
+  @override
+  String get reader_background_temple_red => 'ལྷ་ཁང་དམར་པོ།';
+
+  @override
+  String get reader_background_robe_saffron => 'ཆོས་གོས་ངུར་སྨྲིག';
+
+  @override
+  String get reader_in_the_text => 'དཔེ་ཆའི་ནང་།';
+
+  @override
+  String get reader_ritual_instructions => 'ཆོ་གའི་ལམ་སྟོན།';
+
+  @override
+  String get reader_verse_numbers => 'ཚིགས་བཅད་ཀྱི་ཨང་།';
+
+  @override
+  String get reader_change_languages => 'སྐད་ཡིག་བརྗེ།';
+
+  @override
+  String get reader_live_paused => 'མཚམས་འཇོག';
+
+  @override
+  String reader_section_position(String current, String total) {
+    return 'ས་བཅད། $current / $total';
+  }
+
+  @override
+  String reader_round_position(String current, String total) {
+    return 'སྐོར། $current / $total';
+  }
+
+  @override
+  String reader_round_number(String current) {
+    return 'སྐོར། $current';
+  }
+
+  @override
+  String reader_count_position(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String reader_show_script_in(String language) {
+    return '$language སྟོན་སྟངས།';
+  }
+
+  @override
+  String reader_verse_label(String number) {
+    return 'ཚིགས་བཅད། $number';
+  }
+
+  @override
+  String get reader_tab_commentary => 'འགྲེལ་བ།';
+
+  @override
+  String get reader_tab_versions => 'པར་གཞི།';
 }

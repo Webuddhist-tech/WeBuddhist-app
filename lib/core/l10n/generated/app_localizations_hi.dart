@@ -4332,4 +4332,97 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get timer_duration_sec => 'sec';
+
+  @override
+  String get reader_display_title => 'प्रदर्शन';
+
+  @override
+  String get reader_more_settings => 'अधिक सेटिंग्स';
+
+  @override
+  String get reader_spacing => 'अंतराल';
+
+  @override
+  String get reader_spacing_compact => 'सघन';
+
+  @override
+  String get reader_spacing_normal => 'सामान्य';
+
+  @override
+  String get reader_spacing_relaxed => 'खुला';
+
+  @override
+  String get reader_background => 'पृष्ठभूमि';
+
+  @override
+  String get reader_background_rice_paper => 'चावल कागज़';
+
+  @override
+  String get reader_background_gold => 'सुनहरा';
+
+  @override
+  String get reader_background_sky => 'आसमानी';
+
+  @override
+  String get reader_background_white => 'सफ़ेद';
+
+  @override
+  String get reader_background_plum => 'जामुनी';
+
+  @override
+  String get reader_background_temple_red => 'मंदिर लाल';
+
+  @override
+  String get reader_background_robe_saffron => 'चीवर केसरिया';
+
+  @override
+  String get reader_in_the_text => 'पाठ में';
+
+  @override
+  String get reader_ritual_instructions => 'अनुष्ठान निर्देश';
+
+  @override
+  String get reader_verse_numbers => 'श्लोक संख्या';
+
+  @override
+  String get reader_change_languages => 'भाषाएँ बदलें';
+
+  @override
+  String get reader_live_paused => 'रुका हुआ';
+
+  @override
+  String reader_section_position(String current, String total) {
+    return 'खंड $current / $total';
+  }
+
+  @override
+  String reader_round_position(String current, String total) {
+    return 'चक्र $current / $total';
+  }
+
+  @override
+  String reader_round_number(String current) {
+    return 'चक्र $current';
+  }
+
+  @override
+  String reader_count_position(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String reader_show_script_in(String language) {
+    return '$language इसमें दिखाएँ';
+  }
+
+  @override
+  String reader_verse_label(String number) {
+    return 'श्लोक $number';
+  }
+
+  @override
+  String get reader_tab_commentary => 'टीका';
+
+  @override
+  String get reader_tab_versions => 'संस्करण';
 }

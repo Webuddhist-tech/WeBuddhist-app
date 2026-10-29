@@ -38,6 +38,8 @@ class StorageKeys {
   // ========== USER PREFERENCES ==========
   /// Theme mode preference (light/dark/system)
   static const String themeMode = 'theme_mode';
+  /// Reader page background (a ReaderBackground name, e.g. ricePaper)
+  static const String readerBackground = 'reader_background';
   /// App UI language/locale preference (bounded to bundled ARB translations)
   static const String preferredLanguage = 'locale';
   /// Content language code sent to backend APIs. May be a language the app has
@@ -46,8 +48,15 @@ class StorageKeys {
   /// Chant list language picked on the all-recitations screen. Independent of
   /// [contentLanguage] and kept across restarts.
   static const String chantListLanguage = 'chant_list_language';
-  /// Font size preference
+  /// The reader's old single font size; read once to pick the first size
+  /// steps below.
   static const String fontSize = 'font_size';
+  /// Reader size step (1-7) of the original line
+  static const String readerOriginalStep = 'reader_original_step';
+  /// Reader size step (1-7) of the translation line
+  static const String readerTranslationStep = 'reader_translation_step';
+  /// Reader spacing: compact, normal or relaxed
+  static const String readerSpacing = 'reader_spacing';
   /// First launch flag
   static const String firstLaunch = 'first_launch';
 

@@ -31,6 +31,7 @@ import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
@@ -108,6 +109,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
   // App bar visibility state
   bool _isAppBarVisible = true;
+
+  /// How far through the page the reader is, for the header's progress line.
+  final ValueNotifier<double> _progress = ValueNotifier(0);
   double _bottomOverlayHeight = 0;
   // Scroll controller callback
   void Function(String segmentId, {double? alignment})? _scrollToSegment;
@@ -425,6 +429,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   @override
   void dispose() {
     _audioController?.dispose();
+    _progress.dispose();
     super.dispose();
   }
 
@@ -688,15 +693,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     );
   }
 
-  ThemeData _readerTheme(BuildContext context) {
-    final theme = Theme.of(context);
-    if (theme.brightness != Brightness.light) return theme;
-
-    return theme.copyWith(
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: theme.appBarTheme.copyWith(backgroundColor: Colors.white),
-    );
-  }
+  ThemeData _readerTheme(BuildContext context) =>
+      ReaderStyle.theme(context, ref);
 
   /// [state] is the first source's, which gates loading and errors;
   /// [active] is the tapped source's, which owns the selection and panels.
@@ -786,9 +784,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
         SafeArea(
           child: Column(
             children: [
-              // App bar slides up out of view on scroll-down.
+              // Focus mode: the app bar slides up out of view on scroll-down.
               SlideAwayHeader(
                 visible: _isAppBarVisible,
+                duration: ReaderConstants.focusModeDuration,
+                curve: ReaderConstants.focusModeCurve,
                 child: _buildAppBar(context),
               ),
               // Main scrollable content
@@ -812,6 +812,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                         chantSessionFooter: chantFooter,
                         onSourceSelected: _onSourceSelected,
                         onScrollDirectionChanged: _onScrollDirectionChanged,
+                        progress: _progress,
                         onScrollControllerReady: (scrollFn) {
                           _scrollToSegment = scrollFn;
                         },
@@ -918,7 +919,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     }
     return ReaderAppBarOverlay(
       params: _activeParams,
-      colorIndex: widget.colorIndex,
+      progress: _progress,
       liveSyncToggle: liveSyncToggle,
       prayerRequestsButton: prayerRequestsButton,
       // Picking a result replaces the route without the event, which drops
@@ -927,11 +928,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           liveEventId == null ? () => _handleSearch(context) : null,
       onLanguagesPressed: () => _openLanguagesSheet(context),
       // The event page already offers share and offline recitations, so the
-      // menu goes and font size gets its own button.
+      // menu goes there.
       onMorePressed:
           eventId == null ? () => _openMoreBottomSheet(context) : null,
-      onFontSizePressed:
-          eventId == null ? null : () => showFontSizeBottomSheet(context),
+      onFontSizePressed: () => showFontSizeBottomSheet(context),
     );
   }
 

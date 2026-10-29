@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 class SlideAwayHeader extends StatefulWidget {
   final bool visible;
   final Duration duration;
+  final Curve curve;
   final Widget child;
 
   const SlideAwayHeader({
@@ -12,6 +13,7 @@ class SlideAwayHeader extends StatefulWidget {
     required this.visible,
     required this.child,
     this.duration = const Duration(milliseconds: 500),
+    this.curve = Curves.easeInOut,
   });
 
   @override
@@ -27,7 +29,7 @@ class _SlideAwayHeaderState extends State<SlideAwayHeader>
   );
   late final CurvedAnimation _height = CurvedAnimation(
     parent: _controller,
-    curve: Curves.easeInOut,
+    curve: widget.curve,
   );
 
   @override

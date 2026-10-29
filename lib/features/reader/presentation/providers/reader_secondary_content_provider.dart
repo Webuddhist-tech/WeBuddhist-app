@@ -7,8 +7,11 @@ import 'package:flutter_pecha/features/reader/data/models/navigation_context.dar
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
+import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart' show Either;
 
@@ -441,6 +444,32 @@ final secondaryReaderProvider = StateNotifierProvider.autoDispose
     .family<SecondaryReaderNotifier, SecondaryReaderState, SecondaryReaderKey>(
   (ref, key) => SecondaryReaderNotifier(ref: ref, key: key),
 );
+
+/// A text's whole table of contents, by the edition the reader loaded, so
+/// the sections navigator lists every section before its pages load. Empty
+/// when the text has none or it failed.
+final readerOutlineProvider = FutureProvider.autoDispose
+    .family<TextOutline, String>(
+      (ref, textId) =>
+          ref.read(textsRepositoryProvider).fetchOutline(textId: textId),
+    );
+
+/// The translation [ReaderTranslationTitlesKey.versionId]'s title for each
+/// section of the text, by the original section's id: its own table of
+/// contents matched to the original's by the verse each opens at.
+final readerTranslationTitlesProvider = FutureProvider.autoDispose
+    .family<Map<String, String>, ReaderTranslationTitlesKey>((ref, key) async {
+      final original = await ref.watch(
+        readerOutlineProvider(key.textId).future,
+      );
+      if (original.isEmpty) return const {};
+      final translation = await ref
+          .read(textsRepositoryProvider)
+          .fetchOutline(textId: key.textId, versionId: key.versionId);
+      return matchTranslationTitles(original, translation);
+    });
+
+typedef ReaderTranslationTitlesKey = ({String textId, String versionId});
 
 /// The request a secondary stream makes first. Shared with the reader, which
 /// fetches it ahead for a translation opened as itself.

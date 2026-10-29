@@ -8,9 +8,9 @@ import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/controllers/bookmark_controller.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -102,37 +102,15 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
     }
   }
 
-  // ── font size helpers ──────────────────────────────────────────────────────
-
-  int _stepIndex(double fontSize) {
-    for (int i = 0; i < ReaderFontSizeBottomSheet.fontSizeSteps.length; i++) {
-      if ((fontSize - ReaderFontSizeBottomSheet.fontSizeSteps[i]).abs() < 0.5) {
-        return i;
-      }
-    }
-    int closest = ReaderFontSizeBottomSheet.defaultStepIndex;
-    double minDiff = double.infinity;
-    for (int i = 0; i < ReaderFontSizeBottomSheet.fontSizeSteps.length; i++) {
-      final d = (fontSize - ReaderFontSizeBottomSheet.fontSizeSteps[i]).abs();
-      if (d < minDiff) {
-        minDiff = d;
-        closest = i;
-      }
-    }
-    return closest;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final isBookmarked = ref.watch(isBookmarkedProvider(_bookmarkTarget));
 
-    final fontSize = ref.watch(fontSizeProvider);
-    final stepIndex = _stepIndex(fontSize);
-    final canDecrease = stepIndex > 0;
-    final canIncrease =
-        stepIndex < ReaderFontSizeBottomSheet.fontSizeSteps.length - 1;
+    final textSize = ref.watch(readerTextSizeProvider);
+    final canDecrease = ReaderFontSizeBottomSheet.canDecrease(textSize);
+    final canIncrease = ReaderFontSizeBottomSheet.canIncrease(textSize);
 
     return SafeArea(
       top: false,
@@ -167,11 +145,8 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
                             ? () {
                               HapticFeedback.lightImpact();
                               ref
-                                  .read(fontSizeProvider.notifier)
-                                  .setFontSize(
-                                    ReaderFontSizeBottomSheet
-                                        .fontSizeSteps[stepIndex - 1],
-                                  );
+                                  .read(readerTextSizeProvider.notifier)
+                                  .stepBoth(-1);
                             }
                             : null,
                   ),
@@ -187,11 +162,8 @@ class _ReaderMoreBottomSheetState extends ConsumerState<ReaderMoreBottomSheet> {
                             ? () {
                               HapticFeedback.lightImpact();
                               ref
-                                  .read(fontSizeProvider.notifier)
-                                  .setFontSize(
-                                    ReaderFontSizeBottomSheet
-                                        .fontSizeSteps[stepIndex + 1],
-                                  );
+                                  .read(readerTextSizeProvider.notifier)
+                                  .stepBoth(1);
                             }
                             : null,
                   ),

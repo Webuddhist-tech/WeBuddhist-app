@@ -45,6 +45,32 @@ class LibraryTocSection {
   bool contains(int offset) => offset >= spanStart && offset < spanEnd;
 }
 
+/// A heading of an edition's table of contents placed on its verses: the
+/// first verse it holds ([segmentId], numbered [number]) and the number of
+/// its last ([endNumber]). [depth] is 0 for a top-level heading.
+/// [opensText] when no verse comes before it.
+class LibraryOutlineEntry {
+  final String id;
+  final String? parentId;
+  final int depth;
+  final Map<String, String> title;
+  final String segmentId;
+  final int number;
+  final int endNumber;
+  final bool opensText;
+
+  const LibraryOutlineEntry({
+    required this.id,
+    this.parentId,
+    required this.depth,
+    required this.title,
+    required this.segmentId,
+    required this.number,
+    required this.endNumber,
+    this.opensText = false,
+  });
+}
+
 /// One entry of `GET /v2/editions/{id}/table-of-contents`.
 class LibraryTableOfContents {
   final String id;

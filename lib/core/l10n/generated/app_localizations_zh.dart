@@ -4160,6 +4160,99 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get timer_duration_sec => 'sec';
+
+  @override
+  String get reader_display_title => '顯示';
+
+  @override
+  String get reader_more_settings => '更多設定';
+
+  @override
+  String get reader_spacing => '間距';
+
+  @override
+  String get reader_spacing_compact => '緊湊';
+
+  @override
+  String get reader_spacing_normal => '標準';
+
+  @override
+  String get reader_spacing_relaxed => '寬鬆';
+
+  @override
+  String get reader_background => '背景';
+
+  @override
+  String get reader_background_rice_paper => '宣紙';
+
+  @override
+  String get reader_background_gold => '金色';
+
+  @override
+  String get reader_background_sky => '天藍';
+
+  @override
+  String get reader_background_white => '白色';
+
+  @override
+  String get reader_background_plum => '梅紫';
+
+  @override
+  String get reader_background_temple_red => '寺院紅';
+
+  @override
+  String get reader_background_robe_saffron => '袈裟橙';
+
+  @override
+  String get reader_in_the_text => '文中';
+
+  @override
+  String get reader_ritual_instructions => '儀軌說明';
+
+  @override
+  String get reader_verse_numbers => '偈頌編號';
+
+  @override
+  String get reader_change_languages => '更改語言';
+
+  @override
+  String get reader_live_paused => '已暫停';
+
+  @override
+  String reader_section_position(String current, String total) {
+    return '第 $current / $total 節';
+  }
+
+  @override
+  String reader_round_position(String current, String total) {
+    return '第 $current / $total 輪';
+  }
+
+  @override
+  String reader_round_number(String current) {
+    return '第 $current 輪';
+  }
+
+  @override
+  String reader_count_position(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String reader_show_script_in(String language) {
+    return '$language顯示方式';
+  }
+
+  @override
+  String reader_verse_label(String number) {
+    return '偈頌 $number';
+  }
+
+  @override
+  String get reader_tab_commentary => '注釋';
+
+  @override
+  String get reader_tab_versions => '版本';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -8170,4 +8263,97 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get timer_duration_sec => '秒';
+
+  @override
+  String get reader_display_title => '显示';
+
+  @override
+  String get reader_more_settings => '更多设置';
+
+  @override
+  String get reader_spacing => '间距';
+
+  @override
+  String get reader_spacing_compact => '紧凑';
+
+  @override
+  String get reader_spacing_normal => '标准';
+
+  @override
+  String get reader_spacing_relaxed => '宽松';
+
+  @override
+  String get reader_background => '背景';
+
+  @override
+  String get reader_background_rice_paper => '宣纸';
+
+  @override
+  String get reader_background_gold => '金色';
+
+  @override
+  String get reader_background_sky => '天蓝';
+
+  @override
+  String get reader_background_white => '白色';
+
+  @override
+  String get reader_background_plum => '梅紫';
+
+  @override
+  String get reader_background_temple_red => '寺院红';
+
+  @override
+  String get reader_background_robe_saffron => '袈裟橙';
+
+  @override
+  String get reader_in_the_text => '文中';
+
+  @override
+  String get reader_ritual_instructions => '仪轨说明';
+
+  @override
+  String get reader_verse_numbers => '偈颂编号';
+
+  @override
+  String get reader_change_languages => '更改语言';
+
+  @override
+  String get reader_live_paused => '已暂停';
+
+  @override
+  String reader_section_position(String current, String total) {
+    return '第 $current / $total 节';
+  }
+
+  @override
+  String reader_round_position(String current, String total) {
+    return '第 $current / $total 轮';
+  }
+
+  @override
+  String reader_round_number(String current) {
+    return '第 $current 轮';
+  }
+
+  @override
+  String reader_count_position(String current, String total) {
+    return '$current / $total';
+  }
+
+  @override
+  String reader_show_script_in(String language) {
+    return '$language显示方式';
+  }
+
+  @override
+  String reader_verse_label(String number) {
+    return '偈颂 $number';
+  }
+
+  @override
+  String get reader_tab_commentary => '注释';
+
+  @override
+  String get reader_tab_versions => '版本';
 }

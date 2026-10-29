@@ -171,9 +171,10 @@ void main() {
       await _pump(tester, _twoRangesOfA());
 
       expect(find.text('· 1 / 2'), findsOneWidget);
-      // The pill names the text, as its heading does.
-      expect(find.text(_refugeTitle), findsOneWidget);
-      expect(find.text(_rootTitle), findsNWidgets(2));
+      // The pill names the section at the top, as its heading does; the
+      // book is named only by its heading.
+      expect(find.text(_refugeTitle), findsNWidgets(2));
+      expect(find.text(_rootTitle), findsOneWidget);
     },
   );
 
@@ -186,19 +187,19 @@ void main() {
     await _settle(tester);
     expect(find.text('Sections'), findsOneWidget);
     expect(find.text('Two prayers'), findsOneWidget);
-    // Each text is a row (pill, heading and two rows name the book), its
+    // Each text is a row (its heading and two rows name the book), its
     // sections nested under it.
-    expect(find.text(_rootTitle), findsNWidgets(4));
+    expect(find.text(_rootTitle), findsNWidgets(3));
     expect(find.text(_kingTitle), findsOneWidget);
 
-    // The second text's row brings its own title heading to the top.
+    // The second text's row brings its own title heading to the top, and the
+    // pill names its section.
     await tester.tap(find.text(_rootTitle).last);
     await _settle(tester);
 
     expect(find.text('Sections'), findsNothing);
     expect(find.text('· 2 / 2'), findsOneWidget);
-    expect(find.text(_rootTitle), findsNWidgets(2));
-    expect(find.text(_kingTitle), findsOneWidget);
+    expect(find.text(_kingTitle), findsNWidgets(2));
   });
 
   testWidgets('the pill slides away on a scroll down and back on a scroll up', (
@@ -217,18 +218,19 @@ void main() {
     expect(_pillVisible(tester), isTrue);
   });
 
-  testWidgets('a text read whole lists its chapters, with no count', (
+  testWidgets('a text read whole counts its chapters and lists them', (
     tester,
   ) async {
     await _pump(tester, const [ReaderParams(textId: 'A')]);
 
-    expect(find.textContaining('/ '), findsNothing);
-    expect(find.text(_rootTitle), findsNWidgets(2));
+    expect(find.text('· 1 / 2'), findsOneWidget);
+    expect(find.text(_rootTitle), findsOneWidget);
 
-    await tester.tap(find.text(_rootTitle).first);
+    await tester.tap(find.text('· 1 / 2'));
     await _settle(tester);
     expect(find.text('Sections'), findsOneWidget);
-    expect(find.text(_refugeTitle), findsNWidgets(2));
+    // The pill, the heading and the sheet's row.
+    expect(find.text(_refugeTitle), findsNWidgets(3));
     expect(find.text(_kingTitle), findsOneWidget);
   });
 

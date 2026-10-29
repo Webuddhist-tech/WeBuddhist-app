@@ -12,6 +12,7 @@ import 'package:flutter_pecha/features/library/data/models/library_text.dart';
 import 'package:flutter_pecha/features/library/data/models/library_toc.dart';
 import 'package:flutter_pecha/features/library/data/models/library_yigchung.dart';
 import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
+import 'package:flutter_pecha/features/library/domain/library_toc_sections.dart';
 
 /// Composes the library API calls into what the reader and chant list need.
 class LibraryRepository {
@@ -160,6 +161,41 @@ class LibraryRepository {
       }
       return const [];
     });
+  }
+
+  /// [editionId]'s table of contents placed on its verses, in reading
+  /// order, numbered as the reader numbers them. With [primaryEditionId]
+  /// (the parallel reader's primary) the verses are numbered like its own,
+  /// as [loadWindow] pairs them, so the two editions' headings line up.
+  /// Empty when the edition has no table of contents.
+  Future<List<LibraryOutlineEntry>> getOutline(
+    String editionId, {
+    String? primaryEditionId,
+  }) async {
+    final toc = await getTableOfContents(editionId);
+    if (toc.isEmpty) return const [];
+    var segments = await getEditionSegments(editionId);
+    List<int>? numbers;
+    if (primaryEditionId != null && primaryEditionId != editionId) {
+      final paired = await _alignedToPrimary(
+        editionId,
+        primaryEditionId,
+        segments,
+      );
+      if (paired != null) {
+        segments = paired.segments;
+        numbers = paired.numbers;
+      }
+    }
+    numbers ??= segmentNumbers(segments);
+    return buildTocOutline(
+      toc: toc,
+      verses: [
+        for (var i = 0; i < segments.length; i++)
+          if (segments[i].spanStart case final start?)
+            (id: segments[i].id, spanStart: start, number: numbers[i]),
+      ],
+    );
   }
 
   /// Spans of [editionId]'s yigchung (small text) runs, sorted by start;
