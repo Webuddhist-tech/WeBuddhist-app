@@ -1240,7 +1240,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get reader_languages_title => 'སྐད་ཡིག';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => 'ས་བཅད།';
 
   @override
   String get reader_original_label => 'མ་ཡིག';

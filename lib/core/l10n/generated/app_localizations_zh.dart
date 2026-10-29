@@ -1182,7 +1182,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_languages_title => '語言';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => '章節';
 
   @override
   String get reader_original_label => '原文';

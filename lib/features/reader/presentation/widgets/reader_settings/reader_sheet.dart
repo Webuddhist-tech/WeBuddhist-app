@@ -70,6 +70,10 @@ const double readerSheetTapTarget = 44;
 /// follows right under the handle, so every sheet's header lines up.
 const double readerSheetHandleTop = 8;
 
+/// The verse sheet's content (language chips, commentary, video cards) sits
+/// 20 from the sheet's edges, its tabs 16 (WF13, WF16).
+const double readerVerseSheetInset = 20;
+
 /// A sheet header's icon buttons: [readerSheetTapTarget] square, not
 /// padded out to Material's 48.
 final ButtonStyle readerSheetIconButtonStyle = IconButton.styleFrom(

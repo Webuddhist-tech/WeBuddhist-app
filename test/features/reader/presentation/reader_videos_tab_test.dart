@@ -45,9 +45,11 @@ void main() {
     final first = tester.getTopLeft(find.text('Talk 1'));
     final second = tester.getTopLeft(find.text('Talk 2'));
     final third = tester.getTopLeft(find.text('Talk 3'));
-    // The first two side by side, half the width each; the third below.
+    // The first two side by side, 169 wide inside 20 margins with a 12 gap
+    // (WF16); the third below.
+    expect(first.dx, 20);
     expect(second.dy, first.dy);
-    expect(second.dx - first.dx, closeTo((390 - 32 - 12) / 2 + 12, 1));
+    expect(second.dx - first.dx, closeTo((390 - 40 - 12) / 2 + 12, 1));
     expect(third.dx, first.dx);
     expect(third.dy, greaterThan(first.dy));
   });

@@ -1232,7 +1232,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get reader_languages_title => 'भाषाएँ';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => 'खंड';
 
   @override
   String get reader_original_label => 'मूल';

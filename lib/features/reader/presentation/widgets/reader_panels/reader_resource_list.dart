@@ -104,7 +104,12 @@ class _ReaderResourceListState extends ConsumerState<ReaderResourceList> {
     ];
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        readerVerseSheetInset,
+        0,
+        readerVerseSheetInset,
+        24,
+      ),
       children: [
         ReaderSheetChips(
           spacing: 8,

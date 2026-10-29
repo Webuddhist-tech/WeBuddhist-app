@@ -560,7 +560,12 @@ class ReaderVideosTab extends ConsumerWidget {
     final style = ReaderStyle.of(context, ref);
     final palette = style.palette;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        readerVerseSheetInset,
+        4,
+        readerVerseSheetInset,
+        24,
+      ),
       children: [
         Wrap(
           spacing: _gap,
@@ -570,7 +575,10 @@ class ReaderVideosTab extends ConsumerWidget {
               LayoutBuilder(
                 builder: (context, _) {
                   final width =
-                      (MediaQuery.sizeOf(context).width - 32 - _gap) / 2;
+                      (MediaQuery.sizeOf(context).width -
+                          2 * readerVerseSheetInset -
+                          _gap) /
+                      2;
                   return SizedBox(
                     width: width,
                     child: _VideoCard(
@@ -591,8 +599,8 @@ class ReaderVideosTab extends ConsumerWidget {
   static const double _gap = 12;
 }
 
-/// [video] as WF16 draws it: a rounded 16:9 thumbnail with the play mark,
-/// then its title on up to two lines.
+/// [video] as WF16 draws it: a rounded 169 × 110 thumbnail with the play
+/// mark, then its title on up to two lines.
 class _VideoCard extends StatelessWidget {
   const _VideoCard({
     required this.video,
@@ -622,7 +630,7 @@ class _VideoCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: AspectRatio(
-                aspectRatio: 16 / 9,
+                aspectRatio: 169 / 110,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -655,7 +663,7 @@ class _VideoCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               video.title,
               maxLines: 2,
@@ -663,7 +671,8 @@ class _VideoCard extends StatelessWidget {
               style: TextStyle(
                 fontFamily: titleFamily,
                 fontSize: 14,
-                height: 1.3,
+                // Lines 20 apart, as WF16.
+                height: 20 / 14,
                 color: palette.ink,
               ),
             ),
