@@ -1253,7 +1253,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get bookmark => 'बुकमार्क';
 
   @override
-  String get collection_audio_versions => 'Audio versions';
+  String get collection_audio_versions => 'Audio version';
 
   @override
   String get playback_speed => 'Playback speed';

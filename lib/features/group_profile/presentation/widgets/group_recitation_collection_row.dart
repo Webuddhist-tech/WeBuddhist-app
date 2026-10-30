@@ -29,6 +29,7 @@ NavigationContext groupRecitationCollectionNavigationContext({
   required GroupRecitationCollectionItem item,
   required GroupRecitationCollectionCompletionState completionState,
   CollectionAudioTrack? initialAudio,
+  String? groupName,
 }) {
   final currentIndex = collection.items.indexWhere((i) => i.id == item.id);
   final planTextItems =
@@ -52,7 +53,9 @@ NavigationContext groupRecitationCollectionNavigationContext({
     planTextItems: planTextItems,
     currentTextIndex: currentIndex >= 0 ? currentIndex : 0,
     groupId: key.groupId,
+    groupTitle: groupName,
     collectionId: key.collectionId,
+    collectionImageUrl: collection.imageUrl,
     language: item.language,
     collectionAudioTracks: tracks,
     autoPlay: initialAudio != null,

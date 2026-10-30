@@ -61,13 +61,17 @@ void main() {
       planTextItems: _items(),
       currentTextIndex: 0,
       groupId: 'g',
+      groupTitle: 'Webuddhist',
       collectionId: 'c',
+      collectionImageUrl: 'https://cdn/cover.jpg',
       eventId: 'ev1',
     );
     final next = service.createNavigationContextForIndex(current, 2)!;
     expect(next.source, NavigationSource.groupRecitationCollection);
     expect(next.groupId, 'g');
+    expect(next.groupTitle, 'Webuddhist');
     expect(next.collectionId, 'c');
+    expect(next.collectionImageUrl, 'https://cdn/cover.jpg');
     expect(next.eventId, 'ev1');
   });
 

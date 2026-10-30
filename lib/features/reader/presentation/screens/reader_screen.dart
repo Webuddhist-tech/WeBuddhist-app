@@ -474,10 +474,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // The ⋮ sheet has just closed. Let that route finish before opening this one.
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
+    final nav = widget.navigationContext;
     final picked = await showGroupRecitationAudioSheet(
       context,
       tracks: tracks,
       selectedTrackId: _currentCollectionTrack?.id,
+      groupName: nav?.groupTitle,
+      imageUrl: nav?.collectionImageUrl,
     );
     if (!mounted || picked == null) return;
     _selectedCollectionTrack = picked;

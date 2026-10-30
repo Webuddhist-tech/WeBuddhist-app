@@ -2282,7 +2282,7 @@ abstract class AppLocalizations {
   /// No description provided for @collection_audio_versions.
   ///
   /// In en, this message translates to:
-  /// **'Audio versions'**
+  /// **'Audio version'**
   String get collection_audio_versions;
 
   /// No description provided for @playback_speed.
