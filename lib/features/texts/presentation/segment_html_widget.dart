@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html_parser;
 import 'package:flutter_pecha/features/library/domain/library_content_slicer.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_palette.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
@@ -53,10 +55,82 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
   // Set of visible footnote indices for this segment
   Set<int> visibleFootnotes = {};
 
+  /// The verse as plain runs when it needs nothing flutter_html does.
+  late List<_Run>? _runs = _plainRuns(widget.htmlContent);
+
+  @override
+  void didUpdateWidget(SegmentHtmlWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.htmlContent != widget.htmlContent) {
+      _runs = _plainRuns(widget.htmlContent);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = ReaderPalette.resolve(theme, ref);
+    final runs = _runs;
+    if (runs != null) return _buildPlain(theme, palette, runs);
+    return _buildHtml(palette);
+  }
+
+  /// Drawn as flutter_html would, without its style tree: text over the
+  /// theme's body text, the verse's style, yigchung runs smaller.
+  Widget _buildPlain(ThemeData theme, ReaderPalette palette, List<_Run> runs) {
+    final base = theme.textTheme.bodyMedium ?? const TextStyle();
+    final style = base
+        .copyWith(height: base.height ?? 1.2)
+        .merge(
+          TextStyle(
+            fontSize: widget.fontSize,
+            height: widget.lineHeight,
+            color: widget.textColor,
+            fontFamily: widget.fontFamily ?? getFontFamily(widget.language),
+            fontStyle: widget.fontStyle,
+            fontWeight: widget.fontWeight,
+            decoration: widget.isSelected ? TextDecoration.underline : null,
+            decorationStyle:
+                widget.isSelected ? TextDecorationStyle.dotted : null,
+            decorationThickness: widget.isSelected ? 1.5 : null,
+          ),
+        );
+    final yigchung = TextStyle(
+      color: palette.yigchung,
+      fontStyle: FontStyle.italic,
+      fontSize: widget.fontSize * _yigchungScale,
+    );
+    final verse = SizedBox(
+      width: double.infinity,
+      child: Text.rich(
+        TextSpan(
+          style: style,
+          children: [
+            for (final run in runs)
+              TextSpan(text: run.text, style: run.yigchung ? yigchung : null),
+          ],
+        ),
+      ),
+    );
+    // flutter_html's root line around its body block: the same spacing, and
+    // text scaling applied once to the whole verse.
+    final root = DefaultTextStyle.of(context).style;
+    return Text.rich(
+      TextSpan(
+        style: root.copyWith(height: root.height ?? 1.2),
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.bottom,
+            baseline: TextBaseline.alphabetic,
+            child: MediaQuery.withNoTextScaling(child: verse),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHtml(ReaderPalette palette) {
     int footnoteCounter = 0;
-    final palette = ReaderPalette.resolve(Theme.of(context), ref);
     final lineHeight = widget.lineHeight;
     return Html(
       data: widget.htmlContent,
@@ -187,4 +261,60 @@ class _SegmentHtmlWidgetState extends ConsumerState<SegmentHtmlWidget> {
       ],
     );
   }
+}
+
+/// A stretch of a verse: plain, or yigchung (small text).
+class _Run {
+  final String text;
+  final bool yigchung;
+
+  const _Run(this.text, {this.yigchung = false});
+}
+
+final RegExp _htmlSpace = RegExp(r'[ \t\n\r\f]+');
+
+/// [html] as runs when it holds only text, `<br>` and yigchung spans, as
+/// library verses do; null for anything else. Spaces collapse as in HTML.
+List<_Run>? _plainRuns(String html) {
+  final runs = <_Run>[];
+  void add(String text, {bool yigchung = false}) {
+    var collapsed = text.replaceAll(_htmlSpace, ' ');
+    // A space ending the run before swallows one starting this run.
+    if (runs.isNotEmpty && runs.last.text.endsWith(' ')) {
+      collapsed = collapsed.trimLeft();
+    }
+    if (collapsed.isNotEmpty) runs.add(_Run(collapsed, yigchung: yigchung));
+  }
+
+  for (final node in html_parser.parseFragment(html).nodes) {
+    if (node is dom.Text) {
+      add(node.data);
+    } else if (node is dom.Element && node.localName == 'br') {
+      runs.add(const _Run('\n'));
+    } else if (node is dom.Element &&
+        node.localName == 'span' &&
+        node.classes.length == 1 &&
+        node.classes.contains(libraryYigchungClass) &&
+        node.nodes.every((child) => child is dom.Text)) {
+      add(node.text, yigchung: true);
+    } else {
+      return null;
+    }
+  }
+  return _trimLines(runs);
+}
+
+/// Drops the spaces HTML would not draw: at the start and end of each line.
+List<_Run> _trimLines(List<_Run> runs) {
+  final result = <_Run>[];
+  for (var i = 0; i < runs.length; i++) {
+    var text = runs[i].text;
+    final lineStart = result.isEmpty || result.last.text.endsWith('\n');
+    if (lineStart) text = text.trimLeft();
+    final lineEnd = i == runs.length - 1 || runs[i + 1].text == '\n';
+    if (lineEnd && text != '\n') text = text.trimRight();
+    if (text.isEmpty) continue;
+    result.add(_Run(text, yigchung: runs[i].yigchung));
+  }
+  return result;
 }

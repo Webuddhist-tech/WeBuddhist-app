@@ -389,6 +389,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         for (var i = 0; i < _startedCount; i++) _readView(i),
       ]).entries;
 
+  /// The list as last drawn, which the item positions index into; read on
+  /// every scroll pause, so not laid out again.
+  List<_Entry> _drawnEntries() => _layout?.entries ?? _currentEntries();
+
   /// The list, source after source, with the page's table of contents.
   ///
   /// A rule goes before each source after the first, then its title when its
@@ -882,7 +886,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         positions.toList()..sort((a, b) => a.index.compareTo(b.index));
     final firstVisibleIndex = sortedPositions.first.index;
     final lastVisibleIndex = sortedPositions.last.index;
-    final totalItems = _currentEntries().length;
+    final totalItems = _drawnEntries().length;
 
     if (_isCollapsed) {
       _loadForward(lastVisibleIndex, totalItems);
@@ -927,7 +931,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// all its verses. Once the last started source has them all, or failed,
   /// the next source starts.
   void _loadForward(int lastVisibleIndex, int totalItems) {
-    final entries = _currentEntries();
+    final entries = _drawnEntries();
     var lastIsDone = false;
     for (var index = 0; index < _startedCount; index++) {
       final state = ref.read(readerNotifierProvider(widget.sources[index]));
@@ -993,7 +997,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (!mounted) return;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
-    final entries = _currentEntries();
+    final entries = _drawnEntries();
     final furthest = <int, int>{};
     for (final position in positions) {
       if (position.index >= entries.length) continue;
@@ -1205,7 +1209,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (_isProgrammaticScroll) return;
     final index = _selectedSourceIndex();
     if (index == null) return;
-    final entries = _currentEntries();
+    final entries = _drawnEntries();
     final top = readerTopVerseEntry(
       _itemPositionsListener.itemPositions.value,
       (i) =>
