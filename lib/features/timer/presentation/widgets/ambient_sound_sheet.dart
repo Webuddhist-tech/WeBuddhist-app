@@ -18,14 +18,18 @@ class AmbientSoundSelection {
 
 /// "Ambient sounds" bottom sheet.
 ///
-/// Tapping a row selects it and starts a looping preview (stopping any
-/// previous preview). The volume slider only controls preview playback here
-/// — it is local UI state and is never sent to the backend.
+/// Tapping a row selects it immediately through [onChanged] and starts a
+/// looping preview (stopping any previous preview). The sheet stays open so
+/// the volume slider can still adjust that preview. Closing — the X, a swipe,
+/// or a tap outside — does not pick a sound; a dismiss with no new tap leaves
+/// the previous choice in place. The volume slider is local UI state and is
+/// never sent to the backend.
 class AmbientSoundSheet extends ConsumerStatefulWidget {
   const AmbientSoundSheet({
     super.key,
     required this.selectedId,
     this.selectedName,
+    this.onChanged,
   });
 
   final String? selectedId;
@@ -34,10 +38,14 @@ class AmbientSoundSheet extends ConsumerStatefulWidget {
   /// returns the current selection intact instead of an id with no name.
   final String? selectedName;
 
+  /// Called as soon as a row is tapped, while the sheet is still open.
+  final ValueChanged<AmbientSoundSelection>? onChanged;
+
   static Future<AmbientSoundSelection?> show(
     BuildContext context, {
     required String? selectedId,
     String? selectedName,
+    ValueChanged<AmbientSoundSelection>? onChanged,
   }) {
     return showModalBottomSheet<AmbientSoundSelection>(
       context: context,
@@ -50,6 +58,7 @@ class AmbientSoundSheet extends ConsumerStatefulWidget {
           (_) => AmbientSoundSheet(
             selectedId: selectedId,
             selectedName: selectedName,
+            onChanged: onChanged,
           ),
     );
   }
@@ -86,17 +95,21 @@ class _AmbientSoundSheetState extends ConsumerState<AmbientSoundSheet> {
 
   void _selectDefault() {
     unawaited(_player.stop());
+    const selection = AmbientSoundSelection();
     setState(() {
-      _selectedId = null;
-      _selectedName = null;
+      _selectedId = selection.id;
+      _selectedName = selection.name;
     });
+    widget.onChanged?.call(selection);
   }
 
   void _selectSound(AmbientSound sound) {
+    final selection = AmbientSoundSelection(id: sound.id, name: sound.name);
     setState(() {
-      _selectedId = sound.id;
-      _selectedName = sound.name;
+      _selectedId = selection.id;
+      _selectedName = selection.name;
     });
+    widget.onChanged?.call(selection);
     unawaited(_player.play(sound.url, volume: _volume));
   }
 
