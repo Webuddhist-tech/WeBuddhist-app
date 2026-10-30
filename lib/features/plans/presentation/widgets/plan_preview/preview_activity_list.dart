@@ -158,11 +158,11 @@ class PreviewActivityList extends ConsumerWidget {
       return;
     }
 
-    final collections = await loadPlanGroupCollections(
+    final collections = await loadPlanGroupCollectionsToOpen(
       ref,
       PlanSubtaskNavigation.groupCollectionIdsForPlanTasks(tasks),
     );
-    if (!context.mounted) return;
+    if (collections == null || !context.mounted) return;
 
     final planTextItems = PlanSubtaskNavigation.fromPlanTasks(
       tasks,

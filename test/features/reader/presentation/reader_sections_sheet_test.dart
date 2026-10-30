@@ -212,6 +212,25 @@ void main() {
     expect(find.text('Section 1 / 6'), findsOneWidget);
   });
 
+  testWidgets('a text the leader is in carries the Live pill', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      ReaderSectionsSnapshot(
+        sections: [
+          _row('a', 'Prayer to the Buddha', isText: true),
+          _row('t1', 'Prayer for the Future', source: 1, isText: true),
+        ],
+        pendingSources: 0,
+        severalTexts: true,
+        liveKey: '1:t1',
+      ),
+      current: 'a',
+    );
+    expect(find.text('Live'), findsOneWidget);
+  });
+
   testWidgets('one text is not ruled', (tester) async {
     await _open(tester, puja, current: 'a');
     expect(find.byType(Divider), findsNothing);

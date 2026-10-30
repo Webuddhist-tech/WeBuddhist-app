@@ -21,6 +21,12 @@ if [[ -z "${LIBRARY_CHANTS_TAG_ID:-}" ]]; then
   exit 1
 fi
 
+# The library API rejects requests without its key; same reasoning.
+if [[ -z "${LIBRARY_API_KEY:-}" ]]; then
+  echo "::error::LIBRARY_API_KEY secret is not set"
+  exit 1
+fi
+
 # --- Development -----------------------------------------------------------
 {
   echo "BASE_API_URL=${DEV_BASE_API_URL:-}"

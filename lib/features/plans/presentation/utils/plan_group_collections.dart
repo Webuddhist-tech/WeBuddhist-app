@@ -35,3 +35,20 @@ Future<PlanGroupCollections> loadPlanGroupCollections(
   final entries = await Future.wait(collectionIds.map(load));
   return Map.fromEntries(entries.whereType<MapEntry<String, List<String>>>());
 }
+
+bool _opening = false;
+
+/// [loadPlanGroupCollections] for a tap that opens the reader: null while an
+/// earlier tap is still loading, so a second tap cannot open a second reader.
+Future<PlanGroupCollections?> loadPlanGroupCollectionsToOpen(
+  WidgetRef ref,
+  Set<String> collectionIds,
+) async {
+  if (_opening) return null;
+  _opening = true;
+  try {
+    return await loadPlanGroupCollections(ref, collectionIds);
+  } finally {
+    _opening = false;
+  }
+}

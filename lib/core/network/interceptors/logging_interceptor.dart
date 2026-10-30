@@ -62,8 +62,11 @@ class LoggingInterceptor extends Interceptor {
   Map<String, dynamic> _filterHeaders(Map<String, dynamic> headers) {
     final filtered = <String, dynamic>{};
     for (final entry in headers.entries) {
-      if (entry.key.toLowerCase() == 'authorization') {
+      final key = entry.key.toLowerCase();
+      if (key == 'authorization') {
         filtered[entry.key] = 'Bearer ***';
+      } else if (key == 'x-api-key') {
+        filtered[entry.key] = '***';
       } else {
         filtered[entry.key] = entry.value;
       }

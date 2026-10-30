@@ -305,14 +305,21 @@ class _SectionRow extends ConsumerWidget {
             constraints: const BoxConstraints(minHeight: 46),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: _textTitle(
-                  context,
-                  style,
-                  section.title,
-                  section.language,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _textTitle(
+                      context,
+                      style,
+                      section.title,
+                      section.language,
+                    ),
+                  ),
+                  if (isLive) ...[
+                    const SizedBox(width: 10),
+                    _LivePill(palette: palette),
+                  ],
+                ],
               ),
             ),
           ),
