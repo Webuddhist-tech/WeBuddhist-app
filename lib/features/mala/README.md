@@ -235,6 +235,9 @@ widget layer (which would log ImageResourceService 403 errors).
   `mala_image_url` first, falling back to the accumulator-level one.
 - **Offline.** Persisted bytes in `LocalMalaState` let the strand render on a
   cold start without network.
+- **No flash.** `MalaCounterNotifier` prefills the cached bytes synchronously
+  (via `malaUserIdSync`) and `MalaBeads` keeps decoded skins in a small
+  in-memory cache keyed by content hash, so remounts paint on the first frame.
 
 ## Bead input & feedback
 

@@ -29,6 +29,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_signal_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
@@ -51,6 +52,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class GroupProfileBody extends ConsumerStatefulWidget {
   final GroupProfile profile;
@@ -186,6 +188,9 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
 
     _visibleTabs = tabs;
     _tabController = controller;
+    // A tab selected without a swipe, such as Members when it is the only
+    // one, never fires the listener; sync its flags once the frame is up.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onTabChanged());
 
     if (previous != null) {
       previous.removeListener(_onTabChanged);
@@ -420,10 +425,12 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
       groupPracticesProvider(profile.id).select(
         (state) => (
           state.practices.isNotEmpty,
-          state.isLoading && state.practices.isEmpty,
+          !state.hasLoaded,
         ),
       ),
     );
+    // Posts and events refetch when the group's signal moves.
+    ref.watch(groupSignalsProvider(profile.id));
     final eventsAsync = ref.watch(groupEventsProvider(profile.id));
     // Keep the events tab when loading failed so its retry action stays
     // reachable.
@@ -993,7 +1000,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
                   child:
                       profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
                           ? CachedNetworkImageWidget(
-                            key: ValueKey(profile.avatarUrl),
+                            key: networkImageKey(profile.avatarUrl),
                             imageUrl: profile.avatarUrl,
                             width: 44,
                             height: 44,
@@ -1401,7 +1408,7 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         child: AspectRatio(
           aspectRatio: 3.5,
           child: CachedNetworkImageWidget(
-            key: ValueKey(profile.bannerUrl),
+            key: networkImageKey(profile.bannerUrl),
             imageUrl: profile.bannerUrl,
             fit: BoxFit.cover,
             errorWidget: Container(

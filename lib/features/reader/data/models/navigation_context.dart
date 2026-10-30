@@ -48,6 +48,7 @@ class PlanContentTypes {
   static const String image = 'IMAGE';
   static const String video = 'VIDEO';
   static const String groupAccumulation = 'GROUP_ACCUMULATION';
+  static const String groupCollection = 'GROUP_COLLECTION';
 
   /// Map a raw API value to a [PlanItemContentType], or null if unknown.
   static PlanItemContentType? parse(String? raw) {
@@ -685,6 +686,10 @@ class NavigationContext {
   /// [NavigationSource.groupRecitationCollection].
   final String? collectionId;
 
+  /// Cover of the group recitation collection. Each audio version shows this
+  /// until a recording has its own image.
+  final String? collectionImageUrl;
+
   /// Recordings for each chant id in a group recitation collection.
   /// Empty for every other navigation source. Swipe navigation keeps this
   /// map so the destination chant can offer its own tracks.
@@ -725,6 +730,7 @@ class NavigationContext {
     this.groupAccumulatorEnded = false,
     this.language,
     this.collectionId,
+    this.collectionImageUrl,
     this.collectionAudioTracks = const <String, List<CollectionAudioTrack>>{},
     this.initialCollectionAudio,
     this.eventId,
@@ -853,6 +859,7 @@ class NavigationContext {
     bool? groupAccumulatorEnded,
     String? language,
     String? collectionId,
+    String? collectionImageUrl,
     Map<String, List<CollectionAudioTrack>>? collectionAudioTracks,
     CollectionAudioTrack? initialCollectionAudio,
     String? eventId,
@@ -879,6 +886,7 @@ class NavigationContext {
           groupAccumulatorEnded ?? this.groupAccumulatorEnded,
       language: language ?? this.language,
       collectionId: collectionId ?? this.collectionId,
+      collectionImageUrl: collectionImageUrl ?? this.collectionImageUrl,
       collectionAudioTracks:
           collectionAudioTracks ?? this.collectionAudioTracks,
       initialCollectionAudio:

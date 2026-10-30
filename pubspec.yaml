@@ -107,6 +107,7 @@ dependencies:
   # Equatable
   equatable: ^2.0.7
   cached_network_image: ^3.4.1
+  flutter_cache_manager: ^3.4.1
 
   # Google fonts
   google_fonts: ^6.2.1
@@ -147,7 +148,9 @@ dependencies:
 
   # UUID generation
   uuid: ^4.5.1
-  firebase_core: ^4.11.0
+  firebase_core: ^4.15.2
+  cloud_firestore: ^6.10.2
+  firebase_auth: ^6.7.1
   firebase_analytics: ^12.4.3
   firebase_crashlytics: ^5.2.4
   # Required by Airbridge SDK for uninstall tracking (RemoteMessage at R8 minify time)
@@ -183,10 +186,10 @@ flutter_launcher_icons:
     background_color: "#FFFFFF"
     theme_color: "#FFFFFF"
   remove_alpha_ios: true
-  image_path: "assets/images/webuddhist_logo.png"
+  image_path: "assets/launcher/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/webuddhist_logo.png"
+  adaptive_icon_background: "#FFF4E3"
+  adaptive_icon_foreground: "assets/launcher/app_icon_foreground.png"
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -198,7 +201,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/images/segment-bg/
     - assets/images/verse-bg/
     - assets/images/tag_cover/
     - assets/images/recitation_cover/
@@ -227,6 +229,12 @@ flutter:
     - family: WBTibetanContent
       fonts:
         - asset: assets/fonts/WBTibetanContent.ttf
+          style: normal
+    # Jomolhari, rebuilt and renamed like WBTibetanContent; a reader font
+    # choice for Tibetan.
+    - family: WBTibetanUchen
+      fonts:
+        - asset: assets/fonts/WBTibetanUchen.ttf
           style: normal
 # To add assets to your application, add an assets section, like this:
 # assets:

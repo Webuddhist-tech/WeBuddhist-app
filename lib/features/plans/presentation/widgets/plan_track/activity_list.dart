@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_dto_model.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_group_collections.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_shorts_section.dart';
@@ -125,7 +127,7 @@ class ActivityList extends ConsumerWidget {
             );
           },
         ),
-        PlanShortsSection(videos: videos),
+        PlanDayVideos(videos: videos),
       ],
     );
   }
@@ -137,12 +139,12 @@ class ActivityList extends ConsumerWidget {
     return task.subTasks.any((s) => s.hasOwnAudio);
   }
 
-  void _handleActivityTap(
+  Future<void> _handleActivityTap(
     BuildContext context,
     WidgetRef ref,
     UserTasksDto task, {
     required bool autoPlay,
-  }) {
+  }) async {
     final accumulatorId = PlanSubtaskNavigation.groupAccumulationIdForUserTask(
       task,
     );
@@ -165,15 +167,27 @@ class ActivityList extends ConsumerWidget {
       return;
     }
 
+    final collections = await loadPlanGroupCollectionsToOpen(
+      ref,
+      PlanSubtaskNavigation.groupCollectionIdsForUserTasks(tasks),
+    );
+    if (collections == null || !context.mounted) return;
+
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(
       tasks,
       withCompletion: !readOnly,
+      collections: collections,
     );
-    if (planTextItems.isEmpty) return;
 
     // Open at the task's first subtask; next/prev walks the rest.
     final index = planTextItems.indexWhere((item) => item.taskId == task.id);
-    if (index < 0) return;
+    if (index < 0) {
+      // Only a collection that failed to load leaves a task without an item.
+      if (task.subTasks.any((s) => s.groupCollectionId != null)) {
+        _showLoadError(context);
+      }
+      return;
+    }
 
     final target = planTextItems[index];
     final effectiveAudioUrl = dayAudioUrl;
@@ -197,6 +211,15 @@ class ActivityList extends ConsumerWidget {
       navigationContext,
     ).then((_) => onReaderClosed?.call());
   }
+}
+
+void _showLoadError(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(context.l10n.something_went_wrong),
+      backgroundColor: Colors.red,
+    ),
+  );
 }
 
 /// Checkbox widget for task completion with ripple effect

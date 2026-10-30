@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -23,15 +24,13 @@ class PracticeExploreScreen extends ConsumerStatefulWidget {
 
 class _PracticeExploreScreenState extends ConsumerState<PracticeExploreScreen> {
   Future<void> _refreshAll() async {
-    ref.invalidate(practiceExploreSeriesProvider);
-    ref.invalidate(practiceExploreRecitationsProvider);
-    ref.invalidate(practiceExploreAccumulatorsProvider);
-    ref.invalidate(practiceExploreTimersProvider);
+    final repo = ref.read(practiceExploreRepositoryProvider);
+    final language = ref.read(contentLanguageProvider);
     await Future.wait([
-      ref.read(practiceExploreSeriesProvider.future),
-      ref.read(practiceExploreRecitationsProvider.future),
-      ref.read(practiceExploreAccumulatorsProvider.future),
-      ref.read(practiceExploreTimersProvider.future),
+      repo.refreshSeries(language),
+      repo.refreshRecitations(language),
+      repo.refreshAccumulators(language),
+      repo.refreshTimers(),
     ]);
   }
 

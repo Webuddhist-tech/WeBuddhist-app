@@ -119,6 +119,22 @@ void main() {
       ).called(1);
     });
 
+    test('should localize the UI into Thai, Burmese and Vietnamese', () async {
+      when(
+        mockLocalStorageService.get<String>(StorageKeys.preferredLanguage),
+      ).thenAnswer((_) async => null);
+      when(
+        mockLocalStorageService.set(StorageKeys.preferredLanguage, any),
+      ).thenAnswer((_) async => true);
+      localeNotifier = await createLocaleNotifier();
+
+      for (final String code in <String>['th', 'my', 'vi']) {
+        await localeNotifier.applyUiLocaleForContent(code);
+
+        expect(localeNotifier.state, Locale(code), reason: code);
+      }
+    });
+
     test('should set and persist new locale', () async {
       // Arrange
       when(

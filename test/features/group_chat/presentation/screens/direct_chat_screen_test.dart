@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/analytics/analytics_providers.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/realtime/realtime_providers.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
@@ -14,7 +15,6 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.d
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_reaction_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/providers/direct_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/screens/direct_chat_screen.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_emoji_pill.dart';
@@ -176,8 +176,8 @@ Future<void> _pumpScreen(
     ProviderScope(
       overrides: [
         groupChatRepositoryProvider.overrideWithValue(repository),
-        // REST only here; the socket is covered by the notifier tests.
-        directChatLiveConfigProvider.overrideWithValue(null),
+        // Not signed in to Firebase: no room signal, REST only.
+        firebaseSignedInProvider.overrideWith((ref) => false),
         userProvider.overrideWith((ref) => _Tenzin()),
         analyticsServiceProvider.overrideWithValue(
           RecordingAnalyticsService(),

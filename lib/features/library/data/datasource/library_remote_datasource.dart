@@ -21,6 +21,7 @@ class LibraryRemoteDatasource {
     String? title,
     int limit = 20,
     int offset = 0,
+    bool noCache = false,
   }) async {
     final response = await dio.get(
       '/v2/texts',
@@ -31,6 +32,7 @@ class LibraryRemoteDatasource {
         'limit': limit,
         'offset': offset,
       },
+      options: noCache ? Options(extra: {'no_cache': true}) : null,
     );
     return LibraryTextPage.fromJson(_asMap(response.data, '/v2/texts'));
   }

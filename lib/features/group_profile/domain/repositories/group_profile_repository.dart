@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
@@ -17,9 +18,90 @@ abstract class GroupProfileRepositoryInterface {
     required String language,
   });
 
+  /// Synchronous source builders so a screen can seed its first frame.
+  ScreenCacheSource<GroupProfile> groupProfileSource(
+    String groupId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupEventsPage> groupEventsSource(
+    String groupId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupEvent> groupEventDetailSource(
+    String eventId, {
+    required String language,
+  });
+
+  ScreenCacheSource<GroupRecitationCollection> recitationCollectionDetailSource({
+    required String collectionId,
+  });
+
+  /// Stored profile first, then revalidated in the background.
+  Stream<Either<Failure, GroupProfile>> watchGroupProfile(
+    String groupId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupProfile>> refreshGroupProfile(
+    String groupId, {
+    required String language,
+  });
+
+  Stream<Either<Failure, GroupEventsPage>> watchGroupEvents(
+    String groupId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupEventsPage>> refreshGroupEvents(
+    String groupId, {
+    required String language,
+  });
+
+  Stream<Either<Failure, GroupEvent>> watchGroupEventDetail(
+    String eventId, {
+    required String language,
+  });
+
+  Future<Either<Failure, GroupEvent>> refreshGroupEventDetail(
+    String eventId, {
+    required String language,
+  });
+
+  Stream<Either<Failure, GroupRecitationCollection>>
+  watchRecitationCollectionDetail({required String collectionId});
+
+  /// Stored first pages; the matching `getX(skip: 0)` call writes them.
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  });
+
+  GroupMembersPage? readStoredGroupMembers(String groupId);
+
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  );
+
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(String groupId);
+
+  GroupReportsPage? readStoredGroupReports(String groupId);
+
+  /// Revalidates and stores the viewer's membership.
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
     GroupType groupType,
+  );
+
+  /// Stored membership, so the follow row paints before the check returns.
+  bool? readStoredFollowStatus(String groupId, GroupType groupType);
+
+  /// Records a join or leave the server accepted, for the next open.
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
   );
 
   Future<Either<Failure, void>> followGroup(

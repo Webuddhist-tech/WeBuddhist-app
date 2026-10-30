@@ -4,11 +4,9 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/deep_linking/deep_link_url_builder.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
-import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_hero_card.dart';
-import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_member_lists.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_more_sheet.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_sections.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_accumulator_session_complete_sheet.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/bookmark_providers.dart';
@@ -27,6 +25,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 
 class GroupAccumulatorScreen extends ConsumerStatefulWidget {
   final String accumulatorId;
@@ -43,23 +42,13 @@ class GroupAccumulatorScreen extends ConsumerStatefulWidget {
       _GroupAccumulatorScreenState();
 }
 
-class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _GroupAccumulatorScreenState
+    extends ConsumerState<GroupAccumulatorScreen> {
   bool _isJoining = false;
   bool _viewTracked = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  /// Set while Recite fetches the server count, so a double tap opens once.
+  bool _isFetchingCount = false;
 
   @override
   Widget build(BuildContext context) {
@@ -132,35 +121,14 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
           children: [
             _buildAppBar(context, resolvedDetail),
             Expanded(
-              child: detailAsync.when(
-                data:
-                    (either) => either.fold(
-                      (failure) => Center(
-                        child: ErrorStateWidget(
-                          error: failure,
-                          onRetry:
-                              () => ref.invalidate(
-                                groupAccumulatorDetailProvider(
-                                  widget.accumulatorId,
-                                ),
-                              ),
-                        ),
-                      ),
-                      (detail) => _buildContent(context, detail, isDark),
+              child: ScreenCacheBuilder<GroupAccumulatorDetail>(
+                value: detailAsync,
+                skeleton: const Center(child: CircularProgressIndicator()),
+                onRetry:
+                    () => ref.invalidate(
+                      groupAccumulatorDetailProvider(widget.accumulatorId),
                     ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, _) => Center(
-                      child: ErrorStateWidget(
-                        error: error,
-                        onRetry:
-                            () => ref.invalidate(
-                              groupAccumulatorDetailProvider(
-                                widget.accumulatorId,
-                              ),
-                            ),
-                      ),
-                    ),
+                data: (detail) => _buildContent(context, detail, isDark),
               ),
             ),
           ],
@@ -269,10 +237,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
       _viewTracked = true;
       ref
           .read(groupEventAnalyticsProvider)
-          .accumulatorViewed(
-            groupId: detail.groupId,
-            accumulatorId: detail.id,
-          );
+          .accumulatorViewed(groupId: detail.groupId, accumulatorId: detail.id);
     }
 
     return Column(
@@ -287,37 +252,15 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
             isJoining: _isJoining,
             onJoinTap: () => _onJoinTap(detail),
             onReciteTap: () => _onReciteTap(context, detail),
+            onTextTap:
+                detail.hasTextContent
+                    ? () =>
+                        _openTextReader(context, detail, hasJoined: hasJoined)
+                    : null,
           ),
-        ),
-        TabBar(
-          controller: _tabController,
-          labelColor: isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-          unselectedLabelColor:
-              isDark ? AppColors.textTertiaryDark : AppColors.textSecondary,
-          indicatorColor:
-              isDark ? AppColors.surfaceWhite : AppColors.textPrimary,
-          indicatorWeight: 2,
-          dividerHeight: 1,
-          dividerColor: isDark ? AppColors.cardBorderDark : AppColors.grey300,
-          tabs: [
-            Tab(text: context.l10n.group_accumulator_leaderboard),
-            Tab(text: context.l10n.group_accumulator_my_contributions),
-          ],
         ),
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              GroupAccumulatorLeaderboardList(
-                accumulatorId: widget.accumulatorId,
-                isDark: isDark,
-              ),
-              GroupAccumulatorMyContributionsList(
-                detail: detail,
-                isDark: isDark,
-              ),
-            ],
-          ),
+          child: GroupAccumulatorSections(detail: detail, isDark: isDark),
         ),
       ],
     );
@@ -378,9 +321,39 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
       return;
     }
 
+    await _openTextReader(context, detail, hasJoined: true);
+  }
+
+  /// Opens the accumulation's text. A joined member gets the same counted
+  /// reader as Recite now. Anyone else gets the text itself, without a count.
+  Future<void> _openTextReader(
+    BuildContext context,
+    GroupAccumulatorDetail detail, {
+    required bool hasJoined,
+  }) async {
     final textId = detail.textId;
     if (textId == null || textId.isEmpty) return;
 
+    if (!hasJoined) {
+      await context.push('/reader/$textId');
+      return;
+    }
+
+    // The detail on screen may still be the stored copy; the reader mirrors
+    // this count, so it has to be the server's.
+    if (_isFetchingCount) return;
+    _isFetchingCount = true;
+    final container = ProviderScope.containerOf(context, listen: false);
+    final GroupAccumulatorDetail? fresh;
+    try {
+      fresh = await fetchFreshGroupAccumulatorDetail(container, detail.id);
+    } finally {
+      _isFetchingCount = false;
+    }
+    if (!context.mounted) return;
+    final startCount = (fresh ?? detail).user?.totalCount ?? 0;
+
+    final ended = isPastEndDate(detail.endDate, DateTime.now());
     final sessionCount = await context.push<int>(
       '/reader/$textId',
       extra: NavigationContext(
@@ -392,7 +365,7 @@ class _GroupAccumulatorScreenState extends ConsumerState<GroupAccumulatorScreen>
             _resolveGroupName(detail.groupId)?.trim().isNotEmpty == true
                 ? _resolveGroupName(detail.groupId)!.trim()
                 : null,
-        groupAccumulatorSessionCount: detail.user?.totalCount ?? 0,
+        groupAccumulatorSessionCount: startCount,
         groupAccumulatorEnded: ended,
       ),
     );
@@ -502,6 +475,7 @@ class _AccumulatorHeroCard extends StatelessWidget {
   final bool isJoining;
   final VoidCallback? onJoinTap;
   final VoidCallback? onReciteTap;
+  final VoidCallback? onTextTap;
 
   const _AccumulatorHeroCard({
     required this.detail,
@@ -510,6 +484,7 @@ class _AccumulatorHeroCard extends StatelessWidget {
     this.isJoining = false,
     this.onJoinTap,
     this.onReciteTap,
+    this.onTextTap,
   });
 
   @override
@@ -521,6 +496,7 @@ class _AccumulatorHeroCard extends StatelessWidget {
       isJoining: isJoining,
       onJoinTap: onJoinTap,
       onActionTap: hasJoined ? onReciteTap : null,
+      onTextTap: onTextTap,
     );
   }
 }

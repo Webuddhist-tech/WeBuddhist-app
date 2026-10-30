@@ -5,8 +5,8 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 
-/// Mantra shown when the viewer prays, by app language. Static for now; the
-/// event will supply it later.
+/// Fallback mantra shown when the viewer prays, by app language, for a room
+/// that carries none of its own.
 String prayerMantraForLocale(Locale locale) {
   return switch (locale.languageCode) {
     'hi' => 'ॐ तारे तुत्तारे तुरे स्वाहा',

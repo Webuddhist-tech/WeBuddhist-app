@@ -9,6 +9,8 @@ import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_member_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/chat_bulk_delete_unsupported.dart';
 
+int _pageInt(Object? value) => value is num ? value.toInt() : 0;
+
 class ChatRoomsPage {
   final List<ChatRoomDTO> rooms;
   final int skip;
@@ -21,6 +23,27 @@ class ChatRoomsPage {
     required this.limit,
     required this.total,
   });
+
+  factory ChatRoomsPage.fromJson(Map<String, dynamic> json) {
+    return ChatRoomsPage(
+      rooms:
+          (json['rooms'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatRoomDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: _pageInt(json['skip']),
+      limit: _pageInt(json['limit']),
+      total: _pageInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'rooms': rooms.map((room) => room.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+  };
 }
 
 class ChatMessagesPage {
@@ -35,6 +58,27 @@ class ChatMessagesPage {
     required this.limit,
     required this.total,
   });
+
+  factory ChatMessagesPage.fromJson(Map<String, dynamic> json) {
+    return ChatMessagesPage(
+      messages:
+          (json['messages'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatMessageDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: _pageInt(json['skip']),
+      limit: _pageInt(json['limit']),
+      total: _pageInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'messages': messages.map((message) => message.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+  };
 }
 
 class ChatRoomMembersPage {
@@ -66,6 +110,29 @@ class ChatPrayersPage {
     required this.limit,
     required this.total,
   });
+
+  factory ChatPrayersPage.fromJson(Map<String, dynamic> json) {
+    return ChatPrayersPage(
+      messageId: json['message_id'] as String? ?? '',
+      prayers:
+          (json['prayers'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(ChatPrayerUserDTO.fromJson)
+              .toList() ??
+          const [],
+      skip: _pageInt(json['skip']),
+      limit: _pageInt(json['limit']),
+      total: _pageInt(json['total']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'message_id': messageId,
+    'prayers': prayers.map((user) => user.toJson()).toList(),
+    'skip': skip,
+    'limit': limit,
+    'total': total,
+  };
 }
 
 class GroupChatRemoteDatasource {
@@ -109,11 +176,13 @@ class GroupChatRemoteDatasource {
   }
 
   /// Resolves an event's room, creating it and joining the caller on first
-  /// use. 404 once chat is switched off or the event is gone.
-  Future<ChatRoomDTO> getEventRoom(String eventId) async {
+  /// use. 404 once chat is switched off or the event is gone. [language]
+  /// picks the room mantra's language; the server falls back on its own.
+  Future<ChatRoomDTO> getEventRoom(String eventId, {String? language}) async {
     try {
       final response = await _dio.get(
         '/chat/events/$eventId/room',
+        queryParameters: {if (language != null) 'language': language},
         options: _noCache,
       );
       return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);
@@ -123,11 +192,12 @@ class GroupChatRemoteDatasource {
   }
 
   /// Resolves a space's room, creating it on first use. Members and
-  /// followers only.
-  Future<ChatRoomDTO> getGroupRoom(String groupId) async {
+  /// followers only. [language] as on [getEventRoom].
+  Future<ChatRoomDTO> getGroupRoom(String groupId, {String? language}) async {
     try {
       final response = await _dio.get(
         '/chat/groups/$groupId/room',
+        queryParameters: {if (language != null) 'language': language},
         options: _noCache,
       );
       return ChatRoomDTO.fromJson(response.data as Map<String, dynamic>);

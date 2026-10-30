@@ -7,7 +7,6 @@ import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/services/share_url/share_url_service.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
-import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
@@ -23,6 +22,7 @@ import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 
 class GroupRecitationCollectionScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -85,37 +85,25 @@ class _GroupRecitationCollectionScreenState
           children: [
             _CollectionAppBar(title: detail?.name ?? widget.initialTitle),
             Expanded(
-              child: detailAsync.when(
-                data:
-                    (either) => either.fold(
-                      (failure) => ErrorStateWidget(
-                        error: failure,
-                        onRetry:
-                            () => ref.invalidate(
-                              groupRecitationCollectionDetailProvider(key),
-                            ),
-                      ),
-                      (collection) => _CollectionContent(
-                        collection: collection,
-                        completionState: completionState,
-                        isDark: isDark,
-                        onOpenItem:
-                            (item) =>
-                                _openReaderAndComplete(key, item, collection),
-                        onPlayItem:
-                            (item) =>
-                                _openReaderOnFirstAudio(key, item, collection),
-                        onShare: () => _onShare(collection),
-                      ),
+              child: ScreenCacheBuilder<GroupRecitationCollection>(
+                value: detailAsync,
+                skeleton: const Center(child: CircularProgressIndicator()),
+                onRetry:
+                    () => ref.invalidate(
+                      groupRecitationCollectionDetailProvider(key),
                     ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, _) => ErrorStateWidget(
-                      error: error,
-                      onRetry:
-                          () => ref.invalidate(
-                            groupRecitationCollectionDetailProvider(key),
-                          ),
+                data:
+                    (collection) => _CollectionContent(
+                      collection: collection,
+                      completionState: completionState,
+                      isDark: isDark,
+                      onOpenItem:
+                          (item) =>
+                              _openReaderAndComplete(key, item, collection),
+                      onPlayItem:
+                          (item) =>
+                              _openReaderOnFirstAudio(key, item, collection),
+                      onShare: () => _onShare(collection),
                     ),
               ),
             ),
@@ -190,6 +178,7 @@ class _GroupRecitationCollectionScreenState
         groupRecitationCollectionCompletionProvider(key),
       ),
       initialAudio: initialAudio,
+      groupName: _resolveGroupName(ref, collection.groupId),
     );
 
     await context.push('/reader/$textId', extra: navigationContext);

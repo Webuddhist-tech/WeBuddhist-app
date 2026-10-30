@@ -58,6 +58,7 @@ Future<void> _pump(
   VoidCallback? onEdit,
   VoidCallback? onDelete,
   DateTime? now,
+  String? mantra,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -80,6 +81,7 @@ Future<void> _pump(
           onShowSupporters: onShowSupporters,
           onEdit: onEdit,
           onDelete: onDelete,
+          mantra: mantra,
           now: now,
         ),
       ),
@@ -470,6 +472,39 @@ void main() {
     await tester.tap(find.text('Pray'));
     await tester.pump();
     expect(prayed, 1);
+    expect(find.text('Om Tare Tuttare Ture Soha'), findsOneWidget);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('praying floats the room mantra over the built-in one', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      count: 0,
+      prayedByMe: false,
+      onPray: () {},
+      mantra: 'Om Mani Padme Hum',
+    );
+    await tester.tap(find.text('Pray'));
+    await tester.pump();
+    expect(find.text('Om Mani Padme Hum'), findsOneWidget);
+    expect(find.text('Om Tare Tuttare Ture Soha'), findsNothing);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a blank room mantra falls back to the built-in one', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      count: 0,
+      prayedByMe: false,
+      onPray: () {},
+      mantra: ' ',
+    );
+    await tester.tap(find.text('Pray'));
+    await tester.pump();
     expect(find.text('Om Tare Tuttare Ture Soha'), findsOneWidget);
     await tester.pumpAndSettle();
   });

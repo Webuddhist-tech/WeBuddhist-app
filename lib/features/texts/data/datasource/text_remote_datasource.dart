@@ -1,5 +1,6 @@
 import 'package:flutter_pecha/features/texts/data/models/search/multilingual_search_response.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 
 /// Reader text details and in-text search; implemented by the library adapter.
 abstract class TextRemoteDatasource {
@@ -27,4 +28,9 @@ abstract class TextRemoteDatasource {
     required String sourceTextId,
     required String targetTextId,
   });
+
+  /// [textId]'s whole table of contents, placed on its verses. With
+  /// [versionId], that edition's instead, numbered like [textId]'s verses
+  /// the way the parallel reader pairs them. Empty when it has none.
+  Future<TextOutline> fetchOutline({required String textId, String? versionId});
 }

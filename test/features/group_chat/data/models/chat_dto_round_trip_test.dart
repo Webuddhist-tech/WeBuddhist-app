@@ -218,6 +218,32 @@ void main() {
       expect(ChatRoomDTO.fromJson(first.toJson()), first);
     });
 
+    test('ChatRoomDTO carries the room mantra and survives null', () {
+      const json = {
+        'id': 'r5',
+        'created_by': 'u1',
+        'kind': 'EVENT',
+        'name': 'test',
+        'updated_at': '2026-10-22T06:00:35.386468+00:00',
+        'mantra': {
+          'id': 'm1',
+          'audio_url': null,
+          'language': 'EN',
+          'title': 'Green Tara',
+          'mantra': 'ॐ तारे तुत्तारे तुरे स्वाहा',
+          'pronunciation': 'Om Tare Tuttare Ture Svaha',
+        },
+      };
+      final first = ChatRoomDTO.fromJson(json);
+      expect(first.mantra?.pronunciation, 'Om Tare Tuttare Ture Svaha');
+      expect(first.mantra?.title, 'Green Tara');
+      expect(ChatRoomDTO.fromJson(first.toJson()), first);
+
+      final none = ChatRoomDTO.fromJson({...json, 'mantra': null});
+      expect(none.mantra, isNull);
+      expect(none.toJson(), isNot(contains('mantra')));
+    });
+
     test('ChatRoomDTO without is_official, or with junk, is not official', () {
       const base = {'id': 'r4', 'kind': 'PRIVATE', 'updated_at': ''};
       expect(ChatRoomDTO.fromJson(base).isOfficial, isFalse);

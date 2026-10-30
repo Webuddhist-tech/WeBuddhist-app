@@ -19,10 +19,14 @@ void main() {
       );
     });
 
-    test('passes through en hi mn ne', () {
-      for (final String code in <String>['en', 'hi', 'mn', 'ne']) {
+    test('passes through en hi mn ne th my', () {
+      for (final String code in <String>['en', 'hi', 'mn', 'ne', 'th', 'my']) {
         expect(TolgeeLocaleMap.cdnTagFor(Locale(code)), code);
       }
+    });
+
+    test('maps Vietnamese to the vi-VN tag the project already had', () {
+      expect(TolgeeLocaleMap.cdnTagFor(const Locale('vi')), 'vi-VN');
     });
   });
 
@@ -32,6 +36,10 @@ void main() {
       expect(TolgeeLocaleMap.appLanguageCodeOf('zh-Hant-TW'), 'zh');
       expect(TolgeeLocaleMap.appLanguageCodeOf('zh_Hans'), 'zh-Hans');
       expect(TolgeeLocaleMap.appLanguageCodeOf('zh-Hans-CN'), 'zh-Hans');
+    });
+
+    test('drops the region from vi-VN', () {
+      expect(TolgeeLocaleMap.appLanguageCodeOf('vi-VN'), 'vi');
     });
   });
 }

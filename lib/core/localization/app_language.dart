@@ -63,7 +63,9 @@ class AppLanguage {
   int get hashCode => Object.hash(code, name, nativeName, enabled);
 
   /// Bundled list used before the backend responds, and as the offline
-  /// fallback. Mirrors the UI locales the app ships ARB translations for.
+  /// fallback. Mirrors the UI locales the app ships ARB translations for,
+  /// most-used first (users per language, Oct 2026); the languages added
+  /// without usage data yet come last.
   static const List<AppLanguage> bundledFallback = [
     AppLanguage(
       code: AppConfig.englishLanguageCode,
@@ -81,14 +83,19 @@ class AppLanguage {
       nativeName: '中文',
     ),
     AppLanguage(
-      code: AppConfig.simplifiedChineseLanguageCode,
-      name: 'Simplified Chinese',
-      nativeName: '简体中文',
-    ),
-    AppLanguage(
       code: AppConfig.hindiLanguageCode,
       name: 'Hindi',
       nativeName: 'हिन्दी',
+    ),
+    AppLanguage(
+      code: AppConfig.nepaliLanguageCode,
+      name: 'Nepali',
+      nativeName: 'नेपाली',
+    ),
+    AppLanguage(
+      code: AppConfig.simplifiedChineseLanguageCode,
+      name: 'Simplified Chinese',
+      nativeName: '简体中文',
     ),
     AppLanguage(
       code: AppConfig.mongolianLanguageCode,
@@ -96,9 +103,19 @@ class AppLanguage {
       nativeName: 'Монгол',
     ),
     AppLanguage(
-      code: AppConfig.nepaliLanguageCode,
-      name: 'Nepali',
-      nativeName: 'नेपाली',
+      code: AppConfig.thaiLanguageCode,
+      name: 'Thai',
+      nativeName: 'ไทย',
+    ),
+    AppLanguage(
+      code: AppConfig.burmeseLanguageCode,
+      name: 'Burmese',
+      nativeName: 'မြန်မာ',
+    ),
+    AppLanguage(
+      code: AppConfig.vietnameseLanguageCode,
+      name: 'Vietnamese',
+      nativeName: 'Tiếng Việt',
     ),
   ];
 }

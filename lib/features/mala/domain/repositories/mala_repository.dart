@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/accumulator_group.dart';
@@ -34,6 +35,23 @@ abstract class MalaRepository {
   /// Used when resetting the on-screen session while preserving lifetime totals
   /// on the deleted record server-side.
   Future<Either<Failure, Unit>> deleteUserAccumulator(String accumulatorId);
+
+  /// Stored joined groups first, then revalidated in the background.
+  Stream<Either<Failure, List<AccumulatorGroup>>> watchJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  });
+
+  Future<Either<Failure, List<AccumulatorGroup>>> refreshJoinedAccumulatorGroups(
+    String accumulatorId, {
+    String? language,
+  });
+
+  /// Synchronous builder so a screen can seed its first frame.
+  ScreenCacheSource<List<AccumulatorGroup>> joinedAccumulatorGroupsSource(
+    String accumulatorId, {
+    String? language,
+  });
 
   /// Joined group accumulators for a preset
   /// (`GET /accumulators/{accumulator_id}/groups?joined_only=true`).

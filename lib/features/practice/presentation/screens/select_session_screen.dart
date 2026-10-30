@@ -26,6 +26,7 @@ import 'package:flutter_pecha/features/plans/data/utils/plan_date_format.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/cache/app_image_cache_manager.dart';
 
 final _logger = AppLogger('SelectSessionScreen');
 
@@ -473,6 +474,7 @@ class _MalasTab extends ConsumerWidget {
     }
 
     return catalogueAsync.when(
+      skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error:
           (_, __) => _RefreshableScrollBody(
@@ -782,14 +784,15 @@ class _CircularImage extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: url,
           cacheKey: stableNetworkImageCacheKey(url),
+          cacheManager: appImageCacheManager,
           width: size,
           height: size,
           fit: BoxFit.cover,
           memCacheWidth: cachePx,
           memCacheHeight: cachePx,
-          maxWidthDiskCache: cachePx,
-          maxHeightDiskCache: cachePx,
           fadeInDuration: const Duration(milliseconds: 200),
+          fadeOutDuration: const Duration(milliseconds: 200),
+          useOldImageOnUrlChange: true,
           placeholder: (_, __) => _placeholder(),
           errorWidget: (context, url, error) {
             final sanitizedUrl = stableNetworkImageCacheKey(url);

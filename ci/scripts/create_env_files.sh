@@ -21,11 +21,18 @@ if [[ -z "${LIBRARY_CHANTS_TAG_ID:-}" ]]; then
   exit 1
 fi
 
+# The library API rejects requests without its key; same reasoning.
+if [[ -z "${LIBRARY_API_KEY:-}" ]]; then
+  echo "::error::LIBRARY_API_KEY secret is not set"
+  exit 1
+fi
+
 # --- Development -----------------------------------------------------------
 {
   echo "BASE_API_URL=${DEV_BASE_API_URL:-}"
   echo "LIBRARY_API_URL=${DEV_LIBRARY_API_URL:-${LIBRARY_API_URL:-}}"
   echo "LIBRARY_CHANTS_TAG_ID=${DEV_LIBRARY_CHANTS_TAG_ID:-${LIBRARY_CHANTS_TAG_ID:-}}"
+  echo "LIBRARY_API_KEY=${DEV_LIBRARY_API_KEY:-${LIBRARY_API_KEY:-}}"
   echo "AUTH0_SCHEME=org.pecha.app.dev"
   echo "AUTH0_AUDIENCE=${DEV_AUTH0_AUDIENCE:-}"
   echo "ENVIRONMENT=development"
@@ -41,6 +48,7 @@ fi
   echo "BASE_API_URL=${STAGING_BASE_API_URL:-}"
   echo "LIBRARY_API_URL=${STAGING_LIBRARY_API_URL:-${LIBRARY_API_URL:-}}"
   echo "LIBRARY_CHANTS_TAG_ID=${STAGING_LIBRARY_CHANTS_TAG_ID:-${LIBRARY_CHANTS_TAG_ID:-}}"
+  echo "LIBRARY_API_KEY=${STAGING_LIBRARY_API_KEY:-${LIBRARY_API_KEY:-}}"
   echo "AUTH0_SCHEME=org.pecha.app.staging"
   echo "AUTH0_AUDIENCE=${STAGING_AUTH0_AUDIENCE:-}"
   echo "ENVIRONMENT=staging"
@@ -56,6 +64,7 @@ fi
   echo "BASE_API_URL=${BASE_API_URL:-}"
   echo "LIBRARY_API_URL=${LIBRARY_API_URL:-}"
   echo "LIBRARY_CHANTS_TAG_ID=${LIBRARY_CHANTS_TAG_ID:-}"
+  echo "LIBRARY_API_KEY=${LIBRARY_API_KEY:-}"
   echo "AUTH0_SCHEME=org.pecha.app"
   echo "AUTH0_AUDIENCE=${AUTH0_AUDIENCE:-}"
   echo "ENVIRONMENT=production"

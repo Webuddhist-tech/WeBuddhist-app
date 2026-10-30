@@ -12,6 +12,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_profile_nested_tab_scroll_view.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/widgets/group_remove_member_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 class GroupProfileMembersTab extends ConsumerStatefulWidget {
   final String groupId;
@@ -281,7 +282,7 @@ class _GroupMemberRow extends StatelessWidget {
                   child:
                       member.avatarUrl != null && member.avatarUrl!.isNotEmpty
                           ? CachedNetworkImageWidget(
-                            key: ValueKey(member.avatarUrl),
+                            key: networkImageKey(member.avatarUrl),
                             imageUrl: member.avatarUrl,
                             fit: BoxFit.cover,
                             errorWidget: AvatarFallback(

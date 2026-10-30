@@ -17,6 +17,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_cha
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_quoted_message.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reaction_badges.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// One message row: self on the right in a warm-tinted bubble, everyone else
 /// on the left in a white one with a coloured sender name.
@@ -637,7 +638,7 @@ class _Avatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: GroupChatMessageBubble._avatarSize,
                   height: GroupChatMessageBubble._avatarSize,

@@ -19,6 +19,7 @@ class ReaderLanguageOption {
       code: json['language_code'] as String? ?? '',
       label: json['language'] as String? ?? '',
       versionCount: json['version_count'] as int? ?? 0,
+      translationCount: json['translation_count'] as int?,
     );
   }
 
@@ -26,6 +27,7 @@ class ReaderLanguageOption {
         'language_code': code,
         'language': label,
         'version_count': versionCount,
+        'translation_count': translationCount,
       };
 }
 

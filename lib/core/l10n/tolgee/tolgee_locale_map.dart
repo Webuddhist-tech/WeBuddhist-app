@@ -3,9 +3,9 @@ import 'dart:ui' show Locale;
 /// Maps app UI locales (bare language codes) to Tolgee CDN language tags.
 ///
 /// Content Delivery publishes:
-/// `en`, `bo-IN`, `zh-Hant-TW`, `zh-Hans-CN`, `hi`, `mn`, `ne` under the
-/// `webuddhist` namespace. The Flutter UI / ARB stack keeps using `bo`, `zh`
-/// (Traditional) and `zh_Hans` (Simplified).
+/// `en`, `bo-IN`, `zh-Hant-TW`, `zh-Hans-CN`, `hi`, `mn`, `ne`, `th`, `my`,
+/// `vi-VN` under the `webuddhist` namespace. The Flutter UI / ARB stack keeps
+/// using `bo`, `zh` (Traditional), `zh_Hans` (Simplified) and `vi`.
 class TolgeeLocaleMap {
   TolgeeLocaleMap._();
 
@@ -17,6 +17,9 @@ class TolgeeLocaleMap {
         return 'bo-IN';
       case 'zh':
         return appLocale.scriptCode == 'Hans' ? 'zh-Hans-CN' : 'zh-Hant-TW';
+      // The Tolgee project already had `vi-VN`, which another client may read.
+      case 'vi':
+        return 'vi-VN';
       default:
         return appLocale.languageCode;
     }

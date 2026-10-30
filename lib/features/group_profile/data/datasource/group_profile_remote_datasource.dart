@@ -26,6 +26,16 @@ class GroupProfileRemoteDatasource {
     String groupId, {
     required String language,
   }) async {
+    return GroupProfileModel.fromJson(
+      await fetchGroupProfileJson(groupId, language: language),
+    );
+  }
+
+  /// Raw profile as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchGroupProfileJson(
+    String groupId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/author/groups/$groupId',
@@ -34,9 +44,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupProfileModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error(
           'Failed to load group profile $groupId: ${response.statusCode}',
@@ -174,6 +182,25 @@ class GroupProfileRemoteDatasource {
     required int skip,
     required int limit,
   }) async {
+    return GroupPracticesPageModel.fromJson(
+      await fetchPracticesJson(
+        groupId: groupId,
+        includeUnfollowed: includeUnfollowed,
+        language: language,
+        skip: skip,
+        limit: limit,
+      ),
+    );
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchPracticesJson({
+    String? groupId,
+    required bool includeUnfollowed,
+    required String language,
+    required int skip,
+    required int limit,
+  }) async {
     try {
       final queryParameters = <String, dynamic>{
         'language': language,
@@ -194,9 +221,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupPracticesPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(
@@ -215,6 +240,14 @@ class GroupProfileRemoteDatasource {
   Future<GroupRecitationCollectionModel> fetchRecitationCollectionDetail({
     required String collectionId,
   }) async {
+    return GroupRecitationCollectionModel.fromJson(
+      await fetchRecitationCollectionDetailJson(collectionId: collectionId),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchRecitationCollectionDetailJson({
+    required String collectionId,
+  }) async {
     try {
       final response = await dio.get(
         '/author/groups/recitation-collections/$collectionId',
@@ -222,9 +255,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupRecitationCollectionModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(
@@ -351,16 +382,25 @@ class GroupProfileRemoteDatasource {
     required int skip,
     required int limit,
   }) async {
+    return GroupMembersPageModel.fromJson(
+      await fetchGroupMembersJson(groupId, skip: skip, limit: limit),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupMembersJson(
+    String groupId, {
+    required int skip,
+    required int limit,
+  }) async {
     try {
       final response = await dio.get(
         '/author/groups/$groupId/members',
         queryParameters: {'skip': skip, 'limit': limit},
+        options: Options(extra: {'no_cache': true}),
       );
 
       if (response.statusCode == 200) {
-        return GroupMembersPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error(
           'Failed to load group members $groupId: ${response.statusCode}',
@@ -456,6 +496,16 @@ class GroupProfileRemoteDatasource {
     String groupId, {
     required String language,
   }) async {
+    return GroupEventsPageModel.fromJson(
+      await fetchGroupEventsJson(groupId, language: language),
+      language: language,
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupEventsJson(
+    String groupId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/events',
@@ -465,10 +515,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupEventsPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-          language: language,
-        );
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error(
           'Failed to load group events $groupId: ${response.statusCode}',
@@ -488,6 +535,15 @@ class GroupProfileRemoteDatasource {
     String eventId, {
     required String language,
   }) async {
+    return GroupEventModel.fromJson(
+      await fetchGroupEventDetailJson(eventId, language: language),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupEventDetailJson(
+    String eventId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/events/$eventId',
@@ -498,7 +554,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupEventModel.fromJson(response.data as Map<String, dynamic>);
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error(
           'Failed to load group event $eventId: ${response.statusCode}',
@@ -519,6 +575,16 @@ class GroupProfileRemoteDatasource {
     required int skip,
     required int limit,
   }) async {
+    return GroupEventParticipantsPageModel.fromJson(
+      await fetchGroupEventParticipantsJson(eventId, skip: skip, limit: limit),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupEventParticipantsJson(
+    String eventId, {
+    required int skip,
+    required int limit,
+  }) async {
     try {
       final response = await dio.get(
         '/events/$eventId/participants',
@@ -528,9 +594,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupEventParticipantsPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error(
           'Failed to load group event participants $eventId: ${response.statusCode}',
@@ -601,6 +665,22 @@ class GroupProfileRemoteDatasource {
     required int skip,
     required int limit,
   }) async {
+    return GroupJoinRequestsPageModel.fromJson(
+      await fetchGroupJoinRequestsJson(
+        groupId,
+        status: status,
+        skip: skip,
+        limit: limit,
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupJoinRequestsJson(
+    String groupId, {
+    GroupJoinRequestStatus status = GroupJoinRequestStatus.pending,
+    required int skip,
+    required int limit,
+  }) async {
     try {
       final response = await dio.get(
         '/cms/author/groups/$groupId/join-requests',
@@ -613,9 +693,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupJoinRequestsPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(
@@ -726,6 +804,24 @@ class GroupProfileRemoteDatasource {
     required int skip,
     required int limit,
   }) async {
+    return GroupReportsPageModel.fromJson(
+      await fetchGroupReportsJson(
+        groupId,
+        kind: kind,
+        resolved: resolved,
+        skip: skip,
+        limit: limit,
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupReportsJson(
+    String groupId, {
+    GroupReportKind? kind,
+    bool? resolved,
+    required int skip,
+    required int limit,
+  }) async {
     try {
       final response = await dio.get(
         '/groups/$groupId/reports',
@@ -739,9 +835,7 @@ class GroupProfileRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupReportsPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       _logger.error(

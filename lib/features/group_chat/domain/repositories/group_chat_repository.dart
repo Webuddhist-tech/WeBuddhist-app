@@ -15,9 +15,15 @@ abstract class GroupChatRepository {
 
   Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId);
 
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId);
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  });
 
-  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId);
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
+    String groupId, {
+    String? language,
+  });
 
   Future<Either<Failure, ChatMessagesPage>> listMessages(
     String roomId, {

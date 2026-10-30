@@ -1,9 +1,16 @@
+import 'dart:math' as math;
+
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
 
 class ConnectEventsState {
   final List<GroupEvent> events;
@@ -54,16 +61,38 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
     required this.ref,
     required this.includeUnfollowed,
     required this.language,
+    required ScreenCacheSource<GroupEventsPage>? source,
     this.eventFormat,
-  }) : super(const ConnectEventsState());
+  }) : _source = source,
+       super(_seed(source));
+
+  // The stored page is the first state, so the first frame never spins.
+  static ConnectEventsState _seed(ScreenCacheSource<GroupEventsPage>? source) {
+    final page = source?.read();
+    if (page == null) return const ConnectEventsState();
+    return ConnectEventsState(
+      events: page.events,
+      hasMore: page.hasMore,
+      skip: page.events.length,
+      hasLoaded: true,
+    );
+  }
 
   final Ref ref;
   final bool includeUnfollowed;
   final String language;
+  final ScreenCacheSource<GroupEventsPage>? _source;
 
   /// `event_format` query value, or null to list every format.
   final String? eventFormat;
   static const int _limit = 20;
+
+  /// Most rows one call may ask for when the loaded rows are read again.
+  static const int _windowLimit = 100;
+
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
   bool _loadRequested = false;
 
   void ensureLoaded() {
@@ -81,43 +110,54 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
       return;
     }
 
-    state = state.copyWith(isLoading: true, clearError: true);
+    final source = _source;
+    if (source == null) {
+      state = const ConnectEventsState(hasMore: false, hasLoaded: true);
+      return;
+    }
+    // Only an empty list shows the loader; a seeded one refreshes silently.
+    state = state.copyWith(isLoading: state.events.isEmpty, clearError: true);
 
-    final result = await ref.read(groupProfileRepositoryProvider).getConnectEvents(
-      includeUnfollowed: includeUnfollowed,
-      language: language,
-      skip: 0,
-      limit: _limit,
-      eventFormat: eventFormat,
-    );
-
-    if (!mounted) return;
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: failure.message,
-          hasLoaded: true,
-        );
-      },
-      (page) {
-        state = state.copyWith(
-          events: page.events,
-          isLoading: false,
-          hasMore: page.hasMore,
-          skip: page.events.length,
-          hasLoaded: true,
-          clearError: true,
-        );
-      },
-    );
+    _firstPageInFlight = true;
+    try {
+      await loadCachedFirstPage(
+        source,
+        isCurrent: () => mounted,
+        seed: state.events.isEmpty,
+        apply: (page) {
+          _pageEpoch++;
+          state = state.copyWith(
+            events: page.events,
+            isLoading: false,
+            hasMore: page.hasMore,
+            skip: page.events.length,
+            hasLoaded: true,
+            clearError: true,
+          );
+        },
+        fail:
+            (failure) =>
+                state = state.copyWith(
+                  isLoading: false,
+                  error: failure.message,
+                  hasLoaded: true,
+                ),
+      );
+    } finally {
+      _firstPageInFlight = false;
+    }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) return;
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
+      return;
+    }
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
+    final epoch = _pageEpoch;
 
     final result = await ref.read(groupProfileRepositoryProvider).getConnectEvents(
       includeUnfollowed: includeUnfollowed,
@@ -128,6 +168,11 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
     );
 
     if (!mounted) return;
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {
@@ -145,10 +190,70 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
     );
   }
 
+  bool _refreshing = false;
+  bool _refreshAgain = false;
+
+  /// For live signals: reads every loaded row again, so a list scrolled past
+  /// page one keeps its place. A burst costs one read in flight plus one more.
+  Future<void> refreshLatest() async {
+    if (_refreshing) {
+      _refreshAgain = true;
+      return;
+    }
+    _refreshing = true;
+    try {
+      do {
+        _refreshAgain = false;
+        await _readLoaded();
+      } while (_refreshAgain && mounted);
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  Future<void> _readLoaded() async {
+    // Nothing paged yet: an ordinary first-page read is the same thing.
+    if (state.events.isEmpty || state.isLoading) {
+      if (!_firstPageInFlight) await refresh();
+      return;
+    }
+    final source = _source;
+    if (source == null) return;
+
+    final epoch = _pageEpoch;
+    final read = await readLoadedWindow<GroupEvent>(
+      window: () => math.max(_limit, state.skip),
+      fetch:
+          (skip, limit) async => (await ref
+                  .read(groupProfileRepositoryProvider)
+                  .getConnectEvents(
+                    includeUnfollowed: includeUnfollowed,
+                    language: language,
+                    skip: skip,
+                    limit: limit,
+                    eventFormat: eventFormat,
+                  ))
+              .map((page) => (page.events, page.total)),
+      idOf: (event) => event.id,
+      // A pull-to-refresh that landed meanwhile is newer.
+      isCurrent: () => mounted && epoch == _pageEpoch,
+      pageLimit: _windowLimit,
+    );
+    if (read == null) return;
+    _pageEpoch++;
+    state = state.copyWith(
+      events: read.rows,
+      hasMore: read.rows.length < read.total,
+      skip: read.rows.length,
+      hasLoaded: true,
+      clearError: true,
+    );
+  }
+
+  /// Keeps the list on screen while the first page is read again.
   Future<void> refresh() async {
-    _loadRequested = false;
-    state = const ConnectEventsState();
-    ensureLoaded();
+    _loadRequested = true;
+    await loadInitial();
   }
 
   void retry() {
@@ -165,11 +270,25 @@ final myConnectEventsProvider = StateNotifierProvider.autoDispose
     .family<ConnectEventsNotifier, ConnectEventsState, ConnectEventFormatFilter>(
       (ref, filter) {
         final language = ref.watch(contentLanguageProvider);
+        final signedIn = ref.watch(
+          authProvider.select((a) => a.isLoggedIn && !a.isGuest),
+        );
         return ConnectEventsNotifier(
           ref: ref,
           includeUnfollowed: false,
           language: language,
           eventFormat: filter.apiValue,
+          source:
+              signedIn
+                  ? ref
+                      .watch(connectRepositoryProvider)
+                      .connectEventsFirstPage(
+                        includeUnfollowed: false,
+                        language: language,
+                        limit: ConnectEventsNotifier._limit,
+                        eventFormat: filter.apiValue,
+                      )
+                  : null,
         );
       },
     );
@@ -183,5 +302,12 @@ final discoverConnectEventsProvider =
         ref: ref,
         includeUnfollowed: true,
         language: language,
+        source: ref
+            .watch(connectRepositoryProvider)
+            .connectEventsFirstPage(
+              includeUnfollowed: true,
+              language: language,
+              limit: ConnectEventsNotifier._limit,
+            ),
       );
     });

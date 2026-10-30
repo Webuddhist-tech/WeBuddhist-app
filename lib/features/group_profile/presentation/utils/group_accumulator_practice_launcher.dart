@@ -130,19 +130,26 @@ Future<bool> _countIncreased(
   String accumulatorId,
   int countBefore,
 ) async {
-  final detail = await _loadDetail(container, accumulatorId);
+  // Only the server can say the count went up; a stored copy predates it.
+  final detail = await _loadDetail(
+    container,
+    accumulatorId,
+    allowStored: false,
+  );
   return (detail?.user?.totalCount ?? 0) > countBefore;
 }
 
 Future<GroupAccumulatorDetail?> _loadDetail(
   ProviderContainer container,
-  String accumulatorId,
-) async {
+  String accumulatorId, {
+  bool allowStored = true,
+}) async {
   try {
-    final either = await container.read(
-      groupAccumulatorDetailProvider(accumulatorId).future,
+    return await fetchFreshGroupAccumulatorDetail(
+      container,
+      accumulatorId,
+      allowStored: allowStored,
     );
-    return either.fold((_) => null, (detail) => detail);
   } catch (_) {
     return null;
   }

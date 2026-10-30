@@ -17,6 +17,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/analytics/recording_analytics_service.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 class _GuestAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _GuestAuth() : super(const AuthState(isLoggedIn: false, isGuest: true));
@@ -27,6 +32,11 @@ class _GuestAuth extends StateNotifier<AuthState> implements AuthNotifier {
 
 class _FakeAccumulatorRepository extends Fake
     implements GroupAccumulatorRepositoryInterface {
+  @override
+  GroupAccumulatorMembersPage? readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  }) => null;
   @override
   Future<Either<Failure, GroupAccumulatorMembersPage>>
   getGroupAccumulatorMembers(
@@ -46,7 +56,31 @@ class _FakeAccumulatorRepository extends Fake
 }
 
 class _FakeProfileRepository extends Fake
-    implements GroupProfileRepositoryInterface {}
+    implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+}
 
 const _detail = GroupAccumulatorDetail(
   id: 'acc-1',
@@ -66,10 +100,10 @@ Future<void> _pump(
         analyticsServiceProvider.overrideWithValue(service),
         authProvider.overrideWith((ref) => _GuestAuth()),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) async => const Right(_detail),
+          () => GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) async => const Left(NetworkFailure('test')),
+          () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
         groupAccumulatorRepositoryProvider.overrideWithValue(
           _FakeAccumulatorRepository(),
@@ -112,7 +146,7 @@ void main() {
     });
 
     // Rebuilds do not report again.
-    await tester.tap(find.text('My Contributions'));
+    await tester.tap(find.text('About'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 

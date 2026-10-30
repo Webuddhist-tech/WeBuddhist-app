@@ -111,7 +111,7 @@ List<Override> _overrides(
   return [
     groupProfileRepositoryProvider.overrideWithValue(repository),
     groupProfileProvider.overrideWith(
-      (ref, groupId) async => const Right(_profile),
+      () => GroupProfileNotifier.fixed(const Right(_profile)),
     ),
     notificationProvider.overrideWith(
       (ref) => _FakeNotificationNotifier(

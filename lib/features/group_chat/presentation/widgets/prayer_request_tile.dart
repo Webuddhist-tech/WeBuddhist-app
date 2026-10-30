@@ -16,6 +16,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_thread
 import 'package:flutter_pecha/features/group_chat/presentation/utils/prayer_intention_tint.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/floating_prayer_text.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// One prayer request as a card tinted by its intention: who asked, what
 /// for, how many are praying, and a pray button for everyone but the
@@ -32,10 +33,15 @@ class PrayerRequestTile extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.onToggleCompleted,
+    this.mantra,
     this.now,
   });
 
   final ChatMessageDTO request;
+
+  /// The room's mantra floated on each prayer; null or blank falls back to
+  /// the built-in one for the app language.
+  final String? mantra;
   final String displayName;
   final String? avatarUrl;
 
@@ -244,6 +250,7 @@ class PrayerRequestTile extends StatelessWidget {
             accent: accent,
             isDark: isDark,
             onTap: onPray,
+            mantra: mantra,
           ),
         ],
       ],
@@ -524,7 +531,7 @@ class PrayerAvatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: inner,
                   height: inner,
@@ -672,8 +679,10 @@ class _PrayButton extends StatefulWidget {
     required this.accent,
     required this.isDark,
     required this.onTap,
+    this.mantra,
   });
 
+  final String? mantra;
   final bool prayedByMe;
   final int myPrayerCount;
   final Color accent;
@@ -694,6 +703,7 @@ class _PrayButtonState extends State<_PrayButton> {
   /// Every tap floats the mantra up from where it landed.
   void _handleTap() {
     final box = context.findRenderObject() as RenderBox?;
+    final mantra = widget.mantra?.trim();
     final origin =
         _lastTap ??
         (box == null
@@ -703,7 +713,10 @@ class _PrayButtonState extends State<_PrayButton> {
     showFloatingPrayerText(
       context,
       origin: origin,
-      text: prayerMantraForLocale(Localizations.localeOf(context)),
+      text:
+          mantra == null || mantra.isEmpty
+              ? prayerMantraForLocale(Localizations.localeOf(context))
+              : mantra,
       accent: accent,
       isDark: isDark,
     );

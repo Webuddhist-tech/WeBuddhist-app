@@ -1,4 +1,7 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exception_mapper.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
@@ -17,10 +20,57 @@ import 'package:flutter_pecha/features/practice/domain/repositories/routine_api_
 ///   - Catching datasource exceptions and mapping them to typed [Failure]s
 class RoutineApiRepositoryImpl implements RoutineApiRepository {
   final RoutineRemoteDatasource _datasource;
+  final ScreenCacheStore _store;
   final _logger = AppLogger('RoutineApiRepositoryImpl');
 
-  RoutineApiRepositoryImpl({required RoutineRemoteDatasource datasource})
-      : _datasource = datasource;
+  RoutineApiRepositoryImpl({
+    required RoutineRemoteDatasource datasource,
+    required ScreenCacheStore store,
+  }) : _datasource = datasource,
+       _store = store;
+
+  @override
+  Stream<Either<Failure, RoutineData>> watchUserRoutine({
+    required String language,
+  }) {
+    final source = userRoutineSource(language: language);
+    if (source == null) {
+      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
+    }
+    return source.watch();
+  }
+
+  @override
+  Future<Either<Failure, RoutineData>> refreshUserRoutine({
+    required String language,
+  }) async {
+    final source = userRoutineSource(language: language);
+    if (source == null) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    return source.refresh();
+  }
+
+  // "No routine yet" is stored as an empty RoutineData, same as getUserRoutine.
+  @override
+  ScreenCacheSource<RoutineData>? userRoutineSource({required String language}) {
+    final userId = _store.currentUserIdSync;
+    if (userId == null || userId.isEmpty) return null;
+    return ScreenCacheSource(
+      store: _store,
+      key: ScreenCacheKey.user(
+        'user_routine',
+        userId: userId,
+        language: language,
+      ),
+      fetchJson: () async {
+        final response = await _datasource.getUserRoutine(language: language);
+        return routineDataFromApiResponse(response).toJson();
+      },
+      fromJson: (json) => RoutineData.fromJson(json as Map<String, dynamic>),
+      failureMessage: 'Failed to load routine',
+    );
+  }
 
   @override
   Future<Either<Failure, RoutineData?>> getUserRoutine({

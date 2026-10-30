@@ -10,6 +10,9 @@ class L10n {
     const Locale(AppConfig.hindiLanguageCode),
     const Locale(AppConfig.mongolianLanguageCode),
     const Locale(AppConfig.nepaliLanguageCode),
+    const Locale(AppConfig.thaiLanguageCode),
+    const Locale(AppConfig.burmeseLanguageCode),
+    const Locale(AppConfig.vietnameseLanguageCode),
   ];
 
   /// Parses a stored or backend code (`zh`, `zh-Hans`, `zh_Hans`) into a Locale.

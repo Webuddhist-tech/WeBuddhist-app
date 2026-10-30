@@ -6,6 +6,7 @@ import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// The unfurl of a link in the draft, shown above the composer once one is
 /// typed or pasted — so the sender sees what the card will look like before
@@ -94,7 +95,7 @@ class _GroupChatComposerLinkPreviewState
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: CachedNetworkImageWidget(
-                        key: ValueKey(imageUrl),
+                        key: networkImageKey(imageUrl),
                         imageUrl: imageUrl,
                         width: 48,
                         height: 48,

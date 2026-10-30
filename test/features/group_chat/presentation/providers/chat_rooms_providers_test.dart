@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/realtime/realtime_providers.dart';
+import 'package:flutter_pecha/core/realtime/signal_paths.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/storage/storage_service.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
@@ -17,6 +19,8 @@ import 'package:flutter_pecha/features/group_chat/presentation/providers/group_c
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+
+import '../../../../helpers/fake_realtime_signals.dart';
 
 ChatRoomDTO _group(int i, {int unreadCount = 0}) {
   return ChatRoomDTO(
@@ -119,11 +123,17 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async => const Left(NotFoundFailure('not used'));
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getEventRoom(String eventId) async =>
+  Future<Either<Failure, ChatRoomDTO>> getEventRoom(
+    String eventId, {
+    String? language,
+  }) async =>
       const Left(NotFoundFailure('not used'));
 
   @override
-  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(String groupId) async =>
+  Future<Either<Failure, ChatRoomDTO>> getGroupRoom(
+    String groupId, {
+    String? language,
+  }) async =>
       const Left(NotFoundFailure('not used'));
 
   @override
@@ -979,6 +989,99 @@ void main() {
       await _settle();
 
       expect(storage.roomCacheKeys, isEmpty);
+    });
+  });
+  group('chatRoomsSignalsProvider', () {
+    late FakeRealtimeSignals signals;
+
+    ProviderContainer buildLiveContainer() {
+      signals = FakeRealtimeSignals();
+      return ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          storageServiceProvider.overrideWithValue(storage),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => true),
+        ],
+      );
+    }
+
+    Future<void> settleTimers() =>
+        Future<void>.delayed(const Duration(milliseconds: 600));
+
+    test('listens to every listed room and follows the list', () async {
+      repository = _FakeGroupChatRepository(rooms: [_group(1), _group(2)]);
+      container = buildLiveContainer();
+      container.listen(chatRoomsSignalsProvider, (_, _) {});
+      _keepAlive(container);
+      await _settle();
+
+      expect(signals.listeners(SignalPaths.chatRoom('group-room-1')), 1);
+      expect(signals.listeners(SignalPaths.chatRoom('group-room-2')), 1);
+      expect(signals.totalListeners, 2);
+
+      repository.rooms = [_group(2), _group(3)];
+      await container.read(chatRoomsProvider.notifier).refresh();
+      await _settle();
+
+      expect(signals.listeners(SignalPaths.chatRoom('group-room-1')), 0);
+      expect(signals.listeners(SignalPaths.chatRoom('group-room-3')), 1);
+      expect(signals.totalListeners, 2);
+    });
+
+    test('a moved signal refetches the list once per burst', () async {
+      repository = _FakeGroupChatRepository(rooms: [_group(1), _group(2)]);
+      container = buildLiveContainer();
+      container.listen(chatRoomsSignalsProvider, (_, _) {});
+      _keepAlive(container);
+      await _settle();
+      final path1 = SignalPaths.chatRoom('group-room-1');
+      final path2 = SignalPaths.chatRoom('group-room-2');
+      signals.emit(path1, {'messages_changed_at': DateTime.utc(2026, 1, 1)});
+      signals.emit(path2, {'messages_changed_at': DateTime.utc(2026, 1, 1)});
+      await settleTimers();
+      final calls = repository.listCallCount;
+
+      signals.emit(path1, {'messages_changed_at': DateTime.utc(2026, 1, 2)});
+      signals.emit(path2, {'messages_changed_at': DateTime.utc(2026, 1, 2)});
+      await settleTimers();
+      await _settle();
+
+      expect(repository.listCallCount, calls + 1);
+    });
+
+    test('the first snapshot does not refetch', () async {
+      repository = _FakeGroupChatRepository(rooms: [_group(1)]);
+      container = buildLiveContainer();
+      container.listen(chatRoomsSignalsProvider, (_, _) {});
+      _keepAlive(container);
+      await _settle();
+      final calls = repository.listCallCount;
+
+      signals.emit(SignalPaths.chatRoom('group-room-1'), {
+        'messages_changed_at': DateTime.utc(2026, 1, 1),
+      });
+      await settleTimers();
+
+      expect(repository.listCallCount, calls);
+    });
+
+    test('nothing is listened to before Firebase is signed in', () async {
+      repository = _FakeGroupChatRepository(rooms: [_group(1)]);
+      signals = FakeRealtimeSignals();
+      container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          storageServiceProvider.overrideWithValue(storage),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => false),
+        ],
+      );
+      container.listen(chatRoomsSignalsProvider, (_, _) {});
+      _keepAlive(container);
+      await _settle();
+
+      expect(signals.totalListeners, 0);
     });
   });
 }

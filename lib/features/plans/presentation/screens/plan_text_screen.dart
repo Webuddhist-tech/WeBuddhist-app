@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_re
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_player_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigation_bottom_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
@@ -13,9 +14,9 @@ import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigatio
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_subtask_completion.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_bottom_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_app_bar/reader_font_size_button.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
 import 'package:flutter_pecha/shared/widgets/reusable_youtube_player.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,9 +29,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Audio behaviour (shared with `ReaderScreen` via
 /// [PlanSegmentAudioController]):
-/// - A floating play/pause button appears when the task has resolvable audio
-///   (its own `audioUrl`, or the day-level track as fallback).
-/// - Tapping it plays the task's segment. When the segment ends the screen
+/// - A floating play/pause button and a progress line appear when the task
+///   has resolvable audio (its own `audioUrl`, or the day-level track as
+///   fallback). Plan tasks do not show a recording-title pill.
+/// - Tapping play plays the task's segment. When the segment ends the screen
 ///   auto-advances to the next task with auto-play.
 /// - Audio stops on any manual navigation or back press — no leaks.
 class PlanTextScreen extends ConsumerStatefulWidget {
@@ -122,20 +124,13 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
 
   // ─── Build ─────────────────────────────────────────────────────────────
 
-  ThemeData _readerTheme(BuildContext context) {
-    final theme = Theme.of(context);
-    if (theme.brightness != Brightness.light) return theme;
-
-    return theme.copyWith(
-      scaffoldBackgroundColor: Colors.white,
-      appBarTheme: theme.appBarTheme.copyWith(backgroundColor: Colors.white),
-    );
-  }
+  ThemeData _readerTheme(BuildContext context) =>
+      ReaderStyle.theme(context, ref);
 
   @override
   Widget build(BuildContext context) {
     final currentItem = widget.navigationContext.currentItem;
-    final fontSize = ref.watch(fontSizeProvider);
+    final fontSize = ReaderTypography.resolve(ref).planTextSize;
     final readerTheme = _readerTheme(context);
 
     if (currentItem == null || !_hasRenderableContent(currentItem)) {
@@ -185,7 +180,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: _hasAudio ? 72 : 0,
+                                bottom: _hasAudio ? 84 : 0,
                               ),
                               child: _buildInlineImage(
                                 imageUrl: blocks.first.content,
@@ -208,7 +203,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                           Positioned(
                             left: 0,
                             right: 0,
-                            bottom: 8,
+                            bottom: 12,
                             child: Center(
                               child: PlanAudioButton(
                                 controller: _audioController!,
@@ -218,9 +213,12 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                       ],
                     ),
                   ),
+                  if (_hasAudio)
+                    PlanAudioPlayerBar(controller: _audioController),
                   PlanNavigationBottomBar(
                     navigationContext: widget.navigationContext,
                     fallbackTitle: currentItem.title,
+                    showTopBorder: !_hasAudio,
                     onPreviousTap: () => _navigate(SwipeDirection.previous),
                     onNextTap: () => _navigate(SwipeDirection.next),
                     onFinishedTap: _finish,
@@ -374,7 +372,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
       if (isLive) const PlanTaskLiveLabel(),
       if (eventId != null) PrayerRequestsIconButton(eventId: eventId),
       if (showFontControls)
-        ReaderFontSizeButton(onPressed: () => showFontSizeBottomSheet(context)),
+        ReaderFontSizeButton(onPressed: () => showReaderDisplaySheet(context)),
     ];
   }
 

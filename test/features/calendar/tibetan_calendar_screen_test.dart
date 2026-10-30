@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 
 /// Fails every request so the screen falls back to the local engine — makes the
 /// widget assertions deterministic and network-free (also exercises the
@@ -25,6 +26,28 @@ class _OfflineCalendarRepository implements CalendarRepository {
   @override
   Future<Either<Failure, TibetanCalendarDay>> getToday() async =>
       const Left(NetworkFailure('offline test'));
+
+  @override
+  Stream<Either<Failure, List<TibetanCalendarDay>>> watchMonth(
+    int year,
+    int month,
+  ) => Stream.fromFuture(getMonth(year, month));
+
+  @override
+  Future<Either<Failure, List<TibetanCalendarDay>>> refreshMonth(
+    int year,
+    int month,
+  ) => getMonth(year, month);
+
+  @override
+  Stream<Either<Failure, TibetanCalendarDay>> watchToday() =>
+      Stream.fromFuture(getToday());
+  @override
+  ScreenCacheSource<List<TibetanCalendarDay>>? monthSource(int year, int month) =>
+      null;
+
+  @override
+  ScreenCacheSource<TibetanCalendarDay>? todaySource() => null;
 }
 
 void main() {

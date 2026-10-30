@@ -31,6 +31,8 @@ Future<void> _pumpBar(
   WidgetTester tester, {
   VoidCallback? onSearchPressed,
   Widget? liveSyncToggle,
+  VoidCallback? onMorePressed,
+  ValueNotifier<double>? progress,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -56,6 +58,8 @@ Future<void> _pumpBar(
               onLanguagesPressed: () {},
               liveSyncToggle: liveSyncToggle,
               onFontSizePressed: () {},
+              onMorePressed: onMorePressed,
+              progress: progress,
             ),
           ),
         ),
@@ -91,5 +95,41 @@ void main() {
     // The rest of the bar is untouched.
     expect(find.byType(ReaderLanguagesButton), findsOneWidget);
     expect(find.byTooltip('Font size'), findsOneWidget);
+  });
+
+  testWidgets('the normal reader reads search, Aa, globe, more', (
+    tester,
+  ) async {
+    await _pumpBar(tester, onSearchPressed: () {}, onMorePressed: () {});
+
+    final order = [
+      find.byTooltip('Search'),
+      find.byTooltip('Font size'),
+      find.byType(ReaderLanguagesButton),
+      find.byIcon(Icons.more_vert),
+    ].map((finder) => tester.getCenter(finder).dx).toList();
+    expect(order, [...order]..sort());
+  });
+
+  testWidgets('a progress line runs under the bar and follows the page', (
+    tester,
+  ) async {
+    final progress = ValueNotifier<double>(0.25);
+    addTearDown(progress.dispose);
+    await _pumpBar(tester, onSearchPressed: () {}, progress: progress);
+
+    LinearProgressIndicator line() =>
+        tester.widget(find.byType(LinearProgressIndicator));
+    expect(line().value, 0.25);
+
+    progress.value = 0.8;
+    await tester.pump();
+    expect(line().value, 0.8);
+  });
+
+  testWidgets('without a progress value there is no line', (tester) async {
+    await _pumpBar(tester, onSearchPressed: () {});
+
+    expect(find.byType(LinearProgressIndicator), findsNothing);
   });
 }

@@ -8,8 +8,32 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) => null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(String groupId) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) => null;
+
   final List<int> pageSkips = [];
   final List<Completer<Either<Failure, GroupJoinRequestsPage>>> pageHolds = [];
   int approveCalls = 0;
@@ -89,6 +113,7 @@ void main() {
     );
 
     final initial = notifier.loadInitial();
+    await pumpEventQueue();
     final firstPage = _page(skip: 0, start: 0, count: 20, total: 40);
     repository.pageHolds.single.complete(Right(firstPage));
     await initial;
@@ -120,6 +145,36 @@ void main() {
     expect(notifier.state.skip, 39);
   });
 
+  test('a request decided during a refresh stays gone', () async {
+    final repository = _FakeRepository();
+    final notifier = GroupJoinRequestsNotifier(
+      repository: repository,
+      groupId: 'group-1',
+    );
+
+    final initial = notifier.loadInitial();
+    await pumpEventQueue();
+    repository.pageHolds.single.complete(
+      Right(_page(skip: 0, start: 0, count: 3, total: 3)),
+    );
+    await initial;
+
+    // A refresh goes out, then the admin approves before it answers.
+    final refresh = notifier.loadInitial();
+    await pumpEventQueue();
+    expect(await notifier.approve('r0'), isTrue);
+
+    // The response was read before the approval landed.
+    repository.pageHolds[1].complete(
+      Right(_page(skip: 0, start: 0, count: 3, total: 3)),
+    );
+    await refresh;
+
+    expect(notifier.state.requests.map((r) => r.id), ['r1', 'r2']);
+    expect(notifier.state.total, 2);
+    expect(notifier.state.hasMore, isFalse);
+  });
+
   test('stops paging when a page lands empty against a stale total', () async {
     final repository = _FakeRepository();
     final notifier = GroupJoinRequestsNotifier(
@@ -128,6 +183,7 @@ void main() {
     );
 
     final initial = notifier.loadInitial();
+    await pumpEventQueue();
     repository.pageHolds.single.complete(
       Right(_page(skip: 0, start: 0, count: 20, total: 40)),
     );
@@ -159,6 +215,7 @@ void main() {
     );
 
     final initial = notifier.loadInitial();
+    await pumpEventQueue();
     repository.pageHolds.single.complete(
       Right(_page(skip: 0, start: 0, count: 20, total: 30)),
     );

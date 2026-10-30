@@ -1,3 +1,4 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/features/more/data/datasource/user_stats_local_datasource.dart';
 import 'package:flutter_pecha/features/more/data/datasource/user_stats_remote_datasource.dart';
@@ -26,6 +27,7 @@ final userStatsRepositoryProvider = Provider<UserStatsRepositoryInterface>((
   return UserStatsRepositoryImpl(
     remote: ref.watch(userStatsRemoteDatasourceProvider),
     local: ref.watch(userStatsLocalDatasourceProvider),
+    store: ref.watch(screenCacheStoreProvider),
   );
 });
 
