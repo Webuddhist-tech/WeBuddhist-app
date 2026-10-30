@@ -85,7 +85,7 @@ data/          → datasources, models (DTOs), repository implementations
 ### Networking
 
 - Main API: **`dioProvider`** + auth/cache/retry interceptors.
-- Library API: **`libraryDioProvider`** (no auth) only in the library feature.
+- Library API: **`libraryDioProvider`** (no user auth, `X-API-Key` header) only in the library feature.
 - Protected routes: see `core/config/protected_routes.dart`.
 
 ### Localization & content language
