@@ -16,6 +16,9 @@ void main() {
       'hi',
       'mn',
       'ne',
+      'th',
+      'my',
+      'vi',
     ]);
 
     for (final MapEntry<String, String> entry

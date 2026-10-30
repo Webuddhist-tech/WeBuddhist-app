@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_post_link_utils.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../../shared/widgets/reusable_youtube_player.dart';
 
@@ -28,10 +29,13 @@ class _YoutubeVideoPlayerState extends State<YoutubeVideoPlayer> {
   bool _isPlaying = false;
   bool _isReady = false;
   bool _showPlaybackControls = true;
+  late final bool _isShort;
 
   @override
   void initState() {
     super.initState();
+    _isShort = ConnectPostLinkUtils.isYoutubeShort(widget.videoUrl);
+    if (!_isShort) return;
     // Hide status bar and navigation bar for a true full-screen experience
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _scheduleControlsHide();
@@ -114,7 +118,46 @@ class _YoutubeVideoPlayerState extends State<YoutubeVideoPlayer> {
           _restoreSystemUi();
         }
       },
-      child: Scaffold(
+      child: _isShort ? _buildShorts(context) : _buildStandard(context),
+    );
+  }
+
+  /// Hour-long recordings and other non-Shorts: a 16:9 player with the
+  /// normal progress bar, not the vertical full-screen loop.
+  Widget _buildStandard(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(AppAssets.arrowLeft),
+          onPressed: _closePlayer,
+        ),
+        title:
+            widget.title.isEmpty
+                ? null
+                : Text(
+                  widget.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+      ),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ReusableYoutubePlayer(
+          videoUrl: widget.videoUrl,
+          aspectRatio: 16 / 9,
+          autoPlay: true,
+          mute: false,
+          loop: false,
+          showControls: true,
+          onControllerCreated: (controller) => _controller = controller,
+          onStopPlaybackRegistered: (stop) => _stopPlayback = stop,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShorts(BuildContext context) {
+    return Scaffold(
       backgroundColor: Colors.black,
       // Let the player go behind where the status bar was
       extendBodyBehindAppBar: true,
@@ -175,7 +218,10 @@ class _YoutubeVideoPlayerState extends State<YoutubeVideoPlayer> {
                           _isPlaying
                               ? Icons.pause_rounded
                               : Icons.play_arrow_rounded,
-                      label: _isPlaying ? context.l10n.player_pause : context.l10n.player_play,
+                      label:
+                          _isPlaying
+                              ? context.l10n.player_pause
+                              : context.l10n.player_play,
                       size: 45,
                       onPressed: _isReady ? _togglePlayPause : null,
                     ),
@@ -231,7 +277,6 @@ class _YoutubeVideoPlayerState extends State<YoutubeVideoPlayer> {
             ),
         ],
       ),
-    ),
     );
   }
 }

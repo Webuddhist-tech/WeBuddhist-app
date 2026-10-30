@@ -300,6 +300,31 @@ class SeriesRepository implements SeriesRepositoryInterface {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> refreshFeaturedSeries({
+    required String language,
+    int limit = 10,
+  }) async {
+    try {
+      await _refreshFeaturedSeries(language: language, limit: limit);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to refresh featured series'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> refreshSeriesList({
+    required String language,
+  }) async {
+    try {
+      await _refreshSeriesList(language: language);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to refresh series list'));
+    }
+  }
+
   Future<void> _refreshFeaturedSeries({
     required String language,
     required int limit,

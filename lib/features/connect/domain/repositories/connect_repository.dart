@@ -1,7 +1,10 @@
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract class ConnectRepository {
@@ -18,11 +21,55 @@ abstract class ConnectRepository {
     int limit = 20,
   });
 
+  /// Stored first page of joined groups, then revalidated in the background.
+  Stream<Either<Failure, DiscoverGroupsPage>> watchMyGroups({
+    required String language,
+  });
+
+  /// Null when no user id is stored yet.
+  ScreenCacheSource<DiscoverGroupsPage>? myGroupsSource({
+    required String language,
+  });
+
+  Future<Either<Failure, DiscoverGroupsPage>> refreshMyGroups({
+    required String language,
+  });
+
   Future<Either<Failure, ConnectFeedPage>> getConnectFeeds({
     required bool includeUnfollowed,
     required String language,
     int skip = 0,
     int limit = 20,
+  });
+
+  /// Stored first pages for the Connect lists; see ScreenCacheSource.
+  ScreenCacheSource<DiscoverGroupsPage> discoverGroupsFirstPage({
+    required String language,
+    required int limit,
+  });
+
+  ScreenCacheSource<ConnectFeedPage> connectFeedFirstPage({
+    required bool includeUnfollowed,
+    required String language,
+    required int limit,
+  });
+
+  ScreenCacheSource<GroupEventsPage> connectEventsFirstPage({
+    required bool includeUnfollowed,
+    required String language,
+    required int limit,
+    String? eventFormat,
+  });
+
+  ScreenCacheSource<GroupPracticesPage> connectPracticesFirstPage({
+    required bool includeUnfollowed,
+    required String language,
+    required int limit,
+  });
+
+  ScreenCacheSource<ConnectPostCommentsPage> postCommentsFirstPage(
+    String postId, {
+    required int limit,
   });
 
   Future<Either<Failure, void>> likePost(String postId);

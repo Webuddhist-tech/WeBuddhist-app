@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/analytics/recording_analytics_service.dart';
 import '../../../mala/mala_fakes.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_notifier.dart';
 
 const _userId = 'user-1';
 const _mantra = Mantra(presetId: 'tara-praises');
@@ -82,7 +83,9 @@ Future<void> _pumpBar(WidgetTester tester, _JoinedList joined) async {
         malaSoundPlayerProvider.overrideWithValue(SilentMalaSoundPlayer()),
         analyticsServiceProvider.overrideWithValue(RecordingAnalyticsService()),
         joinedAccumulatorGroupsProvider.overrideWith(
-          (ref, presetId) async => joined.next(),
+          () => AutoDisposeScreenCacheFamilyNotifier(
+            (ref, presetId, bind) => joined.next(),
+          ),
         ),
       ],
       child: const MaterialApp(

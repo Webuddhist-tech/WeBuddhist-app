@@ -502,21 +502,40 @@ class ReaderNotifier extends StateNotifier<ReaderState>
       if (_isDisposed) return null;
       final local = _localSegmentId(window.content, target);
       if (local == null) return null;
-      final response = window.response;
-      state = state.copyWith(
-        content: window.content,
-        currentSegmentPosition: response.currentSegmentPosition,
-        totalSegments: response.totalSegments,
-        hasNextPage: response.hasNextPage,
-        hasPreviousPage: window.hasPreviousPage,
-        isLoadingNext: false,
-        isLoadingPrevious: false,
-      );
+      _showWindow(window);
       return local;
     } catch (e) {
       _logger.debug('Jump to segment $segmentId failed: $e');
       return null;
     }
+  }
+
+  /// Replaces the loaded window with the text's first page, for going back
+  /// to its start from further in. False when the fetch failed.
+  Future<bool> jumpToStart() async {
+    if (_isDisposed) return false;
+    try {
+      final window = await _fetchWindow();
+      if (_isDisposed) return false;
+      _showWindow(window);
+      return true;
+    } catch (e) {
+      _logger.debug('Jump to the start failed: $e');
+      return false;
+    }
+  }
+
+  void _showWindow(_ContentWindow window) {
+    final response = window.response;
+    state = state.copyWith(
+      content: window.content,
+      currentSegmentPosition: response.currentSegmentPosition,
+      totalSegments: response.totalSegments,
+      hasNextPage: response.hasNextPage,
+      hasPreviousPage: window.hasPreviousPage,
+      isLoadingNext: false,
+      isLoadingPrevious: false,
+    );
   }
 
   /// This version's id for [segmentId]: the loaded line it names (directly
@@ -871,40 +890,122 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     }
   }
 
-  /// Select a segment
+  /// Select a segment; null closes the verse sheet with its tab.
   void selectSegment(Segment? segment) {
     if (_isDisposed) return;
 
     if (segment == null) {
-      state = state.copyWith(clearSelectedSegment: true);
+      closeVerseSheet();
     } else {
       state = state.copyWith(selectedSegment: segment);
     }
   }
 
-  /// Toggle segment selection
+  /// Toggle segment selection. A selected verse has its sheet open below
+  /// the text; tapping it again closes the sheet. A verse picked while
+  /// another's sheet is open keeps the open tab.
   void toggleSegmentSelection(Segment segment) {
     if (_isDisposed) return;
 
     if (state.selectedSegment?.segmentId == segment.segmentId) {
-      // Deselect if same segment
+      closeVerseSheet();
+      return;
+    }
+    final opening = !state.hasSelection;
+    state = state.copyWith(
+      selectedSegment: segment,
+      // The sheet opens at its default height, and keeps the height the
+      // person dragged it to while it stays open.
+      splitRatio: opening ? ReaderConstants.defaultSplitRatio : null,
+      commentarySegmentId: state.isCommentaryOpen ? segment.segmentId : null,
+      translationSegmentId:
+          state.isTranslationOpen ? segment.segmentId : null,
+      videosSegmentId: state.isVideosOpen ? segment.segmentId : null,
+    );
+  }
+
+  /// Moves the open sheet to [segment], the verse scrolled to the top of
+  /// the text, keeping its height and tab. Does nothing with no sheet open
+  /// or when [segment] is already its verse.
+  void followVerse(Segment segment) {
+    if (_isDisposed || !state.hasSelection) return;
+    if (state.selectedSegment!.segmentId == segment.segmentId) return;
+    toggleSegmentSelection(segment);
+  }
+
+  /// Closes the verse sheet: no verse selected, no tab open.
+  void closeVerseSheet() {
+    if (_isDisposed) return;
+    state = state.copyWith(
+      clearSelectedSegment: true,
+      clearCommentarySegmentId: true,
+      clearTranslationSegmentId: true,
+      clearVideosSegmentId: true,
+    );
+  }
+
+  /// Opens the selected verse's first tab with something, once its counts
+  /// are known: the one a plan task asks for (see [autoOpenPlanPanel]),
+  /// else Commentary, Versions, Videos, then Root text. Does nothing when
+  /// [segmentId] is no longer selected or the open tab has something for
+  /// it; an open tab it has nothing for, kept from the verse before, gives
+  /// way, and closes when no tab has anything. The tab opened.
+  ReaderResourceTab? openFirstResourceTab(
+    String segmentId, {
+    required bool hasCommentaries,
+    required bool hasVersions,
+    required bool hasVideos,
+    required bool hasRootText,
+  }) {
+    if (_isDisposed) return null;
+    if (state.selectedSegment?.segmentId != segmentId) return null;
+    final open = state.resourceTab;
+    if (open != null) {
+      final hasOpen = switch (open) {
+        ReaderResourceTab.commentary => hasCommentaries,
+        ReaderResourceTab.versions => hasVersions,
+        ReaderResourceTab.videos => hasVideos,
+        ReaderResourceTab.rootText => hasRootText,
+      };
+      if (hasOpen) return null;
       state = state.copyWith(
-        clearSelectedSegment: true,
         clearCommentarySegmentId: true,
         clearTranslationSegmentId: true,
+        clearVideosSegmentId: true,
       );
-    } else {
-      // Select new segment
-      state = state.copyWith(selectedSegment: segment);
+    }
+    if (autoOpenPlanPanel(
+      segmentId,
+      hasCommentaries: hasCommentaries,
+      hasVersions: hasVersions,
+    )) {
+      return state.resourceTab;
+    }
+    final tab =
+        hasCommentaries
+            ? ReaderResourceTab.commentary
+            : hasVersions
+            ? ReaderResourceTab.versions
+            : hasVideos
+            ? ReaderResourceTab.videos
+            : hasRootText
+            ? ReaderResourceTab.rootText
+            : null;
+    if (tab != null) openResourceTab(segmentId, tab);
+    return tab;
+  }
 
-      // Update commentary if it's open
-      if (state.isCommentaryOpen) {
-        state = state.copyWith(commentarySegmentId: segment.segmentId);
-      }
-      // Update translation if it's open
-      if (state.isTranslationOpen) {
-        state = state.copyWith(translationSegmentId: segment.segmentId);
-      }
+  /// Shows [tab] of [segmentId]'s sheet in place of the open one.
+  void openResourceTab(String segmentId, ReaderResourceTab tab) {
+    switch (tab) {
+      case ReaderResourceTab.commentary:
+        openCommentary(segmentId);
+      case ReaderResourceTab.versions:
+        openTranslation(segmentId);
+      case ReaderResourceTab.rootText:
+        openTranslation(segmentId, rootText: true);
+      case ReaderResourceTab.videos:
+        openVideos(segmentId);
     }
   }
 
@@ -935,14 +1036,14 @@ class ReaderNotifier extends StateNotifier<ReaderState>
     return false;
   }
 
-  /// Open commentary panel for a segment
+  /// Open commentary panel for a segment: the sheet's Commentary tab, in
+  /// place of the open one.
   void openCommentary(String segmentId) {
     if (_isDisposed) return;
-    final isOpening = !state.isCommentaryOpen;
     state = state.copyWith(
       commentarySegmentId: segmentId,
-      splitRatio:
-          isOpening ? ReaderConstants.defaultSplitRatio : state.splitRatio,
+      clearTranslationSegmentId: true,
+      clearVideosSegmentId: true,
     );
   }
 
@@ -967,12 +1068,21 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// of a commentary instead of the versions.
   void openTranslation(String segmentId, {bool rootText = false}) {
     if (_isDisposed) return;
-    final isOpening = !state.isTranslationOpen;
     state = state.copyWith(
       translationSegmentId: segmentId,
       showsRootText: rootText,
-      splitRatio:
-          isOpening ? ReaderConstants.defaultSplitRatio : state.splitRatio,
+      clearCommentarySegmentId: true,
+      clearVideosSegmentId: true,
+    );
+  }
+
+  /// Shows the videos about a segment: the sheet's Videos tab.
+  void openVideos(String segmentId) {
+    if (_isDisposed) return;
+    state = state.copyWith(
+      videosSegmentId: segmentId,
+      clearCommentarySegmentId: true,
+      clearTranslationSegmentId: true,
     );
   }
 

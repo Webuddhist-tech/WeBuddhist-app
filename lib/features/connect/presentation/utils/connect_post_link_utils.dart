@@ -37,6 +37,16 @@ abstract final class ConnectPostLinkUtils {
 
   static bool isYoutube(String url) => youtubeVideoId(url) != null;
 
+  /// A YouTube Short is the only form whose path contains `shorts`.
+  /// Session recordings (`/watch`, `/live`, `youtu.be`, `/embed`) are not.
+  static bool isYoutubeShort(String url) {
+    final host = hostOf(url);
+    if (host == null) return false;
+    if (host != 'youtube.com' && !host.endsWith('.youtube.com')) return false;
+    final segments = Uri.tryParse(url.trim())?.pathSegments ?? const <String>[];
+    return segments.contains('shorts');
+  }
+
   static String youtubeThumbnailUrl(String videoId) =>
       'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
 

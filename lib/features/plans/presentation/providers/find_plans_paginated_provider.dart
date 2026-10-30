@@ -61,6 +61,10 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
   final PlansLocalDatasource local;
   static const int _limit = 20;
 
+  // Blocks paging while page one is being read again; stale pages are dropped.
+  bool _firstPageInFlight = false;
+  int _pageEpoch = 0;
+
   Future<void> _initialize() async {
     _seedFromCache();
     await loadInitial();
@@ -102,11 +106,13 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
       state = state.copyWith(isLoading: true, error: null);
     }
 
+    _firstPageInFlight = true;
     final result = await getPlansUseCase(GetPlansParams(
       language: languageCode,
       skip: 0,
       limit: _limit,
     ));
+    _firstPageInFlight = false;
 
     result.fold(
       (failure) {
@@ -122,6 +128,7 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
       (plans) {
         _logger.debug('✅ Got ${plans.length} plans from use case');
         if (mounted) {
+          _pageEpoch++;
           state = state.copyWith(
             plans: plans,
             isLoading: false,
@@ -138,17 +145,27 @@ class FindPlansNotifier extends StateNotifier<FindPlansState> {
 
   /// Load more plans
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || state.isLoading) {
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.isLoading ||
+        _firstPageInFlight) {
       return;
     }
 
     state = state.copyWith(isLoadingMore: true, error: null);
+    final epoch = _pageEpoch;
 
     final result = await getPlansUseCase(GetPlansParams(
       language: languageCode,
       skip: state.skip,
       limit: _limit,
     ));
+
+    // Page one was replaced meanwhile; this page belongs to the old list.
+    if (epoch != _pageEpoch) {
+      if (mounted) state = state.copyWith(isLoadingMore: false);
+      return;
+    }
 
     result.fold(
       (failure) {

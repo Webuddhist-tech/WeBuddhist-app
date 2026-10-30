@@ -61,6 +61,9 @@ The app requests `{TolgeeCdn.baseUrl}/{tag}.json` itself — see
 | `hi.json` | `hi` |
 | `mn.json` | `mn` |
 | `ne.json` | `ne` |
+| `th.json` | `th` |
+| `my.json` | `my` (Burmese) |
+| `vi-VN.json` | `vi` |
 
 Requirements in Tolgee Content Delivery:
 
@@ -104,8 +107,13 @@ with bare codes (`en`, `bo`, `zh`, …). Simplified Chinese is the one locale
 with a script subtag: `Locale.fromSubtags(languageCode: 'zh', scriptCode:
 'Hans')`, stored and sent to the backend as `zh-Hans`, ARB `app_zh_Hans.arb`.
 `TolgeeLocaleMap` remaps only the Tolgee fetch tag (`bo` → `bo-IN`, `zh` →
-`zh-Hant-TW`, `zh_Hans` → `zh-Hans-CN`). ARB fallbacks and Material locale
-remain `bo` / `zh` / `zh_Hans`.
+`zh-Hant-TW`, `zh_Hans` → `zh-Hans-CN`, `vi` → `vi-VN`). ARB fallbacks and
+Material locale remain `bo` / `zh` / `zh_Hans` / `vi`.
+
+Vietnamese keeps `vi-VN` because the Tolgee project already had that language
+when the app added it, and another client may read it. Do not rename it in
+Tolgee. A new language should use a bare tag (`th`, `my`) so it needs no
+mapping.
 
 gen-l10n makes `AppLocalizationsZhHans` a subclass of `AppLocalizationsZh`, so
 a key missing from `app_zh_Hans.arb` shows the Traditional text, not English.
@@ -195,7 +203,8 @@ Network sync commands need a write-capable project API key. Never put it in
 1. Open Tolgee → select the WeBuddhist project → **Project API Keys** (Account /
    project settings → API keys).
 2. Click **+ API Key**.
-3. Grant at least `keys.create`, plus `translations.view` and `languages.view`.
+3. Grant at least `keys.create`, plus `keys.view` and `translations.view`.
+   (Tolgee has no `languages.view` scope.)
 4. Copy the `tgpak_...` value once and place it only where sync tooling reads it:
    - **Local:** current shell session — macOS/Linux
      `export TOLGEE_SYNC_API_KEY='tgpak_...'`, PowerShell
@@ -246,7 +255,7 @@ Use this sequence for a full local sync:
 3. `dart run tool/tolgee_sync.dart push --dry-run` — preview missing Tolgee keys
 4. `dart run tool/tolgee_sync.dart push` — create missing keys only (skip if dry-run is empty)
 5. `dart run tool/tolgee_sync.dart pull --dry-run` — preview ARB value/insert changes
-6. `dart run tool/tolgee_sync.dart pull` — write all seven ARBs after a clean fetch
+6. `dart run tool/tolgee_sync.dart pull` — write all ten ARBs after a clean fetch
 7. `flutter gen-l10n` — regenerate Flutter localizations from ARBs
 8. `dart run tool/generate_tolgee_bridge.dart` — regenerate OTA bridge for CI freshness
 9. `dart run tool/tolgee_sync.dart doctor --remote` — confirm ARB ↔ Tolgee ↔ CDN health
@@ -271,7 +280,7 @@ real push or pull.
 
 #### 1. Offline doctor
 
-This is the local structural health check for the seven ARB files under
+This is the local structural health check for the ten ARB files under
 `lib/core/l10n/`. It reports keys present in English but missing from another
 locale, orphan keys, stale `@key` metadata, and ICU placeholder argument-name
 mismatches. It does not talk to Tolgee or the CDN, so no API key is required.
@@ -342,8 +351,9 @@ dart run tool/tolgee_sync.dart intentions
 
 #### 5. Pull dry-run
 
-Fetches all seven Tolgee languages in one pass (`en`, `bo-IN`, `zh-Hant-TW`,
-`zh-Hans-CN`, `hi`, `mn`, `ne`), compares them to each `app_*.arb`, and prints per-locale
+Fetches all ten Tolgee languages in one pass (`en`, `bo-IN`, `zh-Hant-TW`,
+`zh-Hans-CN`, `hi`, `mn`, `ne`, `th`, `my`, `vi-VN`), compares them to each
+`app_*.arb`, and prints per-locale
 counts of values that would update, keys that would insert (only when the key
 already exists in English), and keys left unchanged. No ARB files are written.
 Use this to estimate review size before a real pull — the first pull can be
@@ -415,7 +425,7 @@ translations to production by itself. It runs push → pull → `flutter gen-l10
 **Safe by design**
 
 - Push is create-only — existing Tolgee translations are not overwritten or deleted
-- Pull fetches all seven languages before writing any ARB — a mid-run failure should not leave a half-updated tree
+- Pull fetches all ten languages before writing any ARB — a mid-run failure should not leave a half-updated tree
 - Empty Tolgee strings are skipped — blanks cannot wipe good local ARB text
 - Local ARB keys are not deleted just because Tolgee lacks them
 - Result is a PR, not a direct commit to `develop` and not a release-build rewrite

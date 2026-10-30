@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 
 class AppBottomNavItem<T> extends StatelessWidget {
   const AppBottomNavItem({
@@ -108,19 +108,12 @@ class _NavProfileAvatar extends StatelessWidget {
       height: _size,
       decoration: BoxDecoration(shape: BoxShape.circle),
       child: ClipOval(
-        child: CachedNetworkImage(
+        child: CachedNetworkImageWidget(
           imageUrl: avatarUrl,
-          cacheKey:
-              Uri.tryParse(
-                avatarUrl,
-              )?.replace(query: '', fragment: '').toString() ??
-              avatarUrl,
           width: _size,
           height: _size,
           fit: BoxFit.cover,
-          errorWidget:
-              (context, url, error) =>
-                  PhosphorIcon(fallbackIcon, size: _size, color: iconColor),
+          errorWidget: PhosphorIcon(fallbackIcon, size: _size, color: iconColor),
         ),
       ),
     );

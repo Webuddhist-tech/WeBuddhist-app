@@ -10,7 +10,6 @@ import 'package:flutter_pecha/features/auth/domain/usecases/upload_avatar_usecas
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_notifier.dart';
 import 'package:flutter_pecha/features/mala/data/datasources/mala_local_datasource.dart';
-import 'package:flutter_pecha/features/mala/data/models/accumulator_group_model.dart';
 import 'package:flutter_pecha/features/mala/data/models/accumulator_model.dart';
 import 'package:flutter_pecha/features/mala/data/repositories/mala_repository_impl.dart';
 import 'package:flutter_pecha/features/mala/domain/entities/mantra.dart';
@@ -61,19 +60,14 @@ class _ListingRemote extends FakeMalaRemote {
   final calls = <({String id, bool joinedOnly, String? language})>[];
 
   @override
-  Future<List<AccumulatorGroupModel>> fetchAccumulatorGroups(
+  Future<Map<String, dynamic>> fetchAccumulatorGroupsJson(
     String accumulatorId, {
     bool joinedOnly = false,
     String? language,
   }) async {
     calls.add((id: accumulatorId, joinedOnly: joinedOnly, language: language));
     if (fails) throw Exception('offline');
-    return AccumulatorGroupsResponseModel.fromJson({
-      'groups': rows,
-      'total': rows.length,
-      'skip': 0,
-      'limit': 20,
-    }).groups;
+    return {'groups': rows, 'total': rows.length, 'skip': 0, 'limit': 20};
   }
 
   /// Offline: the personal counter falls back to its local total.

@@ -9,6 +9,7 @@ import 'package:flutter_pecha/core/analytics/clarity_analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/entry_analytics.dart';
 import 'package:flutter_pecha/core/analytics/posthog_analytics_service.dart';
 import 'package:flutter_pecha/core/cache/cache_service.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/config/app_feature_flags.dart';
 import 'package:flutter_pecha/core/config/router/app_router.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
@@ -31,6 +32,7 @@ import 'package:flutter_pecha/features/push_notifications/application/push_notif
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_local_datasource.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/firebase_session_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_session_bootstrap.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
@@ -63,6 +65,9 @@ final _logger = AppLogger('Main');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Covers from every tab share this budget; the 100 MB default evicts them
+  // between tab switches and they come back through a placeholder.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20;
   // Portrait only; unawaited: a headless (audio_service) engine never replies.
   unawaited(
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
@@ -189,6 +194,14 @@ void main() async {
     _logger.info('Plans local storage initialized');
   } catch (e) {
     _logger.warning('Error initializing plans local storage: $e');
+  }
+
+  // Initialize the shared screen cache (last-known-good data per screen).
+  try {
+    await ScreenCacheStore.init();
+    _logger.info('Screen cache initialized');
+  } catch (e) {
+    _logger.warning('Error initializing screen cache: $e');
   }
 
   // Create provider container for routine storage
@@ -319,6 +332,10 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       // Picks up strings published in Tolgee since the app was opened, which
       // on iOS can be days without a cold start. Throttled inside the service.
       unawaited(_refreshTolgee());
+      // A Firebase sign-in that gave up while offline gets another go.
+      if (Firebase.apps.isNotEmpty) {
+        ref.read(firebaseSessionProvider.notifier).resume();
+      }
     }
   }
 
@@ -437,6 +454,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // Bootstrap FCM: capture/refresh token, register handlers, and register the
     // device token with the backend once the user signs in.
     ref.watch(pushNotificationBootstrapProvider);
+    // Signs in to Firebase as the backend user so Firestore signals can be read.
+    ref.watch(firebaseSessionBootstrapProvider);
     // Mala background sync — kept alive for the app lifetime so offline counts
     // flush on lifecycle/connectivity triggers even off the mala screen.
     ref.watch(malaSyncManagerProvider);

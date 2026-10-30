@@ -9,6 +9,10 @@ enum ReaderStatus { initial, loading, loaded, error }
 /// Direction for pagination
 enum PaginationDirection { next, previous }
 
+/// The tabs of a verse's sheet. Root text, the root work of a commentary,
+/// shows only for verses that have one.
+enum ReaderResourceTab { commentary, versions, videos, rootText }
+
 /// Main state model for the reader feature
 class ReaderState {
   // Core content
@@ -37,6 +41,9 @@ class ReaderState {
   // Translation (versions, or the root text of a commentary)
   final String? translationSegmentId;
   final bool showsRootText;
+
+  // Videos about the verse
+  final String? videosSegmentId;
 
   final double splitRatio;
 
@@ -68,6 +75,7 @@ class ReaderState {
     this.commentarySegmentId,
     this.translationSegmentId,
     this.showsRootText = false,
+    this.videosSegmentId,
     this.splitRatio = 0.5,
     this.highlightedSegmentId,
     this.highlightSource = NavigationSource.normal,
@@ -109,6 +117,22 @@ class ReaderState {
   /// Check if translation panel is open
   bool get isTranslationOpen => translationSegmentId != null;
 
+  /// Whether the verse sheet shows its videos.
+  bool get isVideosOpen => videosSegmentId != null;
+
+  /// The verse sheet's open tab; null while the selected verse's counts
+  /// are loading, or when it has nothing to show.
+  ReaderResourceTab? get resourceTab {
+    if (isCommentaryOpen) return ReaderResourceTab.commentary;
+    if (isTranslationOpen) {
+      return showsRootText
+          ? ReaderResourceTab.rootText
+          : ReaderResourceTab.versions;
+    }
+    if (isVideosOpen) return ReaderResourceTab.videos;
+    return null;
+  }
+
   /// Check if a segment is selected
   bool get hasSelection => selectedSegment != null;
 
@@ -130,6 +154,7 @@ class ReaderState {
     String? commentarySegmentId,
     String? translationSegmentId,
     bool? showsRootText,
+    String? videosSegmentId,
     double? splitRatio,
     String? highlightedSegmentId,
     NavigationSource? highlightSource,
@@ -145,6 +170,7 @@ class ReaderState {
     bool clearSelectedSegment = false,
     bool clearCommentarySegmentId = false,
     bool clearTranslationSegmentId = false,
+    bool clearVideosSegmentId = false,
     bool clearHighlightedSegmentId = false,
     bool clearErrorMessage = false,
   }) {
@@ -169,6 +195,10 @@ class ReaderState {
               ? null
               : (translationSegmentId ?? this.translationSegmentId),
       showsRootText: showsRootText ?? this.showsRootText,
+      videosSegmentId:
+          clearVideosSegmentId
+              ? null
+              : (videosSegmentId ?? this.videosSegmentId),
       splitRatio: splitRatio ?? this.splitRatio,
       highlightedSegmentId:
           clearHighlightedSegmentId

@@ -16,6 +16,23 @@ class GroupAccumulatorRemoteDatasource {
     required int limit,
     required String language,
   }) async {
+    return GroupAccumulatorsPageModel.fromJson(
+      await fetchGroupAccumulatorsJson(
+        groupId,
+        skip: skip,
+        limit: limit,
+        language: language,
+      ),
+    );
+  }
+
+  /// Raw page as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchGroupAccumulatorsJson(
+    String groupId, {
+    required int skip,
+    required int limit,
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/group-accumulators/$groupId/accumulators',
@@ -24,9 +41,7 @@ class GroupAccumulatorRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupAccumulatorsPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       throw _statusToException(
@@ -43,6 +58,15 @@ class GroupAccumulatorRemoteDatasource {
     String accumulatorId, {
     required String language,
   }) async {
+    return GroupAccumulatorModel.fromJson(
+      await fetchGroupAccumulatorJson(accumulatorId, language: language),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupAccumulatorJson(
+    String accumulatorId, {
+    required String language,
+  }) async {
     try {
       final response = await dio.get(
         '/group-accumulators/$accumulatorId',
@@ -51,9 +75,7 @@ class GroupAccumulatorRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupAccumulatorModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       throw _statusToException(
@@ -109,6 +131,22 @@ class GroupAccumulatorRemoteDatasource {
     required int limit,
     required GroupAccumulatorMemberSort sortBy,
   }) async {
+    return GroupAccumulatorMembersPageModel.fromJson(
+      await fetchGroupAccumulatorMembersJson(
+        accumulatorId,
+        skip: skip,
+        limit: limit,
+        sortBy: sortBy,
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchGroupAccumulatorMembersJson(
+    String accumulatorId, {
+    required int skip,
+    required int limit,
+    required GroupAccumulatorMemberSort sortBy,
+  }) async {
     try {
       final response = await dio.get(
         '/group-accumulators/$accumulatorId/members',
@@ -121,9 +159,7 @@ class GroupAccumulatorRemoteDatasource {
       );
 
       if (response.statusCode == 200) {
-        return GroupAccumulatorMembersPageModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
+        return response.data as Map<String, dynamic>;
       }
 
       throw _statusToException(

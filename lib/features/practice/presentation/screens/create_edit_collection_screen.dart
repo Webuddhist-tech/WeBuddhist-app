@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
@@ -21,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart' show Either;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 
 /// Placeholder mustard accent used for the empty cover tile in the designs.
 const Color _kCoverPlaceholder = Color(0xFFC9A84C);
@@ -799,12 +799,12 @@ class _CoverTile extends StatelessWidget {
               if (localFile != null)
                 Image.file(localFile!, fit: BoxFit.cover)
               else if (networkUrl != null && networkUrl!.isNotEmpty)
-                CachedNetworkImage(
+                CachedNetworkImageWidget(
                   imageUrl: networkUrl!,
+                  width: _kCoverWidth,
+                  height: _kCoverHeight,
                   fit: BoxFit.cover,
-                  errorWidget:
-                      (context, url, error) =>
-                          const ColoredBox(color: _kCoverPlaceholder),
+                  errorWidget: const ColoredBox(color: _kCoverPlaceholder),
                 )
               else
                 const ColoredBox(color: _kCoverPlaceholder),

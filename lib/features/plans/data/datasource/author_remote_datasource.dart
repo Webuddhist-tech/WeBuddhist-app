@@ -37,11 +37,19 @@ class AuthorRemoteDatasource {
   }
 
   Future<AuthorModel> getAuthorById(String authorId) async {
+    return AuthorModel.fromJson(await fetchAuthorJson(authorId));
+  }
+
+  /// Raw author as served, so the screen cache stores exactly what the API sent.
+  Future<Map<String, dynamic>> fetchAuthorJson(String authorId) async {
     try {
-      final response = await dio.get('/authors/$authorId');
+      final response = await dio.get(
+        '/authors/$authorId',
+        options: Options(extra: {'no_cache': true}),
+      );
 
       if (response.statusCode == 200) {
-        return AuthorModel.fromJson(response.data);
+        return response.data as Map<String, dynamic>;
       } else {
         _logger.error('Error to load author: ${response.statusCode}');
         if (response.statusCode == 401) {

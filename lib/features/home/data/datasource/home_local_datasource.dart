@@ -35,6 +35,13 @@ class HomeLocalDatasource {
     );
   }
 
+  /// Same id without an await, so a screen can seed its first frame.
+  String? get currentUserIdSync {
+    return SharedPreferencesService.instance.getSync<String>(
+      StorageKeys.currentUserId,
+    );
+  }
+
   Stream<void> watchKey(String key) async* {
     await for (final _ in _box.watch(key: key)) {
       yield null;

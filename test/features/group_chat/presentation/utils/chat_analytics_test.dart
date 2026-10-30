@@ -187,7 +187,7 @@ void main() {
 
     test('fires once for a screen, however the room shows up again', () {
       track('room-1');
-      track('room-1', source: ChatOpenSource.live);
+      track('room-1', source: ChatOpenSource.firstSend);
       track('room-1', source: ChatOpenSource.firstSend);
 
       expect(service.eventNames, [AnalyticsEvents.groupChatOpened]);
@@ -217,9 +217,9 @@ void main() {
       expect(service.events.single.properties['source'], 'firstSend');
     });
 
-    test('a lookup or socket frame after the screen is gone fires nothing', () {
+    test('a lookup after the screen is gone fires nothing', () {
       track('room-1', screenDisposed: true);
-      track('room-1', source: ChatOpenSource.live, screenDisposed: true);
+      track('room-1', screenDisposed: true);
 
       expect(service.events, isEmpty);
     });

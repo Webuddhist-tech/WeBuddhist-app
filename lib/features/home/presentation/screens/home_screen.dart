@@ -1,6 +1,8 @@
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/features/home/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/services/service_providers.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -10,8 +12,6 @@ import 'package:flutter_pecha/features/home/presentation/providers/featured_seri
 import 'package:flutter_pecha/features/home/presentation/providers/home_group_events_preview_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/routine_info_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/streak_provider.dart';
-import 'package:flutter_pecha/features/home/presentation/providers/series_provider.dart';
-import 'package:flutter_pecha/features/home/presentation/providers/today_events_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_engagement_providers.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/verse_of_day_provider.dart';
 import 'package:flutter_pecha/features/home/presentation/home_screen_constants.dart';
@@ -224,26 +224,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         MainTab.practice.index;
   }
 
-  /// Pull-to-refresh handler. Invalidates the series list and verse of day,
-  /// then awaits the refreshed results so the spinner stays until data lands.
+  /// Pull-to-refresh: awaits the server fetches so the spinner stays until
+  /// data lands; each store write reaches its section through its stream.
   Future<void> _onRefresh() async {
     _refreshVerseOfDayEngagement();
-    ref.invalidate(seriesListFutureProvider);
-    ref.invalidate(featuredSeriesFutureProvider);
-    ref.invalidate(homeGroupEventsPreviewProvider);
-    ref.invalidate(homePoemsPreviewProvider);
-    ref.invalidate(verseOfDayFutureProvider);
-    ref.invalidate(todayEventsFutureProvider);
-    ref.invalidate(routineInfoFutureProvider);
-    ref.invalidate(streakFutureProvider);
-    await Future.wait([
-      ref.read(seriesListFutureProvider.future),
-      ref.read(featuredSeriesFutureProvider.future),
-      ref.read(homeGroupEventsPreviewProvider.future),
-      ref.read(homePoemsPreviewProvider.future),
-      ref.read(verseOfDayFutureProvider.future),
-      ref.read(todayEventsFutureProvider.future),
-      ref.read(routineInfoFutureProvider.future),
+    final language = ref.read(contentLanguageProvider);
+    final series = ref.read(seriesDomainRepositoryProvider);
+    final events = ref.read(homeGroupEventsPreviewSourceProvider);
+    await Future.wait<Object?>([
+      series.refreshSeriesList(language: language),
+      series.refreshFeaturedSeries(
+        language: language,
+        limit: homeFeaturedSeriesLimit,
+      ),
+      if (events != null) events.refresh(),
+      ref.read(homePoemsPreviewSourceProvider).refresh(),
+      ref.read(verseOfDayDomainRepositoryProvider).refreshVerseOfDay(
+        language: language,
+      ),
+      ref.read(todayEventsDomainRepositoryProvider).refreshTodayEvents(
+        language: language,
+      ),
+      ref.read(routineInfoDomainRepositoryProvider).refreshRoutineInfo(),
+      ref.read(streakDomainRepositoryProvider).refreshStreak(),
     ]);
   }
 

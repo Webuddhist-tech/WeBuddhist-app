@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
 import 'package:flutter_pecha/core/config/router/app_routes.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
@@ -66,7 +67,9 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen>
 
   Future<void> _onGroupsRefresh() async {
     await Future.wait([
-      ref.refresh(myGroupsProvider.future),
+      ref
+          .read(connectRepositoryProvider)
+          .refreshMyGroups(language: ref.read(contentLanguageProvider)),
       ref.read(discoverGroupsProvider.notifier).refresh(),
     ]);
   }
@@ -227,8 +230,10 @@ class _ChatsAction extends ConsumerWidget {
     );
     if (!isMember) return const SizedBox.shrink();
 
-    // Keeps the push listener alive for as long as the dot is on screen.
+    // Keeps the push and signal listeners alive for as long as the dot is on
+    // screen.
     ref.watch(chatRoomsPushRefreshProvider);
+    ref.watch(chatRoomsSignalsProvider);
     final hasUnread = ref.watch(chatRoomsProvider).hasUnread;
     final theme = Theme.of(context);
 

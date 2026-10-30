@@ -19,8 +19,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+
   _FakeRepository(this.reports, {this.members = const [], this.pageSize});
 
   List<GroupReport> reports;

@@ -5,6 +5,7 @@ import 'package:flutter_pecha/features/group_profile/data/datasource/group_post_
 import 'package:flutter_pecha/features/group_profile/data/models/group_post_model.dart';
 import 'package:flutter_pecha/features/group_profile/data/repositories/group_post_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../../helpers/fake_screen_cache_store.dart';
 
 class _FakeRemote extends Fake implements GroupPostRemoteDatasource {
   final List<String> calls = [];
@@ -50,7 +51,10 @@ void main() {
 
   setUp(() {
     remote = _FakeRemote();
-    repository = GroupPostRepositoryImpl(remote: remote);
+    repository = GroupPostRepositoryImpl(
+      remote: remote,
+      store: FakeScreenCacheStore(),
+    );
   });
 
   test('reports which parts persisted when a later request fails', () async {

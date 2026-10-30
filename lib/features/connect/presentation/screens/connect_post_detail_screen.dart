@@ -14,6 +14,7 @@ import 'package:flutter_pecha/features/auth/presentation/widgets/login_drawer.da
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post_comment.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_comments_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_like_actions.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_like_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_post_comment_tile.dart';
@@ -278,6 +279,14 @@ class _ConnectPostDetailPanelState extends ConsumerState<ConnectPostDetailPanel>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final commentsState = ref.watch(connectPostCommentsProvider(widget.postId));
+    // New comments refetch the list; the path needs the post's group.
+    final signalGroupId =
+        (widget.groupId ?? '').isNotEmpty ? widget.groupId! : _post.groupId;
+    if (signalGroupId.isNotEmpty) {
+      ref.watch(
+        postCommentsSignalProvider((groupId: signalGroupId, postId: widget.postId)),
+      );
+    }
     final isSubmittingComment = ref.watch(
       connectPostCommentsProvider(
         widget.postId,

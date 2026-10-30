@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
+import 'package:flutter_pecha/features/recitation/data/models/recitation_model.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitations_providers.dart';
 import 'package:flutter_pecha/features/recitation/presentation/widgets/recitation_list_skeleton.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,39 +30,28 @@ class SelectRecitationScreen extends ConsumerWidget {
         scrolledUnderElevation: 0,
         centerTitle: false,
       ),
-      body: recitationsAsync.when(
-        loading: () => const RecitationListSkeleton(),
-        error: (error, _) => Center(
-          child: Text(
-            localizations.recitations_no_content,
-            style: TextStyle(color: AppColors.textSecondary),
-          ),
-        ),
-        data: (recitationsEither) {
-          return recitationsEither.fold(
-            (failure) => Center(
-              child: ErrorStateWidget(error: failure),
-            ),
-            (recitations) {
-              if (recitations.isEmpty) {
-                return Center(
-                  child: Text(
-                    localizations.recitations_no_content,
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                );
-              }
+      body: ScreenCacheBuilder<List<RecitationModel>>(
+        value: recitationsAsync,
+        skeleton: const RecitationListSkeleton(),
+        onRetry: () => ref.invalidate(recitationsFutureProvider),
+        data: (recitations) {
+          if (recitations.isEmpty) {
+            return Center(
+              child: Text(
+                localizations.recitations_no_content,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            );
+          }
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                itemCount: recitations.length,
-                itemBuilder: (context, index) {
-                  final recitation = recitations[index];
-                  return _SelectableRecitationCard(
-                    title: recitation.title,
-                    onTap: () => Navigator.of(context).pop(recitation),
-                  );
-                },
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            itemCount: recitations.length,
+            itemBuilder: (context, index) {
+              final recitation = recitations[index];
+              return _SelectableRecitationCard(
+                title: recitation.title,
+                onTap: () => Navigator.of(context).pop(recitation),
               );
             },
           );

@@ -24,11 +24,15 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         groupEventsProvider.overrideWith(
-          (ref, groupId) async => Right<Failure, GroupEventsPage>(
-            GroupEventsPage(events: events, total: events.length),
+          () => GroupEventsNotifier.fixed(
+            Right<Failure, GroupEventsPage>(
+              GroupEventsPage(events: events, total: events.length),
+            ),
           ),
         ),
-        groupCmsEventsProvider.overrideWith((ref, groupId) async => cmsItems),
+        groupCmsEventsProvider.overrideWith(
+          () => GroupCmsEventsNotifier.fixed(cmsItems),
+        ),
       ],
       child: MaterialApp(
         locale: const Locale('en'),

@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_rooms_list.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// The other person in a direct chat: their picture, or their initial on a
 /// warm tint (the "W" of the WeBuddhist Team in the mocks).
@@ -27,7 +28,7 @@ class DirectChatAvatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: size,
                   height: size,

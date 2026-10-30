@@ -89,14 +89,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Playback speed'), findsOneWidget);
-    expect(find.text('1.00x'), findsOneWidget);
+    expect(find.text('1.00×'), findsOneWidget);
     expect(find.text('Normal'), findsOneWidget);
 
     await tester.tap(find.text('1.25'));
     await tester.pump();
 
     expect(controller.speed, 1.25);
-    expect(find.text('1.25x'), findsOneWidget);
+    // The sheet's reading, and the bar's label behind it.
+    expect(find.text('1.25×'), findsNWidgets(2));
     expect(find.text('Playback speed'), findsOneWidget);
 
     await tester.tap(find.byIcon(AppAssets.x));
@@ -115,13 +116,14 @@ void main() {
     await tester.tap(find.byIcon(AppAssets.plus));
     await tester.pump();
     expect(controller.speed, closeTo(1.01, 0.001));
-    expect(find.text('1.01x'), findsOneWidget);
+    // The sheet's reading, and the bar's label behind it.
+    expect(find.text('1.01×'), findsNWidgets(2));
     expect(find.text('Playback speed'), findsOneWidget);
 
     await tester.tap(find.byIcon(AppAssets.minus));
     await tester.pump();
     expect(controller.speed, closeTo(1.0, 0.001));
-    expect(find.text('1.00x'), findsOneWidget);
+    expect(find.text('1.00×'), findsOneWidget);
   });
 
   testWidgets('repeat starts off and loops until tapped again', (tester) async {

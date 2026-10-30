@@ -24,10 +24,14 @@ Both are local assets with **rewritten vertical metrics**; see
 - **System**: Google Noto Sans Traditional Chinese
 - **Content**: Google Noto Serif Traditional Chinese
 
-### Hindi, Nepali, Mongolian (hi, ne, mn) and any other code
+### Hindi, Nepali, Mongolian, Thai, Burmese, Vietnamese (hi, ne, mn, th, my, vi) and any other code
 - No entry in `_languageFonts`, so they use the default config (Inter /
-  Source Serif 4). Devanagari glyphs are not in Inter or Source Serif 4 and
-  render through the platform fallback font.
+  Source Serif 4). Devanagari, Thai and Myanmar glyphs are not in Inter or
+  Source Serif 4 and render through the platform fallback font. Vietnamese is
+  Latin and is covered by both.
+- Myanmar stacks tall marks above and below the base letter. Check it for
+  clipping under the fixed `height:` line boxes before relying on the
+  fallback font.
 
 Font family names live in `AppConfig` (`core/constants/app_config.dart`):
 `englishSystemFont`, `englishContentFont`, `chineseSystemFont`,

@@ -126,4 +126,60 @@ void main() {
     expect(sections.single.id, 'E/gap/0');
     expect(sections.single.title, isNull);
   });
+
+
+  group('buildTocOutline', () {
+    LibraryOutlineVerse verse(String id, int start, int number) =>
+        (id: id, spanStart: start, number: number);
+
+    test('places every heading holding a verse, nested ones after it', () {
+      final outline = buildTocOutline(
+        toc: _toc,
+        verses: [
+          verse('s1', 0, 1),
+          verse('s2', 20, 2),
+          verse('s3', 40, 3),
+          verse('s4', 100, 4),
+          verse('s5', 150, 5),
+        ],
+      );
+
+      expect(outline.map((e) => e.id), ['A', 'A1', 'A2', 'B']);
+      final alpha = outline[0];
+      expect((alpha.number, alpha.endNumber, alpha.segmentId), (1, 3, 's1'));
+      expect(alpha.depth, 0);
+      expect(alpha.opensText, isTrue);
+      final two = outline[2];
+      expect((two.number, two.endNumber, two.segmentId), (3, 3, 's3'));
+      expect((two.depth, two.parentId), (1, 'A'));
+      expect(two.opensText, isFalse);
+      expect((outline[3].number, outline[3].endNumber), (4, 5));
+    });
+
+    test('a heading holding no verse is left out with its subheadings', () {
+      final outline = buildTocOutline(
+        toc: _toc,
+        verses: [verse('s4', 100, 1)],
+      );
+      expect(outline.map((e) => e.id), ['B']);
+      // No verse comes before it, so it opens the text.
+      expect(outline.single.opensText, isTrue);
+    });
+
+    test('verses before the first heading mean it does not open the text', () {
+      final outline = buildTocOutline(
+        toc: const [
+          LibraryTocSection(
+            id: 'late',
+            title: {'en': 'Late'},
+            spanStart: 50,
+            spanEnd: 100,
+          ),
+        ],
+        verses: [verse('s1', 0, 1), verse('s2', 60, 2)],
+      );
+      expect(outline.single.number, 2);
+      expect(outline.single.opensText, isFalse);
+    });
+  });
 }

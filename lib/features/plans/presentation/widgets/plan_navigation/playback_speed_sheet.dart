@@ -128,7 +128,9 @@ class _PlaybackSpeedSheetState extends State<_PlaybackSpeedSheet> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _digits(context, '${_speed.toStringAsFixed(2)}x'),
+                  // Two decimals for the 0.01 slider, with the same × as
+                  // the bar's label.
+                  _digits(context, '${_speed.toStringAsFixed(2)}×'),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,

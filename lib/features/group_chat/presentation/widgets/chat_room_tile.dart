@@ -11,6 +11,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_thread_rows.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/direct_chat_identity.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_pecha/core/utils/network_image_utils.dart';
 
 /// One chat in the Chats list, group or direct.
 class ChatRoomTile extends StatelessWidget {
@@ -215,7 +216,7 @@ class _Avatar extends StatelessWidget {
         child:
             hasUrl
                 ? CachedNetworkImageWidget(
-                  key: ValueKey(url),
+                  key: networkImageKey(url),
                   imageUrl: url,
                   width: ChatRoomTile._avatarSize,
                   height: ChatRoomTile._avatarSize,

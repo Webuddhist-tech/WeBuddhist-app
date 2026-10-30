@@ -5,6 +5,7 @@ import 'package:flutter_pecha/core/theme/font_config.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/home_group_events_preview_provider.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
 import 'package:flutter_pecha/features/home/presentation/widgets/group_events_section_skeleton.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,9 @@ class GroupEventsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Featuring and followed groups' event changes refresh the preview.
+    ref.watch(featuredEventsSignalProvider);
+    ref.watch(myFeedSignalsProvider);
     final eventsAsync = ref.watch(homeGroupEventsPreviewProvider);
 
     return eventsAsync.when(

@@ -7,8 +7,36 @@ import 'package:flutter_pecha/features/group_profile/domain/repositories/group_p
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_practice.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
 
 class _FakeRepository extends Fake implements GroupProfileRepositoryInterface {
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+
   Either<Failure, void> removeResult = const Right(null);
   int removeCalls = 0;
   int? lastBanDays;

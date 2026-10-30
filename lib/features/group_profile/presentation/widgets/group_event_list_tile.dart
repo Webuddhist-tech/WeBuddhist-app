@@ -8,6 +8,7 @@ import 'package:flutter_pecha/core/widgets/responsive_cover_image.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_ended_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/utils/group_event_time_format.dart';
 import 'package:intl/intl.dart';
 
 /// Compact event row shared by the group profile and Connect event lists.
@@ -214,49 +215,29 @@ class GroupEventListTile extends StatelessWidget {
     ];
   }
 
-  /// "12 Mar · 7:00 pm", a day range for multi-day events, or the recurrence.
+  /// "12 Mar · 7:00 pm", "12 Mar - 15 Mar 2026" for a multi-day event, or
+  /// "8 Nov 2026 · 5:30 pm" for the next session of a repeating event.
+  /// Single-day labels still drop the year when it is this year.
   static String? formatDateLabel(BuildContext context, GroupEvent event) {
+    final locale = intlFormatLocaleOf(context);
+    if (event.isRecurring) {
+      final upcoming = (event.occurrenceDate ?? event.startDate)?.toLocal();
+      if (upcoming == null) return null;
+      final day = DateFormat('d MMM y', locale).format(upcoming);
+      final time = DateFormat.jm(locale).format(upcoming).toLowerCase();
+      return '$day · $time';
+    }
+
     final start = event.startDate?.toLocal();
     if (start == null) return null;
 
-    final locale = intlFormatLocaleOf(context);
     final time = DateFormat.jm(locale).format(start).toLowerCase();
-    final now = DateTime.now();
-    final dayPattern = start.year == now.year ? 'd MMM' : 'd MMM y';
-    final dayFormat = DateFormat(dayPattern, locale);
-
-    final recurrenceLabel = _recurrenceLabel(context, event, start, locale);
-    if (recurrenceLabel != null) return '$recurrenceLabel · $time';
-
     final end = event.endDate?.toLocal();
-    final isMultiDay = end != null && !DateUtils.isSameDay(start, end);
-    if (isMultiDay) {
-      return '${dayFormat.format(start)} - ${dayFormat.format(end)}';
+    if (end != null && !DateUtils.isSameDay(start, end)) {
+      return formatGroupEventDayRange(start, end, locale);
     }
-    return '${dayFormat.format(start)} · $time';
-  }
-
-  static String? _recurrenceLabel(
-    BuildContext context,
-    GroupEvent event,
-    DateTime start,
-    String locale,
-  ) {
-    final recurrence = event.recurrence;
-    if (!event.isRecurring || recurrence == null) return null;
-
-    final occurrence = event.occurrenceDate?.toLocal() ?? start;
-    return switch (recurrence.frequency.toUpperCase()) {
-      'DAILY' => context.l10n.connect_event_every_day,
-      'WEEKLY' => context.l10n.connect_event_every_weekday(
-        DateFormat.E(locale).format(occurrence),
-      ),
-      'MONTHLY' => context.l10n.connect_event_every_month,
-      'YEARLY' => context.l10n.connect_event_every_date(
-        DateFormat('d MMM', locale).format(occurrence),
-      ),
-      _ => null,
-    };
+    final dayPattern = start.year == DateTime.now().year ? 'd MMM' : 'd MMM y';
+    return '${DateFormat(dayPattern, locale).format(start)} · $time';
   }
 }
 

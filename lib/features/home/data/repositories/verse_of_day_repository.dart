@@ -188,6 +188,18 @@ class VerseOfDayRepository implements VerseOfDayRepositoryInterface {
     }
   }
 
+  @override
+  Future<Either<Failure, Unit>> refreshVerseOfDay({
+    required String language,
+  }) async {
+    try {
+      await _refresh(language);
+      return const Right(unit);
+    } catch (e) {
+      return Left(_toFailure(e, 'Failed to refresh verse of day'));
+    }
+  }
+
   Future<void> _refresh(String language) async {
     final model = await remote.fetchVerseOfDay(language: language);
     await local.saveVerseOfDay(language, model);

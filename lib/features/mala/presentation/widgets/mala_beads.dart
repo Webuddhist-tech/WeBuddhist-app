@@ -51,6 +51,31 @@ class MalaBeads extends StatefulWidget {
   State<MalaBeads> createState() => _MalaBeadsState();
 }
 
+/// Decoded skins by content hash, so a remount or mantra switch paints the
+/// cached skin on its first frame instead of re-decoding through the gradient.
+final Map<int, ui.Image> _decodedBeadImages = <int, ui.Image>{};
+final Expando<int> _beadBytesHash = Expando<int>('beadBytesHash');
+const int _kMaxDecodedBeadImages = 8;
+
+int _hashBeadBytes(Uint8List bytes) {
+  final cached = _beadBytesHash[bytes];
+  if (cached != null) return cached;
+  var h = 0x811c9dc5;
+  for (final b in bytes) {
+    h = ((h ^ b) * 0x01000193) & 0xFFFFFFFF;
+  }
+  final key = Object.hash(bytes.length, h);
+  _beadBytesHash[bytes] = key;
+  return key;
+}
+
+void _cacheDecodedBeadImage(int key, ui.Image image) {
+  if (_decodedBeadImages.length >= _kMaxDecodedBeadImages) {
+    _decodedBeadImages.remove(_decodedBeadImages.keys.first);
+  }
+  _decodedBeadImages[key] = image;
+}
+
 class _MalaBeadsState extends State<MalaBeads>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
@@ -58,8 +83,16 @@ class _MalaBeadsState extends State<MalaBeads>
   late double _phaseTo;
 
   ui.Image? _beadImage;
+  bool _decodeFailed = false;
   ImageStream? _imageStream;
   ImageStreamListener? _imageListener;
+
+  /// Bytes exist but are still decoding: paint no bead rather than a brown
+  /// one that pops to the skin a frame later.
+  bool get _imagePending =>
+      _beadImage == null &&
+      !_decodeFailed &&
+      (widget.beadImageBytes?.isNotEmpty ?? false);
 
   @override
   void initState() {
@@ -97,29 +130,46 @@ class _MalaBeadsState extends State<MalaBeads>
   /// Renders Hive-backed bytes only. Network fetch (with presigned URL refresh)
   /// is handled by [MalaCounterNotifier]; until bytes arrive, draw the gradient bead.
   void _resolveBeadImage() {
+    _decodeFailed = false;
     final bytes = widget.beadImageBytes;
     if (bytes != null && bytes.isNotEmpty) {
-      _resolveImageProvider(MemoryImage(bytes));
+      final key = _hashBeadBytes(bytes);
+      final cached = _decodedBeadImages[key];
+      if (cached != null) {
+        _detachImageListener();
+        _imageStream = null;
+        _setBeadImage(cached);
+        return;
+      }
+      _resolveImageProvider(MemoryImage(bytes), key);
       return;
     }
 
     _detachImageListener();
     _imageStream = null;
-    if (_beadImage != null && mounted) setState(() => _beadImage = null);
+    _setBeadImage(null);
   }
 
-  void _resolveImageProvider(ImageProvider provider) {
+  void _setBeadImage(ui.Image? image) {
+    if (_beadImage == image) return;
+    _beadImage = image;
+    if (mounted) setState(() {});
+  }
+
+  void _resolveImageProvider(ImageProvider provider, int cacheKey) {
     final stream = provider.resolve(ImageConfiguration.empty);
     if (stream.key == _imageStream?.key) return;
 
     _detachImageListener();
     final listener = ImageStreamListener(
       (info, _) {
+        _cacheDecodedBeadImage(cacheKey, info.image);
         if (!mounted) return;
         setState(() => _beadImage = info.image);
       },
       onError: (_, __) {
-        // Network image failed — fall back to the drawn gradient bead.
+        // Undecodable bytes — fall back to the drawn gradient bead.
+        _decodeFailed = true;
         if (mounted) setState(() => _beadImage = null);
       },
     );
@@ -186,6 +236,7 @@ class _MalaBeadsState extends State<MalaBeads>
               beadColor: widget.beadColor,
               threadColor: widget.threadColor,
               beadImage: _beadImage,
+              imagePending: _imagePending,
               mirrored: widget.mirrored,
             ),
           );
@@ -201,6 +252,7 @@ class _MalaBeadsPainter extends CustomPainter {
     required this.beadColor,
     required this.threadColor,
     this.beadImage,
+    this.imagePending = false,
     this.mirrored = false,
   });
 
@@ -214,6 +266,9 @@ class _MalaBeadsPainter extends CustomPainter {
 
   /// Bead artwork (network or bundled asset). Null while loading.
   final ui.Image? beadImage;
+
+  /// Skin bytes are known but not decoded yet; beads are skipped this frame.
+  final bool imagePending;
 
   /// Candidate beads laid out along the strand; off-strand ones are skipped and
   /// any overflow past the edges is clipped.
@@ -351,6 +406,7 @@ class _MalaBeadsPainter extends CustomPainter {
   }
 
   void _drawBead(Canvas canvas, Offset center, double radius) {
+    if (imagePending) return;
     // Drop shadow.
     canvas.drawCircle(
       center.translate(0, radius * 0.18),
@@ -430,5 +486,6 @@ class _MalaBeadsPainter extends CustomPainter {
       old.beadColor != beadColor ||
       old.threadColor != threadColor ||
       old.beadImage != beadImage ||
+      old.imagePending != imagePending ||
       old.mirrored != mirrored;
 }

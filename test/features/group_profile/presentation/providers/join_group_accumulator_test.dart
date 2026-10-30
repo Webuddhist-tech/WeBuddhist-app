@@ -18,6 +18,14 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_members_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_event.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_join_requests_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_reports_page.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/features/connect/domain/entities/discover_groups_page.dart';
+import '../../../../helpers/fake_screen_cache_store.dart';
+import 'package:flutter_pecha/core/error/exceptions.dart';
 
 class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
   _SignedInAuth() : super(const AuthState(isLoggedIn: true));
@@ -29,6 +37,11 @@ class _SignedInAuth extends StateNotifier<AuthState> implements AuthNotifier {
 /// Holds the join request open until the test completes [join].
 class _SlowJoinRepository extends Fake
     implements GroupAccumulatorRepositoryInterface {
+  @override
+  GroupAccumulatorMembersPage? readStoredGroupAccumulatorMembers(
+    String accumulatorId, {
+    required GroupAccumulatorMemberSort sortBy,
+  }) => null;
   final join = Completer<Either<Failure, void>>();
 
   @override
@@ -38,6 +51,40 @@ class _SlowJoinRepository extends Fake
 
 class _FakeProfileRepository extends Fake
     implements GroupProfileRepositoryInterface {
+  @override
+  bool? readStoredFollowStatus(String groupId, GroupType groupType) => null;
+
+  @override
+  Future<void> saveFollowStatus(
+    String groupId,
+    GroupType groupType,
+    bool isFollowing,
+  ) async {}
+
+  @override
+  GroupPracticesPage? readStoredGroupPractices(
+    String groupId, {
+    required String language,
+  }) => null;
+
+  @override
+  GroupMembersPage? readStoredGroupMembers(String groupId) =>
+      null;
+
+  @override
+  GroupEventParticipantsPage? readStoredGroupEventParticipants(
+    String eventId,
+  ) => null;
+
+  @override
+  GroupJoinRequestsPage? readStoredGroupJoinRequests(
+    String groupId,
+  ) => null;
+
+  @override
+  GroupReportsPage? readStoredGroupReports(String groupId) =>
+      null;
+
   @override
   Future<Either<Failure, bool>> checkFollowStatus(
     String groupId,
@@ -61,7 +108,23 @@ class _FixedContentLanguage extends StateNotifier<String>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeConnectRepository extends Fake implements ConnectRepository {}
+class _FakeConnectRepository extends Fake implements ConnectRepository {
+  // Built when the discover-groups notifier is created; never fetched here.
+  @override
+  ScreenCacheSource<DiscoverGroupsPage> discoverGroupsFirstPage({
+    required String language,
+    required int limit,
+  }) {
+    return ScreenCacheSource(
+      store: FakeScreenCacheStore(),
+      key: 'test:discover_groups',
+      fetchJson: () async => throw const NetworkException('test'),
+      fromJson:
+          (_) => const DiscoverGroupsPage(groups: [], skip: 0, limit: 20, total: 0),
+      failureMessage: 'test',
+    );
+  }
+}
 
 const _group = GroupProfile(id: 'group-1', title: 'Lodhen Sangha');
 
@@ -89,10 +152,10 @@ void main() {
           _FakeProfileRepository(),
         ),
         groupAccumulatorDetailProvider.overrideWith(
-          (ref, id) async => const Right(_detail),
+          () => GroupAccumulatorDetailNotifier.fixed(const Right(_detail)),
         ),
         groupProfileProvider.overrideWith(
-          (ref, id) async => const Left(NetworkFailure('test')),
+          () => GroupProfileNotifier.fixed(const Left(NetworkFailure('test'))),
         ),
       ],
     );
@@ -169,8 +232,12 @@ void main() {
         groupProfileRepositoryProvider.overrideWithValue(
           _FakeProfileRepository(),
         ),
-        groupAccumulatorDetailProvider.overrideWith((ref, id) => detail.future),
-        groupProfileProvider.overrideWith((ref, id) => profile.future),
+        groupAccumulatorDetailProvider.overrideWith(
+          () => GroupAccumulatorDetailNotifier((ref, id, bind) => detail.future),
+        ),
+        groupProfileProvider.overrideWith(
+          () => GroupProfileNotifier((ref, id, bind) => profile.future),
+        ),
       ],
     );
     addTearDown(container.dispose);

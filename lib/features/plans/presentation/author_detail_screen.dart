@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/core/widgets/error_state_widget.dart';
+import 'package:flutter_pecha/core/widgets/screen_cache_builder.dart';
 import 'package:flutter_pecha/features/plans/domain/entities/plan.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/author_providers.dart';
 import 'package:flutter_pecha/features/plans/data/models/author/author_model.dart';
@@ -42,27 +43,17 @@ class AuthorDetailScreen extends ConsumerWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: authorDetails.when(
-        data:
-            (authorEither) => authorEither.fold(
-              (failure) => ErrorStateWidget(
-                error: failure,
-                customMessage: context.l10n.author_details_load_error,
-                onRetry: () {
-                  ref.invalidate(authorByIdFutureProvider(authorId));
-                },
-              ),
-              (authorData) => _buildAuthorContent(context, authorData),
-            ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+      body: ScreenCacheBuilder<AuthorModel>(
+        value: authorDetails,
+        skeleton: const Center(child: CircularProgressIndicator()),
+        onRetry: () => ref.invalidate(authorByIdFutureProvider(authorId)),
         error:
-            (error, stackTrace) => ErrorStateWidget(
+            (error, retry) => ErrorStateWidget(
               error: error,
               customMessage: context.l10n.author_details_load_error,
-              onRetry: () {
-                ref.invalidate(authorByIdFutureProvider(authorId));
-              },
+              onRetry: retry,
             ),
+        data: (authorData) => _buildAuthorContent(context, authorData),
       ),
     );
   }
@@ -251,28 +242,22 @@ class AuthorDetailScreen extends ConsumerWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            plansAsync.when(
-              data: (plansEither) {
-                return plansEither.fold(
-                  (failure) => _buildPlansErrorState(context, ref, authorId),
-                  (plans) {
-                    if (plans.isEmpty) {
-                      return _buildEmptyPlansState(context);
-                    }
-                    return _buildPlansList(context, plans);
-                  },
-                );
+            ScreenCacheBuilder<List<Plan>>(
+              value: plansAsync,
+              skeleton: const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              onRetry: () => ref.invalidate(authorPlansFutureProvider(authorId)),
+              error: (_, __) => _buildPlansErrorState(context, ref, authorId),
+              data: (plans) {
+                if (plans.isEmpty) {
+                  return _buildEmptyPlansState(context);
+                }
+                return _buildPlansList(context, plans);
               },
-              loading:
-                  () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-              error:
-                  (error, stackTrace) =>
-                      _buildPlansErrorState(context, ref, authorId),
             ),
           ],
         );

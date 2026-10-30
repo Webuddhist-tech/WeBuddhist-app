@@ -33,6 +33,9 @@ abstract class VerseOfDayRepositoryInterface extends Repository {
   Stream<Either<Failure, VerseOfDay>> watchVerseOfDay({
     required String language,
   });
+
+  /// Pull-to-refresh: fetches and stores; the watch stream delivers the result.
+  Future<Either<Failure, Unit>> refreshVerseOfDay({required String language});
   Future<Either<Failure, VerseOfDayLikes>> getLikes(String verseId);
   Future<Either<Failure, Unit>> likeVerse(String verseId);
   Future<Either<Failure, Unit>> unlikeVerse(String verseId);
@@ -68,18 +71,21 @@ abstract class TodayEventsRepositoryInterface extends Repository {
   Stream<Either<Failure, List<TodayEvent>>> watchTodayEvents({
     required String language,
   });
+  Future<Either<Failure, Unit>> refreshTodayEvents({required String language});
 }
 
 /// Routine info repository interface.
 abstract class RoutineInfoRepositoryInterface extends Repository {
   Future<Either<Failure, RoutineInfo>> getRoutineInfo();
   Stream<Either<Failure, RoutineInfo>> watchRoutineInfo();
+  Future<Either<Failure, Unit>> refreshRoutineInfo();
 }
 
 /// User streak repository interface.
 abstract class StreakRepositoryInterface extends Repository {
   Future<Either<Failure, int>> getStreak();
   Stream<Either<Failure, int>> watchStreak();
+  Future<Either<Failure, Unit>> refreshStreak();
 }
 
 /// Series repository interface.
@@ -92,12 +98,17 @@ abstract class SeriesRepositoryInterface extends Repository {
     required String language,
     int limit = 10,
   });
+  Future<Either<Failure, Unit>> refreshFeaturedSeries({
+    required String language,
+    int limit = 10,
+  });
   Future<Either<Failure, List<Series>>> getSeriesList({
     required String language,
   });
   Stream<Either<Failure, List<Series>>> watchSeriesList({
     required String language,
   });
+  Future<Either<Failure, Unit>> refreshSeriesList({required String language});
   Future<Either<Failure, Series>> getSeriesById(
     String id, {
     required String language,

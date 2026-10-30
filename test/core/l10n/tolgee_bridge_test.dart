@@ -19,6 +19,9 @@ void main() {
     Locale('hi'),
     Locale('mn'),
     Locale('ne'),
+    Locale('th'),
+    Locale('my'),
+    Locale('vi'),
   ];
 
   group('bridge inactive', () {
@@ -104,6 +107,9 @@ void main() {
 
       load('zh-Hant-TW', <String, String>{'sign_in': '登入'});
       expect(TolgeeBridge.get('zh', 'sign_in', () => 'bundled'), '登入');
+
+      load('vi-VN', <String, String>{'sign_in': 'Đăng nhập'});
+      expect(TolgeeBridge.get('vi', 'sign_in', () => 'bundled'), 'Đăng nhập');
     });
 
     test('refuses to serve one language while another is on screen', () {

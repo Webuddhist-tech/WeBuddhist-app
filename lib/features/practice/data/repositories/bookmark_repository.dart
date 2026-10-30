@@ -1,4 +1,7 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_source.dart';
+import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_store.dart';
 import 'package:flutter_pecha/core/error/exception_mapper.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/practice/data/datasource/bookmark_remote_datasource.dart';
@@ -6,8 +9,53 @@ import 'package:flutter_pecha/features/practice/data/models/bookmark_models.dart
 
 class BookmarkRepository {
   final BookmarkRemoteDatasource remoteDatasource;
+  final ScreenCacheStore store;
 
-  BookmarkRepository({required this.remoteDatasource});
+  BookmarkRepository({required this.remoteDatasource, required this.store});
+
+  /// Stored bookmarks first, then revalidated in the background.
+  Stream<Either<Failure, List<BookmarkDTO>>> watchBookmarks({
+    String? language,
+  }) {
+    final source = bookmarksSource(language: language);
+    if (source == null) {
+      return Stream.value(const Left(AuthenticationFailure('Not authenticated')));
+    }
+    return source.watch();
+  }
+
+  Future<Either<Failure, List<BookmarkDTO>>> refreshBookmarks({
+    String? language,
+  }) async {
+    final source = bookmarksSource(language: language);
+    if (source == null) {
+      return const Left(AuthenticationFailure('Not authenticated'));
+    }
+    return source.refresh();
+  }
+
+  /// Built synchronously for first-frame seeding; null while signed out.
+  ScreenCacheSource<List<BookmarkDTO>>? bookmarksSource({String? language}) {
+    final userId = store.currentUserIdSync;
+    if (userId == null || userId.isEmpty) return null;
+    return ScreenCacheSource(
+      store: store,
+      key: ScreenCacheKey.user(
+        'bookmarks',
+        userId: userId,
+        language: language ?? 'all',
+      ),
+      fetchJson: () => remoteDatasource.fetchBookmarksJson(language: language),
+      fromJson:
+          (json) =>
+              (json as List)
+                  .whereType<Map<String, dynamic>>()
+                  .map(BookmarkDTO.tryFromJson)
+                  .whereType<BookmarkDTO>()
+                  .toList(),
+      failureMessage: 'Failed to load bookmarks',
+    );
+  }
 
   Future<Either<Failure, bool>> createBookmark({
     required BookmarkType type,

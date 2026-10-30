@@ -82,3 +82,70 @@ List<Section> _build(
 
 int _headingIndex(List<LibraryTocSection> toc, LibraryReaderSegment segment) =>
     toc.indexWhere((s) => s.contains(segment.spanStart));
+
+/// A verse as the outline places headings on it: where it starts in the
+/// edition and the number the reader gives it.
+typedef LibraryOutlineVerse = ({String id, int spanStart, int number});
+
+/// Every heading of [toc] that holds a verse, in reading order, with the
+/// first and last of [verses] it holds. [verses] are in reading order, so by
+/// where they start. Headings holding none are left out, with their
+/// subheadings.
+List<LibraryOutlineEntry> buildTocOutline({
+  required List<LibraryTocSection> toc,
+  required List<LibraryOutlineVerse> verses,
+}) {
+  final entries = <LibraryOutlineEntry>[];
+
+  // The first verse starting at or after [offset].
+  int firstFrom(int offset) {
+    var low = 0;
+    var high = verses.length;
+    while (low < high) {
+      final middle = (low + high) >> 1;
+      if (verses[middle].spanStart < offset) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    return low;
+  }
+
+  void walk(List<LibraryTocSection> headings, int depth, String? parentId) {
+    for (final heading in headings) {
+      final first = firstFrom(heading.spanStart);
+      if (first >= verses.length ||
+          verses[first].spanStart >= heading.spanEnd) {
+        continue;
+      }
+      var low = verses[first].number;
+      var high = low;
+      for (
+        var i = first;
+        i < verses.length && verses[i].spanStart < heading.spanEnd;
+        i++
+      ) {
+        final number = verses[i].number;
+        if (number < low) low = number;
+        if (number > high) high = number;
+      }
+      entries.add(
+        LibraryOutlineEntry(
+          id: heading.id,
+          parentId: parentId,
+          depth: depth,
+          title: heading.title,
+          segmentId: verses[first].id,
+          number: low,
+          endNumber: high,
+          opensText: first == 0,
+        ),
+      );
+      walk(heading.subsections, depth + 1, heading.id);
+    }
+  }
+
+  walk(toc, 0, null);
+  return entries;
+}

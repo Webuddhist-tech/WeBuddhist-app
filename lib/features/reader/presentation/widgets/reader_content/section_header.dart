@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_numerals.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
-import 'package:flutter_pecha/features/texts/presentation/providers/font_size_notifier.dart';
-import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// A table-of-contents heading; top-level ones also carry their number.
+/// A section's place among the page's sections, for its overline.
+typedef ReaderSectionPlace = ({int position, int total});
+
+/// A table-of-contents heading, left-aligned: an overline "SECTION n / m"
+/// for a section the pill counts, the title, and an optional subtitle.
 class SectionHeader extends ConsumerWidget {
   final Section section;
   final int depth;
@@ -14,28 +19,46 @@ class SectionHeader extends ConsumerWidget {
   /// A rule above the title, for a heading that follows another's lines.
   final bool showDivider;
 
+  /// Where the section sits among those the pill counts; null for a heading
+  /// the pill does not count (a nested or grouping heading).
+  final ReaderSectionPlace? place;
+
+  /// The language the page's numbers are written in.
+  final String? numeralLanguage;
+
+  /// Shown in italic under the title.
+  final String? subtitle;
+
+  /// Appended to the overline after a "·", e.g. the live round.
+  final String? overlineTrailing;
+
   const SectionHeader({
     super.key,
     required this.section,
     required this.depth,
     required this.language,
     this.showDivider = false,
+    this.place,
+    this.numeralLanguage,
+    this.subtitle,
+    this.overlineTrailing,
   });
+
+  /// Size of the overline in Latin; other scripts scale it like the chrome.
+  static const double overlineSize = 11;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final title = section.title;
     if (title == null || title.isEmpty) return const SizedBox.shrink();
 
-    final fontSize = ref.watch(fontSizeProvider);
-    final theme = Theme.of(context);
-    final fontFamily = getFontFamily(language);
-    final titleColor = theme.textTheme.bodyMedium?.color;
-    final scale = switch (depth) {
-      0 => 1.2,
-      1 => 1.0,
-      _ => 0.9,
-    };
+    final style = ReaderStyle.of(context, ref);
+    final script = ReaderScript.of(title, language: language);
+    final fontFamily = style.type.headingFamily(language, script);
+    final metrics = style.type.heading(depth, script);
+    final place = this.place;
+    final subtitle = this.subtitle;
+    final numeralScript = ReaderScript.ofLanguage(numeralLanguage ?? language);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -45,6 +68,7 @@ class SectionHeader extends ConsumerWidget {
         bottom: 12,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (showDivider)
             Padding(
@@ -52,37 +76,99 @@ class SectionHeader extends ConsumerWidget {
               child: Divider(
                 height: 1,
                 thickness: 1,
-                color: theme.dividerColor,
+                color: style.palette.divider,
               ),
             ),
-          if (depth == 0 && section.sectionNumber > 0) ...[
-            Text(
-              '${section.sectionNumber}',
-              style: TextStyle(
-                fontSize: fontSize * 0.9,
-                fontFamily: fontFamily,
-                color: theme.textTheme.bodyMedium?.color,
+          // A heading the pill does not count still carries the live round.
+          if (place != null || overlineTrailing != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: _Overline(
+                text: readerSectionOverline(
+                  place == null
+                      ? null
+                      : context.l10n.reader_section_position(
+                        '${place.position}',
+                        '${place.total}',
+                      ),
+                  trailing: overlineTrailing,
+                  script: numeralScript,
+                ),
+                numeralScript: numeralScript,
+                color: style.palette.verseNumber,
               ),
             ),
-            Container(
-              width: 40,
-              height: 1.5,
-              margin: const EdgeInsets.only(top: 8, bottom: 20),
-              color: theme.textTheme.bodySmall?.color,
-            ),
-          ],
           Text(
             title,
-            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: fontSize * scale,
-              fontWeight: FontWeight.w600,
+              fontSize: metrics.fontSize,
+              fontWeight: metrics.fontWeight,
               fontFamily: fontFamily,
-              color: titleColor,
-              height: getLineHeight(language),
+              color: style.palette.heading,
+              height: metrics.height,
             ),
           ),
+          if (subtitle != null && subtitle.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: style.type.instruction(script).fontSize,
+                  fontStyle: FontStyle.italic,
+                  fontFamily: style.type.family(language, script: script),
+                  color: style.palette.translation,
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// The overline's text: [label] ("Section 5 / 15") in capitals, its digits
+/// in [script], and [trailing] after a "·"; either may be left out.
+String readerSectionOverline(
+  String? label, {
+  String? trailing,
+  required ReaderScript script,
+}) {
+  final text = [
+    if (label != null) label,
+    if (trailing != null) trailing,
+  ].join(' · ');
+  return readerNumerals(text.toUpperCase(), script);
+}
+
+class _Overline extends StatelessWidget {
+  const _Overline({
+    required this.text,
+    required this.numeralScript,
+    required this.color,
+  });
+
+  final String text;
+  final ReaderScript numeralScript;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    // Interface text, in the app's language and its font.
+    final script = ReaderScript.ofLanguage(
+      Localizations.localeOf(context).languageCode,
+    );
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: ReaderTypography.interfaceSize(
+          SectionHeader.overlineSize,
+          script,
+        ),
+        fontWeight: FontWeight.w600,
+        letterSpacing: script == ReaderScript.latin ? 0.8 : null,
+        fontFamilyFallback: readerNumeralFallback(numeralScript),
+        color: color,
       ),
     );
   }
