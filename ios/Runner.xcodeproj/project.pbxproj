@@ -335,6 +335,7 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				BFA8C18C2E52F9B40027D47D /* Generate Entitlements */,
 				97C146EC1CF9000F007C117D /* Resources */,
+				B1F1A0C0DE5EC0FFEE000001 /* [Firebase] Copy flavor GoogleService-Info.plist */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				AD2113F5E1C6C544E92664B7 /* Embed App Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
@@ -537,6 +538,25 @@
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n";
 		};
+		B1F1A0C0DE5EC0FFEE000001 /* [Firebase] Copy flavor GoogleService-Info.plist */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Firebase] Copy flavor GoogleService-Info.plist";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Bundle the Firebase config for this flavor (Runner/config/<flavor>/).\n# Configurations are named <Flavor>-<Debug|Release>; plain Debug/Release/Profile is prod.\nFLAVOR=$(echo \"${CONFIGURATION}\" | sed -E 's/-(Debug|Release|Profile)$//' | tr '[:upper:]' '[:lower:]')\ncase \"$FLAVOR\" in debug|release|profile) FLAVOR=prod ;; esac\n\nSRC=\"${SRCROOT}/Runner/config/${FLAVOR}/GoogleService-Info.plist\"\nDEST=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist\"\n\nif [ ! -f \"$SRC\" ]; then\n  echo \"warning: No Firebase config for flavor '${FLAVOR}' at ${SRC}; keeping Runner/GoogleService-Info.plist\"\n  exit 0\nfi\n\ncp \"$SRC\" \"$DEST\"\n\nPLIST_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' \"$SRC\" 2>/dev/null || true)\nif [ \"$PLIST_BUNDLE_ID\" != \"$PRODUCT_BUNDLE_IDENTIFIER\" ]; then\n  echo \"warning: ${SRC} is for '${PLIST_BUNDLE_ID}' but this app is '${PRODUCT_BUNDLE_IDENTIFIER}'\"\nfi\necho \"Bundled Firebase config for flavor '${FLAVOR}' (${PLIST_BUNDLE_ID})\"";
+		};
 		B34D2527A1AA1FDF1D8BDE84 /* [Airbridge] Create LibraryInfo.json */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -571,7 +591,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Xcode Run Script Build Phase\n#!/bin/bash\nexport PATH=\"$PATH:$HOME/.pub-cache/bin:/usr/local/bin\"\n\nAUTH0_DOMAIN=${AUTH0_DOMAIN:-$(echo $AUTH0_DOMAIN_BUILD_SETTING)}\nAIRBRIDGE_APP_NAME=${AIRBRIDGE_APP_NAME:-}\n\nif [ -z \"$AIRBRIDGE_APP_NAME\" ]; then\n  SECRETS_FILE=\"$SRCROOT/Flutter/Secrets.xcconfig\"\n  if [ -f \"$SECRETS_FILE\" ]; then\n    AIRBRIDGE_APP_NAME=$(grep -E '^AIRBRIDGE_APP_NAME=' \"$SECRETS_FILE\" | head -1 | sed 's/^AIRBRIDGE_APP_NAME=//' | tr -d '[:space:]\\r')\n  fi\nfi\n\nif [ -z \"$AUTH0_DOMAIN\" ]; then\n    echo \"error: AUTH0_DOMAIN not set. Please set it in Build Settings or environment.\"\n    exit 1\nfi\n\nif [ -z \"$AIRBRIDGE_APP_NAME\" ]; then\n    echo \"error: AIRBRIDGE_APP_NAME not set. Add it to ios/Flutter/Secrets.xcconfig or set the AIRBRIDGE_APP_NAME environment variable.\"\n    exit 1\nfi\n\necho \"Generating entitlements with AUTH0_DOMAIN=$AUTH0_DOMAIN AIRBRIDGE_APP_NAME=$AIRBRIDGE_APP_NAME\"\n\nsed -e \"s/\\${AUTH0_DOMAIN}/$AUTH0_DOMAIN/g\" \\\n    -e \"s/\\${AIRBRIDGE_APP_NAME}/$AIRBRIDGE_APP_NAME/g\" \\\n    \"$SRCROOT/Runner/Runner.entitlements.template\" \\\n    > \"$SRCROOT/Runner/Runner.entitlements\"\n\necho \"Entitlements generated successfully\"\n";
+			shellScript = "# Xcode Run Script Build Phase\n#!/bin/bash\nexport PATH=\"$PATH:$HOME/.pub-cache/bin:/usr/local/bin\"\n\nAUTH0_DOMAIN=${AUTH0_DOMAIN:-$(echo $AUTH0_DOMAIN_BUILD_SETTING)}\nAIRBRIDGE_APP_NAME=${AIRBRIDGE_APP_NAME:-}\n\nif [ -z \"$AIRBRIDGE_APP_NAME\" ]; then\n  SECRETS_FILE=\"$SRCROOT/Flutter/Secrets.xcconfig\"\n  if [ -f \"$SECRETS_FILE\" ]; then\n    AIRBRIDGE_APP_NAME=$(grep -E '^AIRBRIDGE_APP_NAME=' \"$SECRETS_FILE\" | head -1 | sed 's/^AIRBRIDGE_APP_NAME=//' | tr -d '[:space:]\\r')\n  fi\nfi\n\nif [ -z \"$AUTH0_DOMAIN\" ]; then\n    echo \"error: AUTH0_DOMAIN not set. Please set it in Build Settings or environment.\"\n    exit 1\nfi\n\nif [ -z \"$AIRBRIDGE_APP_NAME\" ]; then\n    echo \"error: AIRBRIDGE_APP_NAME not set. Add it to ios/Flutter/Secrets.xcconfig or set the AIRBRIDGE_APP_NAME environment variable.\"\n    exit 1\nfi\n\n# Only the configurations that sign with Runner.entitlements (prod, staging)\n# use this file. Dev signs with its own Runner-dev.entitlements, so a dev\n# build must not rewrite this one with the dev Auth0 domain.\nif [ \"$CODE_SIGN_ENTITLEMENTS\" != \"Runner/Runner.entitlements\" ]; then\n    echo \"Skipping: this build signs with ${CODE_SIGN_ENTITLEMENTS:-no entitlements file}\"\n    exit 0\nfi\n\necho \"Generating entitlements with AUTH0_DOMAIN=$AUTH0_DOMAIN AIRBRIDGE_APP_NAME=$AIRBRIDGE_APP_NAME\"\n\nGENERATED=$(sed -e \"s/\\${AUTH0_DOMAIN}/$AUTH0_DOMAIN/g\" \\\n    -e \"s/\\${AIRBRIDGE_APP_NAME}/$AIRBRIDGE_APP_NAME/g\" \\\n    \"$SRCROOT/Runner/Runner.entitlements.template\")\n\n# Write only on a change, so a build leaves the committed file untouched.\nTARGET=\"$SRCROOT/Runner/Runner.entitlements\"\nif [ \"$GENERATED\" != \"$(cat \"$TARGET\" 2>/dev/null)\" ]; then\n    printf '%s\\n' \"$GENERATED\" > \"$TARGET\"\n    echo \"Entitlements generated successfully\"\nelse\n    echo \"Entitlements already up to date\"\nfi\n";
 		};
 		D9A06C095248D4046E79B764 /* FlutterFire: "flutterfire upload-crashlytics-symbols" */ = {
 			isa = PBXShellScriptBuildPhase;
