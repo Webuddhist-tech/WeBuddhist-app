@@ -108,19 +108,27 @@ class ReaderPageText {
 }
 
 /// A row of the sections sheet: a section the pill counts, the language its
-/// number is written in, and the group heading over it, if any ("AFTER THE
-/// PUJA").
+/// number is written in, the group heading over it, if any ("AFTER THE
+/// PUJA"), and on a page of several texts the title of the text it is in,
+/// when no row of its own names that text. [isText] marks a row that is a
+/// text itself on such a page.
 class ReaderSheetSection {
   final ReaderPageSection section;
   final String numeralLanguage;
   final String? group;
   final String? groupLanguage;
+  final String? text;
+  final String? textLanguage;
+  final bool isText;
 
   const ReaderSheetSection({
     required this.section,
     required this.numeralLanguage,
     this.group,
     this.groupLanguage,
+    this.text,
+    this.textLanguage,
+    this.isText = false,
   });
 
   @override
@@ -129,11 +137,21 @@ class ReaderSheetSection {
       other.section == section &&
       other.numeralLanguage == numeralLanguage &&
       other.group == group &&
-      other.groupLanguage == groupLanguage;
+      other.groupLanguage == groupLanguage &&
+      other.text == text &&
+      other.textLanguage == textLanguage &&
+      other.isText == isText;
 
   @override
-  int get hashCode =>
-      Object.hash(section, numeralLanguage, group, groupLanguage);
+  int get hashCode => Object.hash(
+    section,
+    numeralLanguage,
+    group,
+    groupLanguage,
+    text,
+    textLanguage,
+    isText,
+  );
 }
 
 /// What the sections sheet shows: the sections the pill counts, in order.
@@ -143,6 +161,9 @@ class ReaderSectionsSnapshot {
   /// Texts of the page not loaded yet; they count towards the total.
   final int pendingSources;
 
+  /// More than one text on the page: the sheet rules them apart.
+  final bool severalTexts;
+
   /// The section holding the verse the puja leader is on, while the reader
   /// follows a live recitation.
   final String? liveKey;
@@ -150,22 +171,30 @@ class ReaderSectionsSnapshot {
   const ReaderSectionsSnapshot({
     required this.sections,
     required this.pendingSources,
+    this.severalTexts = false,
     this.liveKey,
   });
 
   const ReaderSectionsSnapshot.empty()
     : sections = const [],
       pendingSources = 0,
+      severalTexts = false,
       liveKey = null;
 
   @override
   bool operator ==(Object other) =>
       other is ReaderSectionsSnapshot &&
       other.pendingSources == pendingSources &&
+      other.severalTexts == severalTexts &&
       other.liveKey == liveKey &&
       listEquals(other.sections, sections);
 
   @override
   int get hashCode =>
-      Object.hash(pendingSources, liveKey, Object.hashAll(sections));
+      Object.hash(
+        pendingSources,
+        severalTexts,
+        liveKey,
+        Object.hashAll(sections),
+      );
 }

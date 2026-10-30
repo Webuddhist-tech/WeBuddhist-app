@@ -6,12 +6,17 @@ import 'package:flutter_pecha/features/plans/data/models/user/user_subtasks_dto.
 import 'package:flutter_pecha/features/plans/data/models/user/user_tasks_dto.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
+/// Text ids of each GROUP_COLLECTION's chants, in order, by collection id.
+typedef PlanGroupCollections = Map<String, List<String>>;
+
 /// Single source of truth for converting plan subtasks into the unified
 /// [PlanTextItem] list used by the reader / plan-text navigation strip.
 ///
 /// Each task yields at most one item:
 /// - First navigable subtask is SOURCE_REFERENCE → one reader item whose
 ///   sources are every source subtask of the task, read in turn.
+/// - GROUP_COLLECTION → its collection's texts join the task's sources, once
+///   resolved through `collections`; unresolved, it adds nothing.
 /// - First navigable subtask is TEXT / IMAGE / VIDEO → one inline item whose
 ///   blocks are every inline subtask of the task, shown on a single page.
 /// - GROUP_ACCUMULATION → not a reader item; opens the group accumulator.
@@ -30,6 +35,7 @@ class PlanSubtaskNavigation {
   static List<PlanTextItem> fromUserTasks(
     List<UserTasksDto> tasks, {
     bool withCompletion = true,
+    PlanGroupCollections collections = const {},
   }) {
     final sorted = List<UserTasksDto>.from(tasks)
       ..sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
@@ -41,8 +47,12 @@ class PlanSubtaskNavigation {
         title: task.title,
         taskId: task.id,
         settings: task.settings,
-        contentTypeOf: (s) => s.contentType,
-        sourceOf: (s) => _toSourceRefFromUser(s, withCompletion: withCompletion),
+        sourcesOf:
+            (s) => _toSourcesFromUser(
+              s,
+              collections,
+              withCompletion: withCompletion,
+            ),
         blockOf: (s) => _toBlockFromUser(s, withCompletion: withCompletion),
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
       );
@@ -54,7 +64,10 @@ class PlanSubtaskNavigation {
   /// Build the unified item list for the preview (unenrolled) flow.
   /// `subtaskId` and `isCompleted` are intentionally omitted — preview must
   /// not call completion APIs.
-  static List<PlanTextItem> fromPlanTasks(List<PlanTasksModel> tasks) {
+  static List<PlanTextItem> fromPlanTasks(
+    List<PlanTasksModel> tasks, {
+    PlanGroupCollections collections = const {},
+  }) {
     final sorted = List<PlanTasksModel>.from(tasks)..sort((a, b) {
       final orderA = a.displayOrder ?? 0;
       final orderB = b.displayOrder ?? 0;
@@ -68,8 +81,7 @@ class PlanSubtaskNavigation {
         title: task.title,
         taskId: task.id,
         settings: task.settings,
-        contentTypeOf: (s) => s.contentType,
-        sourceOf: _toSourceRefFromPlan,
+        sourcesOf: (s) => _toSourcesFromPlan(s, collections),
         blockOf: _toBlockFromPlan,
         audioOf: (s) => (s.audioUrl, s.startMs, s.endMs),
       );
@@ -79,7 +91,8 @@ class PlanSubtaskNavigation {
   }
 
   /// True if the given task has at least one navigable subtask
-  /// (SOURCE_REFERENCE, TEXT, IMAGE, VIDEO, or GROUP_ACCUMULATION).
+  /// (SOURCE_REFERENCE, GROUP_COLLECTION, TEXT, IMAGE, VIDEO, or
+  /// GROUP_ACCUMULATION).
   static bool isUserTaskNavigable(UserTasksDto task) {
     return task.subTasks.any(_isUserSubtaskNavigable) ||
         groupAccumulationIdForUserTask(task) != null;
@@ -109,6 +122,26 @@ class PlanSubtaskNavigation {
     return null;
   }
 
+  /// Chant collection ids of every GROUP_COLLECTION subtask in [tasks].
+  static Set<String> groupCollectionIdsForUserTasks(List<UserTasksDto> tasks) {
+    return {
+      for (final task in tasks)
+        for (final subtask in task.subTasks)
+          if (subtask.groupCollectionId != null) subtask.groupCollectionId!,
+    };
+  }
+
+  /// Same as [groupCollectionIdsForUserTasks] for the preview model.
+  static Set<String> groupCollectionIdsForPlanTasks(
+    List<PlanTasksModel> tasks,
+  ) {
+    return {
+      for (final task in tasks)
+        for (final subtask in task.subtasks)
+          if (subtask.groupCollectionId != null) subtask.groupCollectionId!,
+    };
+  }
+
   // ─── Internal helpers ───────────────────────────────────────────────
 
   /// One item per task: the first navigable subtask decides the kind. A
@@ -121,19 +154,15 @@ class PlanSubtaskNavigation {
     required String title,
     required String taskId,
     required TaskSettings? settings,
-    required String? Function(S) contentTypeOf,
-    required PlanSourceRef? Function(S) sourceOf,
+    required List<PlanSourceRef> Function(S) sourcesOf,
     required PlanInlineBlock? Function(S) blockOf,
     required (String? url, int? startMs, int? endMs) Function(S) audioOf,
   }) {
     final isLive = settings?.isLive ?? false;
     for (final subtask in subtasks) {
-      final type = PlanContentTypes.parse(contentTypeOf(subtask));
-      if (type == null) continue;
-      if (type == PlanItemContentType.sourceReference) {
-        if (sourceOf(subtask) == null) continue;
+      if (sourcesOf(subtask).isNotEmpty) {
         return PlanTextItem.sources(
-          sources: subtasks.map(sourceOf).whereType<PlanSourceRef>().toList(),
+          sources: subtasks.expand(sourcesOf).toList(),
           title: title,
           taskId: taskId,
           autoOpenCommentary: settings?.isCommentaryOpen ?? false,
@@ -178,10 +207,53 @@ class PlanSubtaskNavigation {
   }
 
   static bool _isUserSubtaskNavigable(UserSubtasksDto s) =>
-      _toSourceRefFromUser(s) != null || _toBlockFromUser(s) != null;
+      s.groupCollectionId != null ||
+      _toSourceRefFromUser(s) != null ||
+      _toBlockFromUser(s) != null;
 
   static bool _isPlanSubtaskNavigable(PlanSubtasksModel s) =>
-      _toSourceRefFromPlan(s) != null || _toBlockFromPlan(s) != null;
+      s.groupCollectionId != null ||
+      _toSourceRefFromPlan(s) != null ||
+      _toBlockFromPlan(s) != null;
+
+  /// A collection's texts all complete its one subtask.
+  static List<PlanSourceRef> _toSourcesFromUser(
+    UserSubtasksDto subtask,
+    PlanGroupCollections collections, {
+    bool withCompletion = true,
+  }) {
+    final collectionId = subtask.groupCollectionId;
+    if (collectionId != null) {
+      return [
+        for (final textId in collections[collectionId] ?? const <String>[])
+          PlanSourceRef(
+            textId: textId,
+            subtaskId: withCompletion ? subtask.id : null,
+            isCompleted: withCompletion && subtask.isCompleted,
+          ),
+      ];
+    }
+    final source = _toSourceRefFromUser(
+      subtask,
+      withCompletion: withCompletion,
+    );
+    return source == null ? const [] : [source];
+  }
+
+  static List<PlanSourceRef> _toSourcesFromPlan(
+    PlanSubtasksModel subtask,
+    PlanGroupCollections collections,
+  ) {
+    final collectionId = subtask.groupCollectionId;
+    if (collectionId != null) {
+      return [
+        for (final textId in collections[collectionId] ?? const <String>[])
+          PlanSourceRef(textId: textId),
+      ];
+    }
+    final source = _toSourceRefFromPlan(subtask);
+    return source == null ? const [] : [source];
+  }
 
   static PlanSourceRef? _toSourceRefFromUser(
     UserSubtasksDto subtask, {

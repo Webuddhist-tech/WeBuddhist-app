@@ -49,6 +49,15 @@ class UserSubtasksDto {
     return (id == null || id.isEmpty) ? null : id;
   }
 
+  /// Chant collection id when this is a GROUP_COLLECTION subtask.
+  String? get groupCollectionId {
+    if (contentType.trim().toUpperCase() != PlanContentTypes.groupCollection) {
+      return null;
+    }
+    final id = reference?.id ?? referenceId;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
   factory UserSubtasksDto.fromJson(Map<String, dynamic> json) {
     return UserSubtasksDto(
       id: json['id'] as String,

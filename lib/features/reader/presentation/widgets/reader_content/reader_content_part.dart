@@ -515,12 +515,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         );
       }
       // Headings that only group sections ("AFTER THE PUJA") head them in
-      // the sheet; the one naming the text does too on a page of several
-      // texts.
+      // the sheet; the one naming the text heads the text instead.
       readerSectionGroups(
         titled,
         outlined,
-        textHeadingId: views.length > 1 ? null : titleSectionId,
+        textHeadingId: titleSectionId,
       ).forEach((id, group) {
         groups['${view.index}:$id'] = _outlineTitle(view, group);
       });
@@ -702,6 +701,40 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       textLanguage: textLanguage,
     );
     return _inScript(view, (title.title, title.language));
+  }
+
+  /// The sections sheet's rows, as the pill counts them. On a page of
+  /// several texts, a text no row is named after carries its title, for the
+  /// sheet to head it with.
+  List<ReaderSheetSection> _sheetRows(
+    _PageLayout layout,
+    List<_SourceView> views,
+  ) {
+    final severalTexts = widget.sources.length > 1;
+    final rows = <ReaderSheetSection>[];
+    for (final text in layout.texts) {
+      final own = layout.sections.where((s) => s.source == text.source);
+      final sections = own.isEmpty ? [text.start] : own;
+      final named =
+          !severalTexts || sections.any((s) => s.id == text.titleSectionId);
+      for (final section in sections) {
+        final isText = section.id == text.titleSectionId;
+        rows.add(
+          ReaderSheetSection(
+            // The section a text is named after goes to the text's start,
+            // loading it when the page was opened further in.
+            section: isText ? text.start : section,
+            numeralLanguage: _numeralLanguage(views[section.source]),
+            group: layout.groups[section.key]?.$1,
+            groupLanguage: layout.groups[section.key]?.$2,
+            text: named ? null : text.title,
+            textLanguage: named ? null : text.language,
+            isText: severalTexts && isText,
+          ),
+        );
+      }
+    }
+    return rows;
   }
 
   /// The sections the pill counts, text by text: a text's sections, or the
@@ -2119,23 +2152,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Texts not started yet are listed as loading until they are.
     final pending = widget.sources.length - _startedCount;
     final snapshot = ReaderSectionsSnapshot(
-      sections: [
-        for (final text in layout.texts)
-          for (final section
-              in layout.sections.any((s) => s.source == text.source)
-                  ? layout.sections.where((s) => s.source == text.source)
-                  : [text.start])
-            ReaderSheetSection(
-              // The section a text is named after goes to the text's start,
-              // loading it when the page was opened further in.
-              section:
-                  section.id == text.titleSectionId ? text.start : section,
-              numeralLanguage: _numeralLanguage(views[section.source]),
-              group: layout.groups[section.key]?.$1,
-              groupLanguage: layout.groups[section.key]?.$2,
-            ),
-      ],
+      sections: _sheetRows(layout, views),
       pendingSources: pending,
+      severalTexts: widget.sources.length > 1,
       liveKey:
           _isLiveRecitation && liveMode == RecitationLiveFollowMode.following
               ? _liveSectionKey(layout, liveSegmentId)
