@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/widgets/prayer_re
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_inline_markdown_view.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_player_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigation_bottom_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
@@ -28,9 +29,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 ///
 /// Audio behaviour (shared with `ReaderScreen` via
 /// [PlanSegmentAudioController]):
-/// - A floating play/pause button appears when the task has resolvable audio
-///   (its own `audioUrl`, or the day-level track as fallback).
-/// - Tapping it plays the task's segment. When the segment ends the screen
+/// - A floating play/pause button and a progress line appear when the task
+///   has resolvable audio (its own `audioUrl`, or the day-level track as
+///   fallback). Plan tasks do not show a recording-title pill.
+/// - Tapping play plays the task's segment. When the segment ends the screen
 ///   auto-advances to the next task with auto-play.
 /// - Audio stops on any manual navigation or back press — no leaks.
 class PlanTextScreen extends ConsumerStatefulWidget {
@@ -178,7 +180,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                           Positioned.fill(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                bottom: _hasAudio ? 72 : 0,
+                                bottom: _hasAudio ? 84 : 0,
                               ),
                               child: _buildInlineImage(
                                 imageUrl: blocks.first.content,
@@ -201,7 +203,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                           Positioned(
                             left: 0,
                             right: 0,
-                            bottom: 8,
+                            bottom: 12,
                             child: Center(
                               child: PlanAudioButton(
                                 controller: _audioController!,
@@ -211,9 +213,12 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
                       ],
                     ),
                   ),
+                  if (_hasAudio)
+                    PlanAudioPlayerBar(controller: _audioController),
                   PlanNavigationBottomBar(
                     navigationContext: widget.navigationContext,
                     fallbackTitle: currentItem.title,
+                    showTopBorder: !_hasAudio,
                     onPreviousTap: () => _navigate(SwipeDirection.previous),
                     onNextTap: () => _navigate(SwipeDirection.next),
                     onFinishedTap: _finish,

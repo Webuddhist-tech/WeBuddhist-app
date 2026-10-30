@@ -22,6 +22,7 @@ import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_pr
 import 'package:flutter_pecha/features/plans/presentation/providers/user_plans_provider.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_live_pill.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_button.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_player_bar.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
@@ -94,6 +95,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// reader content (no action bar). Matches the original floating offset.
   static const double _audioBottomGap = 76;
 
+  /// Space between the round play button and the audio bar.
+  static const double _playBarGap = 12;
+
   /// Lets the audio button keep its state when it is reparented between the
   /// behind-panel slot and the bottom overlay.
   final GlobalKey _audioButtonKey = GlobalKey();
@@ -106,6 +110,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
   /// How far through the page the reader is, for the header's progress line.
   final ValueNotifier<double> _progress = ValueNotifier(0);
   double _bottomOverlayHeight = 0;
+
+  /// Height of the navigation strip plus the audio controls sitting on it.
+  double _bottomBarHeight = 0;
   VoidCallback? _scrollToTop;
 
   // Group accumulation chant session
@@ -431,13 +438,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     if (url == null) return;
 
     final previous = _audioController;
+    // Stop the old file now, but dispose it after this frame. The play
+    // button and progress bar drop their listeners during the rebuild.
+    previous?.cancel();
     _audioController = PlanSegmentAudioController(
       url: url,
       startMs: 0,
       endMs: null,
       onSegmentComplete: () {},
     );
-    previous?.dispose();
+    if (previous != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => previous.dispose());
+    }
     unawaited(_audioController!.maybeAutoPlay());
   }
 
@@ -458,10 +470,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     // The ⋮ sheet has just closed. Let that route finish before opening this one.
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
+    final nav = widget.navigationContext;
     final picked = await showGroupRecitationAudioSheet(
       context,
       tracks: tracks,
       selectedTrackId: _currentCollectionTrack?.id,
+      groupName: nav?.groupTitle,
+      imageUrl: nav?.collectionImageUrl,
     );
     if (!mounted || picked == null) return;
     _selectedCollectionTrack = picked;
@@ -731,7 +746,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
 
     // A selected verse has its sheet open below the text.
     final isPanelOpen = active.hasSelection;
-    final isBottomOverlayVisible = !isPanelOpen && _hasAudio;
+    // The play button and audio bar share the navigation strip's layout.
+    // When the strip is away for another reason (a commentary, a group
+    // accumulation chant), the button floats over the text on its own.
+    final showAudioOnNav =
+        _hasAudio && SwipeNavigationWrapper.showsBottomBar(active);
+    final isBottomOverlayVisible = !isPanelOpen && _hasAudio && !showAudioOnNav;
     final chantBarHeight =
         _isGroupAccumulatorChant ? GroupAccumulatorChantBar.barHeight : 0.0;
     final chantMantra = _chantMantra;
@@ -740,7 +760,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
     final isChantTargetReady =
         chantMantra != null && _watchChantTargetReady(chantMantra);
     final contentBottomPadding =
-        (isBottomOverlayVisible
+        (showAudioOnNav
+            ? (_bottomBarHeight > 0
+                ? _bottomBarHeight + 16
+                : _selectedSegmentOverlayFallbackHeight)
+            : isBottomOverlayVisible
             ? (_bottomOverlayHeight > 0
                 ? _bottomOverlayHeight + 16
                 : _selectedSegmentOverlayFallbackHeight)
@@ -799,6 +823,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   params: _activeParams,
                   textDetail: state.textDetail!,
                   isAppBarVisible: _isAppBarVisible,
+                  aboveBottomBar:
+                      showAudioOnNav
+                          ? _buildAudioCluster(gap: _playBarGap)
+                          : null,
+                  onBottomBarHeight: (height) {
+                    if ((_bottomBarHeight - height).abs() < 1) return;
+                    setState(() => _bottomBarHeight = height);
+                  },
                   child: ReaderVerseSplitView(
                     params: _activeParams,
                     mainContent: ReaderContentPart(
@@ -849,8 +881,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
                   ),
             ),
           ),
-        // Bottom overlay (only while no verse sheet is open): the floating
-        // audio button.
+        // The floating audio button, while the navigation strip is away for
+        // a reason other than a verse sheet.
         if (isBottomOverlayVisible)
           Positioned(
             left: 0,
@@ -947,6 +979,35 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
       );
     }
     PlanNavigator.pop(context);
+  }
+
+  /// Play button with the progress line and speed control under it.
+  /// Group recitations also show the recording title; plan tasks do not.
+  Widget _buildAudioCluster({required double gap}) {
+    final title = _audioVersionTitle;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Center(child: _buildAudioButton()),
+        SizedBox(height: gap),
+        PlanAudioPlayerBar(
+          controller: _audioController,
+          versionTitle: title,
+          onVersionTap:
+              title == null
+                  ? null
+                  : () => unawaited(_openCollectionAudioSheet()),
+        ),
+      ],
+    );
+  }
+
+  /// Recording name from the backend, for a group recitation that has one.
+  String? get _audioVersionTitle {
+    if (!_hasCollectionAudioChoices) return null;
+    final title = _currentCollectionTrack?.title.trim();
+    if (title == null || title.isEmpty) return null;
+    return title;
   }
 
   /// The floating play control. Plan audio toggles the current segment.

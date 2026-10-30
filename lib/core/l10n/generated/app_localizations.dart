@@ -1769,6 +1769,12 @@ abstract class AppLocalizations {
   /// **'Audio versions'**
   String get collection_audio_versions;
 
+  /// No description provided for @playback_speed.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback speed'**
+  String get playback_speed;
+
   /// No description provided for @author.
   ///
   /// In en, this message translates to:

@@ -954,6 +954,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get collection_audio_versions => 'Bản âm thanh';
 
   @override
+  String get playback_speed => 'Playback speed';
+
+  @override
   String get author => 'Tác giả';
 
   @override

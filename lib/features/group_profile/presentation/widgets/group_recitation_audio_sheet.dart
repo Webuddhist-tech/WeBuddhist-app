@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
+import 'package:flutter_pecha/core/theme/app_colors.dart';
+import 'package:flutter_pecha/core/widgets/cached_network_image_widget.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 
 /// Lists the recordings for one chant. Returns the track the user picks,
 /// or null when they dismiss the sheet.
+///
+/// [imageUrl] is the collection cover, shown on every row until each
+/// recording has its own image. [groupName] is the first line of each row.
 Future<CollectionAudioTrack?> showGroupRecitationAudioSheet(
   BuildContext context, {
   required List<CollectionAudioTrack> tracks,
   String? selectedTrackId,
+  String? groupName,
+  String? imageUrl,
 }) {
   return showModalBottomSheet<CollectionAudioTrack>(
     context: context,
@@ -22,6 +29,8 @@ Future<CollectionAudioTrack?> showGroupRecitationAudioSheet(
         (context) => _GroupRecitationAudioSheet(
           tracks: tracks,
           selectedTrackId: selectedTrackId,
+          groupName: groupName,
+          imageUrl: imageUrl,
         ),
   );
 }
@@ -30,14 +39,19 @@ class _GroupRecitationAudioSheet extends StatelessWidget {
   const _GroupRecitationAudioSheet({
     required this.tracks,
     this.selectedTrackId,
+    this.groupName,
+    this.imageUrl,
   });
 
   final List<CollectionAudioTrack> tracks;
   final String? selectedTrackId;
+  final String? groupName;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
     final maxHeight = MediaQuery.sizeOf(context).height * 0.6;
+    final name = groupName?.trim() ?? '';
 
     return SafeArea(
       top: false,
@@ -57,24 +71,25 @@ class _GroupRecitationAudioSheet extends StatelessWidget {
                 ),
               ),
             ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(AppAssets.arrowLeft),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                Expanded(
-                  child: Text(
-                    context.l10n.collection_audio_versions,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 8, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.collection_audio_versions,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 48),
-              ],
+                  IconButton(
+                    icon: const Icon(AppAssets.x),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
             ),
             Flexible(
               child: ListView.builder(
@@ -82,22 +97,12 @@ class _GroupRecitationAudioSheet extends StatelessWidget {
                 itemCount: tracks.length,
                 itemBuilder: (context, index) {
                   final track = tracks[index];
-                  final isSelected = track.id == selectedTrackId;
-                  return ListTile(
-                    title: Text(
-                      track.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing:
-                        isSelected
-                            ? Icon(
-                              AppAssets.check,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            )
-                            : null,
-                    onTap: () {
+                  return _AudioVersionRow(
+                    track: track,
+                    groupName: name,
+                    imageUrl: imageUrl,
+                    isSelected: track.id == selectedTrackId,
+                    onSelect: () {
                       HapticFeedback.lightImpact();
                       Navigator.of(context).pop(track);
                     },
@@ -108,6 +113,174 @@ class _GroupRecitationAudioSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AudioVersionRow extends StatelessWidget {
+  const _AudioVersionRow({
+    required this.track,
+    required this.groupName,
+    required this.imageUrl,
+    required this.isSelected,
+    required this.onSelect,
+  });
+
+  final CollectionAudioTrack track;
+  final String groupName;
+  final String? imageUrl;
+  final bool isSelected;
+  final VoidCallback onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = Theme.of(context).colorScheme.onSurface;
+    final groupNameColor =
+        isDark ? AppColors.textTertiaryDark : AppColors.textSecondary;
+    final borderColor = isDark ? AppColors.grey800 : AppColors.grey600;
+
+    return InkWell(
+      onTap: onSelect,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            _CollectionThumbnail(imageUrl: imageUrl, isDark: isDark),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (groupName.isNotEmpty)
+                    Text(
+                      groupName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: groupNameColor,
+                      ),
+                    ),
+                  Text(
+                    track.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      color: color,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            _PlayMark(color: color, borderColor: borderColor),
+            const SizedBox(width: 12),
+            _SelectionMark(
+              isSelected: isSelected,
+              isDark: isDark,
+              borderColor: borderColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CollectionThumbnail extends StatelessWidget {
+  const _CollectionThumbnail({required this.imageUrl, required this.isDark});
+
+  final String? imageUrl;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim() ?? '';
+    final fallbackColor =
+        isDark ? AppColors.surfaceVariantDark : AppColors.grey100;
+    final iconColor = isDark ? AppColors.grey500 : AppColors.grey600;
+    final placeholder = ColoredBox(
+      color: fallbackColor,
+      child: Icon(AppAssets.bookOpenText, size: 22, color: iconColor),
+    );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child:
+            url.isEmpty
+                ? placeholder
+                : CachedNetworkImageWidget(
+                  imageUrl: url,
+                  width: 56,
+                  height: 56,
+                  fit: BoxFit.cover,
+                  errorWidget: placeholder,
+                ),
+      ),
+    );
+  }
+}
+
+class _PlayMark extends StatelessWidget {
+  const _PlayMark({required this.color, required this.borderColor});
+
+  final Color color;
+  final Color borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor),
+      ),
+      alignment: Alignment.center,
+      child: Icon(AppAssets.play, size: 14, color: color),
+    );
+  }
+}
+
+class _SelectionMark extends StatelessWidget {
+  const _SelectionMark({
+    required this.isSelected,
+    required this.isDark,
+    required this.borderColor,
+  });
+
+  final bool isSelected;
+  final bool isDark;
+  final Color borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final fillColor = isDark ? AppColors.surfaceWhite : AppColors.textPrimary;
+    final checkColor = isDark ? AppColors.textPrimary : AppColors.surfaceWhite;
+
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isSelected ? fillColor : Colors.transparent,
+        border: Border.all(
+          color: isSelected ? fillColor : borderColor,
+          width: 1.5,
+        ),
+      ),
+      child:
+          isSelected
+              ? Icon(AppAssets.check, size: 13, color: checkColor)
+              : null,
     );
   }
 }

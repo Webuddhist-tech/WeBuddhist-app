@@ -960,6 +960,9 @@ class AppLocalizationsMy extends AppLocalizations {
   String get collection_audio_versions => 'အသံ ဗားရှင်းများ';
 
   @override
+  String get playback_speed => 'Playback speed';
+
+  @override
   String get author => 'စာရေးသူ';
 
   @override
