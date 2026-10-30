@@ -4644,7 +4644,7 @@ abstract class AppLocalizations {
   /// No description provided for @event_prayer_request_count.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural,\n=1 {1 request}\nother {{count} requests}\n}'**
+  /// **'{count, plural,\n=1 {1 request}\nother {{count} requests}\none {1 request}\n}'**
   String event_prayer_request_count(int count);
 
   /// No description provided for @event_prayer_empty_title.

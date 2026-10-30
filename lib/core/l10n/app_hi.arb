@@ -956,7 +956,7 @@
   "event_prayer_closed": "इस कार्यक्रम के लिए प्रार्थना अनुरोध बंद हैं",
   "event_prayer_pray": "प्रार्थना करें",
   "connect_event_organizer": "आयोजक",
-  "event_prayer_request_count": "{count, plural,\nother {{count} अनुरोध}\n=1 {1 अनुरोध}\n}",
+  "event_prayer_request_count": "{count, plural,\nother {{count} अनुरोध}\n=1 {1 अनुरोध}\none {1 अनुरोध}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {

@@ -1338,7 +1338,7 @@
   "event_puja_starts_in": "Puja starts in",
   "event_puja_not_started": "Puja not started yet",
   "event_prayer_requests": "Prayer requests",
-  "event_prayer_request_count": "{count, plural,\n=1 {1 request}\nother {{count} requests}\n}",
+  "event_prayer_request_count": "{count, plural,\n=1 {1 request}\nother {{count} requests}\none {1 request}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {

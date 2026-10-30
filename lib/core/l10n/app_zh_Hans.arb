@@ -1047,7 +1047,7 @@
   "event_puja_starts_in": "法会开始于",
   "event_puja_not_started": "法会尚未开始",
   "event_prayer_requests": "回向与祈愿",
-  "event_prayer_request_count": "{count, plural,\n=1 {1 个回向祈愿}\nother {{count} 个回向祈愿}\n}",
+  "event_prayer_request_count": "{count, plural,\n=1 {1 个回向祈愿}\nother {{count} 个回向祈愿}\none {1 个回向祈愿}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {
