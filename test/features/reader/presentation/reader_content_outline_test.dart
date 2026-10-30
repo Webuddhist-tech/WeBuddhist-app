@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
+import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
@@ -11,6 +13,7 @@ import 'package:flutter_pecha/features/texts/data/models/text/reader_response.da
 import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
+import 'package:flutter_pecha/features/texts/data/models/translation.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/texts_repository.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
@@ -28,10 +31,16 @@ const _total = 60;
 
 int _chapterOf(int verse) => (verse - 1) ~/ 20;
 
+/// Its Chinese translation, C-zh, has a table of contents of its own: the
+/// same chapters under ids of its own.
+const _translation = 'C-zh';
+String _translatedChapter(int chapter) => '第${chapter + 1}章';
+
 /// The page from the anchor, its verses under their chapters' headings: a
 /// page starting partway into a chapter repeats that chapter's heading, as
 /// the API does.
 ReaderResponse _page(TextDetailsParams params) {
+  final isTranslation = params.versionId == _translation;
   final first =
       params.segmentId == null
           ? 1
@@ -40,12 +49,17 @@ ReaderResponse _page(TextDetailsParams params) {
   final sections = <Section>[];
   for (var n = first; n <= last; n++) {
     final chapter = _chapterOf(n);
-    if (sections.isEmpty || sections.last.id != 'ch$chapter') {
+    final id = isTranslation ? 'zh-ch$chapter' : 'ch$chapter';
+    if (sections.isEmpty || sections.last.id != id) {
       sections.add(
         Section(
-          id: 'ch$chapter',
-          title: _chapters[chapter],
-          titles: {'en': _chapters[chapter]},
+          id: id,
+          title:
+              isTranslation ? _translatedChapter(chapter) : _chapters[chapter],
+          titles:
+              isTranslation
+                  ? {'zh': _translatedChapter(chapter)}
+                  : {'en': _chapters[chapter]},
           sectionNumber: chapter + 1,
           segments: [],
           sections: const [],
@@ -53,11 +67,21 @@ ReaderResponse _page(TextDetailsParams params) {
       );
     }
     sections.last.segments.add(
-      Segment(
-        segmentId: 'C-$n',
-        segmentNumber: n,
-        content: 'Verse $n. ${'Om mani padme hum. ' * 6}',
-      ),
+      isTranslation
+          ? Segment(
+            segmentId: '$_translation-$n',
+            segmentNumber: n,
+            translation: Translation(
+              textId: _translation,
+              language: 'zh',
+              content: '譯文第$n句',
+            ),
+          )
+          : Segment(
+            segmentId: 'C-$n',
+            segmentNumber: n,
+            content: 'Verse $n. ${'Om mani padme hum. ' * 6}',
+          ),
     );
   }
   return ReaderResponse(
@@ -164,6 +188,46 @@ void main() {
     expect(find.text('· 1 / 3'), findsOneWidget);
   });
 
+  testWidgets('each chapter heading says where it sits, as the pill counts', (
+    tester,
+  ) async {
+    await _pump(tester);
+    expect(find.text('SECTION 1 / 3'), findsOneWidget);
+
+    await tester.tap(find.text('· 1 / 3'));
+    await _settle(tester);
+    await tester.tap(find.text(_chapters[2]));
+    await _settle(tester);
+    expect(find.text('SECTION 3 / 3'), findsOneWidget);
+  });
+
+  testWidgets('a translation\'s own headings say where they sit too', (
+    tester,
+  ) async {
+    await _pump(tester);
+    final ref = tester.element(find.byType(ReaderContentPart)) as WidgetRef;
+    final notifier = ref.read(
+      readerDualSettingsProvider(
+        const ReaderParams(textId: 'C').settingsScope,
+      ).notifier,
+    );
+    notifier.replaceSecondary(
+      const ReaderSlotConfig(
+        languageCode: 'zh',
+        languageLabel: '中文',
+        versionId: _translation,
+        versionLabel: '中文',
+      ),
+    );
+    notifier.setSecondaryEnabled(true);
+    notifier.setOriginalVisible(false);
+    await _settle(tester);
+
+    // The heading is the translation's, with an id the pill does not know.
+    expect(find.text(_translatedChapter(0)), findsWidgets);
+    expect(find.text('SECTION 1 / 3'), findsOneWidget);
+  });
+
   testWidgets('the sheet lists every chapter; a tap loads one not yet in', (
     tester,
   ) async {
@@ -213,7 +277,7 @@ void main() {
     expect(find.text(_chapters[2]), findsWidgets);
     expect(find.textContaining('Verse 41.'), findsNothing);
 
-    await tester.tap(find.textContaining(' / 3'));
+    await tester.tap(find.textContaining('· '));
     await _settle(tester);
     await tester.tap(find.text(_chapters[2]).last);
     await _settle(tester);
@@ -230,7 +294,7 @@ void main() {
     await _pump(tester, openAt: 'C-45', openingVerse: 6);
     expect(find.textContaining('Verse 1.'), findsNothing);
 
-    await tester.tap(find.textContaining(' / '));
+    await tester.tap(find.textContaining('· '));
     await _settle(tester);
     // The text's row is named by the text.
     await tester.tap(find.text('A Prayer Book').last);

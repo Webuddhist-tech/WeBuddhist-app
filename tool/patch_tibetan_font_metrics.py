@@ -30,11 +30,15 @@ lib/core/theme/FONT_SYSTEM_GUIDE.md):
       single subjoined stack -0.47 em, deep stacks -0.70 em
   WB Tibetan Content      ascender 1024 / descender -614  (1.60 em/line)
       vowel top 0.84 em (max 0.93), stacks down to -0.62 em
+  WB Tibetan Uchen        ascender 1248 / descender -400  (1.61 em/line)
+      (Jomolhari) vowel top 1.08 em (max 1.10), stacks -0.19 em
+      (deepest -0.39 em); its hhea values were close already, but without
+      USE_TYPO_METRICS Flutter reads its win values (1302/610)
 
 usWinAscent/usWinDescent keep the full glyph extents (GDI clips to them),
 USE_TYPO_METRICS is set so every platform reads the same numbers, and the
-fonts are renamed: Noto has no Reserved Font Name, BabelStone does, so its
-derivative must not carry the BabelStone name (OFL 1.1, condition 3).
+fonts are renamed: Noto has no Reserved Font Name, BabelStone and Jomolhari
+do, so their derivatives must not carry those names (OFL 1.1, condition 3).
 
 Usage
 -----
@@ -42,11 +46,14 @@ Usage
   python tool/patch_tibetan_font_metrics.py \
       --noto-dir  <dir containing NotoSerifTibetan-{Regular,Medium,SemiBold,Bold}.ttf> \
       --babelstone <BabelStoneTibetan.ttf> \
+      --jomolhari <Jomolhari-Regular.ttf> \
       --out assets/fonts
 
 Noto source: https://github.com/notofonts/tibetan/releases (unhinted/ttf,
 v2.103 at the time of writing).  BabelStone source: the previous
 assets/fonts/BabelStoneTibetan.ttf (v10.011) or https://www.babelstone.co.uk/Fonts/.
+Jomolhari source: https://github.com/google/fonts/tree/main/ofl/jomolhari
+(Version 1.000, 2006).
 """
 import argparse
 import os
@@ -74,6 +81,9 @@ def patch(src, dst, asc, desc, family, ps_family, note):
     os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap = asc, -desc, 0
     os2.usWinAscent = max(y_max, asc)
     os2.usWinDescent = max(-y_min, desc)
+    # USE_TYPO_METRICS is only defined from OS/2 version 4, which adds no
+    # fields over version 3 (Jomolhari ships version 3).
+    os2.version = max(os2.version, 4)
     os2.fsSelection |= USE_TYPO_METRICS
 
     name = font["name"]
@@ -114,10 +124,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--noto-dir", help="directory with NotoSerifTibetan-<Weight>.ttf")
     parser.add_argument("--babelstone", help="path to BabelStoneTibetan.ttf")
+    parser.add_argument("--jomolhari", help="path to Jomolhari-Regular.ttf")
     parser.add_argument("--out", default="assets/fonts")
     args = parser.parse_args()
-    if not args.noto_dir and not args.babelstone:
-        parser.error("give --noto-dir and/or --babelstone")
+    if not args.noto_dir and not args.babelstone and not args.jomolhari:
+        parser.error("give --noto-dir, --babelstone and/or --jomolhari")
     os.makedirs(args.out, exist_ok=True)
 
     if args.noto_dir:
@@ -143,6 +154,20 @@ def main():
             note=(
                 "WeBuddhist build of BabelStone Tibetan, renamed per OFL Reserved Font Name: "
                 "vertical metrics fitted to Tibetan ink (1024/-614)"
+            ),
+        )
+
+    if args.jomolhari:
+        patch(
+            args.jomolhari,
+            os.path.join(args.out, "WBTibetanUchen.ttf"),
+            asc=1248,
+            desc=400,
+            family="WB Tibetan Uchen",
+            ps_family="WBTibetanUchen",
+            note=(
+                "WeBuddhist build of Jomolhari, renamed per OFL Reserved Font Name: "
+                "vertical metrics fitted to Tibetan ink (1248/-400)"
             ),
         )
 

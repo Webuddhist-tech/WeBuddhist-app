@@ -13,6 +13,19 @@ class ReaderStyle {
   final ReaderPalette palette;
   final ReaderTypography type;
 
+  /// A ritual direction between verses in [language], written in [script].
+  /// Nothing draws one yet: the texts do not mark their directions.
+  TextStyle instructionText(String language, ReaderScript script) {
+    final metrics = type.instruction(script);
+    return TextStyle(
+      fontSize: metrics.fontSize,
+      height: metrics.height,
+      fontStyle: metrics.fontStyle,
+      fontFamily: type.family(language, script: script),
+      color: palette.instruction,
+    );
+  }
+
   /// The style at [context], following the reader's settings via [ref].
   static ReaderStyle of(BuildContext context, WidgetRef ref) => ReaderStyle(
     palette: ReaderPalette.resolve(Theme.of(context), ref),

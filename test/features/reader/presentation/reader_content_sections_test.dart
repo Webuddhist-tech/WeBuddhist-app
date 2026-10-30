@@ -186,15 +186,15 @@ void main() {
     await tester.tap(find.text('· 1 / 2'));
     await _settle(tester);
     expect(find.text('Sections'), findsOneWidget);
-    expect(find.text('Two prayers'), findsOneWidget);
-    // Each text is a row (its heading and two rows name the book), its
-    // sections nested under it.
-    expect(find.text(_rootTitle), findsNWidgets(3));
+    expect(find.text('Section 1 / 2'), findsOneWidget);
+    // The pill's sections, in order: the first on screen, the second not
+    // yet read.
+    expect(find.text(_refugeTitle), findsNWidgets(3));
     expect(find.text(_kingTitle), findsOneWidget);
 
-    // The second text's row brings its own title heading to the top, and the
-    // pill names its section.
-    await tester.tap(find.text(_rootTitle).last);
+    // The second section's row brings its text to the top, and the pill
+    // names it.
+    await tester.tap(find.text(_kingTitle).last);
     await _settle(tester);
 
     expect(find.text('Sections'), findsNothing);

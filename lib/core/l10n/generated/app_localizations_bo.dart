@@ -1240,7 +1240,7 @@ class AppLocalizationsBo extends AppLocalizations {
   String get reader_languages_title => 'སྐད་ཡིག';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => 'ས་བཅད།';
 
   @override
   String get reader_original_label => 'མ་ཡིག';
@@ -3905,6 +3905,9 @@ class AppLocalizationsBo extends AppLocalizations {
   String get reader_display_title => 'མངོན་ཚུལ།';
 
   @override
+  String get text_size => 'ཡིག་གཟུགས་ཆེ་ཆུང་།';
+
+  @override
   String get reader_more_settings => 'སྒྲིག་འགོད་གཞན།';
 
   @override
@@ -3957,6 +3960,12 @@ class AppLocalizationsBo extends AppLocalizations {
 
   @override
   String get reader_live_paused => 'མཚམས་འཇོག';
+
+  @override
+  String get reader_text_smaller => 'ཡི་གེ་ཆུང་དུ་གཏོང་།';
+
+  @override
+  String get reader_text_larger => 'ཡི་གེ་ཆེ་རུ་གཏོང་།';
 
   @override
   String reader_section_position(String current, String total) {

@@ -107,32 +107,65 @@ class ReaderPageText {
   );
 }
 
-/// What the sections sheet shows.
-class ReaderSectionsSnapshot {
-  final String title;
-  final List<ReaderPageText> texts;
+/// A row of the sections sheet: a section the pill counts, the language its
+/// number is written in, and the group heading over it, if any ("AFTER THE
+/// PUJA").
+class ReaderSheetSection {
+  final ReaderPageSection section;
+  final String numeralLanguage;
+  final String? group;
+  final String? groupLanguage;
 
-  /// Texts of the page not loaded yet.
+  const ReaderSheetSection({
+    required this.section,
+    required this.numeralLanguage,
+    this.group,
+    this.groupLanguage,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is ReaderSheetSection &&
+      other.section == section &&
+      other.numeralLanguage == numeralLanguage &&
+      other.group == group &&
+      other.groupLanguage == groupLanguage;
+
+  @override
+  int get hashCode =>
+      Object.hash(section, numeralLanguage, group, groupLanguage);
+}
+
+/// What the sections sheet shows: the sections the pill counts, in order.
+class ReaderSectionsSnapshot {
+  final List<ReaderSheetSection> sections;
+
+  /// Texts of the page not loaded yet; they count towards the total.
   final int pendingSources;
 
+  /// The section holding the verse the puja leader is on, while the reader
+  /// follows a live recitation.
+  final String? liveKey;
+
   const ReaderSectionsSnapshot({
-    required this.title,
-    required this.texts,
+    required this.sections,
     required this.pendingSources,
+    this.liveKey,
   });
 
   const ReaderSectionsSnapshot.empty()
-    : title = '',
-      texts = const [],
-      pendingSources = 0;
+    : sections = const [],
+      pendingSources = 0,
+      liveKey = null;
 
   @override
   bool operator ==(Object other) =>
       other is ReaderSectionsSnapshot &&
-      other.title == title &&
       other.pendingSources == pendingSources &&
-      listEquals(other.texts, texts);
+      other.liveKey == liveKey &&
+      listEquals(other.sections, sections);
 
   @override
-  int get hashCode => Object.hash(title, pendingSources, Object.hashAll(texts));
+  int get hashCode =>
+      Object.hash(pendingSources, liveKey, Object.hashAll(sections));
 }

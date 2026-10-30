@@ -1182,7 +1182,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_languages_title => '語言';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => '章節';
 
   @override
   String get reader_original_label => '原文';
@@ -3742,6 +3742,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_display_title => '顯示';
 
   @override
+  String get text_size => '文字大小';
+
+  @override
   String get reader_more_settings => '更多設定';
 
   @override
@@ -3794,6 +3797,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reader_live_paused => '已暫停';
+
+  @override
+  String get reader_text_smaller => '縮小文字';
+
+  @override
+  String get reader_text_larger => '放大文字';
 
   @override
   String reader_section_position(String current, String total) {
@@ -7423,6 +7432,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get reader_display_title => '显示';
 
   @override
+  String get text_size => '文字大小';
+
+  @override
   String get reader_more_settings => '更多设置';
 
   @override
@@ -7475,6 +7487,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get reader_live_paused => '已暂停';
+
+  @override
+  String get reader_text_smaller => '缩小文字';
+
+  @override
+  String get reader_text_larger => '放大文字';
 
   @override
   String reader_section_position(String current, String total) {

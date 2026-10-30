@@ -1,12 +1,15 @@
 import 'dart:math' as math;
 
 import 'package:flutter/painting.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_text_size_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_fonts.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_script.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_text_size.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+export 'package:flutter_pecha/features/reader/presentation/style/reader_fonts.dart';
 export 'package:flutter_pecha/features/reader/presentation/style/reader_script.dart';
 export 'package:flutter_pecha/features/reader/presentation/style/reader_text_size.dart';
 
@@ -60,13 +63,21 @@ typedef ReaderGaps = ({double verse, double pair, double inPair});
 /// then scales by its size step and its line height by the spacing.
 /// Values are rounded only at the end.
 class ReaderTypography {
-  const ReaderTypography({this.settings = const ReaderTextSize()});
+  const ReaderTypography({
+    this.settings = const ReaderTextSize(),
+    this.fonts = const ReaderFontChoices(),
+  });
 
   final ReaderTextSize settings;
 
+  /// The fonts picked per line. They change only the family, never a size.
+  final ReaderFontChoices fonts;
+
   /// The typography for the reader's current settings.
-  static ReaderTypography resolve(WidgetRef ref) =>
-      ReaderTypography(settings: ref.watch(readerTextSizeProvider));
+  static ReaderTypography resolve(WidgetRef ref) => ReaderTypography(
+    settings: ref.watch(readerTextSizeProvider),
+    fonts: ref.watch(readerFontsProvider),
+  );
 
   /// Sizes at step 3, by role and script.
   static const Map<ReaderTextRole, Map<ReaderScript, double>> baseSizes = {
@@ -209,13 +220,48 @@ class ReaderTypography {
   static double chromeSize(double size, ReaderScript script) =>
       _round(size * script.interfaceScale);
 
+  /// Tibetan interface text in the app's Tibetan UI font is set ×1.1, not
+  /// the card's ×1.5: that font draws bigger letters per point than the
+  /// mocks', and at ×1.1 labels measure as WF27 and WF28 draw them.
+  static const double tibetanInterfaceScale = 1.1;
+
+  /// Size of interface text (sheets, a heading's overline) written in
+  /// [script], given its Latin [size].
+  static double interfaceSize(double size, ReaderScript script) =>
+      script == ReaderScript.tibetan
+          ? _round(size * tibetanInterfaceScale)
+          : chromeSize(size, script);
+
   /// The sections pill's text.
   static const double sectionPillSize = 14;
 
   /// The bottom bar's title and count.
   static const double bottomBarSize = 13;
 
-  String? family(String language) => getFontFamily(language);
+  /// The family for a line in [language]: the font picked for [role]'s line
+  /// in [script], which defaults to [language]'s. Verse numbers, the pill
+  /// and the sheet follow the original's pick.
+  String family(
+    String language, {
+    ReaderTextRole role = ReaderTextRole.originalAlone,
+    ReaderScript? script,
+  }) =>
+      fonts
+          .fontFor(
+            role.isTranslation
+                ? ReaderFontLine.translation
+                : ReaderFontLine.original,
+            script ?? ReaderScript.ofLanguage(language),
+          )
+          .family();
+
+  /// The family for a section heading in [script]: Latin and Cyrillic
+  /// headings are in [ReaderFonts.latinHeading] at
+  /// [ReaderFonts.headingWeight]; others follow the original's pick.
+  String headingFamily(String language, ReaderScript script) =>
+      script == ReaderScript.latin || script == ReaderScript.cyrillic
+          ? ReaderFonts.latinHeading.family(weight: ReaderFonts.headingWeight)
+          : family(language, script: script);
 
   /// Line height of list rows outside the page, such as the sections sheet;
   /// these do not follow the size steps.

@@ -57,6 +57,11 @@ class StorageKeys {
   static const String readerTranslationStep = 'reader_translation_step';
   /// Reader spacing: compact, normal or relaxed
   static const String readerSpacing = 'reader_spacing';
+  /// JSON of the reader fonts picked per line and script, e.g.
+  /// `{"original":{"tibetan":"jomolhari"}}`; defaults are not stored
+  static const String readerFonts = 'reader_fonts';
+  /// Whether the reader shows verse numbers (default true)
+  static const String readerVerseNumbers = 'reader_verse_numbers';
   /// First launch flag
   static const String firstLaunch = 'first_launch';
 

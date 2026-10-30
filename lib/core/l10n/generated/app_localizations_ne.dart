@@ -1244,7 +1244,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_languages_title => 'भाषाहरू';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => 'खण्डहरू';
 
   @override
   String get reader_original_label => 'मूल';
@@ -3908,6 +3908,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_display_title => 'प्रदर्शन';
 
   @override
+  String get text_size => 'पाठको आकार';
+
+  @override
   String get reader_more_settings => 'थप सेटिङहरू';
 
   @override
@@ -3960,6 +3963,12 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get reader_live_paused => 'रोकिएको';
+
+  @override
+  String get reader_text_smaller => 'सानो पाठ';
+
+  @override
+  String get reader_text_larger => 'ठूलो पाठ';
 
   @override
   String reader_section_position(String current, String total) {

@@ -6,7 +6,10 @@ import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigatio
 import 'package:flutter_pecha/features/practice/presentation/providers/my_recitation_completion_service.dart';
 import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,6 +58,28 @@ class _SwipeNavigationWrapperState
 
     final canSwipe = navigationContext != null && navigationContext.canSwipe;
 
+    // The text's title as the page shows it: the translation's when one is
+    // shown, else the original's in the script it is shown in.
+    final language = widget.textDetail.language;
+    final scope = widget.params.settingsScope;
+    final scriptId = ref.watch(
+      readerOriginalScriptProvider(
+        ReaderScriptScope(scope: scope, language: language),
+      ),
+    );
+    final dualSettings = ref.watch(readerDualSettingsProvider(scope));
+    final translation = dualSettings.secondary;
+    final translationShown =
+        dualSettings.secondaryEnabled && translation.versionId != null;
+    final (:title, language: titleLanguage) = readerTextTitle(
+      ref.watch(transliterationServiceProvider),
+      title: widget.textDetail.title,
+      language: language,
+      scriptId: scriptId,
+      translationTitle: translationShown ? translation.versionLabel : null,
+      translationLanguage: translationShown ? translation.languageCode : null,
+    );
+
     return GestureDetector(
       onHorizontalDragEnd:
           canSwipe ? (details) => _onDragEnd(details, navigationContext) : null,
@@ -77,10 +102,8 @@ class _SwipeNavigationWrapperState
                   curve: ReaderConstants.focusModeCurve,
                   child: PlanNavigationBottomBar(
                     navigationContext: navigationContext,
-                    fallbackTitle: widget.textDetail.title,
-                    fallbackTitleFontFamily: getFontFamily(
-                      widget.textDetail.language,
-                    ),
+                    fallbackTitle: title,
+                    fallbackTitleFontFamily: getFontFamily(titleLanguage),
                     onPreviousTap:
                         canSwipe
                             ? () => _navigate(

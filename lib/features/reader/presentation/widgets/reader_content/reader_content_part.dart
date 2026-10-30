@@ -11,15 +11,20 @@ import 'package:flutter_pecha/features/reader/data/models/flattened_item.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_state.dart';
 import 'package:flutter_pecha/features/reader/data/models/secondary_reader_state.dart';
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/reader/domain/services/live_position_resolver.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_dual_settings_provider.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_secondary_content_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reader_items.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_top_verse.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_live_follow.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
@@ -27,10 +32,13 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_conten
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_pill.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_sections_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/section_header.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_skeleton.dart';
+import 'package:flutter_pecha/features/recitation/data/models/edition_live_settings.dart';
 import 'package:flutter_pecha/features/recitation/data/models/recitation_live_position.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_settings_providers.dart';
+import 'package:flutter_pecha/features/recitation/presentation/utils/live_round.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -172,6 +180,24 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Counts the live scrolls, so only the latest one hands the page back.
   int _liveScroll = 0;
   bool _liveInitialized = false;
+
+  /// Set once the page has shown; after that a font arriving only reflows
+  /// it, so the list and its scroll position stay.
+  bool _pageShown = false;
+
+  /// Each counted heading's place on the page, by source and section id;
+  /// set in build for the list's items.
+  Map<(int, String), ReaderSectionPlace> _sectionPlaces = const {};
+
+  /// The same places by source and the id of the verse a section opens at.
+  Map<(int, String), ReaderSectionPlace> _sectionPlacesByVerse = const {};
+
+  /// A live room is being followed (not paused): other verses are muted.
+  bool _followingLive = false;
+
+  /// The live round and the section whose heading shows it; set in build
+  /// while following.
+  _LiveRoundMark? _liveRound;
   bool _liveJumpInFlight = false;
   RecitationLiveState? _livePending;
   int _liveGeneration = 0;
@@ -180,6 +206,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// another edition or language (see [ReaderNotifier.resolveSegment]).
   final Map<String, String> _liveAliases = {};
   DateTime? _lastUserPointerAt;
+
+  /// The person scrolled with a verse's sheet open: once the scroll
+  /// settles, the sheet moves to the verse at the top.
+  bool _followTopVerse = false;
 
   @override
   void initState() {
@@ -209,6 +239,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     _debounceTimer = Timer(ReaderConstants.scrollDebounce, () {
       _checkPaginationThresholds();
       _reportFurthestSegment();
+      _followScroll();
     });
 
     _updateCurrentSection();
@@ -241,7 +272,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         !_isUserScrolling && (_isProgrammaticScroll || !_recentUserGesture);
     // Any scroll by the person leaves the live recitation.
     if (!byApp && delta != 0 && _isLiveRecitation) _pauseLiveFollow();
-    if (byApp && !_isLiveRecitation) return;
+    if (!byApp && delta != 0) _followTopVerse = true;
+    // Paused, the page reads like the normal reader: bringing a verse up
+    // above its sheet leaves the bars, and the Paused pill, where they are.
+    if (byApp && !_isFollowingLive) return;
     if (!_focusMode.scrolled(delta, countUp: !byApp)) return;
     final hide = !_focusMode.barsVisible;
     widget.onScrollDirectionChanged?.call(hide);
@@ -365,6 +399,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final sections = <ReaderPageSection>[];
     final texts = <ReaderPageText>[];
     final sectionIndexByKey = <String, int>{};
+    // The heading each section sits under in the sheet, by section key.
+    final groups = <String, (String, String)>{};
     // Headings drawn so far, by the source and entry they were drawn at.
     final drawn = <String, (int, int)>{};
     // The original's heading in effect at each depth.
@@ -478,6 +514,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           segmentId: section.segmentId,
         );
       }
+      // Headings that only group sections ("AFTER THE PUJA") head them in
+      // the sheet; the one naming the text does too on a page of several
+      // texts.
+      readerSectionGroups(
+        titled,
+        outlined,
+        textHeadingId: views.length > 1 ? null : titleSectionId,
+      ).forEach((id, group) {
+        groups['${view.index}:$id'] = _outlineTitle(view, group);
+      });
       // Where each heading and verse of this source sits in the list.
       final headerEntry = <String, int>{};
       final verseEntry = <int, int>{};
@@ -612,6 +658,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       sections: sections,
       texts: texts,
       sectionOfEntry: sectionOfEntry,
+      groups: groups,
     );
   }
 
@@ -634,7 +681,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       textTitle: section.title ?? '',
       textLanguage: view.language,
     );
-    return (title.title, title.language);
+    return _inScript(view, (title.title, title.language));
   }
 
   /// A section of the whole table of contents as the navigator lists it.
@@ -654,7 +701,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       textTitle: textTitle,
       textLanguage: textLanguage,
     );
-    return (title.title, title.language);
+    return _inScript(view, (title.title, title.language));
   }
 
   /// The sections the pill counts, text by text: a text's sections, or the
@@ -673,16 +720,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         ),
   ];
 
-  /// What the sections are of: the plan task on a page of several texts,
-  /// else the text.
-  String _pageTitle(_SourceView first) {
-    final task = widget.sources.first.navigationContext?.currentItem?.title;
-    if (widget.sources.length > 1 && task != null && task.trim().isNotEmpty) {
-      return task;
-    }
-    return first.state.openedText?.title ?? '';
-  }
-
   // ─── Sections navigator ──────────────────────────────────────────────────
 
   Future<void> _openSectionsSheet() async {
@@ -691,15 +728,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (_startedCount < widget.sources.length) {
       setState(() => _startedCount = widget.sources.length);
     }
-    final picked = await showModalBottomSheet<ReaderPageSection>(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(ReaderPanelConstants.topRadius),
-        ),
-      ),
-      isScrollControlled: true,
+    final picked = await showReaderSheet<ReaderPageSection>(
+      context,
+      dim: ReaderSheetDim.sections,
       builder:
           (_) =>
               ReaderSectionsSheet(snapshot: _sections, current: _currentSectionKey),
@@ -1097,12 +1128,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     });
   }
 
-  /// Selects [segment] of source [index], the only source with a selection.
-  /// A plan task with commentary or versions set to open does that here
-  /// once the segment's counts arrive, and the verse is brought to the top
-  /// the way those buttons do. Closing that sheet leaves the segment
-  /// selected, so the resources sheet is what's left.
+  /// Selects [segment] of source [index], the only source with a selection,
+  /// which opens its sheet below the text. Once the segment's counts arrive
+  /// the sheet opens its first tab with something (the one a plan task asks
+  /// for, if any), and the verse is brought to the top of the text.
   void _onSegmentTap(int index, Segment segment) {
+    // A tap is not a scroll: the list moving as the verse's sheet opens,
+    // and bringing the verse up above it, are the app's own.
+    _isUserScrolling = false;
+    _lastUserPointerAt = null;
     // Opening a verse's resources leaves the live recitation.
     if (_isLiveRecitation) _pauseLiveFollow();
     final params = widget.sources[index];
@@ -1112,8 +1146,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         readerNotifierProvider(widget.sources[i]).notifier,
       );
       other.selectSegment(null);
-      other.closeCommentary();
-      other.closeTranslation();
     }
     widget.onSourceSelected?.call(params);
     final notifier = ref.read(readerNotifierProvider(params).notifier);
@@ -1121,18 +1153,56 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final deselecting = before.selectedSegment?.segmentId == segment.segmentId;
     notifier.toggleSegmentSelection(segment);
     if (deselecting) return;
-
-    final item = params.navigationContext?.currentItem;
-    if (item == null ||
-        (!item.autoOpenCommentary && !item.autoOpenTranslation)) {
-      return;
-    }
-    _autoOpenPlanPanel(index, segment.segmentId);
+    _openFirstTab(index, segment.segmentId);
   }
 
-  /// A segment with no commentaries or versions does not get an empty sheet.
-  /// A failed count is not a zero: the sheet opens and shows its own error.
-  Future<void> _autoOpenPlanPanel(int index, String segmentId) async {
+  /// After the person's scroll settles with a verse's sheet open, the
+  /// sheet moves to the verse now at the top of the text, among its own
+  /// source's verses, keeping its height and tab. The text stays where the
+  /// person left it.
+  void _followScroll() {
+    if (!_followTopVerse || !mounted) return;
+    _followTopVerse = false;
+    if (_isProgrammaticScroll) return;
+    final index = _selectedSourceIndex();
+    if (index == null) return;
+    final entries = _currentEntries();
+    final top = readerTopVerseEntry(
+      _itemPositionsListener.itemPositions.value,
+      (i) =>
+          i < entries.length &&
+          entries[i].source == index &&
+          (entries[i].item?.isSegment ?? false),
+    );
+    final segment = top == null ? null : entries[top].item?.segment;
+    if (segment == null) return;
+    final params = widget.sources[index];
+    if (ref.read(readerNotifierProvider(params)).selectedSegment?.segmentId ==
+        segment.segmentId) {
+      return;
+    }
+    ref.read(readerNotifierProvider(params).notifier).followVerse(segment);
+    _openFirstTab(index, segment.segmentId, scroll: false);
+  }
+
+  /// The started source whose verse has its sheet open, if any.
+  int? _selectedSourceIndex() {
+    for (var i = 0; i < _startedCount; i++) {
+      if (ref.read(readerNotifierProvider(widget.sources[i])).hasSelection) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  /// A tab the segment has nothing for is skipped. A failed count is not a
+  /// zero: Commentary opens and shows its own error. A tapped verse is
+  /// brought to the top of the text ([scroll]).
+  Future<void> _openFirstTab(
+    int index,
+    String segmentId, {
+    bool scroll = true,
+  }) async {
     SegmentInfo? info;
     try {
       info = await ref.read(segmentInfoFutureProvider(segmentId).future);
@@ -1140,14 +1210,23 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _logger.warning('Segment info for $segmentId not loaded', e, st);
     }
     if (!mounted) return;
-    final opened = ref
-        .read(readerNotifierProvider(widget.sources[index]).notifier)
-        .autoOpenPlanPanel(
-          segmentId,
-          hasCommentaries: info == null || info.relatedText.commentaries > 0,
-          hasVersions: info == null || info.translations > 0,
-        );
-    if (opened) _scrollToSegment(segmentId, alignment: 0.0);
+    final notifier = ref.read(
+      readerNotifierProvider(widget.sources[index]).notifier,
+    );
+    if (ref.read(readerNotifierProvider(widget.sources[index])).selectedSegment
+            ?.segmentId !=
+        segmentId) {
+      return;
+    }
+    notifier.openFirstResourceTab(
+      segmentId,
+      hasCommentaries: info == null || info.relatedText.commentaries > 0,
+      hasVersions: info == null || info.translations > 0,
+      hasVideos: info?.videos.isNotEmpty ?? false,
+      hasRootText: info?.relatedText.hasRootText ?? false,
+    );
+    // The verse stays in view above its sheet.
+    if (scroll) _scrollToSegment(segmentId, alignment: 0.0);
   }
 
   void _scrollToSegment(String segmentId, {double? alignment}) {
@@ -1626,6 +1705,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return true;
   }
 
+  /// Whether the page follows the live recitation right now.
+  bool get _isFollowingLive {
+    final eventId = _liveEventId;
+    return eventId != null &&
+        ref.read(recitationLiveProvider(eventId)).isFollowing;
+  }
+
   /// Leaves the live recitation: the Live pill turns to Paused, the page stops
   /// following and reads like the normal reader until the person rejoins.
   void _pauseLiveFollow() {
@@ -1652,6 +1738,142 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
 
   /// Source [index] as the list draws it, watched in build.
   _SourceView _watchView(int index) => _viewOf(index, watch: true);
+
+  /// The language [view]'s numbers are written in: the translation's when
+  /// one is shown, else the original's.
+  /// The key of the section holding the verse [liveSegmentId], when it is
+  /// on the page.
+  static String? _liveSectionKey(_PageLayout layout, String? liveSegmentId) {
+    if (liveSegmentId == null) return null;
+    for (var i = 0; i < layout.entries.length; i++) {
+      if (layout.entries[i].item?.segment?.segmentId != liveSegmentId) {
+        continue;
+      }
+      final section = layout.sectionOfEntry[i];
+      return section < 0 ? null : layout.sections[section].key;
+    }
+    return null;
+  }
+
+  /// While following, the room's round and the section the live verse is
+  /// in, whose heading shows it; null outside a round.
+  _LiveRoundMark? _liveRoundOn(
+    _PageLayout layout,
+    RecitationLivePosition? position,
+    String? liveSegmentId,
+  ) {
+    final round = position?.roundNumber;
+    if (position == null || round == null || liveSegmentId == null) {
+      return null;
+    }
+    final jumps =
+        ref.watch(editionReturnJumpsProvider(position.textId)).valueOrNull ??
+        const <ReturnJump>[];
+    for (var i = 0; i < layout.entries.length; i++) {
+      final entry = layout.entries[i];
+      final segment = entry.item?.segment;
+      if (segment == null || segment.segmentId != liveSegmentId) continue;
+      final sectionIndex = layout.sectionOfEntry[i];
+      if (sectionIndex < 0) return null;
+      final section = layout.sections[sectionIndex];
+      final content =
+          ref
+              .read(readerNotifierProvider(widget.sources[entry.source]))
+              .content;
+      final live = liveRound(
+        roundNumber: round,
+        jumps: jumps,
+        liveVerse: segment.segmentNumber,
+        verseNumberOf: (segmentId) {
+          final at = content?.resolveSegmentIndex(segmentId);
+          return at == null ? null : content!.items[at].segment?.segmentNumber;
+        },
+      );
+      if (live == null) return null;
+      final total = live.total;
+      return (
+        source: section.source,
+        sectionId: section.id,
+        place: _sectionPlaces[(section.source, section.id)],
+        label:
+            total == null
+                ? context.l10n.reader_round_number('${live.current}')
+                : context.l10n.reader_round_position(
+                  '${live.current}',
+                  '$total',
+                ),
+      );
+    }
+    return null;
+  }
+
+  /// The live round for the heading of [sectionId] in [source], counted at
+  /// [place]: a translation's own heading matches by its place.
+  String? _liveRoundFor(
+    int source,
+    String sectionId,
+    ReaderSectionPlace? place,
+  ) {
+    final mark = _liveRound;
+    if (mark == null || mark.source != source) return null;
+    final matches =
+        mark.sectionId == sectionId || (place != null && place == mark.place);
+    return matches ? mark.label : null;
+  }
+
+  String _numeralLanguage(_SourceView view) {
+    if (view.secondaryActive) return view.dualSettings.secondary.languageCode;
+    // The original shown in another script counts in that script's numerals.
+    final scriptId = view.originalScriptId;
+    if (scriptId == null) return view.language;
+    return ref
+            .read(transliterationServiceProvider)
+            .fontLanguageFor(view.language, scriptId) ??
+        view.language;
+  }
+
+  /// The script [view]'s original is shown in, read from its first verse as
+  /// [SegmentItem] reads it: Latin for a Tibetan text in Roman phonetics, so
+  /// the page waits for the font the verses actually use.
+  ReaderScript _shownOriginalScript(_SourceView view) {
+    String? content;
+    for (final item in view.items) {
+      if (item.isSegment) {
+        content = item.segment?.content;
+        break;
+      }
+    }
+    if (content == null) return ReaderScript.ofLanguage(view.language);
+    final primary = primarySegmentHtml(
+      ref,
+      content: content,
+      language: view.language,
+      scope: view.params.settingsScope,
+    );
+    return ReaderScript.of(primary.html, language: primary.fontLanguage);
+  }
+
+  /// Whether a downloaded font picked for these texts' lines is still
+  /// loading, for a short while at most. Defaults are not waited for.
+  bool _waitingForPickedFonts(List<_SourceView> views) {
+    final fonts = ref.watch(readerFontsProvider);
+    final picked = {
+      for (final view in views)
+        ...fonts.pickedDownloads(
+          original: view.showOriginal ? _shownOriginalScript(view) : null,
+          translation:
+              view.secondaryActive
+                  ? ReaderScript.ofLanguage(
+                    view.dualSettings.secondary.languageCode,
+                  )
+                  : null,
+        ),
+    };
+    if (picked.isEmpty) return false;
+    return ref
+        .watch(readerFontPreloadProvider(readerFontPreloadKey(picked)))
+        .isLoading;
+  }
 
   /// Source [index] as the list draws it: watched in build, read outside it.
   /// A read takes the translation only once build has subscribed to it.
@@ -1744,17 +1966,53 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
               : null,
       outline: outline,
       translationTitles: translationTitles,
+      originalScriptId: get(
+        readerOriginalScriptProvider(
+          ReaderScriptScope(
+            scope: params.settingsScope,
+            language: state.textDetail?.language ?? 'en',
+          ),
+        ),
+      ),
     );
   }
 
   /// A text's title as the page reads it: its translation's when one shows.
   (String, String) _titleOf(_SourceView view) {
     final translation = view.dualSettings.secondary;
-    final translated = translation.versionLabel;
-    if (view.secondaryActive && translated != null && translated.isNotEmpty) {
-      return (translated, translation.languageCode);
+    final title = readerTextTitle(
+      ref.read(transliterationServiceProvider),
+      title: view.state.openedText?.title ?? '',
+      language: view.language,
+      scriptId: view.originalScriptId,
+      translationTitle: view.secondaryActive ? translation.versionLabel : null,
+      translationLanguage:
+          view.secondaryActive ? translation.languageCode : null,
+    );
+    return (title.title, title.language);
+  }
+
+  /// [title], when it is in the original's language and the original is
+  /// shown in another script, in that script, with the language its font
+  /// comes from; any other title as it is.
+  (String, String) _inScript(_SourceView view, (String, String) title) {
+    final scriptId = view.originalScriptId;
+    final (text, language) = title;
+    if (scriptId == null ||
+        TransliterationService.normalizeLanguage(language) !=
+            TransliterationService.normalizeLanguage(view.language)) {
+      return title;
     }
-    return (view.state.openedText?.title ?? '', view.language);
+    final service = ref.read(transliterationServiceProvider);
+    return (
+      readerTitleInScript(
+        service,
+        title: text,
+        language: language,
+        scriptId: scriptId,
+      ),
+      service.fontLanguageFor(language, scriptId) ?? language,
+    );
   }
 
   /// Handle initial scroll to segment. Skipped while collapsed — the first
@@ -1829,6 +2087,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (content == null || content.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (!_pageShown && _waitingForPickedFonts(views)) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    _pageShown = true;
 
     // First live evaluation once content is on screen: lands a late joiner
     // on the live line, or pauses if they opened a different text.
@@ -1857,9 +2119,27 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Texts not started yet are listed as loading until they are.
     final pending = widget.sources.length - _startedCount;
     final snapshot = ReaderSectionsSnapshot(
-      title: _pageTitle(first),
-      texts: layout.texts,
+      sections: [
+        for (final text in layout.texts)
+          for (final section
+              in layout.sections.any((s) => s.source == text.source)
+                  ? layout.sections.where((s) => s.source == text.source)
+                  : [text.start])
+            ReaderSheetSection(
+              // The section a text is named after goes to the text's start,
+              // loading it when the page was opened further in.
+              section:
+                  section.id == text.titleSectionId ? text.start : section,
+              numeralLanguage: _numeralLanguage(views[section.source]),
+              group: layout.groups[section.key]?.$1,
+              groupLanguage: layout.groups[section.key]?.$2,
+            ),
+      ],
       pendingSources: pending,
+      liveKey:
+          _isLiveRecitation && liveMode == RecitationLiveFollowMode.following
+              ? _liveSectionKey(layout, liveSegmentId)
+              : null,
     );
     if (snapshot != _sections.value) {
       // The sheet, in its own route, listens: not during this build.
@@ -1871,6 +2151,32 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final pillSections = _pillSections(layout);
     final sectionCount = pillSections.length + pending;
     final showPill = pillSections.isNotEmpty && sectionCount > 1;
+    // Each counted heading's place, for its overline, as the pill counts.
+    _sectionPlaces = {
+      if (sectionCount > 1)
+        for (var i = 0; i < pillSections.length; i++)
+          (pillSections[i].source, pillSections[i].id): (
+            position: i + 1,
+            total: sectionCount,
+          ),
+    };
+    // A translation's own headings have ids of their own: they find their
+    // section by the verse it opens at.
+    _sectionPlacesByVerse = {
+      if (sectionCount > 1)
+        for (var i = 0; i < pillSections.length; i++)
+          if (pillSections[i].segmentId case final segmentId?)
+            (pillSections[i].source, segmentId): (
+              position: i + 1,
+              total: sectionCount,
+            ),
+    };
+    _followingLive =
+        _isLiveRecitation && liveMode == RecitationLiveFollowMode.following;
+    _liveRound =
+        _followingLive
+            ? _liveRoundOn(layout, livePosition, liveSegmentId)
+            : null;
 
     return Column(
       children: [
@@ -1890,6 +2196,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                 return ReaderSectionsPill(
                   title: section.title,
                   language: section.language,
+                  numeralLanguage: _numeralLanguage(views[section.source]),
                   position: index + 1,
                   total: sectionCount,
                   onTap: _openSectionsSheet,
@@ -2010,12 +2317,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       header: (section, depth) {
         if (view.translationHeadings) return const SizedBox.shrink();
         final (title, headingLanguage) = _headingText(view, section);
+        final place = _sectionPlaces[(view.index, section.id)];
         return SectionHeader(
           section:
               title == section.title ? section : section.copyWith(title: title),
           depth: depth,
           language: headingLanguage,
           showDivider: depth > 0 && (previousItem?.isSegment ?? false),
+          place: place,
+          numeralLanguage: _numeralLanguage(view),
+          overlineTrailing: _liveRoundFor(view.index, section.id, place),
         );
       },
       segment: (segment, depth, sectionId) {
@@ -2053,12 +2364,22 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                     isHighlighted: isHighlighted,
                     highlightSource: state.highlightSource,
                     isLive: isLive,
+                    followingLive: _followingLive,
                     onTap: () => _onSegmentTap(view.index, segment),
                   );
           if (headings.isEmpty) return verse;
           final firstVerse =
               previousItem == null ||
               segment.segmentId == state.content?.firstSegmentId;
+          // Of the headings opening at a verse the pill counts the
+          // innermost; outer ones only group it.
+          final places = [
+            for (var i = 0; i < headings.length; i++)
+              _sectionPlaces[(view.index, headings[i].section.id)] ??
+                  (i == headings.length - 1
+                      ? _sectionPlacesByVerse[(view.index, segment.segmentId)]
+                      : null),
+          ];
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -2069,6 +2390,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
                   language: secondarySlot.languageCode,
                   // Like the original's: a nested heading after lines.
                   showDivider: i == 0 && headings[i].depth > 0 && !firstVerse,
+                  place: places[i],
+                  numeralLanguage: _numeralLanguage(view),
+                  overlineTrailing: _liveRoundFor(
+                    view.index,
+                    headings[i].section.id,
+                    places[i],
+                  ),
                 ),
               verse,
             ],
@@ -2082,6 +2410,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
           scope: view.params.settingsScope,
           isSelected: isSelected,
           isLive: isLive,
+          followingLive: _followingLive,
           onTap: () {
             HapticFeedback.lightImpact();
             _onSegmentTap(view.index, segment);
@@ -2114,6 +2443,9 @@ class _SourceView {
   /// The translation's title for each section, by the original's id.
   final Map<String, String> translationTitles;
 
+  /// The script the original is shown in; null as written.
+  final String? originalScriptId;
+
   const _SourceView({
     required this.index,
     required this.params,
@@ -2127,6 +2459,7 @@ class _SourceView {
     this.collapsedHeadings,
     this.outline,
     this.translationTitles = const {},
+    this.originalScriptId,
   });
 
   String get language => state.textDetail?.language ?? 'en';
@@ -2176,6 +2509,10 @@ class _Entry {
 }
 
 /// The list and its table of contents, as built from the started sources.
+/// The live round as a heading shows it, and the section it belongs to.
+typedef _LiveRoundMark =
+    ({int source, String sectionId, ReaderSectionPlace? place, String label});
+
 class _PageLayout {
   final List<_Entry> entries;
   final List<ReaderPageSection> sections;
@@ -2184,11 +2521,16 @@ class _PageLayout {
   /// Each entry's section, -1 for one past the last section.
   final List<int> sectionOfEntry;
 
+  /// The group heading over a section in the sheet, and its language, by
+  /// the section's key.
+  final Map<String, (String, String)> groups;
+
   const _PageLayout({
     required this.entries,
     required this.sections,
     required this.texts,
     required this.sectionOfEntry,
+    required this.groups,
   });
 }
 
@@ -2276,11 +2618,9 @@ class _SourceTitle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (title.isEmpty) return const SizedBox.shrink();
     final style = ReaderStyle.of(context, ref);
-    // A top-level heading's size.
-    final metrics = style.type.heading(
-      0,
-      ReaderScript.of(title, language: language),
-    );
+    // A top-level heading's size and font.
+    final script = ReaderScript.of(title, language: language);
+    final metrics = style.type.heading(0, script);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         ReaderConstants.segmentHorizontalPadding,
@@ -2290,11 +2630,10 @@ class _SourceTitle extends ConsumerWidget {
       ),
       child: Text(
         title,
-        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: metrics.fontSize,
           fontWeight: metrics.fontWeight,
-          fontFamily: style.type.family(language),
+          fontFamily: style.type.headingFamily(language, script),
           color: style.palette.heading,
           height: metrics.height,
         ),

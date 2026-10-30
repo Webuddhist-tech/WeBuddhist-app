@@ -3863,10 +3863,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reader_display_title => 'Display';
 
   @override
+  String get text_size => 'Text size';
+
+  @override
   String get reader_more_settings => 'More settings';
 
   @override
-  String get reader_spacing => 'Spacing';
+  String get reader_spacing => 'Line spacing';
 
   @override
   String get reader_spacing_compact => 'Compact';
@@ -3915,6 +3918,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reader_live_paused => 'Paused';
+
+  @override
+  String get reader_text_smaller => 'Smaller text';
+
+  @override
+  String get reader_text_larger => 'Larger text';
 
   @override
   String reader_section_position(String current, String total) {

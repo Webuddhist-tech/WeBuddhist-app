@@ -367,7 +367,7 @@ class _PlanTextScreenState extends ConsumerState<PlanTextScreen> {
       if (isLive) const PlanTaskLiveLabel(),
       if (eventId != null) PrayerRequestsIconButton(eventId: eventId),
       if (showFontControls)
-        ReaderFontSizeButton(onPressed: () => showFontSizeBottomSheet(context)),
+        ReaderFontSizeButton(onPressed: () => showReaderDisplaySheet(context)),
     ];
   }
 

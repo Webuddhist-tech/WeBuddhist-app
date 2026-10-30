@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_pecha/features/reader/data/models/navigation_context.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_settings_scope.dart';
 import 'package:flutter_pecha/features/reader/data/models/reader_slot_config.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_verse_lines.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/segment_type_style.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_verse_frame.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/segment_number.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/presentation/segment_html_widget.dart';
@@ -57,6 +58,7 @@ class InterlinearSegmentItem extends ConsumerWidget {
     this.highlightSource = NavigationSource.normal,
     this.isGreyedOut = false,
     this.isLive = false,
+    this.followingLive = false,
     this.onTap,
   });
 
@@ -88,6 +90,9 @@ class InterlinearSegmentItem extends ConsumerWidget {
 
   /// The line the puja leader is on right now.
   final bool isLive;
+
+  /// A live room is being followed: verses other than [isLive]'s are muted.
+  final bool followingLive;
   final VoidCallback? onTap;
 
   @override
@@ -108,110 +113,120 @@ class InterlinearSegmentItem extends ConsumerWidget {
     // The aligned line is the same kind of segment, so it shares the style.
     final typeStyle = SegmentTypeStyle.of(segment.type);
 
-    // The translation reads as supporting text beneath the original. Without
-    // the original it is the text, so it takes the text's colour.
-    final Color secondaryColor =
-        layers.original ? style.palette.translation : style.palette.text;
-    final originalMetrics = style.type.line(
-      layers.translation
-          ? ReaderTextRole.originalWithTranslation
-          : ReaderTextRole.originalAlone,
-      ReaderScript.of(primary.html, language: primary.fontLanguage),
+    final originalRole =
+        layers.translation
+            ? ReaderTextRole.originalWithTranslation
+            : ReaderTextRole.originalAlone;
+    final originalScript = ReaderScript.of(
+      primary.html,
+      language: primary.fontLanguage,
+    );
+    final originalMetrics = style.type.line(originalRole, originalScript);
+    final translationRole =
+        layers.original
+            ? ReaderTextRole.translationUnder
+            : ReaderTextRole.translationAlone;
+    final translationScript = ReaderScript.of(
+      secondary.text,
+      language: secondarySlot.languageCode,
     );
     final translationMetrics = style.type.line(
-      layers.original
-          ? ReaderTextRole.translationUnder
-          : ReaderTextRole.translationAlone,
-      ReaderScript.of(secondary.text, language: secondarySlot.languageCode),
+      translationRole,
+      translationScript,
+    );
+    final translationFamily = style.type.family(
+      secondarySlot.languageCode,
+      role: translationRole,
+      script: translationScript,
     );
 
-    return AnimatedOpacity(
-      opacity: isGreyedOut ? 0.3 : 1.0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        // Square-edged so the tint reads as a band across the page.
-        decoration: BoxDecoration(
-          color: isLive ? style.palette.liveHighlight : null,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(
-              ReaderConstants.segmentBorderRadius,
-            ),
-            child: Padding(
-              padding: EdgeInsets.only(
-                left: ReaderConstants.segmentHorizontalPadding + (depth * 8),
-                right: ReaderConstants.segmentHorizontalPadding,
-                top: ReaderConstants.segmentVerticalPadding,
-                bottom: ReaderConstants.segmentVerticalPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SegmentNumber(
-                    label: segment.displayNumber,
-                    language: primaryLanguage,
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (layers.original) ...[
-                        SegmentHtmlWidget(
-                          htmlContent: primary.html,
-                          segmentIndex: segment.segmentNumber,
-                          fontSize: originalMetrics.fontSize,
-                          lineHeight: originalMetrics.height,
-                          language: primary.fontLanguage,
-                          isSelected: isSelected,
-                          textColor: style.palette.text,
-                          fontStyle:
-                              typeStyle.fontStyle ?? originalMetrics.fontStyle,
-                          fontWeight:
-                              typeStyle.fontWeight ??
-                              originalMetrics.fontWeight,
-                        ),
-                        // Original and its translation belong together; the
-                        // larger gap goes between verses, below.
-                        if (layers.translation) const SizedBox(height: 6),
-                      ],
-                      if (layers.translation && secondary.isPlaceholder)
-                        _SecondaryPlaceholder(
-                          text: secondary.text,
-                          fontFamily: style.type.family(
-                            secondarySlot.languageCode,
-                          ),
-                          metrics: translationMetrics,
-                          color: secondaryColor,
-                        )
-                      else if (layers.translation)
-                        SegmentHtmlWidget(
-                          htmlContent: secondary.text,
-                          segmentIndex: segment.segmentNumber,
-                          fontSize: translationMetrics.fontSize,
-                          lineHeight: translationMetrics.height,
-                          language: secondarySlot.languageCode,
-                          isSelected: isSelected,
-                          textColor: secondaryColor,
-                          fontStyle:
-                              typeStyle.fontStyle ??
-                              translationMetrics.fontStyle,
-                          fontWeight:
-                              typeStyle.fontWeight ??
-                              translationMetrics.fontWeight,
-                        ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ],
-              ),
+    // Gaps follow the step of the topmost line shown.
+    final settings = style.type.settings;
+    final gaps = style.type.gaps(
+      layers.original ? settings.originalStep : settings.translationStep,
+    );
+    final colors = readerVerseColors(
+      style.palette,
+      isLive: isLive,
+      followingLive: followingLive,
+      translationUnderOriginal: layers.original,
+    );
+    final lines = pairLines(
+      layers.original ? primary.html : null,
+      layers.translation && !secondary.isPlaceholder ? secondary.text : null,
+    );
+
+    Widget original(String html) => SegmentHtmlWidget(
+      htmlContent: html,
+      segmentIndex: segment.segmentNumber,
+      fontSize: originalMetrics.fontSize,
+      lineHeight: originalMetrics.height,
+      language: primary.fontLanguage,
+      textColor: colors.original,
+      fontStyle: typeStyle.fontStyle ?? originalMetrics.fontStyle,
+      fontWeight: typeStyle.fontWeight ?? originalMetrics.fontWeight,
+      fontFamily: style.type.family(
+        primary.fontLanguage,
+        role: originalRole,
+        script: originalScript,
+      ),
+    );
+    Widget translation(String html) => SegmentHtmlWidget(
+      htmlContent: html,
+      segmentIndex: segment.segmentNumber,
+      fontSize: translationMetrics.fontSize,
+      lineHeight: translationMetrics.height,
+      language: secondarySlot.languageCode,
+      textColor: colors.translation,
+      fontStyle: typeStyle.fontStyle ?? translationMetrics.fontStyle,
+      fontWeight: typeStyle.fontWeight ?? translationMetrics.fontWeight,
+      fontFamily: translationFamily,
+    );
+
+    Widget translationBlock() =>
+        secondary.isPlaceholder
+            ? _SecondaryPlaceholder(
+              text: secondary.text,
+              fontFamily: translationFamily,
+              metrics: translationMetrics,
+              color: colors.translation,
+            )
+            : lines.translation.isEmpty
+            ? const SizedBox.shrink()
+            : translation(lines.translation.single);
+
+    // The card marks the selected verse; its lines are not underlined.
+    return ReaderVerseFrame(
+      style: style,
+      verseGap: gaps.verse,
+      isLive: isLive,
+      isSelected: isSelected,
+      isGreyedOut: isGreyedOut,
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (lines.paired)
+            for (var i = 0; i < lines.original.length; i++) ...[
+              if (i > 0) SizedBox(height: gaps.pair),
+              original(lines.original[i]),
+              SizedBox(height: gaps.inPair),
+              translation(lines.translation[i]),
+            ]
+          else ...[
+            if (lines.original.isNotEmpty) original(lines.original.single),
+            if (lines.original.isNotEmpty && layers.translation)
+              SizedBox(height: gaps.pair),
+            if (layers.translation) translationBlock(),
+          ],
+          Padding(
+            padding: EdgeInsets.only(top: gaps.inPair),
+            child: SegmentNumber(
+              label: segment.displayNumber,
+              language: secondarySlot.languageCode,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -274,7 +289,6 @@ class _SecondaryPlaceholder extends StatelessWidget {
       width: double.infinity,
       child: Text(
         text,
-        textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: metrics.fontSize,
           fontFamily: fontFamily,

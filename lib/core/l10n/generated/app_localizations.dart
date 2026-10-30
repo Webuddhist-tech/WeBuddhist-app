@@ -6763,6 +6763,12 @@ abstract class AppLocalizations {
   /// **'Display'**
   String get reader_display_title;
 
+  /// No description provided for @text_size.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get text_size;
+
   /// No description provided for @reader_more_settings.
   ///
   /// In en, this message translates to:
@@ -6772,7 +6778,7 @@ abstract class AppLocalizations {
   /// No description provided for @reader_spacing.
   ///
   /// In en, this message translates to:
-  /// **'Spacing'**
+  /// **'Line spacing'**
   String get reader_spacing;
 
   /// No description provided for @reader_spacing_compact.
@@ -6870,6 +6876,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paused'**
   String get reader_live_paused;
+
+  /// No description provided for @reader_text_smaller.
+  ///
+  /// In en, this message translates to:
+  /// **'Smaller text'**
+  String get reader_text_smaller;
+
+  /// No description provided for @reader_text_larger.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger text'**
+  String get reader_text_larger;
 
   /// No description provided for @reader_section_position.
   ///
