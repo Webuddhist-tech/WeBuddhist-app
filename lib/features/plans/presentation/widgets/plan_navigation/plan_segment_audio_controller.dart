@@ -95,6 +95,15 @@ class PlanSegmentAudioController extends ChangeNotifier {
   /// cannot start a second restart or look like an unexpected stop.
   bool _loopRestarting = false;
 
+  /// True from the moment the listener pauses until they start or resume.
+  ///
+  /// [toggle] pauses without changing [_audioSessionId], so a repeat seek
+  /// already in flight still finishes. [AudioPlayer.playing] is false after
+  /// that pause, and the restart treats that as "stopped, call play()".
+  /// Checking this after the seek keeps the pause from starting playback
+  /// and putting the pause icon back.
+  bool _pauseRequested = false;
+
   /// End-of-slice positions still queued from before a repeat seek. Cleared
   /// as soon as playback is heard back inside the slice.
   int _staleEndSkips = 0;
@@ -169,10 +178,12 @@ class PlanSegmentAudioController extends ChangeNotifier {
         return; // ignore taps while loading
 
       case PlanAudioButtonState.pause:
+        _pauseRequested = true;
         await _player?.pause();
         _setButtonState(PlanAudioButtonState.play);
 
       case PlanAudioButtonState.play:
+        _pauseRequested = false;
         if (_player == null) {
           await _startAudio();
           return;
@@ -204,6 +215,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   Future<void> _startAudio() async {
     if (!hasAudio || _buttonState == PlanAudioButtonState.loading) return;
 
+    _pauseRequested = false;
     final sessionId = ++_audioSessionId;
     _setButtonState(PlanAudioButtonState.loading);
 
@@ -320,6 +332,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
 
   /// Seek to [startMs] and keep playing. The button stays on pause, and the
   /// segment does not complete, so a plan task does not auto-advance.
+  /// A pause that arrives while the seek is in flight stays paused.
   void _restartForRepeat() {
     if (_loopRestarting || _isDisposed || _hasCompleted || !preferredRepeat) {
       return;
@@ -350,13 +363,21 @@ class PlanSegmentAudioController extends ChangeNotifier {
           _fireSegmentComplete();
           return;
         }
+        _staleEndSkips = 2;
+        // The listener may have paused while this seek was in flight.
+        // playing is then false, which is also how a completed player looks,
+        // so the flag — not the player — decides whether to resume.
+        if (_pauseRequested) {
+          _setButtonState(PlanAudioButtonState.play);
+          _publishProgress(player.position);
+          return;
+        }
         // Completed players stay stopped until play() is requested again.
         // play() only finishes when playback stops, so it must not be awaited.
         if (player.processingState == ProcessingState.completed ||
             !player.playing) {
           player.play();
         }
-        _staleEndSkips = 2;
         _setButtonState(PlanAudioButtonState.pause);
         _publishProgress(player.position);
       } catch (_) {
@@ -385,6 +406,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   void cancel() {
     _audioSessionId++; // invalidate any in-flight _startAudio
     _hasCompleted = true; // prevent late-firing position callbacks
+    _pauseRequested = false;
     _loopRestarting = false;
     _staleEndSkips = 0;
     _playerStateSub?.cancel();

@@ -16,6 +16,9 @@ Future<void> showPlaybackSpeedSheet(
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
+    // The default sheet height is 9/16 of the screen. Large text on a short
+    // screen is taller than that, so let the sheet grow and scroll.
+    isScrollControlled: true,
     builder:
         (context) =>
             _PlaybackSpeedSheet(selected: selected, onChanged: onChanged),
@@ -76,122 +79,132 @@ class _PlaybackSpeedSheetState extends State<_PlaybackSpeedSheet> {
     final sheetColor =
         isDark ? AppColors.cardBackgroundDark : AppColors.goldLight;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: sheetColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: onSurface.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.playback_speed,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+    final maxHeight =
+        MediaQuery.sizeOf(context).height - MediaQuery.paddingOf(context).top;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: sheetColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: onSurface.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  IconButton(
-                    icon: const Icon(AppAssets.x, size: 22),
-                    tooltip: l10n.close,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _digits(context, '${_speed.toStringAsFixed(2)}x'),
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: _speedColor,
-                height: 1.1,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(AppAssets.minus, size: 22),
-                    onPressed:
-                        _speed > _min + 0.001
-                            ? () => _set(_speed - _step, haptic: true)
-                            : null,
-                  ),
-                  Expanded(
-                    child: SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 4,
-                        activeTrackColor: track,
-                        inactiveTrackColor: track,
-                        thumbColor: thumb,
-                        overlayColor: thumb.withValues(alpha: 0.12),
-                        thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 8,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.playback_speed,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        overlayShape: const RoundSliderOverlayShape(
-                          overlayRadius: 16,
+                      ),
+                      IconButton(
+                        icon: const Icon(AppAssets.x, size: 22),
+                        tooltip: l10n.close,
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _digits(context, '${_speed.toStringAsFixed(2)}x'),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: _speedColor,
+                    height: 1.1,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(AppAssets.minus, size: 22),
+                        onPressed:
+                            _speed > _min + 0.001
+                                ? () => _set(_speed - _step, haptic: true)
+                                : null,
+                      ),
+                      Expanded(
+                        child: SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 4,
+                            activeTrackColor: track,
+                            inactiveTrackColor: track,
+                            thumbColor: thumb,
+                            overlayColor: thumb.withValues(alpha: 0.12),
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 8,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 16,
+                            ),
+                            trackShape: const RoundedRectSliderTrackShape(),
+                          ),
+                          child: Slider(
+                            value: _speed,
+                            min: _min,
+                            max: _max,
+                            divisions: ((_max - _min) / _step).round(),
+                            onChanged: _set,
+                          ),
                         ),
-                        trackShape: const RoundedRectSliderTrackShape(),
                       ),
-                      child: Slider(
-                        value: _speed,
-                        min: _min,
-                        max: _max,
-                        divisions: ((_max - _min) / _step).round(),
-                        onChanged: _set,
+                      IconButton(
+                        icon: const Icon(AppAssets.plus, size: 22),
+                        onPressed:
+                            _speed < _max - 0.001
+                                ? () => _set(_speed + _step, haptic: true)
+                                : null,
                       ),
-                    ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(AppAssets.plus, size: 22),
-                    onPressed:
-                        _speed < _max - 0.001
-                            ? () => _set(_speed + _step, haptic: true)
-                            : null,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final preset in planPlaybackSpeeds)
+                        Expanded(
+                          child: _SpeedChip(
+                            label: _digits(context, _presetLabel(preset)),
+                            caption:
+                                preset == 1.0 ? l10n.mala_speed_normal : null,
+                            selected: (_speed - preset).abs() < 0.001,
+                            onTap: () => _set(preset, haptic: true),
+                          ),
+                        ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final preset in planPlaybackSpeeds)
-                    Expanded(
-                      child: _SpeedChip(
-                        label: _digits(context, _presetLabel(preset)),
-                        caption: preset == 1.0 ? l10n.mala_speed_normal : null,
-                        selected: (_speed - preset).abs() < 0.001,
-                        onTap: () => _set(preset, haptic: true),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
+          ),
         ),
       ),
     );

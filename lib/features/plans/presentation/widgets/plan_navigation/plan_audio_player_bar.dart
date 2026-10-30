@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
@@ -166,27 +168,104 @@ class _ProgressRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = TextStyle(
-      color: color.withValues(alpha: 0.55),
-      fontSize: 12,
-      fontWeight: FontWeight.w500,
-      fontFeatures: const [FontFeature.tabularFigures()],
+    final style = DefaultTextStyle.of(context).style.merge(
+      TextStyle(
+        color: color.withValues(alpha: 0.55),
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
     );
+    final leading = _clock(context, progress.position);
+    final trailing = _clock(context, progress.duration ?? Duration.zero);
+    final direction = Directionality.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final track = IgnorePointer(
+          child: CustomPaint(
+            painter: _TrackPainter(fraction: progress.fraction, color: color),
+            child: const SizedBox(height: 16),
+          ),
+        );
+        if (!maxWidth.isFinite) {
+          return _clockRow(leading, trailing, style, track);
+        }
+
+        // Clocks do not shrink on their own. When they take the row, the
+        // track is what is left — sometimes nothing. Scale them only then,
+        // so a normal width still pins the duration to the trailing edge.
+        const gap = 8.0;
+        const minTrack = 12.0;
+        final leadingWidth = _textWidth(leading, style, textScaler, direction);
+        final trailingWidth = _textWidth(
+          trailing,
+          style,
+          textScaler,
+          direction,
+        );
+        final naturalTrack = maxWidth - leadingWidth - trailingWidth - gap * 2;
+        if (naturalTrack >= minTrack) {
+          return _clockRow(leading, trailing, style, track);
+        }
+
+        final gaps = maxWidth >= minTrack + gap * 2 ? gap : 0.0;
+        final reservedTrack = math.min(
+          minTrack,
+          math.max(0.0, maxWidth - gaps * 2),
+        );
+        final clockBudget = maxWidth - gaps * 2 - reservedTrack;
+        final clockTotal = leadingWidth + trailingWidth;
+        final leadingSlot =
+            clockTotal <= 0
+                ? clockBudget / 2
+                : clockBudget * leadingWidth / clockTotal;
+        final trailingSlot = clockBudget - leadingSlot;
+
+        return Row(
+          children: [
+            if (leadingSlot > 0)
+              SizedBox(
+                width: leadingSlot,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(leading, style: style, maxLines: 1),
+                ),
+              ),
+            if (gaps > 0) SizedBox(width: gaps),
+            Expanded(child: track),
+            if (gaps > 0) SizedBox(width: gaps),
+            if (trailingSlot > 0)
+              SizedBox(
+                width: trailingSlot,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(trailing, style: style, maxLines: 1),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _clockRow(
+    String leading,
+    String trailing,
+    TextStyle style,
+    Widget track,
+  ) {
     return Row(
       children: [
-        Text(_clock(context, progress.position), style: style),
+        Text(leading, style: style),
         const SizedBox(width: 8),
-        Expanded(
-          child: IgnorePointer(
-            child: CustomPaint(
-              painter: _TrackPainter(fraction: progress.fraction, color: color),
-              child: const SizedBox(height: 16),
-            ),
-          ),
-        ),
+        Expanded(child: track),
         const SizedBox(width: 8),
-        Text(_clock(context, progress.duration ?? Duration.zero), style: style),
+        Text(trailing, style: style),
       ],
     );
   }
@@ -200,11 +279,16 @@ class _TrackPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.width <= 0 || size.height <= 0) return;
     const trackHeight = 3.0;
     const thumbRadius = 6.0;
     final y = size.height / 2;
-    final start = thumbRadius;
-    final end = (size.width - thumbRadius).clamp(start, size.width);
+    // clamp(radius, width) throws once the track is narrower than the thumb.
+    // Long clocks and large text can leave only that sliver, so fit the
+    // thumb to the width before drawing.
+    final radius = size.width < thumbRadius * 2 ? size.width / 2 : thumbRadius;
+    final start = radius;
+    final end = size.width - radius;
     final dx = start + (end - start) * fraction.clamp(0.0, 1.0);
 
     final track =
@@ -220,7 +304,7 @@ class _TrackPainter extends CustomPainter {
           ..strokeWidth = trackHeight
           ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(start, y), Offset(dx, y), played);
-    canvas.drawCircle(Offset(dx, y), thumbRadius, played);
+    canvas.drawCircle(Offset(dx, y), radius, played);
   }
 
   @override
@@ -372,6 +456,23 @@ class _RepeatButton extends StatelessWidget {
 
 String _clock(BuildContext context, Duration duration) {
   return _clockLabel(context, formatPlanAudioClock(duration));
+}
+
+double _textWidth(
+  String text,
+  TextStyle style,
+  TextScaler textScaler,
+  TextDirection direction,
+) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: direction,
+    textScaler: textScaler,
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
 }
 
 String _clockLabel(BuildContext context, String label) {

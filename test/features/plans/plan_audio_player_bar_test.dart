@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -177,13 +179,85 @@ void main() {
     expect(PlanSegmentAudioController.preferredRepeat, isTrue);
     expect(controller.repeat, isTrue);
   });
+
+  testWidgets('a narrow track still paints when the clocks take the width', (
+    tester,
+  ) async {
+    controller.progress.value = const PlanAudioProgress(
+      position: Duration(hours: 10, minutes: 10, seconds: 10),
+      duration: Duration(hours: 12, minutes: 34, seconds: 56),
+    );
+
+    await tester.pumpWidget(
+      _host(
+        PlanAudioPlayerBar(controller: controller),
+        width: 280,
+        textScaler: const TextScaler.linear(2.5),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('10:10:10'), findsOneWidget);
+    expect(find.text('12:34:56'), findsOneWidget);
+
+    final painted = tester.widget<CustomPaint>(
+      find.descendant(
+        of: find.byType(PlanAudioPlayerBar),
+        matching: find.byType(CustomPaint),
+      ),
+    );
+    final canvas = Canvas(ui.PictureRecorder());
+    expect(
+      () => painted.painter!.paint(canvas, const Size(4, 16)),
+      returnsNormally,
+    );
+    expect(() => painted.painter!.paint(canvas, Size.zero), returnsNormally);
+  });
+
+  testWidgets('the speed sheet scrolls on a short screen', (tester) async {
+    tester.view.physicalSize = const Size(800, 200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _host(
+        PlanAudioPlayerBar(controller: controller),
+        textScaler: const TextScaler.linear(2.5),
+      ),
+    );
+
+    await tester.tap(find.text('1.0×'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Playback speed'), findsOneWidget);
+    expect(find.byType(Slider), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Normal'),
+      40,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Normal'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-Widget _host(Widget child, {double width = 400}) {
+Widget _host(
+  Widget child, {
+  double width = 400,
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
   return MaterialApp(
     locale: const Locale('en'),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
+    builder: (context, child) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        child: child!,
+      );
+    },
     home: Scaffold(body: Center(child: SizedBox(width: width, child: child))),
   );
 }
