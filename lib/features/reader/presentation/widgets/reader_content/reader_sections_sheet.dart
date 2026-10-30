@@ -84,17 +84,43 @@ class _SectionList extends StatefulWidget {
 
 class _SectionListState extends State<_SectionList> {
   final _currentRow = GlobalKey();
+  final _scroll = ScrollController();
+
+  /// A row is never shorter than this, so an offset of this times the rows
+  /// above the current one never jumps past it.
+  static const double _minRowHeight = 46;
 
   @override
   void initState() {
     super.initState();
     // Opens with the section on screen in view.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final row = _currentRow.currentContext;
-      if (row != null && mounted) {
-        Scrollable.ensureVisible(row, alignment: 0.4);
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(0));
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  /// Brings the current row into view. The list only builds rows near the
+  /// screen, so one far down a long table of contents has no context yet:
+  /// jump towards it first, then centre it once it is built.
+  void _reveal(int attempt) {
+    if (!mounted || widget.current <= 0) return;
+    final row = _currentRow.currentContext;
+    if (row != null) {
+      Scrollable.ensureVisible(row, alignment: 0.4);
+      return;
+    }
+    if (attempt >= 4 || !_scroll.hasClients) return;
+    final position = _scroll.position;
+    final target =
+        attempt == 0
+            ? widget.current * _minRowHeight
+            : position.pixels + position.viewportDimension;
+    _scroll.jumpTo(target.clamp(0, position.maxScrollExtent));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(attempt + 1));
   }
 
   @override
@@ -125,7 +151,12 @@ class _SectionListState extends State<_SectionList> {
     for (var i = 0; i < widget.pendingSources; i++) {
       children.add(const _PendingSectionRow());
     }
-    return ListView(shrinkWrap: true, padding: EdgeInsets.zero, children: children);
+    return ListView(
+      controller: _scroll,
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      children: children,
+    );
   }
 }
 

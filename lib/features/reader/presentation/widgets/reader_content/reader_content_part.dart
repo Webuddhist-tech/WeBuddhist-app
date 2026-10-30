@@ -24,6 +24,7 @@ import 'package:flutter_pecha/features/reader/presentation/utils/collapsed_reade
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_initial_layout_applier.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_toc_titles.dart';
 import 'package:flutter_pecha/features/reader/presentation/utils/reader_top_verse.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_transliteration.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_live_follow.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_page_toc.dart';
@@ -1831,6 +1832,27 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         view.language;
   }
 
+  /// The script [view]'s original is shown in, read from its first verse as
+  /// [SegmentItem] reads it: Latin for a Tibetan text in Roman phonetics, so
+  /// the page waits for the font the verses actually use.
+  ReaderScript _shownOriginalScript(_SourceView view) {
+    String? content;
+    for (final item in view.items) {
+      if (item.isSegment) {
+        content = item.segment?.content;
+        break;
+      }
+    }
+    if (content == null) return ReaderScript.ofLanguage(view.language);
+    final primary = primarySegmentHtml(
+      ref,
+      content: content,
+      language: view.language,
+      scope: view.params.settingsScope,
+    );
+    return ReaderScript.of(primary.html, language: primary.fontLanguage);
+  }
+
   /// Whether a downloaded font picked for these texts' lines is still
   /// loading, for a short while at most. Defaults are not waited for.
   bool _waitingForPickedFonts(List<_SourceView> views) {
@@ -1838,8 +1860,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final picked = {
       for (final view in views)
         ...fonts.pickedDownloads(
-          original:
-              view.showOriginal ? ReaderScript.ofLanguage(view.language) : null,
+          original: view.showOriginal ? _shownOriginalScript(view) : null,
           translation:
               view.secondaryActive
                   ? ReaderScript.ofLanguage(

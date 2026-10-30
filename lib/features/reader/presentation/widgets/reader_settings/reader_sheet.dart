@@ -594,19 +594,28 @@ class ReaderSheetSegments<T> extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(6),
                                     )
                                     : null,
-                            child: Text(
-                              labelOf(value),
-                              style: readerSheetText(
-                                context,
-                                value == selected
-                                    ? ReaderSheetTextRole.segmentSelected
-                                    : ReaderSheetTextRole.segment,
-                                // The raised segment is white in light and
-                                // dark.
-                                color:
-                                    value == selected
-                                        ? ReaderPalette.inkLight
-                                        : palette.ink,
+                            // One line, shrunk to fit when four tabs or a
+                            // larger system text size leave it too little
+                            // room; the track keeps its 40.
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                labelOf(value),
+                                maxLines: 1,
+                                softWrap: false,
+                                style: readerSheetText(
+                                  context,
+                                  value == selected
+                                      ? ReaderSheetTextRole.segmentSelected
+                                      : ReaderSheetTextRole.segment,
+                                  // The raised segment is white in light and
+                                  // dark.
+                                  color:
+                                      value == selected
+                                          ? ReaderPalette.inkLight
+                                          : palette.ink,
+                                ),
                               ),
                             ),
                           ),

@@ -142,6 +142,25 @@ void main() {
     expect(find.text('Loading...'), findsOneWidget);
   });
 
+  testWidgets('opens on the section on screen, even far down a long list', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      ReaderSectionsSnapshot(
+        sections: [for (var i = 1; i <= 40; i++) _row('s$i', 'Section $i')],
+        pendingSources: 0,
+      ),
+      current: 's38',
+    );
+    final row = find.text('Section 38');
+    expect(row, findsOneWidget);
+    final sheet = tester.getRect(find.byType(ReaderSectionsSheet));
+    final at = tester.getRect(row);
+    expect(at.top, greaterThanOrEqualTo(sheet.top));
+    expect(at.bottom, lessThanOrEqualTo(sheet.bottom));
+  });
+
   testWidgets('a tap goes to that section', (tester) async {
     final picked = await _open(tester, puja, current: 'c');
     await tester.tap(find.text('The Melodious Tune'));

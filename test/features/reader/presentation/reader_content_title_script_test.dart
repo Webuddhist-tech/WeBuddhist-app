@@ -1,10 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
+import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/utils/local_storage_service.dart';
+import 'package:flutter_pecha/features/reader/presentation/providers/reader_fonts_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_script_preference_provider.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_settings_providers.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_fonts.dart';
+import 'package:flutter_pecha/features/reader/presentation/style/reader_script.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -61,16 +68,27 @@ ReaderResponse _page(TextDetailsParams params) {
   );
 }
 
-Future<WidgetRef> _pump(WidgetTester tester) async {
+Future<WidgetRef> _pump(
+  WidgetTester tester, {
+  Map<String, Object> stored = const {},
+  List<Override> overrides = const [],
+  Duration loadTime = Duration.zero,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        localStorageServiceProvider.overrideWithValue(FakeLocalStorage()),
+        ...overrides,
+        localStorageServiceProvider.overrideWithValue(
+          FakeLocalStorage()..values.addAll(stored),
+        ),
         readerSettingsRemoteDatasourceProvider.overrideWithValue(
           FakeReaderSettingsDatasource(languages: const [], versions: const {}),
         ),
         textDetailsFutureProvider.overrideWith(
-          (ref, params) async => Right<Failure, ReaderResponse>(_page(params)),
+          (ref, params) async {
+            await Future<void>.delayed(loadTime);
+            return Right<Failure, ReaderResponse>(_page(params));
+          },
         ),
       ],
       child: MaterialApp(
@@ -78,7 +96,15 @@ Future<WidgetRef> _pump(WidgetTester tester) async {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: ReaderContentPart(sources: const [ReaderParams(textId: 'T')]),
+          // The reader's app bar reads the font picks from the start, through
+          // ReaderStyle; the page here stands alone, so this does it.
+          body: Consumer(
+            builder: (context, ref, child) {
+              ref.watch(readerFontsProvider);
+              return child!;
+            },
+            child: ReaderContentPart(sources: const [ReaderParams(textId: 'T')]),
+          ),
         ),
       ),
     ),
@@ -123,5 +149,35 @@ void main() {
     await _settle(tester);
     expect(find.text(_first), findsWidgets);
     expect(find.text('tö pa ngö'), findsNothing);
+  });
+
+  testWidgets('in Roman phonetics, the page waits for the Latin font picked '
+      'for the original', (tester) async {
+    final loading = Completer<void>();
+    await _pump(
+      tester,
+      stored: {
+        StorageKeys.readerScriptPreference: jsonEncode({'bo': 'phonetic'}),
+        StorageKeys.readerFonts: const ReaderFontChoices()
+            .pick(
+              ReaderFontLine.original,
+              ReaderScript.latin,
+              ReaderFonts.literata,
+            )
+            .toJson(),
+      },
+      overrides: [
+        readerFontPreloadProvider.overrideWith((ref, key) => loading.future),
+      ],
+      // As over the network: the stored picks are in before the text.
+      loadTime: const Duration(milliseconds: 100),
+    );
+    // The verses are in Latin letters, so it is Literata they wait for.
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('tö pa ngö'), findsNothing);
+
+    loading.complete();
+    await _settle(tester);
+    expect(find.text('tö pa ngö'), findsOneWidget);
   });
 }
