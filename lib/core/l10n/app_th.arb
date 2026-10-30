@@ -751,7 +751,7 @@
   "event_puja_starts_in": "พิธีบูชาจะเริ่มใน",
   "event_puja_not_started": "พิธีบูชายังไม่เริ่ม",
   "event_prayer_requests": "คำขอให้ร่วมอธิษฐาน",
-  "event_prayer_request_count": "{count, plural, =1 {1 คำขอ} one {1 คำขอ} other {{count} คำขอ}}",
+  "event_prayer_request_count": "{count, plural, =1 {1 คำขอ} other {{count} คำขอ}}",
   "event_prayer_empty_title": "ยังไม่มีคำขอให้ร่วมอธิษฐาน",
   "event_prayer_empty_body": "คำขอของคุณและของกลุ่มจะแสดงที่นี่",
   "event_prayer_add": "เพิ่มคำขอให้ร่วมอธิษฐาน",

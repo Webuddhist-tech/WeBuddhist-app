@@ -23,6 +23,9 @@ class Env {
   static String get libraryApiUrl =>
       _nonEmpty('LIBRARY_API_URL') ?? 'https://library.webuddhist.com';
 
+  /// Sent as `X-API-Key` on every library call; prod rejects calls without it.
+  static String? get libraryApiKey => _nonEmpty('LIBRARY_API_KEY');
+
   /// Library tag that marks the texts listed as chants. Null when unset; the
   /// chant list then reports a load error rather than failing to build (the
   /// same datasource also serves the user's collections).

@@ -264,7 +264,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Focus mode. The person's scrolls count both ways. The app's own count
   /// only while following a live recitation, and only downwards, so a jump
   /// back up the page does not bring hidden bars back.
-  void _onScrollOffset(double delta) {
+  void _onScrollOffset(double delta, ScrollMetrics metrics) {
     if (!mounted) return;
     // A finger on the list makes the scroll the person's, even one that
     // interrupts the app's own.
@@ -276,7 +276,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Paused, the page reads like the normal reader: bringing a verse up
     // above its sheet leaves the bars, and the Paused pill, where they are.
     if (byApp && !_isFollowingLive) return;
-    if (!_focusMode.scrolled(delta, countUp: !byApp)) return;
+    final changed = _focusMode.scrolled(
+      delta,
+      countUp: !byApp,
+      outOfRange: metrics.outOfRange,
+      atTop: metrics.pixels <= metrics.minScrollExtent,
+    );
+    if (!changed) return;
     final hide = !_focusMode.barsVisible;
     widget.onScrollDirectionChanged?.call(hide);
     setState(() => _pillVisible = !hide);
@@ -382,6 +388,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       _layoutFor([
         for (var i = 0; i < _startedCount; i++) _readView(i),
       ]).entries;
+
+  /// The list as last drawn, which the item positions index into; read on
+  /// every scroll pause, so not laid out again.
+  List<_Entry> _drawnEntries() => _layout?.entries ?? _currentEntries();
 
   /// The list, source after source, with the page's table of contents.
   ///
@@ -515,12 +525,11 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         );
       }
       // Headings that only group sections ("AFTER THE PUJA") head them in
-      // the sheet; the one naming the text does too on a page of several
-      // texts.
+      // the sheet; the one naming the text heads the text instead.
       readerSectionGroups(
         titled,
         outlined,
-        textHeadingId: views.length > 1 ? null : titleSectionId,
+        textHeadingId: titleSectionId,
       ).forEach((id, group) {
         groups['${view.index}:$id'] = _outlineTitle(view, group);
       });
@@ -704,6 +713,40 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     return _inScript(view, (title.title, title.language));
   }
 
+  /// The sections sheet's rows, as the pill counts them. On a page of
+  /// several texts, a text no row is named after carries its title, for the
+  /// sheet to head it with.
+  List<ReaderSheetSection> _sheetRows(
+    _PageLayout layout,
+    List<_SourceView> views,
+  ) {
+    final severalTexts = widget.sources.length > 1;
+    final rows = <ReaderSheetSection>[];
+    for (final text in layout.texts) {
+      final own = layout.sections.where((s) => s.source == text.source);
+      final sections = own.isEmpty ? [text.start] : own;
+      final named =
+          !severalTexts || sections.any((s) => s.id == text.titleSectionId);
+      for (final section in sections) {
+        final isText = section.id == text.titleSectionId;
+        rows.add(
+          ReaderSheetSection(
+            // The section a text is named after goes to the text's start,
+            // loading it when the page was opened further in.
+            section: isText ? text.start : section,
+            numeralLanguage: _numeralLanguage(views[section.source]),
+            group: layout.groups[section.key]?.$1,
+            groupLanguage: layout.groups[section.key]?.$2,
+            text: named ? null : text.title,
+            textLanguage: named ? null : text.language,
+            isText: severalTexts && isText,
+          ),
+        );
+      }
+    }
+    return rows;
+  }
+
   /// The sections the pill counts, text by text: a text's sections, or the
   /// text itself while none of its verses are in.
   static List<ReaderPageSection> _pillSections(_PageLayout layout) => [
@@ -843,7 +886,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         positions.toList()..sort((a, b) => a.index.compareTo(b.index));
     final firstVisibleIndex = sortedPositions.first.index;
     final lastVisibleIndex = sortedPositions.last.index;
-    final totalItems = _currentEntries().length;
+    final totalItems = _drawnEntries().length;
 
     if (_isCollapsed) {
       _loadForward(lastVisibleIndex, totalItems);
@@ -888,7 +931,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// all its verses. Once the last started source has them all, or failed,
   /// the next source starts.
   void _loadForward(int lastVisibleIndex, int totalItems) {
-    final entries = _currentEntries();
+    final entries = _drawnEntries();
     var lastIsDone = false;
     for (var index = 0; index < _startedCount; index++) {
       final state = ref.read(readerNotifierProvider(widget.sources[index]));
@@ -954,7 +997,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (!mounted) return;
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
-    final entries = _currentEntries();
+    final entries = _drawnEntries();
     final furthest = <int, int>{};
     for (final position in positions) {
       if (position.index >= entries.length) continue;
@@ -1166,7 +1209,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     if (_isProgrammaticScroll) return;
     final index = _selectedSourceIndex();
     if (index == null) return;
-    final entries = _currentEntries();
+    final entries = _drawnEntries();
     final top = readerTopVerseEntry(
       _itemPositionsListener.itemPositions.value,
       (i) =>
@@ -2119,23 +2162,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Texts not started yet are listed as loading until they are.
     final pending = widget.sources.length - _startedCount;
     final snapshot = ReaderSectionsSnapshot(
-      sections: [
-        for (final text in layout.texts)
-          for (final section
-              in layout.sections.any((s) => s.source == text.source)
-                  ? layout.sections.where((s) => s.source == text.source)
-                  : [text.start])
-            ReaderSheetSection(
-              // The section a text is named after goes to the text's start,
-              // loading it when the page was opened further in.
-              section:
-                  section.id == text.titleSectionId ? text.start : section,
-              numeralLanguage: _numeralLanguage(views[section.source]),
-              group: layout.groups[section.key]?.$1,
-              groupLanguage: layout.groups[section.key]?.$2,
-            ),
-      ],
+      sections: _sheetRows(layout, views),
       pendingSources: pending,
+      severalTexts: widget.sources.length > 1,
       liveKey:
           _isLiveRecitation && liveMode == RecitationLiveFollowMode.following
               ? _liveSectionKey(layout, liveSegmentId)
@@ -2234,7 +2263,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
               onNotification: (notification) {
                 if (notification.depth == 0 &&
                     notification.metrics.axis == Axis.vertical) {
-                  _onScrollOffset(notification.scrollDelta ?? 0);
+                  _onScrollOffset(
+                    notification.scrollDelta ?? 0,
+                    notification.metrics,
+                  );
                 }
                 return false;
               },

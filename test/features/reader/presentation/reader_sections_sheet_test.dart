@@ -16,9 +16,12 @@ ReaderSheetSection _row(
   String language = 'en',
   String numeralLanguage = 'en',
   String? group,
+  int source = 0,
+  String? text,
+  bool isText = false,
 }) => ReaderSheetSection(
   section: ReaderPageSection(
-    source: 0,
+    source: source,
     id: id,
     title: title,
     language: language,
@@ -27,6 +30,9 @@ ReaderSheetSection _row(
   numeralLanguage: numeralLanguage,
   group: group,
   groupLanguage: group == null ? null : language,
+  text: text,
+  textLanguage: text == null ? null : language,
+  isText: isText,
 );
 
 /// Opens the sheet over a page whose section on screen is [current], and
@@ -159,6 +165,75 @@ void main() {
     final at = tester.getRect(row);
     expect(at.top, greaterThanOrEqualTo(sheet.top));
     expect(at.bottom, lessThanOrEqualTo(sheet.bottom));
+  });
+
+  testWidgets('several texts are ruled apart, each under its title', (
+    tester,
+  ) async {
+    const mirror = 'The Clear Mirror';
+    await _open(
+      tester,
+      ReaderSectionsSnapshot(
+        sections: [
+          _row('summary', 'The brief summary', text: mirror),
+          _row(
+            'p1',
+            'Prostration',
+            group: 'The detailed explanation',
+            text: mirror,
+          ),
+          _row(
+            'p2',
+            'Praise',
+            group: 'The detailed explanation',
+            text: mirror,
+          ),
+          // Texts with no sections of their own are their one row.
+          _row('t1', 'Prayer for the Future', source: 1, isText: true),
+          _row('t2', 'Prayer to Guru Rinpoche', source: 2, isText: true),
+        ],
+        pendingSources: 1,
+        severalTexts: true,
+      ),
+      current: 'summary',
+    );
+
+    expect(find.text(mirror), findsOneWidget);
+    expect(find.text('THE DETAILED EXPLANATION'), findsOneWidget);
+    expect(find.text('Prayer for the Future'), findsOneWidget);
+    // Those texts are titles, unnumbered; the sections are numbered.
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('4'), findsNothing);
+    expect(find.text('5'), findsNothing);
+    final title = tester.widget<Text>(find.text('Prayer for the Future'));
+    expect(title.style?.fontWeight, FontWeight.w600);
+    // Between the four texts, the last still loading.
+    expect(find.byType(Divider), findsNWidgets(3));
+    expect(find.text('Section 1 / 6'), findsOneWidget);
+  });
+
+  testWidgets('a text the leader is in carries the Live pill', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      ReaderSectionsSnapshot(
+        sections: [
+          _row('a', 'Prayer to the Buddha', isText: true),
+          _row('t1', 'Prayer for the Future', source: 1, isText: true),
+        ],
+        pendingSources: 0,
+        severalTexts: true,
+        liveKey: '1:t1',
+      ),
+      current: 'a',
+    );
+    expect(find.text('Live'), findsOneWidget);
+  });
+
+  testWidgets('one text is not ruled', (tester) async {
+    await _open(tester, puja, current: 'a');
+    expect(find.byType(Divider), findsNothing);
   });
 
   testWidgets('a tap goes to that section', (tester) async {

@@ -16,6 +16,7 @@ import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/presentation/providers/plan_days_providers.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/live_tracked_plan_text.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_analytics.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_group_collections.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_days_model.dart';
 import 'package:flutter_pecha/features/plans/data/models/plan_tasks_model.dart';
 import 'package:flutter_pecha/features/practice/presentation/providers/routine_api_providers.dart';
@@ -336,10 +337,17 @@ class _PlanPreviewDetailsState extends ConsumerState<PlanPreviewDetails> {
   ) {
     final liveTextId = widget.liveTextId;
     if (liveTextId == null || liveTextId.isEmpty || _didOpenLiveText) return;
-    final items = PlanSubtaskNavigation.fromPlanTasks(tasks);
     _didOpenLiveText = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final collections = await loadPlanGroupCollections(
+        ref,
+        PlanSubtaskNavigation.groupCollectionIdsForPlanTasks(tasks),
+      );
       if (!mounted) return;
+      final items = PlanSubtaskNavigation.fromPlanTasks(
+        tasks,
+        collections: collections,
+      );
       unawaited(
         openLiveTrackedPlanText(
           context: context,

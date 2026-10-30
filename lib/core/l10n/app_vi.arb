@@ -751,7 +751,7 @@
   "event_puja_starts_in": "Pháp hội bắt đầu sau",
   "event_puja_not_started": "Pháp hội chưa bắt đầu",
   "event_prayer_requests": "Lời nhờ cầu nguyện",
-  "event_prayer_request_count": "{count, plural, =1 {1 lời nhờ} one {1 lời nhờ} other {{count} lời nhờ}}",
+  "event_prayer_request_count": "{count, plural, =1 {1 lời nhờ} other {{count} lời nhờ}}",
   "event_prayer_empty_title": "Chưa có lời nhờ cầu nguyện nào",
   "event_prayer_empty_body": "Lời nhờ của bạn và của nhóm sẽ hiển thị tại đây",
   "event_prayer_add": "Thêm lời nhờ cầu nguyện",

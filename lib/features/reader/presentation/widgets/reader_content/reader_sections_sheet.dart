@@ -9,7 +9,8 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settin
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The Sections sheet (WF11/WF12/WF26): "Sections · Section n / m", then the
-/// sections the pill counts, in order, under their group headings. Those
+/// sections the pill counts, in order, under their group headings; several
+/// texts are ruled apart, each under its title. Those
 /// before the one on screen are ticked, the rest numbered; the one on screen
 /// is marked, and the live one carries the Live pill. Pops with the section
 /// to go to.
@@ -55,6 +56,7 @@ class ReaderSectionsSheet extends ConsumerWidget {
                 child: _SectionList(
                   sections: sections,
                   pendingSources: page.pendingSources,
+                  severalTexts: page.severalTexts,
                   current: sections.isEmpty ? -1 : index,
                   liveKey: page.liveKey,
                 ),
@@ -69,12 +71,14 @@ class _SectionList extends StatefulWidget {
   const _SectionList({
     required this.sections,
     required this.pendingSources,
+    required this.severalTexts,
     required this.current,
     required this.liveKey,
   });
 
   final List<ReaderSheetSection> sections;
   final int pendingSources;
+  final bool severalTexts;
   final int current;
   final String? liveKey;
 
@@ -128,8 +132,21 @@ class _SectionListState extends State<_SectionList> {
     final sections = widget.sections;
     final children = <Widget>[];
     String? group;
+    int? source;
     for (var i = 0; i < sections.length; i++) {
       final row = sections[i];
+      if (row.section.source != source) {
+        if (widget.severalTexts && source != null) {
+          children.add(const _TextRule());
+        }
+        if (row.text != null) {
+          children.add(
+            _TextHeading(label: row.text!, language: row.textLanguage),
+          );
+        }
+        source = row.section.source;
+        group = null;
+      }
       if (row.group != null && row.group != group) {
         children.add(
           _GroupHeading(label: row.group!, language: row.groupLanguage),
@@ -149,6 +166,7 @@ class _SectionListState extends State<_SectionList> {
       );
     }
     for (var i = 0; i < widget.pendingSources; i++) {
+      if (children.isNotEmpty) children.add(const _TextRule());
       children.add(const _PendingSectionRow());
     }
     return ListView(
@@ -158,6 +176,62 @@ class _SectionListState extends State<_SectionList> {
       children: children,
     );
   }
+}
+
+/// The rule between two texts of the page.
+class _TextRule extends ConsumerWidget {
+  const _TextRule();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: ReaderStyle.of(context, ref).palette.drawerDivider,
+      ),
+    );
+  }
+}
+
+/// The title over a text's sections on a page of several texts.
+class _TextHeading extends ConsumerWidget {
+  const _TextHeading({required this.label, this.language});
+
+  final String label;
+  final String? language;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 2),
+      child: _textTitle(context, ReaderStyle.of(context, ref), label, language),
+    );
+  }
+}
+
+/// A text's title in the sheet, sized by its own letters.
+Widget _textTitle(
+  BuildContext context,
+  ReaderStyle style,
+  String label,
+  String? language,
+) {
+  final script = ReaderScript.of(label, language: language);
+  final latin = script == ReaderScript.latin || script == ReaderScript.cyrillic;
+  return Text(
+    label,
+    style: readerSheetText(
+      context,
+      ReaderSheetTextRole.group,
+      color: style.palette.ink,
+      script: script,
+    ).copyWith(
+      height: latin ? 1.25 : style.type.listLineHeight(language ?? ''),
+      fontFamily: latin ? null : style.type.family(language ?? ''),
+    ),
+  );
 }
 
 /// A heading over a group of sections ("AFTER THE PUJA").
@@ -219,6 +293,39 @@ class _SectionRow extends ConsumerWidget {
     final latin = script == ReaderScript.latin || script == ReaderScript.cyrillic;
     final numerals = ReaderScript.ofLanguage(row.numeralLanguage);
     final muted = palette.sheetMuted;
+    if (row.isText) {
+      // A text's title, as the heading over a text's sections: no number.
+      return Material(
+        color: isCurrent ? palette.sheetCurrentRow : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 46),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _textTitle(
+                      context,
+                      style,
+                      section.title,
+                      section.language,
+                    ),
+                  ),
+                  if (isLive) ...[
+                    const SizedBox(width: 10),
+                    _LivePill(palette: palette),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Material(
       color: isCurrent ? palette.sheetCurrentRow : Colors.transparent,
       borderRadius: BorderRadius.circular(10),
