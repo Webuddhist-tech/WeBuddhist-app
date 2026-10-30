@@ -61,6 +61,7 @@ void main() {
     'line one<br>line two that is long enough to wrap across the width<br>3',
     '  spaced   out \n text <span class="yigchung"> small </span> end  ',
     'Tom &amp; Jerry &lt;3',
+    'passage one<br><br>passage two',
   ];
 
   testWidgets('library verses skip flutter_html', (tester) async {
@@ -83,34 +84,40 @@ void main() {
     (null, false, 1.0),
     (1.8, false, 1.3),
   ]) {
-    testWidgets(
-      'lays out as flutter_html did (line height $lineHeight, '
-      'selected $selected, text scale $scale)',
-      (tester) async {
-        for (final sample in samples) {
-          await _pump(tester, textScale: scale, [
-            _verse(sample, lineHeight: lineHeight, isSelected: selected),
-            _verse(
-              '$sample$_forceHtml',
-              lineHeight: lineHeight,
-              isSelected: selected,
-            ),
-          ]);
-          final verses = find.byType(SegmentHtmlWidget);
-          expect(find.byType(Html), findsOneWidget);
-          expect(
-            tester.getSize(verses.at(0)),
-            tester.getSize(verses.at(1)),
-            reason: sample,
-          );
-        }
-      },
-    );
+    testWidgets('lays out as flutter_html did (line height $lineHeight, '
+        'selected $selected, text scale $scale)', (tester) async {
+      for (final sample in samples) {
+        await _pump(tester, textScale: scale, [
+          _verse(sample, lineHeight: lineHeight, isSelected: selected),
+          _verse(
+            '$sample$_forceHtml',
+            lineHeight: lineHeight,
+            isSelected: selected,
+          ),
+        ]);
+        final verses = find.byType(SegmentHtmlWidget);
+        expect(find.byType(Html), findsOneWidget);
+        expect(
+          tester.getSize(verses.at(0)),
+          tester.getSize(verses.at(1)),
+          reason: sample,
+        );
+      }
+    });
   }
 
   testWidgets('spaces collapse and trim as HTML draws them', (tester) async {
     await _pump(tester, [_verse(samples[3])]);
     final verse = tester.widget<RichText>(find.byType(RichText).last).text;
     expect(verse.toPlainText(), 'spaced out text small end');
+  });
+
+  testWidgets('a double line break keeps its blank line', (tester) async {
+    await _pump(tester, [_verse('one<br><br>two'), _verse('one<br> <br>two')]);
+    final verses = [
+      for (final text in tester.widgetList<RichText>(find.byType(RichText)))
+        if (text.text.toPlainText().contains('one')) text.text.toPlainText(),
+    ];
+    expect(verses, ['one\n\ntwo', 'one\n\ntwo']);
   });
 }

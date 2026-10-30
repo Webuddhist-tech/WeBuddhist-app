@@ -310,7 +310,8 @@ List<_Run> _trimLines(List<_Run> runs) {
   for (var i = 0; i < runs.length; i++) {
     var text = runs[i].text;
     final lineStart = result.isEmpty || result.last.text.endsWith('\n');
-    if (lineStart) text = text.trimLeft();
+    // A line break is never trimmed away: `<br><br>` keeps its blank line.
+    if (lineStart && text != '\n') text = text.trimLeft();
     final lineEnd = i == runs.length - 1 || runs[i + 1].text == '\n';
     if (lineEnd && text != '\n') text = text.trimRight();
     if (text.isEmpty) continue;
