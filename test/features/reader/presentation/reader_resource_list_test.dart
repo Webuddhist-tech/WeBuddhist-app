@@ -148,5 +148,64 @@ void main() {
       expect(find.textContaining('Source:'), findsNothing);
       expect(find.textContaining('License:'), findsNothing);
     });
+      testWidgets("the picked language carries over to the next verse's list", (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      // 0: verse A's list, 1: loading (no list), 2: verse B's list.
+      final step = ValueNotifier(0);
+      addTearDown(step.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(FakeLocalStorage()),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              // Stands in for the verse sheet, which stays open meanwhile.
+              body: Consumer(
+                builder: (context, ref, _) {
+                  ref.listen(
+                    readerResourceLanguageProvider('commentary'),
+                    (_, _) {},
+                  );
+                  return ValueListenableBuilder<int>(
+                    valueListenable: step,
+                    builder:
+                        (context, value, _) =>
+                            value == 1
+                                ? const SizedBox()
+                                : ReaderResourceList(
+                                  key: ValueKey('verse-$value'),
+                                  entries: const [_tibetan, _english],
+                                  textLanguage: 'bo',
+                                  rememberAs: 'commentary',
+                                ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Illuminating Rays'), findsOneWidget);
+
+      await tester.tap(find.text('བོད་ཡིག'));
+      await tester.pumpAndSettle();
+      expect(find.text('གསལ་བའི་འོད་ཟེར།'), findsOneWidget);
+
+      step.value = 1;
+      await tester.pumpAndSettle();
+      step.value = 2;
+      await tester.pumpAndSettle();
+      // Verse B opens on Tibetan, not back on English.
+      expect(find.text('གསལ་བའི་འོད་ཟེར།'), findsOneWidget);
+      expect(find.text('Illuminating Rays'), findsNothing);
+    });
   });
 }

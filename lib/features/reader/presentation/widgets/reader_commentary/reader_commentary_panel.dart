@@ -72,6 +72,7 @@ class _CommentaryList extends StatelessWidget {
     return ReaderResourceList(
       textLanguage: textLanguage,
       firstLanguage: pinned?.language,
+      rememberAs: 'commentary',
       entries: [
         if (pinned != null) _entry(pinned),
         for (final code in order.languageCodes)

@@ -40,6 +40,7 @@ class ReaderTranslationPanel extends ConsumerWidget {
           (data) => _TranslationList(
             translations: data.translations,
             textLanguage: textLanguage,
+            rootText: rootText,
             translationTextId:
                 rootText
                     ? null
@@ -59,11 +60,13 @@ class _TranslationList extends StatelessWidget {
   const _TranslationList({
     required this.translations,
     required this.textLanguage,
+    required this.rootText,
     required this.translationTextId,
   });
 
   final List<SegmentTranslation> translations;
   final String textLanguage;
+  final bool rootText;
   final String? translationTextId;
 
   @override
@@ -80,6 +83,7 @@ class _TranslationList extends StatelessWidget {
     return ReaderResourceList(
       textLanguage: textLanguage,
       firstLanguage: pinned?.language,
+      rememberAs: rootText ? 'root' : 'versions',
       entries: [
         if (pinned != null) _entry(pinned),
         for (final group in order.groups)

@@ -829,6 +829,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
             ],
           ),
         ),
+        // An open verse sheet carries its colour down under the home
+        // indicator, which the SafeArea above leaves showing the page.
+        if (isPanelOpen && chantMantra == null && bottomInset > 0)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: bottomInset,
+            child: Builder(
+              // Read under the reader's Theme, not this State's context.
+              builder:
+                  (context) => ColoredBox(
+                    color:
+                        ReaderPalette.resolve(
+                          Theme.of(context),
+                          ref,
+                        ).drawerBackground,
+                  ),
+            ),
+          ),
         // Bottom overlay (only while no verse sheet is open): the floating
         // audio button.
         if (isBottomOverlayVisible)

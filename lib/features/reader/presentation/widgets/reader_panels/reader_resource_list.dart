@@ -48,23 +48,32 @@ List<String> readerResourceLanguages({
   return [...first, ...rest];
 }
 
+/// The language last picked in each verse sheet tab (keyed by tab), so the
+/// choice carries over when the sheet moves to the next verse. Cleared when
+/// the sheet closes.
+final readerResourceLanguageProvider =
+    StateProvider.autoDispose.family<String?, String>((ref, tab) => null);
+
 /// A tab's items, one language at a time: a chip for each language, then
 /// the chosen language's items, each with a line naming its source that
 /// opens into the source's card (WF13–WF15, WF27).
 ///
 /// [entries] come in order; [firstLanguage] (a plan task's pinned item's)
-/// is chosen first when given, else the first chip.
+/// is chosen first when given, else the first chip. With [rememberAs], a
+/// language the reader picks is kept for that tab across verses.
 class ReaderResourceList extends ConsumerStatefulWidget {
   const ReaderResourceList({
     super.key,
     required this.entries,
     required this.textLanguage,
     this.firstLanguage,
+    this.rememberAs,
   });
 
   final List<ReaderResourceEntry> entries;
   final String textLanguage;
   final String? firstLanguage;
+  final String? rememberAs;
 
   @override
   ConsumerState<ReaderResourceList> createState() => _ReaderResourceListState();
@@ -81,6 +90,10 @@ class _ReaderResourceListState extends ConsumerState<ReaderResourceList> {
       _expandedContent = null;
       _expandedSource = null;
     });
+    final tab = widget.rememberAs;
+    if (tab != null) {
+      ref.read(readerResourceLanguageProvider(tab).notifier).state = language;
+    }
   }
 
   @override
@@ -92,9 +105,14 @@ class _ReaderResourceListState extends ConsumerState<ReaderResourceList> {
     );
     if (languages.isEmpty) return const SizedBox.shrink();
     final first = widget.firstLanguage;
+    final tab = widget.rememberAs;
+    final remembered =
+        tab == null ? null : ref.watch(readerResourceLanguageProvider(tab));
     final language =
         languages.contains(_language)
             ? _language!
+            : remembered != null && languages.contains(remembered)
+            ? remembered
             : first != null && languages.contains(first)
             ? first
             : languages.first;

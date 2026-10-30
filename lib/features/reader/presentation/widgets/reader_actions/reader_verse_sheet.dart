@@ -24,6 +24,8 @@ import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commen
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/reader_commentary_panel.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/interlinear_segment_item.dart'
     show interlinearTranslationFor;
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_resource_list.dart'
+    show readerResourceLanguageProvider;
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_settings/reader_sheet.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_translation/reader_translation_panel.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
@@ -183,6 +185,11 @@ class _ReaderVerseSheetState extends ConsumerState<ReaderVerseSheet> {
     final tabs = readerResourceTabs(info.valueOrNull, failed: info.hasError);
     final open = state.resourceTab;
     final language = state.textDetail?.language ?? 'en';
+    // Keeps each tab's picked language while the sheet is open, including
+    // while the next verse's list is loading.
+    for (final tab in const ['commentary', 'versions', 'root']) {
+      ref.listen(readerResourceLanguageProvider(tab), (_, _) {});
+    }
 
     return Material(
       color: palette.drawerBackground,
