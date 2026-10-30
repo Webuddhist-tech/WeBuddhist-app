@@ -264,7 +264,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// Focus mode. The person's scrolls count both ways. The app's own count
   /// only while following a live recitation, and only downwards, so a jump
   /// back up the page does not bring hidden bars back.
-  void _onScrollOffset(double delta) {
+  void _onScrollOffset(double delta, ScrollMetrics metrics) {
     if (!mounted) return;
     // A finger on the list makes the scroll the person's, even one that
     // interrupts the app's own.
@@ -276,7 +276,13 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // Paused, the page reads like the normal reader: bringing a verse up
     // above its sheet leaves the bars, and the Paused pill, where they are.
     if (byApp && !_isFollowingLive) return;
-    if (!_focusMode.scrolled(delta, countUp: !byApp)) return;
+    final changed = _focusMode.scrolled(
+      delta,
+      countUp: !byApp,
+      outOfRange: metrics.outOfRange,
+      atTop: metrics.pixels <= metrics.minScrollExtent,
+    );
+    if (!changed) return;
     final hide = !_focusMode.barsVisible;
     widget.onScrollDirectionChanged?.call(hide);
     setState(() => _pillVisible = !hide);
@@ -2253,7 +2259,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
               onNotification: (notification) {
                 if (notification.depth == 0 &&
                     notification.metrics.axis == Axis.vertical) {
-                  _onScrollOffset(notification.scrollDelta ?? 0);
+                  _onScrollOffset(
+                    notification.scrollDelta ?? 0,
+                    notification.metrics,
+                  );
                 }
                 return false;
               },
