@@ -37,7 +37,7 @@ import 'package:go_router/go_router.dart';
 /// Where the screen stands on the room that backs this group. The room
 /// endpoint creates it on first use, so a member either has one or the
 /// lookup failed; the composer is live in every state but [resolving].
-enum _RoomState { resolving, joined, unavailable }
+enum _RoomState { resolving, joined, unavailable, closed }
 
 /// Member-gated chat shell. Group membership alone grants read and send.
 class GroupChatScreen extends ConsumerStatefulWidget {
@@ -256,6 +256,11 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         _trackOpened(roomId, source: ChatOpenSource.resolved);
         _attachLive(roomId);
         await _markRoomRead();
+      case GroupChatRoomClosed():
+        setState(() {
+          _roomState = _RoomState.closed;
+          _closed = true;
+        });
       case GroupChatRoomUnavailable():
         setState(() => _roomState = _RoomState.unavailable);
     }
@@ -511,6 +516,8 @@ class _GroupChatScreenState extends ConsumerState<GroupChatScreen>
         _RoomState.unavailable => GroupChatErrorState(
           onRetry: _retryResolveRoom,
         ),
+        // The closed notice sits in the composer's place.
+        _RoomState.closed => const SizedBox.shrink(),
         _RoomState.joined =>
           roomId == null
               ? _buildLoading()

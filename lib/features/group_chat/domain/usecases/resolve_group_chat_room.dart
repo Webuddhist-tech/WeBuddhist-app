@@ -15,6 +15,12 @@ class GroupChatRoomFound extends GroupChatRoomLookup {
   const GroupChatRoomFound(this.roomId);
 }
 
+/// The group is unpublished (the room endpoint answered 404), so its chat
+/// is closed. Retrying cannot help; the screen shows the closed notice.
+class GroupChatRoomClosed extends GroupChatRoomLookup {
+  const GroupChatRoomClosed();
+}
+
 /// The lookup itself failed, so the room is unknown for now; a flaky network
 /// must never present an existing conversation as an empty one.
 class GroupChatRoomUnavailable extends GroupChatRoomLookup {
@@ -56,11 +62,11 @@ class ResolveGroupChatRoom {
     final result = await _repository.getRoom(roomId);
     final room = result.fold<ChatRoomDTO?>((_) => null, (room) => room);
     if (room != null && room.id.isNotEmpty) return GroupChatRoomFound(room.id);
-    final isStale = result.fold<bool>(
-      (failure) => failure is NotFoundFailure,
-      (_) => false,
-    );
-    if (!isStale) return const GroupChatRoomUnavailable();
+    final failure = result.fold<Failure?>((failure) => failure, (_) => null);
+    // 403: the user left the room (e.g. left and rejoined the group). The
+    // group endpoint puts them back in, so ask it instead of failing.
+    if (failure is AuthorizationFailure) return null;
+    if (failure is! NotFoundFailure) return const GroupChatRoomUnavailable();
     await _cache.clear(userId: userId, groupId: groupId);
     return null;
   }
@@ -73,6 +79,10 @@ class ResolveGroupChatRoom {
   }) async {
     final result = await _repository.getGroupRoom(groupId);
     final room = result.fold<ChatRoomDTO?>((_) => null, (room) => room);
+    if (result.isLeft() &&
+        result.getLeft().toNullable() is NotFoundFailure) {
+      return const GroupChatRoomClosed();
+    }
     if (room == null || room.id.isEmpty) return const GroupChatRoomUnavailable();
     await _cache.write(userId: userId, groupId: groupId, roomId: room.id);
     return GroupChatRoomFound(room.id);

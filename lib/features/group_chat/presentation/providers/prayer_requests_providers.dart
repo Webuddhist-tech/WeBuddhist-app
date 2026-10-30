@@ -21,6 +21,7 @@ import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_translation_language.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_room_live_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/pending_prayer_sends.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
@@ -800,10 +801,12 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
     final epoch = _pageEpoch;
     final result = await _fetchPage(roomId, skip: state.skip);
     if (!mounted || generation != _listGeneration) return;
-    // Page one was replaced meanwhile; this page belongs to the old list.
+    // The loaded rows were replaced meanwhile (a live refresh, which fires on
+    // every tap in a busy room); this page belongs to the old list. Ask again
+    // from the new end so the user scrolling down still gets the next page.
     if (epoch != _pageEpoch) {
       state = state.copyWith(isLoadingMore: false);
-      return;
+      return loadMore();
     }
 
     if (_pageShifted) {
@@ -850,7 +853,38 @@ class PrayerRequestsNotifier extends StateNotifier<PrayerRequestsState> {
   /// own prayers, so a row with taps still on their way keeps its optimistic
   /// count, and nobody can un-pray, so the larger count wins. True when a
   /// request arrived.
-  Future<bool> refreshLatest() async {
+  ///
+  /// Every prayer tap in the room moves the signal, so a burst costs at most
+  /// one read in flight plus one more.
+  Future<bool> refreshLatest() {
+    final running = _refreshing;
+    if (running != null) {
+      // Joins the run in flight, which reads once more after this read.
+      _refreshAgain = true;
+      return running;
+    }
+    return _refreshing = _runRefreshes();
+  }
+
+  Future<bool>? _refreshing;
+  bool _refreshAgain = false;
+
+  Future<bool> _runRefreshes() async {
+    var arrived = false;
+    try {
+      do {
+        _refreshAgain = false;
+        if (await _readLoadedRows()) arrived = true;
+      } while (_refreshAgain && mounted);
+    } finally {
+      // Cleared in the same step the loop ends, so a call cannot join a run
+      // that has already decided not to read again.
+      _refreshing = null;
+    }
+    return arrived;
+  }
+
+  Future<bool> _readLoadedRows() async {
     final roomId = state.roomId;
     if (roomId == null) return false;
     final generation = _listGeneration;
@@ -1721,7 +1755,11 @@ final prayerRoomLiveProvider = Provider.autoDispose
 
       // The sheet is open, so new requests are seen. Events only: a space's
       // room also holds its chat.
+      // Signals that joined one refresh share its future; read once for it.
+      Future<bool>? marked;
       Future<void> markReadIfArrived(Future<bool> refresh) async {
+        if (identical(refresh, marked)) return;
+        marked = refresh;
         final arrived = await refresh;
         if (!arrived || !key.scope.isEvent) return;
         final lifecycle = WidgetsBinding.instance.lifecycleState;
@@ -1731,21 +1769,36 @@ final prayerRoomLiveProvider = Provider.autoDispose
         await repository.markRoomRead(key.roomId);
       }
 
+      var disposed = false;
+      ref.onDispose(() => disposed = true);
+
+      // `closed_at` is never cleared, so a reopened room still has it; only
+      // the room endpoint's 404 means it is closed now.
+      Future<bool> closeIfConfirmed() async {
+        final closed = await confirmRoomClosed(repository, key.roomId);
+        if (disposed || closed != true) return false;
+        notifier().markClosed();
+        return true;
+      }
+
       listenSignal(
         ref,
         path: SignalPaths.chatRoom(key.roomId),
         fields: const {SignalFields.prayersChangedAt, SignalFields.closedAt},
         permissionRetries: 5,
         onReady: (snapshot) {
-          if (snapshot[SignalFields.closedAt] != null) {
-            notifier().markClosed();
+          if (snapshot[SignalFields.closedAt] == null) {
+            unawaited(markReadIfArrived(notifier().catchUp()));
             return;
           }
-          unawaited(markReadIfArrived(notifier().catchUp()));
+          unawaited(() async {
+            if (await closeIfConfirmed() || disposed) return;
+            await markReadIfArrived(notifier().catchUp());
+          }());
         },
         onChange: (change) {
           if (change.field == SignalFields.closedAt) {
-            if (change.current != null) notifier().markClosed();
+            if (change.current != null) unawaited(closeIfConfirmed());
             return;
           }
           unawaited(markReadIfArrived(notifier().refreshLatest()));

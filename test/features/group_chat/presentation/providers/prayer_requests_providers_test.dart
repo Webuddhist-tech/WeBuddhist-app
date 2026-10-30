@@ -281,9 +281,26 @@ class _FakeGroupChatRepository implements GroupChatRepository {
   }) async =>
       const Right(ChatRoomsPage(rooms: [], skip: 0, limit: 0, total: 0));
 
+  /// What `GET /chat/rooms/{id}` answers; a 404 by default (room closed).
+  Failure? getRoomFailure = const NotFoundFailure('closed');
+  int getRoomCalls = 0;
+
   @override
-  Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) async =>
-      const Left(NotFoundFailure('not used'));
+  Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) async {
+    getRoomCalls++;
+    final failure = getRoomFailure;
+    if (failure != null) return Left(failure);
+    return Right(
+      ChatRoomDTO(
+        id: roomId,
+        createdBy: 'u1',
+        kind: 'EVENT',
+        eventId: 'e1',
+        name: 'Tara',
+        updatedAt: '',
+      ),
+    );
+  }
 
   @override
   Future<Either<Failure, ChatMessageDTO>> sendGroupMessage(
@@ -1979,6 +1996,79 @@ void main() {
       expect(notifier.state.roomStatus, PrayerRoomStatus.closed);
     });
 
+    test('a reopened room with an old closed_at stays open', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')])
+        ..getRoomFailure = null;
+      final signals = FakeRealtimeSignals();
+      container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          prayerPacingProvider.overrideWithValue(_instant),
+          prayerTranslationLanguageProvider.overrideWithValue('EN'),
+          prayerMantraLanguageProvider.overrideWithValue('en'),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => true),
+        ],
+      );
+      final notifier = _keepAlive(container);
+      await _settle();
+      container.listen(
+        prayerRoomLiveProvider((scope: _eventScope, roomId: 'room-1')),
+        (_, _) {},
+      );
+      await _settle();
+
+      // Closed once, re-enabled since: the field is still there.
+      final path = SignalPaths.chatRoom('room-1');
+      signals.emit(path, {'closed_at': DateTime.utc(2026, 10, 1)});
+      await _settle();
+      expect(repository.getRoomCalls, 1);
+      expect(notifier.state.roomStatus, isNot(PrayerRoomStatus.closed));
+
+      // New requests still arrive.
+      repository.history = [_prayer('b'), _prayer('a')];
+      signals.emit(path, {
+        'closed_at': DateTime.utc(2026, 10, 1),
+        'prayers_changed_at': DateTime.utc(2026, 10, 29),
+      });
+      await _settle();
+      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+      expect(notifier.state.roomStatus, isNot(PrayerRoomStatus.closed));
+    });
+
+    test('a closed_at change on a reachable room does not close it', () async {
+      repository = _FakeGroupChatRepository(history: [_prayer('a')])
+        ..getRoomFailure = null;
+      final signals = FakeRealtimeSignals();
+      container = ProviderContainer(
+        overrides: [
+          groupChatRepositoryProvider.overrideWithValue(repository),
+          prayerPacingProvider.overrideWithValue(_instant),
+          prayerTranslationLanguageProvider.overrideWithValue('EN'),
+          prayerMantraLanguageProvider.overrideWithValue('en'),
+          realtimeSignalsProvider.overrideWithValue(signals),
+          firebaseSignedInProvider.overrideWith((ref) => true),
+        ],
+      );
+      final notifier = _keepAlive(container);
+      await _settle();
+      container.listen(
+        prayerRoomLiveProvider((scope: _eventScope, roomId: 'room-1')),
+        (_, _) {},
+      );
+      await _settle();
+
+      final path = SignalPaths.chatRoom('room-1');
+      signals.emit(path, {'prayers_changed_at': DateTime.utc(2026, 10, 29)});
+      await _settle();
+      signals.emit(path, {
+        'prayers_changed_at': DateTime.utc(2026, 10, 29),
+        'closed_at': DateTime.utc(2026, 10, 29, 0, 1),
+      });
+      await _settle();
+      expect(notifier.state.roomStatus, isNot(PrayerRoomStatus.closed));
+    });
+
     test('the first snapshot catches up and new requests mark the event read', () async {
       repository = _FakeGroupChatRepository(history: [_prayer('a')]);
       final signals = FakeRealtimeSignals();
@@ -2122,27 +2212,58 @@ void main() {
       expect(notifier.state.hasMore, isFalse);
     });
 
-    test('an older refresh landing late is dropped', () async {
-      repository = _FakeGroupChatRepository(history: [_prayer('a')]);
+    test('a refresh asked during another reads once more after it', () async {
+      repository = _StaleReadRepository(history: [_prayer('a')]);
       container = buildContainer();
 
       final notifier = _keepAlive(container);
       await _settle();
+      final before = repository.listedTypes.length;
 
       final slow = Completer<void>();
       repository.listGate = slow;
-      final older = notifier.refreshLatest();
+      final first = notifier.refreshLatest();
       await _settle();
-      repository.listGate = null;
+      // The slow read was taken before 'b' existed; three more signals land.
       repository.history = [_prayer('b'), _prayer('a')];
-      await notifier.refreshLatest();
-      expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
-
-      // The slow read was taken before 'b' existed.
-      repository.history = [_prayer('a')];
+      final joined = [
+        notifier.refreshLatest(),
+        notifier.refreshLatest(),
+        notifier.refreshLatest(),
+      ];
       slow.complete();
-      await older;
+
+      final results = await Future.wait([first, ...joined]);
       expect(notifier.state.requests.map((r) => r.id), ['b', 'a']);
+      // Every caller hears that a request arrived.
+      expect(results, everyElement(isTrue));
+      // One read in flight plus one more, not one per signal.
+      expect(repository.listedTypes.length - before, 2);
+    });
+
+    test('a load-more cut off by a live refresh still loads the next page', () async {
+      repository = _StaleReadRepository(
+        history: [for (var i = 0; i < 60; i++) _prayer('p$i')],
+      );
+      container = buildContainer();
+
+      final notifier = _keepAlive(container);
+      await _settle();
+      expect(notifier.state.requests, hasLength(30));
+
+      final slow = Completer<void>();
+      repository.listGate = slow;
+      final more = notifier.loadMore();
+      await _settle();
+      // Someone prays while the page is out: the loaded rows are re-read.
+      await notifier.refreshLatest();
+      slow.complete();
+      await more;
+      await _settle();
+
+      expect(notifier.state.requests, hasLength(60));
+      expect(notifier.state.requests.last.id, 'p59');
+      expect(notifier.state.isLoadingMore, isFalse);
     });
 
     test('applyDeletion drops the request', () async {
@@ -2564,6 +2685,7 @@ class _StaleReadRepository extends _FakeGroupChatRepository {
     String? intention,
     String? translationLanguage,
   }) async {
+    listedTypes.add(messageType);
     final snapshot = List.of(history);
     final gate = listGate;
     listGate = null;

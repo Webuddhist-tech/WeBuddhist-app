@@ -294,6 +294,39 @@ void main() {
       expect(await cache.read(userId: 'u1', groupId: 'g1'), isNull);
     });
 
+    test('an unpublished group (404) is closed, not an error', () async {
+      repository.getGroupRoomFailure = const NotFoundFailure('not found');
+
+      final actual = await resolve(userId: 'u1', groupId: 'g1');
+
+      expect(actual, isA<GroupChatRoomClosed>());
+      expect(await cache.read(userId: 'u1', groupId: 'g1'), isNull);
+    });
+
+    test('a cached room the user left (403) rejoins through the group '
+        'endpoint', () async {
+      await cache.write(userId: 'u1', groupId: 'g1', roomId: 'r1');
+      repository.getRoomFailure = const AuthorizationFailure('forbidden');
+      repository.groupRooms['g1'] = _room('r1', groupId: 'g1');
+
+      final actual = await resolve(userId: 'u1', groupId: 'g1');
+
+      expect((actual as GroupChatRoomFound).roomId, 'r1');
+      expect(repository.getGroupRoomCallCount, 1);
+      expect(await cache.read(userId: 'u1', groupId: 'g1'), 'r1');
+    });
+
+    test('a cached room in an unpublished group is closed', () async {
+      await cache.write(userId: 'u1', groupId: 'g1', roomId: 'r1');
+      repository.getRoomFailure = const NotFoundFailure('not found');
+      repository.getGroupRoomFailure = const NotFoundFailure('not found');
+
+      final actual = await resolve(userId: 'u1', groupId: 'g1');
+
+      expect(actual, isA<GroupChatRoomClosed>());
+      expect(await cache.read(userId: 'u1', groupId: 'g1'), isNull);
+    });
+
     test('reports unavailable for an empty group id', () async {
       expect(
         await resolve(userId: 'u1', groupId: ''),

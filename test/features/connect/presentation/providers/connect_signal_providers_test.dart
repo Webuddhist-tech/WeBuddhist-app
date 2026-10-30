@@ -10,11 +10,17 @@ import 'package:flutter_pecha/features/auth/presentation/providers/state_provide
 import 'package:flutter_pecha/features/auth/presentation/state/auth_state.dart';
 import 'package:flutter_pecha/features/connect/data/datasource/connect_remote_datasource.dart';
 import 'package:flutter_pecha/features/connect/data/repositories/connect_repository_impl.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_events_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_post_comments_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_unified_feed_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
+import 'package:flutter_pecha/features/group_profile/data/models/group_event_model.dart';
+import 'package:flutter_pecha/features/group_profile/domain/entities/group_events_page.dart';
+import 'package:flutter_pecha/features/group_profile/domain/repositories/group_profile_repository.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_events_remote_datasource.dart';
 import 'package:flutter_pecha/features/home/domain/repositories/home_repository.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/home_group_events_preview_provider.dart';
@@ -116,6 +122,22 @@ class _FakeRemote extends ConnectRemoteDatasource {
     };
   }
 
+  /// Soonest first, as the event lists come back.
+  List<String> eventIds = [];
+  int eventFetches = 0;
+
+  @override
+  Future<Map<String, dynamic>> fetchConnectEventsJson({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+    String? eventFormat,
+  }) async {
+    eventFetches++;
+    return eventsJson(eventIds, skip, limit);
+  }
+
   @override
   Future<Map<String, dynamic>> fetchConnectPracticesJson({
     required bool includeUnfollowed,
@@ -141,6 +163,39 @@ class _FakeRemote extends ConnectRemoteDatasource {
       'limit': 20,
       'total': groupIds.length,
     };
+  }
+}
+
+Map<String, dynamic> eventsJson(List<String> ids, int skip, int limit) => {
+  'events': [
+    for (final id in ids.skip(skip).take(limit)) {'id': id, 'group_id': 'g1'},
+  ],
+  'skip': skip,
+  'limit': limit,
+  'total': ids.length,
+};
+
+/// Pages after the first, and the re-read of loaded rows, come from here.
+class _FakeGroupProfile extends Fake
+    implements GroupProfileRepositoryInterface {
+  _FakeGroupProfile(this.remote);
+
+  final _FakeRemote remote;
+
+  @override
+  Future<Either<Failure, GroupEventsPage>> getConnectEvents({
+    required bool includeUnfollowed,
+    required String language,
+    int skip = 0,
+    int limit = 20,
+    String? eventFormat,
+  }) async {
+    remote.eventFetches++;
+    return Right(
+      GroupEventsPageModel.fromJson(
+        eventsJson(remote.eventIds, skip, limit),
+      ).toEntity(),
+    );
   }
 }
 
@@ -187,6 +242,9 @@ void main() {
           ConnectRepositoryImpl(remote: remote, store: FakeScreenCacheStore()),
         ),
         todayEventsDomainRepositoryProvider.overrideWithValue(today),
+        groupProfileRepositoryProvider.overrideWithValue(
+          _FakeGroupProfile(remote),
+        ),
         homeEventsRemoteDatasourceProvider.overrideWithValue(home),
         screenCacheStoreProvider.overrideWithValue(FakeScreenCacheStore()),
         realtimeSignalsProvider.overrideWithValue(signals),
@@ -495,6 +553,63 @@ void main() {
       await settle();
       expect(today.refreshes, 1);
       expect(home.previews, 1);
+    });
+  });
+
+  group('event lists', () {
+    List<String> shown(ConnectEventsState state) => [
+      for (final event in state.events) event.id,
+    ];
+
+    test('an events signal keeps the pages already scrolled', () async {
+      remote.groupIds = ['g1'];
+      remote.eventIds = [for (var i = 0; i < 50; i++) 'e$i'];
+      final list = myConnectEventsProvider(ConnectEventFormatFilter.all);
+      container.listen(list, (_, _) {});
+      final events = container.read(list.notifier);
+      await events.refresh();
+      await events.loadMore();
+      expect(container.read(list).events, hasLength(40));
+
+      container.listen(myFeedSignalsProvider, (_, _) {});
+      container.listen(myGroupsProvider, (_, _) {});
+      await pumpEventQueue();
+      await pumpEventQueue();
+      final path = SignalPaths.group('g1');
+      signals.emit(path, {'events_changed_at': DateTime.utc(2026, 1, 1)});
+      await settle();
+
+      // An event is edited and a new one lands at the top.
+      remote.eventIds = ['new', ...remote.eventIds];
+      signals.emit(path, {'events_changed_at': DateTime.utc(2026, 1, 2)});
+      await settle();
+
+      // Still two pages, not back to one; the row pushed off the end is next
+      // in line for load-more.
+      final state = container.read(list);
+      expect(state.events, hasLength(40));
+      expect(shown(state).first, 'new');
+      expect(shown(state).last, 'e38');
+      expect(state.skip, 40);
+      expect(state.hasMore, isTrue);
+    });
+
+    test('a burst of signals reads the loaded rows at most twice', () async {
+      remote.eventIds = [for (var i = 0; i < 30; i++) 'e$i'];
+      final events = container.read(discoverConnectEventsProvider.notifier);
+      container.listen(discoverConnectEventsProvider, (_, _) {});
+      await events.refresh();
+      await events.loadMore();
+      final before = remote.eventFetches;
+
+      await Future.wait([
+        events.refreshLatest(),
+        events.refreshLatest(),
+        events.refreshLatest(),
+      ]);
+
+      expect(remote.eventFetches - before, 2);
+      expect(container.read(discoverConnectEventsProvider).events, hasLength(30));
     });
   });
 

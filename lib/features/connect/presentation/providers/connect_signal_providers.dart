@@ -90,7 +90,7 @@ final featuredEventsSignalProvider = Provider.autoDispose<void>((ref) {
 });
 
 /// Home's preview and today's events revalidate through their sources; the
-/// paged lists refresh only while they are alive.
+/// paged lists re-read their loaded rows only while they are alive.
 void refreshEventListsIfShown(Ref ref) {
   final language = ref.read(contentLanguageProvider);
   ref.read(homeGroupEventsPreviewSourceProvider)?.refresh();
@@ -99,9 +99,9 @@ void refreshEventListsIfShown(Ref ref) {
       .refreshTodayEvents(language: language);
   for (final filter in ConnectEventFormatFilter.values) {
     if (!ref.exists(myConnectEventsProvider(filter))) continue;
-    ref.read(myConnectEventsProvider(filter).notifier).refresh();
+    ref.read(myConnectEventsProvider(filter).notifier).refreshLatest();
   }
   if (ref.exists(discoverConnectEventsProvider)) {
-    ref.read(discoverConnectEventsProvider.notifier).refresh();
+    ref.read(discoverConnectEventsProvider.notifier).refreshLatest();
   }
 }

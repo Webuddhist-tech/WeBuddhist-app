@@ -90,7 +90,15 @@ class FirebaseSessionNotifier extends StateNotifier<FirebaseSessionState> {
   bool get _signingIn => _signingInFor == _session;
 
   void onAuthChanged({required bool loggedIn}) {
-    if (loggedIn == _wantSignedIn) return;
+    if (loggedIn == _wantSignedIn) {
+      // Opening logged out: a Firebase user saved from an earlier launch
+      // belongs to whoever left, so it must not carry into the next login.
+      if (!loggedIn && _session == 0) {
+        _session++;
+        if (_gateway.currentUid != null) unawaited(_signOut());
+      }
+      return;
+    }
     _wantSignedIn = loggedIn;
     final firstSession = _session == 0;
     _session++;

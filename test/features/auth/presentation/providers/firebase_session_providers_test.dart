@@ -188,6 +188,40 @@ void main() {
     expect(gateway.uid, 'u2');
   });
 
+  test('a user saved from an earlier launch is not reused by the next account '
+      'when the app starts logged out', () async {
+    // Account A's Firebase user survived on disk (e.g. iOS Keychain), but the
+    // app opens logged out, so no logout ever runs in this launch.
+    gateway.uid = 'u1';
+    notifier.onAuthChanged(loggedIn: false);
+    await _settle();
+
+    repository.uid = 'u2';
+    notifier.onAuthChanged(loggedIn: true);
+    await _settle();
+
+    expect(notifier.state.uid, 'u2');
+    expect(gateway.uid, 'u2');
+    expect(gateway.signedInTokens, ['token-for-u2']);
+  });
+
+  test('a saved user is signed out when the app starts logged out', () async {
+    gateway.uid = 'u1';
+    notifier.onAuthChanged(loggedIn: false);
+    await _settle();
+
+    expect(gateway.uid, isNull);
+    expect(gateway.signOutCalls, 1);
+    expect(notifier.state.signedIn, isFalse);
+  });
+
+  test('starting logged out with no saved user does not sign out', () async {
+    notifier.onAuthChanged(loggedIn: false);
+    await _settle();
+
+    expect(gateway.signOutCalls, 0);
+  });
+
   test('a sign-in landing after logout is signed out', () async {
     final held = Completer<void>();
     gateway.signInGate = held;

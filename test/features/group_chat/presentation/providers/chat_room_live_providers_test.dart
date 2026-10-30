@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/auth/presentation/state/user_state.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_parent_dto.dart';
+import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/chat_room_live_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
@@ -51,6 +52,27 @@ class _FakeRepository implements GroupChatRepository {
         skip: skip,
         limit: limit,
         total: messages.length,
+      ),
+    );
+  }
+
+  /// What `GET /chat/rooms/{id}` answers; a 404 by default (room closed).
+  Failure? getRoomFailure = const NotFoundFailure('closed');
+  int getRoomCalls = 0;
+
+  @override
+  Future<Either<Failure, ChatRoomDTO>> getRoom(String roomId) async {
+    getRoomCalls++;
+    final failure = getRoomFailure;
+    if (failure != null) return Left(failure);
+    return Right(
+      ChatRoomDTO(
+        id: roomId,
+        createdBy: 'u1',
+        kind: 'GROUP',
+        groupId: 'g1',
+        name: 'Sangha',
+        updatedAt: '',
       ),
     );
   }
@@ -234,6 +256,45 @@ void main() {
     signals.emit(_path, {'closed_at': DateTime.utc(2026, 1, 1)});
     await _settle();
 
+    expect(state().closed, isTrue);
+  });
+
+  test('a reopened room with an old closed_at stays open', () async {
+    build();
+    repository.getRoomFailure = null;
+    await _settle();
+
+    signals.emit(_path, {'closed_at': DateTime.utc(2026, 1, 1)});
+    await _settle();
+    expect(state().closed, isFalse);
+    expect(state().live, isTrue);
+
+    // The same closed_at on later snapshots is not asked about again.
+    signals.emit(_path, {
+      'closed_at': DateTime.utc(2026, 1, 1),
+      'messages_changed_at': DateTime.utc(2026, 10, 29),
+    });
+    await _settle();
+    expect(repository.getRoomCalls, 1);
+    expect(state().closed, isFalse);
+  });
+
+  test('a failed closed check is asked again on the next snapshot', () async {
+    build();
+    repository.getRoomFailure = const NetworkFailure('offline');
+    await _settle();
+
+    signals.emit(_path, {'closed_at': DateTime.utc(2026, 1, 1)});
+    await _settle();
+    expect(state().closed, isFalse);
+
+    repository.getRoomFailure = const NotFoundFailure('closed');
+    signals.emit(_path, {
+      'closed_at': DateTime.utc(2026, 1, 1),
+      'messages_changed_at': DateTime.utc(2026, 10, 29),
+    });
+    await _settle();
+    expect(repository.getRoomCalls, 2);
     expect(state().closed, isTrue);
   });
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/realtime/realtime_providers.dart';
 import 'package:flutter_pecha/core/realtime/realtime_signals.dart';
 import 'package:flutter_pecha/core/realtime/retry_permission_denied.dart';
@@ -8,8 +9,26 @@ import 'package:flutter_pecha/core/realtime/signal_field_diff.dart';
 import 'package:flutter_pecha/core/realtime/signal_paths.dart';
 import 'package:flutter_pecha/core/utils/app_logger.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
+import 'package:flutter_pecha/features/group_chat/domain/repositories/group_chat_repository.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_thread_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// `closed_at` is set when a room closes and never cleared, so a room that
+/// was closed and later reopened (group re-published, event chat switched
+/// back on) still carries it. The room endpoint answers 404 only while the
+/// room is really closed, so that decides: true closed, false open, null when
+/// the check itself failed and proves nothing.
+Future<bool?> confirmRoomClosed(
+  GroupChatRepository repository,
+  String roomId,
+) async {
+  final result = await repository.getRoom(roomId);
+  return result.fold(
+    (failure) => failure is NotFoundFailure ? true : null,
+    (_) => false,
+  );
+}
 
 class ChatRoomLiveState extends Equatable {
   const ChatRoomLiveState({
@@ -75,13 +94,18 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
   bool _refreshing = false;
   bool _dirty = false;
 
+  /// The `closed_at` value last confirmed against the room endpoint, or being
+  /// confirmed now, so each close is checked once rather than per snapshot.
+  Object? _checkedClosedAt;
+
   void _onSnapshot(SignalSnapshot snapshot) {
     if (!mounted) return;
+    if (!state.live) state = state.copyWith(live: true);
     // Already closed is state, not a change, so it is read on every snapshot.
-    if (snapshot[SignalFields.closedAt] != null && !state.closed) {
-      state = state.copyWith(closed: true, live: true);
-    } else if (!state.live) {
-      state = state.copyWith(live: true);
+    final closedAt = snapshot[SignalFields.closedAt];
+    if (closedAt != null && !state.closed && closedAt != _checkedClosedAt) {
+      _checkedClosedAt = closedAt;
+      unawaited(_confirmClosed(closedAt));
     }
     final first = !_diff.hasBaseline;
     final changes = _diff.update(roomId, snapshot);
@@ -90,6 +114,20 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
     final catchUp =
         first && ref.read(groupChatThreadProvider(roomId)).hasLoaded;
     if (changes.isNotEmpty || catchUp) unawaited(_refreshThread());
+  }
+
+  Future<void> _confirmClosed(Object closedAt) async {
+    final closed = await confirmRoomClosed(
+      ref.read(groupChatRepositoryProvider),
+      roomId,
+    );
+    if (!mounted) return;
+    if (closed == true) {
+      state = state.copyWith(closed: true);
+    } else if (closed == null && _checkedClosedAt == closedAt) {
+      // The check failed; let the next snapshot ask again.
+      _checkedClosedAt = null;
+    }
   }
 
   void _onError(Object error) {

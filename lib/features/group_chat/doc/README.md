@@ -103,7 +103,7 @@ group_chat/
 
 - Don't remove a row optimistically on delete
 - Don't apply a signal by hand — refetch; Firestore carries no content
-- Don't treat a failed room lookup as "no room" (`GroupChatRoomUnavailable` vs `GroupChatRoomMissing`)
+- Don't treat a failed room lookup as "no room" (`GroupChatRoomUnavailable` vs `GroupChatRoomClosed`)
 
 ### Common tasks
 
