@@ -751,7 +751,7 @@
   "event_puja_starts_in": "ပူဇော်ပွဲ စတင်ရန် ကျန်ချိန်",
   "event_puja_not_started": "ပူဇော်ပွဲ မစတင်သေးပါ",
   "event_prayer_requests": "ဆုတောင်းပေးရန် တောင်းဆိုချက်များ",
-  "event_prayer_request_count": "{count, plural, =1 {တောင်းဆိုချက် 1 ခု} one {တောင်းဆိုချက် 1 ခု} other {တောင်းဆိုချက် {count} ခု}}",
+  "event_prayer_request_count": "{count, plural, =1 {တောင်းဆိုချက် 1 ခု} other {တောင်းဆိုချက် {count} ခု}}",
   "event_prayer_empty_title": "ဆုတောင်းပေးရန် တောင်းဆိုချက် မရှိသေးပါ",
   "event_prayer_empty_body": "သင့်တောင်းဆိုချက်နှင့် သင့်အဖွဲ့၏ တောင်းဆိုချက်များ ဤနေရာတွင် ပေါ်လာပါမည်",
   "event_prayer_add": "ဆုတောင်းပေးရန် တောင်းဆိုချက် ထည့်ရန်",

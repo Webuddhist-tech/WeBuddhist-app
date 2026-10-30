@@ -2618,8 +2618,8 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      one: '1 request',
       other: '$count requests',
+      one: '1 request',
     );
     return '$_temp0';
   }

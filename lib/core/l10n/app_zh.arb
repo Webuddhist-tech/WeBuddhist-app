@@ -992,7 +992,7 @@
   "event_replays_empty": "尚無錄影",
   "event_puja_starts_in": "法會開始於",
   "event_puja_not_started": "法會尚未開始",
-  "event_prayer_request_count": "{count, plural,\n=1 {1 個迴向祈願}\nother {{count} 個迴向祈願}\none {1 個迴向祈願}\n}",
+  "event_prayer_request_count": "{count, plural,\n=1 {1 個迴向祈願}\nother {{count} 個迴向祈願}\n}",
   "@event_prayer_request_count": {
     "placeholders": {
       "count": {
