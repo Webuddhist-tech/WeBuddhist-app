@@ -173,16 +173,13 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
 
     if (!mounted || generation != _requestGeneration) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: state.practices.isEmpty ? failure.message : null,
-          hasLoaded: true,
-        );
-      },
-      _applyFirstPage,
-    );
+    result.fold((failure) {
+      state = state.copyWith(
+        isLoading: false,
+        error: state.practices.isEmpty ? failure.message : null,
+        hasLoaded: true,
+      );
+    }, _applyFirstPage);
   }
 
   void _applyFirstPage(GroupPracticesPage page, {bool fresh = true}) {
@@ -247,26 +244,23 @@ class GroupPracticesNotifier extends StateNotifier<GroupPracticesState> {
   }
 }
 
-final groupPracticesProvider = StateNotifierProvider.autoDispose
-    .family<GroupPracticesNotifier, GroupPracticesState, String>((
-      ref,
-      groupId,
-    ) {
-      ref.watch(authProvider);
-      final language = ref.watch(contentLanguageProvider);
-      final repository = ref.watch(groupProfileRepositoryProvider);
-      final notifier = GroupPracticesNotifier(
-        repository: repository,
-        ref: ref,
-        groupId: groupId,
-        stored: repository.readStoredGroupPractices(
-          groupId,
-          language: language,
-        ),
-      );
-      notifier.loadInitial();
-      return notifier;
-    });
+final groupPracticesProvider = StateNotifierProvider.autoDispose.family<
+  GroupPracticesNotifier,
+  GroupPracticesState,
+  String
+>((ref, groupId) {
+  ref.watch(authProvider);
+  final language = ref.watch(contentLanguageProvider);
+  final repository = ref.watch(groupProfileRepositoryProvider);
+  final notifier = GroupPracticesNotifier(
+    repository: repository,
+    ref: ref,
+    groupId: groupId,
+    stored: repository.readStoredGroupPractices(groupId, language: language),
+  );
+  notifier.loadInitial();
+  return notifier;
+});
 
 void refreshGroupPractices(WidgetRef ref, String groupId) {
   if (!ref.exists(groupPracticesProvider(groupId))) return;
@@ -313,7 +307,8 @@ typedef GroupRecitationCollectionDetailNotifier =
       GroupRecitationCollectionKey
     >;
 
-final groupRecitationCollectionDetailProvider = AsyncNotifierProvider.autoDispose
+final groupRecitationCollectionDetailProvider = AsyncNotifierProvider
+    .autoDispose
     .family<
       GroupRecitationCollectionDetailNotifier,
       Either<Failure, GroupRecitationCollection>,
@@ -823,9 +818,7 @@ class GroupFollowNotifier extends StateNotifier<GroupFollowState> {
       isFollowing: true,
       countDelta: incrementCount ? previousDelta + 1 : previousDelta,
     );
-    unawaited(
-      _repository.saveFollowStatus(_key.groupId, _key.groupType, true),
-    );
+    unawaited(_repository.saveFollowStatus(_key.groupId, _key.groupType, true));
     _invalidateGroupProfile();
     _refreshGroupMembers();
     _invalidateConnectProviders();
@@ -1100,15 +1093,12 @@ class GroupMembersNotifier extends StateNotifier<GroupMembersState> {
 
     if (!mounted || generation != _requestGeneration) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: state.members.isEmpty ? failure.message : null,
-        );
-      },
-      _applyFirstPage,
-    );
+    result.fold((failure) {
+      state = state.copyWith(
+        isLoading: false,
+        error: state.members.isEmpty ? failure.message : null,
+      );
+    }, _applyFirstPage);
   }
 
   void _applyFirstPage(GroupMembersPage page, {bool fresh = true}) {
@@ -1378,6 +1368,9 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
   // still being refreshed, nor land on a list that page one has replaced.
   bool _firstPageInFlight = false;
   int _pageEpoch = 0;
+  // Decided while a first-page refresh may still be in flight; a response
+  // read before the decision must not bring them back as pending.
+  final Set<String> _decided = {};
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
@@ -1402,25 +1395,28 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
 
     if (!mounted || generation != _requestGeneration) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: state.requests.isEmpty ? failure.message : null,
-        );
-      },
-      _applyFirstPage,
-    );
+    result.fold((failure) {
+      state = state.copyWith(
+        isLoading: false,
+        error: state.requests.isEmpty ? failure.message : null,
+      );
+    }, _applyFirstPage);
   }
 
   void _applyFirstPage(GroupJoinRequestsPage page, {bool fresh = true}) {
     if (fresh) _pageEpoch++;
+    final requests = [
+      for (final request in page.requests)
+        if (!_decided.contains(request.id)) request,
+    ];
+    final dropped = page.requests.length - requests.length;
+    final total = page.total > dropped ? page.total - dropped : 0;
     state = state.copyWith(
-      requests: page.requests,
-      total: page.total,
+      requests: requests,
+      total: total,
       isLoading: false,
-      hasMore: _hasMore(page.requests.length, page.requests, page.total),
-      skip: page.requests.length,
+      hasMore: _hasMore(requests.length, requests, total),
+      skip: requests.length,
       clearError: true,
     );
   }
@@ -1512,6 +1508,7 @@ class GroupJoinRequestsNotifier extends StateNotifier<GroupJoinRequestsState> {
   }
 
   void _dropRequest(String requestId) {
+    _decided.add(requestId);
     final remaining = [
       for (final request in state.requests)
         if (request.id != requestId) request,
@@ -1749,15 +1746,12 @@ class GroupEventParticipantsNotifier
 
     if (!mounted || generation != _requestGeneration) return;
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          error: state.participants.isEmpty ? failure.message : null,
-        );
-      },
-      _applyFirstPage,
-    );
+    result.fold((failure) {
+      state = state.copyWith(
+        isLoading: false,
+        error: state.participants.isEmpty ? failure.message : null,
+      );
+    }, _applyFirstPage);
   }
 
   void _applyFirstPage(GroupEventParticipantsPage page, {bool fresh = true}) {

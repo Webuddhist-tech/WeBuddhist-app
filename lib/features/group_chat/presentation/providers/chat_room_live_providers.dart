@@ -91,6 +91,7 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
   });
 
   StreamSubscription<SignalSnapshot>? _sub;
+  ProviderSubscription<bool>? _loadSub;
   bool _refreshing = false;
   bool _dirty = false;
 
@@ -111,9 +112,25 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
     final changes = _diff.update(roomId, snapshot);
     // The first snapshot is only a baseline, so whatever changed since the
     // thread loaded is caught up once, here.
-    final catchUp =
-        first && ref.read(groupChatThreadProvider(roomId)).hasLoaded;
+    final loaded = ref.read(groupChatThreadProvider(roomId)).hasLoaded;
+    final catchUp = first && loaded;
     if (changes.isNotEmpty || catchUp) unawaited(_refreshThread());
+    // The thread's first page may have been read before this snapshot, so
+    // it can miss a message the baseline already counts. Catch up once it lands.
+    if (first && !loaded) _catchUpAfterLoad();
+  }
+
+  void _catchUpAfterLoad() {
+    _loadSub?.close();
+    _loadSub = ref.listen<bool>(
+      groupChatThreadProvider(roomId).select((s) => s.hasLoaded),
+      (_, hasLoaded) {
+        if (!hasLoaded) return;
+        _loadSub?.close();
+        _loadSub = null;
+        if (mounted) unawaited(_refreshThread());
+      },
+    );
   }
 
   Future<void> _confirmClosed(Object closedAt) async {
@@ -169,6 +186,7 @@ class ChatRoomLiveNotifier extends StateNotifier<ChatRoomLiveState> {
   @override
   void dispose() {
     _sub?.cancel();
+    _loadSub?.close();
     super.dispose();
   }
 }

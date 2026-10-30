@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
@@ -32,6 +34,7 @@ class _FakeRepository implements GroupChatRepository {
   List<ChatMessageDTO> messages = [_message('m1')];
   int pageCount = 0;
   Failure? pageFailure;
+  Completer<void>? pageHold;
 
   @override
   Future<Either<Failure, ChatMessagesPage>> listMessages(
@@ -46,14 +49,16 @@ class _FakeRepository implements GroupChatRepository {
     pageCount++;
     final failure = pageFailure;
     if (failure != null) return Left(failure);
-    return Right(
-      ChatMessagesPage(
-        messages: messages.skip(skip).take(limit).toList(),
-        skip: skip,
-        limit: limit,
-        total: messages.length,
-      ),
+    // Read before any hold, like a server answering before the reply arrives.
+    final page = ChatMessagesPage(
+      messages: messages.skip(skip).take(limit).toList(),
+      skip: skip,
+      limit: limit,
+      total: messages.length,
     );
+    final hold = pageHold;
+    if (hold != null) await hold.future;
+    return Right(page);
   }
 
   /// What `GET /chat/rooms/{id}` answers; a 404 by default (room closed).
@@ -150,6 +155,36 @@ void main() {
       expect(state().live, isTrue);
       expect(state().refreshes, 1);
       expect(repository.pageCount, pages + 1);
+      expect(ids(), ['m2', 'm1']);
+    },
+  );
+
+  test(
+    'a first snapshot during the first load catches up once it lands',
+    () async {
+      build();
+      // build() already started the first load; hold the next ones instead.
+      repository.pageHold = Completer<void>();
+      container.invalidate(groupChatThreadProvider('room-1'));
+      container.read(groupChatThreadProvider('room-1'));
+      await _settle();
+      expect(
+        container.read(groupChatThreadProvider('room-1')).hasLoaded,
+        isFalse,
+      );
+
+      // A message lands after the server read the page, before the snapshot.
+      repository.messages = [_message('m2'), _message('m1')];
+      signals.emit(_path, {'messages_changed_at': DateTime.utc(2026, 1, 1)});
+      await _settle();
+      expect(state().refreshes, 0);
+
+      final hold = repository.pageHold!;
+      repository.pageHold = null;
+      hold.complete();
+      await _settle();
+
+      expect(state().refreshes, 1);
       expect(ids(), ['m2', 'm1']);
     },
   );
