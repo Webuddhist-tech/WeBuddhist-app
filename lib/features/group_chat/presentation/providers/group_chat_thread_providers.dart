@@ -81,19 +81,6 @@ class GroupChatThreadState extends Equatable {
   ];
 }
 
-/// What a `refreshLatest` found, for the caller deciding whether the socket
-/// that should have delivered it can still be trusted.
-enum ThreadRefreshResult {
-  /// The request failed, so nothing can be said either way.
-  failed,
-
-  /// Every message the page carried was already held.
-  nothingMissed,
-
-  /// The page carried a message nothing else had delivered.
-  missedMessages,
-}
-
 class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   GroupChatThreadNotifier({required this.ref, required this.roomId})
     : super(const GroupChatThreadState()) {
@@ -103,6 +90,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
   final Ref ref;
   final String roomId;
   static const int _limit = 30;
+
+  /// The API's largest page, for re-reading loaded history in few calls.
+  static const int _windowLimit = 100;
 
   /// Per message, the sequence number of the most recent toggle and the tail
   /// of its in-flight work. Overlapping taps on one message would otherwise
@@ -230,6 +220,15 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       ];
     }
 
+    // A fetched row carries its own deletion, but replies quoting it do not,
+    // and with signals that is how another member's delete arrives.
+    for (final message in messages) {
+      final deletedAt = message.deletedAt;
+      if (deletedAt != null) {
+        _deletedOriginals.putIfAbsent(message.id, () => deletedAt);
+      }
+    }
+
     // Quotes of every original known to be gone, whether or not a fetch was
     // running: the page just committed carries those quotes as live.
     if (_deletedOriginals.isNotEmpty) {
@@ -296,7 +295,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       (page) {
         // The list was empty when the request went out — the constructor and
         // `retry` only load into an empty thread — so anything held now came
-        // over the socket meanwhile. It is newer than the page and the count
+        // through `appendLive` meanwhile. It is newer than the page and the count
         // that came with it, so it stays on top rather than being replaced
         // by a snapshot taken before it.
         final pageIds = {for (final message in page.messages) message.id};
@@ -370,9 +369,8 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     _dropStalePending();
   }
 
-  /// Inserts a message that arrived over the socket or came back from a REST
-  /// send. Deduped by id, so a send that also echoes as `message_created`
-  /// produces exactly one row.
+  /// Inserts a message that came back from a REST send or a refetch. Deduped
+  /// by id, so the signal-driven refetch of an own send yields one row.
   void appendLive(ChatMessageDTO message) {
     if (message.id.isEmpty) return;
     // Prayer requests share the room but belong to the prayer sheet.
@@ -389,85 +387,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     );
   }
 
-  /// A `message_created` frame. Same insert as [appendLive], but it also
-  /// vouches for the socket: a `refreshLatest` waiting on this id learns the
-  /// socket did deliver it, just after the page had already landed.
-  ///
-  /// Only the socket path calls this. The POST response for an own message
-  /// and the refresh's own inserts go through [appendLive], because neither
-  /// says anything about whether the socket is working.
-  void appendFromSocket(ChatMessageDTO message) {
-    if (_awaitingSocket.containsKey(message.id)) {
-      _vouchedBySocket.add(message.id);
-    }
-    appendLive(message);
-  }
-
-  /// Ids a `refreshLatest` inserted itself and is now giving the socket a
-  /// grace window to deliver, with how many refreshes are waiting on each.
-  final Map<String, int> _awaitingSocket = {};
-
-  /// Ids in [_awaitingSocket] the socket has since delivered.
-  final Set<String> _vouchedBySocket = {};
-
-  /// Decides between `missedMessages` and `nothingMissed` for rows this
-  /// refresh inserted itself.
-  ///
-  /// The page landing before the socket frame is not proof the socket is
-  /// dead: the push, the frame and the refetch all race, and a frame held up
-  /// by a few hundred milliseconds of jitter arrives right after the page
-  /// did. Judging at the instant the page lands would call that a miss and
-  /// have the caller replace a healthy socket. So the socket is given
-  /// [grace] to deliver what the page carried, and only what it still has not
-  /// delivered by then counts.
-  Future<ThreadRefreshResult> _judgeMissed(
-    Set<String> missedIds,
-    Duration grace,
-  ) async {
-    if (missedIds.isEmpty) return ThreadRefreshResult.nothingMissed;
-    if (grace <= Duration.zero) return ThreadRefreshResult.missedMessages;
-
-    for (final id in missedIds) {
-      _awaitingSocket[id] = (_awaitingSocket[id] ?? 0) + 1;
-    }
-    await Future<void>.delayed(grace);
-
-    // Read before the release below: the last waiter clears the record.
-    final stillMissing = missedIds.any(
-      (id) => !_vouchedBySocket.contains(id),
-    );
-    for (final id in missedIds) {
-      final waiters = (_awaitingSocket[id] ?? 1) - 1;
-      if (waiters > 0) {
-        _awaitingSocket[id] = waiters;
-      } else {
-        _awaitingSocket.remove(id);
-        _vouchedBySocket.remove(id);
-      }
-    }
-    if (!mounted) return ThreadRefreshResult.failed;
-    return stillMissing
-        ? ThreadRefreshResult.missedMessages
-        : ThreadRefreshResult.nothingMissed;
-  }
-
-  /// Re-reads the newest page after a reconnect and merges by id, so anything
-  /// missed while the socket was down lands without duplicating what is held.
-  ///
-  /// Reports whether the page carried a message nothing else had delivered by
-  /// the time it was merged. A message the socket delivered while the request
-  /// was in flight is already held when the page lands, so it does not count:
-  /// the socket did its job, just not before the refetch went out.
-  ///
-  /// [socketGrace] extends that allowance past the merge: rows this refresh
-  /// had to insert itself are reported as missed only if the socket has still
-  /// not delivered them (via [appendFromSocket]) once the window closes. The
-  /// merge itself is committed before the wait, so the rows are on screen
-  /// either way; only the verdict is delayed. Zero judges at the merge.
-  Future<ThreadRefreshResult> refreshLatest({
+  /// Re-reads the newest page after a signal, a push or a return from the
+  /// background and merges by id, so nothing is duplicated and an own send
+  /// or reaction still in flight keeps its optimistic row. False on failure.
+  Future<bool> refreshLatest({
     String? currentUserId,
     String? currentUserEmail,
-    Duration socketGrace = Duration.zero,
   }) async {
     // Taken before the request goes out, so anything that changes while it is
     // in flight is visible on arrival.
@@ -477,7 +402,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     };
     // Identity is snapshot for the same reason. Only the history held when the
     // request went out can say whether the page that comes back is contiguous
-    // with it; a message appended over the socket meanwhile has no standing in
+    // with it; a message appended live meanwhile has no standing in
     // that question, and reading it back out of post-await state would let one
     // such insert suppress a restart the gap actually needs.
     final knownBefore = state.messages.map((message) => message.id).toSet();
@@ -493,11 +418,9 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
           ),
     );
 
-    if (!mounted) return ThreadRefreshResult.failed;
+    if (!mounted) return false;
 
     // The ids of every row this refresh inserted itself, or null on failure.
-    // Judged after the merge is committed, not inside the fold, so the wait
-    // does not hold back rows the caller should already see.
     final missedIds = result.fold<Set<String>?>((_) => null, (page) {
       List<ChatMessageReactionDTO> resolve(
         List<ChatMessageReactionDTO> reactions,
@@ -542,12 +465,12 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       /// held when the request went out form one contiguous block, because
       /// the two writers add at opposite ends of it: `appendLive` prepends an
       /// arrival above the block, `loadMore` appends history below it. So
-      /// everything above the first held row came over the socket and is
+      /// everything above the first held row was appended live and is
       /// newer than this page; everything below the last came from `loadMore`
       /// and the server has already counted it. Cutting at the first held row
       /// rather than at a page row is what lets this hold for a page that
       /// shares nothing with what is held. Rows the page carries are excluded
-      /// by id: the socket does not promise creation order, so an arrival the
+      /// by id: arrivals carry no promise of creation order, so an arrival the
       /// page includes can land on top of one it does not.
       List<ChatMessageDTO> arrivedSince(Set<String> pageIds) {
         final firstKnown = state.messages.indexWhere(
@@ -556,7 +479,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         // Every held row was in `knownBefore` and nothing removes rows, so
         // this is unreachable today. Should it ever be reached the two cannot
         // be told apart, and misordering older history is the lesser harm
-        // next to dropping what the socket delivered.
+        // next to dropping what arrived live.
         if (firstKnown < 0) {
           return state.messages
               .where(
@@ -574,7 +497,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
 
       if (state.messages.isEmpty) {
         // Only a thread that had loaded can have missed anything: an empty
-        // list before the first page lands says nothing about the socket.
+        // list before the first page lands has nothing to miss.
         final missed = state.hasLoaded ? fetchedIds : <String>{};
         final messages = fetched.map(withPending).toList();
         state = state.copyWith(
@@ -589,7 +512,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       }
 
       // A full page with nothing in common with what is held means more
-      // arrived while the socket was down than one page can carry. The middle
+      // arrived since the last page than one page can carry. The middle
       // is missing, so the retained tail is not contiguous with it — keeping
       // both would leave `skip` pointing past the gap and those messages
       // would never load. Start again from the newest page and let `loadMore`
@@ -598,7 +521,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         (message) => knownBefore.contains(message.id),
       );
       if (!overlaps && fetched.length >= _limit) {
-        // Restarting must not throw away what the restored socket delivered
+        // Restarting must not throw away what was appended live
         // while this page was in flight: those rows are newer than the page,
         // so they sit above it, and the count that came with it predates
         // them. Older history `loadMore` appended meanwhile is neither — it
@@ -621,46 +544,24 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
       }
 
       // Refresh what is already held rather than skipping it. A reaction that
-      // changed while the socket was down arrives on a message whose id we
+      // changed since the last page arrives on a message whose id we
       // already have, and `appendLive` alone would drop that update on the
       // floor. A message mid-swap is left alone — its optimistic state is
       // newer than this page.
       final fetchedById = {for (final message in fetched) message.id: message};
 
-      // What the socket delivered while the request was in flight, which the
+      // What was appended live while the request was in flight, which the
       // count that came back with it cannot include. Counted before the
       // page's own rows are inserted further down.
       final arrivedDuring = arrivedSince(fetchedIds).length;
 
       // Judged against what is held now, not when the request went out, so a
-      // row the socket delivered meanwhile counts as delivered.
+      // row appended live meanwhile counts as delivered.
       final heldNow = {for (final message in state.messages) message.id};
       final missed = fetchedIds.difference(heldNow);
 
       state = state.copyWith(
-        messages:
-            state.messages.map((existing) {
-              // A summary held while this page was in flight is newer than the
-              // page and newer than what is held, so it settles the row before
-              // either branch below gets to.
-              final pending = _pendingReactions.remove(existing.id);
-              if (pending != null) {
-                return existing.copyWith(reactions: resolve(pending));
-              }
-
-              final fresh = fetchedById[existing.id];
-              if (fresh == null) return existing;
-
-              // Anything touched since this request was sent is newer than the
-              // page it brought back, whether or not that work has finished by
-              // the time the page arrives.
-              final changed =
-                  (_reactionRevision[existing.id] ?? 0) !=
-                  (revisionsBefore[existing.id] ?? 0);
-              if (changed || _swapping.contains(existing.id)) return existing;
-
-              return fresh;
-            }).toList(),
+        messages: _refreshHeld(fetchedById, revisionsBefore, resolve),
       );
 
       // Oldest first, so each insert lands above the previous one and the
@@ -669,7 +570,7 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
         appendLive(withPending(message));
       }
 
-      // The server's count plus what the socket delivered after the server
+      // The server's count plus what was appended live after the server
       // counted. Taking the page's figure alone walks `total` backwards past
       // those arrivals, and in a room small enough for the difference to
       // matter that leaves `hasMore` false — after which `loadMore` returns
@@ -683,8 +584,91 @@ class GroupChatThreadNotifier extends StateNotifier<GroupChatThreadState> {
     });
     _applyPendingDeletions();
     _dropStalePending();
-    if (missedIds == null) return ThreadRefreshResult.failed;
-    return _judgeMissed(missedIds, socketGrace);
+    return missedIds != null;
+  }
+
+  /// Held rows replaced by their copy in [fetchedById]. A row touched since
+  /// [revisionsBefore] was taken, or mid-swap, keeps what it shows.
+  List<ChatMessageDTO> _refreshHeld(
+    Map<String, ChatMessageDTO> fetchedById,
+    Map<String, int> revisionsBefore,
+    List<ChatMessageReactionDTO> Function(List<ChatMessageReactionDTO>)
+    resolve,
+  ) {
+    return state.messages.map((existing) {
+      // A summary held while this page was in flight is newer than the
+      // page and newer than what is held, so it settles the row before
+      // either branch below gets to.
+      final pending = _pendingReactions.remove(existing.id);
+      if (pending != null) {
+        return existing.copyWith(reactions: resolve(pending));
+      }
+
+      final fresh = fetchedById[existing.id];
+      if (fresh == null) return existing;
+
+      // Anything touched since this request was sent is newer than the
+      // page it brought back, whether or not that work has finished by
+      // the time the page arrives.
+      final changed =
+          (_reactionRevision[existing.id] ?? 0) !=
+          (revisionsBefore[existing.id] ?? 0);
+      if (changed || _swapping.contains(existing.id)) return existing;
+
+      return fresh;
+    }).toList();
+  }
+
+  /// Re-reads the history loaded below the newest page and updates the rows
+  /// held, by id. A signal says only that something changed, so a deletion
+  /// or reaction on an older message would otherwise never show.
+  Future<void> refreshLoaded({
+    String? currentUserId,
+    String? currentUserEmail,
+  }) async {
+    List<ChatMessageReactionDTO> resolve(
+      List<ChatMessageReactionDTO> reactions,
+    ) {
+      if (reactions.isEmpty) return reactions;
+      return chatReactionsForViewer(
+        reactions,
+        currentUserId: currentUserId,
+        currentUserEmail: currentUserEmail,
+      );
+    }
+
+    for (var skip = _limit; skip < state.skip; skip += _windowLimit) {
+      final revisionsBefore = {
+        for (final message in state.messages)
+          message.id: _reactionRevision[message.id] ?? 0,
+      };
+      final result = await _guardFetch(
+        () => ref
+            .read(groupChatRepositoryProvider)
+            .listMessages(
+              roomId,
+              skip: skip,
+              limit: _windowLimit,
+              messageType: ChatMessageDTO.typeText,
+            ),
+      );
+      if (!mounted) return;
+      final page = result.getRight().toNullable();
+      if (page == null) break;
+      final fetchedById = {
+        for (final message in page.messages)
+          message.id:
+              message.reactions.isEmpty
+                  ? message
+                  : message.copyWith(reactions: resolve(message.reactions)),
+      };
+      state = state.copyWith(
+        messages: _refreshHeld(fetchedById, revisionsBefore, resolve),
+      );
+      _applyPendingDeletions();
+      if (page.messages.length < _windowLimit) break;
+    }
+    _dropStalePending();
   }
 
   /// Rewrites one message's reactions from an authoritative summary — the

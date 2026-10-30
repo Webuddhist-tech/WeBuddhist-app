@@ -3,6 +3,7 @@ import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_events_providers.dart';
+import 'package:flutter_pecha/features/connect/presentation/providers/connect_signal_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/utils/connect_event_filter_utils.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_event_card.dart';
 import 'package:flutter_pecha/features/connect/presentation/widgets/connect_paginated_list_view.dart';
@@ -75,6 +76,9 @@ class _GroupEventsScreenState extends ConsumerState<GroupEventsScreen>
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    // Event changes in followed groups, and featuring, refetch the lists.
+    ref.watch(myFeedSignalsProvider);
+    ref.watch(featuredEventsSignalProvider);
 
     return Scaffold(
       appBar: AppBar(

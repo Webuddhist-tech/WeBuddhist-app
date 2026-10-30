@@ -2333,6 +2333,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get group_chat_load_failed => 'Зурвасуудыг ачаалж чадсангүй';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found => 'Энэ зурвас чатад байхгүй болсон';
 
   @override

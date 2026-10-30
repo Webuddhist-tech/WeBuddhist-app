@@ -230,8 +230,10 @@ class _ChatsAction extends ConsumerWidget {
     );
     if (!isMember) return const SizedBox.shrink();
 
-    // Keeps the push listener alive for as long as the dot is on screen.
+    // Keeps the push and signal listeners alive for as long as the dot is on
+    // screen.
     ref.watch(chatRoomsPushRefreshProvider);
+    ref.watch(chatRoomsSignalsProvider);
     final hasUnread = ref.watch(chatRoomsProvider).hasUnread;
     final theme = Theme.of(context);
 

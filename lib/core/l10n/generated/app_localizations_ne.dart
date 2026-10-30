@@ -2337,6 +2337,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get group_chat_load_failed => 'सन्देशहरू लोड गर्न सकिएन';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found => 'यो सन्देश अब च्याटमा छैन';
 
   @override

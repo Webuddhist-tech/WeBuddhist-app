@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_feed_item.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
@@ -109,6 +113,24 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   int _pageEpoch = 0;
   bool _loadRequested = false;
 
+  /// The API's largest page, for re-reading loaded cards in few calls.
+  static const int _windowLimit = 100;
+
+  /// Bumped when a refresh replaces the feed cards, so a feed page computed
+  /// against the old ones is dropped. Practices page on regardless.
+  int _feedEpoch = 0;
+
+  /// Posts edited here while a refresh was out; its read predates them.
+  Map<String, ConnectPost>? _updatedDuringRefresh;
+  bool _refreshing = false;
+
+  /// A signal came while a read was out, so one more runs once it lands.
+  bool _refreshAgain = false;
+
+  /// Bumped by every full load, so a background read from before it is
+  /// dropped rather than undoing it.
+  int _loadGeneration = 0;
+
   void ensureLoaded() {
     if (_loadRequested) return;
     _loadRequested = true;
@@ -117,6 +139,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
 
   Future<void> loadInitial() async {
     if (state.isLoading) return;
+    _loadGeneration++;
 
     final authState = ref.read(authProvider);
     if (!includeUnfollowed && (authState.isGuest || !authState.isLoggedIn)) {
@@ -166,6 +189,8 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     _firstPageInFlight = false;
 
     if (!mounted) return;
+    // Runs after this load lands, so a signal during it is not lost.
+    scheduleMicrotask(_runPendingRefresh);
 
     feedResult.fold(
       (failure) {
@@ -218,11 +243,12 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
 
     state = state.copyWith(isLoadingMore: true, clearError: true);
     final epoch = _pageEpoch;
+    final feedEpoch = _feedEpoch;
 
     final futures = <Future<void>>[];
 
     if (state.feedHasMore) {
-      futures.add(_loadMoreFeed(epoch));
+      futures.add(_loadMoreFeed(epoch, feedEpoch));
     }
     if (state.practicesHasMore) {
       futures.add(_loadMorePractices(epoch));
@@ -234,7 +260,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     state = state.copyWith(isLoadingMore: false);
   }
 
-  Future<void> _loadMoreFeed(int epoch) async {
+  Future<void> _loadMoreFeed(int epoch, int feedEpoch) async {
     final result = await ref.read(connectRepositoryProvider).getConnectFeeds(
       includeUnfollowed: includeUnfollowed,
       language: language,
@@ -243,7 +269,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     );
 
     // Page one was replaced meanwhile; this page belongs to the old list.
-    if (!mounted || epoch != _pageEpoch) return;
+    if (!mounted || epoch != _pageEpoch || feedEpoch != _feedEpoch) return;
 
     result.fold(
       (failure) {
@@ -291,6 +317,66 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
     );
   }
 
+  /// Re-reads every loaded feed card after a followed group posts or
+  /// changes an event, keeping the pages already loaded and where paging
+  /// stands. Practices are left as they are.
+  Future<void> refreshLatest() async {
+    if (_feedSource == null) return;
+    if (state.isLoading || _firstPageInFlight || _refreshing) {
+      _refreshAgain = true;
+      return;
+    }
+    // Nothing shown and nothing loading: the first load reads fresh anyway.
+    if (!state.hasLoaded) return;
+    _refreshing = true;
+    final generation = _loadGeneration;
+    final updated = _updatedDuringRefresh = {};
+    final LoadedWindow<ConnectFeedItem>? read;
+    try {
+      read = await readLoadedWindow(
+        window: () => math.max(_limit, state.feedSkip),
+        fetch:
+            (skip, limit) async => (await ref
+                    .read(connectRepositoryProvider)
+                    .getConnectFeeds(
+                      includeUnfollowed: includeUnfollowed,
+                      language: language,
+                      skip: skip,
+                      limit: limit,
+                    ))
+                .map((page) => (page.items, page.total)),
+        idOf: (item) => item.dedupeKey,
+        isCurrent: () => mounted && generation == _loadGeneration,
+        pageLimit: _windowLimit,
+      );
+    } finally {
+      _refreshing = false;
+      _updatedDuringRefresh = null;
+    }
+    if (read != null) {
+      _feedEpoch++;
+      state = state.copyWith(
+        feedItems: [
+          for (final item in read.rows)
+            switch (updated[item.post?.id]) {
+              final post? => item.copyWithPost(post),
+              null => item,
+            },
+        ],
+        feedSkip: read.rows.length,
+        feedHasMore: read.rows.length < read.total,
+        clearError: true,
+      );
+    }
+    _runPendingRefresh();
+  }
+
+  void _runPendingRefresh() {
+    if (!_refreshAgain || !mounted) return;
+    _refreshAgain = false;
+    unawaited(refreshLatest());
+  }
+
   /// Keeps the feed on screen while the first pages are read again.
   Future<void> refresh() async {
     _loadRequested = true;
@@ -307,6 +393,7 @@ class UnifiedConnectFeedNotifier extends StateNotifier<UnifiedConnectFeedState> 
   }
 
   void updatePost(ConnectPost updatedPost) {
+    _updatedDuringRefresh?[updatedPost.id] = updatedPost;
     final index = state.feedItems.indexWhere(
       (item) =>
           item.type == ConnectFeedItemType.post &&

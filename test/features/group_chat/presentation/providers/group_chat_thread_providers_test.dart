@@ -375,7 +375,7 @@ void main() {
       final notifier = _keepAlive(container);
       await _settle();
 
-      notifier.appendFromSocket(
+      notifier.appendLive(
         ChatMessageDTO(
           id: 'p1',
           roomId: 'room-1',
@@ -460,7 +460,7 @@ void main() {
     );
 
     test(
-      'loadInitial keeps what the socket delivered while it was in flight',
+      'loadInitial keeps what arrived while it was in flight',
       () async {
         repository = _FakeGroupChatRepository(
           history: [_message('m2'), _message('m1')],
@@ -471,7 +471,7 @@ void main() {
 
         final notifier = _keepAlive(container);
         // The page's snapshot was taken before this one arrived.
-        notifier.appendFromSocket(_message('live'));
+        notifier.appendLive(_message('live'));
         hold.complete();
         await _settle();
 
@@ -497,7 +497,7 @@ void main() {
         container = buildContainer();
 
         final notifier = _keepAlive(container);
-        notifier.appendFromSocket(_message('live'));
+        notifier.appendLive(_message('live'));
         hold.complete();
         await _settle();
 
@@ -527,163 +527,6 @@ void main() {
       ]);
     });
 
-    test('refreshLatest reports a message nothing else delivered', () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.history = [_message('m2'), _message('m1')];
-      expect(
-        await notifier.refreshLatest(),
-        ThreadRefreshResult.missedMessages,
-      );
-    });
-
-    test(
-      'refreshLatest reports nothing missed when the page is all held',
-      () async {
-        repository = _FakeGroupChatRepository(history: [_message('m1')]);
-        container = buildContainer();
-        final notifier = _keepAlive(container);
-        await _settle();
-
-        expect(
-          await notifier.refreshLatest(),
-          ThreadRefreshResult.nothingMissed,
-        );
-      },
-    );
-
-    test(
-      'a message the socket delivers mid-refresh does not count as missed',
-      () async {
-        repository = _FakeGroupChatRepository(history: [_message('m1')]);
-        container = buildContainer();
-        final notifier = _keepAlive(container);
-        await _settle();
-
-        // The push and the socket frame race the refetch; the socket wins.
-        repository.history = [_message('m2'), _message('m1')];
-        final hold = repository.holdNextList = Completer<void>();
-        final refreshing = notifier.refreshLatest();
-        notifier.appendLive(_message('m2'));
-        hold.complete();
-
-        expect(await refreshing, ThreadRefreshResult.nothingMissed);
-        expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
-      },
-    );
-
-    test('a socket frame landing just after the page is not a miss', () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      // The push and the socket frame race the refetch; the page wins by
-      // a hair, and the frame follows inside the grace window.
-      repository.history = [_message('m2'), _message('m1')];
-      final refreshing = notifier.refreshLatest(
-        socketGrace: const Duration(milliseconds: 50),
-      );
-      await _settle();
-      // The row is already on screen while the verdict is pending.
-      expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
-      notifier.appendFromSocket(_message('m2'));
-
-      expect(await refreshing, ThreadRefreshResult.nothingMissed);
-      expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
-    });
-
-    test('a socket that stays silent through the grace is a miss', () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.history = [_message('m2'), _message('m1')];
-      expect(
-        await notifier.refreshLatest(
-          socketGrace: const Duration(milliseconds: 50),
-        ),
-        ThreadRefreshResult.missedMessages,
-      );
-    });
-
-    test('only the socket vouches, not an own send or a refresh', () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.history = [_message('m2'), _message('m1')];
-      final refreshing = notifier.refreshLatest(
-        socketGrace: const Duration(milliseconds: 50),
-      );
-      await _settle();
-      // The POST echo path: the same row, but it says nothing about the
-      // socket, so it must not clear the miss.
-      notifier.appendLive(_message('m2'));
-
-      expect(await refreshing, ThreadRefreshResult.missedMessages);
-    });
-
-    test('a frame for one of several missed rows is not enough', () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.history = [_message('m3'), _message('m2'), _message('m1')];
-      final refreshing = notifier.refreshLatest(
-        socketGrace: const Duration(milliseconds: 50),
-      );
-      await _settle();
-      notifier.appendFromSocket(_message('m3'));
-
-      expect(await refreshing, ThreadRefreshResult.missedMessages);
-    });
-
-    test('the grace bookkeeping is released once judged', () async {
-      repository = _FakeGroupChatRepository(history: [_message('m1')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.history = [_message('m2'), _message('m1')];
-      await notifier.refreshLatest(
-        socketGrace: const Duration(milliseconds: 20),
-      );
-      // A frame after the window has closed neither throws nor duplicates.
-      notifier.appendFromSocket(_message('m2'));
-      expect(notifier.state.messages.map((m) => m.id).toList(), ['m2', 'm1']);
-
-      // A second refresh with nothing new judges promptly and cleanly.
-      expect(
-        await notifier.refreshLatest(
-          socketGrace: const Duration(milliseconds: 20),
-        ),
-        ThreadRefreshResult.nothingMissed,
-      );
-    });
-
-    test('a restart from a full unseen page counts as missed', () async {
-      repository = _FakeGroupChatRepository(history: [_message('old')]);
-      container = buildContainer();
-      final notifier = _keepAlive(container);
-      await _settle();
-
-      repository.history = [
-        for (var i = 0; i < 40; i++) _message('new$i'),
-        _message('old'),
-      ];
-      expect(
-        await notifier.refreshLatest(),
-        ThreadRefreshResult.missedMessages,
-      );
-    });
-
     test('a failed refreshLatest says so', () async {
       repository = _FakeGroupChatRepository(history: [_message('m1')]);
       container = buildContainer();
@@ -691,7 +534,7 @@ void main() {
       await _settle();
 
       repository.listFailure = const NetworkFailure('offline');
-      expect(await notifier.refreshLatest(), ThreadRefreshResult.failed);
+      expect(await notifier.refreshLatest(), isFalse);
     });
   });
 

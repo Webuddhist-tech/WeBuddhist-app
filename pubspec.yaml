@@ -148,7 +148,9 @@ dependencies:
 
   # UUID generation
   uuid: ^4.5.1
-  firebase_core: ^4.11.0
+  firebase_core: ^4.15.2
+  cloud_firestore: ^6.10.2
+  firebase_auth: ^6.7.1
   firebase_analytics: ^12.4.3
   firebase_crashlytics: ^5.2.4
   # Required by Airbridge SDK for uninstall tracking (RemoteMessage at R8 minify time)

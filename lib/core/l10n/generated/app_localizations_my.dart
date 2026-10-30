@@ -2336,6 +2336,9 @@ class AppLocalizationsMy extends AppLocalizations {
   String get group_chat_load_failed => 'မက်ဆေ့ချ်များကို ဖွင့်၍ မရပါ';
 
   @override
+  String get chat_room_closed => 'This chat has been closed.';
+
+  @override
   String get group_chat_message_not_found => 'ဤမက်ဆေ့ချ် ချတ်တွင် မရှိတော့ပါ';
 
   @override

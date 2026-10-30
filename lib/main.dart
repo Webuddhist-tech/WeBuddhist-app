@@ -32,6 +32,7 @@ import 'package:flutter_pecha/features/push_notifications/application/push_notif
 import 'package:flutter_pecha/features/push_notifications/presentation/providers/push_notification_providers.dart';
 import 'package:flutter_pecha/features/home/data/datasource/home_local_datasource.dart';
 import 'package:flutter_pecha/features/home/presentation/providers/use_case_providers.dart';
+import 'package:flutter_pecha/features/auth/presentation/providers/firebase_session_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/user_session_bootstrap.dart';
 import 'package:flutter_pecha/features/home/presentation/screens/main_navigation_screen.dart';
@@ -331,6 +332,10 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
       // Picks up strings published in Tolgee since the app was opened, which
       // on iOS can be days without a cold start. Throttled inside the service.
       unawaited(_refreshTolgee());
+      // A Firebase sign-in that gave up while offline gets another go.
+      if (Firebase.apps.isNotEmpty) {
+        ref.read(firebaseSessionProvider.notifier).resume();
+      }
     }
   }
 
@@ -449,6 +454,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
     // Bootstrap FCM: capture/refresh token, register handlers, and register the
     // device token with the backend once the user signs in.
     ref.watch(pushNotificationBootstrapProvider);
+    // Signs in to Firebase as the backend user so Firestore signals can be read.
+    ref.watch(firebaseSessionBootstrapProvider);
     // Mala background sync — kept alive for the app lifetime so offline counts
     // flush on lifecycle/connectivity triggers even off the mala screen.
     ref.watch(malaSyncManagerProvider);

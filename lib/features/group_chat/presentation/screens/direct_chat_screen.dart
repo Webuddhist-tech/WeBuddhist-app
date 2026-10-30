@@ -16,6 +16,7 @@ import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_link_s
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_rooms_list.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/direct_chat_identity.dart';
+import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_closed_notice.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_composer.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_composer_link_preview.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_reply_preview.dart';
@@ -234,8 +235,12 @@ class _DirectChatScreenState extends ConsumerState<DirectChatScreen> {
         ),
       ),
       // In the bottom slot rather than the body column, so a floating
-      // snackbar is laid out above the composer instead of over it.
-      bottomNavigationBar: Column(
+      // snackbar is laid out above the composer instead of over it. A room
+      // that is gone, or that the viewer left, cannot be written to.
+      bottomNavigationBar:
+          state.unavailable
+              ? const GroupChatClosedNotice()
+              : Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Watches the draft directly, so the rest of the screen does not
