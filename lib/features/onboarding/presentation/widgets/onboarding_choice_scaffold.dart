@@ -59,8 +59,12 @@ class OnboardingChoiceScaffold extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // The whole page scrolls, not just the options: with the keyboard
+            // open a small phone has less height than the heading needs.
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(20, 29, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +132,7 @@ class OnboardingChoiceScaffold extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 24),
-                    Expanded(child: SingleChildScrollView(child: options)),
+                    options,
                   ],
                 ),
               ),

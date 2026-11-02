@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
@@ -195,5 +197,83 @@ void main() {
     );
     verifyNever(updateUsername(any));
     expect(nextCalls, 0);
+  });
+
+  testWidgets('saves nothing when the profile cannot be loaded', (
+    tester,
+  ) async {
+    // Without the stored first and last name, saving would blank them.
+    when(
+      getUser(any),
+    ).thenAnswer((_) async => const Left(ServerFailure('down')));
+    await pumpScreen(tester);
+    await fillIn(tester);
+
+    await tapContinue(tester);
+
+    expect(
+      find.text("Couldn't save your changes. Please try again"),
+      findsOneWidget,
+    );
+    verifyNever(updateUsername(any));
+    verifyNever(updateUserInfo(any));
+    expect(nextCalls, 0);
+  });
+
+  testWidgets('a second tap during the connectivity check saves once', (
+    tester,
+  ) async {
+    final online = Completer<bool>();
+    when(connectivity.checkConnectivity()).thenAnswer((_) => online.future);
+    when(
+      updateUsername(any),
+    ).thenAnswer((_) async => Right(UsernameUpdateResult.success('tenzin')));
+    when(updateUserInfo(any)).thenAnswer((_) async => const Right(generated));
+    await pumpScreen(tester);
+    await fillIn(tester);
+
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pump();
+    await tester.tap(find.byType(ElevatedButton), warnIfMissed: false);
+    await tester.pump();
+    online.complete(true);
+    await tester.pumpAndSettle();
+
+    verify(connectivity.checkConnectivity()).called(1);
+    verify(updateUsername('tenzin')).called(1);
+    expect(nextCalls, 1);
+  });
+
+  testWidgets('both fields are locked while saving', (tester) async {
+    final claim = Completer<Either<Failure, UsernameUpdateResult>>();
+    when(updateUsername(any)).thenAnswer((_) => claim.future);
+    when(updateUserInfo(any)).thenAnswer((_) async => const Right(generated));
+    await pumpScreen(tester);
+    await fillIn(tester);
+
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+
+    final fields = tester.widgetList<TextField>(find.byType(TextField));
+    expect(fields.map((field) => field.enabled), [false, false]);
+
+    claim.complete(Right(UsernameUpdateResult.success('tenzin')));
+    await tester.pumpAndSettle();
+    expect(nextCalls, 1);
+  });
+
+  testWidgets('fits a small phone with the keyboard open', (tester) async {
+    // iPhone SE (375 × 667) with a keyboard and suggestion bar.
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.reset);
+
+    await pumpScreen(tester);
+    await tester.showKeyboard(find.byType(TextField).at(0));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Continue'), findsOneWidget);
   });
 }

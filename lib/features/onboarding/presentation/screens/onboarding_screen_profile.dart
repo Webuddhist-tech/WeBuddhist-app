@@ -140,16 +140,29 @@ class _OnboardingScreenProfileState
     });
     if (displayNameError != null || usernameError != null) return;
 
+    // Lock Continue and the fields before the first await, so a second tap
+    // cannot start another save and an edit made now is not silently dropped.
+    setState(() => _isSaving = true);
+
     final isOnline =
         await ref.read(connectivityServiceProvider).checkConnectivity();
     if (!mounted) return;
     if (!isOnline) {
-      setState(() => _saveError = l10n.edit_profile_offline);
+      _stopSaving(l10n.edit_profile_offline);
       return;
     }
 
-    setState(() => _isSaving = true);
+    // saveProfile sends the stored first and last name back unchanged, so it
+    // needs the loaded profile; without it they would be saved blank. Load it
+    // before claiming the username so a failure here changes nothing.
     final userNotifier = ref.read(userProvider.notifier);
+    if (ref.read(userProvider).user == null) await userNotifier.refreshUser();
+    if (!mounted) return;
+    final user = ref.read(userProvider).user;
+    if (user == null) {
+      _stopSaving(l10n.edit_profile_save_failed);
+      return;
+    }
 
     if (username != _savedUsername) {
       setState(() => _usernameState = UsernameState.checking);
@@ -168,31 +181,31 @@ class _OnboardingScreenProfileState
       setState(() => _usernameState = UsernameState.available);
     }
 
-    // saveProfile sends the stored first and last name back unchanged, so
-    // make sure the profile is loaded before saving over it.
-    if (ref.read(userProvider).user == null) await userNotifier.refreshUser();
-    if (!mounted) return;
-    final user = ref.read(userProvider).user;
     final error = await userNotifier.saveProfile(
       displayName: PersonNameValidator.sanitize(_displayNameCtrl.text) ?? '',
-      aboutMe: user?.aboutMe,
-      avatarUrl: user?.avatarUrl,
+      aboutMe: user.aboutMe,
+      avatarUrl: user.avatarUrl,
     );
     if (!mounted) return;
 
     if (error != null) {
-      setState(() {
-        _isSaving = false;
-        _saveError =
-            ErrorMessageMapper.isNetworkError(error)
-                ? l10n.edit_profile_offline
-                : l10n.edit_profile_save_failed;
-      });
+      _stopSaving(
+        ErrorMessageMapper.isNetworkError(error)
+            ? l10n.edit_profile_offline
+            : l10n.edit_profile_save_failed,
+      );
       return;
     }
 
     setState(() => _isSaving = false);
     widget.onNext();
+  }
+
+  void _stopSaving(String error) {
+    setState(() {
+      _isSaving = false;
+      _saveError = error;
+    });
   }
 
   // ── UI ────────────────────────────────────────────────────────────────────
@@ -242,6 +255,7 @@ class _OnboardingScreenProfileState
             onSuggestionTap: _onSuggestionTap,
             isDark: isDark,
             placeholderStyle: placeholderStyle,
+            enabled: !_isSaving,
           ),
           if (_saveError != null) ...[
             const SizedBox(height: 16),
