@@ -22,9 +22,9 @@ void main() {
     expect(service.events.single.properties, isEmpty);
   });
 
-  test('stepViewed names the page by its wrapper index', () {
-    analytics.stepViewed(stepIndex: 0);
-    analytics.stepViewed(stepIndex: 2);
+  test('stepViewed sends the step and its wrapper index', () {
+    analytics.stepViewed(step: OnboardingStep.welcome, stepIndex: 0);
+    analytics.stepViewed(step: OnboardingStep.tradition, stepIndex: 3);
 
     expect(service.eventNames, [
       AnalyticsEvents.onboardingStepViewed,
@@ -36,14 +36,8 @@ void main() {
     });
     expect(service.events.last.properties, {
       'step': 'tradition',
-      'step_index': 2,
+      'step_index': 3,
     });
-  });
-
-  test('a page the wrapper does not know sends only its index', () {
-    analytics.stepViewed(stepIndex: 9);
-
-    expect(service.events.single.properties, {'step': null, 'step_index': 9});
   });
 
   test('every wrapper page has a snake_case key', () {

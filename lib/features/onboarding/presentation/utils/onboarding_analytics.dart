@@ -4,9 +4,11 @@ import 'package:flutter_pecha/core/analytics/analytics_service.dart';
 import 'package:flutter_pecha/core/analytics/analytics_tracking.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// The onboarding pages in the order the wrapper shows them.
+/// The onboarding pages in the order the wrapper shows them. [profile] is
+/// shown to phone accounts only.
 enum OnboardingStep {
   welcome,
+  profile,
   language,
   tradition,
   finish;
@@ -37,13 +39,11 @@ class OnboardingAnalytics {
     _analytics.trackInBackground(AnalyticsEvents.onboardingStarted, const {});
   }
 
-  /// [stepIndex] is the wrapper's page index; a page it does not know sends
-  /// no step name.
-  void stepViewed({required int stepIndex}) {
-    final steps = OnboardingStep.values;
-    final inRange = stepIndex >= 0 && stepIndex < steps.length;
+  /// [stepIndex] is the wrapper's page index. Phone accounts get an extra
+  /// page, so the same index can name different steps; [step] says which.
+  void stepViewed({required OnboardingStep step, required int stepIndex}) {
     _analytics.trackInBackground(AnalyticsEvents.onboardingStepViewed, {
-      AnalyticsProperties.step: inRange ? steps[stepIndex].key : null,
+      AnalyticsProperties.step: step.key,
       AnalyticsProperties.stepIndex: stepIndex,
     });
   }

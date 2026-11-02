@@ -13,10 +13,16 @@ class OnboardingScreenTradition extends ConsumerWidget {
     super.key,
     required this.onNext,
     required this.onBack,
+    this.stepIndex = 1,
+    this.stepCount = 2,
   });
 
   final VoidCallback onNext;
   final VoidCallback onBack;
+
+  /// Position in the progress bar; see [OnboardingChoiceScaffold.stepCount].
+  final int stepIndex;
+  final int stepCount;
 
   Future<void> _handleContinue(BuildContext context, WidgetRef ref) async {
     final saved =
@@ -55,7 +61,8 @@ class OnboardingScreenTradition extends ConsumerWidget {
     });
 
     return OnboardingChoiceScaffold(
-      stepIndex: 1,
+      stepIndex: stepIndex,
+      stepCount: stepCount,
       title: l10n.onboarding_tradition_title,
       subtitle: l10n.onboarding_tradition_subtitle,
       onBack: onBack,

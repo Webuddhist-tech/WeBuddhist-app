@@ -1325,6 +1325,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get person_name_invalid_chars => '僅允許字母、空格、連字號和撇號';
 
   @override
+  String get onboarding_profile_title => '我們該怎麼稱呼您？';
+
+  @override
+  String get onboarding_profile_subtitle => '社群中的其他人會這樣看到您';
+
+  @override
+  String get onboarding_profile_note => '您隨時可以在「設定」中變更。';
+
+  @override
+  String get onboarding_profile_display_name_required => '請輸入顯示名稱';
+
+  @override
   String get about_title => '關於';
 
   @override
@@ -5160,6 +5172,18 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get person_name_invalid_chars => '仅允许字母、空格、连字号和撇号';
+
+  @override
+  String get onboarding_profile_title => '我们该怎么称呼您？';
+
+  @override
+  String get onboarding_profile_subtitle => '社区中的其他人会这样看到您';
+
+  @override
+  String get onboarding_profile_note => '您随时可以在「设置」中变更。';
+
+  @override
+  String get onboarding_profile_display_name_required => '请输入显示名称';
 
   @override
   String get about_title => '关于';

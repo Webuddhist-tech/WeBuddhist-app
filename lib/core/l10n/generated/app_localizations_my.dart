@@ -1397,6 +1397,20 @@ class AppLocalizationsMy extends AppLocalizations {
       'စာလုံး၊ ကွက်လပ်၊ တုံးတို နှင့် အပိုစထရော့ဖီများကိုသာ ခွင့်ပြုပါသည်';
 
   @override
+  String get onboarding_profile_title => 'သင့်ကို ဘယ်လိုခေါ်ရမလဲ။';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'အသိုင်းအဝိုင်းရှိ အခြားသူများ သင့်ကို ဤသို့ မြင်ရပါမည်';
+
+  @override
+  String get onboarding_profile_note =>
+      'ဆက်တင်များတွင် အချိန်မရွေး ပြောင်းနိုင်ပါသည်။';
+
+  @override
+  String get onboarding_profile_display_name_required => 'ပြသမည့်အမည် ထည့်ပါ';
+
+  @override
   String get about_title => 'အကြောင်း';
 
   @override
