@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1217,6 +1218,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     var kept = _keptTop;
     final int moved;
     if (kept == null) {
+      // A jump not laid out yet: the positions still describe the list
+      // before it, and putting their top entry back would undo the jump.
+      if (_pendingAppJumps > 0) return;
       ItemPosition? top;
       for (final position in _itemPositionsListener.itemPositions.value) {
         if (position.itemTrailingEdge <= 0) continue;
@@ -1670,10 +1674,12 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         final found = await _liveVerseIn(i, position, wanted: wanted);
         if (!mounted || !wanted()) return null;
         if (found == null) continue;
-        setState(() => _startedCount = i + 1);
+        // Texts started while it loaded (the sections sheet, reading on)
+        // stay started: lowering the count would drop their readers.
+        setState(() => _startedCount = math.max(_startedCount, i + 1));
         // The next build draws it, and keeps its reader from then on.
         await WidgetsBinding.instance.endOfFrame;
-        if (!mounted) return null;
+        if (!mounted || !wanted()) return null;
         return found;
       } finally {
         held.close();
@@ -1808,13 +1814,15 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   /// The verse is held ⅔ down the text area (see [liveScrollTarget]). When
   /// the room moved to another section or round, that section's heading
   /// goes to the top instead. [instant] jumps rather than scrolls, for a
-  /// verse the page moved rather than the room.
+  /// verse the page moved rather than the room. [heading] puts that heading
+  /// back at the top again, for a jump to it that rows landing above moved.
   bool _scrollToLiveSegment(
     int source,
     String segmentId,
     int? round, {
     bool settling = false,
     bool instant = false,
+    bool heading = false,
   }) {
     final layout = _layoutFor([
       for (var i = 0; i < _startedCount; i++) _readView(i),
@@ -1864,7 +1872,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // A verse not laid out yet is placed by its top; once the scroll lands
     // it is measured and placed again by its middle.
     var measured = true;
-    if (jump && section != null && section.isOnPage) {
+    if ((jump || heading) && section != null && section.isOnPage) {
       target = (index: section.entryIndex, alignment: 0);
     } else {
       final positions = _itemPositionsListener.itemPositions.value;
@@ -1894,6 +1902,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       // The verse moved under the page, not with the room: it is put back
       // at once, with no scroll for the eye to follow. Never under a finger.
       if (_isUserScrolling) return true;
+      // It supersedes a pending put-back of the top entry ([_keepTopEntry]).
+      _keptTop = null;
+      _keptTopJumps++;
       _appJump(index: target.index, alignment: target.alignment);
       if (!measured) {
         // A room move or a live scroll since then has the page elsewhere.
@@ -1960,6 +1971,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
             round,
             settling: true,
             instant: shifted,
+            heading: jump,
           );
         });
     return true;
