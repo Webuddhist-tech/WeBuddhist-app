@@ -20,10 +20,10 @@ class AmbientSoundSelection {
 ///
 /// Tapping a row selects it immediately through [onChanged] and starts a
 /// looping preview (stopping any previous preview). The sheet stays open so
-/// the volume slider can still adjust that preview. Closing — the X, a swipe,
-/// or a tap outside — does not pick a sound; a dismiss with no new tap leaves
-/// the previous choice in place. The volume slider is local UI state and is
-/// never sent to the backend.
+/// the volume slider can still adjust that preview. The X returns the current
+/// selection; a swipe or a tap outside returns null. Either way a dismiss
+/// with no new tap leaves the previous choice in place. The volume slider is
+/// local UI state and is never sent to the backend.
 class AmbientSoundSheet extends ConsumerStatefulWidget {
   const AmbientSoundSheet({
     super.key,
