@@ -48,6 +48,18 @@ bool liveVerseInView({required double top, required double bottom}) {
   return top >= -slack && bottom <= 1 + slack;
 }
 
+/// The section the live verse was last placed in, to tell a jump by. While
+/// that verse is on the page ([verseOnPage]) its section is read from the
+/// page as it is now ([current]): a section's id changes as the text's
+/// table of contents and translation load. Once it has left, as when a
+/// jump in a whole text replaced the loaded pages, the id kept when it was
+/// placed ([kept]) stands in.
+String? livePreviousSection({
+  required bool verseOnPage,
+  String? current,
+  String? kept,
+}) => verseOnPage ? current : kept;
+
 /// Whether the live position moved to a new section or a new round, so the
 /// page should bring that section's heading to the top rather than hold the
 /// verse. The first position after joining or rejoining is never a jump.

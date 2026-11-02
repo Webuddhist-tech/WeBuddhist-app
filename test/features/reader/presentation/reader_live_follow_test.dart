@@ -521,6 +521,31 @@ void main() {
         isFalse,
       );
     });
+
+    test('the last verse\'s section is read from the page while on it', () {
+      expect(
+        livePreviousSection(verseOnPage: true, current: 'a2', kept: 'a1'),
+        'a2',
+      );
+      expect(
+        livePreviousSection(verseOnPage: true, current: null, kept: 'a1'),
+        isNull,
+      );
+    });
+
+    test('once the last verse left the page, its kept section stands in', () {
+      final previous = livePreviousSection(verseOnPage: false, kept: 'a');
+      expect(previous, 'a');
+      expect(
+        isLiveSectionJump(
+          previousSection: previous,
+          section: 'b',
+          previousRound: 1,
+          round: 1,
+        ),
+        isTrue,
+      );
+    });
   });
 
   group('the round in the live section\'s heading', () {

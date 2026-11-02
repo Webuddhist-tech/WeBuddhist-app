@@ -182,6 +182,10 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   (int, String)? _lastLiveVerse;
   int? _lastLiveRound;
 
+  /// That verse's section id when it was placed, for once the verse has
+  /// left the page (see [livePreviousSection]).
+  String? _lastLiveSection;
+
   /// The source the live verse was last placed in. While the page follows
   /// it, the sources before it fetch no further pages (see [_loadForward]).
   int? _liveSource;
@@ -1420,6 +1424,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       // section the room moved to meanwhile.
       _lastLiveVerse = null;
       _lastLiveRound = null;
+      _lastLiveSection = null;
       // The verse opened before leaving would cover the live one.
       for (var i = 0; i < _startedCount; i++) {
         ref
@@ -1818,18 +1823,23 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         last == null
             ? null
             : _entryIndexForSegment(layout.entries, last.$2, source: last.$1);
-    final previousSection = lastEntry == null ? null : sectionAt(lastEntry);
+    final previousSection = livePreviousSection(
+      verseOnPage: lastEntry != null,
+      current: lastEntry == null ? null : sectionAt(lastEntry)?.key,
+      kept: _lastLiveSection,
+    );
     final jump = isLiveSectionJump(
-      previousSection: previousSection?.key,
+      previousSection: previousSection,
       section: section?.key,
       previousRound: _lastLiveRound,
       round: round,
     );
-    if (jump || section?.key != previousSection?.key) {
+    if (jump || section?.key != previousSection) {
       _liveAfterSectionJump = jump;
     }
     _lastLiveVerse = (source, segmentId);
     _lastLiveRound = round;
+    _lastLiveSection = section?.key;
     if (!_itemScrollController.isAttached) return true;
 
     final LiveScrollTarget? target;
@@ -1861,6 +1871,7 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     }
     if (target == null) return true;
 
+    final generation = _liveGeneration;
     if (instant) {
       // The verse moved under the page, not with the room: it is put back
       // at once, with no scroll for the eye to follow.
@@ -1869,8 +1880,16 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
         alignment: target.alignment,
       );
       if (!measured) {
+        // A room move or a live scroll since then has the page elsewhere.
+        final scroll = _liveScroll;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !_isFollowingLive || _recentUserGesture) return;
+          if (!mounted ||
+              generation != _liveGeneration ||
+              scroll != _liveScroll ||
+              !_isFollowingLive ||
+              _recentUserGesture) {
+            return;
+          }
           _scrollToLiveSegment(
             source,
             segmentId,
@@ -1883,7 +1902,6 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
       return true;
     }
 
-    final generation = _liveGeneration;
     final scroll = ++_liveScroll;
     _isProgrammaticScroll = true;
     // A jump far down the page runs past its duration, so this waits for
