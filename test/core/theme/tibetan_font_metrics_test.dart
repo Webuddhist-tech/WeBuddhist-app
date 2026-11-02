@@ -22,8 +22,11 @@ void main() {
       ..addFont(rootBundle.load('assets/fonts/NotoSerifTibetanWB-Regular.ttf'));
     final content = FontLoader(AppConfig.tibetanContentFont)
       ..addFont(rootBundle.load('assets/fonts/WBTibetanContent.ttf'));
+    final jomolhari = FontLoader('WBTibetanUchen')
+      ..addFont(rootBundle.load('assets/fonts/WBTibetanUchen.ttf'));
     await ui.load();
     await content.load();
+    await jomolhari.load();
   });
 
   LineMetrics firstLine(String fontFamily, double fontSize, double height) {
@@ -90,6 +93,44 @@ void main() {
       final metrics = line();
       final boxCentre = (metrics.ascent - metrics.descent) / 2 / fontSize;
       expect(boxCentre, closeTo(0.22, 0.06));
+    });
+  });
+
+  // Jomolhari, rebuilt by the same tool: without USE_TYPO_METRICS its win
+  // values put the box 0.1 em below the ink.
+  group('WBTibetanUchen (Jomolhari, reader font choice)', () {
+    const fontSize = 20.0;
+
+    test('line box encloses vowel signs at the content line height', () {
+      final metrics = firstLine(
+        'WBTibetanUchen',
+        fontSize,
+        AppFontConfig.tibetanContentLineHeight,
+      );
+      // Vowel signs reach 1.08 em (1.10 em at most); stacks reach 0.39 em
+      // below the baseline; the upstream file gave a box centred at 0.34 em.
+      expect(metrics.ascent, greaterThanOrEqualTo(1.10 * fontSize));
+      expect(metrics.descent, greaterThanOrEqualTo(0.39 * fontSize));
+    });
+
+    test('vowel signs still fit at the compact line height', () {
+      final metrics = firstLine(
+        'WBTibetanUchen',
+        fontSize,
+        AppFontConfig.tibetanCompactLineHeight,
+      );
+      expect(metrics.ascent, greaterThanOrEqualTo(1.10 * fontSize));
+    });
+
+    test('line box is centred on the ink', () {
+      final metrics = firstLine(
+        'WBTibetanUchen',
+        fontSize,
+        AppFontConfig.tibetanContentLineHeight,
+      );
+      // Ink of ordinary text is centred ~0.44 em above the baseline.
+      final boxCentre = (metrics.ascent - metrics.descent) / 2 / fontSize;
+      expect(boxCentre, closeTo(0.42, 0.06));
     });
   });
 }

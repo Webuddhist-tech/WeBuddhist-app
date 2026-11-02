@@ -29,6 +29,7 @@ import 'package:flutter_pecha/features/group_profile/presentation/providers/grou
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_event_composer_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_post_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_profile_providers.dart';
+import 'package:flutter_pecha/features/group_profile/presentation/providers/group_signal_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/providers/group_reports_providers.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_about_screen.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/screens/group_event_composer_screen.dart';
@@ -428,6 +429,8 @@ class _GroupProfileBodyState extends ConsumerState<GroupProfileBody>
         ),
       ),
     );
+    // Posts and events refetch when the group's signal moves.
+    ref.watch(groupSignalsProvider(profile.id));
     final eventsAsync = ref.watch(groupEventsProvider(profile.id));
     // Keep the events tab when loading failed so its retry action stays
     // reachable.

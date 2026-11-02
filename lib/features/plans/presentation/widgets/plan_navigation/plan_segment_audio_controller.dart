@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pecha/core/utils/audio_url.dart';
+import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_audio_progress.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Visual state of the play/pause button driven by [PlanSegmentAudioController].
@@ -21,6 +22,10 @@ enum PlanAudioButtonState { play, loading, pause }
 /// exactly once. Owners typically use it to mark the subtask complete and
 /// auto-advance to the next task.
 ///
+/// Repeat keeps this slice playing instead. The pass seeks back to [startMs]
+/// (a whole file loops natively) and [onSegmentComplete] waits until repeat
+/// is turned off. The choice is remembered for the session, like speed.
+///
 /// Lifecycle: owned by a widget `State` — create in `initState`, call
 /// [cancel] on any manual navigation / back press, and [dispose] in the
 /// state's `dispose`. It is intentionally **not** a Riverpod provider because
@@ -31,7 +36,21 @@ class PlanSegmentAudioController extends ChangeNotifier {
     required this.startMs,
     required this.endMs,
     required this.onSegmentComplete,
-  });
+  }) : progress = ValueNotifier(
+         describePlanAudioProgress(
+           position: Duration.zero,
+           startMs: startMs,
+           endMs: endMs,
+         ),
+       );
+
+  /// Speed chosen from the picker. Kept for the rest of the app session so
+  /// the next plan task or recording starts at the same speed.
+  static double preferredSpeed = 1.0;
+
+  /// Repeat chosen from the player bar. Kept for the session, same as speed.
+  /// Off plays the slice once. On loops it until the listener turns it off.
+  static bool preferredRepeat = false;
 
   /// Resolved audio URL (subtask audio takes precedence over day audio).
   /// Null when this item has no playable audio.
@@ -45,11 +64,24 @@ class PlanSegmentAudioController extends ChangeNotifier {
   AudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSub;
   StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration?>? _durationSub;
+  Duration? _fileDuration;
+
+  /// Elapsed time within this task's slice. Updated on its own so the play
+  /// button does not rebuild on every tick.
+  final ValueNotifier<PlanAudioProgress> progress;
 
   PlanAudioButtonState _buttonState = PlanAudioButtonState.play;
   PlanAudioButtonState get buttonState => _buttonState;
 
+  double get speed => preferredSpeed;
+
+  bool get repeat => preferredRepeat;
+
   bool get hasAudio => hasPlayableAudio(url);
+
+  /// True when the slice is the whole file, so the player can loop it itself.
+  bool get _loopsEntireFile => (startMs ?? 0) == 0 && endMs == null;
 
   /// Incremented by [cancel] so any in-flight [_startAudio] can detect it has
   /// been superseded and abort before calling play().
@@ -59,12 +91,77 @@ class PlanSegmentAudioController extends ChangeNotifier {
   /// [onSegmentComplete] more than once.
   bool _hasCompleted = false;
 
+  /// True while a repeat seek is in flight, so a stale end-of-slice position
+  /// cannot start a second restart or look like an unexpected stop.
+  bool _loopRestarting = false;
+
+  /// True from the moment the listener pauses until they start or resume.
+  ///
+  /// [toggle] pauses without changing [_audioSessionId], so a repeat seek
+  /// already in flight still finishes. [AudioPlayer.playing] is false after
+  /// that pause, and the restart treats that as "stopped, call play()".
+  /// Checking this after the seek keeps the pause from starting playback
+  /// and putting the pause icon back.
+  bool _pauseRequested = false;
+
+  /// End-of-slice positions still queued from before a repeat seek. Cleared
+  /// as soon as playback is heard back inside the slice.
+  int _staleEndSkips = 0;
+
   bool _isDisposed = false;
+
+  /// True after [dispose]. Listeners use it to skip detaching from a player
+  /// that has already gone away.
+  bool get isDisposed => _isDisposed;
 
   void _setButtonState(PlanAudioButtonState state) {
     if (_isDisposed || _buttonState == state) return;
     _buttonState = state;
     notifyListeners();
+  }
+
+  /// Applies [speed] to the current player, and to the next one in this session.
+  Future<void> setSpeed(double speed) async {
+    preferredSpeed = speed;
+    await _player?.setSpeed(speed);
+    if (!_isDisposed) notifyListeners();
+  }
+
+  /// Loops the current slice, and the next task or recording in this session.
+  ///
+  /// A whole file uses the player's own loop. A window from [startMs] to
+  /// [endMs] seeks back to the start when the boundary is crossed, so the
+  /// audio after [endMs] never plays.
+  Future<void> setRepeat(bool repeat) async {
+    if (preferredRepeat == repeat) return;
+    preferredRepeat = repeat;
+    if (_isDisposed) return;
+    notifyListeners();
+    await _applyLoopMode();
+  }
+
+  Future<void> _applyLoopMode() async {
+    final player = _player;
+    if (player == null || !_loopsEntireFile) return;
+    try {
+      await player.setLoopMode(preferredRepeat ? LoopMode.one : LoopMode.off);
+    } catch (_) {}
+  }
+
+  void _publishProgress(Duration rawPosition) {
+    if (_isDisposed) return;
+    final next = describePlanAudioProgress(
+      position: rawPosition,
+      fileDuration: _fileDuration,
+      startMs: startMs,
+      endMs: endMs,
+    );
+    final current = progress.value;
+    final sameSecond =
+        current.position.inMilliseconds ~/ 200 ==
+        next.position.inMilliseconds ~/ 200;
+    if (sameSecond && current.duration == next.duration) return;
+    progress.value = next;
   }
 
   /// Begin playback if this item has audio. Safe to call once after build.
@@ -81,10 +178,12 @@ class PlanSegmentAudioController extends ChangeNotifier {
         return; // ignore taps while loading
 
       case PlanAudioButtonState.pause:
+        _pauseRequested = true;
         await _player?.pause();
         _setButtonState(PlanAudioButtonState.play);
 
       case PlanAudioButtonState.play:
+        _pauseRequested = false;
         if (_player == null) {
           await _startAudio();
           return;
@@ -116,6 +215,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   Future<void> _startAudio() async {
     if (!hasAudio || _buttonState == PlanAudioButtonState.loading) return;
 
+    _pauseRequested = false;
     final sessionId = ++_audioSessionId;
     _setButtonState(PlanAudioButtonState.loading);
 
@@ -125,16 +225,26 @@ class PlanSegmentAudioController extends ChangeNotifier {
       // Tear down stale subscriptions before rebinding.
       _playerStateSub?.cancel();
       _positionSub?.cancel();
+      _durationSub?.cancel();
       _playerStateSub = null;
       _positionSub = null;
+      _durationSub = null;
 
       await _player!.setUrl(url!);
+      if (_isDisposed || sessionId != _audioSessionId) return;
+
+      await _player!.setSpeed(preferredSpeed);
+      if (_isDisposed || sessionId != _audioSessionId) return;
+
+      await _applyLoopMode();
       if (_isDisposed || sessionId != _audioSessionId) return;
 
       await _player!.seek(Duration(milliseconds: startMs ?? 0));
       if (_isDisposed || sessionId != _audioSessionId) return;
 
       _hasCompleted = false;
+      _loopRestarting = false;
+      _staleEndSkips = 0;
 
       // Subscribe *before* play so no events are missed.
       // skip(1) discards the BehaviorSubject's stale initial emit
@@ -144,6 +254,10 @@ class PlanSegmentAudioController extends ChangeNotifier {
           .skip(1)
           .listen(_onPlayerState);
       _positionSub = _player!.positionStream.listen(_onPosition);
+      _durationSub = _player!.durationStream.listen((duration) {
+        _fileDuration = duration;
+        _publishProgress(_player?.position ?? Duration.zero);
+      });
 
       // Fire-and-forget: play() completes only when playback stops.
       _player!.play();
@@ -167,15 +281,22 @@ class PlanSegmentAudioController extends ChangeNotifier {
       return;
     }
 
-    // The file reached its natural end — treat as segment completion. This is
-    // the path for per-subtask audio where [endMs] is null. Checked *before*
-    // the `playing` guard: just_audio keeps `playing == true` at end-of-track
-    // (the flag tracks play/pause intent, not active output), so this branch
-    // would be unreachable if gated behind `!state.playing`.
+    // The file reached its natural end. A whole-file repeat uses LoopMode.one,
+    // which never emits this. A windowed slice, or a repeat that the player
+    // could not loop itself, seeks back to the start instead of finishing.
+    // Checked *before* the `playing` guard: just_audio keeps `playing == true`
+    // at end-of-track (the flag tracks play/pause intent, not active output),
+    // so this branch would be unreachable if gated behind `!state.playing`.
     if (ps == ProcessingState.completed) {
+      if (preferredRepeat) {
+        _restartForRepeat();
+        return;
+      }
       _fireSegmentComplete();
       return;
     }
+
+    if (_loopRestarting) return;
 
     if (state.playing) return;
 
@@ -186,13 +307,87 @@ class PlanSegmentAudioController extends ChangeNotifier {
 
   /// Position stream callback. Triggers segment completion once when the
   /// [endMs] boundary is reached. Only relevant when a window is defined.
+  /// Repeat seeks back to [startMs] and keeps the same task on screen.
   void _onPosition(Duration position) {
-    if (_hasCompleted) return;
+    _publishProgress(position);
+    if (_hasCompleted || _loopRestarting) return;
     final end = endMs;
     if (end == null) return;
+
+    if (position.inMilliseconds < end) {
+      _staleEndSkips = 0;
+    } else if (_staleEndSkips > 0) {
+      _staleEndSkips--;
+      return;
+    }
+
     if (position.inMilliseconds >= end) {
+      if (preferredRepeat) {
+        _restartForRepeat();
+        return;
+      }
       _fireSegmentComplete();
     }
+  }
+
+  /// Seek to [startMs] and keep playing. The button stays on pause, and the
+  /// segment does not complete, so a plan task does not auto-advance.
+  /// A pause that arrives while the seek is in flight stays paused.
+  void _restartForRepeat() {
+    if (_loopRestarting || _isDisposed || _hasCompleted || !preferredRepeat) {
+      return;
+    }
+    final player = _player;
+    if (player == null) return;
+    final sessionId = _audioSessionId;
+    _loopRestarting = true;
+    final start = startMs ?? 0;
+    unawaited(() async {
+      try {
+        await player.seek(Duration(milliseconds: start));
+        if (_isDisposed || _hasCompleted || sessionId != _audioSessionId) {
+          return;
+        }
+        if (!preferredRepeat) {
+          try {
+            await player.pause();
+          } catch (_) {}
+          _fireSegmentComplete();
+          return;
+        }
+        final landed = player.position.inMilliseconds;
+        final end = endMs;
+        final stillPastSlice =
+            end != null ? landed >= end : landed > start + 1000;
+        if (stillPastSlice) {
+          _fireSegmentComplete();
+          return;
+        }
+        _staleEndSkips = 2;
+        // The listener may have paused while this seek was in flight.
+        // playing is then false, which is also how a completed player looks,
+        // so the flag — not the player — decides whether to resume.
+        if (_pauseRequested) {
+          _setButtonState(PlanAudioButtonState.play);
+          _publishProgress(player.position);
+          return;
+        }
+        // Completed players stay stopped until play() is requested again.
+        // play() only finishes when playback stops, so it must not be awaited.
+        if (player.processingState == ProcessingState.completed ||
+            !player.playing) {
+          player.play();
+        }
+        _setButtonState(PlanAudioButtonState.pause);
+        _publishProgress(player.position);
+      } catch (_) {
+        if (!_isDisposed && !_hasCompleted && sessionId == _audioSessionId) {
+          _fireSegmentComplete();
+        }
+      } finally {
+        if (sessionId == _audioSessionId) _loopRestarting = false;
+      }
+    }());
   }
 
   void _fireSegmentComplete() {
@@ -211,10 +406,15 @@ class PlanSegmentAudioController extends ChangeNotifier {
   void cancel() {
     _audioSessionId++; // invalidate any in-flight _startAudio
     _hasCompleted = true; // prevent late-firing position callbacks
+    _pauseRequested = false;
+    _loopRestarting = false;
+    _staleEndSkips = 0;
     _playerStateSub?.cancel();
     _positionSub?.cancel();
+    _durationSub?.cancel();
     _playerStateSub = null;
     _positionSub = null;
+    _durationSub = null;
     final player = _player;
     if (player != null) {
       // Fire-and-forget; dispose() waits for it before freeing the player.
@@ -229,6 +429,7 @@ class PlanSegmentAudioController extends ChangeNotifier {
   void dispose() {
     _isDisposed = true;
     cancel();
+    progress.dispose();
     final player = _player;
     _player = null;
     if (player != null) {

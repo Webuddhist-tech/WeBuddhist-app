@@ -193,9 +193,8 @@ void main() {
       await _tapLanguage(tester, 'zh');
       expect(_secondaryOf(ref, _refuge).versionId, 'refuge-zh');
       expect(_secondaryOf(ref, _aspiration).versionId, 'aspiration-zh');
-      // No edition is named: the field shows the language alone, and the
-      // editions of the shown text do not open under it.
-      expect(find.text(getNativeLanguageName('zh')!), findsNWidgets(2));
+      // No edition is named or listed: the language's chip alone.
+      expect(find.text(getNativeLanguageName('zh')!), findsOneWidget);
       expect(find.text('Refuge Chinese'), findsNothing);
 
       // A language only the other text has: that text shows it, this one
@@ -209,7 +208,7 @@ void main() {
     },
   );
 
-  testWidgets('one text alone still names and offers its editions', (
+  testWidgets('one text alone: a language picks its one translation', (
     tester,
   ) async {
     final ref = await _pump(tester, others: const []);
@@ -219,10 +218,34 @@ void main() {
 
     await _tapLanguage(tester, 'zh');
     expect(_secondaryOf(ref, _refuge).versionId, 'refuge-zh');
-    expect(
-      find.text('${getNativeLanguageName('zh')!} (Refuge Chinese)'),
-      findsOneWidget,
-    );
-    expect(find.text('Refuge Chinese'), findsOneWidget);
+    // One translation per language: no editions are listed or named.
+    expect(find.text('Refuge Chinese'), findsNothing);
+    expect(find.textContaining('Refuge Chinese'), findsNothing);
+  });
+
+  testWidgets('the only line on cannot be turned off', (tester) async {
+    final ref = await _pump(tester, others: const []);
+    ReaderDualLayoutSettings settings() =>
+        ref.read(readerDualSettingsProvider(_refuge));
+
+    // The original alone: its switch is locked, so nothing changes.
+    await tester.tap(find.byType(AppToggleSwitch).at(0));
+    await _settle(tester);
+    expect(settings().originalVisible, isTrue);
+    expect(settings().secondaryEnabled, isFalse);
+
+    // Both lines on: either can go.
+    await _switchTranslationOn(tester);
+    await _tapLanguage(tester, 'zh');
+    expect(settings().secondary.versionId, 'refuge-zh');
+    await tester.tap(find.byType(AppToggleSwitch).at(0));
+    await _settle(tester);
+    expect(settings().originalVisible, isFalse);
+
+    // The translation alone: now its switch is the locked one.
+    await tester.tap(find.byType(AppToggleSwitch).at(1));
+    await _settle(tester);
+    expect(settings().secondaryEnabled, isTrue);
+    expect(settings().originalVisible, isFalse);
   });
 }

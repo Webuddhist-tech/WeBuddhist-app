@@ -178,6 +178,7 @@ class _GroupRecitationCollectionScreenState
         groupRecitationCollectionCompletionProvider(key),
       ),
       initialAudio: initialAudio,
+      groupName: _resolveGroupName(ref, collection.groupId),
     );
 
     await context.push('/reader/$textId', extra: navigationContext);

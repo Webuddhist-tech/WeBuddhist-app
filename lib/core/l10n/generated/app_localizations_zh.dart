@@ -914,6 +914,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get collection_audio_versions => 'Audio versions';
 
   @override
+  String get playback_speed => 'Playback speed';
+
+  @override
   String get author => '作者';
 
   @override
@@ -1182,7 +1185,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_languages_title => '語言';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => '章節';
 
   @override
   String get reader_original_label => '原文';
@@ -2206,6 +2209,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => '無法載入訊息';
+
+  @override
+  String get chat_room_closed => 'This chat has been closed.';
 
   @override
   String get group_chat_message_not_found => '此訊息已不在聊天中';
@@ -3742,6 +3748,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get reader_display_title => '顯示';
 
   @override
+  String get text_size => '文字大小';
+
+  @override
   String get reader_more_settings => '更多設定';
 
   @override
@@ -3794,6 +3803,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get reader_live_paused => '已暫停';
+
+  @override
+  String get reader_text_smaller => '縮小文字';
+
+  @override
+  String get reader_text_larger => '放大文字';
 
   @override
   String reader_section_position(String current, String total) {
@@ -7423,6 +7438,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String get reader_display_title => '显示';
 
   @override
+  String get text_size => '文字大小';
+
+  @override
   String get reader_more_settings => '更多设置';
 
   @override
@@ -7475,6 +7493,12 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get reader_live_paused => '已暂停';
+
+  @override
+  String get reader_text_smaller => '缩小文字';
+
+  @override
+  String get reader_text_larger => '放大文字';
 
   @override
   String reader_section_position(String current, String total) {

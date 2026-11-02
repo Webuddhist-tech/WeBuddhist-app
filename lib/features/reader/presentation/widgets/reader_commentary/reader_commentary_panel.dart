@@ -1,251 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/utils/get_language.dart';
 import 'package:flutter_pecha/features/reader/presentation/providers/reader_notifier.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_list_order.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_commentary/commentary_skeleton.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_bottom_panel_shell.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_constants.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_content_block.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_metadata_tile.dart';
-import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_panel_section_header.dart';
+import 'package:flutter_pecha/features/reader/presentation/widgets/reader_panels/reader_resource_list.dart';
 import 'package:flutter_pecha/features/texts/data/models/commentary/segment_commentary.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/segment_provider.dart';
 import 'package:flutter_pecha/shared/utils/helper_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final _expandedContentIndexProvider = StateProvider.family<int?, String>(
-  (ref, segmentId) => null,
-);
-
-final _expandedMetadataIndexProvider = StateProvider.family<int?, String>(
-  (ref, segmentId) => null,
-);
-
+/// The verse sheet's Commentary tab: the verse's commentaries.
 class ReaderCommentaryPanel extends ConsumerWidget {
   final String segmentId;
   final String textLanguage;
   final ReaderParams params;
-  final double availableHeight;
 
   const ReaderCommentaryPanel({
     super.key,
     required this.segmentId,
     required this.textLanguage,
     required this.params,
-    required this.availableHeight,
   });
-
-  void _resetExpansion(WidgetRef ref) {
-    ref.read(_expandedContentIndexProvider(segmentId).notifier).state = null;
-    ref.read(_expandedMetadataIndexProvider(segmentId).notifier).state = null;
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final localizations = context.l10n;
-    final notifier = ref.read(readerNotifierProvider(params).notifier);
     final segmentCommentaries = ref.watch(
       segmentCommentaryFutureProvider(segmentId),
     );
 
-    return ReaderBottomPanelShell(
-      title: localizations.text_commentary,
-      params: params,
-      availableHeight: availableHeight,
-      onDismiss: () {
-        notifier.closeCommentary();
-        _resetExpansion(ref);
-      },
-      child: segmentCommentaries.when(
-        data:
-            (data) => _CommentaryList(
-              commentaries: data.commentaries,
-              segmentId: segmentId,
-              textLanguage: textLanguage,
-              commentaryTextId:
-                  params.navigationContext?.currentItem?.commentaryTextId,
-            ),
-        error:
-            (error, _) => _ErrorState(
-              error: error,
-              onRetry:
-                  () => ref.invalidate(
-                    segmentCommentaryFutureProvider(segmentId),
-                  ),
-            ),
-        loading: () => const CommentarySkeleton(),
-      ),
+    return segmentCommentaries.when(
+      data:
+          (data) => _CommentaryList(
+            commentaries: data.commentaries,
+            textLanguage: textLanguage,
+            commentaryTextId:
+                params.navigationContext?.currentItem?.commentaryTextId,
+          ),
+      error:
+          (error, _) => _ErrorState(
+            error: error,
+            onRetry:
+                () => ref.invalidate(
+                  segmentCommentaryFutureProvider(segmentId),
+                ),
+          ),
+      loading: () => const CommentarySkeleton(),
     );
   }
 }
 
-class _CommentaryList extends ConsumerWidget {
+class _CommentaryList extends StatelessWidget {
   const _CommentaryList({
     required this.commentaries,
-    required this.segmentId,
     required this.textLanguage,
     required this.commentaryTextId,
   });
 
   final List<SegmentCommentary> commentaries;
-  final String segmentId;
   final String textLanguage;
   final String? commentaryTextId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final order = orderCommentaries(
       commentaries: commentaries,
       textLanguage: textLanguage,
       commentaryTextId: commentaryTextId,
     );
-
-    final expandedContent = ref.watch(_expandedContentIndexProvider(segmentId));
-    final expandedMetadata = ref.watch(
-      _expandedMetadataIndexProvider(segmentId),
-    );
-
-    final children = <Widget>[];
-    var globalIndex = 0;
     final pinned = order.pinned;
-    if (pinned != null) {
-      final index = globalIndex++;
-      children.add(
-        _CommentaryItem(
-          commentary: pinned,
-          index: index,
-          segmentId: segmentId,
-          isContentExpanded: expandedContent == index,
-          isMetadataExpanded: expandedMetadata == index,
-        ),
+    return ReaderResourceList(
+      textLanguage: textLanguage,
+      firstLanguage: pinned?.language,
+      rememberAs: 'commentary',
+      entries: [
+        if (pinned != null) _entry(pinned),
+        for (final code in order.languageCodes)
+          for (final commentary
+              in order.byLanguage[code] ?? const <SegmentCommentary>[])
+            _entry(commentary),
+      ],
+    );
+  }
+
+  static ReaderResourceEntry _entry(SegmentCommentary commentary) =>
+      ReaderResourceEntry(
+        content: commentary.segments
+            .map((s) => normalizeSegmentHtml(s.content))
+            .where((s) => s.isNotEmpty)
+            .join('<br><br>'),
+        language: commentary.language,
+        title: commentary.title,
+        source: commentary.source,
+        license: commentary.license,
       );
-    }
-    for (final code in order.languageCodes) {
-      final items = order.byLanguage[code] ?? const <SegmentCommentary>[];
-      // The pinned card already left this section. An empty placeholder
-      // would only repeat that it is gone.
-      if (items.isEmpty && pinned != null && code == pinned.language) {
-        continue;
-      }
-      if (items.isEmpty) {
-        children.add(ReaderPanelSectionHeader(languageCode: code));
-        children.add(_LanguageUnavailable(languageCode: code));
-        continue;
-      }
-      children.add(
-        ReaderPanelSectionHeader(languageCode: code, count: items.length),
-      );
-      for (final commentary in items) {
-        final index = globalIndex++;
-        children.add(
-          _CommentaryItem(
-            commentary: commentary,
-            index: index,
-            segmentId: segmentId,
-            isContentExpanded: expandedContent == index,
-            isMetadataExpanded: expandedMetadata == index,
-          ),
-        );
-      }
-    }
-
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
-      children: children,
-    );
-  }
-}
-
-/// Placeholder rendered under a language section header when no commentary in
-/// that language is available for the current segment.
-class _LanguageUnavailable extends StatelessWidget {
-  const _LanguageUnavailable({required this.languageCode});
-
-  final String languageCode;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final localizations = context.l10n;
-    final label = getLanguageName(languageCode, context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        ReaderPanelConstants.horizontalPadding,
-        ReaderPanelConstants.itemSpacing,
-        ReaderPanelConstants.horizontalPadding,
-        ReaderPanelConstants.itemSpacing,
-      ),
-      child: Text(
-        localizations.commentary_not_available_for_language(label),
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-        ),
-      ),
-    );
-  }
-}
-
-class _CommentaryItem extends ConsumerWidget {
-  const _CommentaryItem({
-    required this.commentary,
-    required this.index,
-    required this.segmentId,
-    required this.isContentExpanded,
-    required this.isMetadataExpanded,
-  });
-
-  final SegmentCommentary commentary;
-  final int index;
-  final String segmentId;
-  final bool isContentExpanded;
-  final bool isMetadataExpanded;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final content = commentary.segments
-        .map((s) => normalizeSegmentHtml(s.content))
-        .where((s) => s.isNotEmpty)
-        .join('<br><br>');
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        ReaderPanelConstants.horizontalPadding,
-        ReaderPanelConstants.contentSpacing,
-        ReaderPanelConstants.horizontalPadding,
-        ReaderPanelConstants.itemSpacing,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ReaderPanelContentBlock(
-            content: content,
-            language: commentary.language,
-            segmentIndex: index,
-            isExpanded: isContentExpanded,
-            onToggle: () {
-              ref
-                  .read(_expandedContentIndexProvider(segmentId).notifier)
-                  .state = isContentExpanded ? null : index;
-            },
-          ),
-          const SizedBox(height: ReaderPanelConstants.contentSpacing),
-          ReaderPanelMetadataTile(
-            title: commentary.title,
-            language: commentary.language,
-            source: commentary.source,
-            license: commentary.license,
-            isExpanded: isMetadataExpanded,
-            onToggle: () {
-              ref
-                  .read(_expandedMetadataIndexProvider(segmentId).notifier)
-                  .state = isMetadataExpanded ? null : index;
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ErrorState extends StatelessWidget {

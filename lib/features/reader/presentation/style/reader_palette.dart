@@ -36,6 +36,8 @@ class ReaderPalette {
     required this.drawerChip,
     required this.drawerDivider,
     required this.drawerHandle,
+    required this.chipFill,
+    required this.chipOutline,
     required this.sheetMuted,
     required this.sheetCurrentRow,
     required this.selectedChip,
@@ -95,6 +97,12 @@ class ReaderPalette {
   final Color drawerDivider;
   final Color drawerHandle;
 
+  /// An unselected chip's fill and edge: in light only an edge, as every
+  /// light mock draws it (WF13, WF17, WF21); in dark filled as the card
+  /// gives (WF18).
+  final Color chipFill;
+  final Color chipOutline;
+
   /// The sections sheet: secondary text and the row on screen.
   final Color sheetMuted;
   final Color sheetCurrentRow;
@@ -119,6 +127,12 @@ class ReaderPalette {
   static const Color yigchungLight = Color(0xFF1F4E9C);
   static const Color yigchungDark = Color(0xFF9CBFF9);
 
+  /// Sheets in light mode, on every background, as the mocks draw them.
+  static const Color drawerLight = Color(0xFFFBF9F4);
+
+  /// An unselected chip's edge in light, the same on every background.
+  static const Color chipOutlineLight = Color(0xFFDADADA);
+
   /// The palette for the reader's picked background and [theme]'s
   /// brightness.
   static ReaderPalette resolve(ThemeData theme, WidgetRef ref) =>
@@ -130,7 +144,9 @@ class ReaderPalette {
     final page = background.of(brightness);
     final ink = isDark ? inkDark : inkLight;
     final drawer =
-        isDark ? Color.alphaBlend(Colors.black.withValues(alpha: 0.32), page) : page;
+        isDark
+            ? Color.alphaBlend(Colors.black.withValues(alpha: 0.32), page)
+            : drawerLight;
 
     // The ink at [light] or [dark] strength (0-1) over [over].
     Color shade(double light, double dark, {Color? over}) => Color.alphaBlend(
@@ -140,6 +156,13 @@ class ReaderPalette {
 
     final past = shade(0.70, 0.66);
     final translation = shade(0.72, 0.76);
+    // Chips and rules on a sheet: the light mocks blend them over the page,
+    // not the near-white sheet (#F2E7D7 chips on Rice Paper, #E9E9E9 rules
+    // on White); the dark ones over the sheet.
+    final onDrawer = isDark ? drawer : page;
+    final liveHighlight = shade(0.08, 0.10);
+    final drawerChip = shade(0.06, 0.12, over: onDrawer);
+    final drawerDivider = shade(0.10, 0.12, over: onDrawer);
     return ReaderPalette(
       background: page,
       ink: ink,
@@ -151,7 +174,7 @@ class ReaderPalette {
       pastVerse: past,
       instruction: past,
       divider: shade(0.10, 0.10),
-      liveHighlight: shade(0.08, 0.10),
+      liveHighlight: liveHighlight,
       liveOriginal: shade(1.0, 0.87),
       yigchung: isDark ? yigchungDark : yigchungLight,
       footnoteMarker: const Color(0xFF007bff),
@@ -163,11 +186,15 @@ class ReaderPalette {
       // (dark Gold, Sky, Robe Saffron); the translation's does not.
       pillMuted: translation,
       drawerBackground: drawer,
-      drawerChip: shade(0.06, 0.12, over: drawer),
-      drawerDivider: shade(0.10, 0.12, over: drawer),
+      drawerChip: drawerChip,
+      drawerDivider: drawerDivider,
       drawerHandle: shade(0.55, 0.40, over: drawer),
-      sheetMuted: shade(0.70, 0.66, over: drawer),
-      sheetCurrentRow: shade(0.06, 0.12, over: drawer),
+      chipFill: isDark ? drawerChip : drawer,
+      chipOutline: isDark ? drawerDivider : chipOutlineLight,
+      // The sheets' secondary text and current row are drawn as the
+      // translation and the live verse's card (WF11, WF12, WF19, WF20).
+      sheetMuted: translation,
+      sheetCurrentRow: liveHighlight,
       selectedChip: isDark ? gold : plum,
       selectedChipText: isDark ? inkLight : inkDark,
       livePill: liveRed,

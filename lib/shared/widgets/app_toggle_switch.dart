@@ -13,12 +13,22 @@ class AppToggleSwitch extends StatelessWidget {
     required this.onChanged,
     this.thumbOnColor = Colors.white,
     this.thumbOffColor = Colors.white,
+    this.trackOnColor = _trackOnColor,
+    this.trackOffColor = _trackOffColor,
+    this.width = 64,
+    this.height = 32,
   });
 
   final bool value;
   final ValueChanged<bool> onChanged;
   final Color thumbOnColor;
   final Color thumbOffColor;
+  final Color trackOnColor;
+  final Color trackOffColor;
+
+  /// The track's size; the thumb fills its height less 2 on each side.
+  final double width;
+  final double height;
 
   static const Color _trackOnColor = Color(0xFF196BF1);
   static const Color _trackOffColor = Color(0xFFADADAD);
@@ -29,19 +39,19 @@ class AppToggleSwitch extends StatelessWidget {
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 64,
-        height: 32,
+        width: width,
+        height: height,
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: value ? _trackOnColor : _trackOffColor,
+          borderRadius: BorderRadius.circular(height / 2),
+          color: value ? trackOnColor : trackOffColor,
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
           alignment: value ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
-            width: 28,
-            height: 28,
+            width: height - 4,
+            height: height - 4,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: value ? thumbOnColor : thumbOffColor,

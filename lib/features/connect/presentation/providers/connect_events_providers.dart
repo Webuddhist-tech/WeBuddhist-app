@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/presentation/providers/connect_providers.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/cached_first_page.dart';
@@ -83,6 +86,9 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
   /// `event_format` query value, or null to list every format.
   final String? eventFormat;
   static const int _limit = 20;
+
+  /// Most rows one call may ask for when the loaded rows are read again.
+  static const int _windowLimit = 100;
 
   // Blocks paging while page one is being read again; stale pages are dropped.
   bool _firstPageInFlight = false;
@@ -181,6 +187,66 @@ class ConnectEventsNotifier extends StateNotifier<ConnectEventsState> {
           clearError: true,
         );
       },
+    );
+  }
+
+  bool _refreshing = false;
+  bool _refreshAgain = false;
+
+  /// For live signals: reads every loaded row again, so a list scrolled past
+  /// page one keeps its place. A burst costs one read in flight plus one more.
+  Future<void> refreshLatest() async {
+    if (_refreshing) {
+      _refreshAgain = true;
+      return;
+    }
+    _refreshing = true;
+    try {
+      do {
+        _refreshAgain = false;
+        await _readLoaded();
+      } while (_refreshAgain && mounted);
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  Future<void> _readLoaded() async {
+    // Nothing paged yet: an ordinary first-page read is the same thing.
+    if (state.events.isEmpty || state.isLoading) {
+      if (!_firstPageInFlight) await refresh();
+      return;
+    }
+    final source = _source;
+    if (source == null) return;
+
+    final epoch = _pageEpoch;
+    final read = await readLoadedWindow<GroupEvent>(
+      window: () => math.max(_limit, state.skip),
+      fetch:
+          (skip, limit) async => (await ref
+                  .read(groupProfileRepositoryProvider)
+                  .getConnectEvents(
+                    includeUnfollowed: includeUnfollowed,
+                    language: language,
+                    skip: skip,
+                    limit: limit,
+                    eventFormat: eventFormat,
+                  ))
+              .map((page) => (page.events, page.total)),
+      idOf: (event) => event.id,
+      // A pull-to-refresh that landed meanwhile is newer.
+      isCurrent: () => mounted && epoch == _pageEpoch,
+      pageLimit: _windowLimit,
+    );
+    if (read == null) return;
+    _pageEpoch++;
+    state = state.copyWith(
+      events: read.rows,
+      hasMore: read.rows.length < read.total,
+      skip: read.rows.length,
+      hasLoaded: true,
+      clearError: true,
     );
   }
 

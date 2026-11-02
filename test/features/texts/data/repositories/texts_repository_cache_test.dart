@@ -6,6 +6,7 @@ import 'package:flutter_pecha/features/texts/data/models/search/multilingual_sea
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
+import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/toc.dart';
 import 'package:flutter_pecha/features/texts/data/models/text_detail.dart';
 import 'package:flutter_pecha/features/texts/data/repositories/texts_repository.dart';
@@ -46,6 +47,12 @@ class _FakeRemote implements TextRemoteDatasource {
     required String sourceTextId,
     required String targetTextId,
   }) async => null;
+
+  @override
+  Future<TextOutline> fetchOutline({
+    required String textId,
+    String? versionId,
+  }) => throw UnimplementedError();
 }
 
 ReaderResponse _page(String content, {bool partial = false}) {

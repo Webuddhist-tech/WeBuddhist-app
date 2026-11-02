@@ -21,6 +21,7 @@ import 'package:flutter_pecha/features/texts/data/repositories/texts_repository.
 import 'package:flutter_pecha/features/texts/presentation/providers/texts_provider.dart';
 import 'package:flutter_pecha/features/texts/presentation/providers/use_case_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_pecha/features/reader/constants/reader_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -649,6 +650,164 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group("a verse's sheet", () {
+    const verse = Segment(segmentId: 'E2-1', segmentNumber: 1, content: 'a');
+    const next = Segment(segmentId: 'E2-2', segmentNumber: 2, content: 'b');
+    const params = ReaderParams(textId: 'E2');
+
+    Future<ReaderNotifier> selected() async {
+      final sub = container.listen(readerNotifierProvider(params), (_, __) {});
+      addTearDown(sub.close);
+      await _loaded(container, params);
+      final notifier = container.read(readerNotifierProvider(params).notifier);
+      notifier.toggleSegmentSelection(verse);
+      return notifier;
+    }
+
+    ReaderState state() => container.read(readerNotifierProvider(params));
+
+    test('opens at its default height on the first tab with something',
+        () async {
+      final notifier = await selected();
+      expect(state().splitRatio, ReaderConstants.defaultSplitRatio);
+      expect(state().resourceTab, isNull);
+
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-1',
+          hasCommentaries: false,
+          hasVersions: false,
+          hasVideos: true,
+          hasRootText: true,
+        ),
+        ReaderResourceTab.videos,
+      );
+      expect(state().videosSegmentId, 'E2-1');
+      // Once a tab is open, a late count does not move it.
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-1',
+          hasCommentaries: true,
+          hasVersions: true,
+          hasVideos: true,
+          hasRootText: true,
+        ),
+        isNull,
+      );
+      expect(state().resourceTab, ReaderResourceTab.videos);
+    });
+
+    test('Commentary before Versions; nothing to show opens no tab', () async {
+      final notifier = await selected();
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-1',
+          hasCommentaries: false,
+          hasVersions: false,
+          hasVideos: false,
+          hasRootText: false,
+        ),
+        isNull,
+      );
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-1',
+          hasCommentaries: true,
+          hasVersions: true,
+          hasVideos: false,
+          hasRootText: false,
+        ),
+        ReaderResourceTab.commentary,
+      );
+    });
+
+    test('one tab at a time, kept for the next verse, height kept', () async {
+      final notifier = await selected();
+      notifier.openResourceTab('E2-1', ReaderResourceTab.rootText);
+      expect(state().resourceTab, ReaderResourceTab.rootText);
+      notifier.updateSplitRatio(0.3);
+
+      notifier.openResourceTab('E2-1', ReaderResourceTab.commentary);
+      expect(state().resourceTab, ReaderResourceTab.commentary);
+      expect(state().isTranslationOpen, isFalse);
+      expect(state().splitRatio, 0.3);
+
+      notifier.toggleSegmentSelection(next);
+      expect(state().commentarySegmentId, 'E2-2');
+      expect(state().splitRatio, 0.3);
+    });
+
+    test('follows the verse scrolled to the top, height and tab kept',
+        () async {
+      final notifier = await selected();
+      notifier.openResourceTab('E2-1', ReaderResourceTab.versions);
+      notifier.updateSplitRatio(0.3);
+
+      notifier.followVerse(next);
+      expect(state().selectedSegment, next);
+      expect(state().translationSegmentId, 'E2-2');
+      expect(state().splitRatio, 0.3);
+
+      // Following the verse it is on keeps it open.
+      notifier.followVerse(next);
+      expect(state().hasSelection, isTrue);
+
+      // With no sheet open there is nothing to follow.
+      notifier.closeVerseSheet();
+      notifier.followVerse(verse);
+      expect(state().hasSelection, isFalse);
+    });
+
+    test('a kept tab the new verse has nothing for gives way', () async {
+      final notifier = await selected();
+      notifier.openResourceTab('E2-1', ReaderResourceTab.commentary);
+      notifier.followVerse(next);
+
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-2',
+          hasCommentaries: false,
+          hasVersions: true,
+          hasVideos: false,
+          hasRootText: false,
+        ),
+        ReaderResourceTab.versions,
+      );
+      expect(state().translationSegmentId, 'E2-2');
+      expect(state().isCommentaryOpen, isFalse);
+
+      // A verse with nothing at all leaves no tab open.
+      notifier.followVerse(verse);
+      expect(
+        notifier.openFirstResourceTab(
+          'E2-1',
+          hasCommentaries: false,
+          hasVersions: false,
+          hasVideos: false,
+          hasRootText: false,
+        ),
+        isNull,
+      );
+      expect(state().resourceTab, isNull);
+      expect(state().selectedSegment, verse);
+    });
+
+    test('closing it, or tapping the verse again, leaves nothing open',
+        () async {
+      final notifier = await selected();
+      notifier.openResourceTab('E2-1', ReaderResourceTab.videos);
+      notifier.toggleSegmentSelection(verse);
+      expect(state().hasSelection, isFalse);
+      expect(state().resourceTab, isNull);
+
+      notifier.toggleSegmentSelection(verse);
+      notifier.openResourceTab('E2-1', ReaderResourceTab.versions);
+      notifier.selectSegment(null);
+      expect(state().hasSelection, isFalse);
+      expect(state().resourceTab, isNull);
     });
   });
 }

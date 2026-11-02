@@ -857,6 +857,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   extra['groupAccumulatorEnded'] as bool? ?? false,
               language: extra['language'] as String?,
               collectionId: extra['collectionId'] as String?,
+              collectionImageUrl: extra['collectionImageUrl'] as String?,
               eventId: extra['eventId'] as String?,
               isOnlineAttendee: extra['isOnlineAttendee'] as bool? ?? false,
             );

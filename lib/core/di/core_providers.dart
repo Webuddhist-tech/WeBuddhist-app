@@ -156,15 +156,19 @@ final dioProvider = Provider<Dio>((ref) {
 
 // ============ Library Dio Client ============
 
-/// Public library (texts) API client: no auth, shared cache/error/logging.
+/// Library (texts) API client: API key, no user auth, shared cache/error/logging.
 final libraryDioProvider = Provider<Dio>((ref) {
+  final apiKey = Env.libraryApiKey;
   final dio = Dio(
     BaseOptions(
       baseUrl: Env.libraryApiUrl,
       connectTimeout: Env.apiTimeout,
       receiveTimeout: Env.apiTimeout,
       sendTimeout: Env.apiTimeout,
-      headers: {'Accept': 'application/json'},
+      headers: {
+        'Accept': 'application/json',
+        if (apiKey != null) 'X-API-Key': apiKey,
+      },
     ),
   );
   dio.interceptors.addAll([

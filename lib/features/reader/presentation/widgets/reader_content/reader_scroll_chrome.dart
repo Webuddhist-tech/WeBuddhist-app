@@ -15,9 +15,18 @@ class ReaderFocusMode {
 
   /// Feeds one scroll step of [delta] pixels, positive downwards. With
   /// [countUp] false an upward step is ignored, so a jump the app makes
-  /// back up the page does not bring hidden bars back. Returns true when
-  /// [barsVisible] changed.
-  bool scrolled(double delta, {bool countUp = true}) {
+  /// back up the page does not bring hidden bars back. A step while the page
+  /// is [outOfRange] is ignored: an iOS bounce springing back from the top
+  /// is not the person scrolling down. [atTop] brings the bars back. Returns
+  /// true when [barsVisible] changed.
+  bool scrolled(
+    double delta, {
+    bool countUp = true,
+    bool outOfRange = false,
+    bool atTop = false,
+  }) {
+    if (atTop) return show();
+    if (outOfRange) return false;
     if (delta > 0) {
       _up = 0;
       _down += delta;

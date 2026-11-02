@@ -83,6 +83,8 @@ class _ChatsScreenState extends ConsumerState<ChatsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(chatRoomsProvider);
+    // Rooms move while the list is open; the signal refetches it.
+    ref.watch(chatRoomsSignalsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(

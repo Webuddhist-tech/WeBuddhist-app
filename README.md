@@ -31,7 +31,7 @@ forced-update prompt (`upgrader`).
 ## 📦 Getting Started
 
 ### Requirements
-- Flutter **3.35.7** (stable) — the version CI pins in `.github/workflows/*.yml`
+- Flutter **3.41.9** (stable) — the version CI pins in `.github/workflows/*.yml`
   (Dart SDK constraint in `pubspec.yaml`: `^3.7.2`)
 - Xcode (iOS/macOS) and Android Studio / JDK 17 (Android)
 

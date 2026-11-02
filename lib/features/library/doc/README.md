@@ -63,7 +63,8 @@ library/
 
 ## Data sources
 
-- **`libraryDioProvider`** — separate Dio, no auth; cache, error and logging
+- **`libraryDioProvider`** — separate Dio, no user auth (sends `X-API-Key` from
+  `LIBRARY_API_KEY`, which prod requires); cache, error and logging
   interceptors. Errors are mapped by `ErrorInterceptor`; 404s are treated
   as "none" for TOC, yigchungs and alignments.
 - Chants: `/v2/texts?tag_id=$LIBRARY_CHANTS_TAG_ID` (title filter ≥ 2 chars).

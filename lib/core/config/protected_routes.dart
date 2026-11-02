@@ -19,6 +19,7 @@ class ProtectedRoutes {
     '/users/me',
     '/users/me/', // Catch-all: matches all /users/me/* paths
     '/users/me/push-devices', // Push device token registration
+    '/auth/firebase-token', // Firebase custom token for live signals
 
     '/users/me/plans',
     '/users/me/plans/{planId}',

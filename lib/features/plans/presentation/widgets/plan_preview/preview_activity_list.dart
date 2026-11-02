@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
+import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/utils/audio_url.dart';
 import 'package:flutter_pecha/features/group_profile/presentation/utils/group_accumulator_practice_launcher.dart';
 import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/plans.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_group_collections.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_task_live_badge.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_shorts_section.dart';
@@ -131,12 +133,12 @@ class PreviewActivityList extends ConsumerWidget {
     return task.subtasks.any((s) => s.hasOwnAudio);
   }
 
-  void _handleActivityTap(
+  Future<void> _handleActivityTap(
     BuildContext context,
     WidgetRef ref,
     PlanTasksModel task, {
     required bool autoPlay,
-  }) {
+  }) async {
     final accumulatorId = PlanSubtaskNavigation.groupAccumulationIdForPlanTask(
       task,
     );
@@ -156,12 +158,26 @@ class PreviewActivityList extends ConsumerWidget {
       return;
     }
 
-    final planTextItems = PlanSubtaskNavigation.fromPlanTasks(tasks);
-    if (planTextItems.isEmpty) return;
+    final collections = await loadPlanGroupCollectionsToOpen(
+      ref,
+      PlanSubtaskNavigation.groupCollectionIdsForPlanTasks(tasks),
+    );
+    if (collections == null || !context.mounted) return;
+
+    final planTextItems = PlanSubtaskNavigation.fromPlanTasks(
+      tasks,
+      collections: collections,
+    );
 
     // Open at the task's first subtask; next/prev walks the rest.
     final index = planTextItems.indexWhere((item) => item.taskId == task.id);
-    if (index < 0) return;
+    if (index < 0) {
+      // Only a collection that failed to load leaves a task without an item.
+      if (task.subtasks.any((s) => s.groupCollectionId != null)) {
+        _showLoadError(context);
+      }
+      return;
+    }
 
     final target = planTextItems[index];
     final navigationContext = NavigationContext(
@@ -179,6 +195,15 @@ class PreviewActivityList extends ConsumerWidget {
 
     PlanNavigator.push(context, target, navigationContext);
   }
+}
+
+void _showLoadError(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(context.l10n.something_went_wrong),
+      backgroundColor: Colors.red,
+    ),
+  );
 }
 
 /// Task item widget for preview mode (read-only, no checkbox)

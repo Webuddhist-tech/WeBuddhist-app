@@ -50,6 +50,21 @@ void main() {
       expect(mode.barsVisible, isFalse);
     });
 
+    test('a bounce past the top springing back does not hide them', () {
+      final mode = ReaderFocusMode()..scrolled(30);
+      expect(mode.scrolled(-10), isTrue);
+      // Pulled past the top, then springing back down to it.
+      expect(mode.scrolled(-40, outOfRange: true), isFalse);
+      expect(mode.scrolled(40, outOfRange: true), isFalse);
+      expect(mode.barsVisible, isTrue);
+    });
+
+    test('the top of the page brings them back', () {
+      final mode = ReaderFocusMode()..scrolled(30);
+      expect(mode.scrolled(-2, countUp: false, atTop: true), isTrue);
+      expect(mode.barsVisible, isTrue);
+    });
+
     test('show brings hidden bars back and starts counting afresh', () {
       final mode = ReaderFocusMode()..scrolled(30);
       expect(mode.show(), isTrue);

@@ -7,6 +7,9 @@ import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_key.dart';
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/realtime/realtime_providers.dart';
+import 'package:flutter_pecha/core/realtime/signal_set.dart';
+import 'package:flutter_pecha/core/realtime/signal_paths.dart';
 import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_remote_datasource.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_room_dto.dart';
@@ -209,11 +212,11 @@ class ChatRoomsNotifier extends StateNotifier<ChatRoomsState>
   // Blocks paging while a walk from the top is in flight.
   bool _firstPageInFlight = false;
 
-  /// Unread counts and last messages both change on the server without the app
-  /// hearing about it — the live socket is per-room, and there is no rooms
-  /// stream. So this list is refetched on every occasion it could be stale
-  /// rather than loaded once: coming back to the foreground, a chat push
-  /// landing while the app is open, and whenever the Chats screen is shown.
+  /// Unread counts and last messages both change on the server; each listed
+  /// room's signal ([chatRoomsSignalsProvider]) says when. The list is still
+  /// refetched on every other occasion it could be stale: coming back to the
+  /// foreground, a chat push landing while the app is open, and whenever the
+  /// Chats screen is shown.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) refresh();
@@ -626,4 +629,37 @@ final chatRoomsPushRefreshProvider = Provider.autoDispose<void>((ref) {
       });
 
   ref.onDispose(subscription.cancel);
+});
+
+/// Refreshes the rooms list when any listed room's messages move. One
+/// listener per listed room, following the list as it changes; a burst
+/// across rooms costs one refetch. Watch it next to [chatRoomsPushRefreshProvider].
+final chatRoomsSignalsProvider = Provider.autoDispose<void>((ref) {
+  final signals = ref.watch(liveSignalsProvider);
+  if (signals == null) return;
+
+  Timer? coalesce;
+  final rooms = SignalSet(
+    signals: signals,
+    fields: const {SignalFields.messagesChangedAt},
+    onChange: (_) {
+      coalesce ??= Timer(const Duration(milliseconds: 500), () {
+        coalesce = null;
+        ref.read(chatRoomsProvider.notifier).refresh();
+      });
+    },
+  );
+
+  ref.listen<ChatRoomsState>(
+    chatRoomsProvider,
+    (_, next) => rooms.sync([
+      for (final room in next.rooms) SignalPaths.chatRoom(room.id),
+    ]),
+    fireImmediately: true,
+  );
+
+  ref.onDispose(() {
+    coalesce?.cancel();
+    rooms.dispose();
+  });
 });

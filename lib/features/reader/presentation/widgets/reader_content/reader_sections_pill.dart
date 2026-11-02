@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/features/reader/presentation/style/reader_style.dart';
+import 'package:flutter_pecha/features/reader/presentation/utils/reader_numerals.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// "Section name · N / total": the section at the top of the page and its
@@ -11,6 +12,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ReaderSectionsPill extends ConsumerWidget {
   final String title;
   final String language;
+
+  /// The language the page's numbers are written in; the section name's
+  /// when not given.
+  final String? numeralLanguage;
   final int position;
   final int total;
   final VoidCallback onTap;
@@ -19,6 +24,7 @@ class ReaderSectionsPill extends ConsumerWidget {
     super.key,
     required this.title,
     required this.language,
+    this.numeralLanguage,
     required this.position,
     required this.total,
     required this.onTap,
@@ -29,6 +35,7 @@ class ReaderSectionsPill extends ConsumerWidget {
     final theme = Theme.of(context);
     final style = ReaderStyle.of(context, ref);
     final palette = style.palette;
+    final numeralScript = ReaderScript.ofLanguage(numeralLanguage ?? language);
     final titleSize = ReaderTypography.chromeSize(
       ReaderTypography.sectionPillSize,
       ReaderScript.of(title, language: language),
@@ -62,10 +69,11 @@ class ReaderSectionsPill extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '· ${context.l10n.reader_count_position('$position', '$total')}',
+                    '· ${readerNumerals(context.l10n.reader_count_position('$position', '$total'), numeralScript)}',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontSize: ReaderTypography.sectionPillSize,
                       color: palette.pillMuted,
+                      fontFamilyFallback: readerNumeralFallback(numeralScript),
                     ),
                   ),
                   const SizedBox(width: 4),

@@ -957,6 +957,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get collection_audio_versions => 'Audio versions';
 
   @override
+  String get playback_speed => 'Playback speed';
+
+  @override
   String get author => 'Зохиогч';
 
   @override
@@ -1235,7 +1238,7 @@ class AppLocalizationsMn extends AppLocalizations {
   String get reader_languages_title => 'Хэлүүд';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => 'Бүлгүүд';
 
   @override
   String get reader_original_label => 'Эх';
@@ -2331,6 +2334,9 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => 'Зурвасуудыг ачаалж чадсангүй';
+
+  @override
+  String get chat_room_closed => 'This chat has been closed.';
 
   @override
   String get group_chat_message_not_found => 'Энэ зурвас чатад байхгүй болсон';
@@ -3904,6 +3910,9 @@ class AppLocalizationsMn extends AppLocalizations {
   String get reader_display_title => 'Харагдац';
 
   @override
+  String get text_size => 'Бичвэрийн хэмжээ';
+
+  @override
   String get reader_more_settings => 'Бусад тохиргоо';
 
   @override
@@ -3956,6 +3965,12 @@ class AppLocalizationsMn extends AppLocalizations {
 
   @override
   String get reader_live_paused => 'Түр зогссон';
+
+  @override
+  String get reader_text_smaller => 'Жижиг бичвэр';
+
+  @override
+  String get reader_text_larger => 'Том бичвэр';
 
   @override
   String reader_section_position(String current, String total) {

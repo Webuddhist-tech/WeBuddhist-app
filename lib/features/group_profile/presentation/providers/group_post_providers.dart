@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter_pecha/core/cache/screen_cache/screen_cache_providers.dart';
 import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
+import 'package:flutter_pecha/core/utils/loaded_window.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/connect/domain/entities/connect_post.dart';
 import 'package:flutter_pecha/features/group_profile/data/datasource/group_post_remote_datasource.dart';
@@ -105,6 +109,13 @@ class GroupPostsState {
   }
 }
 
+/// What changed here while a refresh was out; its read predates these.
+class _PostChanges {
+  final Map<String, ConnectPost> added = {};
+  final Set<String> deleted = {};
+  final Map<String, ConnectPost> updated = {};
+}
+
 class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   GroupPostsNotifier({
     required GroupPostRepositoryInterface repository,
@@ -120,11 +131,24 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   final GroupPostRepositoryInterface _repository;
   final String _groupId;
   static const int _limit = 20;
+
+  /// The API's largest page, for re-reading loaded posts in few calls.
+  static const int _windowLimit = 100;
   int _requestGeneration = 0;
   // A page-two request must not run from the stored offset while page one is
   // still being refreshed, nor land on a list that page one has replaced.
   bool _firstPageInFlight = false;
   int _pageEpoch = 0;
+
+  /// Numbers refreshes so an older one landing late is dropped.
+  int _refreshSeq = 0;
+
+  /// Set while a refresh is out; see [_PostChanges].
+  _PostChanges? _changes;
+
+  /// A signal came while the first page was out, so a refresh runs once it
+  /// lands; that read may predate the change.
+  bool _refreshAgain = false;
 
   /// Stored first page shows at once; the server copy replaces it.
   Future<void> loadInitial() async {
@@ -157,6 +181,10 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
       },
       _applyFirstPage,
     );
+    if (_refreshAgain) {
+      _refreshAgain = false;
+      unawaited(refreshLatest());
+    }
   }
 
   void _applyFirstPage(ConnectPostsPage page, {bool fresh = true}) {
@@ -199,8 +227,11 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
         state = state.copyWith(isLoadingMore: false, error: failure.message);
       },
       (page) {
+        // A merged refresh or an own post can already hold some of these.
+        final known = {for (final post in state.posts) post.id};
+        final fresh = page.posts.where((post) => !known.contains(post.id));
         state = state.copyWith(
-          posts: [...state.posts, ...page.posts],
+          posts: [...state.posts, ...fresh],
           total: page.total,
           isLoadingMore: false,
           hasMore: page.hasMore,
@@ -208,6 +239,70 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
           clearError: true,
         );
       },
+    );
+  }
+
+  /// Re-reads every loaded position after someone posts, so new posts land
+  /// on top with no gap behind them and deleted ones leave. A post pushed
+  /// past the window by new ones comes back with the next page.
+  Future<void> refreshLatest() async {
+    if (state.isLoading || _firstPageInFlight) {
+      _refreshAgain = true;
+      return;
+    }
+    if (!state.hasLoaded) return;
+    final generation = _requestGeneration;
+    final seq = ++_refreshSeq;
+    final changes = _changes = _PostChanges();
+    final LoadedWindow<ConnectPost>? read;
+    try {
+      read = await readLoadedWindow(
+        window: () => math.max(_limit, state.skip),
+        fetch:
+            (skip, limit) async => (await _repository.getGroupPosts(
+              _groupId,
+              skip: skip,
+              limit: limit,
+            )).map((page) => (page.posts, page.total)),
+        idOf: (post) => post.id,
+        isCurrent:
+            () =>
+                mounted &&
+                generation == _requestGeneration &&
+                seq == _refreshSeq,
+        pageLimit: _windowLimit,
+      );
+    } finally {
+      if (identical(_changes, changes)) _changes = null;
+    }
+    if (read == null) return;
+    final rows = read.rows;
+    final total = read.total;
+    final seen = {for (final post in rows) post.id};
+
+    // Laid back over the read: what was posted, deleted or edited here
+    // after it went out.
+    final added = [
+      for (final post in changes.added.values)
+        if (!seen.contains(post.id)) post,
+    ];
+    final deleted = rows.where((post) => changes.deleted.contains(post.id));
+    final shift = added.length - deleted.length;
+    final skip = rows.length + shift;
+    final count = math.max(0, total + shift);
+    _pageEpoch++;
+    state = state.copyWith(
+      posts: [
+        ...added,
+        for (final post in rows)
+          if (!changes.deleted.contains(post.id))
+            changes.updated[post.id] ?? post,
+      ],
+      total: count,
+      hasMore: skip < count,
+      skip: skip,
+      hasLoaded: true,
+      clearError: true,
     );
   }
 
@@ -221,6 +316,8 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
 
   /// Shows a freshly published post at the top before the next fetch.
   void prependPost(ConnectPost post) {
+    _changes?.added[post.id] = post;
+    _changes?.deleted.remove(post.id);
     final withoutDuplicate =
         state.posts.where((item) => item.id != post.id).toList();
     state = state.copyWith(
@@ -233,6 +330,7 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
   }
 
   void updatePost(ConnectPost updatedPost) {
+    _changes?.updated[updatedPost.id] = updatedPost;
     final index = state.posts.indexWhere((post) => post.id == updatedPost.id);
     if (index == -1) return;
 
@@ -247,6 +345,8 @@ class GroupPostsNotifier extends StateNotifier<GroupPostsState> {
     if (!mounted) return false;
 
     return result.fold((_) => false, (_) {
+      _changes?.deleted.add(postId);
+      _changes?.added.remove(postId);
       final remaining =
           state.posts.where((post) => post.id != postId).toList();
       if (remaining.length == state.posts.length) return true;

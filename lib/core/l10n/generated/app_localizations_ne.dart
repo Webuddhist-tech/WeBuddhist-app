@@ -964,6 +964,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get collection_audio_versions => 'Audio versions';
 
   @override
+  String get playback_speed => 'Playback speed';
+
+  @override
   String get author => 'लेखक';
 
   @override
@@ -1244,7 +1247,7 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_languages_title => 'भाषाहरू';
 
   @override
-  String get reader_sections_title => 'Sections';
+  String get reader_sections_title => 'खण्डहरू';
 
   @override
   String get reader_original_label => 'मूल';
@@ -2335,6 +2338,9 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get group_chat_load_failed => 'सन्देशहरू लोड गर्न सकिएन';
+
+  @override
+  String get chat_room_closed => 'This chat has been closed.';
 
   @override
   String get group_chat_message_not_found => 'यो सन्देश अब च्याटमा छैन';
@@ -3908,6 +3914,9 @@ class AppLocalizationsNe extends AppLocalizations {
   String get reader_display_title => 'प्रदर्शन';
 
   @override
+  String get text_size => 'पाठको आकार';
+
+  @override
   String get reader_more_settings => 'थप सेटिङहरू';
 
   @override
@@ -3960,6 +3969,12 @@ class AppLocalizationsNe extends AppLocalizations {
 
   @override
   String get reader_live_paused => 'रोकिएको';
+
+  @override
+  String get reader_text_smaller => 'सानो पाठ';
+
+  @override
+  String get reader_text_larger => 'ठूलो पाठ';
 
   @override
   String reader_section_position(String current, String total) {

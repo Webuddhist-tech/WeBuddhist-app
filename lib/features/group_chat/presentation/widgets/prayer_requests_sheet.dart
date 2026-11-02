@@ -2,20 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/constants/app_assets.dart';
-import 'package:flutter_pecha/core/di/core_providers.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
-import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
-import 'package:flutter_pecha/features/group_chat/data/datasource/group_chat_live_client.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_message_dto.dart';
 import 'package:flutter_pecha/features/group_chat/data/models/chat_prayer_user_dto.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_requests_filter.dart';
 import 'package:flutter_pecha/features/group_chat/domain/prayer_room_scope.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/chat_send_error.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/group_chat_providers.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/providers/prayer_requests_providers.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/group_chat_delete_dialog.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/widgets/new_prayer_request_sheet.dart';
@@ -70,18 +65,10 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   static const double _initialSize = 0.6;
   static const double _maxSize = 0.95;
 
-  /// Read through the container: socket frames can land after the sheet's
+  /// Read through the container: async work can finish after the sheet's
   /// element is deactivated, where `ref.read` throws.
   late final ProviderContainer _providers;
-  ScaffoldMessengerState? _messenger;
-  AppLocalizations? _l10n;
 
-  ChatLiveClient? _live;
-  StreamSubscription<ChatLiveEvent>? _liveSub;
-  Timer? _reconnectTimer;
-  int _reconnectAttempt = 0;
-  bool _connectingLive = false;
-  bool _hadLiveSession = false;
   bool _disposed = false;
   bool _composing = false;
   String? _roomId;
@@ -103,17 +90,8 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _messenger = ScaffoldMessenger.maybeOf(context);
-    _l10n = context.l10n;
-  }
-
-  @override
   void dispose() {
     _disposed = true;
-    _reconnectTimer?.cancel();
-    unawaited(_tearDownLive());
     _listController?.removeListener(_onScroll);
     _sheetController.dispose();
     super.dispose();
@@ -177,127 +155,14 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     );
   }
 
-  /// Connects once the room is known; the socket is scoped to the event or
-  /// space. A closed
-  /// room keeps its id so the loaded requests still render, so the status has
-  /// to be checked too — otherwise the rebuild that follows `markClosed`
-  /// reconnects to the room the server just shut.
+  /// Marks the room read once it is known. A closed room keeps its id so the
+  /// loaded requests still render, so the status has to be checked too.
   void _syncRoom(PrayerRequestsState state) {
     if (state.roomStatus == PrayerRoomStatus.closed) return;
     final roomId = state.roomId;
     if (roomId == null || roomId.isEmpty || roomId == _roomId) return;
     _roomId = roomId;
-    unawaited(_ensureLiveConnected());
     unawaited(_markRoomRead());
-  }
-
-  Future<void> _tearDownLive() async {
-    final sub = _liveSub;
-    final live = _live;
-    _liveSub = null;
-    _live = null;
-    await sub?.cancel();
-    await live?.dispose();
-  }
-
-  Future<void> _ensureLiveConnected() async {
-    if (_disposed || _live != null || _connectingLive || _roomId == null) {
-      return;
-    }
-    _connectingLive = true;
-
-    final String? token;
-    try {
-      token = await _providers.read(authServiceProvider).getValidAccessToken();
-    } catch (_) {
-      _connectingLive = false;
-      _scheduleReconnect();
-      return;
-    }
-    if (_disposed || token == null) {
-      _connectingLive = false;
-      return;
-    }
-
-    final uri = ChatLiveClient.liveUri(
-      restBaseUrl: _providers.read(apiConfigProvider).baseUrl,
-      token: token,
-      eventId: widget.scope.eventId,
-      groupId: widget.scope.groupId,
-      roomId: _roomId,
-    );
-    final client = ChatLiveClient();
-    _live = client;
-    _connectingLive = false;
-    final reconnected = _hadLiveSession;
-    _hadLiveSession = true;
-
-    try {
-      _liveSub = client
-          .connect(uri)
-          .listen(
-            _onLiveEvent,
-            onError: (_) => _scheduleReconnect(),
-            onDone: _scheduleReconnect,
-            cancelOnError: true,
-          );
-    } catch (_) {
-      _live = null;
-      _scheduleReconnect();
-      return;
-    }
-
-    if (reconnected) await _notifier.refreshLatest();
-  }
-
-  void _scheduleReconnect() {
-    if (_disposed || _roomId == null) return;
-    _reconnectTimer?.cancel();
-    _reconnectAttempt++;
-    _reconnectTimer = Timer(chatReconnectDelay(_reconnectAttempt), () async {
-      if (_disposed) return;
-      await _tearDownLive();
-      await _ensureLiveConnected();
-    });
-  }
-
-  void _onLiveEvent(ChatLiveEvent event) {
-    if (_disposed) return;
-    _reconnectAttempt = 0;
-
-    switch (event) {
-      case ChatLiveMessageCreated(message: final json):
-        if (json.isEmpty) return;
-        _notifier.appendLive(
-          ChatMessageDTO.fromJson(json),
-          viewerId: _viewerId,
-        );
-        unawaited(_markRoomRead());
-      case ChatLiveMessageUpdated(message: final json):
-        if (json.isEmpty) return;
-        _notifier.applyEdit(ChatMessageDTO.fromJson(json));
-      case ChatLivePrayersUpdated(prayers: final updates):
-        _notifier.applyPrayersUpdated(updates, viewerId: _viewerId);
-      case ChatLiveMessageDeleted(messageId: final messageId):
-        _notifier.applyDeletion(messageId);
-      case ChatLiveRoomClosed():
-        _notifier.markClosed();
-        _roomId = null;
-        _reconnectTimer?.cancel();
-        unawaited(_tearDownLive());
-      case ChatLiveError():
-        final messenger = _messenger;
-        final l10n = _l10n;
-        if (messenger != null && l10n != null) {
-          showChatSendError(messenger, l10n, event);
-        }
-      case ChatLiveRoomInfo():
-      case ChatLiveReactionsUpdated():
-      case ChatLiveTyping():
-      case ChatLivePresence():
-      case ChatLiveUnknown():
-        break;
-    }
   }
 
   /// Best-effort: the room also lists under chats, so keep its badge clear.
@@ -322,7 +187,6 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
       );
       if (!mounted || result == null || editing != null) return;
       unawaited(_markRoomRead());
-      unawaited(_ensureLiveConnected());
       final list = _listController;
       if (list != null && list.hasClients) {
         list.animateTo(
@@ -427,6 +291,12 @@ class _PrayerRequestsSheetState extends ConsumerState<PrayerRequestsSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(prayerRequestsProvider(widget.scope));
     _syncRoom(state);
+    final liveRoomId = state.roomId;
+    if (liveRoomId != null &&
+        liveRoomId.isNotEmpty &&
+        state.roomStatus != PrayerRoomStatus.closed) {
+      ref.watch(prayerRoomLiveProvider((scope: widget.scope, roomId: liveRoomId)));
+    }
 
     // Requests stay readable after the event, but no new ones are taken. A
     // space has no end.

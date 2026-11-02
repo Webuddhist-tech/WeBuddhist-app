@@ -11,7 +11,9 @@ import 'package:flutter_pecha/features/reader/presentation/providers/reader_sett
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_content_part.dart';
 import 'package:flutter_pecha/features/reader/presentation/widgets/reader_content/reader_live_follow.dart';
 import 'package:flutter_pecha/features/recitation/data/datasource/recitation_live_client.dart';
+import 'package:flutter_pecha/features/recitation/data/models/edition_live_settings.dart';
 import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_notifier.dart';
+import 'package:flutter_pecha/features/recitation/presentation/providers/recitation_live_settings_providers.dart';
 import 'package:flutter_pecha/features/texts/data/models/section.dart';
 import 'package:flutter_pecha/features/texts/data/models/segment.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/reader_response.dart';
@@ -56,9 +58,9 @@ class _FakeSink implements WebSocketSink {
 const _sessionInfo =
     '{"type":"session_info","event_id":"ev1","is_operator":false}';
 
-String _position(int verse) =>
+String _position(int verse, {int round = 1}) =>
     '{"type":"position","event_id":"ev1","text_id":"A",'
-    '"segment_id":"A-$verse","revision":$verse,"round_number":1}';
+    '"segment_id":"A-$verse","revision":$verse,"round_number":$round}';
 
 const _verses = 30;
 
@@ -109,13 +111,53 @@ ReaderResponse _page(TextDetailsParams params) => ReaderResponse(
   totalSegments: _verses,
 );
 
+/// The same verses under two titled sections: "Opening" (1-15) and
+/// "Praises" (16-30), so each heading carries "SECTION n / 2".
+ReaderResponse _titledPage(TextDetailsParams params) {
+  Section section(String id, String title, int first, int last) => Section(
+    id: id,
+    title: title,
+    titles: {'en': title},
+    sectionNumber: id == 'S1' ? 1 : 2,
+    segments: [
+      for (var n = first; n <= last; n++)
+        Segment(
+          segmentId: 'A-$n',
+          segmentNumber: n,
+          content: 'Verse $n. ${'Om tare tuttare ture soha. ' * 4}',
+        ),
+    ],
+    sections: const [],
+  );
+  final plain = _page(params);
+  return ReaderResponse(
+    textDetail: plain.textDetail,
+    content: Toc(
+      id: 'A',
+      textId: 'A',
+      sections: [
+        section('S1', 'Opening', 1, 15),
+        section('S2', 'Praises', 16, _verses),
+      ],
+    ),
+    size: plain.size,
+    paginationDirection: plain.paginationDirection,
+    currentSegmentPosition: plain.currentSegmentPosition,
+    lastSegmentPosition: plain.lastSegmentPosition,
+    totalSegments: plain.totalSegments,
+  );
+}
+
 /// A reader following event ev1's live recitation over a socket the test
 /// feeds by hand, its live verse at [verse]. [bars] records each time focus
 /// mode hides (true) or shows (false) the reader's bars.
 Future<RecitationLiveNotifier> _pumpLiveReader(
   WidgetTester tester, {
   int verse = 5,
+  int round = 1,
   List<bool>? bars,
+  ReaderResponse Function(TextDetailsParams params) page = _page,
+  List<ReturnJump> jumps = const [],
 }) async {
   final channel = _FakeChannel();
   final live = RecitationLiveNotifier(
@@ -133,9 +175,10 @@ Future<RecitationLiveNotifier> _pumpLiveReader(
           FakeReaderSettingsDatasource(languages: const [], versions: const {}),
         ),
         textDetailsFutureProvider.overrideWith(
-          (ref, params) async => Right<Failure, ReaderResponse>(_page(params)),
+          (ref, params) async => Right<Failure, ReaderResponse>(page(params)),
         ),
         recitationLiveProvider.overrideWith((ref, id) => live),
+        editionReturnJumpsProvider.overrideWith((ref, id) async => jumps),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -152,7 +195,7 @@ Future<RecitationLiveNotifier> _pumpLiveReader(
   );
   await _settle(tester);
   channel.incoming.add(_sessionInfo);
-  channel.incoming.add(_position(verse));
+  channel.incoming.add(_position(verse, round: round));
   await _settle(tester);
   return live;
 }
@@ -431,6 +474,50 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('the round in the live section\'s heading', () {
+    const praises = ReturnJump(
+      key: 'praises',
+      toSegmentId: 'A-16',
+      afterSegmentId: 'A-30',
+      times: 3,
+    );
+
+    // The live verse opens the part, so its heading is on screen.
+    testWidgets('reads the round out of the part\'s rounds', (tester) async {
+      await _pumpLiveReader(
+        tester,
+        verse: 16,
+        round: 2,
+        page: _titledPage,
+        jumps: const [praises],
+      );
+      expect(find.text('SECTION 2 / 2 · ROUND 2 / 3'), findsOneWidget);
+      // The other section's heading has no round.
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('without a total, just the round', (tester) async {
+      await _pumpLiveReader(tester, verse: 16, round: 2, page: _titledPage);
+      expect(find.text('SECTION 2 / 2 · ROUND 2'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('Paused is the normal heading', (tester) async {
+      final live = await _pumpLiveReader(
+        tester,
+        verse: 16,
+        round: 2,
+        page: _titledPage,
+        jumps: const [praises],
+      );
+      live.pauseFollowing();
+      await _settle(tester);
+      expect(find.text('SECTION 2 / 2'), findsOneWidget);
+      expect(find.textContaining('ROUND'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 

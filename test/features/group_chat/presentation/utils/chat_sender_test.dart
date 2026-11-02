@@ -1,5 +1,4 @@
 import 'package:flutter_pecha/core/theme/app_colors.dart';
-import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_reconnect_backoff.dart';
 import 'package:flutter_pecha/features/group_chat/presentation/utils/chat_sender.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -199,25 +198,6 @@ void main() {
     test('falls back to a placeholder for an empty name', () {
       expect(chatSenderInitials(''), '?');
       expect(chatSenderInitials(null), '?');
-    });
-  });
-
-  group('chatReconnectDelay', () {
-    test('doubles from one second', () {
-      expect(chatReconnectDelay(1), const Duration(seconds: 1));
-      expect(chatReconnectDelay(2), const Duration(seconds: 2));
-      expect(chatReconnectDelay(3), const Duration(seconds: 4));
-      expect(chatReconnectDelay(4), const Duration(seconds: 8));
-      expect(chatReconnectDelay(5), const Duration(seconds: 16));
-    });
-
-    test('caps at thirty seconds', () {
-      expect(chatReconnectDelay(6), const Duration(seconds: 30));
-      expect(chatReconnectDelay(50), const Duration(seconds: 30));
-    });
-
-    test('treats a non-positive attempt as the first retry', () {
-      expect(chatReconnectDelay(0), const Duration(seconds: 1));
     });
   });
 }

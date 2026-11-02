@@ -43,6 +43,7 @@ import 'package:flutter_pecha/features/plans/domain/subtask_navigation.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/event_replays.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/live_tracked_plan_text.dart';
 import 'package:flutter_pecha/features/plans/presentation/utils/plan_day_share.dart';
+import 'package:flutter_pecha/features/plans/presentation/utils/plan_group_collections.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_host.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_embedded_panel.dart';
 import 'package:flutter_pecha/features/plans/presentation/widgets/plan_navigation/plan_navigator.dart';
@@ -1271,13 +1272,18 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
   void _scheduleLiveTrackedText(List<UserTasksDto> tasks, String? audioUrl) {
     final liveTextId = widget.liveTextId;
     if (liveTextId == null || liveTextId.isEmpty || _didOpenLiveText) return;
-    final items = PlanSubtaskNavigation.fromUserTasks(
-      tasks,
-      withCompletion: !widget.readOnly,
-    );
     _didOpenLiveText = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final collections = await loadPlanGroupCollections(
+        ref,
+        PlanSubtaskNavigation.groupCollectionIdsForUserTasks(tasks),
+      );
       if (!mounted) return;
+      final items = PlanSubtaskNavigation.fromUserTasks(
+        tasks,
+        withCompletion: !widget.readOnly,
+        collections: collections,
+      );
       unawaited(
         openLiveTrackedPlanText(
           context: context,
@@ -1296,11 +1302,11 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
     });
   }
 
-  void _startReading(
+  Future<void> _startReading(
     BuildContext context,
     List<UserTasksDto> tasks, {
     String? audioUrl,
-  }) {
+  }) async {
     final accumulationTask = _nextGroupAccumulationTask(tasks);
     final accumulatorId =
         accumulationTask == null
@@ -1326,9 +1332,16 @@ class _PlanDetailsState extends ConsumerState<PlanDetails> {
       return;
     }
 
+    final collections = await loadPlanGroupCollectionsToOpen(
+      ref,
+      PlanSubtaskNavigation.groupCollectionIdsForUserTasks(tasks),
+    );
+    if (collections == null || !context.mounted) return;
+
     final planTextItems = PlanSubtaskNavigation.fromUserTasks(
       tasks,
       withCompletion: !widget.readOnly,
+      collections: collections,
     );
     if (planTextItems.isEmpty) return;
 

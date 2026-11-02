@@ -1,4 +1,61 @@
+import 'package:flutter_pecha/features/reader/domain/transliteration/transliteration_service.dart';
 import 'package:flutter_pecha/features/texts/data/models/text/text_outline.dart';
+
+/// Leading head marks and shads (༄༅། །): they open a title, and say nothing
+/// in another script.
+final _titleMarks = RegExp(r'^[༁-༊།-༔\s]+');
+
+/// [title] with its leading ༄༅། ། marks taken off.
+String stripTitleMarks(String title) =>
+    title.replaceFirst(_titleMarks, '').trim();
+
+/// A title in [language] as the reader shows it once that language's
+/// original is shown in [scriptId]: without its leading marks, through the
+/// same converter as the verses, on one line. The service caches each title
+/// per script. Without a script the title is unchanged.
+String readerTitleInScript(
+  TransliterationService service, {
+  required String title,
+  required String language,
+  required String? scriptId,
+}) {
+  if (scriptId == null || !service.supports(language)) return title;
+  final bare = stripTitleMarks(title);
+  if (bare.isEmpty) return title;
+  return service
+      .convertHtml(bare, languageCode: language, toScriptId: scriptId)
+      .replaceAll(RegExp(r'\s*<br>\s*'), ' ')
+      .trim();
+}
+
+/// A text's title as the page shows it, and the language its font comes
+/// from: the shown translation's title ([translationTitle], in
+/// [translationLanguage]) when it has one, else [title] in the script its
+/// original is shown in.
+({String title, String language}) readerTextTitle(
+  TransliterationService service, {
+  required String title,
+  required String language,
+  required String? scriptId,
+  String? translationTitle,
+  String? translationLanguage,
+}) {
+  if (translationLanguage != null &&
+      translationTitle != null &&
+      translationTitle.isNotEmpty) {
+    return (title: translationTitle, language: translationLanguage);
+  }
+  if (scriptId == null) return (title: title, language: language);
+  return (
+    title: readerTitleInScript(
+      service,
+      title: title,
+      language: language,
+      scriptId: scriptId,
+    ),
+    language: service.fontLanguageFor(language, scriptId) ?? language,
+  );
+}
 
 /// The translation's title for each section of the [original], by the
 /// original section's id. Library tables of contents hold titles only in
@@ -99,6 +156,38 @@ List<TextOutlineSection> readerPageSections(List<TextOutlineSection> titled) {
     for (final section in titled)
       if (!grouping(section)) section,
   ];
+}
+
+/// The group heading each of the page's [sections] sits under in the
+/// sections sheet, by section id: of [titled], the headings that only group
+/// sections (not among [sections]), other than [textHeadingId], the one
+/// naming the text. One level, as the design draws it: a section sits under
+/// the outermost group holding it, so a label never comes back after a
+/// deeper one. A section under no group is left out.
+Map<String, TextOutlineSection> readerSectionGroups(
+  List<TextOutlineSection> titled,
+  List<TextOutlineSection> sections, {
+  String? textHeadingId,
+}) {
+  final sectionIds = {for (final section in sections) section.id};
+  final grouping = [
+    for (final heading in titled)
+      if (!sectionIds.contains(heading.id) && heading.id != textHeadingId)
+        heading,
+  ];
+  final groups = <String, TextOutlineSection>{};
+  for (final section in sections) {
+    TextOutlineSection? group;
+    for (final candidate in grouping) {
+      if (candidate.depth < section.depth &&
+          candidate.holds(section.number) &&
+          (group == null || candidate.depth < group.depth)) {
+        group = candidate;
+      }
+    }
+    if (group != null) groups[section.id] = group;
+  }
+  return groups;
 }
 
 /// The innermost of [sections] holding the verse numbered [verseNumber],
