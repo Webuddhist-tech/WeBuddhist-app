@@ -11,9 +11,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Onboarding screen: choose the app UI language.
 class OnboardingScreenLanguage extends ConsumerStatefulWidget {
-  const OnboardingScreenLanguage({super.key, required this.onNext});
+  const OnboardingScreenLanguage({
+    super.key,
+    required this.onNext,
+    this.stepIndex = 0,
+    this.stepCount = 2,
+  });
 
   final VoidCallback onNext;
+
+  /// Position in the progress bar; see [OnboardingChoiceScaffold.stepCount].
+  final int stepIndex;
+  final int stepCount;
 
   // Most-used first, the same order as AppLanguage.bundledFallback.
   static const _languages = [
@@ -98,7 +107,8 @@ class _OnboardingScreenLanguageState
   @override
   Widget build(BuildContext context) {
     return OnboardingChoiceScaffold(
-      stepIndex: 0,
+      stepIndex: widget.stepIndex,
+      stepCount: widget.stepCount,
       title: context.l10n.onboarding_first_question,
       subtitle: context.l10n.onboarding_language_subtitle,
       isSaving: _isSubmitting,

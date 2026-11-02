@@ -1395,6 +1395,20 @@ class AppLocalizationsBo extends AppLocalizations {
       'ཡི་གེ བར་སྟོང་། ཐིག་ཕྲན་དང་ཚེག་འགུག་ཁོ་ན་ཆོག';
 
   @override
+  String get onboarding_profile_title => 'ཁྱེད་ལ་མིང་ག་རེ་ཟེར་ནས་འབོད་དགོས།';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'ཚོགས་པའི་ནང་མི་གཞན་གྱིས་ཁྱེད་ལ་འདི་ལྟར་མཐོང་ཐུབ།';
+
+  @override
+  String get onboarding_profile_note =>
+      'འདི་དུས་ནམ་ཡིན་ཡང་སྒྲིག་འགོད་ནང་བསྒྱུར་ཆོག';
+
+  @override
+  String get onboarding_profile_display_name_required => 'མངོན་མིང་འབྲི་རོགས།';
+
+  @override
   String get about_title => 'ང་ཚོའི་སྐོར།';
 
   @override

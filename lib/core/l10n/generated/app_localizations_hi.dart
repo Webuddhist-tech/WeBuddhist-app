@@ -1388,6 +1388,21 @@ class AppLocalizationsHi extends AppLocalizations {
       'केवल अक्षर, स्पेस, हाइफ़न और अपॉस्ट्रॉफ़ी की अनुमति है';
 
   @override
+  String get onboarding_profile_title => 'हम आपको किस नाम से बुलाएँ?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'समुदाय में दूसरे लोग आपको इसी तरह देखेंगे';
+
+  @override
+  String get onboarding_profile_note =>
+      'आप इसे कभी भी सेटिंग्स में बदल सकते हैं।';
+
+  @override
+  String get onboarding_profile_display_name_required =>
+      'प्रदर्शन नाम दर्ज करें';
+
+  @override
   String get about_title => 'परिचय';
 
   @override

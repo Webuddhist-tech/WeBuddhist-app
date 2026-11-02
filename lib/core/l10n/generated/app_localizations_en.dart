@@ -1378,6 +1378,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Only letters, spaces, hyphens, and apostrophes are allowed';
 
   @override
+  String get onboarding_profile_title => 'What should we call you?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'This is how others will see you in the community';
+
+  @override
+  String get onboarding_profile_note =>
+      'You can change this anytime in Settings.';
+
+  @override
+  String get onboarding_profile_display_name_required => 'Enter a display name';
+
+  @override
   String get about_title => 'About';
 
   @override

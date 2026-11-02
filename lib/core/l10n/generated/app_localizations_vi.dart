@@ -1385,6 +1385,20 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chỉ được dùng chữ cái, dấu cách, dấu gạch nối và dấu nháy đơn';
 
   @override
+  String get onboarding_profile_title => 'Chúng tôi nên gọi bạn là gì?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'Đây là cách người khác trong cộng đồng nhìn thấy bạn';
+
+  @override
+  String get onboarding_profile_note =>
+      'Bạn có thể thay đổi bất cứ lúc nào trong Cài đặt.';
+
+  @override
+  String get onboarding_profile_display_name_required => 'Nhập tên hiển thị';
+
+  @override
   String get about_title => 'Giới thiệu';
 
   @override

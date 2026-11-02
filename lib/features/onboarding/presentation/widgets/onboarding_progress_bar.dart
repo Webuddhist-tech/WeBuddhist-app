@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 
-/// Segmented progress for the language and tradition onboarding steps.
+/// Segmented progress for the onboarding steps.
 ///
-/// The active step and every step before it are filled. Later steps stay
-/// on the track color.
+/// As in the Figma onboarding frames, only the step on screen is filled;
+/// every other step stays on the track color.
 class OnboardingProgressBar extends StatelessWidget {
   const OnboardingProgressBar({
     super.key,
@@ -19,18 +19,18 @@ class OnboardingProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final inactive = isDark ? AppColors.grey800 : const Color(0xFFE6E3DB);
+    final inactive = isDark ? AppColors.grey800 : const Color(0xFFE5E7EB);
 
     return Row(
       children: [
         for (var index = 0; index < totalSteps; index++) ...[
-          if (index > 0) const SizedBox(width: 8),
+          if (index > 0) const SizedBox(width: 6),
           Expanded(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              height: 3,
+              height: 4,
               decoration: BoxDecoration(
-                color: index <= currentStep ? AppColors.brandblue : inactive,
+                color: index == currentStep ? AppColors.brandblue : inactive,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

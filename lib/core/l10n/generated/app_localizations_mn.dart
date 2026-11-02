@@ -1394,6 +1394,21 @@ class AppLocalizationsMn extends AppLocalizations {
       'Зөвхөн үсэг, зай, зурааст (-) ба апостроф (\') зөвшөөрнө';
 
   @override
+  String get onboarding_profile_title => 'Таныг хэн гэж дуудах вэ?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'Нийгэмлэгийн бусад гишүүд таныг ингэж харна';
+
+  @override
+  String get onboarding_profile_note =>
+      'Та үүнийг хүссэн үедээ Тохиргоо хэсэгт өөрчилж болно.';
+
+  @override
+  String get onboarding_profile_display_name_required =>
+      'Харагдах нэрээ оруулна уу';
+
+  @override
   String get about_title => 'Тухай';
 
   @override

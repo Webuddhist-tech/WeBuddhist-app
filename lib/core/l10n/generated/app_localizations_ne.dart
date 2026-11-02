@@ -1399,6 +1399,21 @@ class AppLocalizationsNe extends AppLocalizations {
       'अक्षर, खाली ठाउँ, हाइफन (-) र उच्च कोमा (\') मात्र अनुमति छ';
 
   @override
+  String get onboarding_profile_title => 'हामी तपाईंलाई के भनेर बोलाऔं?';
+
+  @override
+  String get onboarding_profile_subtitle =>
+      'समुदायमा अरूले तपाईंलाई यसरी देख्नेछन्';
+
+  @override
+  String get onboarding_profile_note =>
+      'तपाईं यसलाई जुनसुकै बेला सेटिङमा परिवर्तन गर्न सक्नुहुन्छ।';
+
+  @override
+  String get onboarding_profile_display_name_required =>
+      'प्रदर्शन नाम लेख्नुहोस्';
+
+  @override
   String get about_title => 'बारेमा';
 
   @override

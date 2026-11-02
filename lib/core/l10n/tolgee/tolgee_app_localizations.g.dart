@@ -2670,6 +2670,34 @@ class TolgeeAppLocalizations extends AppLocalizations {
   );
 
   @override
+  String get onboarding_profile_title => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_title',
+    () => _fallback.onboarding_profile_title,
+  );
+
+  @override
+  String get onboarding_profile_subtitle => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_subtitle',
+    () => _fallback.onboarding_profile_subtitle,
+  );
+
+  @override
+  String get onboarding_profile_note => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_note',
+    () => _fallback.onboarding_profile_note,
+  );
+
+  @override
+  String get onboarding_profile_display_name_required => TolgeeBridge.get(
+    localeName,
+    'onboarding_profile_display_name_required',
+    () => _fallback.onboarding_profile_display_name_required,
+  );
+
+  @override
   String get about_title =>
       TolgeeBridge.get(localeName, 'about_title', () => _fallback.about_title);
 
