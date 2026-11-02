@@ -39,6 +39,15 @@ LiveScrollTarget? liveScrollTarget({
   return (index: index, alignment: alignment);
 }
 
+/// Whether the live verse, its edges at [top] and [bottom] as fractions of
+/// the text area, shows where [liveScrollTarget] would leave it: all of it
+/// on screen, or, taller than the screen, filling it from the top.
+bool liveVerseInView({required double top, required double bottom}) {
+  const slack = 0.01;
+  if (bottom - top >= 1) return top <= slack && bottom >= 1 - slack;
+  return top >= -slack && bottom <= 1 + slack;
+}
+
 /// Whether the live position moved to a new section or a new round, so the
 /// page should bring that section's heading to the top rather than hold the
 /// verse. The first position after joining or rejoining is never a jump.

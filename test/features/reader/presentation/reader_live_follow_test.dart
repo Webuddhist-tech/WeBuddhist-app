@@ -58,9 +58,9 @@ class _FakeSink implements WebSocketSink {
 const _sessionInfo =
     '{"type":"session_info","event_id":"ev1","is_operator":false}';
 
-String _position(int verse, {int round = 1}) =>
-    '{"type":"position","event_id":"ev1","text_id":"A",'
-    '"segment_id":"A-$verse","revision":$verse,"round_number":$round}';
+String _position(int verse, {int round = 1, String text = 'A'}) =>
+    '{"type":"position","event_id":"ev1","text_id":"$text",'
+    '"segment_id":"$text-$verse","revision":$verse,"round_number":$round}';
 
 const _verses = 30;
 
@@ -213,10 +213,26 @@ class _SameTextAligner implements TextsRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Text X is another edition of B, verse for verse; A is unrelated to both.
+class _SiblingEditionAligner implements TextsRepository {
+  @override
+  Future<String?> alignSegment({
+    required String segmentId,
+    required String sourceTextId,
+    required String targetTextId,
+  }) async =>
+      sourceTextId == 'X' && targetTextId == 'B'
+          ? 'B-${segmentId.split('-').last}'
+          : null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 const _pageSize = 20;
 
 /// Verses per text in a paged plan; ids are `<text>-<number>`.
-const _planTotals = {'A': 80, 'B': 20};
+const _planTotals = {'A': 80, 'B': 20, 'C': 20, 'D': 20};
 
 /// A page of [_pageSize] verses from the anchor, like the library serves.
 ReaderResponse _planPage(TextDetailsParams params) {
@@ -268,14 +284,20 @@ ReaderResponse _planPage(TextDetailsParams params) {
 }
 
 /// A plan task's page, collapsed, following event ev1 live. Each source is
-/// a text with its picked verses, or null for the whole text. Returns the
-/// live notifier and every page fetched.
+/// a text with its picked verses, or null for the whole text. The live verse
+/// is [verse] of [text], then each of [then] in turn. A text in
+/// [pageDelays] serves its pages after that delay instead of [pageDelay].
+/// Returns the live notifier and every page fetched.
 Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
   WidgetTester tester,
   Map<String, List<String>?> picks, {
   required int verse,
+  String text = 'A',
+  List<String> then = const [],
+  TextsRepository? aligner,
   ValueNotifier<double>? progress,
   Duration pageDelay = Duration.zero,
+  Map<String, Duration> pageDelays = const {},
 }) async {
   final channel = _FakeChannel();
   final live = RecitationLiveNotifier(
@@ -308,10 +330,13 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
         readerSettingsRemoteDatasourceProvider.overrideWithValue(
           FakeReaderSettingsDatasource(languages: const [], versions: const {}),
         ),
-        textsRepositoryProvider.overrideWithValue(_SameTextAligner()),
+        textsRepositoryProvider.overrideWithValue(
+          aligner ?? _SameTextAligner(),
+        ),
         textDetailsFutureProvider.overrideWith((ref, params) async {
           fetches.add(params);
-          if (pageDelay > Duration.zero) await Future.delayed(pageDelay);
+          final delay = pageDelays[params.textId] ?? pageDelay;
+          if (delay > Duration.zero) await Future.delayed(delay);
           return Right<Failure, ReaderResponse>(_planPage(params));
         }),
         recitationLiveProvider.overrideWith((ref, id) => live),
@@ -339,8 +364,12 @@ Future<(RecitationLiveNotifier, List<TextDetailsParams>)> _pumpLivePlan(
   );
   await _settle(tester);
   channel.incoming.add(_sessionInfo);
-  channel.incoming.add(_position(verse));
+  channel.incoming.add(_position(verse, text: text));
   await _settle(tester);
+  for (final position in then) {
+    channel.incoming.add(position);
+    await _settle(tester);
+  }
   return (live, fetches);
 }
 
@@ -424,6 +453,23 @@ void main() {
         ),
         isNotNull,
       );
+    });
+  });
+
+  group('the live verse in view', () {
+    test('all of it on screen is in view', () {
+      expect(liveVerseInView(top: 0.55, bottom: 0.75), isTrue);
+    });
+
+    test('pushed past the bottom or the top it is not', () {
+      expect(liveVerseInView(top: 0.9, bottom: 1.1), isFalse);
+      expect(liveVerseInView(top: 1.3, bottom: 1.5), isFalse);
+      expect(liveVerseInView(top: -0.2, bottom: 0.1), isFalse);
+    });
+
+    test('taller than the screen, it is in view filling it from the top', () {
+      expect(liveVerseInView(top: 0, bottom: 1.4), isTrue);
+      expect(liveVerseInView(top: 0.3, bottom: 1.7), isFalse);
     });
   });
 
@@ -621,6 +667,120 @@ void main() {
       final pages = fetches.length;
       await _settle(tester);
       expect(fetches.length, pages);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('texts that lack the verse are passed over, not loaded', (
+      tester,
+    ) async {
+      // The room is in text B, then in X, another edition of B. Text A
+      // comes first and holds neither, so it stays at its first page:
+      // pages of it would land above the live verse and push it away.
+      final (live, fetches) = await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null},
+        verse: 3,
+        text: 'B',
+        then: [_position(5, text: 'X')],
+        aligner: _SiblingEditionAligner(),
+      );
+
+      expect(fetches.where((p) => p.textId == 'A'), hasLength(1));
+      expect(live.state.outOfSync, isFalse);
+      expect(find.textContaining('B verse 5.'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('the text before the live one stays put while following', (
+      tester,
+    ) async {
+      // The live verse opens text B, so the end of text A shows just above
+      // it. A page more of A would land above the live verse and push it
+      // off screen.
+      final (live, fetches) = await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null},
+        verse: 2,
+        text: 'B',
+        aligner: _SiblingEditionAligner(),
+      );
+      await _settle(tester);
+
+      expect(find.textContaining('A verse 20.'), findsOneWidget);
+      expect(fetches.where((p) => p.textId == 'A'), hasLength(1));
+      expect(live.state.isFollowing, isTrue);
+      expect(find.textContaining('B verse 2.'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('the live text loads first, the texts before it after', (
+      tester,
+    ) async {
+      // Live opens text C. B, between the first text and C, waits until
+      // C's page is in, so its own does not hold C's up.
+      final (live, fetches) = await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null, 'C': null},
+        verse: 3,
+        text: 'C',
+        pageDelay: const Duration(milliseconds: 300),
+      );
+      await _settle(tester);
+
+      final firstOf = [
+        for (final text in ['B', 'C'])
+          fetches.indexWhere((p) => p.textId == text),
+      ];
+      expect(firstOf, everyElement(isNonNegative));
+      expect(firstOf[0], greaterThan(firstOf[1]));
+      expect(live.state.outOfSync, isFalse);
+      expect(find.textContaining('C verse 3.'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('texts landing frames apart above the live one leave it be', (
+      tester,
+    ) async {
+      // Live opens text D; B and C land after the page has scrolled to D,
+      // a few frames apart, both above the live verse.
+      final (live, _) = await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null, 'C': null, 'D': null},
+        verse: 3,
+        text: 'D',
+        pageDelays: const {
+          'B': Duration(seconds: 3),
+          'C': Duration(milliseconds: 3020),
+        },
+      );
+      await _settle(tester);
+      await _settle(tester);
+
+      expect(live.state.isFollowing, isTrue);
+      expect(find.textContaining('C verse 1.'), findsNothing);
+      expect(find.textContaining('D verse 3.'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('a text arriving late above the live one leaves it in view', (
+      tester,
+    ) async {
+      // Live opens text C, which starts B with it; B's first page lands
+      // after the page has scrolled to C, all of it above the live verse.
+      final (live, fetches) = await _pumpLivePlan(
+        tester,
+        {'A': null, 'B': null, 'C': null},
+        verse: 3,
+        text: 'C',
+        pageDelays: const {'B': Duration(seconds: 3)},
+      );
+      await _settle(tester);
+      await _settle(tester);
+
+      expect(fetches.where((p) => p.textId == 'B'), isNotEmpty);
+      expect(find.textContaining('B verse 1.'), findsNothing);
+      expect(live.state.isFollowing, isTrue);
+      expect(find.textContaining('C verse 3.'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });

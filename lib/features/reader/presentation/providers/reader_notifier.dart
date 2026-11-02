@@ -541,25 +541,32 @@ class ReaderNotifier extends StateNotifier<ReaderState>
   /// This version's id for [segmentId]: the loaded line it names (directly
   /// or through `mappings`), else its verse aligned from [sourceTextId] when
   /// the operator reads another edition, else [segmentId] itself. Null when
-  /// the alignment failed. Nothing is fetched.
+  /// the alignment failed, and with [alignedOnly] also when [sourceTextId]
+  /// is another text with no counterpart here: a plan task then passes this
+  /// text over rather than load all of it looking for a verse it lacks.
+  /// Nothing is fetched.
   Future<String?> resolveSegment(
     String segmentId, {
     String? sourceTextId,
+    bool alignedOnly = false,
   }) async {
     if (_isDisposed) return null;
     final loaded = _localSegmentId(state.content, segmentId);
     if (loaded != null) return loaded;
     if (sourceTextId == null || sourceTextId.isEmpty) return segmentId;
     try {
+      final targetTextId = await _resolveDetailsTextId();
+      // The operator reads this very version: its ids are this reader's.
+      if (sourceTextId == targetTextId) return segmentId;
       final aligned = await _ref
           .read(textsRepositoryProvider)
           .alignSegment(
             segmentId: segmentId,
             sourceTextId: sourceTextId,
-            targetTextId: await _resolveDetailsTextId(),
+            targetTextId: targetTextId,
           );
       if (_isDisposed) return null;
-      return aligned ?? segmentId;
+      return aligned ?? (alignedOnly ? null : segmentId);
     } catch (e) {
       _logger.debug('Aligning segment $segmentId failed: $e');
       return null;
