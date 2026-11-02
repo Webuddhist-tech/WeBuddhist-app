@@ -8,7 +8,8 @@ First-run multi-step onboarding for signed-in users: welcome, language, traditio
 
 ## User-facing functionality
 
-- PageView flow: Welcome → Language → Tradition → Finish
+- PageView flow: Welcome → Language → Tradition → Finish. Phone (SMS) accounts get a Profile step after Welcome (`onboardingStepsProvider`, `sub` starts with `sms|`)
+- Profile step (phone accounts only): Auth0 creates phone accounts with a generated display name and username, so the user picks their own. Continue claims the username first (`PATCH /users/username`, a taken one shows suggestions), then saves the display name (`POST /users/info`, first and last name sent back unchanged). Accounts that already finished onboarding never see it
 - Language step applies the UI locale + backend content language (`selectAppLanguage`) and saves the preference locally
 - Tradition step saves selections to the backend (`POST/DELETE /users/me/traditions`, options from `GET /users/me/traditions/onboarding`)
 - On completion: save preferences locally, `PUT /users/me/onboarding` (`has_seen_onboarding: true`), call auth `markOnboardingCompleted()`, navigate home
@@ -72,7 +73,7 @@ onboarding/
 1. **Completion must call auth `markOnboardingCompleted()`** — router depends on it.
 2. **Event enrollment failures are logged, not blocking** — user still reaches home.
 3. **Keep application notifiers in `application/`** — don't move to presentation without refactor.
-4. Adding steps requires updating PageView indices and wrapper sync.
+4. Adding steps requires updating `OnboardingStep`, `onboardingStepsFor` and the wrapper's `_buildPage`; the wrapper derives page indices and progress-bar positions from that list.
 
 ### Do
 
@@ -90,7 +91,7 @@ onboarding/
 
 | Task | Where to start |
 |------|----------------|
-| New onboarding step | screen widget + wrapper page list + notifier page count |
+| New onboarding step | screen widget + `OnboardingStep` + `onboardingStepsFor` + wrapper `_buildPage` |
 | New preference field | entity → local model → notifier → save use case |
 | Event plan enrollment | `event_enrollment_service.dart` (called from plans) |
 | Tradition options | remote datasource + tradition selection notifier |
