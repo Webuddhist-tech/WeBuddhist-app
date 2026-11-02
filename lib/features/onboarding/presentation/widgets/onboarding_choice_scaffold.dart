@@ -52,6 +52,12 @@ class OnboardingChoiceScaffold extends StatelessWidget {
     final secondary =
         isDark ? onSurface.withValues(alpha: 0.6) : AppColors.textSecondary;
     final canContinue = continueEnabled && !isSaving && onContinue != null;
+    // The back chevron needs a 48-tall tap target. It is centred on the
+    // 24-tall progress row, so that row grows by 12 on each side and the
+    // padding around it shrinks by the same amount: the bar and the title
+    // stay where Figma puts them.
+    final hasBack = onBack != null;
+    final rowHeight = hasBack ? 48.0 : 24.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -65,26 +71,33 @@ class OnboardingChoiceScaffold extends StatelessWidget {
               child: SingleChildScrollView(
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(20, 29, 20, 0),
+                padding: EdgeInsets.fromLTRB(20, hasBack ? 17 : 29, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(
-                      height: 24,
+                      height: rowHeight,
                       child: Row(
                         children: [
-                          if (onBack != null) ...[
+                          if (hasBack)
                             GestureDetector(
                               onTap: onBack,
                               behavior: HitTestBehavior.opaque,
-                              child: Icon(
-                                Icons.chevron_left,
-                                size: 24,
-                                color: onSurface,
+                              // 40 wide: the 24 glyph plus the 16 gap to the
+                              // bar, so both keep their place.
+                              child: SizedBox(
+                                width: 40,
+                                height: rowHeight,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Icon(
+                                    Icons.chevron_left,
+                                    size: 24,
+                                    color: onSurface,
+                                  ),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                          ],
                           Expanded(
                             child: OnboardingProgressBar(
                               currentStep: stepIndex,
@@ -94,7 +107,7 @@ class OnboardingChoiceScaffold extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 44),
+                    SizedBox(height: hasBack ? 32 : 44),
                     Text(
                       title,
                       strutStyle: context.tibetanStrutStyle(34, compact: true),

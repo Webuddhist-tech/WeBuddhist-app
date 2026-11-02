@@ -1,15 +1,22 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/error_message_mapper.dart';
 import 'package:flutter_pecha/core/extensions/context_ext.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
+import 'package:flutter_pecha/core/storage/storage_keys.dart';
 import 'package:flutter_pecha/core/theme/app_colors.dart';
 import 'package:flutter_pecha/core/theme/font_config.dart';
+import 'package:flutter_pecha/core/utils/app_logger.dart';
+import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/presentation/providers/state_providers.dart';
 import 'package:flutter_pecha/features/more/presentation/widgets/username_form_field.dart';
 import 'package:flutter_pecha/features/onboarding/presentation/widgets/onboarding_choice_scaffold.dart';
 import 'package:flutter_pecha/shared/domain/validators/person_name_validator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+final _logger = AppLogger('OnboardingScreenProfile');
 
 /// Onboarding screen for phone accounts: choose a display name and username.
 ///
@@ -17,6 +24,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// so this step replaces both. Continue saves the username first
 /// (PATCH /users/username) because it is the one the backend can refuse, then
 /// the display name (POST /users/info).
+///
+/// Each successful request is also recorded locally
+/// ([StorageKeys.onboardingProfileSaved]), so a relaunch between the two, or
+/// before onboarding finishes, brings the saved values back instead of an
+/// empty form.
 class OnboardingScreenProfile extends ConsumerStatefulWidget {
   const OnboardingScreenProfile({
     super.key,
@@ -52,11 +64,73 @@ class _OnboardingScreenProfileState
   bool _isSaving = false;
   String? _saveError;
 
+  /// Auth0 `sub` of the signed-in account, which scopes the saved record.
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSaved();
+  }
+
   @override
   void dispose() {
     _displayNameCtrl.dispose();
     _usernameCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Saved progress ────────────────────────────────────────────────────────
+
+  /// Fills the fields with what this step already saved for this account.
+  Future<void> _restoreSaved() async {
+    final storage = ref.read(localStorageServiceProvider);
+    String? userId;
+    Map<String, dynamic>? saved;
+    try {
+      userId = await storage.get<String>(StorageKeys.currentUserId);
+      final raw = await storage.get<String>(StorageKeys.onboardingProfileSaved);
+      if (raw != null) saved = jsonDecode(raw) as Map<String, dynamic>?;
+    } catch (e) {
+      _logger.warning('Could not read the saved profile step', e);
+    }
+    if (!mounted) return;
+    _userId = userId;
+    if (saved == null || userId == null || saved['userId'] != userId) return;
+
+    final username = saved['username'] as String?;
+    final displayName = saved['displayName'] as String?;
+    setState(() {
+      if (username != null && _usernameCtrl.text.isEmpty) {
+        _usernameCtrl.text = username;
+        _savedUsername = username;
+      }
+      if (displayName != null && _displayNameCtrl.text.isEmpty) {
+        _displayNameCtrl.text = displayName;
+      }
+    });
+  }
+
+  /// Records a successful save, so [_restoreSaved] can bring it back.
+  Future<void> _rememberSaved({
+    required String username,
+    String? displayName,
+  }) async {
+    final storage = ref.read(localStorageServiceProvider);
+    try {
+      _userId ??= await storage.get<String>(StorageKeys.currentUserId);
+      if (_userId == null) return;
+      await storage.set(
+        StorageKeys.onboardingProfileSaved,
+        jsonEncode({
+          'userId': _userId,
+          'username': username,
+          if (displayName != null) 'displayName': displayName,
+        }),
+      );
+    } catch (e) {
+      _logger.warning('Could not record the saved profile step', e);
+    }
   }
 
   // ── Validation ────────────────────────────────────────────────────────────
@@ -179,10 +253,14 @@ class _OnboardingScreenProfileState
       }
       _savedUsername = username;
       setState(() => _usernameState = UsernameState.available);
+      await _rememberSaved(username: username);
+      if (!mounted) return;
     }
 
+    final displayName =
+        PersonNameValidator.sanitize(_displayNameCtrl.text) ?? '';
     final error = await userNotifier.saveProfile(
-      displayName: PersonNameValidator.sanitize(_displayNameCtrl.text) ?? '',
+      displayName: displayName,
       aboutMe: user.aboutMe,
       avatarUrl: user.avatarUrl,
     );
@@ -197,6 +275,8 @@ class _OnboardingScreenProfileState
       return;
     }
 
+    await _rememberSaved(username: username, displayName: displayName);
+    if (!mounted) return;
     setState(() => _isSaving = false);
     widget.onNext();
   }

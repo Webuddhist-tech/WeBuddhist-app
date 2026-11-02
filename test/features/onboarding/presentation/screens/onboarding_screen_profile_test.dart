@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/error/failures.dart';
 import 'package:flutter_pecha/core/l10n/generated/app_localizations.dart';
 import 'package:flutter_pecha/core/network/connectivity_service.dart';
+import 'package:flutter_pecha/core/storage/storage_keys.dart';
+import 'package:flutter_pecha/core/utils/local_storage_service.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/user.dart';
 import 'package:flutter_pecha/features/auth/domain/entities/username_update_result.dart';
 import 'package:flutter_pecha/features/auth/domain/usecases/update_user_info_usecase.dart';
@@ -23,7 +26,10 @@ void main() {
   late MockUpdateUserInfoUseCase updateUserInfo;
   late MockUpdateUsernameUseCase updateUsername;
   late MockConnectivityService connectivity;
+  late FakeLocalStorage storage;
   late int nextCalls;
+
+  const userId = 'sms|1';
 
   // What Auth0's account creation left: a placeholder name and handle.
   const generated = User(
@@ -44,6 +50,7 @@ void main() {
     updateUserInfo = MockUpdateUserInfoUseCase();
     updateUsername = MockUpdateUsernameUseCase();
     connectivity = MockConnectivityService();
+    storage = FakeLocalStorage()..values[StorageKeys.currentUserId] = userId;
     nextCalls = 0;
     when(getUser(any)).thenAnswer((_) async => const Right(generated));
     when(connectivity.checkConnectivity()).thenAnswer((_) async => true);
@@ -59,9 +66,10 @@ void main() {
               updateUserInfoUseCase: updateUserInfo,
               updateUsernameUseCase: updateUsername,
               uploadAvatarUseCase: MockUploadAvatarUseCase(),
-              localStorageService: FakeLocalStorage(),
+              localStorageService: storage,
             ),
           ),
+          localStorageServiceProvider.overrideWithValue(storage),
           connectivityServiceProvider.overrideWithValue(connectivity),
         ],
         child: MaterialApp(
@@ -182,6 +190,70 @@ void main() {
 
     verify(updateUsername('tenzin')).called(1);
     expect(nextCalls, 1);
+  });
+
+  testWidgets('remembers each successful save for a relaunch', (tester) async {
+    when(
+      updateUsername(any),
+    ).thenAnswer((_) async => Right(UsernameUpdateResult.success('tenzin')));
+    when(
+      updateUserInfo(any),
+    ).thenAnswer((_) async => const Left(ServerFailure('down')));
+    await pumpScreen(tester);
+    await fillIn(tester);
+
+    await tapContinue(tester);
+    expect(
+      jsonDecode(storage.values[StorageKeys.onboardingProfileSaved] as String),
+      {'userId': userId, 'username': 'tenzin'},
+    );
+
+    when(updateUserInfo(any)).thenAnswer((_) async => const Right(generated));
+    await tapContinue(tester);
+    expect(
+      jsonDecode(storage.values[StorageKeys.onboardingProfileSaved] as String),
+      {'userId': userId, 'username': 'tenzin', 'displayName': 'Tenzin Dhakar'},
+    );
+  });
+
+  testWidgets('a relaunch restores the saved values and claims nothing twice', (
+    tester,
+  ) async {
+    storage.values[StorageKeys.onboardingProfileSaved] = jsonEncode({
+      'userId': userId,
+      'username': 'tenzin',
+      'displayName': 'Tenzin Dhakar',
+    });
+    when(updateUserInfo(any)).thenAnswer((_) async => const Right(generated));
+    await pumpScreen(tester);
+    await tester.pump();
+
+    final fields = tester.widgetList<TextField>(find.byType(TextField));
+    expect(fields.map((f) => f.controller!.text), ['Tenzin Dhakar', 'tenzin']);
+
+    await tapContinue(tester);
+
+    verifyNever(updateUsername(any));
+    final params =
+        verify(updateUserInfo(captureAny)).captured.single
+            as UpdateUserInfoParams;
+    expect(params.displayName, 'Tenzin Dhakar');
+    expect(nextCalls, 1);
+  });
+
+  testWidgets('another account\'s saved values are not restored', (
+    tester,
+  ) async {
+    storage.values[StorageKeys.onboardingProfileSaved] = jsonEncode({
+      'userId': 'sms|2',
+      'username': 'someone',
+      'displayName': 'Someone Else',
+    });
+    await pumpScreen(tester);
+    await tester.pump();
+
+    final fields = tester.widgetList<TextField>(find.byType(TextField));
+    expect(fields.map((f) => f.controller!.text), ['', '']);
   });
 
   testWidgets('offline shows a message and sends nothing', (tester) async {
