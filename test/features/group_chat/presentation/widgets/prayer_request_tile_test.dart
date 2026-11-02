@@ -23,6 +23,7 @@ ChatMessageDTO _prayer({
   required bool prayedByMe,
   int mine = 0,
   int total = 0,
+  bool isCompleted = false,
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
 }) {
@@ -39,6 +40,7 @@ ChatMessageDTO _prayer({
     prayerCount: count,
     totalPrayerCount: total,
     prayedByMe: prayedByMe,
+    isCompleted: isCompleted,
     myPrayerCount: mine,
     recentPrayers: recent,
   );
@@ -50,6 +52,7 @@ Future<void> _pump(
   required bool prayedByMe,
   int mine = 0,
   int total = 0,
+  bool isCompleted = false,
   bool isOwn = false,
   List<ChatPrayerUserDTO> recent = const [],
   ChatPrayerIntentionDTO? intention,
@@ -72,6 +75,7 @@ Future<void> _pump(
             prayedByMe: prayedByMe,
             mine: mine,
             total: total,
+            isCompleted: isCompleted,
             recent: recent,
             intention: intention,
           ),
@@ -262,7 +266,26 @@ void main() {
   testWidgets('nobody praying yet reads Pray with no count', (tester) async {
     await _pump(tester, count: 0, prayedByMe: false);
     expect(find.text('Pray'), findsOneWidget);
+    expect(find.text('Be the first to pray'), findsOneWidget);
     expect(find.textContaining('praying'), findsNothing);
+  });
+
+  testWidgets('an accomplished request with no prayers shows only the check', (
+    tester,
+  ) async {
+    await _pump(tester, count: 0, prayedByMe: false, isCompleted: true);
+    expect(find.text('Be the first to pray'), findsNothing);
+    expect(find.text('Pray'), findsNothing);
+    expect(find.byIcon(AppAssets.checks), findsOneWidget);
+  });
+
+  testWidgets('an accomplished request that has prayers keeps the count', (
+    tester,
+  ) async {
+    await _pump(tester, count: 2, total: 4, prayedByMe: false, isCompleted: true);
+    expect(find.text('2 people · 4 prayers'), findsOneWidget);
+    expect(find.text('Pray'), findsNothing);
+    expect(find.byIcon(AppAssets.checks), findsOneWidget);
   });
 
   testWidgets('others praying are counted while I still read Pray', (
