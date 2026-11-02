@@ -121,6 +121,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
   bool _isUserScrolling = false;
   bool _isProgrammaticScroll = false;
 
+  /// Instant jumps of the app's ([_appJump]) not laid out yet.
+  int _pendingAppJumps = 0;
+
   /// The entry [_keepTopEntry] is putting back at the top of the screen,
   /// how far down it sat, and the index it is jumping to; counted by
   /// [_keptTopJumps] so only the latest jump lets it go.
@@ -287,7 +290,8 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     // A finger on the list makes the scroll the person's, even one that
     // interrupts the app's own.
     final byApp =
-        !_isUserScrolling && (_isProgrammaticScroll || !_recentUserGesture);
+        !_isUserScrolling &&
+        (_isProgrammaticScroll || _pendingAppJumps > 0 || !_recentUserGesture);
     // Any scroll by the person leaves the live recitation.
     if (!byApp && delta != 0 && _isLiveRecitation) _pauseLiveFollow();
     if (!byApp && delta != 0) _followTopVerse = true;
@@ -1247,18 +1251,32 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final jump = ++_keptTopJumps;
     final alignment = kept.alignment;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // A finger that came down since then holds the list itself.
       if (!mounted ||
           jump != _keptTopJumps ||
           _isProgrammaticScroll ||
+          _isUserScrolling ||
           !_itemScrollController.isAttached) {
         return;
       }
-      _itemScrollController.jumpTo(index: moved, alignment: alignment);
+      _appJump(index: moved, alignment: alignment);
       // Laid out by the next frame; from then the positions are right.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (jump == _keptTopJumps) _keptTop = null;
       });
     });
+  }
+
+  /// Jumps the list as the app's own move: the scroll it reports
+  /// ([_onScrollOffset]) is not taken for the person's, which would leave
+  /// live after a recent tap. Unlike [_isProgrammaticScroll], which an
+  /// animated scroll holds, this counts only until the jump is laid out.
+  void _appJump({required int index, required double alignment}) {
+    _pendingAppJumps++;
+    _itemScrollController.jumpTo(index: index, alignment: alignment);
+    WidgetsBinding.instance
+      ..addPostFrameCallback((_) => _pendingAppJumps--)
+      ..ensureVisualUpdate();
   }
 
   /// What an entry is across rebuilds of the list, wherever it sits.
@@ -1874,11 +1892,9 @@ class _ReaderContentPartState extends ConsumerState<ReaderContentPart> {
     final generation = _liveGeneration;
     if (instant) {
       // The verse moved under the page, not with the room: it is put back
-      // at once, with no scroll for the eye to follow.
-      _itemScrollController.jumpTo(
-        index: target.index,
-        alignment: target.alignment,
-      );
+      // at once, with no scroll for the eye to follow. Never under a finger.
+      if (_isUserScrolling) return true;
+      _appJump(index: target.index, alignment: target.alignment);
       if (!measured) {
         // A room move or a live scroll since then has the page elsewhere.
         final scroll = _liveScroll;
