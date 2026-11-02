@@ -303,6 +303,8 @@ void main() {
     await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
 
     // The other pills only show with bookmarks, so measure them directly.
+    // Unmount first so the next pump gets a fresh ProviderScope and notifier.
+    await tester.pumpWidget(const SizedBox());
     await pumpScreen(tester);
     for (final label in pillLabels()) {
       final size = tester.getSemantics(find.text(label)).rect.size;
