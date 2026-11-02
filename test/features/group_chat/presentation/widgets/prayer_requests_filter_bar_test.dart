@@ -8,6 +8,7 @@ Future<void> _pump(
   WidgetTester tester, {
   VoidCallback? onFindPrayer,
   PrayerRequestsFilter filter = const PrayerRequestsFilter(),
+  int total = 8,
 }) async {
   await tester.pumpWidget(
     MaterialApp(
@@ -20,7 +21,7 @@ Future<void> _pump(
             width: 328,
             child: PrayerRequestsFilterBar(
               filter: filter,
-              total: 8,
+              total: total,
               onOpenSort: () {},
               onClearIntention: () {},
               onFindPrayer: onFindPrayer,
@@ -65,5 +66,16 @@ void main() {
   testWidgets('no callback hides the pill', (tester) async {
     await _pump(tester);
     expect(find.text('Random'), findsNothing);
+  });
+
+  testWidgets('a zero count is not shown', (tester) async {
+    await _pump(tester, total: 0);
+    expect(find.text('0 requests'), findsNothing);
+    expect(find.text('Newest'), findsOneWidget);
+  });
+
+  testWidgets('a count of one reads in the singular', (tester) async {
+    await _pump(tester, total: 1);
+    expect(find.text('1 request'), findsOneWidget);
   });
 }
