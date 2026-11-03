@@ -52,6 +52,24 @@ void main() {
       expect(routineBlockDisplayTitle(_block(), en), isNull);
     });
 
+    test('skips items with a blank label', () {
+      final block = _block(
+        items: [_item(''), _item('  '), _item('Heart Sutra')],
+      );
+      expect(routineBlockDisplayTitle(block, en), 'Heart Sutra +2 more');
+    });
+
+    test('is null when every item label is blank', () {
+      final block = _block(
+        items: [
+          _item(''),
+          // A timer without a positive duration falls back to its stored title.
+          const RoutineItem(id: 't', title: '', type: RoutineItemType.timer),
+        ],
+      );
+      expect(routineBlockDisplayTitle(block, en), isNull);
+    });
+
     test('uses the localized timer label for a timer item', () {
       final block = _block(
         items: [
