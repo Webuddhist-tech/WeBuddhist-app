@@ -2321,6 +2321,12 @@ abstract class AppLocalizations {
   /// **'ACCOUNT'**
   String get settings_section_account;
 
+  /// No description provided for @settings_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get settings_email;
+
   /// No description provided for @settings_edit_profile.
   ///
   /// In en, this message translates to:

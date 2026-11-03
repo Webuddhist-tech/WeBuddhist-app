@@ -1263,6 +1263,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_section_account => 'ACCOUNT';
 
   @override
+  String get settings_email => 'Email';
+
+  @override
   String get settings_edit_profile => 'Edit profile';
 
   @override

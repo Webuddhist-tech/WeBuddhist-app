@@ -1,3 +1,4 @@
+import 'package:clarity_flutter/clarity_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pecha/core/config/locale/content_language_analytics.dart';
 import 'package:flutter_pecha/core/config/locale/locale_notifier.dart';
@@ -120,6 +121,7 @@ class MoreScreen extends ConsumerWidget {
                         LoginDrawer.show(context, ref, useRootNavigator: true),
               ),
             ] else ...[
+              _buildEmailRow(context, ref, localizations),
               _buildSettingsRow(
                 context,
                 icon: AppAssets.signOut,
@@ -159,6 +161,46 @@ class MoreScreen extends ConsumerWidget {
               .read(themeModeProvider.notifier)
               .setTheme(value ? ThemeMode.dark : ThemeMode.light);
         },
+      ),
+    );
+  }
+
+  /// Read-only account email. Hidden when there is none, e.g. phone sign-in.
+  Widget _buildEmailRow(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations localizations,
+  ) {
+    final email =
+        ref.watch(userProvider.select((s) => s.user?.email))?.trim() ?? '';
+    if (email.isEmpty) return const SizedBox.shrink();
+
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Icon(
+            Icons.mail_outline,
+            size: 24,
+            color: Theme.of(context).iconTheme.color,
+          ),
+          const SizedBox(width: 12),
+          Text(localizations.settings_email, style: textTheme.bodyLarge),
+          const SizedBox(width: 16),
+          Expanded(
+            // Personal details stay hidden in Clarity recordings.
+            child: ClarityMask(
+              child: Text(
+                email,
+                textAlign: TextAlign.end,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodyLarge?.copyWith(color: AppColors.grey600),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

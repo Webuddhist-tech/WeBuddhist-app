@@ -1257,6 +1257,9 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settings_section_account => 'บัญชี';
 
   @override
+  String get settings_email => 'อีเมล';
+
+  @override
   String get settings_edit_profile => 'แก้ไขโปรไฟล์';
 
   @override

@@ -1278,6 +1278,9 @@ class AppLocalizationsMy extends AppLocalizations {
   String get settings_section_account => 'အကောင့်';
 
   @override
+  String get settings_email => 'အီးမေးလ်';
+
+  @override
   String get settings_edit_profile => 'ပရိုဖိုင် ပြင်ဆင်ရန်';
 
   @override
